@@ -29,6 +29,9 @@ pub enum BreakLinePointType {
     ///     first_arg: first_arg,
     ///     second_arg: second_arg,
     /// };
+    SeparatedListBreak,
+    /// Same as separated list breaks, but for lists with no separator such as StatementList or
+    /// ItemList.
     ListBreak,
 }
 impl BreakLinePointType {
@@ -37,6 +40,9 @@ impl BreakLinePointType {
     }
     pub fn is_nondangling(&self) -> bool {
         matches!(self, BreakLinePointType::NonDangling)
+    }
+    pub fn is_separated_list_break(&self) -> bool {
+        matches!(self, BreakLinePointType::SeparatedListBreak)
     }
     pub fn is_list_break(&self) -> bool {
         matches!(self, BreakLinePointType::ListBreak)
@@ -55,6 +61,15 @@ impl BreakLinePointProperties {
     pub fn new(precedence: usize, break_type: BreakLinePointType) -> Self {
         Self { precedence, break_type }
     }
+}
+/// Represents the relative position of a break line point inside a node.
+pub enum BreakingPosition {
+    /// A break line point which appears before all the children of a node.
+    Leading,
+    /// A break line point which appears between two children of a node.
+    Internal,
+    /// A break line point which appears after all the children of a node.
+    Trailing,
 }
 
 /// The possible parts of line trees.
@@ -279,7 +294,9 @@ impl LineBuilder {
             if i == 0 && break_line_point_type.is_dangling() {
                 added_indent = trees.last_mut().unwrap().width();
             } else if *position < self.children.len() {
-                if break_line_point_type.is_list_break() {
+                if break_line_point_type.is_separated_list_break()
+                    || break_line_point_type.is_list_break()
+                {
                     // In a breakable list, add indent after the first break point
                     // (e.g. after "Struct{" to indent all struct builder args )
                     if i == 0 {
@@ -405,19 +422,14 @@ pub trait SyntaxNodeFormat {
     fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns the number of allowed empty lines between two consecutive children of this node.
     fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize;
-    /// Returns true if there should be an optional break line point before the node.
-    fn add_break_line_point_before(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns true if there should be an optional break line point after the node.
-    fn add_break_line_point_after(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns true if the list is optionally breakable.
-    /// Only applicable for separated lists kind nodes.
-    fn is_breakable_list(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns the BreakPointProperties associated with the specific node kind.
-    fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties;
-    /// Returns true if the node is protected from breaking unless no other break points exists.
-    /// For example break points inside ExprParenthesized should only be used if there are no break
-    /// points outside the the parenthesis.
-    /// Only applicable for internal nodes.
+    /// Returns the break point properties of a specific node if a break point should exist,
+    /// otherwise returns None. The position indicates the place within the node, before,
+    /// between or after the children.
+    fn get_break_line_point_properties(
+        &self,
+        db: &dyn SyntaxGroup,
+        position: BreakingPosition,
+    ) -> Option<BreakLinePointProperties>;
     fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool;
 }
 
@@ -478,8 +490,10 @@ impl<'a> Formatter<'a> {
         if syntax_node.is_protected_breaking_node(self.db) {
             self.line_state.line_buffer.open_sub_builder();
         }
-        if syntax_node.is_breakable_list(self.db) {
-            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
+        if let Some(break_properties) =
+            syntax_node.get_break_line_point_properties(self.db, BreakingPosition::Leading)
+        {
+            self.append_break_line_point(break_properties);
         }
         let children = syntax_node.children(self.db);
         let n_children = children.len();
@@ -496,13 +510,25 @@ impl<'a> Formatter<'a> {
 
             self.empty_lines_allowance = allowed_empty_between;
             self.current_indent -= indent_change;
-            // If this is a breakable list is breakable a breakpoint is added after each separator
-            if i % 2 == 1 && i != n_children - 1 && syntax_node.is_breakable_list(self.db) {
-                self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
+
+            if let Some(break_properties) =
+                syntax_node.get_break_line_point_properties(self.db, BreakingPosition::Internal)
+            {
+                match break_properties.break_type {
+                    BreakLinePointType::SeparatedListBreak if i % 2 == 1 && i != n_children - 1 => {
+                        self.append_break_line_point(break_properties);
+                    }
+                    BreakLinePointType::ListBreak if i != n_children - 1 => {
+                        self.append_break_line_point(break_properties);
+                    }
+                    _ => {}
+                }
             }
         }
-        if syntax_node.is_breakable_list(self.db) {
-            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
+        if let Some(break_properties) =
+            syntax_node.get_break_line_point_properties(self.db, BreakingPosition::Trailing)
+        {
+            self.append_break_line_point(break_properties);
         }
         if syntax_node.is_protected_breaking_node(self.db) {
             self.line_state.line_buffer.close_sub_builder();
@@ -556,12 +582,16 @@ impl<'a> Formatter<'a> {
             self.line_state.line_buffer.push_space();
         }
         self.line_state.no_space_after = no_space_after;
-        if syntax_node.add_break_line_point_before(self.db) {
-            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
+        if let Some(break_properties) =
+            syntax_node.get_break_line_point_properties(self.db, BreakingPosition::Leading)
+        {
+            self.append_break_line_point(break_properties);
         }
         self.line_state.line_buffer.push_str(&text);
-        if syntax_node.add_break_line_point_after(self.db) {
-            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
+        if let Some(break_properties) =
+            syntax_node.get_break_line_point_properties(self.db, BreakingPosition::Trailing)
+        {
+            self.append_break_line_point(break_properties);
         }
     }
     fn append_break_line_point(&mut self, properties: BreakLinePointProperties) {

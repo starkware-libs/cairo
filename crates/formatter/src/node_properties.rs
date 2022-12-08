@@ -5,7 +5,9 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
 use syntax::node::SyntaxNode;
 
-use crate::formatter::{BreakLinePointProperties, BreakLinePointType, SyntaxNodeFormat};
+use crate::formatter::{
+    BreakLinePointProperties, BreakLinePointType, BreakingPosition, SyntaxNodeFormat,
+};
 
 fn parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
     Some(syntax_node.parent()?.kind(db))
@@ -147,25 +149,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             _ => 0,
         }
     }
-    fn add_break_line_point_before(&self, db: &dyn SyntaxGroup) -> bool {
-        matches!(
-            self.kind(db),
-            SyntaxKind::TokenPlus
-                | SyntaxKind::TokenMinus
-                | SyntaxKind::TokenMul
-                | SyntaxKind::TokenDiv
-                | SyntaxKind::TokenMod
-        )
-    }
-    fn add_break_line_point_after(&self, _db: &dyn SyntaxGroup) -> bool {
-        false
-    }
-    fn is_breakable_list(&self, db: &dyn SyntaxGroup) -> bool {
-        matches!(
-            self.kind(db),
-            SyntaxKind::StructArgList | SyntaxKind::ParamList | SyntaxKind::ExprList
-        )
-    }
+
     fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool {
         matches!(
             self.kind(db),
@@ -175,31 +159,45 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprList
         )
     }
-    fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties {
+    fn get_break_line_point_properties(
+        &self,
+        db: &dyn SyntaxGroup,
+        position: BreakingPosition,
+    ) -> Option<BreakLinePointProperties> {
         match self.kind(db) {
-            SyntaxKind::ExprList => BreakLinePointProperties {
-                precedence: 10,
-                break_type: BreakLinePointType::ListBreak,
-            },
-            SyntaxKind::StructArgList => BreakLinePointProperties {
-                precedence: 11,
-                break_type: BreakLinePointType::ListBreak,
-            },
-            SyntaxKind::ParamList => BreakLinePointProperties {
-                precedence: 12,
-                break_type: BreakLinePointType::ListBreak,
-            },
-            SyntaxKind::TokenPlus | SyntaxKind::TokenMinus => BreakLinePointProperties {
-                precedence: 100,
-                break_type: BreakLinePointType::Dangling,
-            },
-            SyntaxKind::TokenMul | SyntaxKind::TokenDiv | SyntaxKind::TokenMod => {
-                BreakLinePointProperties {
-                    precedence: 101,
-                    break_type: BreakLinePointType::Dangling,
+            SyntaxKind::ExprList => Some(BreakLinePointProperties {
+                precedence: 6,
+                break_type: BreakLinePointType::SeparatedListBreak,
+            }),
+            SyntaxKind::StructArgList => Some(BreakLinePointProperties {
+                precedence: 7,
+                break_type: BreakLinePointType::SeparatedListBreak,
+            }),
+            SyntaxKind::ParamList => Some(BreakLinePointProperties {
+                precedence: 9,
+                break_type: BreakLinePointType::SeparatedListBreak,
+            }),
+            SyntaxKind::TokenPlus | SyntaxKind::TokenMinus => {
+                if let BreakingPosition::Leading = position {
+                    Some(BreakLinePointProperties {
+                        precedence: 10,
+                        break_type: BreakLinePointType::Dangling,
+                    })
+                } else {
+                    None
                 }
             }
-            _ => unreachable!(),
+            SyntaxKind::TokenMul | SyntaxKind::TokenDiv => {
+                if let BreakingPosition::Leading = position {
+                    Some(BreakLinePointProperties {
+                        precedence: 11,
+                        break_type: BreakLinePointType::Dangling,
+                    })
+                } else {
+                    None
+                }
+            }
+            _ => None,
         }
     }
 }
