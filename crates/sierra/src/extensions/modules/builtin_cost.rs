@@ -48,7 +48,7 @@ pub struct BuiltinCostType {
 }
 impl BuiltinCostType {
     fn id_from_token_type(token_type: CostTokenType) -> GenericTypeId {
-        GenericTypeId::from_string(&format!("{}BuiltinCost", token_type.camel_case_name()))
+        GenericTypeId::from_string(format!("{}BuiltinCost", token_type.camel_case_name()))
     }
 }
 impl GenericType for BuiltinCostType {

@@ -1,7 +1,7 @@
 use test_log::test;
 
 use crate::hints::Hint;
-use crate::operand::{CellRef, DerefOrImmediate, Register};
+use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
 
 #[test]
 fn test_alloc_segment_format() {
@@ -78,5 +78,19 @@ fn test_less_than_or_equal_format() {
         }
         .to_string(),
         "%{ memory[ap + 0] = 3 <= memory[ap + 6] %}"
+    );
+}
+
+#[test]
+fn test_syscall_hint_format() {
+    let syscall_ptr = ResOperand::BinOp(BinOpOperand {
+        op: Operation::Add,
+        a: CellRef { register: Register::FP, offset: -3 },
+        b: DerefOrImmediate::from(3),
+    });
+
+    assert_eq!(
+        Hint::SystemCall { syscall_ptr }.to_string(),
+        "%{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + -3] + 3) %}"
     );
 }

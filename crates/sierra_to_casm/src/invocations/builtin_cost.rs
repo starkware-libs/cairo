@@ -36,7 +36,7 @@ fn build_builtin_get_gas(
         .variable_values
         .get(&(builder.idx, libfunc.token_type))
         .ok_or(InvocationError::UnknownVariableData)?;
-    let (range_check_expression, gas_counter_expression, _builtin_cost_expression) =
+    let (range_check_expression, gas_counter_expression, builtin_cost_expression) =
         match builder.refs {
             [
                 ReferenceValue { expression: range_check_expression, .. },
@@ -64,6 +64,13 @@ fn build_builtin_get_gas(
         CellExpression::Deref
     )
     .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let builtin_cost = try_extract_matches!(
+        builtin_cost_expression
+            .try_unpack_single()
+            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+        CellExpression::Deref
+    )
+    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let failure_handle_statement_id = match builder.invocation.branches.as_slice() {
         [
@@ -73,27 +80,30 @@ fn build_builtin_get_gas(
         _ => panic!("malformed invocation"),
     };
 
-    // TODO(lior): Multiply requested_count by a dynamic value.
-
     // The code up to the success branch.
     let mut before_success_branch = casm! {
-        %{ memory[ap + 0] = ((*requested_count - 1) as i128) < memory gas_counter_value %}
+        // Compute the requested amount of gas.
+        [ap + 0] = builtin_cost * (*requested_count), ap++;
+        // Non-deterministically check if there is enough gas.
+        %{
+            memory[ap + 0] = memory[ap - 1] <=
+                memory (gas_counter_value.unchecked_apply_known_ap_change(1))
+        %}
         jmp rel 0 if [ap + 0] != 0, ap++;
 
-        // requested_count - 1 >= gas_counter_value => requested_count > gas_counter:
-        // TODO(orizi): Make into one command when wider constants are supported.
-        [ap + 0] = (gas_counter_value.unchecked_apply_known_ap_change(1)) + (1 - *requested_count as i128), ap++;
-        [ap + 0] = [ap - 1] * (-1), ap++;
-        [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
+        // In this case amount > gas_counter_value, so amount - gas_counter_value - 1 >= 0.
+        [ap - 2] = [ap + 0] + (gas_counter_value.unchecked_apply_known_ap_change(2)), ap++;
+        [ap + 0] = [ap - 1] + (-1), ap++;
+        [ap - 1] = [[range_check.unchecked_apply_known_ap_change(4)]];
 
         jmp rel 0; // Fixed in relocations.
     };
-    patch_jnz_to_end(&mut before_success_branch, 0);
+    patch_jnz_to_end(&mut before_success_branch, 1);
     let relocation_index = before_success_branch.instructions.len() - 1;
     let success_branch = casm! {
-       // requested_count - 1 < gas_counter_value => requested_count <= gas_counter:
-       [ap + 0] = (gas_counter_value.unchecked_apply_known_ap_change(1)) + (-requested_count as i128), ap++;
-       [ap - 1] = [[range_check.unchecked_apply_known_ap_change(2)]];
+       // Compute the remaining gas and check that it is nonnegative.
+       (gas_counter_value.unchecked_apply_known_ap_change(2)) = [ap + 0] + [ap - 2], ap++;
+       [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
     };
 
     Ok(builder.build(
@@ -106,7 +116,7 @@ fn build_builtin_get_gas(
             vec![
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltOperator::Add,
-                    a: range_check.unchecked_apply_known_ap_change(2),
+                    a: range_check.unchecked_apply_known_ap_change(3),
                     b: DerefOrImmediate::from(1),
                 })),
                 ReferenceExpression::from_cell(CellExpression::Deref(CellRef {
@@ -118,11 +128,11 @@ fn build_builtin_get_gas(
             vec![
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltOperator::Add,
-                    a: range_check.unchecked_apply_known_ap_change(3),
+                    a: range_check.unchecked_apply_known_ap_change(4),
                     b: DerefOrImmediate::from(1),
                 })),
                 ReferenceExpression::from_cell(CellExpression::Deref(
-                    gas_counter_value.unchecked_apply_known_ap_change(3),
+                    gas_counter_value.unchecked_apply_known_ap_change(4),
                 )),
             ]
             .into_iter(),
