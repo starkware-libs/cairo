@@ -296,6 +296,7 @@ parser_test!(
     ["src/parser_test_data/function_signature"],
     test_partial_parser_tree
 );
+parser_test!(function_call, ["src/parser_test_data/function_call"], test_partial_parser_tree);
 parser_test!(
     not_isnt_a_binary_operator,
     ["src/parser_test_data/not_isnt_a_binary_operator"],

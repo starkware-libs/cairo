@@ -1,0 +1,35 @@
+//! > Test function call syntax tree
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+func test() {
+    test_generics::<felt, 7>(12);
+}
+
+//! > top_level_kind
+ExprFunctionCall
+
+//! > ignored_kinds
+
+//! > expected_tree
+└── Top level kind: ExprFunctionCall
+    ├── path (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentWithGenericArgs)
+    │       ├── ident (kind: TokenIdentifier): 'test_generics'
+    │       ├── seperator (kind: TokenColonColon): '::'
+    │       └── generic_args (kind: GenericArgs)
+    │           ├── langle (kind: TokenLT): '<'
+    │           ├── generic_args (kind: GenericArgList)
+    │           │   ├── item #0 (kind: ExprPath)
+    │           │   │   └── item #0 (kind: PathSegmentSimple)
+    │           │   │       └── ident (kind: TokenIdentifier): 'felt'
+    │           │   ├── separator #0 (kind: TokenComma): ','
+    │           │   └── item #1 (kind: TokenLiteralNumber): '7'
+    │           └── rangle (kind: TokenGT): '>'
+    └── arguments (kind: ExprListParenthesized)
+        ├── lparen (kind: TokenLParen): '('
+        ├── expressions (kind: ExprList)
+        │   └── item #0 (kind: TokenLiteralNumber): '12'
+        └── rparen (kind: TokenRParen): ')'
