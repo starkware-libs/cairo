@@ -56,7 +56,7 @@ fn test_serialization() {
 pub fn get_example_file_path(file_name: &str) -> PathBuf {
     // Pop the "/sierra_to_casm" suffix.
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.extend(["examples", file_name].into_iter());
+    path.extend(["test_data", file_name].into_iter());
     path
 }
 
@@ -68,17 +68,13 @@ fn test_compile_path() {
     let contract = compile_path(&path, replace_ids).unwrap();
 
     compare_contents_or_fix_with_path(
+        &get_example_file_path("test_contract.json"),
+        serde_json::to_string_pretty(&contract).unwrap() + "\n",
+    );
+
+    // There is a separate file for the sierra code as it is hard to review inside the json.
+    compare_contents_or_fix_with_path(
         &get_example_file_path("test_contract.sierra"),
         contract.sierra_program.to_string(),
-    );
-
-    compare_contents_or_fix_with_path(
-        &get_example_file_path("test_contract.abi"),
-        serde_json::to_string_pretty(&contract.abi).unwrap() + "\n",
-    );
-
-    compare_contents_or_fix_with_path(
-        &get_example_file_path("test_contract.entry_points"),
-        serde_json::to_string_pretty(&contract.entry_points_by_type).unwrap() + "\n",
     );
 }
