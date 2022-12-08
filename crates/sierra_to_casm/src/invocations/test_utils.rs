@@ -10,6 +10,7 @@ use sierra::extensions::types::TypeInfo;
 use sierra::extensions::{ConcreteLibFunc, ConcreteType, GenericLibFuncEx, GenericTypeEx};
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
+use sierra_ap_change::ap_change_info::ApChangeInfo;
 use sierra_gas::gas_info::GasInfo;
 
 use super::{compile_invocation, CompiledInvocation, ProgramInfo};
@@ -235,7 +236,10 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
     }
     let program_info = ProgramInfo {
         metadata: &Metadata {
-            function_ap_change: HashMap::new(),
+            ap_change_info: ApChangeInfo {
+                variable_values: HashMap::default(),
+                function_ap_change: HashMap::default(),
+            },
             gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
         },
         type_sizes: &type_sizes,
