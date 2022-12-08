@@ -56,10 +56,13 @@ pub struct BreakLinePointProperties {
     pub precedence: usize,
     /// The breaking behaviour type.
     pub break_type: BreakLinePointType,
+    /// Indicates if a breakpoint is optional. An optional breakpoint will be broken only if the
+    /// line is too long. A non-optional breakpoint will always be broken.
+    pub is_optional: bool,
 }
 impl BreakLinePointProperties {
-    pub fn new(precedence: usize, break_type: BreakLinePointType) -> Self {
-        Self { precedence, break_type }
+    pub fn new(precedence: usize, break_type: BreakLinePointType, is_optional: bool) -> Self {
+        Self { precedence, break_type, is_optional }
     }
 }
 /// Represents the relative position of a break line point inside a node.
@@ -218,15 +221,17 @@ impl LineBuilder {
     fn to_broken_string_by_width(&self, max_line_width: usize, tab_size: usize) -> Vec<String> {
         // TODO(gil): consider using a write buffer similar to 'write!()' to reduce string
         // allocations.
-        if self.width() < max_line_width {
-            return vec![self.to_string()];
-        }
-        let mut sub_builders = self.to_broken_tree_by_width(max_line_width, tab_size);
+        let mut sub_builders = self.to_broken_tree(max_line_width, tab_size);
         // While the line is not broken into several lines, try to flatten it and then break it.
         while sub_builders.len() == 1 {
             if !sub_builders[0].is_flat() {
                 sub_builders =
-                    sub_builders[0].flatten().to_broken_tree_by_width(max_line_width, tab_size);
+                    sub_builders[0].flatten().to_broken_tree(max_line_width, tab_size);
+            } else if sub_builders[0].contains_break_line_points() {
+                // New lines are broken only after all other points were handled, i.e. the builder
+                // is flat, and trying to break non-newline points doesn't result in two or more
+                // lines.
+                sub_builders = sub_builders[0].to_broken_tree(max_line_width, tab_size);
             } else {
                 // Can't break tree to fit within width
                 // TODO(Gil): Propagate error to user.
@@ -241,27 +246,33 @@ impl LineBuilder {
     }
     /// Breaks the LineTree into a vector of LineTrees
     /// according to the lowest precedence break line point found in the LineTree.
-    fn to_broken_tree_by_width(&self, max_line_width: usize, tab_size: usize) -> Vec<LineBuilder> {
+    fn to_broken_tree(&self, max_line_width: usize, tab_size: usize) -> Vec<LineBuilder> {
+        let break_only_non_optional_points = self.width() <= max_line_width;
         let mut breaking_positions = self.get_preceding_break_points_indices();
         if breaking_positions.is_empty() {
             return vec![self.clone()];
         }
-        let mut break_line_point_type = if let LineComponent::BreakLinePoint(properties) =
+        let mut break_line_point_properties = if let LineComponent::BreakLinePoint(properties) =
             &self.children[breaking_positions[0]]
         {
-            properties.break_type.clone()
+            properties.clone()
         } else {
             unreachable!("Index is taken from a break line points positions vector.");
         };
+        if break_only_non_optional_points && break_line_point_properties.is_optional {
+            return vec![
+                self.remove_optional_break_line_point(break_line_point_properties.precedence),
+            ];
+        }
         let mut trees: Vec<LineBuilder> = vec![LineBuilder::new()];
         let mut added_indent = 0;
         let mut prev_position = 0;
         // Dangling break is overridden if it will cause the line to still be too long.
-        if break_line_point_type.is_dangling()
+        if break_line_point_properties.break_type.is_dangling()
             && (breaking_positions.len() == 1
                 || self.width_between(0, breaking_positions[1]) > max_line_width)
         {
-            break_line_point_type = BreakLinePointType::NonDangling;
+            break_line_point_properties.break_type = BreakLinePointType::NonDangling;
             added_indent = tab_size;
         }
 
@@ -281,11 +292,11 @@ impl LineBuilder {
                     _ => trees.last_mut().unwrap().push_child(self.children[j].clone()),
                 }
             }
-            if i == 0 && break_line_point_type.is_dangling() {
+            if i == 0 && break_line_point_properties.break_type.is_dangling() {
                 added_indent = trees.last_mut().unwrap().width();
             } else if *position < self.children.len() {
-                if break_line_point_type.is_separated_list_break()
-                    || break_line_point_type.is_list_break()
+                if break_line_point_properties.break_type.is_separated_list_break()
+                    || break_line_point_properties.break_type.is_list_break()
                 {
                     // In a breakable list, add indent after the first break point
                     // (e.g. after "Struct{" to indent all struct builder args )
@@ -357,6 +368,28 @@ impl LineBuilder {
     /// Returns whether the line contains only indents.
     fn is_only_indents(&self) -> bool {
         !self.children.iter().any(|child| !matches!(child, LineComponent::Indent(_)))
+    }
+    /// Returns whether the line contains a break point.
+    fn contains_break_line_points(&self) -> bool {
+        self.children.iter().any(|child| matches!(child, LineComponent::BreakLinePoint(_)))
+    }
+    // Removes all the break line points with a given precedence.
+    fn remove_optional_break_line_point(&self, precedence: usize) -> LineBuilder {
+        LineBuilder {
+            children: self
+                .children
+                .iter()
+                .map(|child| match child {
+                    LineComponent::BreakLinePoint(node_properties)
+                        if node_properties.precedence == precedence =>
+                    {
+                        LineComponent::Token(child.to_string())
+                    }
+                    _ => child.clone(),
+                })
+                .collect_vec(),
+            is_open: true,
+        }
     }
 }
 

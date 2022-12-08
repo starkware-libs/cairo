@@ -29,7 +29,9 @@ let z = 5;
 
 }
     
- func bar<T>(x: T) -> T { let x: T = 1; }
+ func bar<T>(x: T) -> T {
+    let x: T = 1;
+}
     
 
  struct A { }
@@ -41,13 +43,16 @@ func fib(
     b: Box::<felt>,
     n: Box::<felt>
 ) -> Box::<felt> {
-    match n { 0 => {
+    match n {
+0 => {
     a
-    }, _ => {
+    },
+_ => {
     fib(
     b,
     into_box::<felt>(unbox::<felt>(a) + unbox::<felt>(b)),
     into_box::<felt>(unbox::<felt>(n) - 1),
 )
-    }, }
+    },
+}
 }

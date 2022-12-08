@@ -133,26 +133,31 @@ impl SyntaxNodeFormat for SyntaxNode {
                         Some(BreakLinePointProperties {
                             precedence: 0,
                             break_type: BreakLinePointType::ListBreak,
+                            is_optional: false,
                         })
                     }
                 }
                 Some(SyntaxKind::ImplBody) => Some(BreakLinePointProperties {
                     precedence: 1,
                     break_type: BreakLinePointType::ListBreak,
+                    is_optional: false,
                 }),
                 _ => None,
             },
             SyntaxKind::TraitItemList => Some(BreakLinePointProperties {
                 precedence: 2,
                 break_type: BreakLinePointType::ListBreak,
+                is_optional: false,
             }),
             SyntaxKind::StatementList => Some(BreakLinePointProperties {
                 precedence: 3,
                 break_type: BreakLinePointType::ListBreak,
+                is_optional: false,
             }),
             SyntaxKind::MatchArms => Some(BreakLinePointProperties {
                 precedence: 4,
                 break_type: BreakLinePointType::SeparatedListBreak,
+                is_optional: false,
             }),
             SyntaxKind::AttributeList => {
                 if let BreakingPosition::Leading = position {
@@ -161,30 +166,36 @@ impl SyntaxNodeFormat for SyntaxNode {
                     Some(BreakLinePointProperties {
                         precedence: 5,
                         break_type: BreakLinePointType::ListBreak,
+                        is_optional: false,
                     })
                 }
             }
             SyntaxKind::ExprList => Some(BreakLinePointProperties {
                 precedence: 6,
                 break_type: BreakLinePointType::SeparatedListBreak,
+                is_optional: true,
             }),
             SyntaxKind::StructArgList => Some(BreakLinePointProperties {
                 precedence: 7,
                 break_type: BreakLinePointType::SeparatedListBreak,
+                is_optional: true,
             }),
             SyntaxKind::MemberList => Some(BreakLinePointProperties {
                 precedence: 8,
                 break_type: BreakLinePointType::SeparatedListBreak,
+                is_optional: true,
             }),
             SyntaxKind::ParamList => Some(BreakLinePointProperties {
                 precedence: 9,
                 break_type: BreakLinePointType::SeparatedListBreak,
+                is_optional: true,
             }),
             SyntaxKind::TokenPlus | SyntaxKind::TokenMinus => {
                 if let BreakingPosition::Leading = position {
                     Some(BreakLinePointProperties {
                         precedence: 10,
                         break_type: BreakLinePointType::Dangling,
+                        is_optional: true,
                     })
                 } else {
                     None
@@ -195,6 +206,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     Some(BreakLinePointProperties {
                         precedence: 11,
                         break_type: BreakLinePointType::Dangling,
+                        is_optional: true,
                     })
                 } else {
                     None
