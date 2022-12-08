@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 
-use super::felt::FeltType;
 use super::syscalls::SyscallPtrType;
+use crate::extensions::felt::FeltType;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext, SpecializationContext,
