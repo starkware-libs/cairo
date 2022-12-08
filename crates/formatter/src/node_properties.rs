@@ -97,11 +97,6 @@ impl SyntaxNodeFormat for SyntaxNode {
         }
     }
 
-    // TODO(gil): consider removing this function as it is no longer used.
-    fn allow_newline_after(&self, _db: &dyn SyntaxGroup) -> bool {
-        false
-    }
-
     fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize {
         match self.kind(db) {
             SyntaxKind::ItemList => 2,
@@ -125,6 +120,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                             precedence: 0,
                             break_type: BreakLinePointType::ListBreak,
                             is_optional: false,
+                            add_indent: false,
                         })
                     }
                 }
@@ -132,6 +128,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     precedence: 1,
                     break_type: BreakLinePointType::ListBreak,
                     is_optional: false,
+                    add_indent: true,
                 }),
                 _ => None,
             },
@@ -139,16 +136,19 @@ impl SyntaxNodeFormat for SyntaxNode {
                 precedence: 2,
                 break_type: BreakLinePointType::ListBreak,
                 is_optional: false,
+                add_indent: true,
             }),
             SyntaxKind::StatementList => Some(BreakLinePointProperties {
                 precedence: 3,
                 break_type: BreakLinePointType::ListBreak,
                 is_optional: false,
+                add_indent: true,
             }),
             SyntaxKind::MatchArms => Some(BreakLinePointProperties {
                 precedence: 4,
                 break_type: BreakLinePointType::SeparatedListBreak,
                 is_optional: false,
+                add_indent: true,
             }),
             SyntaxKind::AttributeList => {
                 if let BreakingPosition::Leading = position {
@@ -158,6 +158,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         precedence: 5,
                         break_type: BreakLinePointType::ListBreak,
                         is_optional: false,
+                        add_indent: false,
                     })
                 }
             }
@@ -165,21 +166,25 @@ impl SyntaxNodeFormat for SyntaxNode {
                 precedence: 6,
                 break_type: BreakLinePointType::SeparatedListBreak,
                 is_optional: true,
+                add_indent: true,
             }),
             SyntaxKind::StructArgList => Some(BreakLinePointProperties {
                 precedence: 7,
                 break_type: BreakLinePointType::SeparatedListBreak,
                 is_optional: true,
+                add_indent: true,
             }),
             SyntaxKind::MemberList => Some(BreakLinePointProperties {
                 precedence: 8,
                 break_type: BreakLinePointType::SeparatedListBreak,
                 is_optional: true,
+                add_indent: true,
             }),
             SyntaxKind::ParamList => Some(BreakLinePointProperties {
                 precedence: 9,
                 break_type: BreakLinePointType::SeparatedListBreak,
                 is_optional: true,
+                add_indent: true,
             }),
             SyntaxKind::TokenPlus | SyntaxKind::TokenMinus => {
                 if let BreakingPosition::Leading = position {
@@ -187,6 +192,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         precedence: 10,
                         break_type: BreakLinePointType::Dangling,
                         is_optional: true,
+                        add_indent: false,
                     })
                 } else {
                     None
@@ -198,11 +204,19 @@ impl SyntaxNodeFormat for SyntaxNode {
                         precedence: 11,
                         break_type: BreakLinePointType::Dangling,
                         is_optional: true,
+                        add_indent: false,
                     })
                 } else {
                     None
                 }
             }
+            // The precedence of a NewLine breakpoint should be greater than all other break points.
+            SyntaxKind::TokenNewline => Some(BreakLinePointProperties {
+                precedence: 1000,
+                break_type: BreakLinePointType::Newline,
+                is_optional: false,
+                add_indent: false,
+            }),
             _ => None,
         }
     }
