@@ -220,6 +220,8 @@ fn find_type_specialization(
 #[test_case("uint128_safe_divmod", vec![value_arg(0)] => Err(UnsupportedGenericArg); "uint128_safe_divmod<0>")]
 #[test_case("uint128_const", vec![value_arg(8)] => Ok(()); "uint128_const<8>")]
 #[test_case("uint128_const", vec![] => Err(UnsupportedGenericArg); "uint128_const")]
+#[test_case("storage_address_const", vec![value_arg(8)] => Ok(()); "storage_address_const<8>")]
+#[test_case("storage_address_const", vec![] => Err(UnsupportedGenericArg); "storage_address_const")]
 #[test_case("drop", vec![type_arg("uint128")] => Ok(()); "drop<uint128>")]
 #[test_case("drop", vec![] => Err(WrongNumberOfGenericArgs); "drop<>")]
 #[test_case("drop", vec![type_arg("GasBuiltin")] => Err(UnsupportedGenericArg);
