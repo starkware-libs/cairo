@@ -107,7 +107,7 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult;
 }
 
-/// Initializes a database witf DefsGroup.
+/// Initializes a database with DefsGroup.
 pub fn init_defs_group(db: &mut (dyn DefsGroup + 'static)) {
     // Initialize inputs.
     db.set_macro_plugins(Vec::new());
