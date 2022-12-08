@@ -1119,6 +1119,16 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Returns a GreenId of a node with an ExprLiteral|ExprPath|ExprParenthesized|ExprTuple kind,
+    /// or None if such an expression can't be parsed.
+    fn try_parse_generic_arg(&mut self) -> Option<ExprGreen> {
+        if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
+            Some(self.take::<TerminalLiteralNumber>().into())
+        } else {
+            self.try_parse_type_expr()
+        }
+    }
+
     /// Assumes the current token is LT.
     /// Expected pattern: `\< <GenericArgList> \>`
     fn expect_generic_args(&mut self) -> GenericArgsGreen {
@@ -1126,7 +1136,7 @@ impl<'a> Parser<'a> {
         let generic_args = GenericArgList::new_green(
             self.db,
             self.parse_separated_list::<Expr, TerminalComma, GenericArgListElementOrSeparatorGreen>(
-                Self::try_parse_type_expr,
+                Self::try_parse_generic_arg,
                 is_of_kind!(rangle, rparen, block, lbrace, rbrace, top_level),
                 "generic arg",
             ),
