@@ -216,7 +216,12 @@ pub fn lower_statement(
     match stmt {
         semantic::Statement::Expr(semantic::StatementExpr { expr, stable_ptr: _ }) => {
             log::trace!("Lowering an expression statement.");
-            lower_expr(ctx, scope, *expr)?;
+            let lowered_expr = lower_expr(ctx, scope, *expr)?;
+            // The LoweredExpr must be evaluated now to push/bring back variables in case it is
+            // LoweredExpr::ExternEnum.
+            if let LoweredExpr::ExternEnum(x) = lowered_expr {
+                x.var(ctx, scope)?;
+            }
         }
         semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
             log::trace!("Lowering a let statement.");
@@ -482,8 +487,8 @@ fn lower_expr_function_call(
             ctx.db.lookup_intern_type(expr.ty)
         {
             // It is still unknown whether we directly match on this enum result, or store it to a
-            // variable. Thus we can't perform the call. Performing it and rebinding variables are
-            // done on the 2 places where this result it used:
+            // variable. Thus we can't perform the call. Performing it and pushing/bringing-back
+            // variables are done on the 2 places where this result is used:
             // 1. [lower_optimized_extern_match]
             // 2. [context::LoweredExprExternEnum::var]
             return Ok(LoweredExpr::ExternEnum(LoweredExprExternEnum {
