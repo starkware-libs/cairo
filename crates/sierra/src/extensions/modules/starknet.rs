@@ -1,4 +1,4 @@
-use super::storage::{StorageAddressType, StorageReadLibFunc};
+use super::storage::{StorageAddressConstLibFunc, StorageAddressType, StorageReadLibFunc};
 use crate::extensions::syscalls::SyscallPtrType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -12,5 +12,6 @@ define_type_hierarchy! {
 define_libfunc_hierarchy! {
     pub enum StarkNetLibFunc {
          StorageRead(StorageReadLibFunc),
+         StorageAddressConst(StorageAddressConstLibFunc),
     }, StarkNetConcreteLibFunc
 }
