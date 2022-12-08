@@ -1,7 +1,6 @@
 type felt = felt;
 type Pedersen = Pedersen;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc felt_const<1> = felt_const<1>;
 libfunc felt_const<2> = felt_const<2>;
 libfunc store_temp<felt> = store_temp<felt>;
@@ -12,7 +11,6 @@ libfunc store_temp<Pedersen> = store_temp<Pedersen>;
 libfunc rename<Pedersen> = rename<Pedersen>;
 libfunc rename<felt> = rename<felt>;
 
-revoke_ap_tracking() -> ();
 felt_const<1>() -> ([1]);
 felt_const<2>() -> ([2]);
 store_temp<felt>([1]) -> ([1]);
