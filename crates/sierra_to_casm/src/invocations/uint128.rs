@@ -3,7 +3,7 @@ use casm::casm;
 use casm::operand::{ap_cell_ref, DerefOrImmediate};
 use itertools::chain;
 use num_bigint::BigInt;
-use sierra::extensions::felt::FeltOperator;
+use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
     Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
@@ -97,7 +97,7 @@ fn build_uint128_op(
                 [
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                            op: FeltOperator::Add,
+                            op: FeltBinaryOperator::Add,
                             a: range_check.unchecked_apply_known_ap_change(2),
                             b: DerefOrImmediate::from(1),
                         })),
@@ -106,7 +106,7 @@ fn build_uint128_op(
                     .into_iter(),
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                            op: FeltOperator::Add,
+                            op: FeltBinaryOperator::Add,
                             a: range_check.unchecked_apply_known_ap_change(3),
                             b: DerefOrImmediate::from(1),
                         })),
@@ -144,7 +144,7 @@ fn build_uint128_op(
                 vec![
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                            op: FeltOperator::Add,
+                            op: FeltBinaryOperator::Add,
                             a: range_check.unchecked_apply_known_ap_change(5),
                             b: DerefOrImmediate::from(3),
                         })),
@@ -222,7 +222,7 @@ fn build_uint128_from_felt(
                 [
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                            op: FeltOperator::Add,
+                            op: FeltBinaryOperator::Add,
                             a: range_check.unchecked_apply_known_ap_change(1),
                             b: DerefOrImmediate::Immediate(BigInt::from(1)),
                         })),
@@ -233,7 +233,7 @@ fn build_uint128_from_felt(
                     .into_iter(),
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                            op: FeltOperator::Add,
+                            op: FeltBinaryOperator::Add,
                             a: range_check.unchecked_apply_known_ap_change(5),
                             b: DerefOrImmediate::Immediate(BigInt::from(2)),
                         })),
@@ -329,7 +329,7 @@ fn build_uint128_lt(
         [2, 3]
             .map(|ap_change| {
                 vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Add,
+                    op: FeltBinaryOperator::Add,
                     a: range_check.unchecked_apply_known_ap_change(ap_change),
                     b: DerefOrImmediate::from(1),
                 }))]
@@ -380,7 +380,7 @@ fn build_uint128_le(
         [3, 2]
             .map(|ap_change| {
                 vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Add,
+                    op: FeltBinaryOperator::Add,
                     a: range_check.unchecked_apply_known_ap_change(ap_change),
                     b: DerefOrImmediate::from(1),
                 }))]
