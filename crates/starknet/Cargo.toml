@@ -15,6 +15,7 @@ semantic = { path = "../semantic" }
 serde.workspace = true
 serde_json.workspace = true
 sierra = { path = "../sierra" }
+sierra_ap_change = { path = "../sierra_ap_change" }
 sierra_generator = { path = "../sierra_generator" }
 syntax = { path = "../syntax" }
 sierra_gas = { path = "../sierra_gas" }

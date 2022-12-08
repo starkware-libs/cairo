@@ -22,16 +22,15 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             ArrayConcreteLibFunc::At(_) => vec![ApChange::Known(5), ApChange::Known(3)],
             ArrayConcreteLibFunc::Len(_) => vec![ApChange::Known(0)],
         },
-        // TODO(orizi): Make this variable dependent.
-        CoreConcreteLibFunc::BranchAlign(_) => vec![ApChange::Known(0)],
+        CoreConcreteLibFunc::BranchAlign(_) => vec![ApChange::FromMetadata],
         CoreConcreteLibFunc::Box(_) => vec![ApChange::Known(0)],
         // TODO(lior): Check/Fix.
         CoreConcreteLibFunc::BuiltinCost(_) => vec![ApChange::Known(2), ApChange::Known(3)],
         CoreConcreteLibFunc::Drop(_) | CoreConcreteLibFunc::Dup(_) => vec![ApChange::Known(0)],
         CoreConcreteLibFunc::Felt(libfunc) => match libfunc {
             FeltConcrete::BinaryOperation(_)
-            | FeltConcrete::Const(_)
-            | FeltConcrete::UnaryOperation(_) => vec![ApChange::Known(0)],
+            | FeltConcrete::UnaryOperation(_)
+            | FeltConcrete::Const(_) => vec![ApChange::Known(0)],
             FeltConcrete::JumpNotZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
         CoreConcreteLibFunc::FunctionCall(libfunc) => {
@@ -67,7 +66,10 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             }
             MemConcreteLibFunc::StoreLocal(_) => vec![ApChange::Known(0)],
             MemConcreteLibFunc::FinalizeLocals(_) => vec![ApChange::FinalizeLocals],
-            MemConcreteLibFunc::AllocLocal(_) | MemConcreteLibFunc::Rename(_) => {
+            MemConcreteLibFunc::AllocLocal(libfunc) => {
+                vec![ApChange::AtLocalsFinalizationByTypeSize(libfunc.ty.clone())]
+            }
+            MemConcreteLibFunc::Rename(_) => {
                 vec![ApChange::Known(0)]
             }
         },

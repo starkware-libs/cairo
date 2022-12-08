@@ -2,13 +2,12 @@
 #[path = "casm_contract_class_test.rs"]
 mod test;
 
-use std::collections::HashMap;
-
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
+use sierra_ap_change::{calc_ap_changes, ApChangeError};
 use sierra_gas::{calc_gas_info, CostError};
 use sierra_to_casm::compiler::CompilationError;
 use sierra_to_casm::metadata::Metadata;
@@ -22,6 +21,8 @@ pub enum StarknetSierraCompilationError {
     CompilationError(#[from] CompilationError),
     #[error(transparent)]
     CostError(#[from] CostError),
+    #[error(transparent)]
+    ApChangeError(#[from] ApChangeError),
     #[error("Invalid entry point.")]
     EntryPointError,
 }
@@ -50,7 +51,7 @@ impl CasmContractClass {
         let gas_usage_check = true;
         let cairo_program = sierra_to_casm::compiler::compile(
             &program,
-            &Metadata { function_ap_change: HashMap::new(), gas_info },
+            &Metadata { ap_change_info: calc_ap_changes(&program)?, gas_info },
             gas_usage_check,
         )?;
 

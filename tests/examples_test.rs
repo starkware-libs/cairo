@@ -90,7 +90,7 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
         "casm",
         sierra_to_casm::compiler::compile(
             &program,
-            &build_metadata(&program, &[], enable_gas_checks),
+            &build_metadata(&program, enable_gas_checks),
             enable_gas_checks,
         )
         .unwrap()

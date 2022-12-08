@@ -1,10 +1,10 @@
-%{ memory[ap + 0] = 24 < memory[fp + -6] %}
+%{ memory[ap + 0] = 27 < memory[fp + -6] %}
 jmp rel 9 if [ap + 0] != 0, ap++;
-[ap + 0] = [fp + -6] + -24, ap++;
+[ap + 0] = [fp + -6] + -27, ap++;
 [ap + 0] = [ap + -1] * -1, ap++;
 [ap + -1] = [[fp + -7] + 0];
 jmp rel 10;
-[ap + 0] = [fp + -6] + -25, ap++;
+[ap + 0] = [fp + -6] + -28, ap++;
 [ap + -1] = [[fp + -7] + 0];
 [ap + 0] = [fp + -7] + 1, ap++;
 [ap + 0] = [ap + -2], ap++;

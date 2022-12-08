@@ -11,6 +11,7 @@ compiler = { path = "../compiler" }
 casm = { path = "../casm" }
 num-bigint.workspace = true
 sierra = { path = "../sierra" }
+sierra_ap_change = { path = "../sierra_ap_change" }
 sierra_gas = { path = "../sierra_gas" }
 sierra_generator = { path = "../sierra_generator" }
 sierra_to_casm = { path = "../sierra_to_casm" }
