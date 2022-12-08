@@ -115,8 +115,7 @@ impl fmt::Display for LineComponent {
     }
 }
 
-/// Represents a line in the code, separated by optional break line points.
-/// Used to break the line if too long.
+/// Used for aggregating the code and then break it into separate lines.
 #[derive(Clone)]
 struct LineBuilder {
     children: Vec<LineComponent>,
@@ -133,15 +132,6 @@ impl LineBuilder {
     /// Creates a new intermediate line.
     pub fn new() -> Self {
         Self { children: vec![], is_open: true }
-    }
-    /// Clears the line. Represent an empty line after the call.
-    pub fn clear(&mut self) {
-        self.children.clear();
-        self.is_open = true;
-    }
-    /// Is the line empty.
-    fn is_empty(&self) -> bool {
-        self.children.is_empty()
     }
     /// Adds a a sub-builder as the next child.
     /// All subsequent children will be added to this sub builder until set as closed.
@@ -339,16 +329,8 @@ impl LineBuilder {
     /// Creates a string of the code represented in the builder. The string may represent
     /// several lines (separated by '\n'), where each line length is
     /// less than max_line_width (if possible).
-    /// Each line is prepended by the leading
-    pub fn build(&self, max_line_width: usize, tab_size: usize, leading_indent: &str) -> String {
-        self.to_broken_string_by_width(max_line_width, tab_size)
-            .iter()
-            .map(
-                |line| {
-                    if line.is_empty() { "".to_string() } else { leading_indent.to_string() + line }
-                },
-            )
-            .join("\n")
+    pub fn build(&self, max_line_width: usize, tab_size: usize) -> String {
+        self.to_broken_string_by_width(max_line_width, tab_size).iter().join("\n")
     }
     /// Creates a new LineBuilder where the first subchild which is a LineBuilder, is replaced by
     /// all its children.
@@ -385,22 +367,11 @@ struct PendingLineState {
     line_buffer: LineBuilder,
     /// Should the next space between tokens be ignored.
     no_space_after: bool,
-    /// Current indentation of the produced line.
-    indentation: String,
 }
 
 impl PendingLineState {
     pub fn new() -> Self {
-        Self { line_buffer: LineBuilder::new(), no_space_after: true, indentation: String::new() }
-    }
-    /// Resets the line state to a clean state.
-    pub fn reset(&mut self, indentation: String) {
-        self.indentation = indentation;
-        self.line_buffer.clear();
-        self.no_space_after = true;
-    }
-    pub fn is_empty(&self) -> bool {
-        self.line_buffer.is_empty()
+        Self { line_buffer: LineBuilder::new(), no_space_after: true }
     }
 }
 
@@ -412,11 +383,6 @@ pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space after it.
     /// Only applicable for token nodes.
     fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns true if the children of a node should be indented inwards relative to the parent.
-    /// Only applicable for internal nodes.
-    fn should_change_indent(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns true if the line should break after the node.
-    fn force_line_break(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns true if the line is allowed to break after the node.
     /// Only applicable for terminal nodes.
     fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool;
@@ -435,38 +401,25 @@ pub trait SyntaxNodeFormat {
 
 pub struct Formatter<'a> {
     db: &'a dyn SyntaxGroup,
-    result: String,
     config: FormatterConfig,
     /// A buffer for the current line.
     line_state: PendingLineState,
-    /// A list of precomputed indent strings (i.e. spaces) for reasonable indent sizes.
-    /// The item in index `i` is a string representing `i` tabs.
-    indents_list: Vec<String>,
-    /// Current indentation in tabs.
-    current_indent: usize,
     /// The number of empty lines allowed after the current node.
     empty_lines_allowance: usize,
 }
 
 impl<'a> Formatter<'a> {
     pub fn new(db: &'a dyn SyntaxGroup, config: FormatterConfig) -> Self {
-        let indents_list = generate_indents_list(&config);
-        Self {
-            db,
-            result: String::new(),
-            config,
-            line_state: PendingLineState::new(),
-            indents_list,
-            current_indent: 0,
-            empty_lines_allowance: 0,
-        }
+        Self { db, config, line_state: PendingLineState::new(), empty_lines_allowance: 0 }
     }
-    /// Returns the result of the formatter after format_node was called.
-    pub fn get_result(&self) -> String {
-        self.result.clone()
+
+    /// Gets a root of a syntax tree and return the formatted string of the code.
+    pub fn get_formatted_string(&mut self, syntax_node: &SyntaxNode) -> String {
+        self.format_node(syntax_node, false);
+        self.line_state.line_buffer.build(self.config.max_line_length, self.config.tab_size)
     }
-    /// Appends a formatted string, representing the syntax_node, to the result.
-    /// Should be called with a root syntax node to format a file.
+
+    /// Aggregates the nodes in the tree of a node into the formatter line builder.
     pub fn format_node(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
@@ -476,14 +429,10 @@ impl<'a> Formatter<'a> {
         } else {
             self.format_internal(syntax_node, no_space_after);
         }
-
-        if syntax_node.force_line_break(self.db) && !self.line_state.is_empty() {
-            self.finalize_line();
-        }
     }
+
     /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
-        let indent_change = usize::from(syntax_node.should_change_indent(self.db));
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
 
@@ -502,14 +451,9 @@ impl<'a> Formatter<'a> {
                 continue;
             }
 
-            self.current_indent += indent_change;
-            if self.line_state.is_empty() {
-                self.line_state.reset(self.get_indentation())
-            }
             self.format_node(&child, no_space_after && i == n_children - 1);
 
             self.empty_lines_allowance = allowed_empty_between;
-            self.current_indent -= indent_change;
 
             if let Some(break_properties) =
                 syntax_node.get_break_line_point_properties(self.db, BreakingPosition::Internal)
@@ -561,7 +505,7 @@ impl<'a> Formatter<'a> {
                 ast::Trivium::Newline(_) => {
                     if allowed_newlines > 0 {
                         allowed_newlines -= 1;
-                        self.finalize_line();
+                        self.line_state.line_buffer.push_str("\n");
                     }
                 }
                 ast::Trivium::Skipped(_) => {
@@ -597,35 +541,4 @@ impl<'a> Formatter<'a> {
     fn append_break_line_point(&mut self, properties: BreakLinePointProperties) {
         self.line_state.line_buffer.push_break_line_point(properties);
     }
-    /// Returns the leading indentation according to the current indent and the tab size.
-    fn get_indentation(&self) -> String {
-        if self.current_indent < self.indents_list.len() {
-            self.indents_list[self.current_indent].clone()
-        } else {
-            " ".repeat(self.config.tab_size * self.current_indent)
-        }
-    }
-    fn append_newline(&mut self) {
-        self.result.push('\n');
-    }
-    /// Builds the pending line states into a string, and append it to the result.
-    fn finalize_line(&mut self) {
-        self.result.push_str(&self.line_state.line_buffer.build(
-            self.config.max_line_length - self.current_indent * self.config.tab_size,
-            self.config.tab_size,
-            &self.get_indentation(),
-        ));
-        self.append_newline();
-        self.line_state.reset(self.get_indentation());
-    }
-}
-
-/// Generates the leading indents for reasonable indent sizes
-fn generate_indents_list(config: &FormatterConfig) -> Vec<String> {
-    let mut indent_list: Vec<String> = vec![];
-    let tab = " ".repeat(config.tab_size);
-    for i in 0..(config.max_line_length / config.tab_size) {
-        indent_list.push(tab.repeat(i).to_string());
-    }
-    indent_list
 }

@@ -97,46 +97,6 @@ impl SyntaxNodeFormat for SyntaxNode {
         }
     }
 
-    fn should_change_indent(&self, db: &dyn SyntaxGroup) -> bool {
-        matches!(
-            self.kind(db),
-            SyntaxKind::StatementList
-                | SyntaxKind::MatchArms
-                | SyntaxKind::ExprList
-                | SyntaxKind::StructArgList
-                | SyntaxKind::ParamList
-                | SyntaxKind::GenericParamList
-                | SyntaxKind::GenericArgList
-        )
-    }
-
-    fn force_line_break(&self, db: &dyn SyntaxGroup) -> bool {
-        match self.kind(db) {
-            SyntaxKind::StatementLet
-            | SyntaxKind::StatementExpr
-            | SyntaxKind::StatementReturn
-            | SyntaxKind::ItemFreeFunction
-            | SyntaxKind::ItemExternFunction
-            | SyntaxKind::ItemExternType
-            | SyntaxKind::ItemTrait
-            | SyntaxKind::ItemImpl
-            | SyntaxKind::ItemStruct
-            | SyntaxKind::Attribute
-            | SyntaxKind::ItemEnum
-            | SyntaxKind::ItemModule
-            | SyntaxKind::ItemUse => true,
-            SyntaxKind::TerminalComma
-                if matches!(parent_kind(db, self), Some(SyntaxKind::MatchArms)) =>
-            {
-                true
-            }
-            SyntaxKind::TerminalLBrace => {
-                matches!(parent_kind(db, self), Some(SyntaxKind::ExprBlock | SyntaxKind::ExprMatch))
-            }
-            _ => false,
-        }
-    }
-
     // TODO(gil): consider removing this function as it is no longer used.
     fn allow_newline_after(&self, _db: &dyn SyntaxGroup) -> bool {
         false
@@ -165,12 +125,55 @@ impl SyntaxNodeFormat for SyntaxNode {
         position: BreakingPosition,
     ) -> Option<BreakLinePointProperties> {
         match self.kind(db) {
+            SyntaxKind::ItemList => match parent_kind(db, self) {
+                Some(SyntaxKind::SyntaxFile) => {
+                    if let BreakingPosition::Leading = position {
+                        None
+                    } else {
+                        Some(BreakLinePointProperties {
+                            precedence: 0,
+                            break_type: BreakLinePointType::ListBreak,
+                        })
+                    }
+                }
+                Some(SyntaxKind::ImplBody) => Some(BreakLinePointProperties {
+                    precedence: 1,
+                    break_type: BreakLinePointType::ListBreak,
+                }),
+                _ => None,
+            },
+            SyntaxKind::TraitItemList => Some(BreakLinePointProperties {
+                precedence: 2,
+                break_type: BreakLinePointType::ListBreak,
+            }),
+            SyntaxKind::StatementList => Some(BreakLinePointProperties {
+                precedence: 3,
+                break_type: BreakLinePointType::ListBreak,
+            }),
+            SyntaxKind::MatchArms => Some(BreakLinePointProperties {
+                precedence: 4,
+                break_type: BreakLinePointType::SeparatedListBreak,
+            }),
+            SyntaxKind::AttributeList => {
+                if let BreakingPosition::Leading = position {
+                    None
+                } else {
+                    Some(BreakLinePointProperties {
+                        precedence: 5,
+                        break_type: BreakLinePointType::ListBreak,
+                    })
+                }
+            }
             SyntaxKind::ExprList => Some(BreakLinePointProperties {
                 precedence: 6,
                 break_type: BreakLinePointType::SeparatedListBreak,
             }),
             SyntaxKind::StructArgList => Some(BreakLinePointProperties {
                 precedence: 7,
+                break_type: BreakLinePointType::SeparatedListBreak,
+            }),
+            SyntaxKind::MemberList => Some(BreakLinePointProperties {
+                precedence: 8,
                 break_type: BreakLinePointType::SeparatedListBreak,
             }),
             SyntaxKind::ParamList => Some(BreakLinePointProperties {
