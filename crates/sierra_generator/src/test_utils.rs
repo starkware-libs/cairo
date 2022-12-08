@@ -4,6 +4,7 @@ use defs::ids::ModuleId;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use lowering::db::{LoweringDatabase, LoweringGroup};
 use parser::db::ParserDatabase;
+use plugins::get_default_plugins;
 use salsa::{InternId, InternKey};
 use semantic::db::{SemanticDatabase, SemanticGroup};
 use semantic::test_utils::setup_test_crate;
@@ -34,6 +35,7 @@ impl Default for SierraGenDatabaseForTesting {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_defs_group(&mut res);
+        res.set_macro_plugins(get_default_plugins());
         res
     }
 }

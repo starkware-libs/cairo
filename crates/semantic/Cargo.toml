@@ -24,6 +24,7 @@ salsa.workspace = true
 smol_str.workspace = true
 syntax = { path = "../syntax" }
 utils = { path = "../utils" }
+plugins = { path = "../plugins" }
 
 [dev-dependencies]
 assert_matches.workspace = true

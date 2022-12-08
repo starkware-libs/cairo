@@ -18,6 +18,7 @@ itertools.workspace = true
 lowering = { path = "../lowering" }
 num-bigint.workspace = true
 parser = { path = "../parser" }
+plugins = { path = "../plugins" }
 salsa.workspace = true
 semantic = { path = "../semantic" }
 sierra = { path = "../sierra" }

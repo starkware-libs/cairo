@@ -6,6 +6,7 @@ use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateId, CrateLongId, Directory};
 use parser::db::ParserDatabase;
+use plugins::get_default_plugins;
 use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use utils::ordered_hash_map::OrderedHashMap;
@@ -24,6 +25,7 @@ impl Default for SemanticDatabaseForTesting {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_defs_group(&mut res);
+        res.set_macro_plugins(get_default_plugins());
         res
     }
 }
