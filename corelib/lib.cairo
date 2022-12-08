@@ -181,4 +181,8 @@ use hash::pedersen_get_gas;
 // Syscall Ptr
 extern type SyscallPtr;
 
+// Cheatcodes
+mod cheatcodes;
+use cheatcodes::roll;
+
 mod test;

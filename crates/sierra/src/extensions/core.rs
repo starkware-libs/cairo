@@ -13,6 +13,7 @@ use super::modules::integer::{Uint128LibFunc, Uint128Type};
 use super::modules::mem::MemLibFunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibFunc};
 use super::modules::unconditional_jump::UnconditionalJumpLibFunc;
+use super::modules::cheatcodes::{CheatcodesLibFunc};
 use super::pedersen::{PedersenLibFunc, PedersenType};
 use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
@@ -61,5 +62,6 @@ define_libfunc_hierarchy! {
         DictFeltTo(DictFeltToLibFunc),
         Pedersen(PedersenLibFunc),
         StarkNet(StarkNetLibFunc),
+        Cheatcodes(CheatcodesLibFunc),
     }, CoreConcreteLibFunc
 }

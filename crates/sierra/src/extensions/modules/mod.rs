@@ -24,6 +24,7 @@ pub mod starknet;
 pub mod strct;
 pub mod unconditional_jump;
 pub mod uninitialized;
+pub mod cheatcodes;
 
 /// Helper for extracting the type from the template arguments.
 fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
