@@ -5,8 +5,6 @@ use num_integer::Integer;
 use num_traits::{Num, Signed};
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
-use sierra::ids::FunctionId;
-use sierra::program::StatementIdx;
 use sierra_gas::{calc_gas_info, CostError};
 use sierra_to_casm::compiler::CompilationError;
 use sierra_to_casm::metadata::Metadata;
@@ -70,14 +68,11 @@ impl CasmContractClass {
             }))
         }
 
-        // A mapping from func_id to statement_id
-        let func_sierra_entry_point: HashMap<&FunctionId, StatementIdx> =
-            program.funcs.iter().map(|func| (&func.id, func.entry_point)).collect();
-
         let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
-            let statement_id = func_sierra_entry_point
-                .get(&FunctionId::new(contract_entry_point.function_id))
-                .ok_or(StarknetSierraCompilationError::EntryPointError)?;
+            let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
+                return Err(StarknetSierraCompilationError::EntryPointError);
+            };
+            let statement_id = function.entry_point;
 
             let code_offset = cairo_program
                 .debug_info

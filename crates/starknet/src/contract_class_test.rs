@@ -10,7 +10,7 @@ use crate::contract_class::{compile_path, ContractClass, ContractEntryPoint, Con
 
 #[test]
 fn test_serialization() {
-    let external = vec![ContractEntryPoint { selector: BigUint::from(u128::MAX), function_id: 7 }];
+    let external = vec![ContractEntryPoint { selector: BigUint::from(u128::MAX), function_idx: 7 }];
 
     let contract = ContractClass {
         sierra_program: sierra::program::Program {
@@ -39,7 +39,7 @@ fn test_serialization() {
             "EXTERNAL": [
               {
                 "selector": "0xffffffffffffffffffffffffffffffff",
-                "function_id": 7
+                "function_idx": 7
               }
             ],
             "L1_HANDLER": [],
