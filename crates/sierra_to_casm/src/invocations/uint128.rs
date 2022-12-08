@@ -231,11 +231,15 @@ fn build_uint128_from_felt(
                         )),
                     ]
                     .into_iter(),
-                    vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                        op: FeltOperator::Add,
-                        a: range_check.unchecked_apply_known_ap_change(5),
-                        b: DerefOrImmediate::Immediate(BigInt::from(2)),
-                    }))]
+                    vec![
+                        ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
+                            op: FeltOperator::Add,
+                            a: range_check.unchecked_apply_known_ap_change(5),
+                            b: DerefOrImmediate::Immediate(BigInt::from(2)),
+                        })),
+                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-4))),
+                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-3))),
+                    ]
                     .into_iter(),
                 ]
                 .into_iter(),
@@ -250,9 +254,13 @@ fn build_uint128_from_felt(
                     ReferenceExpression::from_cell(CellExpression::Immediate(value.clone())),
                 ]
                 .into_iter(),
-                vec![ReferenceExpression::from_cell(CellExpression::Deref(
-                    range_check.unchecked_apply_known_ap_change(5),
-                ))]
+                vec![
+                    ReferenceExpression::from_cell(CellExpression::Deref(
+                        range_check.unchecked_apply_known_ap_change(5),
+                    )),
+                    ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-4))),
+                    ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-3))),
+                ]
                 .into_iter(),
             ]
             .into_iter();
@@ -261,9 +269,14 @@ fn build_uint128_from_felt(
                 builder.build(casm! { ap += 1; }.instructions, vec![], output_expressions)
             } else {
                 builder.build(
-                    casm! { ap += 5; jmp rel 0; }.instructions,
+                    casm! {
+                    [ap + 1] = (value.clone() / uint128_limit.clone());
+                    [ap + 2] = (value % uint128_limit);
+                    ap += 5;
+                    jmp rel 0; }
+                    .instructions,
                     vec![RelocationEntry {
-                        instruction_idx: 1,
+                        instruction_idx: 3,
                         relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
                     }],
                     output_expressions,
