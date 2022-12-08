@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use indoc::writedoc;
 
-use crate::operand::{CellRef, DerefOrImmediate};
+use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 
 #[cfg(test)]
 mod test;
@@ -54,6 +54,10 @@ pub enum Hint {
     /// of the index in the set of hints of the function.
     DictSquashHints {
         hint_index: usize,
+    },
+    /// Represents a hint that triggers a system call.
+    SystemCall {
+        syscall_ptr: ResOperand,
     },
 }
 
@@ -122,6 +126,11 @@ impl Display for Hint {
             Hint::EnterScope => write!(f, "vm_enter_scope()")?,
             Hint::ExitScope => write!(f, "vm_exit_scope()")?,
             Hint::DictSquashHints { hint_index } => dict_squash::fmt_hint_by_index(f, *hint_index)?,
+            Hint::SystemCall { syscall_ptr } => write!(
+                f,
+                "syscall_handler.syscall(segments=segments, syscall_ptr={})",
+                syscall_ptr
+            )?,
         }
         write!(f, " %}}")
     }
