@@ -184,30 +184,46 @@ fn build_uint128_from_felt(
         }
     };
     let failure_handle_statement_id = get_bool_comparison_target_statement_id(&builder);
-    let uint128_limit: BigInt = BigInt::from(u128::MAX) + 1;
+    let uint128_bound: BigInt = BigInt::from(u128::MAX) + 1; // = 2**128.
+    // Represent the maximal possible value (PRIME - 1) as 2**128 * max_x + max_y.
+    let max_x: i128 = 10633823966279327296825105735305134080;
+    let max_y: i128 = 0;
     match value_cell {
         CellExpression::Deref(value) => {
             // The code up to the success branch.
             let mut before_success_branch = casm! {
-                %{ memory[ap + 0] = memory value < (uint128_limit.clone()) %}
+                %{ memory[ap + 0] = memory value < (uint128_bound.clone()) %}
                 jmp rel 0 if [ap + 0] != 0, ap++; // Jump to success branch. Address updated later.
-                // Overflow:
+                // Write value as 2**128 * x + y.
                 %{ (memory[ap + 0], memory[ap + 1]) = divmod(
                     memory (value.unchecked_apply_known_ap_change(1)),
-                    (uint128_limit.clone())
+                    (uint128_bound.clone())
                 ) %}
-                ap += 2;
-                [ap + 0] = [ap - 2] * uint128_limit, ap++;
-                (value.unchecked_apply_known_ap_change(3)) = [ap - 1] + [ap - 2];
-                [ap - 1] = [ap + 0] + 1, ap++;
-                // Range checking that: q > 0 && q < uint128_limit && r < uint128_limit.
-                [ap - 1] = [[(range_check.unchecked_apply_known_ap_change(5))]];
-                [ap - 2] = [[(range_check.unchecked_apply_known_ap_change(5))] + 1];
-                [ap - 3] = [[(range_check.unchecked_apply_known_ap_change(5))] + 2];
-                jmp rel 0; // Fixed in relocations.
+                // Guess x and check that it is in the range [0, 2**128).
+                [ap] = [[(range_check.unchecked_apply_known_ap_change(1))]], ap++;
+                // Guess y and check that it is in the range [0, 2**128).
+                [ap] = [[(range_check.unchecked_apply_known_ap_change(2))] + 1], ap++;
+                // Check that value = 2**128 * x + y (mod PRIME).
+                [ap] = [ap - 2] * (uint128_bound.clone()), ap++;
+                (value.unchecked_apply_known_ap_change(4)) = [ap - 1] + [ap - 2];
+                // Check that there is no overflow in the computation of 2**128 * x + y.
+                // Start by checking if x==max_x.
+                [ap] = [ap - 3] + (-max_x), ap++;
+                jmp rel 6 if [ap - 1] != 0;
+                // If x == max_x, check that y <= max_y.
+                [ap] = [ap - 3] + (uint128_bound.clone() - max_y - 1), ap++;
+                jmp rel 4;
+                // If x != max_x, check that x < max_x.
+                [ap] = [ap - 4] + (uint128_bound - max_x), ap++;
+                // In both cases, range-check the calculated value.
+                [ap - 1] = [[(range_check.unchecked_apply_known_ap_change(6))] + 2];
+                // If x != 0, jump to the end.
+                jmp rel 0 if [ap - 5] != 0; // Fixed in relocations.
+                // Otherwise, start an infinite loop.
+                jmp rel 0;
             };
             patch_jnz_to_end(&mut before_success_branch, 0);
-            let relocation_index = before_success_branch.instructions.len() - 1;
+            let relocation_index = before_success_branch.instructions.len() - 2;
             let success_branch = casm! {
                 // No overflow:
                 value = [[(range_check.unchecked_apply_known_ap_change(1))]];
@@ -234,11 +250,11 @@ fn build_uint128_from_felt(
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                             op: FeltBinaryOperator::Add,
-                            a: range_check.unchecked_apply_known_ap_change(5),
-                            b: DerefOrImmediate::Immediate(BigInt::from(2)),
+                            a: range_check.unchecked_apply_known_ap_change(6),
+                            b: DerefOrImmediate::Immediate(BigInt::from(3)),
                         })),
+                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-5))),
                         ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-4))),
-                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-3))),
                     ]
                     .into_iter(),
                 ]
@@ -265,13 +281,13 @@ fn build_uint128_from_felt(
             ]
             .into_iter();
 
-            Ok(if value >= BigInt::from(0) && value < uint128_limit {
+            Ok(if value >= BigInt::from(0) && value < uint128_bound {
                 builder.build(casm! { ap += 1; }.instructions, vec![], output_expressions)
             } else {
                 builder.build(
                     casm! {
-                    [ap + 1] = (value.clone() / uint128_limit.clone());
-                    [ap + 2] = (value % uint128_limit);
+                    [ap + 1] = (value.clone() / uint128_bound.clone());
+                    [ap + 2] = (value % uint128_bound);
                     ap += 5;
                     jmp rel 0; }
                     .instructions,

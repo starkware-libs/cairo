@@ -440,6 +440,8 @@ impl NoGenericArgsGenericLibFunc for Uint128LessThanOrEqualLibFunc {
 #[derive(Default)]
 pub struct Uint128sFromFeltLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
+    // TODO(lior): Rename to split_felt and remove the branches. Add a separate uint128_from_felt()
+    //   for the conversion.
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128s_from_felt");
 
     fn specialize_signature(
@@ -483,14 +485,20 @@ impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
                         },
                         OutputVarInfo {
                             ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                            // TODO(lior): This is not NewTempVar since the result is not placed at
+                            //   the top of the stack. Either fix here or move the result to the
+                            //   top.
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                         OutputVarInfo {
                             ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                            // TODO(lior): This is not NewTempVar since the result is not placed at
+                            //   the top of the stack. Either fix here or move the result to the
+                            //   top.
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
                         },
                     ],
-                    ap_change: SierraApChange::Known(5),
+                    ap_change: SierraApChange::Known(6),
                 },
             ],
             fallthrough: Some(0),
