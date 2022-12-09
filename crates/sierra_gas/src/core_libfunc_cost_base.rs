@@ -143,7 +143,7 @@ fn integer_libfunc_cost<Ops: CostOperations>(
             vec![ops.const_cost(0)]
         }
         Uint128Concrete::FromFelt(_) => {
-            vec![ops.const_cost(3), ops.const_cost(7)]
+            vec![ops.const_cost(2), ops.const_cost(11)]
         }
         Uint128Concrete::JumpNotZero(_) => {
             vec![ops.const_cost(1), ops.const_cost(1)]
