@@ -7,13 +7,12 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::types::TypeInfo;
+use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
-    ConcreteType, GenericLibFunc, GenericType, NamedType, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibFunc, SpecializationError,
+    NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    SpecializationError,
 };
 use crate::ids::{GenericLibFuncId, GenericTypeId};
-use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Represents different type of costs.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -43,60 +42,22 @@ impl CostTokenType {
 }
 
 /// Represents the cost of a single invocation of a builtin.
-pub struct BuiltinCostType {
-    token_type: CostTokenType,
-}
-impl BuiltinCostType {
-    fn id_from_token_type(token_type: CostTokenType) -> GenericTypeId {
-        GenericTypeId::from_string(format!("{}BuiltinCost", token_type.camel_case_name()))
-    }
-}
-impl GenericType for BuiltinCostType {
-    type Concrete = BuiltinCostConcreteType;
+#[derive(Default)]
+pub struct BuiltinCostsType {}
+impl NoGenericArgsGenericType for BuiltinCostsType {
+    type Concrete = InfoOnlyConcreteType;
+    const ID: GenericTypeId = GenericTypeId::new_inline("BuiltinCosts");
 
-    fn by_id(id: &GenericTypeId) -> Option<Self> {
-        for token_type in CostTokenType::iter() {
-            if *id == Self::id_from_token_type(*token_type) {
-                return Some(Self { token_type: *token_type });
-            }
-        }
-        None
-    }
-
-    fn specialize(
-        &self,
-        _context: &dyn crate::extensions::type_specialization_context::TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        if !args.is_empty() {
-            return Err(SpecializationError::WrongNumberOfGenericArgs);
-        }
-
-        Ok(BuiltinCostConcreteType {
+    fn specialize(&self) -> Self::Concrete {
+        InfoOnlyConcreteType {
             info: TypeInfo {
-                long_id: ConcreteTypeLongId {
-                    generic_id: Self::id_from_token_type(self.token_type),
-                    generic_args: vec![],
-                },
+                long_id: Self::concrete_type_long_id(&[]),
                 storable: true,
                 droppable: true,
                 duplicatable: true,
                 size: 1,
             },
-            token_type: self.token_type,
-        })
-    }
-}
-
-pub struct BuiltinCostConcreteType {
-    pub info: TypeInfo,
-    // TODO: is this needed?
-    pub token_type: CostTokenType,
-}
-
-impl ConcreteType for BuiltinCostConcreteType {
-    fn info(&self) -> &TypeInfo {
-        &self.info
+        }
     }
 }
 
@@ -107,50 +68,23 @@ define_libfunc_hierarchy! {
 }
 
 /// LibFunc for getting gas to be used by a builtin.
-pub struct BuiltinCostGetGasLibFunc {
-    token_type: CostTokenType,
-}
-impl GenericLibFunc for BuiltinCostGetGasLibFunc {
-    type Concrete = BuiltinGetGasConcreteLibFunc;
-
-    fn by_id(id: &GenericLibFuncId) -> Option<Self> {
-        for token_type in CostTokenType::iter() {
-            if *id == GenericLibFuncId::from_string(format!("{}_get_gas", token_type.name())) {
-                return Some(Self { token_type: *token_type });
-            }
-        }
-        None
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn crate::extensions::lib_func::SpecializationContext,
-        args: &[crate::program::GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(BuiltinGetGasConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-            token_type: self.token_type,
-        })
-    }
+#[derive(Default)]
+pub struct BuiltinCostGetGasLibFunc {}
+impl NoGenericArgsGenericLibFunc for BuiltinCostGetGasLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("get_gas_all");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        if !args.is_empty() {
-            return Err(SpecializationError::WrongNumberOfGenericArgs);
-        }
-
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let builtin_cost_type =
-            context.get_concrete_type(BuiltinCostType::id_from_token_type(self.token_type), &[])?;
+        let builtin_costs_type = context.get_concrete_type(BuiltinCostsType::id(), &[])?;
         Ok(LibFuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type.clone()),
                 ParamSignature::new(gas_builtin_type.clone()),
-                ParamSignature::new(builtin_cost_type),
+                ParamSignature::new(builtin_costs_type),
             ],
             branch_signatures: vec![
                 // Success:
@@ -188,15 +122,5 @@ impl GenericLibFunc for BuiltinCostGetGasLibFunc {
             ],
             fallthrough: Some(0),
         })
-    }
-}
-
-pub struct BuiltinGetGasConcreteLibFunc {
-    pub signature: LibFuncSignature,
-    pub token_type: CostTokenType,
-}
-impl SignatureBasedConcreteLibFunc for BuiltinGetGasConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
     }
 }
