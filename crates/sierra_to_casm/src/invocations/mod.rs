@@ -14,6 +14,7 @@ use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use sierra_ap_change::core_libfunc_ap_change::core_libfunc_ap_change;
 use thiserror::Error;
 use utils::extract_matches;
+use utils::ordered_hash_map::OrderedHashMap;
 use {casm, sierra};
 
 use crate::environment::frame_state::{FrameState, FrameStateError};
@@ -76,12 +77,12 @@ pub struct BranchChanges {
     /// The change to AP caused by the libfunc in the branch.
     pub ap_change: ApChange,
     /// The change to the remaing gas value in the wallet.
-    pub gas_change: i64,
+    pub gas_change: OrderedHashMap<CostTokenType, i64>,
 }
 impl BranchChanges {
     fn new(
         ap_change: ApChange,
-        gas_change: i64,
+        gas_change: OrderedHashMap<CostTokenType, i64>,
         expressions: impl Iterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
     ) -> Self {
@@ -212,12 +213,14 @@ impl CompiledInvocationBuilder<'_> {
                     ),
                     sierra_ap_change::ApChange::Unknown => ApChange::Unknown,
                 };
-                // TODO(lior): Instead of taking only the steps, take all token types into account.
-                let gas_change_steps = gas_change.map(|x| x[CostTokenType::Step]);
 
                 BranchChanges::new(
                     ap_change,
-                    -gas_change_steps.unwrap_or(0),
+                    gas_change
+                        .unwrap_or_default()
+                        .iter()
+                        .map(|(token_type, val)| (*token_type, -val))
+                        .collect(),
                     expressions,
                     branch_signature,
                 )

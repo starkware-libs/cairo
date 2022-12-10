@@ -187,7 +187,7 @@ impl SierraCasmRunner {
             .ok_or_else(|| RunnerError::MissingFunction { suffix: name_suffix.to_owned() })
     }
 
-    /// Returns the instructions to add to the begining of the code to successfully call the main
+    /// Returns the instructions to add to the beginning of the code to successfully call the main
     /// function.
     fn create_entry_code(
         &self,
