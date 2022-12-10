@@ -58,7 +58,6 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         }
         Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Step)],
         Gas(BurnGas(_)) => {
-            // TODO(lior): Fix BurnGas Sierra->casm code to handle all token types.
             let cost = CostTokenType::iter()
                 .map(|token_type| ops.statement_var_cost(*token_type))
                 .reduce(|x, y| ops.add(x, y));
