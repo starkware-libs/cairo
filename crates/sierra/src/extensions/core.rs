@@ -1,6 +1,6 @@
 use super::ap_tracking::RevokeApTrackingLibFunc;
 use super::array::{ArrayLibFunc, ArrayType};
-use super::builtin_cost::{BuiltinCostLibFunc, BuiltinCostType};
+use super::builtin_cost::{BuiltinCostLibFunc, BuiltinCostsType};
 use super::dict_felt_to::{DictFeltToLibFunc, DictFeltToType};
 use super::drop::DropLibFunc;
 use super::duplicate::DupLibFunc;
@@ -27,7 +27,7 @@ define_type_hierarchy! {
         Box(BoxType),
         Felt(FeltType),
         GasBuiltin(GasBuiltinType),
-        BuiltinCost(BuiltinCostType),
+        BuiltinCosts(BuiltinCostsType),
         Uint128(Uint128Type),
         NonZero(NonZeroType),
         RangeCheck(RangeCheckType),

@@ -1,10 +1,10 @@
 // Calculates H(...H(H(0, 1), ..., n))...) where H is the Pedersen hash function.
-func hash_chain(n: felt, pedersen_cost: PedersenBuiltinCost) -> felt {
+func hash_chain(n: felt, costs: BuiltinCosts) -> felt {
     if n == 0 {
         return 0;
     }
 
-    match pedersen_get_gas(pedersen_cost) {
+    match get_gas_all(costs) {
         Option::Some(x) => {
         },
         Option::None(x) => {
@@ -14,5 +14,5 @@ func hash_chain(n: felt, pedersen_cost: PedersenBuiltinCost) -> felt {
         },
     }
 
-    pedersen(hash_chain(n - 1, pedersen_cost), n)
+    pedersen(hash_chain(n - 1, costs), n)
 }
