@@ -39,6 +39,13 @@ impl CostTokenType {
     pub fn camel_case_name(&self) -> String {
         self.name().to_case(convert_case::Case::UpperCamel)
     }
+
+    pub fn offset_in_builtin_costs(&self) -> i16 {
+        match self {
+            CostTokenType::Step => panic!("offset_in_builtin_costs is not supported for 'Step'."),
+            CostTokenType::Pedersen => 0,
+        }
+    }
 }
 
 /// Represents the cost of a single invocation of a builtin.

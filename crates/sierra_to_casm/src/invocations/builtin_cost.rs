@@ -73,20 +73,31 @@ fn build_builtin_get_gas(
         if *token_type == CostTokenType::Step {
             continue;
         }
-        let requested_count = variable_values
+        let requested_count = *variable_values
             .get(&(builder.idx, *token_type))
             .ok_or(InvocationError::UnknownVariableData)?;
+        if requested_count == 0 {
+            continue;
+        }
         let translated_builtin_cost =
             builtin_cost.unchecked_apply_known_ap_change(compute_requested_amount_ap_change);
-        compute_requested_amount.extend(
-            casm! {
-                // TODO(lior): Fetch the cost of each builtin separately.
-                [ap] = translated_builtin_cost * (*requested_count), ap++;
-                [ap] = [ap - 2] + [ap - 1], ap++;
-            }
-            .instructions,
-        );
-        compute_requested_amount_ap_change += 2;
+        let offset = token_type.offset_in_builtin_costs();
+
+        // Fetch the cost of a single instance.
+        compute_requested_amount
+            .extend(casm! { [ap] = [[translated_builtin_cost] + offset], ap++; }.instructions);
+        compute_requested_amount_ap_change += 1;
+
+        // If necessary, multiply by the number of instances.
+        if requested_count != 1 {
+            compute_requested_amount
+                .extend(casm! { [ap] = [ap - 1] * requested_count, ap++; }.instructions);
+            compute_requested_amount_ap_change += 1;
+        }
+
+        // Add to the cumulative sum.
+        compute_requested_amount.extend(casm! { [ap] = [ap - 2] + [ap - 1], ap++; }.instructions);
+        compute_requested_amount_ap_change += 1;
     }
 
     let gas_counter_value = try_extract_matches!(
