@@ -1,5 +1,7 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
-use sierra::extensions::builtin_cost::{BuiltinCostConcreteLibFunc, CostTokenType};
+use sierra::extensions::builtin_cost::{
+    BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
+};
 use sierra::extensions::core::CoreConcreteLibFunc::{
     self, ApTracking, Array, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup, Enum, Felt,
     FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
@@ -103,7 +105,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
                 .map(|token_type| ops.statement_var_cost(*token_type))
                 .reduce(|x, y| ops.add(x, y));
             // Compute the (maximal) number of steps for the computation of the requested cost.
-            let compute_requested_cost_steps = 1 + ((CostTokenType::iter().len() as i32) - 1) * 3;
+            let compute_requested_cost_steps = BuiltinCostGetGasLibFunc::max_cost() as i32;
             vec![
                 ops.sub(ops.const_cost(compute_requested_cost_steps + 3), cost.unwrap()),
                 ops.const_cost(compute_requested_cost_steps + 5),
