@@ -98,11 +98,11 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Pedersen(_) => {
             vec![ops.add(ops.const_cost(2), ops.const_cost_token(1, CostTokenType::Pedersen))]
         }
-        BuiltinCost(BuiltinCostConcreteLibFunc::BuiltinGetGas(libfunc)) => {
-            vec![
-                ops.sub(ops.const_cost(3), ops.statement_var_cost(libfunc.token_type)),
-                ops.const_cost(5),
-            ]
+        BuiltinCost(BuiltinCostConcreteLibFunc::BuiltinGetGas(_)) => {
+            let cost = CostTokenType::iter()
+                .map(|token_type| ops.statement_var_cost(*token_type))
+                .reduce(|x, y| ops.add(x, y));
+            vec![ops.sub(ops.const_cost(3), cost.unwrap()), ops.const_cost(5)]
         }
         &CoreConcreteLibFunc::StarkNet(_) => todo!(),
     }
