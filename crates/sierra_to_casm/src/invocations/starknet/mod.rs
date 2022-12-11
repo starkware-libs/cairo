@@ -1,7 +1,10 @@
+use num_bigint::BigInt;
+use sierra::extensions::starknet::storage::StorageAddressConstConcreteLibFunc;
 use sierra::extensions::starknet::StarkNetConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::InvocationError;
+use crate::references::{CellExpression, ReferenceExpression};
 
 mod storage;
 use storage::build_storage_read;
@@ -13,6 +16,23 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         StarkNetConcreteLibFunc::StorageRead(_) => build_storage_read(builder),
-        StarkNetConcreteLibFunc::StorageAddressConst(_) => todo!(),
+        StarkNetConcreteLibFunc::StorageAddressConst(libfunc) => {
+            build_storage_address_const(builder, libfunc)
+        }
     }
+}
+
+/// Handles the storage_address_const libfunc.
+fn build_storage_address_const(
+    builder: CompiledInvocationBuilder<'_>,
+    libfunc: &StorageAddressConstConcreteLibFunc,
+) -> Result<CompiledInvocation, InvocationError> {
+    let addr_bound = (BigInt::from(1) << 251) - 256;
+    if libfunc.c >= addr_bound {
+        return Err(InvocationError::InvalidGenericArg);
+    }
+
+    Ok(builder.build_only_reference_changes(
+        [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))].into_iter(),
+    ))
 }
