@@ -29,16 +29,16 @@ pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
 }
 
-pub fn get_core_ty_by_name(
+pub fn try_get_core_ty_by_name(
     db: &dyn SemanticGroup,
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
-) -> TypeId {
+) -> Result<TypeId, SemanticDiagnosticKind> {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let module_item_id = db
         .module_item_by_name(core_module, name.clone())
-        .unwrap_or_else(|| panic!("Type '{name}' was not found in core lib."));
+        .ok_or(SemanticDiagnosticKind::UnknownType)?;
     let generic_type = match module_item_id {
         ModuleItemId::Use(use_id) => {
             db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
@@ -49,11 +49,19 @@ pub fn get_core_ty_by_name(
     }
     .unwrap_or_else(|| panic!("{name} is not a type."));
 
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
+    Ok(db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
         db,
         generic_type,
         generic_args,
-    )))
+    ))))
+}
+
+pub fn get_core_ty_by_name(
+    db: &dyn SemanticGroup,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> TypeId {
+    try_get_core_ty_by_name(db, name, generic_args).unwrap()
 }
 
 pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
