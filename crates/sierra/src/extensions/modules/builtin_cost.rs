@@ -77,6 +77,13 @@ define_libfunc_hierarchy! {
 /// LibFunc for getting gas to be used by a builtin.
 #[derive(Default)]
 pub struct BuiltinCostGetGasLibFunc {}
+impl BuiltinCostGetGasLibFunc {
+    /// Returns the maximal number of steps required for the computation of the requested cost.
+    pub fn max_cost() -> usize {
+        1 + (CostTokenType::iter().len() - 1) * 3
+    }
+}
+
 impl NoGenericArgsGenericLibFunc for BuiltinCostGetGasLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("get_gas_all");
 
