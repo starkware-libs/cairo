@@ -188,6 +188,8 @@ fn build_uint128_from_felt(
     // Represent the maximal possible value (PRIME - 1) as 2**128 * max_x + max_y.
     let max_x: i128 = 10633823966279327296825105735305134080;
     let max_y: i128 = 0;
+    // TODO(lior): Reorder the temporary variables so that the result is at the top of the stack,
+    //   and fix OutputVarReferenceInfo::NewTempVar::idx in the Sierra definition.
     match value_cell {
         CellExpression::Deref(value) => {
             // The code up to the success branch.

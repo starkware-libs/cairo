@@ -93,7 +93,9 @@ impl State {
                 );
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
-                self.known_stack.insert(res.clone(), *idx);
+                if let Some(idx) = idx {
+                    self.known_stack.insert(res.clone(), *idx);
+                }
                 self.temporary_variables.insert(res, output_info.ty.clone());
             }
             OutputVarReferenceInfo::SameAsParam { .. } | OutputVarReferenceInfo::NewLocalVar => {}
