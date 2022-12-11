@@ -155,8 +155,10 @@ use integer::uint256_from_felt;
 
 // Gas.
 mod gas;
+use gas::BuiltinCosts;
 use gas::GasBuiltin;
 use gas::get_gas;
+use gas::get_gas_all;
 
 // Panics.
 enum PanicResult<T> { Ok: T, Err: Array::<felt>, }
@@ -174,9 +176,7 @@ func assert(cond: bool, err_code: felt) {
 
 // Hash functions.
 mod hash;
-use hash::PedersenBuiltinCost;
 use hash::pedersen;
-use hash::pedersen_get_gas;
 
 // Syscall Ptr
 extern type SyscallPtr;
