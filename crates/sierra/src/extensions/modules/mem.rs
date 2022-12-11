@@ -36,7 +36,7 @@ impl NamedLibFunc for StoreTempLibFunc {
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
-        let type_size = context.as_type_specialization_context().get_type_info(ty.clone())?.size;
+        context.as_type_specialization_context().get_type_info(ty.clone())?;
         Ok(LibFuncSignature::new_non_branch_ex(
             vec![ParamSignature {
                 ty: ty.clone(),
@@ -45,7 +45,7 @@ impl NamedLibFunc for StoreTempLibFunc {
                 allow_const: true,
             }],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } }],
-            SierraApChange::Known(type_size),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 
@@ -135,7 +135,7 @@ impl NamedLibFunc for StoreLocalLibFunc {
                 },
             ],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewLocalVar }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 
@@ -172,7 +172,11 @@ impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::FinalizeLocals))
+        Ok(LibFuncSignature::new_non_branch(
+            vec![],
+            vec![],
+            SierraApChange::Known { new_vars_only: false },
+        ))
     }
 }
 
@@ -204,7 +208,7 @@ impl NamedLibFunc for AllocLocalLibFunc {
                 ty: context.get_wrapped_concrete_type(UninitializedType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::NewLocalVar,
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 
@@ -239,7 +243,7 @@ impl SignatureOnlyGenericLibFunc for RenameLibFunc {
                 ty,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }

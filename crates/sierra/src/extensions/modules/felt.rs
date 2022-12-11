@@ -120,7 +120,7 @@ impl GenericLibFunc for FeltBinaryOperationLibFunc {
                     ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 }],
-                SierraApChange::Known(0),
+                SierraApChange::Known { new_vars_only: true },
             )),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, FeltBinaryOperator::Div) && c.is_zero() {
@@ -132,7 +132,7 @@ impl GenericLibFunc for FeltBinaryOperationLibFunc {
                             ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         }],
-                        SierraApChange::Known(0),
+                        SierraApChange::Known { new_vars_only: true },
                     ))
                 }
             }
@@ -209,7 +209,7 @@ impl GenericLibFunc for FeltUnaryOperationLibFunc {
                         ty,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     }],
-                    SierraApChange::Known(0),
+                    SierraApChange::Known { new_vars_only: true },
                 ))
             }
             _ => Err(SpecializationError::UnsupportedGenericArg),
@@ -296,7 +296,7 @@ impl NamedLibFunc for FeltConstLibFunc {
                 ty: context.get_concrete_type(FeltType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 
