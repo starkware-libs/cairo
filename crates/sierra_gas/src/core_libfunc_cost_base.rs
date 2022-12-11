@@ -21,6 +21,8 @@ use sierra::extensions::mem::MemConcreteLibFunc::{
 use sierra::extensions::strct::StructConcreteLibFunc;
 use sierra::program::Function;
 
+use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
+
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
     type CostType: Clone;
@@ -111,7 +113,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
                 ops.const_cost(compute_requested_cost_steps + 5),
             ]
         }
-        &CoreConcreteLibFunc::StarkNet(_) => todo!(),
+        CoreConcreteLibFunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
     }
 }
 
