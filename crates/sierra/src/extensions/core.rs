@@ -1,5 +1,6 @@
 use super::ap_tracking::RevokeApTrackingLibFunc;
 use super::array::{ArrayLibFunc, ArrayType};
+use super::branch_align::BranchAlignLibFunc;
 use super::builtin_cost::{BuiltinCostLibFunc, BuiltinCostsType};
 use super::dict_felt_to::{DictFeltToLibFunc, DictFeltToType};
 use super::drop::DropLibFunc;
@@ -45,6 +46,7 @@ define_libfunc_hierarchy! {
     pub enum CoreLibFunc {
         ApTracking(RevokeApTrackingLibFunc),
         Array(ArrayLibFunc),
+        BranchAlign(BranchAlignLibFunc),
         Box(BoxLibFunc),
         BuiltinCost(BuiltinCostLibFunc),
         Drop(DropLibFunc),

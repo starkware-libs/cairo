@@ -159,11 +159,11 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
                 libfunc nz_felt_drop = drop<NonZeroFelt>;
                 libfunc felt_jump_nz = felt_jump_nz;
-                libfunc burn_gas = burn_gas;
+                libfunc branch_align = branch_align;
 
 
                 felt_jump_nz([1]) { fallthrough() 3([1]) };
-                burn_gas() -> ();
+                branch_align() -> ();
                 return ();
                 store_temp_nz_felt([1]) -> ([1]);
                 nz_felt_drop([1]) -> ();
