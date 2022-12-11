@@ -102,7 +102,12 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             let cost = CostTokenType::iter()
                 .map(|token_type| ops.statement_var_cost(*token_type))
                 .reduce(|x, y| ops.add(x, y));
-            vec![ops.sub(ops.const_cost(3), cost.unwrap()), ops.const_cost(5)]
+            // Compute the (maximal) number of steps for the computation of the requested cost.
+            let compute_requested_cost_steps = 1 + ((CostTokenType::iter().len() as i32) - 1) * 3;
+            vec![
+                ops.sub(ops.const_cost(compute_requested_cost_steps + 3), cost.unwrap()),
+                ops.const_cost(compute_requested_cost_steps + 5),
+            ]
         }
         &CoreConcreteLibFunc::StarkNet(_) => todo!(),
     }
