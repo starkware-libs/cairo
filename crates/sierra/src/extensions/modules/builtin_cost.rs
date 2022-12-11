@@ -105,7 +105,7 @@ impl NoGenericArgsGenericLibFunc for BuiltinCostGetGasLibFunc {
                         },
                         OutputVarInfo {
                             ty: gas_builtin_type.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },

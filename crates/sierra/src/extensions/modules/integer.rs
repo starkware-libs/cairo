@@ -118,9 +118,12 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                     },
                     OutputVarInfo {
                         ty: ty.clone(),
-                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
                     },
-                    OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 } },
+                    OutputVarInfo {
+                        ty,
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                    },
                 ],
                 SierraApChange::Known { new_vars_only: false },
             )),
@@ -185,11 +188,11 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                         },
                         OutputVarInfo {
                             ty: ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
                         },
                         OutputVarInfo {
                             ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
                         },
                     ],
                     SierraApChange::Known { new_vars_only: false },
@@ -483,17 +486,11 @@ impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
                         },
                         OutputVarInfo {
                             ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                            // TODO(lior): This is not NewTempVar since the result is not placed at
-                            //   the top of the stack. Either fix here or move the result to the
-                            //   top.
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
                         },
                         OutputVarInfo {
                             ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                            // TODO(lior): This is not NewTempVar since the result is not placed at
-                            //   the top of the stack. Either fix here or move the result to the
-                            //   top.
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
