@@ -79,7 +79,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             let vars: Vec<_> = (0..4)
                 .map(|idx| OutputVarInfo {
                     ty: felt_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(idx) },
                 })
                 .collect();
             LibFuncSignature {
@@ -123,12 +123,21 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
                     ty: felt_ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 }],
                 ap_change: SierraApChange::Known { new_vars_only: true },
             }],
             fallthrough: Some(0),
         },
+        "temp_not_on_top" => LibFuncSignature::new_non_branch(
+            vec![],
+            vec![OutputVarInfo {
+                ty: felt_ty,
+                // Simulate the case where the returned value is not on the top of the stack.
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ),
         _ => panic!("get_branch_signatures() is not implemented for '{}'.", name),
     }
 }
@@ -379,6 +388,21 @@ fn push_values_clear_known_stack() {
             "rename<felt>(201) -> (301)",
             "return(0)",
         ]
+    );
+}
+
+#[test]
+fn push_values_temp_not_on_top() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "temp_not_on_top", &[], &["0"]),
+        dummy_push_values(&db, &[("0", "100")]),
+        dummy_return_statement(&["0"]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec!["temp_not_on_top() -> (0)", "store_temp<felt>(0) -> (100)", "return(0)",]
     );
 }
 
