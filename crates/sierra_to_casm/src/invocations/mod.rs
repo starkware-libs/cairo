@@ -59,6 +59,8 @@ pub enum InvocationError {
     #[error("Expected variable data for statement not found.")]
     UnknownVariableData,
     #[error("An integer overflow occurred.")]
+    InvalidGenericArg,
+    #[error("Invalid generic argument for libfunc.")]
     IntegerOverflow,
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
