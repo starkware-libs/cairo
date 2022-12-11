@@ -49,15 +49,14 @@ impl State {
     ) {
         // Clear the stack if needed.
         match branch_signature.ap_change {
-            SierraApChange::NotImplemented | SierraApChange::Unknown => {
-                self.clear_known_stack();
-            }
-            SierraApChange::Known { new_vars_only } if !new_vars_only => {
+            SierraApChange::NotImplemented
+            | SierraApChange::Unknown
+            | SierraApChange::Known { new_vars_only: false } => {
                 // Clear the stack in this case since it's possible that undeclared (not part of the
                 // output) temporary variables are created by the libfunc.
                 self.clear_known_stack();
             }
-            SierraApChange::Known { .. } => {}
+            SierraApChange::Known { new_vars_only: true } => {}
         }
 
         for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {
