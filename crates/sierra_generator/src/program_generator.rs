@@ -6,6 +6,7 @@ use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::ids::CrateId;
 use itertools::chain;
 use sierra::extensions::core::CoreLibFunc;
+use sierra::extensions::lib_func::SierraApChange;
 use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
 use sierra::program;
@@ -17,6 +18,7 @@ use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
+use crate::utils::{revoke_ap_tracking_libfunc_id, simple_statement};
 use crate::SierraGeneratorDiagnostic;
 
 #[cfg(test)]
@@ -146,7 +148,13 @@ pub fn get_sierra_program_for_functions(
         }
         let function: Arc<pre_sierra::Function> = db.free_function_sierra(function_id)?;
         functions.push(function.clone());
-        statements.extend_from_slice(function.body.as_slice());
+        statements.extend_from_slice(&function.body[0..function.prolog_size]);
+        if !matches!(db.get_ap_change(function_id), Some(SierraApChange::Known { .. })) {
+            // If AP change is unknown for the function, adding a revoke so that AP balancing would
+            // not occur.
+            statements.push(simple_statement(revoke_ap_tracking_libfunc_id(db), &[], &[]));
+        }
+        statements.extend_from_slice(&function.body[function.prolog_size..]);
         for statement in &function.body {
             if let Some(related_function_id) = try_get_free_function_id(db, statement) {
                 function_id_queue.push_back(related_function_id);
