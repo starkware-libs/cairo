@@ -4,7 +4,7 @@
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── module_kw (kind: TokenModule): 'mod'
     │   │   ├── name (kind: TokenIdentifier): 'submod'
-    │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │   └── body (kind: TokenSemicolon): ';'
     │   ├── child #1 (kind: ItemUse)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── use_kw (kind: TokenUse): 'use'

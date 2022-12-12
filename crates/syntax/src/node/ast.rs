@@ -6114,9 +6114,9 @@ impl ItemModule {
         attributes: AttributeListGreen,
         module_kw: TerminalModuleGreen,
         name: TerminalIdentifierGreen,
-        semicolon: TerminalSemicolonGreen,
+        body: MaybeModuleBodyGreen,
     ) -> ItemModuleGreen {
-        let children: Vec<GreenId> = vec![attributes.0, module_kw.0, name.0, semicolon.0];
+        let children: Vec<GreenId> = vec![attributes.0, module_kw.0, name.0, body.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemModuleGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemModule,
@@ -6134,8 +6134,8 @@ impl ItemModule {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
+    pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeModuleBody {
+        MaybeModuleBody::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6167,7 +6167,7 @@ impl TypedSyntaxNode for ItemModule {
                     AttributeList::missing(db).0,
                     TerminalModule::missing(db).0,
                     TerminalIdentifier::missing(db).0,
-                    TerminalSemicolon::missing(db).0,
+                    MaybeModuleBody::missing(db).0,
                 ],
                 width: 0,
             },
@@ -6193,6 +6193,151 @@ impl TypedSyntaxNode for ItemModule {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ItemModulePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MaybeModuleBody {
+    Some(ModuleBody),
+    None(TerminalSemicolon),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MaybeModuleBodyPtr(pub SyntaxStablePtrId);
+impl MaybeModuleBodyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<ModuleBodyPtr> for MaybeModuleBodyPtr {
+    fn from(value: ModuleBodyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonPtr> for MaybeModuleBodyPtr {
+    fn from(value: TerminalSemicolonPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ModuleBodyGreen> for MaybeModuleBodyGreen {
+    fn from(value: ModuleBodyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonGreen> for MaybeModuleBodyGreen {
+    fn from(value: TerminalSemicolonGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MaybeModuleBodyGreen(pub GreenId);
+impl TypedSyntaxNode for MaybeModuleBody {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = MaybeModuleBodyPtr;
+    type Green = MaybeModuleBodyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ModuleBody => MaybeModuleBody::Some(ModuleBody::from_syntax_node(db, node)),
+            SyntaxKind::TerminalSemicolon => {
+                MaybeModuleBody::None(TerminalSemicolon::from_syntax_node(db, node))
+            }
+            _ => {
+                panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "MaybeModuleBody")
+            }
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            MaybeModuleBody::Some(x) => x.as_syntax_node(),
+            MaybeModuleBody::None(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MaybeModuleBodyPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ModuleBody {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ModuleBody {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrace: TerminalLBraceGreen,
+        items: ItemListGreen,
+        rbrace: TerminalRBraceGreen,
+    ) -> ModuleBodyGreen {
+        let children: Vec<GreenId> = vec![lbrace.0, items.0, rbrace.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ModuleBodyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ModuleBody,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl ModuleBody {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
+        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn items(&self, db: &dyn SyntaxGroup) -> ItemList {
+        ItemList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
+        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ModuleBodyPtr(pub SyntaxStablePtrId);
+impl ModuleBodyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ModuleBodyGreen(pub GreenId);
+impl TypedSyntaxNode for ModuleBody {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ModuleBody);
+    type StablePtr = ModuleBodyPtr;
+    type Green = ModuleBodyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ModuleBodyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ModuleBody,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLBrace::missing(db).0,
+                    ItemList::missing(db).0,
+                    TerminalRBrace::missing(db).0,
+                ],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ModuleBody,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ModuleBody
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ModuleBodyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

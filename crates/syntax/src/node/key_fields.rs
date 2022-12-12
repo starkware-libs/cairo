@@ -64,6 +64,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::Attribute => vec![],
         SyntaxKind::AttributeList => vec![],
         SyntaxKind::ItemModule => vec![/* name */ children[2]],
+        SyntaxKind::ModuleBody => vec![],
         SyntaxKind::OptionAttributeArgsEmpty => vec![],
         SyntaxKind::AttributeArgs => vec![],
         SyntaxKind::AttributeArgList => vec![],

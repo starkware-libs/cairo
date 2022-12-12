@@ -142,12 +142,26 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Module.
-    /// Expected pattern: `mod<Identifier>\{<ItemList>\}`
+    /// Expected pattern: `mod <Identifier> \{<ItemList>\}` or `mod <Identifier>;`.
     fn expect_module(&mut self, attributes: AttributeListGreen) -> ItemModuleGreen {
         let module_kw = self.take::<TerminalModule>();
         let name = self.parse_identifier();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
-        ItemModule::new_green(self.db, attributes, module_kw, name, semicolon)
+
+        let body = match self.peek().kind {
+            SyntaxKind::TerminalLBrace => {
+                let lbrace = self.take::<TerminalLBrace>();
+                let items = ItemList::new_green(
+                    self.db,
+                    self.parse_list(Self::try_parse_top_level_item, is_of_kind!(rbrace), "item"),
+                );
+                let rbrace = self.parse_token::<TerminalRBrace>();
+                ModuleBody::new_green(self.db, lbrace, items, rbrace).into()
+            }
+            // TODO: Improve diagnostic to indicate semicolon or a body were expected.
+            _ => self.parse_token::<TerminalSemicolon>().into(),
+        };
+
+        ItemModule::new_green(self.db, attributes, module_kw, name, body)
     }
 
     /// Assumes the current token is Struct.

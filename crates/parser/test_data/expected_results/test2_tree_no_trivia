@@ -133,112 +133,115 @@
     │   │       │       │           └── ident (kind: TokenIdentifier): 'y'
     │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       └── rbrace (kind: TokenRBrace): '}'
-    │   ├── child #1 (kind: ItemModule)
-    │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── module_kw (kind: TokenModule): 'mod'
-    │   │   ├── name (kind: TokenIdentifier): 'my_mod'
-    │   │   └── semicolon: Missing
-    │   ├── child #2 (kind: ItemFreeFunction)
-    │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── function_kw (kind: TokenFunction): 'func'
-    │   │   ├── name (kind: TokenIdentifier): 'bar'
-    │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
-    │   │   ├── signature (kind: FunctionSignature)
-    │   │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   │   ├── parameters (kind: ParamList)
-    │   │   │   │   ├── item #0 (kind: Param)
-    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   │   │   ├── name (kind: TokenIdentifier): 'x'
-    │   │   │   │   │   └── type_clause (kind: TypeClause)
-    │   │   │   │   │       ├── colon (kind: TokenColon): ':'
-    │   │   │   │   │       └── ty (kind: ExprPath)
-    │   │   │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │               └── ident (kind: TokenIdentifier): 'T0'
-    │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   └── item #1 (kind: Param)
-    │   │   │   │       ├── modifiers (kind: ModifierList) []
-    │   │   │   │       ├── name (kind: TokenIdentifier): 's'
-    │   │   │   │       └── type_clause (kind: TypeClause)
-    │   │   │   │           ├── colon (kind: TokenColon): ':'
-    │   │   │   │           └── ty (kind: ExprPath)
-    │   │   │   │               └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │                   └── ident (kind: TokenIdentifier): 'S'
-    │   │   │   ├── rparen (kind: TokenRParen): ')'
-    │   │   │   ├── ret_ty (kind: ReturnTypeClause)
-    │   │   │   │   ├── arrow (kind: TokenArrow): '->'
-    │   │   │   │   └── ty (kind: ExprPath)
-    │   │   │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │           └── ident (kind: TokenIdentifier): 'X'
-    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
-    │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
-    │   │   └── body (kind: ExprBlock)
-    │   │       ├── lbrace (kind: TokenLBrace): '{'
-    │   │       ├── statements (kind: StatementList)
-    │   │       │   └── child #0 (kind: StatementExpr)
-    │   │       │       ├── expr (kind: ExprBinary)
-    │   │       │       │   ├── lhs (kind: ExprBinary)
-    │   │       │       │   │   ├── lhs (kind: ExprBinary)
-    │   │       │       │   │   │   ├── lhs (kind: ExprPath)
-    │   │       │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │   │       └── ident (kind: TokenIdentifier): 'x'
-    │   │       │       │   │   │   ├── op (kind: TokenDot): '.'
-    │   │       │       │   │   │   └── rhs (kind: ExprPath)
-    │   │       │       │   │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │           └── ident (kind: TokenIdentifier): 'a'
-    │   │       │       │   │   ├── op (kind: TokenMul): '*'
-    │   │       │       │   │   └── rhs: Missing []
-    │   │       │       │   ├── op (kind: TokenPlus): '+'
-    │   │       │       │   └── rhs (kind: ExprBinary)
-    │   │       │       │       ├── lhs (kind: ExprBinary)
-    │   │       │       │       │   ├── lhs (kind: ExprBinary)
-    │   │       │       │       │   │   ├── lhs (kind: ExprUnary)
-    │   │       │       │       │   │   │   ├── op (kind: TokenMinus): '-'
-    │   │       │       │       │   │   │   └── expr: Missing []
-    │   │       │       │       │   │   ├── op (kind: TokenDot): '.'
-    │   │       │       │       │   │   └── rhs (kind: ExprPath)
-    │   │       │       │       │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │       │       │       │   │           └── ident (kind: TokenIdentifier): 's'
-    │   │       │       │       │   ├── op (kind: TokenDot): '.'
-    │   │       │       │       │   └── rhs (kind: ExprPath)
-    │   │       │       │       │       └── item #0 (kind: PathSegmentSimple)
-    │   │       │       │       │           └── ident (kind: TokenIdentifier): 's'
-    │   │       │       │       ├── op (kind: TokenMul): '*'
-    │   │       │       │       └── rhs (kind: ExprFunctionCall)
-    │   │       │       │           ├── path (kind: ExprPath)
-    │   │       │       │           │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       │           │       └── ident (kind: TokenIdentifier): 'foo'
-    │   │       │       │           └── arguments (kind: ExprListParenthesized)
-    │   │       │       │               ├── lparen (kind: TokenLParen): '('
-    │   │       │       │               ├── expressions (kind: ExprList)
-    │   │       │       │               │   ├── item #0 (kind: TokenLiteralNumber): '1'
-    │   │       │       │               │   ├── separator #0 (kind: TokenComma): ','
-    │   │       │       │               │   └── item #1 (kind: TokenLiteralNumber): '3'
-    │   │       │       │               └── rparen (kind: TokenRParen): ')'
-    │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
-    │   │       └── rbrace (kind: TokenRBrace): '}'
-    │   └── child #3 (kind: ItemStruct)
+    │   └── child #1 (kind: ItemModule)
     │       ├── attributes (kind: AttributeList) []
-    │       ├── struct_kw (kind: TokenStruct): 'struct'
-    │       ├── name (kind: TokenIdentifier): 'A'
-    │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
-    │       ├── lbrace (kind: TokenLBrace): '{'
-    │       ├── members (kind: MemberList)
-    │       │   ├── item #0 (kind: Member)
-    │       │   │   ├── name (kind: TokenIdentifier): 'x'
-    │       │   │   └── type_clause (kind: TypeClause)
-    │       │   │       ├── colon (kind: TokenColon): ':'
-    │       │   │       └── ty (kind: ExprPath)
-    │       │   │           └── item #0 (kind: PathSegmentSimple)
-    │       │   │               └── ident (kind: TokenIdentifier): 'a'
-    │       │   ├── separator #0 (kind: TokenComma): ','
-    │       │   └── item #1 (kind: Member)
-    │       │       ├── name (kind: TokenIdentifier): 'y'
-    │       │       └── type_clause (kind: TypeClause)
-    │       │           ├── colon (kind: TokenColon): ':'
-    │       │           └── ty (kind: ExprPath)
-    │       │               └── item #0 (kind: PathSegmentSimple)
-    │       │                   └── ident (kind: TokenIdentifier): 'int'
-    │       └── rbrace (kind: TokenRBrace): '}'
+    │       ├── module_kw (kind: TokenModule): 'mod'
+    │       ├── name (kind: TokenIdentifier): 'my_mod'
+    │       └── body (kind: ModuleBody)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── items (kind: ItemList)
+    │           │   ├── child #0 (kind: ItemFreeFunction)
+    │           │   │   ├── attributes (kind: AttributeList) []
+    │           │   │   ├── function_kw (kind: TokenFunction): 'func'
+    │           │   │   ├── name (kind: TokenIdentifier): 'bar'
+    │           │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │           │   │   ├── signature (kind: FunctionSignature)
+    │           │   │   │   ├── lparen (kind: TokenLParen): '('
+    │           │   │   │   ├── parameters (kind: ParamList)
+    │           │   │   │   │   ├── item #0 (kind: Param)
+    │           │   │   │   │   │   ├── modifiers (kind: ModifierList) []
+    │           │   │   │   │   │   ├── name (kind: TokenIdentifier): 'x'
+    │           │   │   │   │   │   └── type_clause (kind: TypeClause)
+    │           │   │   │   │   │       ├── colon (kind: TokenColon): ':'
+    │           │   │   │   │   │       └── ty (kind: ExprPath)
+    │           │   │   │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │           │   │   │   │   │               └── ident (kind: TokenIdentifier): 'T0'
+    │           │   │   │   │   ├── separator #0 (kind: TokenComma): ','
+    │           │   │   │   │   └── item #1 (kind: Param)
+    │           │   │   │   │       ├── modifiers (kind: ModifierList) []
+    │           │   │   │   │       ├── name (kind: TokenIdentifier): 's'
+    │           │   │   │   │       └── type_clause (kind: TypeClause)
+    │           │   │   │   │           ├── colon (kind: TokenColon): ':'
+    │           │   │   │   │           └── ty (kind: ExprPath)
+    │           │   │   │   │               └── item #0 (kind: PathSegmentSimple)
+    │           │   │   │   │                   └── ident (kind: TokenIdentifier): 'S'
+    │           │   │   │   ├── rparen (kind: TokenRParen): ')'
+    │           │   │   │   ├── ret_ty (kind: ReturnTypeClause)
+    │           │   │   │   │   ├── arrow (kind: TokenArrow): '->'
+    │           │   │   │   │   └── ty (kind: ExprPath)
+    │           │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │           │   │   │   │           └── ident (kind: TokenIdentifier): 'X'
+    │           │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │           │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │           │   │   └── body (kind: ExprBlock)
+    │           │   │       ├── lbrace (kind: TokenLBrace): '{'
+    │           │   │       ├── statements (kind: StatementList)
+    │           │   │       │   └── child #0 (kind: StatementExpr)
+    │           │   │       │       ├── expr (kind: ExprBinary)
+    │           │   │       │       │   ├── lhs (kind: ExprBinary)
+    │           │   │       │       │   │   ├── lhs (kind: ExprBinary)
+    │           │   │       │       │   │   │   ├── lhs (kind: ExprPath)
+    │           │   │       │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │           │   │       │       │   │   │   │       └── ident (kind: TokenIdentifier): 'x'
+    │           │   │       │       │   │   │   ├── op (kind: TokenDot): '.'
+    │           │   │       │       │   │   │   └── rhs (kind: ExprPath)
+    │           │   │       │       │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │           │   │       │       │   │   │           └── ident (kind: TokenIdentifier): 'a'
+    │           │   │       │       │   │   ├── op (kind: TokenMul): '*'
+    │           │   │       │       │   │   └── rhs: Missing []
+    │           │   │       │       │   ├── op (kind: TokenPlus): '+'
+    │           │   │       │       │   └── rhs (kind: ExprBinary)
+    │           │   │       │       │       ├── lhs (kind: ExprBinary)
+    │           │   │       │       │       │   ├── lhs (kind: ExprBinary)
+    │           │   │       │       │       │   │   ├── lhs (kind: ExprUnary)
+    │           │   │       │       │       │   │   │   ├── op (kind: TokenMinus): '-'
+    │           │   │       │       │       │   │   │   └── expr: Missing []
+    │           │   │       │       │       │   │   ├── op (kind: TokenDot): '.'
+    │           │   │       │       │       │   │   └── rhs (kind: ExprPath)
+    │           │   │       │       │       │   │       └── item #0 (kind: PathSegmentSimple)
+    │           │   │       │       │       │   │           └── ident (kind: TokenIdentifier): 's'
+    │           │   │       │       │       │   ├── op (kind: TokenDot): '.'
+    │           │   │       │       │       │   └── rhs (kind: ExprPath)
+    │           │   │       │       │       │       └── item #0 (kind: PathSegmentSimple)
+    │           │   │       │       │       │           └── ident (kind: TokenIdentifier): 's'
+    │           │   │       │       │       ├── op (kind: TokenMul): '*'
+    │           │   │       │       │       └── rhs (kind: ExprFunctionCall)
+    │           │   │       │       │           ├── path (kind: ExprPath)
+    │           │   │       │       │           │   └── item #0 (kind: PathSegmentSimple)
+    │           │   │       │       │           │       └── ident (kind: TokenIdentifier): 'foo'
+    │           │   │       │       │           └── arguments (kind: ExprListParenthesized)
+    │           │   │       │       │               ├── lparen (kind: TokenLParen): '('
+    │           │   │       │       │               ├── expressions (kind: ExprList)
+    │           │   │       │       │               │   ├── item #0 (kind: TokenLiteralNumber): '1'
+    │           │   │       │       │               │   ├── separator #0 (kind: TokenComma): ','
+    │           │   │       │       │               │   └── item #1 (kind: TokenLiteralNumber): '3'
+    │           │   │       │       │               └── rparen (kind: TokenRParen): ')'
+    │           │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │           │   │       └── rbrace (kind: TokenRBrace): '}'
+    │           │   └── child #1 (kind: ItemStruct)
+    │           │       ├── attributes (kind: AttributeList) []
+    │           │       ├── struct_kw (kind: TokenStruct): 'struct'
+    │           │       ├── name (kind: TokenIdentifier): 'A'
+    │           │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │           │       ├── lbrace (kind: TokenLBrace): '{'
+    │           │       ├── members (kind: MemberList)
+    │           │       │   ├── item #0 (kind: Member)
+    │           │       │   │   ├── name (kind: TokenIdentifier): 'x'
+    │           │       │   │   └── type_clause (kind: TypeClause)
+    │           │       │   │       ├── colon (kind: TokenColon): ':'
+    │           │       │   │       └── ty (kind: ExprPath)
+    │           │       │   │           └── item #0 (kind: PathSegmentSimple)
+    │           │       │   │               └── ident (kind: TokenIdentifier): 'a'
+    │           │       │   ├── separator #0 (kind: TokenComma): ','
+    │           │       │   └── item #1 (kind: Member)
+    │           │       │       ├── name (kind: TokenIdentifier): 'y'
+    │           │       │       └── type_clause (kind: TypeClause)
+    │           │       │           ├── colon (kind: TokenColon): ':'
+    │           │       │           └── ty (kind: ExprPath)
+    │           │       │               └── item #0 (kind: PathSegmentSimple)
+    │           │       │                   └── ident (kind: TokenIdentifier): 'int'
+    │           │       └── rbrace (kind: TokenRBrace): '}'
+    │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
 --------------------
 error: Missing tokens. Expected an expression.
@@ -246,38 +249,23 @@ error: Missing tokens. Expected an expression.
     let z = ;
            ^
 
-error: Missing token TerminalSemicolon.
- --> test2.cairo:13:11
-mod my_mod{
-          ^
-
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test2.cairo:13:11
-mod my_mod{
-          ^
-
 error: Missing tokens. Expected an expression.
- --> test2.cairo:15:14
+ --> test2.cairo:13:14
         x.a *+-. s.s * foo(1,3)
              ^
 
 error: Missing tokens. Expected an expression.
- --> test2.cairo:15:16
+ --> test2.cairo:13:16
         x.a *+-. s.s * foo(1,3)
                ^
 
-error: Skipped tokens. Expected: item.
- --> test2.cairo:22:1
-}
-^
-
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test2.cairo:24:1
+ --> test2.cairo:22:1
 skipped tokens
 ^*****^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test2.cairo:24:9
+ --> test2.cairo:22:9
 skipped tokens
         ^****^
 
