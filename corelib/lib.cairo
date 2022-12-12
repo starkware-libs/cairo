@@ -184,6 +184,6 @@ use hash::pedersen;
 
 // StarkNet
 mod starknet;
-use starknet::SyscallPtr;
+use starknet::System;
 
 mod test;

@@ -48,9 +48,9 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginRes
         let getter_name = format!("get_{}", name);
 
         let getter = quote! {
-            func $getter_name(ref syscall_ptr: SyscallPtr) -> felt {
+            func $getter_name(ref system: System) -> felt {
                 starknet::storage_read_syscall(
-                    syscall_ptr, starknet::storage_address_const::<$address>())
+                    system, starknet::storage_address_const::<$address>())
             }
         };
 
@@ -107,12 +107,12 @@ fn generate_entry_point_wrapper(
     let params_len = params.len();
     let mut params_iter = params.into_iter();
 
-    // Assert the first parameter is SyscallPtr.
+    // Assert the first parameter is System.
     // TODO(yuval): get_text includes trivia... This wouldn't always work.
     match params_iter.next() {
         Some(first_param) => {
             let first_param_type = first_param.type_clause(db).ty(db).as_syntax_node().get_text(db);
-            if first_param_type != "SyscallPtr" {
+            if first_param_type != "System" {
                 // TODO(yuval): diagnostic
                 successful_expansion = false;
             }
@@ -159,13 +159,13 @@ fn generate_entry_point_wrapper(
 
     // TODO(yuval): change to uint128 literal once it's supported.
     Some(quote! {
-        func $wrapper_name(ref syscall_ptr: SyscallPtr, mut data: Array::<felt>) -> Array::<felt> {
+        func $wrapper_name(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
             if array::array_len::<felt>(data) != integer::uint128_from_felt($params_len) {
                 // TODO(yuval): add error message.
                 panic(array::array_new::<felt>());
             }
             $arg_definitions
-            let res = $wrapped_name(syscall_ptr, $param_names_tokens);
+            let res = $wrapped_name(system, $param_names_tokens);
             let mut arr = array::array_new::<felt>();
             $ref_appends
             array::array_append::<felt>(arr, res);
