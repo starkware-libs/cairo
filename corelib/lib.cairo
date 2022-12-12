@@ -180,7 +180,7 @@ func assert(cond: bool, err_code: felt) {
 mod hash;
 use hash::pedersen;
 
-// Syscall Ptr
-extern type SyscallPtr;
+// System
+extern type System;
 
 mod test;
