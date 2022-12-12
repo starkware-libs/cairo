@@ -132,6 +132,7 @@ use option::Option;
 // Integer.
 mod integer;
 use integer::uint128;
+use integer::uint128_const;
 use integer::uint128_from_felt;
 use integer::uint128_to_felt;
 use integer::uint128_add;
