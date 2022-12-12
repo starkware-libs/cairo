@@ -24,7 +24,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Uint128(_)
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::SyscallPtr(_)) => Some(1),
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_)) => Some(1),
             CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageAddress(_)) => Some(1),
             CoreTypeConcrete::Pedersen(_) => Some(1),
             CoreTypeConcrete::Array(_)

@@ -1,7 +1,7 @@
-trait ITestContract { func test(ref syscall_ptr: SyscallPtr) -> felt; }
+trait ITestContract { func test(ref system: System) -> felt; }
 
 #[ContractImpl]
-impl TestContractImpl of ITestContract { func test(ref syscall_ptr: SyscallPtr) -> felt {
+impl TestContractImpl of ITestContract { func test(ref system: System) -> felt {
     1
 }
 }
