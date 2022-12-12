@@ -52,7 +52,7 @@ impl NamedLibFunc for StorageAddressConstLibFunc {
                 ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 
@@ -120,7 +120,7 @@ impl NoGenericArgsGenericLibFunc for StorageReadLibFunc {
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
-            SierraApChange::Known(1),
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }

@@ -21,7 +21,6 @@ pub fn build(
     match libfunc {
         GasConcreteLibFunc::GetGas(_) => build_get_gas(builder),
         GasConcreteLibFunc::RefundGas(_) => build_refund_gas(builder),
-        GasConcreteLibFunc::BurnGas(_) => Ok(builder.build_only_reference_changes([].into_iter())),
     }
 }
 

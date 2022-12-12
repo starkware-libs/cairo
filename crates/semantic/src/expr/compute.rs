@@ -8,8 +8,6 @@ use ast::{BinaryOperator, PathSegment};
 use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
 use id_arena::Arena;
 use itertools::zip_eq;
-use num_bigint::BigInt;
-use num_traits::Num;
 use smol_str::SmolStr;
 use syntax::node::ast::{BlockOrIf, PatternStructParam};
 use syntax::node::db::SyntaxGroup;
@@ -26,7 +24,7 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
-    true_literal_expr, unit_ty, unwrap_error_propagation_type,
+    true_literal_expr, try_get_core_ty_by_name, unit_ty, unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -34,6 +32,7 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::modifiers::compute_mutability;
 use crate::items::strct::SemanticStructEx;
+use crate::literals::LiteralLongId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
@@ -839,13 +838,23 @@ fn literal_to_semantic(
     let syntax_db = db.upcast();
     let text = literal_syntax.text(syntax_db);
 
-    let value = match text.strip_prefix("0x") {
-        Some(num_no_prefix) => BigInt::from_str_radix(num_no_prefix, 16).ok(),
-        None => text.parse::<BigInt>().ok(),
-    }
-    .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?;
+    let (literal_text, ty) = if let Some((literal, ty)) = text.split_once('_') {
+        (literal.into(), Some(ty))
+    } else {
+        (text.clone(), None)
+    };
+    let value = LiteralLongId::try_from(literal_text)
+        .ok()
+        .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?
+        .value;
 
-    let ty = db.core_felt_ty();
+    let ty = if let Some(ty_str) = ty {
+        try_get_core_ty_by_name(db, ty_str.into(), vec![])
+            .map_err(|err| ctx.diagnostics.report(literal_syntax, err))
+            .ok()?
+    } else {
+        db.core_felt_ty()
+    };
     Some(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
 }
 

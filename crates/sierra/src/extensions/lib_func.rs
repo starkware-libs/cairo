@@ -279,9 +279,10 @@ impl From<ConcreteTypeId> for ParamSignature {
 pub enum OutputVarReferenceInfo {
     /// The output value is exactly the same as one of the parameters.
     SameAsParam { param_idx: usize },
-    /// The output was allocated as a temporary variable. Contains the index of the temporary
-    /// variable in case that more than one temporary variable was allocated by the libfunc.
-    NewTempVar { idx: usize },
+    /// The output was allocated as a temporary variable.
+    /// For the outputs that are at the top of the stack (contiguously), contains the index of the
+    /// temporary variable in the stack (0 is the lowest variable).
+    NewTempVar { idx: Option<usize> },
     /// The output was allocated as a local variable.
     NewLocalVar,
     /// The output is the result of a computation. For example `[ap] + [fp]`,
@@ -321,16 +322,15 @@ pub struct BranchSignature {
 }
 
 /// Describes the effect on the `ap` register in a given libfunc branch.
-// TODO(ilya): Try to combine this with the ApChange of `sierra_to_casm`.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SierraApChange {
     /// The libfunc changes `ap` in an unknown way.
     Unknown,
-    /// The libfunc changes `ap` by pushing new tempvars, as described by
-    /// [OutputVarReferenceInfo::NewTempVar] in [`BranchSignature::vars`].
-    Known(usize),
-    // The libfunc allocates locals, the `ap` change depends on the environment.
-    FinalizeLocals,
+    /// The libfunc changes `ap` in a known (during compilation) way.
+    /// `new_vars_only` is `true` if all the new stack cells created by the libfunc are its output
+    /// variables (as described in [OutputVarReferenceInfo::NewTempVar] in
+    /// [`BranchSignature::vars`]).
+    Known { new_vars_only: bool },
     /// Indicates that the value of ApChange was not assigned properly yet. Behaves as `Unknown`.
     /// This will be removed, once all places using it are fixed.
     // TODO(lior): Remove this value once it is no longer used.

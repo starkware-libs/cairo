@@ -244,13 +244,22 @@ fn handle_function_call(
     );
 
     match libfunc_signature.branch_signatures[0].ap_change {
-        sierra::extensions::lib_func::SierraApChange::Known(_) => {}
+        sierra::extensions::lib_func::SierraApChange::Known { .. } => {}
         _ => {
             state.revoke_temporary_variables();
             *known_ap_change = false;
         }
     }
-    state.register_outputs(inputs, outputs, &libfunc_signature.branch_signatures[0].vars);
+
+    let vars = &libfunc_signature.branch_signatures[0].vars;
+    assert_eq!(
+        outputs.len(),
+        vars.len(),
+        "Wrong number of outputs for '{}'. The 'extern' declaration of the libfunc does not match \
+         the Sierra definition.",
+        DebugReplacer { db }.replace_libfunc_id(&concrete_function_id)
+    );
+    state.register_outputs(inputs, outputs, vars);
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

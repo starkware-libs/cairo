@@ -168,7 +168,7 @@ impl EnumInitLibFunc {
                     ty: enum_type,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 }],
-                SierraApChange::Known(0),
+                SierraApChange::Known { new_vars_only: true },
             ),
             num_variants,
             index,
@@ -219,7 +219,7 @@ impl SignatureOnlyGenericLibFunc for EnumMatchLibFunc {
                     ty,
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 }],
-                ap_change: SierraApChange::Known(0),
+                ap_change: SierraApChange::Known { new_vars_only: true },
             })
             .collect();
 

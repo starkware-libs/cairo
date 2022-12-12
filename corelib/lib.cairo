@@ -53,6 +53,8 @@ func bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
 extern type RangeCheck;
 
 extern type felt;
+extern func felt_const<value>() -> felt nopanic;
+
 // TODO(spapini): Make unnamed.
 impl FeltCopy of Copy::<felt>;
 impl FeltDrop of Drop::<felt>;
@@ -155,8 +157,10 @@ use integer::uint256_from_felt;
 
 // Gas.
 mod gas;
+use gas::BuiltinCosts;
 use gas::GasBuiltin;
 use gas::get_gas;
+use gas::get_gas_all;
 
 // Panics.
 enum PanicResult<T> { Ok: T, Err: Array::<felt>, }
@@ -174,9 +178,7 @@ func assert(cond: bool, err_code: felt) {
 
 // Hash functions.
 mod hash;
-use hash::PedersenBuiltinCost;
 use hash::pedersen;
-use hash::pedersen_get_gas;
 
 // Syscall Ptr
 extern type SyscallPtr;

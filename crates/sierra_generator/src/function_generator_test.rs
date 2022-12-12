@@ -58,7 +58,6 @@ fn test_function_generator() {
             "store_temp<felt>([3]) -> ([7])",
             "function_call<user@test::bar>([5], [6], [7]) -> ([4])",
             "rename<felt>([4]) -> ([8])",
-            "burn_gas() -> ()",
             "return([8])",
         ]
     );
@@ -114,7 +113,6 @@ fn test_function_generator_local_vars() {
             "function_call<user@test::revoke_ap>() -> ([4])",
             "drop<felt>([4]) -> ()",
             "store_temp<felt>([1]) -> ([5])",
-            "burn_gas() -> ()",
             "return([5])",
         ]
     );

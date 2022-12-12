@@ -8,8 +8,8 @@ use super::value::CoreValue;
 use super::LibFuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibFunc;
 use crate::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Struct, Uint128,
-    UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, BranchAlign, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Struct,
+    Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
@@ -19,7 +19,7 @@ use crate::extensions::felt::{
     FeltUnaryOpConcreteLibFunc, FeltUnaryOperationConcreteLibFunc, FeltUnaryOperator,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
-use crate::extensions::gas::GasConcreteLibFunc::{BurnGas, GetGas, RefundGas};
+use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use crate::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
     Uint128ConstConcreteLibFunc, Uint128OperationConcreteLibFunc,
@@ -84,7 +84,7 @@ pub fn simulate<
             }?;
             Ok((vec![CoreValue::GasBuiltin(gas_counter + count)], 0))
         }
-        Gas(BurnGas(_)) => {
+        BranchAlign(_) => {
             get_statement_gas_info().ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
             Ok((vec![], 0))
         }

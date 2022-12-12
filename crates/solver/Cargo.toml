@@ -1,0 +1,15 @@
+[package]
+name = "solver"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+good_lp.workspace = true
+itertools.workspace = true
+utils = { path = "../utils" }
+
+[dev-dependencies]
+env_logger.workspace = true
+indoc.workspace = true
+test-case.workspace = true
+test-log.workspace = true

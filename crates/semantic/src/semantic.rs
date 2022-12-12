@@ -17,6 +17,7 @@ pub use crate::items::functions::{ConcreteFunction, FunctionId, FunctionLongId, 
 pub use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
 pub use crate::items::strct::Member;
 pub use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
+use crate::literals::LiteralId;
 pub use crate::types::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteStructId, ConcreteTypeId, TypeId, TypeLongId,
 };
@@ -89,5 +90,6 @@ impl Variable {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum GenericArgumentId {
     Type(TypeId),
+    Literal(LiteralId),
     // TODO(spapini): impls and constants as generic values.
 }
