@@ -71,7 +71,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 duplicatable: false,
                 size: 0,
             })
-        } else if id == "GasBuiltin".into() || id == "SyscallPtr".into() {
+        } else if id == "GasBuiltin".into() || id == "System".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: true,
@@ -171,7 +171,7 @@ impl SpecializationContext for MockSpecializationContext {
             "Struct<name, UninitializedFelt>")]
 #[test_case("Struct", vec![type_arg("uint128"), type_arg("felt")] => Err(UnsupportedGenericArg);
             "Struct<uint128, felt>")]
-#[test_case("SyscallPtr", vec![] => Ok(()); "SyscallPtr")]
+#[test_case("System", vec![] => Ok(()); "System")]
 #[test_case("StorageAddress", vec![] => Ok(()); "StorageAddress")]
 fn find_type_specialization(
     id: &str,

@@ -4,12 +4,12 @@ pub mod storage;
 use storage::{StorageAddressConstLibFunc, StorageAddressType, StorageReadLibFunc};
 
 mod syscalls;
-use syscalls::SyscallPtrType;
+use syscalls::SystemType;
 
 define_type_hierarchy! {
     pub enum StarkNetType {
         StorageAddress(StorageAddressType),
-        SyscallPtr(SyscallPtrType),
+        System(SystemType),
     }, StarkNetTypeConcrete
 }
 

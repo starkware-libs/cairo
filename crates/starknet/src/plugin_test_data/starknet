@@ -4,11 +4,11 @@
 test_expand_contract
 
 //! > cairo_code
-trait ITestContract { func test(ref syscall_ptr: SyscallPtr, ref arg: felt, ref num: felt) -> felt; }
+trait ITestContract { func test(ref system: System, ref arg: felt, ref num: felt) -> felt; }
 
 #[ContractImpl]
 impl TestContractImpl of ITestContract {
-    func test(ref syscall_ptr: SyscallPtr, ref arg: felt, num: felt) -> felt {
+    func test(ref system: System, ref arg: felt, num: felt) -> felt {
         1
     }
 }
@@ -19,10 +19,10 @@ struct TestContract {
 }
 
 //! > generated_cairo_code
-func test(ref syscall_ptr: SyscallPtr, ref arg: felt, num: felt) -> felt {
+func test(ref system: System, ref arg: felt, num: felt) -> felt {
     1
 }
-func __wrapper_test(ref syscall_ptr: SyscallPtr, mut data: Array::<felt>) -> Array::<felt> {
+func __wrapper_test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
     if array::array_len::<felt>(data) != integer::uint128_from_felt(3) {
         panic(array::array_new::<felt>());
     }
@@ -34,16 +34,16 @@ func __wrapper_test(ref syscall_ptr: SyscallPtr, mut data: Array::<felt>) -> Arr
         Some(x) => x,
         None(()) => panic(array::array_new::<felt>()),
     };
-    let res = test(syscall_ptr, __arg_arg, __arg_num);
+    let res = test(system, __arg_arg, __arg_num);
     let mut arr = array::array_new::<felt>();
     array::array_append::<felt>(arr, __arg_arg);
     array::array_append::<felt>(arr, res);
     arr
 }
 
-func get_storage_var(ref syscall_ptr: SyscallPtr) -> felt {
+func get_storage_var(ref system: System) -> felt {
     starknet::storage_read_syscall(
-        syscall_ptr,
+        system,
         starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>()
     )
 }
