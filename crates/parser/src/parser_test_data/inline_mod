@@ -1,0 +1,31 @@
+//! > Test empty traits and impls.
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+mod my_mod {
+    func test() {
+        f::<felt, 7>(12, a + 3, b);
+    }
+}
+
+//! > top_level_kind
+SyntaxFile
+
+//! > ignored_kinds
+ItemFreeFunction
+
+//! > expected_tree
+└── Top level kind: SyntaxFile
+    ├── items (kind: ItemList)
+    │   └── child #0 (kind: ItemModule)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── module_kw (kind: TokenModule): 'mod'
+    │       ├── name (kind: TokenIdentifier): 'my_mod'
+    │       └── body (kind: ModuleBody)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── items (kind: ItemList)
+    │           │   └── child #0 (kind: ItemFreeFunction) <ignored>
+    │           └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).

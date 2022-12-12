@@ -1,0 +1,13 @@
+//! > Missing lbrace.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+mod my_mod }
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: TerminalLBrace/TerminalSemicolon.
+ --> dummy_file.cairo:1:12
+mod my_mod }
+           ^

@@ -146,8 +146,29 @@ impl<'a> Parser<'a> {
     fn expect_module(&mut self, attributes: AttributeListGreen) -> ItemModuleGreen {
         let module_kw = self.take::<TerminalModule>();
         let name = self.parse_identifier();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
-        ItemModule::new_green(self.db, attributes, module_kw, name, semicolon)
+
+        let body = match self.peek().kind {
+            SyntaxKind::TerminalSemicolon => self.take::<TerminalSemicolon>().into(),
+            SyntaxKind::TerminalLBrace => {
+                let lbrace = self.take::<TerminalLBrace>();
+                let items = ItemList::new_green(
+                    self.db,
+                    self.parse_list(Self::try_parse_top_level_item, is_of_kind!(rbrace), "item"),
+                );
+                let rbrace = self.take::<TerminalRBrace>();
+                ModuleBody::new_green(self.db, lbrace, items, rbrace).into()
+            }
+
+            _ => {
+                self.skip_token(ParserDiagnosticKind::SkippedElement {
+                    element_name: "TerminalLBrace/TerminalSemicolon",
+                });
+
+                TerminalSemicolon::missing(self.db).into()
+            }
+        };
+
+        ItemModule::new_green(self.db, attributes, module_kw, name, body)
     }
 
     /// Assumes the current token is Struct.
