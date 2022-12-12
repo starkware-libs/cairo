@@ -91,14 +91,10 @@ impl<'a> AddStoreVariableStatements<'a> {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
                 let signature = get_lib_func_signature(invocation.libfunc_id.clone());
+                self.prepare_libfunc_arguments(&invocation.args, &signature.param_signatures);
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
-                        self.prepare_libfunc_arguments(
-                            &invocation.args,
-                            &signature.param_signatures,
-                        );
-
                         let branch_signature = &signature.branch_signatures[0];
                         match branch_signature.ap_change {
                             SierraApChange::Unknown | SierraApChange::NotImplemented => {

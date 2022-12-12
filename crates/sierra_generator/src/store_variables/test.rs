@@ -113,6 +113,20 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             ],
             fallthrough: Some(1),
         },
+        "branch_with_param" => LibFuncSignature {
+            param_signatures: vec![ParamSignature::new(felt_ty)],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+            ],
+            fallthrough: Some(1),
+        },
         "store_temp<felt>" => LibFuncSignature {
             param_signatures: vec![ParamSignature {
                 ty: felt_ty.clone(),
@@ -191,6 +205,28 @@ fn store_temp_simple() {
             "label0:",
             "store_temp<felt>(5) -> (5)",
             "felt_add(5, 5) -> (6)",
+            "return()",
+        ]
+    );
+}
+
+#[test]
+fn store_temp_for_branch_command() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_branch(&db, "branch_with_param", &["2"], 0),
+        dummy_label(0),
+        dummy_return_statement(&[]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec![
+            "felt_add(0, 1) -> (2)",
+            "store_temp<felt>(2) -> (2)",
+            "branch_with_param(2) { label0() fallthrough() }",
+            "label0:",
             "return()",
         ]
     );
