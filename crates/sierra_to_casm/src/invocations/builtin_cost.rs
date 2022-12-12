@@ -2,7 +2,9 @@ use casm::ap_change::ApplyApChange;
 use casm::operand::{CellRef, DerefOrImmediate, Register};
 use casm::{casm, casm_extend};
 use itertools::chain;
-use sierra::extensions::builtin_cost::{BuiltinCostConcreteLibFunc, CostTokenType};
+use sierra::extensions::builtin_cost::{
+    BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
+};
 use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::program::{BranchInfo, BranchTarget};
 use utils::try_extract_matches;
@@ -59,11 +61,9 @@ fn build_builtin_get_gas(
 
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
 
-    // Compute the requested amount of gas. Start with [CostTokenType::Step].
-    let requested_steps = *variable_values
-        .get(&(builder.idx, CostTokenType::Step))
-        .ok_or(InvocationError::UnknownVariableData)?;
-    let mut compute_requested_amount = casm! { [ap] = requested_steps, ap++; };
+    // Compute the requested amount of gas. An instruction of the form `[ap] = *, ap++;` will be
+    // prepended after the `for` loop. It will take care of [CostTokenType::Step] and the refund.
+    let mut compute_requested_amount = casm! {};
     let mut compute_requested_amount_ap_change: usize = 1;
     for token_type in CostTokenType::iter() {
         if *token_type == CostTokenType::Step {
@@ -93,6 +93,21 @@ fn build_builtin_get_gas(
         casm_extend!(compute_requested_amount, [ap] = [ap - 2] + [ap - 1], ap++; );
         compute_requested_amount_ap_change += 1;
     }
+
+    // Prepend with an instruction that handles the steps (including the refund).
+    let requested_steps = *variable_values
+        .get(&(builder.idx, CostTokenType::Step))
+        .ok_or(InvocationError::UnknownVariableData)?;
+    // The cost of this libfunc is computed assuming all the cost types are used (and all are > 1).
+    // Since in practice this is rarely the case, refund according to the actual number of steps
+    // produced by the libfunc.
+    let refund_steps = (BuiltinCostGetGasLibFunc::max_cost() as i64)
+        - ((compute_requested_amount.instructions.len() as i64) + 1);
+    assert!(
+        refund_steps >= 0,
+        "Internal compiler error: BuiltinCostGetGasLibFunc::max_cost() is wrong."
+    );
+    let compute_requested_amount_steps = casm! { [ap] = (requested_steps - refund_steps), ap++; };
 
     let gas_counter_value = try_extract_matches!(
         gas_counter_expression
@@ -127,8 +142,10 @@ fn build_builtin_get_gas(
         jmp rel 0; // Fixed in relocations.
     };
     patch_jnz_to_end(&mut before_success_branch, 0);
-    let relocation_index =
-        compute_requested_amount.instructions.len() + before_success_branch.instructions.len() - 1;
+    let relocation_index = compute_requested_amount_steps.instructions.len()
+        + compute_requested_amount.instructions.len()
+        + before_success_branch.instructions.len()
+        - 1;
     let success_branch = casm! {
        // Compute the remaining gas and check that it is nonnegative.
        (gas_counter_value.unchecked_apply_known_ap_change(1)) = [ap + 0] + [ap - 2], ap++;
@@ -137,6 +154,7 @@ fn build_builtin_get_gas(
 
     Ok(builder.build(
         chain!(
+            compute_requested_amount_steps.instructions,
             compute_requested_amount.instructions,
             before_success_branch.instructions,
             success_branch.instructions
