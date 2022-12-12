@@ -2,13 +2,13 @@ use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{NamedType, NoGenericArgsGenericType};
 use crate::ids::GenericTypeId;
 
-/// Type for StarkNet system call pointer.
+/// Type for StarkNet system object.
 /// Used to make system calls.
 #[derive(Default)]
-pub struct SyscallPtrType {}
-impl NoGenericArgsGenericType for SyscallPtrType {
+pub struct SystemType {}
+impl NoGenericArgsGenericType for SystemType {
     type Concrete = InfoOnlyConcreteType;
-    const ID: GenericTypeId = GenericTypeId::new_inline("SyscallPtr");
+    const ID: GenericTypeId = GenericTypeId::new_inline("System");
 
     fn specialize(&self) -> Self::Concrete {
         InfoOnlyConcreteType {

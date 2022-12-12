@@ -1,8 +1,8 @@
-trait ITestContract { func test(ref syscall_ptr: SyscallPtr) -> felt; }
+trait ITestContract { func test(ref system: System) -> felt; }
 
 #[ContractImpl]
-impl TestContractImpl of ITestContract { func test(ref syscall_ptr: SyscallPtr) -> felt {
-    get_my_storage_var(syscall_ptr)
+impl TestContractImpl of ITestContract { func test(ref system: System) -> felt {
+    get_my_storage_var(system)
 }
 }
 
