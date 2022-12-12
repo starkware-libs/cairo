@@ -113,3 +113,21 @@ pub fn build_identity(
     let outputs = builder.refs.iter().map(|r| r.expression.clone());
     Ok(builder.build_only_reference_changes(outputs))
 }
+
+pub fn build_branch_align(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let ap_fix = builder
+        .program_info
+        .metadata
+        .ap_change_info
+        .variable_values
+        .get(&builder.idx)
+        .copied()
+        .unwrap_or(0);
+    Ok(builder.build(
+        if ap_fix > 0 { casm! {ap += ap_fix;}.instructions } else { vec![] },
+        vec![],
+        [vec![].into_iter()].into_iter(),
+    ))
+}
