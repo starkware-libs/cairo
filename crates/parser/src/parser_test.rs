@@ -273,6 +273,7 @@ pub fn test_partial_parser_tree(
 parser_test!(
     diagnostic_tests,
     [
+        "src/parser_test_data/module_diagnostics",
         "src/parser_test_data/exprs",
         "src/parser_test_data/func",
         "src/parser_test_data/if",
@@ -307,3 +308,4 @@ parser_test!(let_statement, ["src/parser_test_data/let_statement"], test_partial
 parser_test!(if_else, ["src/parser_test_data/if_else"], test_partial_parser_tree);
 
 parser_test!(literal, ["src/parser_test_data/literal"], test_partial_parser_tree);
+parser_test!(module, ["src/parser_test_data/module"], test_partial_parser_tree);

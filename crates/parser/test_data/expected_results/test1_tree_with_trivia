@@ -11,7 +11,7 @@
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenIdentifier): 'submod'
     │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   └── semicolon (kind: TerminalSemicolon)
+    │   │   └── body (kind: TerminalSemicolon)
     │   │       ├── leading_trivia (kind: Trivia) []
     │   │       ├── token (kind: TokenSemicolon): ';'
     │   │       └── trailing_trivia (kind: Trivia)

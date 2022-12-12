@@ -60,6 +60,7 @@ pub enum SyntaxKind {
     Attribute,
     AttributeList,
     ItemModule,
+    ModuleBody,
     OptionAttributeArgsEmpty,
     AttributeArgs,
     AttributeArgList,
