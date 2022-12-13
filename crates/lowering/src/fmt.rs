@@ -20,7 +20,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for Lowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         for (block_id, block) in self.blocks.iter() {
             block_id.fmt(f, ctx)?;
-            if self.root == Some(block_id) {
+            if self.root == Ok(block_id) {
                 writeln!(f, " (root):")?;
             } else {
                 writeln!(f, ":")?;

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, ModuleId};
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, ToOption};
 use filesystem::ids::CrateId;
 use lowering::db::LoweringGroup;
 use semantic::corelib::get_core_ty_by_name;
@@ -121,10 +121,11 @@ fn get_function_signature(
     // there.
     let semantic_function_id = db.lookup_intern_sierra_function(function_id);
     let signature = db.concrete_function_signature(semantic_function_id)?;
-    let may_panic = db.function_may_panic(semantic_function_id)?;
+    let may_panic = db.function_may_panic(semantic_function_id).to_option()?;
 
     let implicits = db
-        .function_all_implicits(semantic_function_id)?
+        .function_all_implicits(semantic_function_id)
+        .to_option()?
         .iter()
         .map(|ty| db.get_concrete_type_id(*ty))
         .collect::<Option<Vec<ConcreteTypeId>>>()?;
