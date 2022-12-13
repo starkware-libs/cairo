@@ -120,10 +120,15 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Option<FileId> {
         ModuleId::CrateRoot(crate_id) => {
             db.crate_root_dir(crate_id)?.file(db.upcast(), "lib.cairo".into())
         }
-        ModuleId::Submodule(submodule_id) => {
+        ModuleId::Submodule(SubmoduleId::File(submodule_id)) => {
             let parent = submodule_id.module(db);
             let name = submodule_id.name(db);
             db.module_dir(parent)?.file(db.upcast(), format!("{name}.cairo").into())
+        }
+        ModuleId::Submodule(SubmoduleId::Inline(submodule_id)) => {
+            // TODO(ilya): What is the module_main_file of an inline module?
+            let parent = submodule_id.module(db);
+            db.module_main_file(parent)?
         }
         ModuleId::VirtualSubmodule(virtual_submodule_id) => {
             db.lookup_intern_virtual_submodule(virtual_submodule_id).file
