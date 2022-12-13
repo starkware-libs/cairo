@@ -8,8 +8,6 @@ func foo (x:T) -> S
     x + y
 }
 
-// note: there is no inline module, so this is parsed as mod "mod my_mod<missing ';'>", then skips
-// the '{' and then parses the function and the struct as top-level items.
 mod my_mod{
     func bar (x:T0, s: S) -> X {
         x.a *+-. s.s * foo(1,3)
