@@ -330,9 +330,7 @@ impl<'db> Resolver<'db> {
                     diagnostics.report(segment, PathNotFound);
                     return Some(None);
                 }
-                ModuleId::Submodule(submodule_id) => {
-                    self.db.lookup_intern_submodule(submodule_id).0.0
-                }
+                ModuleId::Submodule(submodule_id) => submodule_id.parent(self.db.upcast()),
                 ModuleId::VirtualSubmodule(submodule_id) => {
                     self.db.lookup_intern_virtual_submodule(submodule_id).parent
                 }
