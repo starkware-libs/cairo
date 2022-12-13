@@ -24,7 +24,9 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_virtual_submodule(&self, virtual_submodule: VirtualSubmodule) -> VirtualSubmoduleId;
     #[salsa::interned]
-    fn intern_submodule(&self, id: SubmoduleLongId) -> SubmoduleId;
+    fn intern_file_submodule(&self, id: FileSubmoduleLongId) -> FileSubmoduleId;
+    #[salsa::interned]
+    fn intern_inline_submodule(&self, id: InlineSubmoduleLongId) -> InlineSubmoduleId;
     #[salsa::interned]
     fn intern_use(&self, id: UseLongId) -> UseId;
     #[salsa::interned]
@@ -233,9 +235,11 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
             }
             match item {
                 ast::Item::Module(module) => {
-                    let item_id =
-                        db.intern_submodule(SubmoduleLongId(module_file_id, module.stable_ptr()));
-                    res.submodules.insert(item_id, module);
+                    let item_id = db.intern_file_submodule(FileSubmoduleLongId(
+                        module_file_id,
+                        module.stable_ptr(),
+                    ));
+                    res.submodules.insert(SubmoduleId::File(item_id), module);
                 }
                 ast::Item::Use(us) => {
                     let item_id = db.intern_use(UseLongId(module_file_id, us.stable_ptr()));
