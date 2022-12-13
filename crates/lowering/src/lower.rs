@@ -9,10 +9,14 @@ use semantic::corelib::{
     core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
     get_enum_concrete_variant, get_panic_ty, jump_nz_nonzero_variant, jump_nz_zero_variant,
 };
+use semantic::db::SemanticGroup;
 use semantic::expr::fmt::ExprFormatter;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::imp::ImplLookupContext;
-use semantic::{ConcreteTypeId, GenericArgumentId, Mutability, TypeLongId, VarId};
+use semantic::{
+    ConcreteEnumId, ConcreteTypeId, ExprFunctionCall, GenericArgumentId, Mutability, TypeLongId,
+    VarId,
+};
 use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{extract_matches, try_extract_matches};
@@ -477,23 +481,19 @@ fn lower_expr_function_call(
     }
 
     // The following is relevant only to extern functions.
-    if expr.function.try_get_extern_function_id(ctx.db.upcast()).is_some() {
-        if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
-            ctx.db.lookup_intern_type(expr.ty)
-        {
-            // It is still unknown whether we directly match on this enum result, or store it to a
-            // variable. Thus we can't perform the call. Performing it and rebinding variables are
-            // done on the 2 places where this result it used:
-            // 1. [lower_optimized_extern_match]
-            // 2. [context::LoweredExprExternEnum::var]
-            return Ok(LoweredExpr::ExternEnum(LoweredExprExternEnum {
-                function: expr.function,
-                concrete_enum_id,
-                inputs,
-                ref_args: expr.ref_args.clone(),
-                implicits: callee_implicit_types,
-            }));
-        }
+    if let Some(concrete_enum_id) = should_optimize(ctx, expr) {
+        // It is still unknown whether we directly match on this enum result, or store it to
+        // a variable. Thus we can't perform the call. Performing it and rebinding variables
+        // are done on the 2 places where this result is used:
+        // 1. [lower_optimized_extern_match]
+        // 2. [context::LoweredExprExternEnum::var]
+        return Ok(LoweredExpr::ExternEnum(LoweredExprExternEnum {
+            function: expr.function,
+            concrete_enum_id,
+            inputs,
+            ref_args: expr.ref_args.clone(),
+            implicits: callee_implicit_types,
+        }));
     }
 
     let may_panic = ctx.db.function_may_panic(expr.function).ok_or(LoweringFlowError::Failed)?;
@@ -515,6 +515,38 @@ fn lower_expr_function_call(
         return lower_panic_error_propagate(ctx, scope, res, expr.ty);
     }
     Ok(res)
+}
+
+// TODO(yg): add relevant test...
+// TODO(yg): doc
+fn should_optimize(
+    ctx: &mut LoweringContext<'_>,
+    function_call: &ExprFunctionCall,
+) -> Option<ConcreteEnumId> {
+    if let Some(extern_function_id) =
+        function_call.function.try_get_extern_function_id(ctx.db.upcast())
+    {
+        if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
+            ctx.db.lookup_intern_type(function_call.ty)
+        {
+            if let Some(refs) = ctx.db.extern_function_declaration_refs(extern_function_id) {
+                if !refs.is_empty() {
+                    // Don't optimize in case the extern function has ref parameters.
+                    // TODO(yg): explain why and how to solve in the future.
+                    return None;
+                }
+                return Some(concrete_enum_id);
+            } else {
+                // It is still unknown whether we directly match on this enum result, or store it to
+                // a variable. Thus we can't perform the call. Performing it and rebinding variables
+                // are done on the 2 places where this result is used:
+                // 1. [lower_optimized_extern_match]
+                // 2. [context::LoweredExprExternEnum::var]
+                return Some(concrete_enum_id);
+            }
+        }
+    }
+    return None;
 }
 
 /// Creates a LoweredExpr for a function call, taking into consideration external function facades:

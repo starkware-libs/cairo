@@ -730,90 +730,92 @@ End:
   Callsite()
 
 blk8:
-Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
+Inputs: v5: (core::felt, (core::felt, core::felt))
 Statements:
-  (v6: core::felt, v7: core::felt) <- struct_destructure(v5)
+  (v6: core::felt, v7: (core::felt, core::felt)) <- struct_destructure(v5)
+  (v8: core::felt, v9: core::felt) <- struct_destructure(v7)
   () <- blk0()
-Drops: v7, v6, v4, v5
+Drops: v9, v5, v6, v7, v8
 End:
-  Callsite(v2, v3)
+  Callsite()
 
 blk9:
-Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
+Inputs: v10: (core::felt, (core::felt, core::felt))
 Statements:
+  (v11: core::felt, v12: (core::felt, core::felt)) <- struct_destructure(v10)
   () <- blk1()
-Drops: v11, v10
+Drops: v12, v10, v11
 End:
-  Callsite(v8, v9)
+  Callsite()
 
 blk10:
-Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: (core::felt, core::felt)
+Inputs: v13: (core::felt, (core::felt, core::felt))
 Statements:
-  (v16: (core::felt, (core::felt, core::felt))) <- struct_construct(v14, v15)
   () <- blk2()
-Drops: v16, v15, v14
+Drops: v13
 End:
-  Callsite(v12, v13)
+  Callsite()
 
 blk11:
-Inputs: v17: core::RangeCheck, v18: core::felt, v19: core::felt, v20: core::felt
+Inputs: v14: (core::felt, core::felt)
 Statements:
+  (v15: core::felt, v16: core::felt) <- struct_destructure(v14)
   () <- blk3()
-Drops: v20, v19
+Drops: v16, v14, v15
 End:
-  Callsite(v17, v18)
+  Callsite()
 
 blk12:
-Inputs: v21: core::RangeCheck, v22: core::felt, v23: core::felt, v24: core::felt
+Inputs: v17: (core::felt, core::felt)
 Statements:
-  (v25: (core::felt, core::felt)) <- struct_construct(v23, v24)
   () <- blk4()
-Drops: v25, v24, v23
+Drops: v17
 End:
-  Callsite(v21, v22)
+  Callsite()
 
 blk13:
-Inputs: v26: core::RangeCheck, v27: core::felt, v28: core::felt
+Inputs: v18: (core::felt,)
 Statements:
+  (v19: core::felt) <- struct_destructure(v18)
   () <- blk5()
-Drops: v28
+Drops: v19, v18
 End:
-  Callsite(v26, v27)
+  Callsite()
 
 blk14:
-Inputs: v29: core::RangeCheck, v30: core::felt, v31: core::felt
+Inputs: v20: (core::felt,)
 Statements:
-  (v32: (core::felt,)) <- struct_construct(v31)
   () <- blk6()
-Drops: v32, v31
+Drops: v20
 End:
-  Callsite(v29, v30)
+  Callsite()
 
 blk15:
-Inputs: v33: core::RangeCheck, v34: core::felt, v35: core::felt
+Inputs: v21: core::felt
 Statements:
   () <- blk7()
-Drops: v35
+Drops: v21
 End:
-  Callsite(v33, v34)
+  Callsite()
 
 blk16 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt
 Statements:
-  (v36: core::RangeCheck, v37: core::felt) <- match test::bar(v0, v1) {
-    (v2, v3, v4, v5) => blk8,
-    (v8, v9, v10, v11) => blk9,
-    (v12, v13, v14, v15) => blk10,
-    (v17, v18, v19, v20) => blk11,
-    (v21, v22, v23, v24) => blk12,
-    (v26, v27, v28) => blk13,
-    (v29, v30, v31) => blk14,
-    (v33, v34, v35) => blk15,
+  (v3: core::RangeCheck, v4: core::felt, v2: test::MyEnum) <- test::bar(v0, v1)
+  () <- match_enum(v2) {
+    MyEnum::a => blk8,
+    MyEnum::b => blk9,
+    MyEnum::c => blk10,
+    MyEnum::d => blk11,
+    MyEnum::e => blk12,
+    MyEnum::f => blk13,
+    MyEnum::g => blk14,
+    MyEnum::h => blk15,
   }
-  (v38: ()) <- struct_construct()
-Drops: v1, v37
+  (v22: ()) <- struct_construct()
+Drops: v1, v4
 End:
-  Callsite(v36, v38)
+  Callsite(v3, v22)
 
 //! > ==========================================================================
 
@@ -859,225 +861,145 @@ extern func bar(ref r: felt) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > lowering_format
 blk0:
-Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
-Statements:
-  (v6: (core::felt, (core::felt, core::felt))) <- struct_construct(v4, v5)
-  (v7: test::MyEnum) <- MyEnum::a(v6)
-Drops: v6, v5, v4
-End:
-  Callsite(v2, v3, v7)
-
-blk1:
-Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
-Statements:
-  (v12: (core::felt, (core::felt, core::felt))) <- struct_construct(v10, v11)
-  (v13: test::MyEnum) <- MyEnum::b(v12)
-Drops: v12, v11, v10
-End:
-  Callsite(v8, v9, v13)
-
-blk2:
-Inputs: v14: core::RangeCheck, v15: core::felt, v16: core::felt, v17: (core::felt, core::felt)
-Statements:
-  (v18: (core::felt, (core::felt, core::felt))) <- struct_construct(v16, v17)
-  (v19: test::MyEnum) <- MyEnum::c(v18)
-Drops: v18, v17, v16
-End:
-  Callsite(v14, v15, v19)
-
-blk3:
-Inputs: v20: core::RangeCheck, v21: core::felt, v22: core::felt, v23: core::felt
-Statements:
-  (v24: (core::felt, core::felt)) <- struct_construct(v22, v23)
-  (v25: test::MyEnum) <- MyEnum::d(v24)
-Drops: v24, v23, v22
-End:
-  Callsite(v20, v21, v25)
-
-blk4:
-Inputs: v26: core::RangeCheck, v27: core::felt, v28: core::felt, v29: core::felt
-Statements:
-  (v30: (core::felt, core::felt)) <- struct_construct(v28, v29)
-  (v31: test::MyEnum) <- MyEnum::e(v30)
-Drops: v30, v29, v28
-End:
-  Callsite(v26, v27, v31)
-
-blk5:
-Inputs: v32: core::RangeCheck, v33: core::felt, v34: core::felt
-Statements:
-  (v35: (core::felt,)) <- struct_construct(v34)
-  (v36: test::MyEnum) <- MyEnum::f(v35)
-Drops: v35, v34
-End:
-  Callsite(v32, v33, v36)
-
-blk6:
-Inputs: v37: core::RangeCheck, v38: core::felt, v39: core::felt
-Statements:
-  (v40: (core::felt,)) <- struct_construct(v39)
-  (v41: test::MyEnum) <- MyEnum::g(v40)
-Drops: v40, v39
-End:
-  Callsite(v37, v38, v41)
-
-blk7:
-Inputs: v42: core::RangeCheck, v43: core::felt, v44: core::felt
-Statements:
-  (v45: test::MyEnum) <- MyEnum::h(v44)
-Drops: v44
-End:
-  Callsite(v42, v43, v45)
-
-blk8:
 Inputs:
 Statements:
 Drops:
+End:
+  Callsite()
+
+blk1:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk2:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk3:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk4:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk5:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk6:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk7:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk8:
+Inputs: v5: (core::felt, (core::felt, core::felt))
+Statements:
+  (v6: core::felt, v7: (core::felt, core::felt)) <- struct_destructure(v5)
+  (v8: core::felt, v9: core::felt) <- struct_destructure(v7)
+  () <- blk0()
+Drops: v9, v5, v6, v7, v8
 End:
   Callsite()
 
 blk9:
-Inputs:
+Inputs: v10: (core::felt, (core::felt, core::felt))
 Statements:
-Drops:
+  (v11: core::felt, v12: (core::felt, core::felt)) <- struct_destructure(v10)
+  () <- blk1()
+Drops: v12, v10, v11
 End:
   Callsite()
 
 blk10:
-Inputs:
+Inputs: v13: (core::felt, (core::felt, core::felt))
 Statements:
-Drops:
+  () <- blk2()
+Drops: v13
 End:
   Callsite()
 
 blk11:
-Inputs:
+Inputs: v14: (core::felt, core::felt)
 Statements:
-Drops:
+  (v15: core::felt, v16: core::felt) <- struct_destructure(v14)
+  () <- blk3()
+Drops: v16, v14, v15
 End:
   Callsite()
 
 blk12:
-Inputs:
+Inputs: v17: (core::felt, core::felt)
 Statements:
-Drops:
+  () <- blk4()
+Drops: v17
 End:
   Callsite()
 
 blk13:
-Inputs:
+Inputs: v18: (core::felt,)
 Statements:
-Drops:
+  (v19: core::felt) <- struct_destructure(v18)
+  () <- blk5()
+Drops: v19, v18
 End:
   Callsite()
 
 blk14:
-Inputs:
+Inputs: v20: (core::felt,)
 Statements:
-Drops:
+  () <- blk6()
+Drops: v20
 End:
   Callsite()
 
 blk15:
-Inputs:
+Inputs: v21: core::felt
 Statements:
-Drops:
+  () <- blk7()
+Drops: v21
 End:
   Callsite()
 
-blk16:
-Inputs: v49: (core::felt, (core::felt, core::felt))
-Statements:
-  (v50: core::felt, v51: (core::felt, core::felt)) <- struct_destructure(v49)
-  (v52: core::felt, v53: core::felt) <- struct_destructure(v51)
-  () <- blk8()
-Drops: v53, v49, v50, v51, v52
-End:
-  Callsite()
-
-blk17:
-Inputs: v54: (core::felt, (core::felt, core::felt))
-Statements:
-  (v55: core::felt, v56: (core::felt, core::felt)) <- struct_destructure(v54)
-  () <- blk9()
-Drops: v56, v54, v55
-End:
-  Callsite()
-
-blk18:
-Inputs: v57: (core::felt, (core::felt, core::felt))
-Statements:
-  () <- blk10()
-Drops: v57
-End:
-  Callsite()
-
-blk19:
-Inputs: v58: (core::felt, core::felt)
-Statements:
-  (v59: core::felt, v60: core::felt) <- struct_destructure(v58)
-  () <- blk11()
-Drops: v60, v58, v59
-End:
-  Callsite()
-
-blk20:
-Inputs: v61: (core::felt, core::felt)
-Statements:
-  () <- blk12()
-Drops: v61
-End:
-  Callsite()
-
-blk21:
-Inputs: v62: (core::felt,)
-Statements:
-  (v63: core::felt) <- struct_destructure(v62)
-  () <- blk13()
-Drops: v63, v62
-End:
-  Callsite()
-
-blk22:
-Inputs: v64: (core::felt,)
-Statements:
-  () <- blk14()
-Drops: v64
-End:
-  Callsite()
-
-blk23:
-Inputs: v65: core::felt
-Statements:
-  () <- blk15()
-Drops: v65
-End:
-  Callsite()
-
-blk24 (root):
+blk16 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt
 Statements:
-  (v47: core::RangeCheck, v48: core::felt, v46: test::MyEnum) <- match test::bar(v0, v1) {
-    (v2, v3, v4, v5) => blk0,
-    (v8, v9, v10, v11) => blk1,
-    (v14, v15, v16, v17) => blk2,
-    (v20, v21, v22, v23) => blk3,
-    (v26, v27, v28, v29) => blk4,
-    (v32, v33, v34) => blk5,
-    (v37, v38, v39) => blk6,
-    (v42, v43, v44) => blk7,
+  (v3: core::RangeCheck, v4: core::felt, v2: test::MyEnum) <- test::bar(v0, v1)
+  () <- match_enum(v2) {
+    MyEnum::a => blk8,
+    MyEnum::b => blk9,
+    MyEnum::c => blk10,
+    MyEnum::d => blk11,
+    MyEnum::e => blk12,
+    MyEnum::f => blk13,
+    MyEnum::g => blk14,
+    MyEnum::h => blk15,
   }
-  () <- match_enum(v46) {
-    MyEnum::a => blk16,
-    MyEnum::b => blk17,
-    MyEnum::c => blk18,
-    MyEnum::d => blk19,
-    MyEnum::e => blk20,
-    MyEnum::f => blk21,
-    MyEnum::g => blk22,
-    MyEnum::h => blk23,
-  }
-  (v66: ()) <- struct_construct()
-Drops: v1, v48
+  (v22: ()) <- struct_construct()
+Drops: v1, v4
 End:
-  Callsite(v47, v66)
+  Callsite(v3, v22)
