@@ -107,7 +107,8 @@ fn build_builtin_get_gas(
         refund_steps >= 0,
         "Internal compiler error: BuiltinCostGetGasLibFunc::max_cost() is wrong."
     );
-    let compute_requested_amount_steps = casm! { [ap] = (requested_steps - refund_steps), ap++; };
+    let compute_requested_amount_steps =
+        casm! { [ap] = ((requested_steps - refund_steps) * 100), ap++; };
 
     let gas_counter_value = try_extract_matches!(
         gas_counter_expression
