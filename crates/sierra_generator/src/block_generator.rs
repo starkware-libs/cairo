@@ -9,9 +9,9 @@ use sierra::program;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
 use crate::utils::{
-    branch_align_libfunc_id, enum_init_libfunc_id, felt_const_libfunc_id, get_concrete_libfunc_id,
-    jump_libfunc_id, jump_statement, match_enum_libfunc_id, return_statement, simple_statement,
-    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    branch_align_libfunc_id, const_libfunc_id_by_type, enum_init_libfunc_id,
+    get_concrete_libfunc_id, jump_libfunc_id, jump_statement, match_enum_libfunc_id,
+    return_statement, simple_statement, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Generates Sierra code that computes a given [lowering::Block].
@@ -137,7 +137,7 @@ fn generate_statement_literal_code(
 ) -> Option<Vec<pre_sierra::Statement>> {
     let output_var = context.get_sierra_variable(statement.output);
     Some(vec![simple_statement(
-        felt_const_libfunc_id(context.get_db(), statement.value.clone()),
+        const_libfunc_id_by_type(context.get_db(), statement.ty, statement.value.clone()),
         &[],
         &[output_var],
     )])

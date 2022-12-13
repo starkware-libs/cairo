@@ -5,8 +5,7 @@ func fib(a: uint128, b: uint128, n: uint128) -> uint128 implicits(RangeCheck) {
     match uint128_to_felt(n) {
         0 => a,
         _ => {
-            // TODO(orizi): Use uint128 literal when supported.
-            fib(b, a + b, n - uint128_const::<1>())
+            fib(b, a + b, n - 1_uint128)
         },
     }
 }
