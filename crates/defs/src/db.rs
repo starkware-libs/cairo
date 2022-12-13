@@ -128,9 +128,9 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Option<FileId> {
             db.module_dir(parent)?.file(db.upcast(), format!("{name}.cairo").into())
         }
         ModuleId::Submodule(SubmoduleId::Inline(submodule_id)) => {
-            // We return the main_file of the parent here, otherwise the diagnostics logic
-            // fails to lookup the DiagnosticLocation.
-            db.module_main_file(submodule_id.parent(db))?
+            // We return the file where the inline module was defined.
+            // It can be either the file of the parent module or a plugin-generated virtual file.
+            db.module_file(submodule_id.module_file_id(db))?
         }
         ModuleId::VirtualSubmodule(virtual_submodule_id) => {
             db.lookup_intern_virtual_submodule(virtual_submodule_id).file
