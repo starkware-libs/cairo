@@ -37,7 +37,7 @@ fn block_generator_test(
     // Lower code.
     let lowered = lower(db, test_function.function_id).unwrap();
 
-    if lowered.root.is_none() {
+    if lowered.root.is_err() {
         return OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), lowered.diagnostics.format(db)),

@@ -2,6 +2,7 @@
 #[path = "local_variables_test.rs"]
 mod test;
 
+use diagnostics::ToOption;
 use itertools::zip_eq;
 use lowering::lower::Lowered;
 use lowering::{BlockId, VariableId};
@@ -26,7 +27,7 @@ pub fn find_local_variables(
     inner_find_local_variables(
         db,
         lowered_function,
-        lowered_function.root?,
+        lowered_function.root.to_option()?,
         LocalVariablesState::default(),
         &mut res,
     )?;
