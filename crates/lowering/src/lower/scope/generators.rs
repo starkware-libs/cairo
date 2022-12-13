@@ -3,6 +3,7 @@
 
 use itertools::chain;
 use num_bigint::BigInt;
+use semantic::corelib::get_core_ty_by_name;
 use semantic::{ConcreteEnumId, ConcreteVariant};
 
 use super::{BlockEndInfo, BlockScope, LivingVar};
@@ -25,7 +26,16 @@ pub struct Literal {
 impl Literal {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
         let output = scope.living_variables.introduce_new_var(ctx, self.ty);
+        let db = ctx.db.upcast();
+        let type_name = if self.ty == get_core_ty_by_name(db, "felt".into(), vec![]) {
+            "felt"
+        } else if self.ty == get_core_ty_by_name(db, "uint128".into(), vec![]) {
+            "uint128"
+        } else {
+            panic!("Type does not support literal generation.")
+        };
         scope.statements.push(Statement::Literal(StatementLiteral {
+            ty: type_name.into(),
             value: self.value,
             output: output.var_id(),
         }));

@@ -120,12 +120,13 @@ fn get_libfunc_id_without_generics(
     })
 }
 
-pub fn felt_const_libfunc_id(
+pub fn const_libfunc_id_by_type(
     db: &dyn SierraGenGroup,
+    type_name: &str,
     value: BigInt,
 ) -> sierra::ids::ConcreteLibFuncId {
     db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
-        generic_id: sierra::ids::GenericLibFuncId::from_string("felt_const"),
+        generic_id: sierra::ids::GenericLibFuncId::from_string(format!("{}_const", type_name)),
         generic_args: vec![sierra::program::GenericArg::Value(value)],
     })
 }
