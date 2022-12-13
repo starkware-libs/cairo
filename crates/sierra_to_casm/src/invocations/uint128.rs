@@ -1,5 +1,6 @@
 use casm::ap_change::ApplyApChange;
 use casm::casm;
+use casm::instructions::InstructionBody;
 use casm::operand::{ap_cell_ref, DerefOrImmediate};
 use itertools::chain;
 use num_bigint::BigInt;
@@ -8,6 +9,7 @@ use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
     Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
 };
+use utils::extract_matches;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
@@ -118,7 +120,8 @@ fn build_uint128_op(
             ))
         }
         IntOperator::DivMod => {
-            let code = casm! {
+            let u64_bound = BigInt::from(2).pow(64);
+            let mut code_q_is_big = casm! {
                 %{ (memory[ap + 0], memory[ap + 1]) = divmod(a, b) %}
                 // Both `q` and `r` must be uint128.
                 // We must check `r` explicitly: we later check that `0 <= b - (r + 1)` and
@@ -135,21 +138,58 @@ fn build_uint128_op(
                 (b.unchecked_apply_known_ap_change(3)) = [ap + 0] + [ap + -1], ap++;
                 [ap + -1] = [[range_check.unchecked_apply_known_ap_change(4)] + 2], ap++;
                 // Verify `b * q + r = a`.
-                [ap + -1] = [ap + -5] * (b.unchecked_apply_known_ap_change(5));
-                (a.unchecked_apply_known_ap_change(5)) = [ap + -1] + [ap + -4];
+                // Since both `b` and `q` can be 2^128-1, we may overflow on `b * q`. To verify this
+                // is not the case, use the fact that `b * q` must be less than 2^128. We know
+                // `min(b, q)` must be less than 2^64. We guess which is less and verify.
+                [ap + 0] = (u64_bound.clone()), ap++;
+                %{ memory[ap + 0] = memory[ap + -6] < (u64_bound) %}
+                jmp rel 0 if [ap + 0] != 0, ap++;
+                // `q >= 2^64`, so compute `2^64 - b` (later we subtract 1 and range-check).
+                [ap + -2] = [ap + 0] + (b.unchecked_apply_known_ap_change(6)), ap++;
+                jmp rel 0;
             };
+            let code_q_is_small = casm! {
+                // `q < 2^64`, compute `2^64 - q`.
+                [ap + -2] = [ap + 0] + [ap + -7], ap++;
+                // Now, [ap + -1] contains either `2^64 - q` or `2^64 - b`. Verify this value is at
+                // least 1 and less than 2^128.
+                [ap + -1] = [ap + 0] + 1, ap++;
+                [ap + -1] = [[range_check.unchecked_apply_known_ap_change(9)] + 3];
+                // Range validations done; verify `b * q + r = a` and that's it.
+                [ap + 0] = [ap + -9] * (b.unchecked_apply_known_ap_change(9)), ap++;
+                (a.unchecked_apply_known_ap_change(10)) = [ap + -1] + [ap + -9];
+            };
+
+            // The JNZ should jump to the `q < 2^64` case (instruction computing `2^64 - q`, the
+            // first instruction in the second code block).
+            let jnz_idx = 6;
+            patch_jnz_to_end(&mut code_q_is_big, jnz_idx);
+
+            // The (relative) JUMP after the JNZ should jump to the +1 computation (i.e, skip the
+            // first instruction in the second code block).
+            let offset = code_q_is_small.instructions[0].body.op_size();
+            let jmp_idx = code_q_is_big.instructions.len() - 1;
+            *extract_matches!(
+                &mut extract_matches!(
+                    &mut code_q_is_big.instructions[jmp_idx].body,
+                    InstructionBody::Jump
+                )
+                .target,
+                DerefOrImmediate::Immediate
+            ) = BigInt::from(offset);
+
             Ok(builder.build(
-                code.instructions,
+                chain! {code_q_is_small.instructions, code_q_is_big.instructions}.collect(),
                 vec![],
                 vec![
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                             op: FeltBinaryOperator::Add,
-                            a: range_check.unchecked_apply_known_ap_change(5),
-                            b: DerefOrImmediate::from(3),
+                            a: range_check.unchecked_apply_known_ap_change(10),
+                            b: DerefOrImmediate::from(4),
                         })),
-                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-5))),
-                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-4))),
+                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-10))),
+                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-9))),
                     ]
                     .into_iter(),
                 ]
