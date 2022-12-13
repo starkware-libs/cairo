@@ -67,9 +67,9 @@ impl Display for Hint {
             DerefOrImmediate::Deref(d) => write!(f, "memory{d}"),
             DerefOrImmediate::Immediate(i) => write!(f, "{i}"),
         };
-        write!(f, "%{{ ")?;
+        write!(f, "%{{")?;
         match self {
-            Hint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()")?,
+            Hint::AllocSegment { dst } => write!(f, " memory{dst} = segments.add() ")?,
             Hint::AllocDictFeltTo { dst, default_value } => writedoc!(
                 f,
                 "
@@ -105,33 +105,35 @@ impl Display for Hint {
                 )?
             }
             Hint::TestLessThan { lhs, rhs, dst } => {
-                write!(f, "memory{dst} = ")?;
+                write!(f, " memory{dst} = ")?;
                 fmt_access_or_const(f, lhs)?;
                 write!(f, " < ")?;
                 fmt_access_or_const(f, rhs)?;
+                write!(f, " ")?;
             }
             Hint::TestLessThanOrEqual { lhs, rhs, dst } => {
-                write!(f, "memory{dst} = ")?;
+                write!(f, " memory{dst} = ")?;
                 fmt_access_or_const(f, lhs)?;
                 write!(f, " <= ")?;
                 fmt_access_or_const(f, rhs)?;
+                write!(f, " ")?;
             }
             Hint::DivMod { lhs, rhs, quotient, remainder } => {
-                write!(f, "(memory{quotient}, memory{remainder}) = divmod(")?;
+                write!(f, " (memory{quotient}, memory{remainder}) = divmod(")?;
                 fmt_access_or_const(f, lhs)?;
                 write!(f, ", ")?;
                 fmt_access_or_const(f, rhs)?;
-                write!(f, ")")?;
+                write!(f, ") ")?;
             }
-            Hint::EnterScope => write!(f, "vm_enter_scope()")?,
-            Hint::ExitScope => write!(f, "vm_exit_scope()")?,
+            Hint::EnterScope => write!(f, " vm_enter_scope() ")?,
+            Hint::ExitScope => write!(f, " vm_exit_scope() ")?,
             Hint::DictSquashHints { hint_index } => dict_squash::fmt_hint_by_index(f, *hint_index)?,
             Hint::SystemCall { syscall_ptr } => write!(
                 f,
-                "syscall_handler.syscall(segments=segments, syscall_ptr={})",
+                " syscall_handler.syscall(segments=segments, syscall_ptr={}) ",
                 syscall_ptr
             )?,
         }
-        write!(f, " %}}")
+        write!(f, "%}}")
     }
 }
