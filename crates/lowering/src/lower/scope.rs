@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use diagnostics::Maybe;
 use itertools::chain;
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::{borrow_as_box, try_extract_matches};
@@ -395,14 +396,14 @@ impl BlockFlowMerger {
     /// `input_tys` are the types of all the inputs to the block, including implicits.
     /// Returns the a [BlockSealed] for that block.
     pub fn run_in_subscope<
-        F: FnOnce(&mut LoweringContext<'_>, &mut BlockScope, Vec<LivingVar>) -> Option<BlockScopeEnd>,
+        F: FnOnce(&mut LoweringContext<'_>, &mut BlockScope, Vec<LivingVar>) -> Maybe<BlockScopeEnd>,
     >(
         &mut self,
         ctx: &mut LoweringContext<'_>,
         input_tys: Vec<semantic::TypeId>,
         // TODO(yuval): rename f.
         f: F,
-    ) -> Option<BlockSealed> {
+    ) -> Maybe<BlockSealed> {
         let block_sealed = borrow_as_box(self, |merger| {
             // Add all implicits to scope.
             let mut living_variables = LivingVariables::default();
@@ -426,15 +427,16 @@ impl BlockFlowMerger {
                 .map(|ty| block_scope.living_variables.introduce_new_var(ctx, ty))
                 .collect();
             block_scope.inputs = input_vars.iter().map(|var| var.var_id()).collect();
-            if let Some(block_end) = f(ctx, &mut block_scope, input_vars) {
-                let (block_sealed, merger) = block_scope.seal(block_end);
-                (Some(block_sealed), merger)
-            } else {
-                (None, block_scope.merger)
+            match f(ctx, &mut block_scope, input_vars) {
+                Ok(block_end) => {
+                    let (block_sealed, merger) = block_scope.seal(block_end);
+                    (Ok(block_sealed), merger)
+                }
+                Err(diag_edded) => (Err(diag_edded), block_scope.merger),
             }
         })?;
         self.add_block_sealed(ctx, &block_sealed);
-        Some(block_sealed)
+        Ok(block_sealed)
     }
 
     /// Pulls a semantic variable from an outer scope.

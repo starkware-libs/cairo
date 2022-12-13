@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, ModuleId, ModuleItemId};
-use diagnostics::{Diagnostics, DiagnosticsBuilder};
+use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use filesystem::ids::FileId;
 use semantic::db::SemanticGroup;
 use semantic::TypeId;
@@ -15,7 +15,7 @@ use crate::lower::{lower, Lowered};
 #[salsa::query_group(LoweringDatabase)]
 pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Computed the lowered representation of a free function.
-    fn free_function_lowered(&self, free_function: FreeFunctionId) -> Option<Arc<Lowered>>;
+    fn free_function_lowered(&self, free_function: FreeFunctionId) -> Maybe<Arc<Lowered>>;
 
     /// Aggregates module level semantic diagnostics.
     fn module_lowering_diagnostics(
@@ -43,34 +43,34 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn function_scc_explicit_implicits(
         &self,
         function: SCCRepresentative,
-    ) -> Option<HashSet<TypeId>>;
+    ) -> Maybe<HashSet<TypeId>>;
 
     /// Returns all the implicit parameters that the function requires (according to both its
     /// signature and the functions it calls). The items in the returned vector are unique and the
     /// order is consistent, but not necessarily related to the order of the explicit implicits in
     /// the signature of the function.
     #[salsa::invoke(crate::lower::implicits::function_all_implicits)]
-    fn function_all_implicits(&self, function: semantic::FunctionId) -> Option<Vec<TypeId>>;
+    fn function_all_implicits(&self, function: semantic::FunctionId) -> Maybe<Vec<TypeId>>;
 
     /// Returns all the implicit parameters that the free function requires (according to both its
     /// signature and the functions it calls).
     #[salsa::invoke(crate::lower::implicits::free_function_all_implicits)]
-    fn free_function_all_implicits(&self, function: FreeFunctionId) -> Option<HashSet<TypeId>>;
+    fn free_function_all_implicits(&self, function: FreeFunctionId) -> Maybe<HashSet<TypeId>>;
 
     /// Returns all the implicit parameters that the free function requires (according to both its
     /// signature and the functions it calls). The items in the returned vector are unique and the
     /// order is consistent, but not necessarily related to the order of the explicit implicits in
     /// the signature of the function.
     #[salsa::invoke(crate::lower::implicits::free_function_all_implicits_vec)]
-    fn free_function_all_implicits_vec(&self, function: FreeFunctionId) -> Option<Vec<TypeId>>;
+    fn free_function_all_implicits_vec(&self, function: FreeFunctionId) -> Maybe<Vec<TypeId>>;
 
     /// Returns whether the function may panic.
     #[salsa::invoke(crate::lower::implicits::function_may_panic)]
-    fn function_may_panic(&self, function: semantic::FunctionId) -> Option<bool>;
+    fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
 
     /// Returns whether the function may panic.
     #[salsa::invoke(crate::lower::implicits::free_function_may_panic)]
-    fn free_function_may_panic(&self, free_function: FreeFunctionId) -> Option<bool>;
+    fn free_function_may_panic(&self, free_function: FreeFunctionId) -> Maybe<bool>;
 
     /// Returns all the functions in the same strongly connected component as the given function.
     #[salsa::invoke(crate::lower::implicits::function_scc)]
@@ -83,8 +83,8 @@ pub struct SCCRepresentative(pub FreeFunctionId);
 fn free_function_lowered(
     db: &dyn LoweringGroup,
     free_function_id: FreeFunctionId,
-) -> Option<Arc<Lowered>> {
-    Some(Arc::new(lower(db.upcast(), free_function_id)?))
+) -> Maybe<Arc<Lowered>> {
+    Ok(Arc::new(lower(db.upcast(), free_function_id)?))
 }
 
 fn module_lowering_diagnostics(
