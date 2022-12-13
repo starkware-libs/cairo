@@ -7,10 +7,12 @@ use filesystem::ids::{CrateId, Directory, FileId, FileLongId, VirtualFile};
 use itertools::chain;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
+use syntax::node::ast::{ItemModule, MaybeModuleBody};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
+use utils::extract_matches;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
@@ -208,17 +210,53 @@ pub struct ModuleItems {
 
 // TODO(spapini): Make this private.
 fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
-    let mut res = ModuleData::default();
     let syntax_db = db.upcast();
 
-    let mut file_queue = VecDeque::new();
-    file_queue.push_back(db.module_main_file(module_id)?);
-    while let Some(file) = file_queue.pop_front() {
+    let (file, item_list) = match module_id {
+        ModuleId::CrateRoot(_)
+        | ModuleId::Submodule(SubmoduleId::File(_))
+        | ModuleId::VirtualSubmodule(_) => {
+            let file = db.module_main_file(module_id)?;
+
+            (file, db.file_syntax(file)?.items(syntax_db))
+        }
+
+        ModuleId::Submodule(SubmoduleId::Inline(id)) => {
+            let parent = id.parent(db);
+            let parent_file = db.module_main_file(parent)?;
+
+            let item_module =
+                ItemModule::from_ptr(syntax_db, &*db.file_syntax(parent_file)?, id.stable_ptr(db));
+
+            // Create an empty dummy file for domains separation between virtual submodules
+            // of the parent module and virtual submodules of the inline module.
+            let module_file = db.intern_file(FileLongId::Virtual(VirtualFile {
+                parent: Some(parent_file),
+                name: format!("__{}", id.name(db.upcast())).into(),
+                content: Arc::new(String::new()),
+            }));
+
+            (
+                module_file,
+                extract_matches!(
+                    item_module.body(syntax_db),
+                    MaybeModuleBody::Some,
+                    "Expected an inline module"
+                )
+                .items(syntax_db),
+            )
+        }
+    };
+
+    let mut module_queue = VecDeque::new();
+    module_queue.push_back((file, item_list));
+    let mut res = ModuleData::default();
+    while let Some((file, item_list)) = module_queue.pop_front() {
         let file_index = FileIndex(res.files.len());
         let module_file_id = ModuleFileId(module_id, file_index);
         res.files.push(file);
-        let syntax_file = db.file_syntax(file)?;
-        for item in syntax_file.items(syntax_db).elements(syntax_db) {
+
+        for item in item_list.elements(syntax_db) {
             for plugin in db.macro_plugins() {
                 let result = plugin.generate_code(db.upcast(), item.clone());
                 for plugin_diag in result.diagnostics {
@@ -231,15 +269,24 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
                     name: name.clone(),
                     content: Arc::new(content),
                 }));
-                file_queue.push_back(new_file);
+                // TODO(ilya): consider implementing virtual modules as inline modules.
+                module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
             }
             match item {
                 ast::Item::Module(module) => {
-                    let item_id = db.intern_file_submodule(FileSubmoduleLongId(
-                        module_file_id,
-                        module.stable_ptr(),
-                    ));
-                    res.submodules.insert(SubmoduleId::File(item_id), module);
+                    let item_id = match module.body(syntax_db) {
+                        MaybeModuleBody::Some(_) => {
+                            SubmoduleId::Inline(db.intern_inline_submodule(InlineSubmoduleLongId(
+                                module_file_id,
+                                module.stable_ptr(),
+                            )))
+                        }
+                        MaybeModuleBody::None(_) => SubmoduleId::File(db.intern_file_submodule(
+                            FileSubmoduleLongId(module_file_id, module.stable_ptr()),
+                        )),
+                    };
+
+                    res.submodules.insert(item_id, module);
                 }
                 ast::Item::Use(us) => {
                     let item_id = db.intern_use(UseLongId(module_file_id, us.stable_ptr()));
