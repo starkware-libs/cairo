@@ -116,13 +116,14 @@ fn build_array_append(
 fn build_array_at(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (range_check, array_view, index) = match builder.refs {
+    let (range_check, array_view, element_size, index) = match builder.refs {
         [
             ReferenceValue { expression: expr_range_check, .. },
             ReferenceValue { expression: expr_arr, .. },
             ReferenceValue { expression: expr_value, .. },
         ] => {
             let concrete_array_type = &builder.libfunc.param_signatures()[0].ty;
+            let array_element_size = builder.program_info.type_sizes[concrete_array_type];
             let array_view =
                 ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
@@ -134,7 +135,7 @@ fn build_array_at(
                 CellExpression::Immediate(op) => DerefOrImmediate::from(op),
                 _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             };
-            (try_unpack_deref(expr_range_check)?, array_view, elem_value)
+            (try_unpack_deref(expr_range_check)?, array_view, array_element_size, elem_value)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -156,34 +157,40 @@ fn build_array_at(
             Err(InvocationError::NotImplemented(builder.invocation.clone()))
         }
         DerefOrImmediate::Deref(index_cell) => {
+            // TODO(dorimedini): Optimize for the case element_size==1.
             let mut index_out_of_bounds_branch = casm! {
-                // Compute the length of the array: [ap + 0]=end-start. The index is a uint128 type
-                // so there are no overflow issues.
+                // Compute the length of the array (in felts).
                 (array_view.end) = [ap + 0] + (array_view.start), ap++;
-                // Check index is in range.
-                %{ memory[ap + 0] = (index.unchecked_apply_known_ap_change(1)) < memory[ap + -1] %}
+                // Compute the element offset (in felts).
+                [ap + 0] = (index_cell.unchecked_apply_known_ap_change(1)) * (element_size), ap++;
+                // Check offset is in range. Note that the offset may be as large as
+                // `2^15 * (2^128 - 1)`, but still, `length - offset` is in [0, 2^128) if and only
+                // if `offset <= length`.
+                %{ memory[ap + 0] = memory[ap + -1] < memory[ap + -2] %}
                 jmp rel 0 if [ap + 0] != 0, ap++;
-                // Index out of bounds.
-                // Compute index - length.
-                (index_cell.unchecked_apply_known_ap_change(2)) = [ap + 0] + [ap + -2], ap++;
-                // Assert index - length >= 0.
-                [ap + -1] = [[(range_check.unchecked_apply_known_ap_change(3))]];
+                // Index out of bounds. Compute offset - length.
+                [ap + -2] = [ap + 0] + [ap + -3], ap++;
+                // Divide by element size. We assume the length is divisible by element size, and by
+                // construction, so is the offset.
+                [ap + -1] = [ap + 0] * (element_size), ap++;
+                // Assert offset - length >= 0.
+                [ap + -1] = [[(range_check.unchecked_apply_known_ap_change(5))]];
                 jmp rel 0;
             };
             let success_branch = casm! {
-                // Assert index < length, or that length-(index+1) is in [0, 2^128).
-                // Compute index+1.
-                [ap + 0] = (index_cell.unchecked_apply_known_ap_change(2)) + 1, ap++;
-                // Compute length-(index+1).
-                [ap + -3] = [ap + 0] + [ap + -1], ap++;
-                // Assert length-(index+1) is in [0, 2^128).
-                [ap + -1] = [[(range_check.unchecked_apply_known_ap_change(4))]];
+                // Assert offset < length, or that length-(offset+1) is in [0, 2^128).
+                // Compute offset+1.
+                [ap + 0] = [ap + -2] + 1, ap++;
+                // Compute length-(offset+1).
+                [ap + -4] = [ap + 0] + [ap + -1], ap++;
+                // Assert length-(offset+1) is in [0, 2^128).
+                [ap + -1] = [[(range_check.unchecked_apply_known_ap_change(5))]];
                 // Compute address of target cell.
-                [ap + 0] = (array_view.start.unchecked_apply_known_ap_change(4)) + (index_cell.unchecked_apply_known_ap_change(4)), ap++;
+                [ap + 0] = (array_view.start.unchecked_apply_known_ap_change(5)) + [ap + -4], ap++;
             };
 
             // Backpatch the JNZ target. It's the second instruction.
-            patch_jnz_to_end(&mut index_out_of_bounds_branch, 1);
+            patch_jnz_to_end(&mut index_out_of_bounds_branch, 2);
 
             // First (success) branch has AP change 4, second (failure) has AP change 3.
             // Both branches invoke range check once. Success branch also outputs the double-deref
@@ -203,7 +210,7 @@ fn build_array_at(
                 vec![
                     ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                         op: FeltBinaryOperator::Add,
-                        a: range_check.unchecked_apply_known_ap_change(5),
+                        a: range_check.unchecked_apply_known_ap_change(6),
                         b: DerefOrImmediate::from(1),
                     })),
                     array_ref.clone(),
@@ -213,7 +220,7 @@ fn build_array_at(
                 vec![
                     ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                         op: FeltBinaryOperator::Add,
-                        a: range_check.unchecked_apply_known_ap_change(3),
+                        a: range_check.unchecked_apply_known_ap_change(5),
                         b: DerefOrImmediate::from(1),
                     })),
                     array_ref,
