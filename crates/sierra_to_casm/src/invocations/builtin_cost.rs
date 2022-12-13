@@ -10,6 +10,7 @@ use sierra::program::{BranchInfo, BranchTarget};
 use utils::try_extract_matches;
 
 use super::{patch_jnz_to_end, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::gas::STEP_COST;
 use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -107,7 +108,8 @@ fn build_builtin_get_gas(
         refund_steps >= 0,
         "Internal compiler error: BuiltinCostGetGasLibFunc::max_cost() is wrong."
     );
-    let compute_requested_amount_steps = casm! { [ap] = (requested_steps - refund_steps), ap++; };
+    let compute_requested_amount_steps =
+        casm! { [ap] = ((requested_steps - refund_steps) * STEP_COST), ap++; };
 
     let gas_counter_value = try_extract_matches!(
         gas_counter_expression
