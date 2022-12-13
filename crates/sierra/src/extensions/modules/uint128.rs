@@ -116,11 +116,11 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                     },
                     OutputVarInfo {
                         ty: ty.clone(),
-                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                     },
                     OutputVarInfo {
                         ty,
-                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
                     },
                 ],
                 SierraApChange::Known { new_vars_only: false },
