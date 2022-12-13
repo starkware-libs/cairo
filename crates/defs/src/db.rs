@@ -7,6 +7,7 @@ use filesystem::ids::{CrateId, Directory, FileId, FileLongId, VirtualFile};
 use itertools::chain;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
+use syntax::node::ast::MaybeModuleBody;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -210,15 +211,36 @@ pub struct ModuleItems {
 fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
     let mut res = ModuleData::default();
     let syntax_db = db.upcast();
+    let mut file = db.module_main_file(module_id)?;
+
+    let mut item_list = match module_id {
+        ModuleId::Submodule(SubmoduleId::Inline(id)) => {
+            let parent = id.parent(db);
+
+            // Create an empty dummy file for domains separation between virtual submodules
+            // in the parent module and virtual submodules of the inline module.
+            file = db.intern_file(FileLongId::Virtual(VirtualFile {
+                parent: Some(file),
+                name: format!("__{}", id.name(db.upcast())).into(),
+                content: Arc::new(String::new()),
+            }));
+
+            match db.module_data(parent)?.submodules[SubmoduleId::Inline(id)].body(syntax_db) {
+                MaybeModuleBody::Some(body) => body.items(syntax_db),
+                MaybeModuleBody::None(_) => panic!("Expected an inline module"),
+            }
+        }
+        _ => db.file_syntax(file)?.items(syntax_db),
+    };
 
     let mut file_queue = VecDeque::new();
-    file_queue.push_back(db.module_main_file(module_id)?);
-    while let Some(file) = file_queue.pop_front() {
+
+    loop {
         let file_index = FileIndex(res.files.len());
         let module_file_id = ModuleFileId(module_id, file_index);
         res.files.push(file);
-        let syntax_file = db.file_syntax(file)?;
-        for item in syntax_file.items(syntax_db).elements(syntax_db) {
+
+        for item in item_list.elements(syntax_db) {
             for plugin in db.macro_plugins() {
                 let result = plugin.generate_code(db.upcast(), item.clone());
                 for plugin_diag in result.diagnostics {
@@ -235,11 +257,19 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
             }
             match item {
                 ast::Item::Module(module) => {
-                    let item_id = db.intern_file_submodule(FileSubmoduleLongId(
-                        module_file_id,
-                        module.stable_ptr(),
-                    ));
-                    res.submodules.insert(SubmoduleId::File(item_id), module);
+                    let item_id = match module.body(syntax_db) {
+                        MaybeModuleBody::Some(_) => {
+                            SubmoduleId::Inline(db.intern_inline_submodule(InlineSubmoduleLongId(
+                                module_file_id,
+                                module.stable_ptr(),
+                            )))
+                        }
+                        MaybeModuleBody::None(_) => SubmoduleId::File(db.intern_file_submodule(
+                            FileSubmoduleLongId(module_file_id, module.stable_ptr()),
+                        )),
+                    };
+
+                    res.submodules.insert(item_id, module);
                 }
                 ast::Item::Use(us) => {
                     let item_id = db.intern_use(UseLongId(module_file_id, us.stable_ptr()));
@@ -285,6 +315,13 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
                 }
             }
         }
+
+        match file_queue.pop_front() {
+            Some(next_file) => file = next_file,
+            None => break,
+        };
+        let syntax_file = db.file_syntax(file)?;
+        item_list = syntax_file.items(syntax_db);
     }
     Some(res)
 }
