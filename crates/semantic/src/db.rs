@@ -6,7 +6,7 @@ use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
     GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
-    StructId, TraitFunctionId, TraitId, UseId, VariantId,
+    StructId, SubmoduleId, TraitFunctionId, TraitId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -545,17 +545,23 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.impl_semantic_definition_diagnostics(*impl_id));
             }
             ModuleItemId::Submodule(id) => {
-                if let Some(file_id) = db.module_main_file(ModuleId::Submodule(*id)) {
-                    if db.file_content(file_id).is_none() {
-                        // Note that the error location is in the parent module, not the submodule.
-                        diagnostics.add(SemanticDiagnostic {
-                            stable_location: StableLocation::new(
-                                id.module_file(db.upcast()),
-                                id.stable_ptr(db.upcast()).untyped(),
-                            ),
-                            kind: SemanticDiagnosticKind::FileNotFound,
-                        });
+                match *id {
+                    SubmoduleId::File(file_submodule_id) => {
+                        if let Some(file_id) = db.module_main_file(ModuleId::Submodule(*id)) {
+                            if db.file_content(file_id).is_none() {
+                                // Note that the error location is in the parent module, not the
+                                // submodule.
+                                diagnostics.add(SemanticDiagnostic {
+                                    stable_location: StableLocation::new(
+                                        file_submodule_id.module_file(db.upcast()),
+                                        file_submodule_id.stable_ptr(db.upcast()).untyped(),
+                                    ),
+                                    kind: SemanticDiagnosticKind::FileNotFound,
+                                })
+                            }
+                        }
                     }
+                    SubmoduleId::Inline(_) => {}
                 }
             }
             ModuleItemId::ExternType(_) => {}
