@@ -1,3 +1,4 @@
+use diagnostics::{DiagnosticAdded, Maybe};
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use semantic::expr::fmt::ExprFormatter;
@@ -128,7 +129,7 @@ impl LoweredExprExternEnum {
                         let result = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs)
                             .var(ctx, subscope)
                             .map(|input| {
-                                Some(BlockScopeEnd::Callsite(Some(
+                                Ok(BlockScopeEnd::Callsite(Some(
                                     generators::EnumConstruct { input, variant: concrete_variant }
                                         .add(ctx, subscope),
                                 )))
@@ -144,10 +145,10 @@ impl LoweredExprExternEnum {
                             subscope.put_semantic_variable(*semantic_var_id, output_var);
                         }
 
-                        Some(result)
+                        Ok(result)
                     })
                 });
-                block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
+                block_opts.collect::<Maybe<Vec<_>>>().map_err(LoweringFlowError::Failed)
             });
 
         let finalized_blocks: Vec<_> = blocks?
@@ -171,32 +172,32 @@ impl LoweredExprExternEnum {
 #[derive(Debug)]
 pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
-    Failed,
+    Failed(DiagnosticAdded),
     /// The current computation is unreachable.
     Unreachable,
     Return(Vec<LivingVar>),
 }
 
 /// Converts a lowering flow error the appropriate block scope end, if possible.
-pub fn lowering_flow_error_to_block_scope_end(err: LoweringFlowError) -> Option<BlockScopeEnd> {
+pub fn lowering_flow_error_to_block_scope_end(err: LoweringFlowError) -> Maybe<BlockScopeEnd> {
     match err {
-        LoweringFlowError::Failed => None,
-        LoweringFlowError::Unreachable => Some(BlockScopeEnd::Unreachable),
-        LoweringFlowError::Return(return_vars) => Some(BlockScopeEnd::Return(return_vars)),
+        LoweringFlowError::Failed(diag_added) => Err(diag_added),
+        LoweringFlowError::Unreachable => Ok(BlockScopeEnd::Unreachable),
+        LoweringFlowError::Return(return_vars) => Ok(BlockScopeEnd::Return(return_vars)),
     }
 }
 
 /// Cases where the flow of lowering a statement should halt.
 pub enum StatementLoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
-    Failed,
+    Failed(DiagnosticAdded),
     /// The block should end after this statement.
     End(BlockScopeEnd),
 }
 impl From<LoweringFlowError> for StatementLoweringFlowError {
     fn from(err: LoweringFlowError) -> Self {
         match err {
-            LoweringFlowError::Failed => StatementLoweringFlowError::Failed,
+            LoweringFlowError::Failed(diag_added) => StatementLoweringFlowError::Failed(diag_added),
             LoweringFlowError::Unreachable => {
                 StatementLoweringFlowError::End(BlockScopeEnd::Unreachable)
             }
