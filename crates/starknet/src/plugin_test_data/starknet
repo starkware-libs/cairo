@@ -41,9 +41,10 @@ func __wrapper_test(ref system: System, mut data: Array::<felt>) -> Array::<felt
     arr
 }
 
-func get_storage_var(ref system: System) -> felt {
+mod storage_var { func read(ref system: System) -> felt {
     starknet::storage_read_syscall(
         system,
         starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>()
     )
+}
 }

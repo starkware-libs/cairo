@@ -42,15 +42,15 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginRes
     let mut code_tokens = rust::Tokens::new();
 
     for member in struct_ast.members(db).elements(db) {
-        // TODO(ilya): Put this logic inside an inline module once inline modules are supported.
-        let name = member.name(db).text(db);
+        let name = member.name(db).text(db).to_string();
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
-        let getter_name = format!("get_{}", name);
 
         let getter = quote! {
-            func $getter_name(ref system: System) -> felt {
-                starknet::storage_read_syscall(
-                    system, starknet::storage_address_const::<$address>())
+            mod $name {
+                func read(ref system: System) -> felt {
+                    starknet::storage_read_syscall(
+                        system, starknet::storage_address_const::<$address>())
+                }
             }
         };
 
