@@ -8,6 +8,7 @@ anyhow.workspace = true
 clap.workspace = true
 compiler = { path = "../compiler" }
 defs = { path = "../defs" }
+diagnostics = { path = "../diagnostics" }
 genco.workspace = true
 itertools.workspace = true
 log.workspace = true

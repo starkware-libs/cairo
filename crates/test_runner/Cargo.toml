@@ -12,6 +12,7 @@ colored.workspace = true
 compiler = { path = "../compiler" }
 debug = { path = "../debug" }
 defs = { path = "../defs" }
+diagnostics = { path = "../diagnostics" }
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
 num-bigint.workspace = true
