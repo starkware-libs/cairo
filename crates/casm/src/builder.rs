@@ -394,3 +394,58 @@ impl Default for CasmBuilder {
         }
     }
 }
+
+#[macro_export]
+macro_rules! casm_build_extend {
+    ($builder:ident,) => {};
+    ($builder:ident, alloc $var:ident; $($tok:tt)*) => {
+        let $var = $builder.alloc_var();
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, ap += $value:expr; $($tok:tt)*) => {
+        $builder.add_ap($value);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, $dst:ident = $res:ident; $($tok:tt)*) => {
+        $builder.assert_vars_eq($dst, $res);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
+        {
+            let var = $builder.bin_op($crate::operand::Operation::Add, $a, $b);
+            $builder.assert_vars_eq($dst, var);
+        }
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
+        {
+            let var = $builder.bin_op($crate::operand::Operation::Mul, $a, $b);
+            $builder.assert_vars_eq($dst, var);
+        }
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, jump $target:ident; $($tok:tt)*) => {
+        $builder.jump(std::stringify!($target).to_owned());
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
+        $builder.jump_nz($condition, std::stringify!($target).to_owned());
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, $label:ident: $($tok:tt)*) => {
+        $builder.label(std::stringify!($label).to_owned());
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, * ( $buffer:ident ++ ) = $value:ident; $($tok:tt)*) => {
+        $builder.buffer_write_and_inc($buffer, $value);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, ($q:ident, $r:ident) = divmod ( $lhs:ident , $rhs:ident ); $($tok:tt)*) => {
+        $builder.add_divmod_hint($lhs, $rhs, $q, $r);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, $dst:ident = $lhs:ident < $rhs:ident; $($tok:tt)*) => {
+        $builder.add_less_than_hint($lhs, $rhs, $dst);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+}
