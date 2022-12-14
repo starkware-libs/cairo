@@ -34,7 +34,7 @@ asciidoctor src/Summary.adoc
 asciidoctor src/*.adoc
 ```
 
-Now, there will generate `html` files.
+Now `Html` versions of the documentation will be generated.
 
 ## View in PDF
 ### Install `asciidoctor`
@@ -63,4 +63,4 @@ asciidoctor-pdf src/Summary.adoc
 asciidoctor-pdf src/*.adoc`
 ```
 
-Now, there will generate `PDF` files.
+Now `PDF` versions of the documentation will be generated.
