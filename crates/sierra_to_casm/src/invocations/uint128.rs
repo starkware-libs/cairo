@@ -1,6 +1,7 @@
 use casm::ap_change::ApplyApChange;
+use casm::builder::{CasmBuildResult, CasmBuilder};
 use casm::casm;
-use casm::operand::{ap_cell_ref, DerefOrImmediate};
+use casm::operand::{ap_cell_ref, DerefOrImmediate, Operation, ResOperand};
 use itertools::chain;
 use num_bigint::BigInt;
 use sierra::extensions::felt::FeltBinaryOperator;
@@ -8,6 +9,7 @@ use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
     Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
 };
+use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
@@ -183,73 +185,100 @@ fn build_uint128_from_felt(
     // Represent the maximal possible value (PRIME - 1) as 2**128 * max_x + max_y.
     let max_x: i128 = 10633823966279327296825105735305134080;
     let max_y: i128 = 0;
-    // TODO(lior): Reorder the temporary variables so that the result is at the top of the stack,
-    //   and fix OutputVarReferenceInfo::NewTempVar::idx in the Sierra definition.
-    // The code up to the success branch.
-    let mut before_success_branch = casm! {
-        %{ memory[ap + 0] = memory value < (uint128_bound.clone()) %}
-        jmp rel 0 if [ap + 0] != 0, ap++; // Jump to success branch. Address updated later.
-        // Write value as 2**128 * x + y.
-        %{ (memory[ap + 0], memory[ap + 1]) = divmod(
-            memory (value.unchecked_apply_known_ap_change(1)),
-            (uint128_bound.clone())
-        ) %}
-        // Guess x and check that it is in the range [0, 2**128).
-        [ap] = [[(range_check.unchecked_apply_known_ap_change(1))]], ap++;
-        // Guess y and check that it is in the range [0, 2**128).
-        [ap] = [[(range_check.unchecked_apply_known_ap_change(2))] + 1], ap++;
-        // Check that value = 2**128 * x + y (mod PRIME).
-        [ap] = [ap - 2] * (uint128_bound.clone()), ap++;
-        (value.unchecked_apply_known_ap_change(4)) = [ap - 1] + [ap - 2];
-        // Check that there is no overflow in the computation of 2**128 * x + y.
-        // Start by checking if x==max_x.
-        [ap] = [ap - 3] + (-max_x), ap++;
-        jmp rel 6 if [ap - 1] != 0;
-        // If x == max_x, check that y <= max_y.
-        [ap] = [ap - 3] + (uint128_bound.clone() - max_y - 1), ap++;
-        jmp rel 4;
-        // If x != max_x, check that x < max_x.
-        [ap] = [ap - 4] + (uint128_bound - max_x), ap++;
-        // In both cases, range-check the calculated value.
-        [ap - 1] = [[(range_check.unchecked_apply_known_ap_change(6))] + 2];
-        // If x != 0, jump to the end.
-        jmp rel 0 if [ap - 5] != 0; // Fixed in relocations.
-        // Otherwise, start an infinite loop.
-        jmp rel 0;
-    };
-    patch_jnz_to_end(&mut before_success_branch, 0);
-    let relocation_index = before_success_branch.instructions.len() - 2;
-    let success_branch = casm! {
-        // No overflow:
-        value = [[(range_check.unchecked_apply_known_ap_change(1))]];
-    };
+    let mut casm_builder = CasmBuilder::default();
+    let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+    let value = casm_builder.add_var(ResOperand::Deref(value));
+    let uint128_limit = casm_builder.add_var(ResOperand::Immediate(uint128_bound.clone()));
+    let le_max_y_fix =
+        casm_builder.add_var(ResOperand::Immediate(uint128_bound.clone() - max_y - 1));
+    let lt_max_x_fix = casm_builder.add_var(ResOperand::Immediate(uint128_bound - max_x));
+    let is_uint128 = casm_builder.alloc_var();
+    casm_builder.add_less_than_hint(value, uint128_limit, is_uint128);
+    casm_builder.jump_nz(is_uint128, "NoOverflow".to_owned());
+    let x_2_128 = casm_builder.alloc_var();
+    let x_minus_max_x = casm_builder.alloc_var();
+    let rced_value = casm_builder.alloc_var();
+    let x = casm_builder.alloc_var();
+    let y = casm_builder.alloc_var();
+    // Write value as 2**128 * x + y.
+    casm_builder.add_divmod_hint(value, uint128_limit, x, y);
+    // Check x in [0, 2**128).
+    let rc0 = casm_builder.double_deref(range_check, 0);
+    casm_builder.assert_vars_eq(x, rc0);
+    // Check y in [0, 2**128).
+    let rc1 = casm_builder.double_deref(range_check, 1);
+    casm_builder.assert_vars_eq(y, rc1);
+    let rc2 = casm_builder.double_deref(range_check, 2);
+    // Check that value = 2**128 * x + y (mod PRIME).
+    let assign_value = casm_builder.bin_op(Operation::Mul, x, uint128_limit);
+    casm_builder.assert_vars_eq(x_2_128, assign_value);
+    let assign_value = casm_builder.bin_op(Operation::Add, x_2_128, y);
+    casm_builder.assert_vars_eq(value, assign_value);
+    // Check that there is no overflow in the computation of 2**128 * x + y.
+    // Start by checking if x==max_x.
+    let minus_max_x = casm_builder.add_var(ResOperand::Immediate(BigInt::from(-max_x)));
+    let assign_value = casm_builder.bin_op(Operation::Add, x, minus_max_x);
+    casm_builder.assert_vars_eq(x_minus_max_x, assign_value);
+    casm_builder.jump_nz(x_minus_max_x, "XNotMaxX".to_owned());
+    // If x == max_x, check that y <= max_y.
+    let assign_value = casm_builder.bin_op(Operation::Add, y, le_max_y_fix);
+    casm_builder.assert_vars_eq(rced_value, assign_value);
+    casm_builder.jump("WriteRcedValue".to_owned());
+    casm_builder.label("XNotMaxX".to_owned());
+    // If x != max_x, check that x < max_x.
+    let assign_value = casm_builder.bin_op(Operation::Add, x, lt_max_x_fix);
+    casm_builder.assert_vars_eq(rced_value, assign_value);
+    casm_builder.label("WriteRcedValue".to_owned());
+    // In both cases, range-check the calculated value.
+    casm_builder.assert_vars_eq(rced_value, rc2);
+    // If x != 0, jump to the end.
+    casm_builder.jump_nz(x, "FailureHandle".to_owned());
+    // Otherwise, start an infinite loop.
+    casm_builder.label("InfiniteLoop".to_owned());
+    casm_builder.jump("InfiniteLoop".to_owned());
+    casm_builder.label("NoOverflow".to_owned());
+    let rc0 = casm_builder.double_deref(range_check, 0);
+    casm_builder.assert_vars_eq(value, rc0);
+    let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
+        casm_builder.build();
 
+    // TODO(orizi): Extract the assertion out of the libfunc implementation.
+    assert_eq!(
+        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+        [fallthrough_state.ap_change, label_state["FailureHandle"].ap_change]
+            .map(sierra_ap_change::ApChange::Known)
+    );
+    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
     Ok(builder.build(
-        chain!(before_success_branch.instructions, success_branch.instructions).collect(),
+        instructions,
         vec![RelocationEntry {
-            instruction_idx: relocation_index,
+            instruction_idx: *relocation_index,
             relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
         }],
         [
             vec![
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltBinaryOperator::Add,
-                    a: range_check.unchecked_apply_known_ap_change(1),
+                    a: fallthrough_state.get_adjusted_as_cell_ref(range_check),
                     b: DerefOrImmediate::Immediate(BigInt::from(1)),
                 })),
                 ReferenceExpression::from_cell(CellExpression::Deref(
-                    value.unchecked_apply_known_ap_change(1),
+                    fallthrough_state.get_adjusted_as_cell_ref(value),
                 )),
             ]
             .into_iter(),
             vec![
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltBinaryOperator::Add,
-                    a: range_check.unchecked_apply_known_ap_change(6),
+                    a: label_state["FailureHandle"].get_adjusted_as_cell_ref(range_check),
                     b: DerefOrImmediate::Immediate(BigInt::from(3)),
                 })),
-                ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-5))),
-                ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-4))),
+                ReferenceExpression::from_cell(CellExpression::Deref(
+                    label_state["FailureHandle"].get_adjusted_as_cell_ref(x),
+                )),
+                ReferenceExpression::from_cell(CellExpression::Deref(
+                    label_state["FailureHandle"].get_adjusted_as_cell_ref(y),
+                )),
             ]
             .into_iter(),
         ]
