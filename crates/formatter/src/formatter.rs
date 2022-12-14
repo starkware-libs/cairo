@@ -62,7 +62,10 @@ enum LineComponent {
     /// long after the first break line point, the one before the '*' operator, is broken.
     /// More generally, any break point inside a child LineBuilder will be ignored unless there
     /// are no breakpoint which are direct children of the parent LineBuilder.
-    Internal(LineBuilder),
+    /// The precedence dictates the order in which the internal builders will be open.
+    /// For example, the body of a function should be broken into separate lines before the
+    /// function signature.
+    Internal { builder: LineBuilder, precedence: usize },
     /// Represent a space in the code.
     Space,
     /// Represent a leading indent.
@@ -74,7 +77,7 @@ impl LineComponent {
     pub fn width(&self) -> usize {
         match self {
             Self::Token(s) => s.len(),
-            Self::Internal(builder) => builder.width(),
+            Self::Internal { builder, .. } => builder.width(),
             Self::Space => 1,
             Self::Indent(n) => *n,
             Self::BreakLinePoint(_) => 0,
@@ -85,7 +88,7 @@ impl fmt::Display for LineComponent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Token(s) => write!(f, "{s}"),
-            Self::Internal(builder) => write!(f, "{builder}"),
+            Self::Internal { builder, .. } => write!(f, "{builder}"),
             Self::Space => write!(f, " "),
             Self::Indent(n) => write!(f, "{}", " ".repeat(*n)),
             Self::BreakLinePoint(_) => write!(f, ""),
@@ -123,8 +126,11 @@ impl LineBuilder {
     }
     /// Adds a a sub-builder as the next child.
     /// All subsequent children will be added to this sub builder until set as closed.
-    fn open_sub_builder(&mut self) {
-        self.get_active_builder().push_child(LineComponent::Internal(LineBuilder::new()));
+    fn open_sub_builder(&mut self, flatten_precedence: usize) {
+        self.get_active_builder().push_child(LineComponent::Internal {
+            builder: LineBuilder::new(),
+            precedence: flatten_precedence,
+        });
     }
     /// Sets the last child, which is assumed to be a LineBuilder, as close.
     /// New children will be siblings of this subtree.
@@ -291,13 +297,13 @@ impl LineBuilder {
         // Splitted into two match statements since self is mutably borrowed in the second match,
         // and thus a mutable ref to self can't be returned in it.
         match self.children.last() {
-            Some(LineComponent::Internal(sub_builder)) if sub_builder.is_open => {}
+            Some(LineComponent::Internal { builder: sub_builder, .. }) if sub_builder.is_open => {}
             _ => {
                 return self;
             }
         }
         match self.children.last_mut() {
-            Some(LineComponent::Internal(sub_builder)) if sub_builder.is_open => {
+            Some(LineComponent::Internal { builder: sub_builder, .. }) if sub_builder.is_open => {
                 sub_builder.get_active_builder()
             }
             _ => {
@@ -319,14 +325,31 @@ impl LineBuilder {
             )
             .join("\n")
     }
+    /// Returns the minimum protected zone precedence from within all the protected zones
+    /// which are a direct child of this builder, or None if there are no protected zones.
+    fn get_min_flatten_precedence(&self) -> Option<usize> {
+        self.children
+            .iter()
+            .filter_map(|child| {
+                if let LineComponent::Internal { precedence, .. } = child {
+                    Some(*precedence)
+                } else {
+                    None
+                }
+            })
+            .min()
+    }
     /// Creates a new LineBuilder where the first subchild which is a LineBuilder, is replaced by
     /// all its children.
     fn flatten(&self) -> LineBuilder {
         let mut flattened_tree = LineBuilder::new();
         let mut first_tree_found = false;
+        let min_precedence = self.get_min_flatten_precedence().unwrap_or(0);
         for child in self.children.iter() {
             match child {
-                LineComponent::Internal(sub_tree) if !first_tree_found => {
+                LineComponent::Internal { builder: sub_tree, precedence }
+                    if *precedence == min_precedence && !first_tree_found =>
+                {
                     first_tree_found = true;
                     for sub_child in sub_tree.children.iter() {
                         flattened_tree.push_child(sub_child.clone());
@@ -339,11 +362,11 @@ impl LineBuilder {
     }
     /// Returns whether or not the line contains an internal LineBuilder.
     fn is_flat(&self) -> bool {
-        !self.children.iter().any(|child| matches!(child, LineComponent::Internal(_)))
+        !self.children.iter().any(|child| matches!(child, LineComponent::Internal { .. }))
     }
     /// Returns whether the line contains only indents.
     fn is_only_indents(&self) -> bool {
-        !self.children.iter().any(|child| !matches!(child, LineComponent::Indent(_)))
+        !self.children.iter().any(|child| !matches!(child, LineComponent::Indent { .. }))
     }
     fn get_leading_indent(&self) -> usize {
         let mut leading_indent = 0;
@@ -409,7 +432,11 @@ pub trait SyntaxNodeFormat {
         &self,
         db: &dyn SyntaxGroup,
     ) -> (Option<BreakLinePointProperties>, Option<BreakLinePointProperties>);
-    fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Returns the node precedence of the protected zone if the node is protected from breaking
+    /// unless no other break points exists, otherwise, returns None. For example break points
+    /// inside ExprParenthesized should only be used if there are no break points outside the
+    /// the parenthesis. Only applicable for internal nodes.
+    fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
 }
 
 pub struct Formatter<'a> {
@@ -450,18 +477,18 @@ impl<'a> Formatter<'a> {
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
-        let is_protected_zone = syntax_node.is_protected_breaking_node(self.db);
+        let protected_zone_precedence = syntax_node.get_protected_zone_precedence(self.db);
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
         self.append_break_line_point(node_break_points.0);
-        if is_protected_zone {
-            self.line_state.line_buffer.open_sub_builder();
+        if let Some(precedence) = protected_zone_precedence {
+            self.line_state.line_buffer.open_sub_builder(precedence);
         }
         if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node, no_space_after);
         } else {
             self.format_internal(syntax_node, no_space_after);
         }
-        if is_protected_zone {
+        if protected_zone_precedence.is_some() {
             self.line_state.line_buffer.close_sub_builder();
         }
         self.append_break_line_point(node_break_points.1);

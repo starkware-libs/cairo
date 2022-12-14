@@ -119,7 +119,7 @@ func bar(
     fourth_arg: T,
     fifth_arg: T,
     sixth_arg: T,
-    seventh_arg: T
+    seventh_arg: T,
 ) -> T {
     let x = Struct {
         first_arg: first_arg,

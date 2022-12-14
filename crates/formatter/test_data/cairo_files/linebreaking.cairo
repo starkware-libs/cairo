@@ -10,7 +10,7 @@ func foo(x: T) -> S {
     let x6 = (1+0+(2+0+(3+0+(4+0+(5+0+(6+0+(7+0+(8+0+(9+0+(1+0+(2+0+(3+0+(4+0)))))))))))));
     }
 
-func bar(first_arg: T, second_arg: T, third_arg: T, fourth_arg: T, fifth_arg: T, sixth_arg: T, seventh_arg: T) -> T {
+func bar(first_arg: T, second_arg: T, third_arg: T, fourth_arg: T, fifth_arg: T, sixth_arg: T, seventh_arg: T,) -> T {
     let x = Struct{first_arg: first_arg, second_arg: second_arg, third_arg: third_arg, fourth_arg: fourth_arg, fifth_arg: fifth_arg};
 }
 
