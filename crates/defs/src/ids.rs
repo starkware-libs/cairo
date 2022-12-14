@@ -286,7 +286,11 @@ define_language_element_id!(
     lookup_intern_file_submodule,
     name
 );
-
+impl FileSubmoduleId {
+    pub fn parent(&self, db: &dyn DefsGroup) -> ModuleId {
+        db.lookup_intern_file_submodule(*self).0.0
+    }
+}
 define_language_element_id!(
     InlineSubmoduleId,
     InlineSubmoduleLongId,
@@ -294,6 +298,11 @@ define_language_element_id!(
     lookup_intern_inline_submodule,
     name
 );
+impl InlineSubmoduleId {
+    pub fn parent(&self, db: &dyn DefsGroup) -> ModuleId {
+        db.lookup_intern_inline_submodule(*self).0.0
+    }
+}
 define_language_element_id_as_enum! {
     pub enum SubmoduleId {
         File(FileSubmoduleId),
@@ -317,8 +326,8 @@ impl SubmoduleId {
 
     pub fn parent(&self, db: &dyn DefsGroup) -> ModuleId {
         match self {
-            SubmoduleId::File(id) => db.lookup_intern_file_submodule(*id).0.0,
-            SubmoduleId::Inline(id) => db.lookup_intern_inline_submodule(*id).0.0,
+            SubmoduleId::File(id) => id.parent(db),
+            SubmoduleId::Inline(id) => id.parent(db),
         }
     }
 }
