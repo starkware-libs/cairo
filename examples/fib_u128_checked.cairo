@@ -5,11 +5,9 @@ fn fib(a: u128, b: u128, n: u128) -> Option::<u128> implicits(RangeCheck) nopani
         0 => Option::<u128>::Some(a),
         _ => {
             let r = fib(
-                b,
-                integer::u128_checked_add(a, b)?,
-                integer::u128_checked_sub(n, 1_u128)?
+                b, integer::u128_checked_add(a, b)?, integer::u128_checked_sub(n, 1_u128)?
             )?;
             Option::<u128>::Some(r)
         },
-     }
+    }
 }

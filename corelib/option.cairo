@@ -1,4 +1,7 @@
-enum Option<T> { Some: T, None: (), }
+enum Option<T> {
+    Some: T,
+    None: (),
+}
 trait OptionTrait<T> {
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect(self: Option::<T>, err: felt) -> T;
@@ -18,7 +21,7 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
                 array_append::<felt>(ref data, err)
                 panic(data)
             },
-         }
+        }
     }
     fn unwrap(self: Option::<T>) -> T {
         self.expect('Option::unwrap failed.')
@@ -27,12 +30,12 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
         match self {
             Option::Some(_) => true,
             Option::None(_) => false,
-         }
+        }
     }
     fn is_none(self: Option::<T>) -> bool {
         match self {
             Option::Some(_) => false,
             Option::None(_) => true,
-         }
+        }
     }
 }
