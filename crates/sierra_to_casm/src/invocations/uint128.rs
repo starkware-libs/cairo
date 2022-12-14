@@ -1,7 +1,7 @@
 use casm::ap_change::ApplyApChange;
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::casm;
-use casm::operand::{ap_cell_ref, DerefOrImmediate, Operation, ResOperand};
+use casm::operand::{ap_cell_ref, DerefOrImmediate, ResOperand};
+use casm::{casm, casm_build_extend};
 use itertools::chain;
 use num_bigint::BigInt;
 use sierra::extensions::felt::FeltBinaryOperator;
@@ -186,58 +186,56 @@ fn build_uint128_from_felt(
     let max_x: i128 = 10633823966279327296825105735305134080;
     let max_y: i128 = 0;
     let mut casm_builder = CasmBuilder::default();
+    // Defining params and constants.
     let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
     let value = casm_builder.add_var(ResOperand::Deref(value));
     let uint128_limit = casm_builder.add_var(ResOperand::Immediate(uint128_bound.clone()));
     let le_max_y_fix =
         casm_builder.add_var(ResOperand::Immediate(uint128_bound.clone() - max_y - 1));
     let lt_max_x_fix = casm_builder.add_var(ResOperand::Immediate(uint128_bound - max_x));
-    let is_uint128 = casm_builder.alloc_var();
-    casm_builder.add_less_than_hint(value, uint128_limit, is_uint128);
-    casm_builder.jump_nz(is_uint128, "NoOverflow".to_owned());
-    let x_2_128 = casm_builder.alloc_var();
-    let x_minus_max_x = casm_builder.alloc_var();
-    let rced_value = casm_builder.alloc_var();
-    let x = casm_builder.alloc_var();
-    let y = casm_builder.alloc_var();
-    // Write value as 2**128 * x + y.
-    casm_builder.add_divmod_hint(value, uint128_limit, x, y);
-    // Check x in [0, 2**128).
-    casm_builder.buffer_write_and_inc(range_check, x);
-    // Check y in [0, 2**128).
-    casm_builder.buffer_write_and_inc(range_check, y);
-    // Check that value = 2**128 * x + y (mod PRIME).
-    let assign_value = casm_builder.bin_op(Operation::Mul, x, uint128_limit);
-    casm_builder.assert_vars_eq(x_2_128, assign_value);
-    let assign_value = casm_builder.bin_op(Operation::Add, x_2_128, y);
-    casm_builder.assert_vars_eq(value, assign_value);
-    // Check that there is no overflow in the computation of 2**128 * x + y.
-    // Start by checking if x==max_x.
     let minus_max_x = casm_builder.add_var(ResOperand::Immediate(BigInt::from(-max_x)));
-    let assign_value = casm_builder.bin_op(Operation::Add, x, minus_max_x);
-    casm_builder.assert_vars_eq(x_minus_max_x, assign_value);
-    casm_builder.jump_nz(x_minus_max_x, "XNotMaxX".to_owned());
-    // If x == max_x, check that y <= max_y.
-    let assign_value = casm_builder.bin_op(Operation::Add, y, le_max_y_fix);
-    casm_builder.assert_vars_eq(rced_value, assign_value);
-    casm_builder.jump("WriteRcedValue".to_owned());
-    casm_builder.label("XNotMaxX".to_owned());
-    // If x != max_x, check that x < max_x.
-    let assign_value = casm_builder.bin_op(Operation::Add, x, lt_max_x_fix);
-    casm_builder.assert_vars_eq(rced_value, assign_value);
-    casm_builder.label("WriteRcedValue".to_owned());
-    // In both cases, range-check the calculated value.
-    casm_builder.buffer_write_and_inc(range_check, rced_value);
-    // If x != 0, jump to the end.
-    casm_builder.jump_nz(x, "FailureHandle".to_owned());
-    // Otherwise, start an infinite loop.
-    casm_builder.label("InfiniteLoop".to_owned());
-    casm_builder.jump("InfiniteLoop".to_owned());
-    casm_builder.label("NoOverflow".to_owned());
-    casm_builder.buffer_write_and_inc(range_check, value);
+    casm_build_extend! {casm_builder,
+            alloc is_uint128;
+            is_uint128 = value < uint128_limit;
+            jump NoOverflow if is_uint128 != 0;
+            // Allocating all values required so that `x` and `y` would be last.
+            alloc x_2_128;
+            alloc x_minus_max_x;
+            alloc rced_value;
+            alloc x;
+            alloc y;
+            // Write value as 2**128 * x + y.
+            (x, y) = divmod(value, uint128_limit);
+            // Check x in [0, 2**128).
+            *(range_check++) = x;
+            // Check y in [0, 2**128).
+            *(range_check++) = y;
+            // Check that value = 2**128 * x + y (mod PRIME).
+            x_2_128 = x * uint128_limit;
+            value = x_2_128 + y;
+            // Check that there is no overflow in the computation of 2**128 * x + y.
+            // Start by checking if x==max_x.
+            x_minus_max_x = x + minus_max_x;
+            jump XNotMaxX if x_minus_max_x != 0;
+            // If x == max_x, check that y <= max_y.
+            rced_value = y + le_max_y_fix;
+            jump WriteRcedValue;
+        XNotMaxX:
+            // If x != max_x, check that x < max_x.
+            rced_value = x + lt_max_x_fix;
+        WriteRcedValue:
+            // In both cases, range-check the calculated value.
+            *(range_check++) = rced_value;
+            // If x != 0, jump to the end.
+            jump FailureHandle if x != 0;
+        InfiniteLoop:
+            // Otherwise, start an infinite loop.
+            jump InfiniteLoop;
+        NoOverflow:
+            *(range_check++) = value;
+    };
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
         casm_builder.build();
-
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
