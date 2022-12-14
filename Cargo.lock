@@ -2214,6 +2214,7 @@ dependencies = [
  "defs",
  "diagnostics",
  "env_logger",
+ "filesystem",
  "formatter",
  "genco",
  "indoc",

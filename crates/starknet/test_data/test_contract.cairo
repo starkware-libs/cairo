@@ -1,12 +1,15 @@
-trait ITestContract { func test(ref system: System, arg1: felt, arg2: felt) -> felt; }
+#[contract]
+mod TestContract { func internal_func(ref system: System) -> felt {
+    1
+}
 
-#[ContractImpl]
-impl TestContractImpl of ITestContract { func test(
-    ref system: System, arg1: felt, arg2: felt
-) -> felt {
-    my_storage_var::read(system)
+#[external]
+func test(ref system: System, ref arg: felt, arg1: felt, arg2: felt) -> felt {
+    internal_func(system) + super::my_storage_var::read(system)
 }
 }
 
-#[contract(TestContractImpl)]
-struct TestContract { my_storage_var: felt, }
+
+// # TODO(ilya): Convert to new format.
+#[contract]
+struct Storage { my_storage_var: felt, }

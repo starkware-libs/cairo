@@ -1,11 +1,12 @@
-use defs::ids::{LanguageElementId, ModuleItemId, StructId};
+use anyhow::Context;
+use defs::ids::{FreeFunctionId, InlineSubmoduleId, ModuleId, ModuleItemId, SubmoduleId};
+use diagnostics::ToOption;
+use filesystem::ids::CrateId;
 use num_bigint::BigUint;
 use semantic::db::SemanticGroup;
-use semantic::diagnostic::SemanticDiagnostics;
-use semantic::resolve_path::{ResolvedConcreteItem, Resolver};
-use semantic::ConcreteImplId;
 use sha3::{Digest, Keccak256};
-use syntax::node::{ast, TypedSyntaxNode};
+
+use crate::plugin::{CONTRACT_ATTR, EXTERNAL_MODULE};
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -13,11 +14,14 @@ mod test;
 
 /// Represents a declaration of a contract.
 pub struct ContractDeclaration {
-    /// The id of the struct that defines the contracts storage.
-    pub struct_id: StructId,
-    /// A list of Expressions that specify the implementations included in the contract.
-    /// See resolve_contract_impls(...) for more detail.
-    pub impls: Vec<syntax::node::ast::Expr>,
+    /// The id of the inline module that defines the contract
+    pub inline_submodule_id: InlineSubmoduleId,
+}
+
+impl ContractDeclaration {
+    pub fn module_id(&self) -> ModuleId {
+        ModuleId::Submodule(SubmoduleId::Inline(self.inline_submodule_id))
+    }
 }
 
 /// A variant of eth-keccak that computes a value that fits in a StarkNet field element.
@@ -31,26 +35,23 @@ pub fn starknet_keccak(data: &[u8]) -> BigUint {
     BigUint::from_bytes_be(&result)
 }
 
-/// Finds the structs annotated as contracts in the current compilation units and
+/// Finds the inline modules annotated as contracts in the given create_ids and
 /// returns the corresponding ContractDeclarations.
-pub fn find_contract_structs(db: &dyn SemanticGroup) -> Vec<ContractDeclaration> {
+pub fn find_contracts(db: &dyn SemanticGroup, create_ids: &[CrateId]) -> Vec<ContractDeclaration> {
     let mut contracts = vec![];
-    for crate_id in db.crates() {
-        let modules = db.crate_modules(crate_id);
+    for crate_id in create_ids {
+        let modules = db.crate_modules(*crate_id);
         for module_id in modules.iter() {
-            let Ok(module_items) = db.module_items(*module_id) else {
+            let Ok(submodules) = db.module_submodules(*module_id) else {
                 continue;
             };
 
-            for item in module_items.items.values() {
-                if let ModuleItemId::Struct(struct_id) = item {
-                    if let Ok(attrs) = db.struct_attributes(*struct_id) {
+            for module_id in submodules {
+                if let ModuleId::Submodule(SubmoduleId::Inline(inline_submodule_id)) = module_id {
+                    if let Ok(attrs) = db.module_attributes(module_id) {
                         if let [attr] = attrs.as_slice() {
-                            if attr.id == "contract" {
-                                contracts.push(ContractDeclaration {
-                                    struct_id: *struct_id,
-                                    impls: attr.args.clone(),
-                                });
+                            if attr.id == CONTRACT_ATTR {
+                                contracts.push(ContractDeclaration { inline_submodule_id });
                             }
                         };
                     }
@@ -61,50 +62,24 @@ pub fn find_contract_structs(db: &dyn SemanticGroup) -> Vec<ContractDeclaration>
     contracts
 }
 
-/// Returns the ConcreteImplId's that should be included in a contract.
-pub fn resolve_contract_impls(
+pub fn get_external_functions(
     db: &(dyn SemanticGroup + 'static),
     contract: &ContractDeclaration,
-) -> anyhow::Result<Vec<ConcreteImplId>> {
-    let syntax_db = db.upcast();
+) -> anyhow::Result<Vec<FreeFunctionId>> {
+    // The wrappers are currently in the parent module.
+    let module_id = contract.inline_submodule_id.parent(db.upcast());
 
-    let module_file_id = contract.struct_id.module_file(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-
-    let mut resolver =
-        Resolver::new(db, module_file_id, &db.struct_generic_params(contract.struct_id).unwrap());
-
-    let mut impls = vec![];
-
-    // TODO(ilya): Add error locations.
-    for expr in &contract.impls {
-        match expr {
-            ast::Expr::Path(path) => match resolver.resolve_concrete_path(&mut diagnostics, path) {
-                Ok(ResolvedConcreteItem::Impl(concrete_impl_id)) => impls.push(concrete_impl_id),
-                Ok(_item) => anyhow::bail!(
-                    "`{}` is not an `impl`.",
-                    path.as_syntax_node().get_text(syntax_db)
-                ),
-                Err(_) => {
-                    anyhow::bail!(
-                        "Failed to resolve `{}`.",
-                        path.as_syntax_node().get_text(syntax_db)
-                    )
-                }
-            },
-
-            _ => {
-                anyhow::bail!(
-                    "Expected a path, Got `{}`.",
-                    expr.as_syntax_node().get_text(syntax_db)
-                )
-            }
-        }
+    match db
+        .module_items(module_id)
+        .to_option()
+        .with_context(|| "Failed to get module items.")?
+        .items
+        .get(EXTERNAL_MODULE)
+    {
+        Some(ModuleItemId::Submodule(external_module_id)) => Ok(db
+            .module_free_functions(ModuleId::Submodule(*external_module_id))
+            .to_option()
+            .with_context(|| "Failed to get module items.")?),
+        _ => anyhow::bail!("Failed to get the wrappers module."),
     }
-    let diag = diagnostics.build();
-    if !diag.get_all().is_empty() {
-        // TODO(ilya): Print diagnostics.
-        anyhow::bail!("Got diagnostics while resolving impl path: {}", diag.format(db.upcast()));
-    }
-    Ok(impls)
 }
