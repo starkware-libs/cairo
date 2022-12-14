@@ -166,16 +166,11 @@ fn build_uint128_op(
 fn build_uint128_from_felt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (range_check, value_cell) = match builder.refs {
+    let (range_check, value) = match builder.refs {
         [
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: expr_value, .. },
-        ] => (
-            try_unpack_deref(range_check_expression)?,
-            expr_value
-                .try_unpack_single()
-                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        ),
+        ] => (try_unpack_deref(range_check_expression)?, try_unpack_deref(expr_value)?),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 2,
@@ -190,119 +185,76 @@ fn build_uint128_from_felt(
     let max_y: i128 = 0;
     // TODO(lior): Reorder the temporary variables so that the result is at the top of the stack,
     //   and fix OutputVarReferenceInfo::NewTempVar::idx in the Sierra definition.
-    match value_cell {
-        CellExpression::Deref(value) => {
-            // The code up to the success branch.
-            let mut before_success_branch = casm! {
-                %{ memory[ap + 0] = memory value < (uint128_bound.clone()) %}
-                jmp rel 0 if [ap + 0] != 0, ap++; // Jump to success branch. Address updated later.
-                // Write value as 2**128 * x + y.
-                %{ (memory[ap + 0], memory[ap + 1]) = divmod(
-                    memory (value.unchecked_apply_known_ap_change(1)),
-                    (uint128_bound.clone())
-                ) %}
-                // Guess x and check that it is in the range [0, 2**128).
-                [ap] = [[(range_check.unchecked_apply_known_ap_change(1))]], ap++;
-                // Guess y and check that it is in the range [0, 2**128).
-                [ap] = [[(range_check.unchecked_apply_known_ap_change(2))] + 1], ap++;
-                // Check that value = 2**128 * x + y (mod PRIME).
-                [ap] = [ap - 2] * (uint128_bound.clone()), ap++;
-                (value.unchecked_apply_known_ap_change(4)) = [ap - 1] + [ap - 2];
-                // Check that there is no overflow in the computation of 2**128 * x + y.
-                // Start by checking if x==max_x.
-                [ap] = [ap - 3] + (-max_x), ap++;
-                jmp rel 6 if [ap - 1] != 0;
-                // If x == max_x, check that y <= max_y.
-                [ap] = [ap - 3] + (uint128_bound.clone() - max_y - 1), ap++;
-                jmp rel 4;
-                // If x != max_x, check that x < max_x.
-                [ap] = [ap - 4] + (uint128_bound - max_x), ap++;
-                // In both cases, range-check the calculated value.
-                [ap - 1] = [[(range_check.unchecked_apply_known_ap_change(6))] + 2];
-                // If x != 0, jump to the end.
-                jmp rel 0 if [ap - 5] != 0; // Fixed in relocations.
-                // Otherwise, start an infinite loop.
-                jmp rel 0;
-            };
-            patch_jnz_to_end(&mut before_success_branch, 0);
-            let relocation_index = before_success_branch.instructions.len() - 2;
-            let success_branch = casm! {
-                // No overflow:
-                value = [[(range_check.unchecked_apply_known_ap_change(1))]];
-            };
+    // The code up to the success branch.
+    let mut before_success_branch = casm! {
+        %{ memory[ap + 0] = memory value < (uint128_bound.clone()) %}
+        jmp rel 0 if [ap + 0] != 0, ap++; // Jump to success branch. Address updated later.
+        // Write value as 2**128 * x + y.
+        %{ (memory[ap + 0], memory[ap + 1]) = divmod(
+            memory (value.unchecked_apply_known_ap_change(1)),
+            (uint128_bound.clone())
+        ) %}
+        // Guess x and check that it is in the range [0, 2**128).
+        [ap] = [[(range_check.unchecked_apply_known_ap_change(1))]], ap++;
+        // Guess y and check that it is in the range [0, 2**128).
+        [ap] = [[(range_check.unchecked_apply_known_ap_change(2))] + 1], ap++;
+        // Check that value = 2**128 * x + y (mod PRIME).
+        [ap] = [ap - 2] * (uint128_bound.clone()), ap++;
+        (value.unchecked_apply_known_ap_change(4)) = [ap - 1] + [ap - 2];
+        // Check that there is no overflow in the computation of 2**128 * x + y.
+        // Start by checking if x==max_x.
+        [ap] = [ap - 3] + (-max_x), ap++;
+        jmp rel 6 if [ap - 1] != 0;
+        // If x == max_x, check that y <= max_y.
+        [ap] = [ap - 3] + (uint128_bound.clone() - max_y - 1), ap++;
+        jmp rel 4;
+        // If x != max_x, check that x < max_x.
+        [ap] = [ap - 4] + (uint128_bound - max_x), ap++;
+        // In both cases, range-check the calculated value.
+        [ap - 1] = [[(range_check.unchecked_apply_known_ap_change(6))] + 2];
+        // If x != 0, jump to the end.
+        jmp rel 0 if [ap - 5] != 0; // Fixed in relocations.
+        // Otherwise, start an infinite loop.
+        jmp rel 0;
+    };
+    patch_jnz_to_end(&mut before_success_branch, 0);
+    let relocation_index = before_success_branch.instructions.len() - 2;
+    let success_branch = casm! {
+        // No overflow:
+        value = [[(range_check.unchecked_apply_known_ap_change(1))]];
+    };
 
-            Ok(builder.build(
-                chain!(before_success_branch.instructions, success_branch.instructions).collect(),
-                vec![RelocationEntry {
-                    instruction_idx: relocation_index,
-                    relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
-                }],
-                [
-                    vec![
-                        ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                            op: FeltBinaryOperator::Add,
-                            a: range_check.unchecked_apply_known_ap_change(1),
-                            b: DerefOrImmediate::Immediate(BigInt::from(1)),
-                        })),
-                        ReferenceExpression::from_cell(CellExpression::Deref(
-                            value.unchecked_apply_known_ap_change(1),
-                        )),
-                    ]
-                    .into_iter(),
-                    vec![
-                        ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                            op: FeltBinaryOperator::Add,
-                            a: range_check.unchecked_apply_known_ap_change(6),
-                            b: DerefOrImmediate::Immediate(BigInt::from(3)),
-                        })),
-                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-5))),
-                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-4))),
-                    ]
-                    .into_iter(),
-                ]
-                .into_iter(),
-            ))
-        }
-        CellExpression::Immediate(value) => {
-            let output_expressions = [
-                vec![
-                    ReferenceExpression::from_cell(CellExpression::Deref(
-                        range_check.unchecked_apply_known_ap_change(1),
-                    )),
-                    ReferenceExpression::from_cell(CellExpression::Immediate(value.clone())),
-                ]
-                .into_iter(),
-                vec![
-                    ReferenceExpression::from_cell(CellExpression::Deref(
-                        range_check.unchecked_apply_known_ap_change(5),
-                    )),
-                    ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-4))),
-                    ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-3))),
-                ]
-                .into_iter(),
+    Ok(builder.build(
+        chain!(before_success_branch.instructions, success_branch.instructions).collect(),
+        vec![RelocationEntry {
+            instruction_idx: relocation_index,
+            relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
+        }],
+        [
+            vec![
+                ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
+                    op: FeltBinaryOperator::Add,
+                    a: range_check.unchecked_apply_known_ap_change(1),
+                    b: DerefOrImmediate::Immediate(BigInt::from(1)),
+                })),
+                ReferenceExpression::from_cell(CellExpression::Deref(
+                    value.unchecked_apply_known_ap_change(1),
+                )),
             ]
-            .into_iter();
-
-            Ok(if value >= BigInt::from(0) && value < uint128_bound {
-                builder.build(casm! { ap += 1; }.instructions, vec![], output_expressions)
-            } else {
-                builder.build(
-                    casm! {
-                    [ap + 1] = (value.clone() / uint128_bound.clone());
-                    [ap + 2] = (value % uint128_bound);
-                    ap += 5;
-                    jmp rel 0; }
-                    .instructions,
-                    vec![RelocationEntry {
-                        instruction_idx: 3,
-                        relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
-                    }],
-                    output_expressions,
-                )
-            })
-        }
-        _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
-    }
+            .into_iter(),
+            vec![
+                ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
+                    op: FeltBinaryOperator::Add,
+                    a: range_check.unchecked_apply_known_ap_change(6),
+                    b: DerefOrImmediate::Immediate(BigInt::from(3)),
+                })),
+                ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-5))),
+                ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-4))),
+            ]
+            .into_iter(),
+        ]
+        .into_iter(),
+    ))
 }
 
 fn build_uint128_lt(
