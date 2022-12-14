@@ -2,7 +2,6 @@
 #[path = "diagnostics_test.rs"]
 mod test;
 
-use std::fmt::Write;
 use std::sync::Arc;
 
 use db_utils::Upcast;
@@ -97,6 +96,20 @@ impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
     }
 }
 
+pub fn format_diagnostics(
+    db: &dyn FilesGroup,
+    message: &str,
+    location: DiagnosticLocation,
+) -> String {
+    let file_name = location.file_id.file_name(db);
+    let marks = get_location_marks(db, &location);
+    let pos = match location.span.start.position_in_file(db, location.file_id) {
+        Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+        None => "?".into(),
+    };
+    format!("error: {message}\n --> {file_name}:{pos}\n{marks}\n")
+}
+
 /// A set of diagnostic entries that arose during a computation.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Diagnostics<TEntry: DiagnosticEntry>(pub Arc<DiagnosticsBuilder<TEntry>>);
@@ -109,15 +122,9 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         let mut res = String::new();
         // Format leaves.
         for entry in &self.0.leaves {
-            let location = entry.location(db);
-            let filename = location.file_id.file_name(db.upcast());
-            let marks = get_location_marks(db.upcast(), &location);
-            let pos = match location.span.start.position_in_file(db.upcast(), location.file_id) {
-                Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
-                None => "?".into(),
-            };
             let message = entry.format(db);
-            writeln!(res, "error: {message}\n --> {filename}:{pos}\n{marks}\n").unwrap();
+            res += &format_diagnostics(db.upcast(), &message, entry.location(db));
+            res += "\n";
         }
         // Format subtrees.
         res += &self.0.subtrees.iter().map(|subtree| subtree.format(db)).join("");

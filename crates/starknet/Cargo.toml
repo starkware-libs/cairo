@@ -32,6 +32,7 @@ plugins = { path = "../plugins" }
 parser = { path = "../parser" }
 
 [dev-dependencies]
+diagnostics = { path = "../diagnostics" }
 env_logger.workspace = true
 formatter = { path = "../formatter" }
 indoc.workspace = true
