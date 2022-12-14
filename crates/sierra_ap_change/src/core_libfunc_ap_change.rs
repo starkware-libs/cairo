@@ -1,4 +1,5 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
+use sierra::extensions::boolean::BoolConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
@@ -23,6 +24,9 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             ArrayConcreteLibFunc::Len(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibFunc::BranchAlign(_) => vec![ApChange::FromMetadata],
+        CoreConcreteLibFunc::Bool(libfunc) => match libfunc {
+            BoolConcreteLibFunc::And(_) => vec![ApChange::Known(0)],
+        },
         CoreConcreteLibFunc::Box(_) => vec![ApChange::Known(0)],
         // TODO(lior): Check/Fix.
         CoreConcreteLibFunc::BuiltinCost(_) => vec![ApChange::Known(2), ApChange::Known(3)],
