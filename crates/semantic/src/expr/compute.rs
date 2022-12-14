@@ -24,7 +24,8 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
-    true_literal_expr, try_get_core_ty_by_name, unit_ty, unwrap_error_propagation_type,
+    true_literal_expr, try_get_const_libfunc_name_by_type, try_get_core_ty_by_name, unit_ty,
+    unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -855,6 +856,9 @@ fn literal_to_semantic(
     } else {
         db.core_felt_ty()
     };
+    try_get_const_libfunc_name_by_type(db, ty)
+        .map_err(|err| ctx.diagnostics.report(literal_syntax, err))
+        .ok()?;
     Some(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
 }
 

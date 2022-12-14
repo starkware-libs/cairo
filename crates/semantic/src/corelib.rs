@@ -400,3 +400,23 @@ fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
 pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
     get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
 }
+
+/// Returns the name of the libfunc that creates a constant of type `ty`.
+pub fn try_get_const_libfunc_name_by_type(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Result<String, SemanticDiagnosticKind> {
+    let felt_ty = core_felt_ty(db);
+    let uint128_ty = get_core_ty_by_name(db, "uint128".into(), vec![]);
+    if ty == felt_ty {
+        Ok("felt_const".into())
+    } else if ty == uint128_ty {
+        Ok("uint128_const".into())
+    } else {
+        Err(SemanticDiagnosticKind::NoLiteralFunctionFound)
+    }
+}
+
+pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
+    try_get_const_libfunc_name_by_type(db, ty).unwrap()
+}
