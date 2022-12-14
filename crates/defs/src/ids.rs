@@ -304,7 +304,7 @@ impl InlineSubmoduleId {
     }
 
     pub fn parent(&self, db: &dyn DefsGroup) -> ModuleId {
-        db.lookup_intern_inline_submodule(*self).0.0
+        self.module_file_id(db).0
     }
 }
 define_language_element_id_as_enum! {
