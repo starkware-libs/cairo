@@ -2210,6 +2210,7 @@ dependencies = [
  "clap 4.0.26",
  "compiler",
  "defs",
+ "diagnostics",
  "env_logger",
  "formatter",
  "genco",

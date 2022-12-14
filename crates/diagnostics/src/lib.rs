@@ -5,6 +5,6 @@ mod diagnostics;
 mod location_marks;
 
 pub use self::diagnostics::{
-    skip_diagnostic, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics,
-    DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
+    format_diagnostics, skip_diagnostic, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation,
+    Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
 };
