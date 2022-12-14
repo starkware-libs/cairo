@@ -9,7 +9,7 @@ impl BoolDrop of Drop::<bool>;
 
 // TODO(dorimedini): Once we can differentiate between the value-bool and the branch-bool, just do:
 // extern func bool_and(a: bool, b: bool) -> bool implicits() nopanic;
-// (this will also require renaming the libfunc from "bool_and_impl" back to "bool_and".
+// (this will also require renaming the libfunc from "bool_and_impl" back to "bool_and").
 extern func bool_and_impl(ref a: bool, b: bool) implicits() nopanic;
 func bool_and(mut a: bool, b: bool) -> bool implicits() nopanic {
     bool_and_impl(a, b);
@@ -24,12 +24,13 @@ func bool_or(a: bool, b: bool) -> bool implicits() nopanic {
     }
 }
 
-// TODO(orizi): Change to extern when added.
-func bool_not(a: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => bool::True(()),
-        bool::True(x) => bool::False(()),
-    }
+// TODO(dorimedini): Once we can differentiate between the value-bool and the branch-bool, just do:
+// extern func bool_not(a: bool) -> bool implicits() nopanic;
+// (this will also require renaming the libfunc from "bool_not_impl" back to "bool_not").
+extern func bool_not_impl(ref a: bool) implicits() nopanic;
+func bool_not(mut a: bool) -> bool implicits() nopanic {
+    bool_not_impl(a);
+    a
 }
 
 // TODO(orizi): Change to extern when added.
