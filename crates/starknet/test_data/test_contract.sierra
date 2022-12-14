@@ -13,7 +13,7 @@ type Tuple<uint128, uint128> = Struct<ut@Tuple, uint128, uint128>;
 type NonZero<felt> = NonZero<felt>;
 
 libfunc store_temp<System> = store_temp<System>;
-libfunc function_call<user@test_contract::test_contract::get_my_storage_var> = function_call<user@test_contract::test_contract::get_my_storage_var>;
+libfunc function_call<user@test_contract::test_contract::my_storage_var::read> = function_call<user@test_contract::test_contract::my_storage_var::read>;
 libfunc rename<System> = rename<System>;
 libfunc rename<felt> = rename<felt>;
 libfunc array_len<felt> = array_len<felt>;
@@ -70,7 +70,7 @@ libfunc felt_jump_nz = felt_jump_nz;
 libfunc drop<NonZero<felt>> = drop<NonZero<felt>>;
 
 store_temp<System>([0]) -> ([3]);
-function_call<user@test_contract::test_contract::get_my_storage_var>([3]) -> ([1], [2]);
+function_call<user@test_contract::test_contract::my_storage_var::read>([3]) -> ([1], [2]);
 rename<System>([1]) -> ([4]);
 rename<felt>([2]) -> ([5]);
 return([4], [5]);
@@ -223,7 +223,7 @@ return([9]);
 
 test_contract::test_contract::test@0([0]: System) -> (System, felt);
 test_contract::test_contract::__wrapper_test@5([0]: RangeCheck, [1]: System, [2]: Array<felt>) -> (RangeCheck, System, core::PanicResult::<core::array::Array::<core::felt>>);
-test_contract::test_contract::get_my_storage_var@51([0]: System) -> (System, felt);
+test_contract::test_contract::my_storage_var::read@51([0]: System) -> (System, felt);
 core::integer::uint128_from_felt@59([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::PanicResult::<core::integer::uint128>);
 core::integer::uint128_ne@84([0]: uint128, [1]: uint128) -> (core::bool);
 core::integer::uint128_try_from_felt@91([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<core::integer::uint128>);
