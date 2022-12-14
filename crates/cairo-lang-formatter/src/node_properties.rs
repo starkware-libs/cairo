@@ -164,11 +164,16 @@ impl SyntaxNodeFormat for SyntaxNode {
         }
     }
     // TODO(Gil): Add all protected zones and break points when the formatter is stable.
-    fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool {
-        matches!(
-            self.kind(db),
-            SyntaxKind::ExprParenthesized
-                | SyntaxKind::ArgList
+    fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize> {
+        match parent_kind(db, self) {
+            Some(SyntaxKind::ItemFreeFunction) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::ExprBlock => Some(2),
+                SyntaxKind::FunctionSignature => Some(3),
+                _ => None,
+            },
+            _ => match self.kind(db) {
+                SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprList
                 | SyntaxKind::MatchArms
                 | SyntaxKind::StructArgList
@@ -180,8 +185,10 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::AttributeArgList
                 | SyntaxKind::GenericArgList
                 | SyntaxKind::GenericParamList
-                | SyntaxKind::ArgListParenthesized
-        )
+                | SyntaxKind::ArgListParenthesized => Some(1),
+                _ => None,
+            },
+        }
     }
     fn get_wrapping_break_line_point_properties(
         &self,

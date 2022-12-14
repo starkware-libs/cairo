@@ -33,7 +33,9 @@ fn serialize_u256(ref serialized: Array::<felt>, input: u256) {
 
 fn deserialize_u256(ref serialized: Array::<felt>) -> Option::<u256> {
     Option::<u256>::Some(
-        u256 { low: deserialize_u128(serialized)?, high: deserialize_u128(serialized)?, }
+        u256 {
+         low: deserialize_u128(serialized)?, high: deserialize_u128(serialized)?,
+        }
     )
 }
 
