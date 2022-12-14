@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, ModuleId};
-use diagnostics::{Diagnostics, Maybe, ToMaybe};
+use diagnostics::{Diagnostics, Maybe};
 use filesystem::ids::CrateId;
 use lowering::db::LoweringGroup;
 use semantic::corelib::get_core_ty_by_name;
@@ -116,7 +116,7 @@ fn get_function_signature(
     // it in the end of program_generator::get_sierra_program instead of calling this function from
     // there.
     let semantic_function_id = db.lookup_intern_sierra_function(function_id);
-    let signature = db.concrete_function_signature(semantic_function_id).to_maybe()?;
+    let signature = db.concrete_function_signature(semantic_function_id)?;
     let may_panic = db.function_may_panic(semantic_function_id)?;
 
     let implicits = db

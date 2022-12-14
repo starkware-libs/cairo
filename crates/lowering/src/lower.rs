@@ -54,10 +54,9 @@ pub struct Lowered {
 /// Lowers a semantic free function.
 pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<Lowered> {
     log::trace!("Lowering a free function.");
-    let function_def = db.free_function_definition(free_function_id).to_maybe()?;
-    let generic_params =
-        db.free_function_declaration_generic_params(free_function_id).to_maybe()?;
-    let signature = db.free_function_declaration_signature(free_function_id).to_maybe()?;
+    let function_def = db.free_function_definition(free_function_id)?;
+    let generic_params = db.free_function_declaration_generic_params(free_function_id)?;
+    let signature = db.free_function_declaration_signature(free_function_id)?;
 
     let implicits = db.free_function_all_implicits_vec(free_function_id)?;
     // Params.
@@ -500,7 +499,7 @@ fn lower_expr_function_call(
                 implicits: callee_implicit_types,
             };
 
-            if let Some(refs) = ctx.db.extern_function_declaration_refs(extern_function_id) {
+            if let Ok(refs) = ctx.db.extern_function_declaration_refs(extern_function_id) {
                 if !refs.is_empty() {
                     // Don't optimize in case the extern function has ref parameters.
                     //
@@ -827,19 +826,15 @@ fn extract_concrete_enum(
         .to_maybe()
         .map_err(LoweringFlowError::Failed)?;
     let enum_id = concrete_enum_id.enum_id(ctx.db.upcast());
-    let variants = ctx.db.enum_variants(enum_id).to_maybe().map_err(LoweringFlowError::Failed)?;
+    let variants = ctx.db.enum_variants(enum_id).map_err(LoweringFlowError::Failed)?;
     let concrete_variants = variants
         .values()
         .map(|variant_id| {
-            let variant = ctx
-                .db
-                .variant_semantic(enum_id, *variant_id)
-                .to_maybe()
-                .map_err(LoweringFlowError::Failed)?;
+            let variant =
+                ctx.db.variant_semantic(enum_id, *variant_id).map_err(LoweringFlowError::Failed)?;
 
             ctx.db
                 .concrete_enum_variant(concrete_enum_id, &variant)
-                .to_maybe()
                 .map_err(LoweringFlowError::Failed)
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -887,8 +882,7 @@ fn lower_expr_member_access(
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a member-access expression: {:?}", expr.debug(&ctx.expr_formatter));
-    let members =
-        ctx.db.struct_members(expr.struct_id).to_maybe().map_err(LoweringFlowError::Failed)?;
+    let members = ctx.db.struct_members(expr.struct_id).map_err(LoweringFlowError::Failed)?;
     let member_idx = members
         .iter()
         .position(|(_, member)| member.id == expr.member)
@@ -911,8 +905,7 @@ fn lower_expr_struct_ctor(
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a struct c'tor expression: {:?}", expr.debug(&ctx.expr_formatter));
-    let members =
-        ctx.db.struct_members(expr.struct_id).to_maybe().map_err(LoweringFlowError::Failed)?;
+    let members = ctx.db.struct_members(expr.struct_id).map_err(LoweringFlowError::Failed)?;
     let member_expr = UnorderedHashMap::from_iter(expr.members.iter().cloned());
     Ok(LoweredExpr::AtVariable(
         generators::StructConstruct {

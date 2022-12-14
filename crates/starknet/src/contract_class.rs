@@ -102,7 +102,7 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
     let impl_id = db.lookup_intern_concrete_impl(concrete_impl_id).impl_id;
 
     let concrete_trait_id =
-        db.impl_trait(impl_id).with_context(|| "Failed to get contract trait.")?;
+        db.impl_trait(impl_id).to_option().with_context(|| "Failed to get contract trait.")?;
     let trait_id = db.lookup_intern_concrete_trait(concrete_trait_id).trait_id;
 
     let sierra_program = db

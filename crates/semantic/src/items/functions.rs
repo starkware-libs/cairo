@@ -1,6 +1,7 @@
 use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, ParamLongId};
+use diagnostics::{skip_diagnostic, Maybe};
 use diagnostics_proc_macros::DebugWithDb;
 use smol_str::SmolStr;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -178,7 +179,7 @@ pub fn function_signature_params(
 pub fn generic_function_signature(
     db: &dyn SemanticGroup,
     generic_function: GenericFunctionId,
-) -> Option<Signature> {
+) -> Maybe<Signature> {
     match generic_function {
         GenericFunctionId::Free(free_function) => {
             db.free_function_declaration_signature(free_function)
@@ -196,7 +197,7 @@ pub fn generic_function_signature(
 pub fn generic_function_generic_params(
     db: &dyn SemanticGroup,
     generic_function: GenericFunctionId,
-) -> Option<Vec<GenericParamId>> {
+) -> Maybe<Vec<GenericParamId>> {
     match generic_function {
         GenericFunctionId::Free(free_function) => {
             db.free_function_declaration_generic_params(free_function)
@@ -217,14 +218,14 @@ pub fn generic_function_generic_params(
 pub fn concrete_function_signature(
     db: &dyn SemanticGroup,
     function_id: FunctionId,
-) -> Option<Signature> {
+) -> Maybe<Signature> {
     let ConcreteFunction { generic_function, generic_args, .. } =
         db.lookup_intern_function(function_id).function;
     let generic_params = db.generic_function_generic_params(generic_function)?;
     if generic_params.len() != generic_args.len() {
         // TODO(spapini): Uphold the invariant that constructed ConcreteFunction instances
         //   always have the correct number of generic arguemnts.
-        return None;
+        return Err(skip_diagnostic());
     }
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
@@ -235,7 +236,7 @@ pub fn concrete_function_signature(
         ty: substitute_generics(db, &substitution_map, param.ty),
         mutability: param.mutability,
     };
-    Some(Signature {
+    Ok(Signature {
         params: generic_signature.params.into_iter().map(concretize_param).collect(),
         return_type: substitute_generics(db, &substitution_map, generic_signature.return_type),
         implicits: generic_signature.implicits,
@@ -256,7 +257,8 @@ fn update_env_with_ast_params(
     let mut semantic_params = Vec::new();
     for ast_param in ast_params.iter() {
         let (name, semantic_param) = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
-        if env.add_param(diagnostics, &name, semantic_param.clone(), ast_param, function_id) {
+        if env.add_param(diagnostics, &name, semantic_param.clone(), ast_param, function_id).is_ok()
+        {
             semantic_params.push(semantic_param);
         }
     }

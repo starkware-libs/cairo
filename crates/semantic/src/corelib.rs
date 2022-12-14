@@ -1,4 +1,5 @@
 use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
+use diagnostics::ToOption;
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
 use syntax::node::ast::{self, BinaryOperator, UnaryOperator};
@@ -41,7 +42,7 @@ pub fn try_get_core_ty_by_name(
         .ok_or(SemanticDiagnosticKind::UnknownType)?;
     let generic_type = match module_item_id {
         ModuleItemId::Use(use_id) => {
-            db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
+            db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericType)
             })
         }
@@ -203,7 +204,9 @@ pub fn unwrap_error_propagation_type(
         TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
             let name = enm.enum_id(db.upcast()).name(db.upcast());
             if name == "Option" || name == "Result" {
-                if let [ok_variant, err_variant] = db.concrete_enum_variants(enm)?.as_slice() {
+                if let [ok_variant, err_variant] =
+                    db.concrete_enum_variants(enm).to_option()?.as_slice()
+                {
                     Some((ok_variant.clone(), err_variant.clone()))
                 } else {
                     None
@@ -351,7 +354,7 @@ pub fn get_core_generic_function_id(db: &dyn SemanticGroup, name: SmolStr) -> Ge
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
     match module_item_id {
         ModuleItemId::Use(use_id) => {
-            db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
+            db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericFunction)
             })
         }

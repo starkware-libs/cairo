@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use defs::ids::{FreeFunctionId, GenericFunctionId};
-use diagnostics::{Maybe, ToMaybe};
+use diagnostics::Maybe;
 use itertools::Itertools;
 use semantic::TypeId;
 use utils::strongly_connected_components::{compute_scc, GraphNode};
@@ -25,7 +25,7 @@ pub fn function_scc_explicit_implicits(
     let mut explicit_implicits = HashSet::new();
     for func in scc {
         let current_implicits: HashSet<TypeId> =
-            db.free_function_declaration_implicits(func).to_maybe()?.into_iter().collect();
+            db.free_function_declaration_implicits(func)?.into_iter().collect();
         explicit_implicits.extend(current_implicits);
     }
     Ok(explicit_implicits)
@@ -39,7 +39,7 @@ pub fn function_all_implicits(
     match db.lookup_intern_function(function).function.generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_all_implicits_vec(free_function),
         GenericFunctionId::Extern(extern_function) => {
-            db.extern_function_declaration_implicits(extern_function).to_maybe()
+            db.extern_function_declaration_implicits(extern_function)
         }
         GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
     }
@@ -57,7 +57,7 @@ pub fn free_function_all_implicits(
     let mut all_implicits = db.function_scc_explicit_implicits(scc_representative.clone())?;
 
     // For each direct callee, add its implicits.
-    for direct_callee in db.free_function_definition_direct_callees(function).to_maybe()? {
+    for direct_callee in db.free_function_definition_direct_callees(function)? {
         let current_implicits =
             match db.lookup_intern_function(direct_callee).function.generic_function {
                 GenericFunctionId::Free(free_function) => {
@@ -73,10 +73,7 @@ pub fn free_function_all_implicits(
                 }
                 GenericFunctionId::Extern(extern_function) => {
                     // All implicits of a libfunc are explicit implicits.
-                    db.extern_function_declaration_implicits(extern_function)
-                        .to_maybe()?
-                        .into_iter()
-                        .collect()
+                    db.extern_function_declaration_implicits(extern_function)?.into_iter().collect()
                 }
                 GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
             };
@@ -132,7 +129,7 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
     match db.lookup_intern_function(function).function.generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_may_panic(free_function),
         GenericFunctionId::Extern(extern_function) => {
-            Ok(db.extern_function_declaration_signature(extern_function).to_maybe()?.panicable)
+            Ok(db.extern_function_declaration_signature(extern_function)?.panicable)
         }
         GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
     }
@@ -148,7 +145,7 @@ pub fn free_function_may_panic(
 
     // TODO(spapini): Add something that actually panics.
     // For each direct callee, find if it may panic.
-    for direct_callee in db.free_function_definition_direct_callees(free_function).to_maybe()? {
+    for direct_callee in db.free_function_definition_direct_callees(free_function)? {
         match db.lookup_intern_function(direct_callee).function.generic_function {
             GenericFunctionId::Free(free_function) => {
                 // For a free function, call this method recursively. To avoid cycles, first
@@ -163,7 +160,7 @@ pub fn free_function_may_panic(
                 }
             }
             GenericFunctionId::Extern(extern_function) => {
-                if db.extern_function_declaration_signature(extern_function).to_maybe()?.panicable {
+                if db.extern_function_declaration_signature(extern_function)?.panicable {
                     return Ok(true);
                 }
             }
