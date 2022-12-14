@@ -57,7 +57,7 @@ pub enum Hint {
     },
     /// Represents a hint that triggers a system call.
     SystemCall {
-        syscall_ptr: ResOperand,
+        system: ResOperand,
     },
 }
 
@@ -128,11 +128,9 @@ impl Display for Hint {
             Hint::EnterScope => write!(f, " vm_enter_scope() ")?,
             Hint::ExitScope => write!(f, " vm_exit_scope() ")?,
             Hint::DictSquashHints { hint_index } => dict_squash::fmt_hint_by_index(f, *hint_index)?,
-            Hint::SystemCall { syscall_ptr } => write!(
-                f,
-                " syscall_handler.syscall(segments=segments, syscall_ptr={}) ",
-                syscall_ptr
-            )?,
+            Hint::SystemCall { system } => {
+                write!(f, " syscall_handler.syscall(segments=segments, syscall_ptr={}) ", system)?
+            }
         }
         write!(f, "%}}")
     }

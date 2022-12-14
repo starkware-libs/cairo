@@ -83,14 +83,14 @@ fn test_less_than_or_equal_format() {
 
 #[test]
 fn test_syscall_hint_format() {
-    let syscall_ptr = ResOperand::BinOp(BinOpOperand {
+    let system = ResOperand::BinOp(BinOpOperand {
         op: Operation::Add,
         a: CellRef { register: Register::FP, offset: -3 },
         b: DerefOrImmediate::from(3),
     });
 
     assert_eq!(
-        Hint::SystemCall { syscall_ptr }.to_string(),
+        Hint::SystemCall { system }.to_string(),
         "%{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + -3] + 3) %}"
     );
 }
