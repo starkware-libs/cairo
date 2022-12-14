@@ -143,6 +143,71 @@ End:
 test_function_lowering
 
 //! > function
+func foo(a: felt, b: felt) -> felt {
+  match f(a, b) {
+    MyEnum::A(y) => y,
+    MyEnum::B((y,)) => y,
+    MyEnum::C((y,_)) => y,
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: felt,
+  B: (felt,),
+  C: (felt, felt),
+}
+extern func f(a: felt, b: felt) -> MyEnum nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v2: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v2)
+
+blk1:
+Inputs: v3: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v3)
+
+blk2:
+Inputs: v4: core::felt, v5: core::felt
+Statements:
+Drops: v5
+End:
+  Callsite(v4)
+
+blk3 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v6: core::felt) <- match test::f(v0, v1) {
+    (v2) => blk0,
+    (v3) => blk1,
+    (v4, v5) => blk2,
+  }
+Drops: v0, v1
+End:
+  Callsite(v6)
+
+//! > ==========================================================================
+
+//! > Test extern function enum calling without optimization (no optimization with ref params).
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
 func foo(ref a: felt, b: felt) -> felt {
   match f(a, b) {
     MyEnum::A(y) => y,
@@ -170,35 +235,68 @@ extern func f(ref a: felt, b: felt) -> MyEnum nopanic;
 blk0:
 Inputs: v2: core::felt, v3: core::felt
 Statements:
-Drops:
+  (v4: test::MyEnum) <- MyEnum::A(v3)
+Drops: v3
 End:
-  Callsite(v2, v3)
+  Callsite(v2, v4)
 
 blk1:
-Inputs: v4: core::felt, v5: core::felt
+Inputs: v5: core::felt, v6: core::felt
+Statements:
+  (v7: (core::felt,)) <- struct_construct(v6)
+  (v8: test::MyEnum) <- MyEnum::B(v7)
+Drops: v7, v6
+End:
+  Callsite(v5, v8)
+
+blk2:
+Inputs: v9: core::felt, v10: core::felt, v11: core::felt
+Statements:
+  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
+  (v13: test::MyEnum) <- MyEnum::C(v12)
+Drops: v12, v10, v11
+End:
+  Callsite(v9, v13)
+
+blk3:
+Inputs: v16: core::felt
 Statements:
 Drops:
 End:
-  Callsite(v4, v5)
+  Callsite(v16)
 
-blk2:
-Inputs: v6: core::felt, v7: core::felt, v8: core::felt
+blk4:
+Inputs: v17: (core::felt,)
 Statements:
-Drops: v8
+  (v18: core::felt) <- struct_destructure(v17)
+Drops: v17
 End:
-  Callsite(v6, v7)
+  Callsite(v18)
 
-blk3 (root):
+blk5:
+Inputs: v19: (core::felt, core::felt)
+Statements:
+  (v20: core::felt, v21: core::felt) <- struct_destructure(v19)
+Drops: v19, v21
+End:
+  Callsite(v20)
+
+blk6 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v10: core::felt, v9: core::felt) <- match test::f(v0, v1) {
+  (v15: core::felt, v14: test::MyEnum) <- match test::f(v0, v1) {
     (v2, v3) => blk0,
-    (v4, v5) => blk1,
-    (v6, v7, v8) => blk2,
+    (v5, v6) => blk1,
+    (v9, v10, v11) => blk2,
+  }
+  (v22: core::felt) <- match_enum(v14) {
+    MyEnum::A => blk3,
+    MyEnum::B => blk4,
+    MyEnum::C => blk5,
   }
 Drops: v0, v1
 End:
-  Callsite(v10, v9)
+  Callsite(v15, v22)
 
 //! > ==========================================================================
 
@@ -333,32 +431,122 @@ extern func f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
 blk0:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Statements:
-Drops:
+  (v6: test::MyEnum) <- MyEnum::A(v5)
+Drops: v5
 End:
-  Callsite(v3, v4, v5)
+  Callsite(v3, v4, v6)
 
 blk1:
-Inputs: v6: core::RangeCheck, v7: core::felt, v8: core::felt
+Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
+Statements:
+  (v10: (core::felt,)) <- struct_construct(v9)
+  (v11: test::MyEnum) <- MyEnum::B(v10)
+Drops: v10, v9
+End:
+  Callsite(v7, v8, v11)
+
+blk2:
+Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
+Statements:
+  (v16: (core::felt, core::felt)) <- struct_construct(v14, v15)
+  (v17: test::MyEnum) <- MyEnum::C(v16)
+Drops: v16, v15, v14
+End:
+  Callsite(v12, v13, v17)
+
+blk3:
+Inputs: v21: core::felt
 Statements:
 Drops:
 End:
-  Callsite(v6, v7, v8)
+  Callsite(v21)
 
-blk2:
-Inputs: v9: core::RangeCheck, v10: core::felt, v11: core::felt, v12: core::felt
+blk4:
+Inputs: v22: (core::felt,)
 Statements:
-Drops: v12
+  (v23: core::felt) <- struct_destructure(v22)
+Drops: v22
 End:
-  Callsite(v9, v10, v11)
+  Callsite(v23)
 
-blk3 (root):
+blk5:
+Inputs: v24: (core::felt, core::felt)
+Statements:
+  (v25: core::felt, v26: core::felt) <- struct_destructure(v24)
+Drops: v26, v24
+End:
+  Callsite(v25)
+
+blk6 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Statements:
-  (v14: core::RangeCheck, v15: core::felt, v13: core::felt) <- match test::f(v0, v1, v2) {
+  (v19: core::RangeCheck, v20: core::felt, v18: test::MyEnum) <- match test::f(v0, v1, v2) {
     (v3, v4, v5) => blk0,
-    (v6, v7, v8) => blk1,
-    (v9, v10, v11, v12) => blk2,
+    (v7, v8, v9) => blk1,
+    (v12, v13, v14, v15) => blk2,
+  }
+  (v27: core::felt) <- match_enum(v18) {
+    MyEnum::A => blk3,
+    MyEnum::B => blk4,
+    MyEnum::C => blk5,
   }
 Drops: v2, v1
 End:
-  Callsite(v14, v15, v13)
+  Callsite(v19, v20, v27)
+
+//! > ==========================================================================
+
+//! > Test match on libfunc call that uses the refs of the libfunc in one of the arms.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(mut arr: Array::<felt>, mut b: (felt,)) -> Array::<felt> {
+    let y = match f(arr, b) {
+        MyEnum::A(x) => arr
+    };
+    y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: felt,
+}
+extern func f(ref arr: Array::<felt>, ref b: (felt,)) -> MyEnum nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
+Statements:
+  (v5: test::MyEnum) <- MyEnum::A(v4)
+Drops: v4
+End:
+  Callsite(v2, v3, v5)
+
+blk1:
+Inputs: v9: core::felt
+Statements:
+Drops: v9
+End:
+  Callsite(v7)
+
+blk2 (root):
+Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
+Statements:
+  (v7: core::array::Array::<core::felt>, v8: (core::felt,), v6: test::MyEnum) <- match test::f(v0, v1) {
+    (v2, v3, v4) => blk0,
+  }
+  (v10: core::array::Array::<core::felt>) <- match_enum(v6) {
+    MyEnum::A => blk1,
+  }
+Drops: v1, v8
+End:
+  Callsite(v10)

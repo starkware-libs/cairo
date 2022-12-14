@@ -477,22 +477,39 @@ fn lower_expr_function_call(
     }
 
     // The following is relevant only to extern functions.
-    if expr.function.try_get_extern_function_id(ctx.db.upcast()).is_some() {
+    if let Some(extern_function_id) = expr.function.try_get_extern_function_id(ctx.db.upcast()) {
         if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
             ctx.db.lookup_intern_type(expr.ty)
         {
-            // It is still unknown whether we directly match on this enum result, or store it to a
-            // variable. Thus we can't perform the call. Performing it and rebinding variables are
-            // done on the 2 places where this result it used:
-            // 1. [lower_optimized_extern_match]
-            // 2. [context::LoweredExprExternEnum::var]
-            return Ok(LoweredExpr::ExternEnum(LoweredExprExternEnum {
+            let lowered_expr = LoweredExprExternEnum {
                 function: expr.function,
                 concrete_enum_id,
                 inputs,
                 ref_args: expr.ref_args.clone(),
                 implicits: callee_implicit_types,
-            }));
+            };
+
+            if let Some(refs) = ctx.db.extern_function_declaration_refs(extern_function_id) {
+                if !refs.is_empty() {
+                    // Don't optimize in case the extern function has ref parameters.
+                    //
+                    // TODO(yuval): This is a temporary measure as there is a problem when a match
+                    // arm returns(moves) a variable that was passed to the
+                    // libfunc call in the match as a reference. To fix it, we
+                    // need: to ensure that if one arm uses a variable, all arms either use it or
+                    // drop it (all refs must be passed to all arms as inputs). Then, if a var that
+                    // was passed to the libfunc as a ref parameter is returned by one of the arms,
+                    // it must be rebound to do that (today it is returned as the same var id).
+                    return Ok(LoweredExpr::AtVariable(lowered_expr.var(ctx, scope)?));
+                }
+            }
+
+            // It is still unknown whether we directly match on this enum result, or store it to a
+            // variable. Thus we can't perform the call. Performing it and rebinding variables are
+            // done on the 2 places where this result it used:
+            // 1. [lower_optimized_extern_match]
+            // 2. [context::LoweredExprExternEnum::var]
+            return Ok(LoweredExpr::ExternEnum(lowered_expr));
         }
     }
 
