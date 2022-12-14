@@ -1,6 +1,9 @@
 extern type Nullable<T>;
 
-enum FromNullableResult<T> { Null: (), NotNull: Box::<T>, }
+enum FromNullableResult<T> {
+    Null: (),
+    NotNull: Box::<T>,
+}
 
 extern fn null<T>() -> Nullable::<T> nopanic;
 extern fn into_nullable<T>(value: Box::<T>) -> Nullable::<T> nopanic;

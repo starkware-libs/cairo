@@ -7,10 +7,10 @@ fn deserialize_felt(ref serialized: Array::<felt>) -> Option::<felt> {
 }
 
 fn serialize_bool(ref serialized: Array::<felt>, input: bool) {
-        serialize_felt(serialized, if input {
-            1
-        } else {
-            0
+    serialize_felt(serialized, if input {
+        1
+    } else {
+        0
     });
 }
 
@@ -33,31 +33,27 @@ fn serialize_u256(ref serialized: Array::<felt>, input: u256) {
 
 fn deserialize_u256(ref serialized: Array::<felt>) -> Option::<u256> {
     Option::<u256>::Some(
-        u256 {
-        low: deserialize_u128(serialized)?, high: deserialize_u128(serialized)?, 
-        }
+        u256 { low: deserialize_u128(serialized)?, high: deserialize_u128(serialized)?,  }
     )
 }
 
 fn serialize_array_felt_helper(ref serialized: Array::<felt>, ref input: Array::<felt>) {
     // TODO(orizi): Replace with simple call once inlining is supported.
     match get_gas() {
-        Option::Some(_) => {
-        },
-         Option::None(_) => {
+        Option::Some(_) => {},
+        Option::None(_) => {
             let mut data = array_new::<felt>();
             array_append::<felt>(data, 'Out of gas');
             panic(data);
         },
-     }
+    }
     match array_pop_front::<felt>(input) {
         Option::Some(value) => {
             serialize_felt(serialized, value);
             serialize_array_felt_helper(serialized, input);
         },
-         Option::None(_) => {
-        },
-     }
+        Option::None(_) => {},
+    }
 }
 
 fn serialize_array_felt(ref serialized: Array::<felt>, mut input: Array::<felt>) {
@@ -70,14 +66,13 @@ fn deserialize_array_felt_helper(
 ) -> Option::<Array::<felt>> {
     // TODO(orizi): Replace with simple call once inlining is supported.
     match get_gas() {
-        Option::Some(_) => {
-        },
-         Option::None(_) => {
+        Option::Some(_) => {},
+        Option::None(_) => {
             let mut data = array_new::<felt>();
             array_append::<felt>(data, 'Out of gas');
             panic(data);
         },
-     }
+    }
     if remaining == 0 {
         return Option::<Array::<felt>>::Some(curr_output);
     }
