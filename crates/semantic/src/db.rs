@@ -560,7 +560,7 @@ fn module_semantic_diagnostics(
                                         file_submodule_id.stable_ptr(db.upcast()).untyped(),
                                     ),
                                     kind: SemanticDiagnosticKind::FileNotFound,
-                                })
+                                });
                             }
                         }
                     }

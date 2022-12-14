@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use defs::ids::{FreeFunctionId, GenericFunctionId};
+use diagnostics::{Maybe, ToMaybe};
 use itertools::Itertools;
 use semantic::TypeId;
 use utils::strongly_connected_components::{compute_scc, GraphNode};
@@ -19,26 +20,26 @@ pub fn function_scc_representative(
 pub fn function_scc_explicit_implicits(
     db: &dyn LoweringGroup,
     function: SCCRepresentative,
-) -> Option<HashSet<TypeId>> {
+) -> Maybe<HashSet<TypeId>> {
     let scc = function_scc(db, function.0);
     let mut explicit_implicits = HashSet::new();
     for func in scc {
         let current_implicits: HashSet<TypeId> =
-            db.free_function_declaration_implicits(func)?.into_iter().collect();
+            db.free_function_declaration_implicits(func).to_maybe()?.into_iter().collect();
         explicit_implicits.extend(current_implicits);
     }
-    Some(explicit_implicits)
+    Ok(explicit_implicits)
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_all_implicits].
 pub fn function_all_implicits(
     db: &dyn LoweringGroup,
     function: semantic::FunctionId,
-) -> Option<Vec<TypeId>> {
+) -> Maybe<Vec<TypeId>> {
     match db.lookup_intern_function(function).function.generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_all_implicits_vec(free_function),
         GenericFunctionId::Extern(extern_function) => {
-            db.extern_function_declaration_implicits(extern_function)
+            db.extern_function_declaration_implicits(extern_function).to_maybe()
         }
         GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
     }
@@ -48,7 +49,7 @@ pub fn function_all_implicits(
 pub fn free_function_all_implicits(
     db: &dyn LoweringGroup,
     function: FreeFunctionId,
-) -> Option<HashSet<TypeId>> {
+) -> Maybe<HashSet<TypeId>> {
     // Find the SCC representative.
     let scc_representative = db.function_scc_representative(function);
 
@@ -56,7 +57,7 @@ pub fn free_function_all_implicits(
     let mut all_implicits = db.function_scc_explicit_implicits(scc_representative.clone())?;
 
     // For each direct callee, add its implicits.
-    for direct_callee in db.free_function_definition_direct_callees(function)? {
+    for direct_callee in db.free_function_definition_direct_callees(function).to_maybe()? {
         let current_implicits =
             match db.lookup_intern_function(direct_callee).function.generic_function {
                 GenericFunctionId::Free(free_function) => {
@@ -72,24 +73,27 @@ pub fn free_function_all_implicits(
                 }
                 GenericFunctionId::Extern(extern_function) => {
                     // All implicits of a libfunc are explicit implicits.
-                    db.extern_function_declaration_implicits(extern_function)?.into_iter().collect()
+                    db.extern_function_declaration_implicits(extern_function)
+                        .to_maybe()?
+                        .into_iter()
+                        .collect()
                 }
                 GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
             };
         all_implicits.extend(&current_implicits);
     }
-    Some(all_implicits)
+    Ok(all_implicits)
 }
 
 /// Query implementation of [crate::db::LoweringGroup::free_function_all_implicits_vec].
 pub fn free_function_all_implicits_vec(
     db: &dyn LoweringGroup,
     function: FreeFunctionId,
-) -> Option<Vec<TypeId>> {
+) -> Maybe<Vec<TypeId>> {
     let implicits_set = db.free_function_all_implicits(function)?;
     let mut implicits_vec = implicits_set.into_iter().collect_vec();
     implicits_vec.sort();
-    Some(implicits_vec)
+    Ok(implicits_vec)
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_scc].
@@ -124,11 +128,11 @@ impl<'a> GraphNode for FreeFunctionNode<'a> {
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
-pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId) -> Option<bool> {
+pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId) -> Maybe<bool> {
     match db.lookup_intern_function(function).function.generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_may_panic(free_function),
         GenericFunctionId::Extern(extern_function) => {
-            Some(db.extern_function_declaration_signature(extern_function)?.panicable)
+            Ok(db.extern_function_declaration_signature(extern_function).to_maybe()?.panicable)
         }
         GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
     }
@@ -138,13 +142,13 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
 pub fn free_function_may_panic(
     db: &dyn LoweringGroup,
     free_function: FreeFunctionId,
-) -> Option<bool> {
+) -> Maybe<bool> {
     // Find the SCC representative.
     let scc_representative = db.function_scc_representative(free_function);
 
     // TODO(spapini): Add something that actually panics.
     // For each direct callee, find if it may panic.
-    for direct_callee in db.free_function_definition_direct_callees(free_function)? {
+    for direct_callee in db.free_function_definition_direct_callees(free_function).to_maybe()? {
         match db.lookup_intern_function(direct_callee).function.generic_function {
             GenericFunctionId::Free(free_function) => {
                 // For a free function, call this method recursively. To avoid cycles, first
@@ -155,16 +159,16 @@ pub fn free_function_may_panic(
                     continue;
                 }
                 if db.free_function_may_panic(direct_callee_representative.0)? {
-                    return Some(true);
+                    return Ok(true);
                 }
             }
             GenericFunctionId::Extern(extern_function) => {
-                if db.extern_function_declaration_signature(extern_function)?.panicable {
-                    return Some(true);
+                if db.extern_function_declaration_signature(extern_function).to_maybe()?.panicable {
+                    return Ok(true);
                 }
             }
             GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
         };
     }
-    Some(false)
+    Ok(false)
 }

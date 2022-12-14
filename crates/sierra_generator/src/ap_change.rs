@@ -3,6 +3,7 @@
 mod test;
 
 use defs::ids::FreeFunctionId;
+use diagnostics::ToOption;
 use sierra::extensions::lib_func::SierraApChange;
 use sierra::program::GenStatement;
 
@@ -12,7 +13,7 @@ use crate::utils::get_libfunc_signature;
 
 /// Query implementation of [SierraGenGroup::contains_cycle].
 pub fn contains_cycle(db: &dyn SierraGenGroup, function_id: FreeFunctionId) -> Option<bool> {
-    let lowered_function = &*db.free_function_lowered(function_id)?;
+    let lowered_function = &*db.free_function_lowered(function_id).to_option()?;
     for (_, block) in &lowered_function.blocks {
         for statement in &block.statements {
             if let lowering::Statement::Call(statement_call) = statement {
