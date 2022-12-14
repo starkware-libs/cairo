@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+diagnostics = { path = "../diagnostics" }
 defs = { path = "../defs" }
 db_utils = { path = "../db_utils" }
 filesystem = { path = "../filesystem" }
