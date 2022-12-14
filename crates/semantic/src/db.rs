@@ -77,6 +77,10 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::us::use_resolved_lookback)]
     fn use_resolved_lookback(&self, use_id: UseId) -> Option<Arc<ResolvedLookback>>;
 
+    // Returns the attributes of a module
+    #[salsa::invoke(items::attribute::module_attributes)]
+    fn module_attributes(&self, module_id: ModuleId) -> Option<Vec<Attribute>>;
+
     // Struct.
     // =======
     /// Private query to compute data about a struct.
