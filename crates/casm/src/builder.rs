@@ -94,6 +94,9 @@ pub struct CasmBuildResult {
     pub fallthrough_state: State,
 }
 
+/// Builder to more easily write casm code without specifically thinking about ap changes and the
+/// sizes of opcodes. Wrong usages of it would panic instead of returning a result, as this builder
+/// assumes we are in a post validation of parameters stage.
 pub struct CasmBuilder {
     /// The state at a point of jumping into a label, per label.
     label_state: HashMap<String, State>,
