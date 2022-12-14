@@ -550,3 +550,157 @@ Statements:
 Drops: v1, v8
 End:
   Callsite(v10)
+
+//! > ==========================================================================
+
+//! > Test calling libfunc that returns enum but does nothing with the result.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo() {
+  get_gas();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
+Statements:
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<()>) <- Option::Some(v4)
+Drops: v4
+End:
+  Callsite(v2, v3, v5)
+
+blk1:
+Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<()>) <- Option::None(v8)
+Drops: v8
+End:
+  Callsite(v6, v7, v9)
+
+blk2 (root):
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Statements:
+  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v10: core::option::Option::<()>) <- match core::gas::get_gas(v0, v1) {
+    (v2, v3) => blk0,
+    (v6, v7) => blk1,
+  }
+  (v13: ()) <- struct_construct()
+Drops: v10
+End:
+  Callsite(v11, v12, v13)
+
+//! > ==========================================================================
+
+//! > Test calling libfunc that returns enum and returns the result as a tail expression.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo() -> Option::<()> {
+  get_gas()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
+Statements:
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<()>) <- Option::Some(v4)
+Drops: v4
+End:
+  Callsite(v2, v3, v5)
+
+blk1:
+Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<()>) <- Option::None(v8)
+Drops: v8
+End:
+  Callsite(v6, v7, v9)
+
+blk2 (root):
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Statements:
+  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v10: core::option::Option::<()>) <- match core::gas::get_gas(v0, v1) {
+    (v2, v3) => blk0,
+    (v6, v7) => blk1,
+  }
+Drops:
+End:
+  Callsite(v11, v12, v10)
+
+//! > ==========================================================================
+
+//! > Test calling libfunc that returns enum and returns the result with `return`.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo() -> Option::<()> {
+  return get_gas();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
+Statements:
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<()>) <- Option::Some(v4)
+Drops: v4
+End:
+  Callsite(v2, v3, v5)
+
+blk1:
+Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<()>) <- Option::None(v8)
+Drops: v8
+End:
+  Callsite(v6, v7, v9)
+
+blk2 (root):
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Statements:
+  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v10: core::option::Option::<()>) <- match core::gas::get_gas(v0, v1) {
+    (v2, v3) => blk0,
+    (v6, v7) => blk1,
+  }
+Drops:
+End:
+  Return(v11, v12, v10)
