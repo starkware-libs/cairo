@@ -299,6 +299,10 @@ define_language_element_id!(
     name
 );
 impl InlineSubmoduleId {
+    pub fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
+        db.lookup_intern_inline_submodule(*self).0
+    }
+
     pub fn parent(&self, db: &dyn DefsGroup) -> ModuleId {
         db.lookup_intern_inline_submodule(*self).0.0
     }
