@@ -1,4 +1,4 @@
-use diagnostics::{skip_diagnostic, Maybe, ToMaybe};
+use diagnostics::{skip_diagnostic, Maybe};
 use itertools::chain;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::strct::SemanticStructEx;
@@ -37,19 +37,13 @@ pub fn get_concrete_type_id(
                     db,
                     ty,
                     "Struct".into(),
-                    db.concrete_struct_members(strct)
-                        .to_maybe()?
-                        .into_iter()
-                        .map(|(_, member)| member.ty),
+                    db.concrete_struct_members(strct)?.into_iter().map(|(_, member)| member.ty),
                 ),
                 semantic::ConcreteTypeId::Enum(enm) => get_user_type_concrete_type_id(
                     db,
                     ty,
                     "Enum".into(),
-                    db.concrete_enum_variants(enm)
-                        .to_maybe()?
-                        .into_iter()
-                        .map(|variant| variant.ty),
+                    db.concrete_enum_variants(enm)?.into_iter().map(|variant| variant.ty),
                 ),
                 semantic::ConcreteTypeId::Extern(extrn) => {
                     Ok(db.intern_concrete_type(ConcreteTypeLongId {

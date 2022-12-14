@@ -6,6 +6,7 @@ use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
 use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
+use diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
 use id_arena::Arena;
 use itertools::zip_eq;
 use smol_str::SmolStr;
@@ -114,7 +115,6 @@ pub struct Environment {
 }
 impl Environment {
     /// Adds a parameter to the environment.
-    /// Returns true on success and false on failure.
     pub fn add_param(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
@@ -122,26 +122,23 @@ impl Environment {
         semantic_param: Parameter,
         ast_param: &ast::Param,
         function_id: GenericFunctionId,
-    ) -> bool {
+    ) -> Maybe<()> {
         let name = match name {
             Some(name) => name,
             None => {
                 self.unnamed_variables.push(Variable::Param(semantic_param));
-                return true;
+                return Ok(());
             }
         };
 
         match self.variables.entry(name.clone()) {
-            std::collections::hash_map::Entry::Occupied(_) => {
-                diagnostics.report(
-                    ast_param,
-                    ParamNameRedefinition { function_id, param_name: name.clone() },
-                );
-                false
-            }
+            std::collections::hash_map::Entry::Occupied(_) => Err(diagnostics.report(
+                ast_param,
+                ParamNameRedefinition { function_id, param_name: name.clone() },
+            )),
             std::collections::hash_map::Entry::Vacant(entry) => {
                 entry.insert(Variable::Param(semantic_param));
-                true
+                Ok(())
             }
         }
     }
@@ -149,7 +146,7 @@ impl Environment {
 
 /// Computes the semantic model of an expression.
 pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr) -> Expr {
-    maybe_compute_expr_semantic(ctx, syntax).unwrap_or_else(|| {
+    maybe_compute_expr_semantic(ctx, syntax).unwrap_or_else(|_| {
         Expr::Missing(ExprMissing { ty: TypeId::missing(ctx.db), stable_ptr: syntax.stable_ptr() })
     })
 }
@@ -158,17 +155,17 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Exp
 pub fn maybe_compute_expr_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::Expr,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    // TODO: When Expr holds the syntax pointer, add it here as well.
+    // TODO(spapini): When Expr holds the syntax pointer, add it here as well.
     match syntax {
         ast::Expr::Path(path) => resolve_variable(ctx, path),
         ast::Expr::Literal(literal_syntax) => {
-            Some(Expr::Literal(literal_to_semantic(ctx, literal_syntax)?))
+            Ok(Expr::Literal(literal_to_semantic(ctx, literal_syntax)?))
         }
-        ast::Expr::False(syntax) => Some(false_literal_expr(ctx, syntax.stable_ptr().into())),
-        ast::Expr::True(syntax) => Some(true_literal_expr(ctx, syntax.stable_ptr().into())),
+        ast::Expr::False(syntax) => Ok(false_literal_expr(ctx, syntax.stable_ptr().into())),
+        ast::Expr::True(syntax) => Ok(true_literal_expr(ctx, syntax.stable_ptr().into())),
         ast::Expr::Parenthesized(paren_syntax) => {
             maybe_compute_expr_semantic(ctx, &paren_syntax.expr(syntax_db))
         }
@@ -183,16 +180,13 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
-        ast::Expr::Missing(_) => {
-            ctx.diagnostics.report(syntax, Unsupported);
-            None
-        }
+        ast::Expr::Missing(_) => Err(ctx.diagnostics.report(syntax, Unsupported)),
     }
 }
 fn compute_expr_unary_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprUnary,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
 
     let unary_op = syntax.op(syntax_db);
@@ -200,8 +194,7 @@ fn compute_expr_unary_semantic(
 
     let function = match core_unary_operator(ctx.db, &unary_op, expr.ty()) {
         Err(err_kind) => {
-            ctx.diagnostics.report(&unary_op, err_kind);
-            return None;
+            return Err(ctx.diagnostics.report(&unary_op, err_kind));
         }
         Ok(function) => function,
     };
@@ -211,7 +204,7 @@ fn compute_expr_unary_semantic(
 fn compute_expr_binary_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBinary,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
 
@@ -233,23 +226,19 @@ fn compute_expr_binary_semantic(
                 if !semantic_var.is_mut() {
                     ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
                 }
-                Some(Expr::Assignment(ExprAssignment {
+                Ok(Expr::Assignment(ExprAssignment {
                     var,
                     rhs: ctx.exprs.alloc(rexpr),
                     ty: unit_ty(db),
                     stable_ptr,
                 }))
             }
-            _ => {
-                ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment);
-                None
-            }
+            _ => Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
         };
     }
     let function = match core_binary_operator(db, &binary_op, lexpr.ty(), rexpr.ty()) {
         Err(err_kind) => {
-            ctx.diagnostics.report(&binary_op, err_kind);
-            return None;
+            return Err(ctx.diagnostics.report(&binary_op, err_kind));
         }
         Ok(function) => function,
     };
@@ -259,7 +248,7 @@ fn compute_expr_binary_semantic(
 fn compute_expr_tuple_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprTuple,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
 
@@ -270,7 +259,7 @@ fn compute_expr_tuple_semantic(
         types.push(expr_semantic.ty());
         items.push(ctx.exprs.alloc(expr_semantic));
     }
-    Some(Expr::Tuple(ExprTuple {
+    Ok(Expr::Tuple(ExprTuple {
         items,
         ty: db.intern_type(TypeLongId::Tuple(types)),
         stable_ptr: syntax.stable_ptr().into(),
@@ -280,7 +269,7 @@ fn compute_expr_tuple_semantic(
 fn compute_expr_function_call_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprFunctionCall,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
 
@@ -299,32 +288,27 @@ fn compute_expr_function_call_semantic(
         }
         ResolvedConcreteItem::Variant(concrete_variant) => {
             if arg_exprs.len() != 1 {
-                ctx.diagnostics.report(
+                return Err(ctx.diagnostics.report(
                     &args_syntax,
                     WrongNumberOfArguments { expected: 1, actual: arg_exprs.len() },
-                );
-                return None;
+                ));
             }
             let arg = arg_exprs[0].clone();
             if concrete_variant.ty != arg.ty() {
-                ctx.diagnostics.report(
+                return Err(ctx.diagnostics.report(
                     &args_syntax,
                     WrongArgumentType { expected_ty: concrete_variant.ty, actual_ty: arg.ty() },
-                );
-                return None;
+                ));
             }
             let concrete_enum_id = concrete_variant.concrete_enum_id;
-            Some(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
+            Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
                 variant: concrete_variant,
                 value_expr: ctx.exprs.alloc(arg),
                 ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id))),
                 stable_ptr: syntax.stable_ptr().into(),
             }))
         }
-        _ => {
-            ctx.diagnostics.report(&path, NotAFunction);
-            None
-        }
+        _ => Err(ctx.diagnostics.report(&path, NotAFunction)),
     }
 }
 
@@ -332,7 +316,7 @@ fn compute_expr_function_call_semantic(
 pub fn compute_expr_block_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBlock,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
 
@@ -348,7 +332,9 @@ pub fn compute_expr_block_semantic(
         // Convert statements to semantic model.
         let statements_semantic: Vec<_> = statements
             .into_iter()
-            .filter_map(|statement_syntax| compute_statement_semantic(new_ctx, statement_syntax))
+            .filter_map(|statement_syntax| {
+                compute_statement_semantic(new_ctx, statement_syntax).to_option()
+            })
             .collect();
 
         // Convert tail expression (if exists) to semantic model.
@@ -364,7 +350,7 @@ pub fn compute_expr_block_semantic(
         } else {
             unit_ty(db)
         };
-        Some(Expr::Block(ExprBlock {
+        Ok(Expr::Block(ExprBlock {
             statements: statements_semantic,
             tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
             ty,
@@ -407,7 +393,7 @@ impl FlowMergeTypeHelper {
 fn compute_expr_match_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprMatch,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     // TODO(yuval): verify exhaustiveness.
     let db = ctx.db;
     let syntax_db = db.upcast();
@@ -436,7 +422,7 @@ fn compute_expr_match_semantic(
                         .insert(v.name.clone(), Variable::Local(v.var.clone()));
                 }
                 let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
-                Some((pattern, arm_expr))
+                Ok((pattern, arm_expr))
             })
         })
         .collect();
@@ -451,12 +437,12 @@ fn compute_expr_match_semantic(
         }
     }
     // Compute semantic representation of the match arms.
-    let pattern_and_exprs: Vec<_> = pattern_and_expr_options.into_iter().collect::<Option<_>>()?;
+    let pattern_and_exprs: Vec<_> = pattern_and_expr_options.into_iter().collect::<Maybe<_>>()?;
     let semantic_arms = pattern_and_exprs
         .into_iter()
         .map(|(pattern, arm_expr)| MatchArm { pattern, expression: ctx.exprs.alloc(arm_expr) })
         .collect();
-    Some(Expr::Match(ExprMatch {
+    Ok(Expr::Match(ExprMatch {
         matched_expr: ctx.exprs.alloc(expr),
         arms: semantic_arms,
         ty: helper.get_final_type(),
@@ -465,10 +451,7 @@ fn compute_expr_match_semantic(
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprIf].
-fn compute_expr_if_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprIf,
-) -> Option<Expr> {
+fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::ExprIf) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
 
     let expr = compute_expr_semantic(ctx, &syntax.condition(syntax_db));
@@ -497,7 +480,7 @@ fn compute_expr_if_semantic(
         .unwrap_or_else(|(block_if_ty, block_else_ty)| {
             ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
         });
-    Some(Expr::If(ExprIf {
+    Ok(Expr::If(ExprIf {
         condition: ctx.exprs.alloc(expr),
         if_block: ctx.exprs.alloc(if_block),
         else_block: else_block_opt.map(|else_block| ctx.exprs.alloc(else_block)),
@@ -510,22 +493,22 @@ fn compute_expr_if_semantic(
 fn compute_expr_error_propagate_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprErrorPropagate,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
     let inner = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let (ok_variant, err_variant) =
-        unwrap_error_propagation_type(ctx.db, inner.ty()).on_none(|| {
-            ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType { ty: inner.ty() });
+        unwrap_error_propagation_type(ctx.db, inner.ty()).ok_or_else(|| {
+            ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType { ty: inner.ty() })
         })?;
     let (_, func_err_variant) = unwrap_error_propagation_type(ctx.db, ctx.signature.return_type)
-        .on_none(|| {
+        .ok_or_else(|| {
             ctx.diagnostics.report(
                 syntax,
                 IncompatibleErrorPropagateType {
                     return_ty: ctx.signature.return_type,
                     err_ty: err_variant.ty,
                 },
-            );
+            )
         })?;
     // TODO(orizi): When auto conversion of types is added, try to convert the error type.
     if func_err_variant.ty != err_variant.ty
@@ -540,7 +523,7 @@ fn compute_expr_error_propagate_semantic(
             },
         );
     }
-    Some(Expr::PropagateError(ExprPropagateError {
+    Ok(Expr::PropagateError(ExprPropagateError {
         inner: ctx.exprs.alloc(inner),
         ok_variant,
         err_variant,
@@ -554,16 +537,17 @@ fn compute_pattern_semantic(
     ctx: &mut ComputationContext<'_>,
     pattern_syntax: ast::Pattern,
     ty: TypeId,
-) -> Option<Pattern> {
+) -> Maybe<Pattern> {
     // TODO(spapini): Check for missing type, and don't reemit an error.
     let syntax_db = ctx.db.upcast();
-    Some(match pattern_syntax {
+    Ok(match pattern_syntax {
         ast::Pattern::Underscore(_) => Pattern::Otherwise(PatternOtherwise { ty }),
         ast::Pattern::Literal(literal_pattern) => {
             let literal = literal_to_semantic(ctx, &literal_pattern)?;
             if ty != core_felt_ty(ctx.db) {
-                ctx.diagnostics.report(&literal_pattern, UnexpectedLiteralPattern { ty });
-                return None;
+                return Err(ctx
+                    .diagnostics
+                    .report(&literal_pattern, UnexpectedLiteralPattern { ty }));
             }
             Pattern::Literal(PatternLiteral { literal, ty })
         }
@@ -572,11 +556,14 @@ fn compute_pattern_semantic(
             let concrete_enum =
                 try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
                     .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
-                    .on_none(|| {
+                    .ok_or_else(|| {
                         // Don't add a diagnostic if the type is missing.
                         // A diagnostic should've already been added.
                         if ty != TypeId::missing(ctx.db) {
-                            ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty });
+                            ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty })
+                        } else {
+                            // TODO(lior): Take the DiagnosticAdded from the missing type.
+                            skip_diagnostic()
                         }
                     })?;
 
@@ -584,25 +571,23 @@ fn compute_pattern_semantic(
             let path = enum_pattern.path(syntax_db);
             let item = ctx.resolver.resolve_generic_path(ctx.diagnostics, &path)?;
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
-                .on_none(|| {
-                    ctx.diagnostics.report(&path, NotAVariant);
-                })?;
+                .ok_or_else(|| ctx.diagnostics.report(&path, NotAVariant))?;
 
             // Check that these are the same enums.
             if generic_variant.enum_id != concrete_enum.enum_id(ctx.db) {
-                ctx.diagnostics.report(
+                return Err(ctx.diagnostics.report(
                     &path,
                     WrongEnum {
                         expected_enum: concrete_enum.enum_id(ctx.db),
                         actual_enum: generic_variant.enum_id,
                     },
-                );
-                return None;
+                ));
             }
-            let concrete_variant =
-                ctx.db.concrete_enum_variant(concrete_enum, &generic_variant).on_none(|| {
-                    ctx.diagnostics.report(&path, UnknownEnum);
-                })?;
+            // TODO(lior): Should we report a diagnostic here?
+            let concrete_variant = ctx
+                .db
+                .concrete_enum_variant(concrete_enum, &generic_variant)
+                .map_err(|_| ctx.diagnostics.report(&path, UnknownEnum))?;
 
             // Compute inner pattern.
             let ty = concrete_variant.ty;
@@ -618,8 +603,7 @@ fn compute_pattern_semantic(
             // A path of length 1 is an identifier, which will result in a variable pattern.
             // Currently, other paths are not supported (and not clear if ever will be).
             if path.elements(syntax_db).len() > 1 {
-                ctx.diagnostics.report(&path, Unsupported);
-                return None;
+                return Err(ctx.diagnostics.report(&path, Unsupported));
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
             let identifier = path.elements(syntax_db)[0].identifier_ast(syntax_db);
@@ -636,11 +620,14 @@ fn compute_pattern_semantic(
             let concrete_struct =
                 try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
                     .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
-                    .on_none(|| {
+                    .ok_or_else(|| {
                         // Don't add a diagnostic if the type is missing.
                         // A diagnostic should've already been added.
                         if ty != TypeId::missing(ctx.db) {
-                            ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty });
+                            ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty })
+                        } else {
+                            // TODO(lior): Take the DiagnosticAdded from the missing type.
+                            skip_diagnostic()
                         }
                     })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
@@ -666,12 +653,13 @@ fn compute_pattern_semantic(
             for pattern_param_ast in pattern_param_asts {
                 match pattern_param_ast {
                     PatternStructParam::Single(single) => {
-                        let member = get_member(ctx, single.text(syntax_db))?;
+                        let member = get_member(ctx, single.text(syntax_db)).to_maybe()?;
                         let pattern = create_variable_pattern(ctx, single, &[], member.ty);
                         field_patterns.push((member, Box::new(pattern)));
                     }
                     PatternStructParam::WithExpr(with_expr) => {
-                        let member = get_member(ctx, with_expr.name(syntax_db).text(syntax_db))?;
+                        let member = get_member(ctx, with_expr.name(syntax_db).text(syntax_db))
+                            .to_maybe()?;
                         let pattern =
                             compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), member.ty)?;
                         field_patterns.push((member, Box::new(pattern)));
@@ -690,27 +678,26 @@ fn compute_pattern_semantic(
         }
         ast::Pattern::Tuple(pattern_tuple) => {
             let tys = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Tuple)
-                .on_none(|| {
-                    ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty });
+                .ok_or_else(|| {
+                    ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty })
                 })?;
 
             let patterns_ast = pattern_tuple.patterns(syntax_db).elements(syntax_db);
             if tys.len() != patterns_ast.len() {
-                ctx.diagnostics.report(
+                return Err(ctx.diagnostics.report(
                     &pattern_tuple,
                     WrongNumberOfGenericArguments {
                         expected: tys.len(),
                         actual: patterns_ast.len(),
                     },
-                );
-                return None;
+                ));
             }
             // Iterator of Option<Pattern?, for each field.
             let pattern_options = zip_eq(patterns_ast.into_iter(), tys).map(|(pattern_ast, ty)| {
-                Some(Box::new(compute_pattern_semantic(ctx, pattern_ast, ty)?))
+                Ok(Box::new(compute_pattern_semantic(ctx, pattern_ast, ty)?))
             });
             // If all are Some, collect into a Vec.
-            let field_patterns: Vec<_> = pattern_options.collect::<Option<_>>()?;
+            let field_patterns: Vec<_> = pattern_options.collect::<Maybe<_>>()?;
 
             Pattern::Tuple(PatternTuple { field_patterns, ty })
         }
@@ -747,7 +734,7 @@ fn create_variable_pattern(
 fn struct_ctor_expr(
     ctx: &mut ComputationContext<'_>,
     ctor_syntax: &ast::ExprStructCtorCall,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
     let path = ctor_syntax.path(syntax_db);
@@ -757,9 +744,7 @@ fn struct_ctor_expr(
 
     let concrete_struct = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
         .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
-        .on_none(|| {
-            ctx.diagnostics.report(&path, NotAStruct);
-        })?;
+        .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
 
     let members = db.concrete_struct_members(concrete_struct)?;
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
@@ -809,7 +794,7 @@ fn struct_ctor_expr(
             ctx.diagnostics.report(ctor_syntax, MissingMember { member_name: member_name.clone() });
         }
     }
-    Some(Expr::StructCtor(ExprStructCtor {
+    Ok(Expr::StructCtor(ExprStructCtor {
         struct_id: concrete_struct.struct_id(db),
         members: member_exprs.into_iter().collect(),
         ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct))),
@@ -834,7 +819,7 @@ fn get_tail_expression(
 fn literal_to_semantic(
     ctx: &mut ComputationContext<'_>,
     literal_syntax: &ast::TerminalLiteralNumber,
-) -> Option<ExprLiteral> {
+) -> Maybe<ExprLiteral> {
     let db = ctx.db;
     let syntax_db = db.upcast();
     let text = literal_syntax.text(syntax_db);
@@ -845,21 +830,18 @@ fn literal_to_semantic(
         (text.clone(), None)
     };
     let value = LiteralLongId::try_from(literal_text)
-        .ok()
-        .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?
+        .map_err(|_| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?
         .value;
 
     let ty = if let Some(ty_str) = ty {
         try_get_core_ty_by_name(db, ty_str.into(), vec![])
-            .map_err(|err| ctx.diagnostics.report(literal_syntax, err))
-            .ok()?
+            .map_err(|err| ctx.diagnostics.report(literal_syntax, err))?
     } else {
         db.core_felt_ty()
     };
     try_get_const_libfunc_name_by_type(db, ty)
-        .map_err(|err| ctx.diagnostics.report(literal_syntax, err))
-        .ok()?;
-    Some(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
+        .map_err(|err| ctx.diagnostics.report(literal_syntax, err))?;
+    Ok(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
 }
 
 /// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper
@@ -868,15 +850,14 @@ fn expr_as_identifier(
     ctx: &mut ComputationContext<'_>,
     rhs_syntax: &ast::Expr,
     syntax_db: &dyn SyntaxGroup,
-) -> Option<SmolStr> {
+) -> Maybe<SmolStr> {
     if let ast::Expr::Path(path) = rhs_syntax {
         let segments = path.elements(syntax_db);
         if segments.len() == 1 {
-            return Some(segments[0].identifier(syntax_db));
+            return Ok(segments[0].identifier(syntax_db));
         }
     };
-    ctx.diagnostics.report(rhs_syntax, InvalidMemberExpression);
-    None
+    Err(ctx.diagnostics.report(rhs_syntax, InvalidMemberExpression))
 }
 
 // TODO(spapini): Consider moving some checks here to the responsibility of the parser.
@@ -886,7 +867,7 @@ fn member_access_expr(
     lexpr: Expr,
     rhs_syntax: ast::Expr,
     stable_ptr: ast::ExprPtr,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
 
     // Find MemberId.
@@ -894,11 +875,12 @@ fn member_access_expr(
     match ctx.db.lookup_intern_type(lexpr.ty()) {
         TypeLongId::Concrete(concrete) => match concrete {
             ConcreteTypeId::Struct(concrete_struct_id) => {
+                // TODO(lior): Add a diagnostic test when accessing a member of a missing type.
                 let member = ctx
                     .db
-                    .concrete_struct_members(concrete_struct_id)
-                    .and_then(|members| members.get(&member_name).cloned())
-                    .on_none(|| {
+                    .concrete_struct_members(concrete_struct_id)?
+                    .get(&member_name)
+                    .ok_or_else(|| {
                         ctx.diagnostics.report(
                             &rhs_syntax,
                             NoSuchMember {
@@ -908,39 +890,36 @@ fn member_access_expr(
                         )
                     })?;
                 let lexpr_id = ctx.exprs.alloc(lexpr);
-                return Some(Expr::MemberAccess(ExprMemberAccess {
+                Ok(Expr::MemberAccess(ExprMemberAccess {
                     expr: lexpr_id,
                     struct_id: concrete_struct_id.struct_id(ctx.db),
                     member: member.id,
                     ty: member.ty,
                     stable_ptr,
-                }));
+                }))
             }
-            _ => {
-                ctx.diagnostics
-                    .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
-            }
+            _ => Err(ctx
+                .diagnostics
+                .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name })),
         },
         TypeLongId::Tuple(_) => {
             // TODO(spapini): Handle .0, .1, ...;
-            ctx.diagnostics.report(&rhs_syntax, Unsupported);
+            Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
         }
-        TypeLongId::GenericParameter(_) => {
-            ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
-        }
-        TypeLongId::Missing => {}
+        TypeLongId::GenericParameter(_) => Err(ctx
+            .diagnostics
+            .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name })),
+        TypeLongId::Missing => Err(skip_diagnostic()),
     }
-    None
 }
 
 /// Resolves a variable given a context and a path expression.
-fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> Option<Expr> {
+fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
     let segments = path.elements(syntax_db);
     if segments.len() != 1 {
-        ctx.diagnostics.report(path, Unsupported);
-        return None;
+        return Err(ctx.diagnostics.report(path, Unsupported));
     }
 
     match &segments[0] {
@@ -949,8 +928,7 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> O
         }
         PathSegment::WithGenericArgs(generic_args_segment) => {
             // TODO(ilya, 10/10/2022): Generics are not supported yet.
-            ctx.diagnostics.report(generic_args_segment, Unsupported);
-            None
+            Err(ctx.diagnostics.report(generic_args_segment, Unsupported))
         }
     }
 }
@@ -960,12 +938,12 @@ pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     identifier: &ast::TerminalIdentifier,
     path: &ast::ExprPath,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
     let mut maybe_env = Some(&*ctx.environment);
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(&variable_name) {
-            return Some(Expr::Var(ExprVar {
+            return Ok(Expr::Var(ExprVar {
                 var: var.id(),
                 ty: var.ty(),
                 stable_ptr: path.stable_ptr().into(),
@@ -973,8 +951,7 @@ pub fn resolve_variable_by_name(
         }
         maybe_env = env.parent.as_deref();
     }
-    ctx.diagnostics.report(identifier, VariableNotFound { name: variable_name });
-    None
+    Err(ctx.diagnostics.report(identifier, VariableNotFound { name: variable_name }))
 }
 
 /// Typechecks a function call.
@@ -983,25 +960,24 @@ fn expr_function_call(
     function_id: FunctionId,
     arg_exprs: Vec<Expr>,
     stable_ptr: ast::ExprPtr,
-) -> Option<Expr> {
+) -> Maybe<Expr> {
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
+    // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let signature = ctx
         .db
         .concrete_function_signature(function_id)
-        .on_none(|| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnknownFunction))?;
+        .map_err(|_| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnknownFunction))?;
 
     if arg_exprs.len() != signature.params.len() {
-        ctx.diagnostics.report_by_ptr(
+        return Err(ctx.diagnostics.report_by_ptr(
             stable_ptr.untyped(),
             WrongNumberOfArguments { expected: signature.params.len(), actual: arg_exprs.len() },
-        );
-        return None;
+        ));
     }
 
     // Check panicable.
     if signature.panicable && !ctx.signature.panicable {
-        ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable);
-        return None;
+        return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
     }
 
     // Check argument types.
@@ -1022,8 +998,8 @@ fn expr_function_call(
 
         if param.mutability == Mutability::Reference {
             // Verify the argument is a variable.
-            let expr_var = try_extract_matches!(&arg, Expr::Var).on_none(|| {
-                ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable);
+            let expr_var = try_extract_matches!(&arg, Expr::Var).ok_or_else(|| {
+                ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable)
             })?;
             // Verify the variable argument is mutable.
             if !ctx.semantic_defs[expr_var.var].is_mut() {
@@ -1034,7 +1010,7 @@ fn expr_function_call(
             args.push(ctx.exprs.alloc(arg));
         }
     }
-    Some(Expr::FunctionCall(ExprFunctionCall {
+    Ok(Expr::FunctionCall(ExprFunctionCall {
         function: function_id,
         ref_args,
         args,
@@ -1047,7 +1023,7 @@ fn expr_function_call(
 pub fn compute_statement_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
-) -> Option<StatementId> {
+) -> Maybe<StatementId> {
     let db = ctx.db;
     let syntax_db = db.upcast();
     let statement = match &syntax {
@@ -1069,7 +1045,7 @@ pub fn compute_statement_semantic(
                                 expected_ty: explicit_type,
                                 actual_ty: inferred_type,
                             },
-                        )
+                        );
                     }
                     explicit_type
                 }
@@ -1107,7 +1083,7 @@ pub fn compute_statement_semantic(
                         expected_ty: ctx.signature.return_type,
                         actual_ty: expr.ty(),
                     },
-                )
+                );
             }
             semantic::Statement::Return(semantic::StatementReturn {
                 expr: ctx.exprs.alloc(expr),
@@ -1116,5 +1092,5 @@ pub fn compute_statement_semantic(
         }
         ast::Statement::Missing(_) => todo!(),
     };
-    Some(ctx.statements.alloc(statement))
+    Ok(ctx.statements.alloc(statement))
 }
