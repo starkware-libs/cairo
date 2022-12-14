@@ -42,7 +42,7 @@ pub fn skip_diagnostic() -> DiagnosticAdded {
 /// reported.
 pub type Maybe<T> = Result<T, DiagnosticAdded>;
 
-/// Temporary trait to allow conversions from the old [Option<T>] mechanism to [Maybe<T>].
+/// Temporary trait to allow conversions from the old `Option<T>` mechanism to `Maybe<T>`.
 // TODO(lior): Remove this trait after converting all the functions.
 pub trait ToMaybe<T> {
     fn to_maybe(self) -> Maybe<T>;
@@ -56,7 +56,7 @@ impl<T> ToMaybe<T> for Option<T> {
     }
 }
 
-/// Temporary trait to allow conversions from [Maybe<T>] to [Option<T>].
+/// Temporary trait to allow conversions from `Maybe<T>` to `Option<T>`.
 /// The behavior is identical to [Result::ok]. It is used to mark all the location where there
 /// is a conversion between the two mechanisms.
 // TODO(lior): Remove this trait after converting all the functions.
