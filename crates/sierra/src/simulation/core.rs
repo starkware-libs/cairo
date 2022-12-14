@@ -7,9 +7,10 @@ use utils::extract_matches;
 use super::value::CoreValue;
 use super::LibFuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibFunc;
+use crate::extensions::boolean::BoolConcreteLibFunc;
 use crate::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, BranchAlign, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Struct,
-    Uint128, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bool, BranchAlign, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem,
+    Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
@@ -131,6 +132,7 @@ pub fn simulate<
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
         Uint128(libfunc) => simulate_integer_libfunc(libfunc, &inputs),
+        Bool(libfunc) => simulate_bool_libfunc(libfunc, &inputs),
         Felt(libfunc) => simulate_felt_libfunc(libfunc, &inputs),
         UnwrapNonZero(_) => match &inputs[..] {
             [CoreValue::NonZero(value)] => Ok((vec![*value.clone()], 0)),
@@ -238,6 +240,29 @@ pub fn simulate<
         &CoreConcreteLibFunc::StarkNet(_) => {
             unimplemented!("Simulation of the StarkNet functionalities is not implemented yet.")
         }
+    }
+}
+
+/// Simulate boolean library functions.
+fn simulate_bool_libfunc(
+    libfunc: &BoolConcreteLibFunc,
+    inputs: &[CoreValue],
+) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
+    match libfunc {
+        BoolConcreteLibFunc::And(_) => match inputs {
+            [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
+                // The variant index defines the true/false "value". Index zero is false.
+                Ok((
+                    vec![CoreValue::Enum {
+                        value: Box::new(CoreValue::Struct(vec![])),
+                        index: usize::from(*a_index == 1_usize && *b_index == 1_usize),
+                    }],
+                    0,
+                ))
+            }
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 

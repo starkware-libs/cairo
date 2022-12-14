@@ -7,10 +7,12 @@ use filesystem::ids::{CrateId, Directory, FileId, FileLongId, VirtualFile};
 use itertools::chain;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
+use syntax::node::ast::{ItemModule, MaybeModuleBody};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
+use utils::extract_matches;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
@@ -120,10 +122,15 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Option<FileId> {
         ModuleId::CrateRoot(crate_id) => {
             db.crate_root_dir(crate_id)?.file(db.upcast(), "lib.cairo".into())
         }
-        ModuleId::Submodule(submodule_id) => {
+        ModuleId::Submodule(SubmoduleId::File(submodule_id)) => {
             let parent = submodule_id.module(db);
             let name = submodule_id.name(db);
             db.module_dir(parent)?.file(db.upcast(), format!("{name}.cairo").into())
+        }
+        ModuleId::Submodule(SubmoduleId::Inline(submodule_id)) => {
+            // We return the main_file of the parent here, otherwise the diagnostics logic
+            // fails to lookup the DiagnosticLocation.
+            db.module_main_file(submodule_id.parent(db))?
         }
         ModuleId::VirtualSubmodule(virtual_submodule_id) => {
             db.lookup_intern_virtual_submodule(virtual_submodule_id).file
@@ -208,38 +215,76 @@ pub struct ModuleItems {
 
 // TODO(spapini): Make this private.
 fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
-    let mut res = ModuleData::default();
     let syntax_db = db.upcast();
+    let mut module_file = db.module_main_file(module_id)?;
+    // The parent file of plugin-generated files
+    // It differs from the module_file when processing an inline module.
+    let mut parent_file = module_file;
+
+    let file_syntax = db.file_syntax(module_file)?;
+    let mut item_asts = match module_id {
+        ModuleId::CrateRoot(_)
+        | ModuleId::Submodule(SubmoduleId::File(_))
+        | ModuleId::VirtualSubmodule(_) => file_syntax.items(syntax_db),
+        ModuleId::Submodule(SubmoduleId::Inline(inline_submodule_id)) => {
+            // Create an empty dummy file for domains separation between virtual submodules
+            // of the parent module and virtual submodules of the inline module.
+            parent_file = db.intern_file(FileLongId::Virtual(VirtualFile {
+                parent: Some(module_file),
+                name: format!("__{}", inline_submodule_id.name(db)).into(),
+                content: Arc::new(String::new()),
+            }));
+
+            let item_module_ast =
+                ItemModule::from_ptr(syntax_db, &file_syntax, inline_submodule_id.stable_ptr(db));
+
+            extract_matches!(
+                item_module_ast.body(syntax_db),
+                MaybeModuleBody::Some,
+                "Expected an inline module."
+            )
+            .items(syntax_db)
+        }
+    };
 
     let mut file_queue = VecDeque::new();
-    file_queue.push_back(db.module_main_file(module_id)?);
-    while let Some(file) = file_queue.pop_front() {
+    let mut res = ModuleData::default();
+    loop {
         let file_index = FileIndex(res.files.len());
         let module_file_id = ModuleFileId(module_id, file_index);
-        res.files.push(file);
-        let syntax_file = db.file_syntax(file)?;
-        for item in syntax_file.items(syntax_db).elements(syntax_db) {
+        res.files.push(module_file);
+
+        for item_ast in item_asts.elements(syntax_db) {
             for plugin in db.macro_plugins() {
-                let result = plugin.generate_code(db.upcast(), item.clone());
+                let result = plugin.generate_code(db.upcast(), item_ast.clone());
                 for plugin_diag in result.diagnostics {
                     res.plugin_diagnostics.push((module_file_id, plugin_diag));
                 }
 
                 let Some((name, content)) = result.code else { continue };
                 let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
-                    parent: Some(file),
+                    parent: Some(parent_file),
                     name: name.clone(),
                     content: Arc::new(content),
                 }));
+                // TODO(ilya): Consider using non-virtual submodules for plugin-generated content.
                 file_queue.push_back(new_file);
             }
-            match item {
+            match item_ast {
                 ast::Item::Module(module) => {
-                    let item_id = db.intern_file_submodule(FileSubmoduleLongId(
-                        module_file_id,
-                        module.stable_ptr(),
-                    ));
-                    res.submodules.insert(SubmoduleId::File(item_id), module);
+                    let item_id = match module.body(syntax_db) {
+                        MaybeModuleBody::Some(_) => {
+                            SubmoduleId::Inline(db.intern_inline_submodule(InlineSubmoduleLongId(
+                                module_file_id,
+                                module.stable_ptr(),
+                            )))
+                        }
+                        MaybeModuleBody::None(_) => SubmoduleId::File(db.intern_file_submodule(
+                            FileSubmoduleLongId(module_file_id, module.stable_ptr()),
+                        )),
+                    };
+
+                    res.submodules.insert(item_id, module);
                 }
                 ast::Item::Use(us) => {
                     let item_id = db.intern_use(UseLongId(module_file_id, us.stable_ptr()));
@@ -285,6 +330,13 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
                 }
             }
         }
+
+        match file_queue.pop_front() {
+            Some(file) => module_file = file,
+            None => break,
+        };
+        item_asts = db.file_syntax(module_file)?.items(syntax_db);
+        parent_file = module_file;
     }
     Some(res)
 }
