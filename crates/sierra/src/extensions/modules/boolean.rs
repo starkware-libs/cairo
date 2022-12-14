@@ -10,6 +10,7 @@ use crate::ids::GenericLibFuncId;
 define_libfunc_hierarchy! {
     pub enum BoolLibFunc {
         And(BoolAndLibFunc),
+        Not(BoolNotLibFunc),
     }, BoolConcreteLibFunc
 }
 
