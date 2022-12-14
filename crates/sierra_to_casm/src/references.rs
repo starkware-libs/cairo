@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use casm::ap_change::ApplyApChange;
-use casm::operand::{CellRef, DerefOrImmediate, Register};
+use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
 use num_bigint::BigInt;
 use num_traits::cast::ToPrimitive;
 use sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
@@ -82,6 +82,23 @@ pub enum CellExpression {
     Immediate(BigInt),
     UnaryOp(UnaryOpExpression),
     BinOp(BinOpExpression),
+}
+impl CellExpression {
+    pub fn from_res_operand(operand: ResOperand) -> Self {
+        match operand {
+            ResOperand::Deref(cell) => Self::Deref(cell),
+            ResOperand::DoubleDeref(cell, offset) => Self::DoubleDeref(cell, offset),
+            ResOperand::Immediate(imm) => Self::Immediate(imm),
+            ResOperand::BinOp(op) => Self::BinOp(BinOpExpression {
+                op: match op.op {
+                    casm::operand::Operation::Add => FeltBinaryOperator::Add,
+                    casm::operand::Operation::Mul => FeltBinaryOperator::Mul,
+                },
+                a: op.a,
+                b: op.b,
+            }),
+        }
+    }
 }
 
 /// A collection of Cell Expression which represents one logical object.
