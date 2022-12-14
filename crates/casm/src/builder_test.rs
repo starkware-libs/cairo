@@ -107,3 +107,46 @@ fn test_allocations_not_enough_commands() {
     };
     builder.build();
 }
+
+#[test]
+fn test_aligned_branch_intersect() {
+    let mut builder = CasmBuilder::default();
+    let var = builder.add_var(res!([ap + 7]));
+    casm_build_extend! {builder,
+        alloc _unused;
+        jump X if var != 0;
+        jump ONE_ALLOC;
+        X:
+        ONE_ALLOC:
+    };
+    let result = builder.build();
+    assert!(result.label_state.is_empty());
+    assert!(result.awaiting_relocations.is_empty());
+    assert_eq!(result.fallthrough_state.ap_change, 1);
+    assert_eq!(result.fallthrough_state.allocated, 1);
+    assert_eq!(
+        join(result.instructions.iter().map(|inst| format!("{inst};\n")), ""),
+        indoc! {"
+            jmp rel 4 if [ap + 7] != 0, ap++;
+            jmp rel 2;
+        "}
+    );
+}
+
+#[test]
+#[should_panic]
+fn test_unaligned_branch_intersect() {
+    let mut builder = CasmBuilder::default();
+    let var = builder.add_var(res!([ap + 7]));
+    casm_build_extend! {builder,
+        jump X if var != 0;
+        // A single alloc in this branch.
+        alloc _unused;
+        jump ONESIDED_ALLOC;
+        // No allocs in this branch.
+        X:
+        // When the merge occurs here we will panic on a mismatch.
+        ONESIDED_ALLOC:
+    };
+    builder.build();
+}
