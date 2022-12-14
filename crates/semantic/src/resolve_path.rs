@@ -369,16 +369,16 @@ impl<'db> Resolver<'db> {
                     self.db.lookup_intern_type(*ty)
                 {
                     let enum_id = concrete_enum_id.enum_id(self.db);
-                    let variants = self.db.enum_variants(enum_id).map_err(|_| {
-                        diagnostics.report(identifier, UnknownEnum)
+                    let variants = self
+                        .db
+                        .enum_variants(enum_id)
+                        .map_err(|_| diagnostics.report(identifier, UnknownEnum))?;
+                    let variant_id = variants.get(&ident).ok_or_else(|| {
+                        diagnostics
+                            .report(identifier, NoSuchVariant { enum_id, variant_name: ident })
                     })?;
-                    let variant = variants
-                        .get(&ident)
-                        .and_then(|id| self.db.variant_semantic(enum_id, *id))
-                        .on_none(|| {
-                            diagnostics
-                                .report(identifier, NoSuchVariant { enum_id, variant_name: ident });
-                        })?;
+                    let variant = self.db.variant_semantic(enum_id, *variant_id)?;
+                    // TODO(lior): Should we report diagnostic if `concrete_enum_variant` failed?
                     let concrete_variant = self
                         .db
                         .concrete_enum_variant(concrete_enum_id, &variant)
@@ -463,24 +463,19 @@ impl<'db> Resolver<'db> {
                 self.module_item_to_generic_item(diagnostics, module_item)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
+                // TODO(lior): Should we report a diagnostic if `enum_variants()` failed?
                 let variants = self
                     .db
                     .enum_variants(*enum_id)
-                    .on_none(|| diagnostics.report(identifier, UnknownEnum))?;
-                let variant = variants
-                    .get(&ident)
-                    .and_then(|id| self.db.variant_semantic(*enum_id, *id))
-                    .on_none(|| {
-                        diagnostics.report(
-                            identifier,
-                            NoSuchVariant { enum_id: *enum_id, variant_name: ident },
-                        )
-                    })?;
-                Some(ResolvedGenericItem::Variant(variant))
-            }
-            _ => {
-                diagnostics.report(identifier, InvalidPath);
-                None
+                    .map_err(|_| diagnostics.report(identifier, UnknownEnum))?;
+                let variant_id = variants.get(&ident).ok_or_else(|| {
+                    diagnostics.report(
+                        identifier,
+                        NoSuchVariant { enum_id: *enum_id, variant_name: ident },
+                    )
+                })?;
+                let variant = self.db.variant_semantic(*enum_id, *variant_id)?;
+                Ok(ResolvedGenericItem::Variant(variant))
             }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }

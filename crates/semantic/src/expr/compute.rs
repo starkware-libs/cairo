@@ -876,19 +876,16 @@ fn member_access_expr(
         TypeLongId::Concrete(concrete) => match concrete {
             ConcreteTypeId::Struct(concrete_struct_id) => {
                 // TODO(lior): Add a diagnostic test when accessing a member of a missing type.
-                let member = ctx
-                    .db
-                    .concrete_struct_members(concrete_struct_id)?
-                    .get(&member_name)
-                    .ok_or_else(|| {
-                        ctx.diagnostics.report(
-                            &rhs_syntax,
-                            NoSuchMember {
-                                struct_id: concrete_struct_id.struct_id(ctx.db),
-                                member_name,
-                            },
-                        )
-                    })?;
+                let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
+                let member = members.get(&member_name).ok_or_else(|| {
+                    ctx.diagnostics.report(
+                        &rhs_syntax,
+                        NoSuchMember {
+                            struct_id: concrete_struct_id.struct_id(ctx.db),
+                            member_name,
+                        },
+                    )
+                })?;
                 let lexpr_id = ctx.exprs.alloc(lexpr);
                 Ok(Expr::MemberAccess(ExprMemberAccess {
                     expr: lexpr_id,
