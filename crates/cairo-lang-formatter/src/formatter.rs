@@ -62,14 +62,17 @@ impl BreakLinePointProperties {
 enum LineComponent {
     /// A simple string to be printed.
     Token(String),
-    /// A child LineBuilder, any break line point inside will be ignored unless
+    /// Any break line point inside a protected zone is ignored unless
     /// it has no sibling break line points.
-    /// For example, in the expression let x = 1 * (2 + 3); everything inside the parenthesis
-    /// will be collected into an internal LineBuilder and will be broken only if the line is too
-    /// long after the first break line point, the one before the '*' operator, is broken.
-    /// More generally, any break point inside a child LineBuilder will be ignored unless there
-    /// are no breakpoint which are direct children of the parent LineBuilder.
-    Internal(LineBuilder),
+    /// For example, in the expression let "x = 1 * (2 + 3);" everything inside the parentheses
+    /// is collected into a protected zone and is broken only if the line is too
+    /// long after the first break line point (the one before the '*' operator) is broken.
+    /// More generally, any break point inside a protected zone is ignored unless there
+    /// are no breakpoints which are direct children of the parent LineBuilder.
+    /// The precedence dictates the order of breaking the protected zones, among sibling protected
+    /// zones. For example, the body of a function should be broken into separate lines before
+    /// the function signature.
+    ProtectedZone { builder: LineBuilder, precedence: usize },
     /// Represent a space in the code.
     Space,
     /// Represent a leading indent.
@@ -81,7 +84,7 @@ impl LineComponent {
     pub fn width(&self) -> usize {
         match self {
             Self::Token(s) => s.len(),
-            Self::Internal(builder) => builder.width(),
+            Self::ProtectedZone { builder, .. } => builder.width(),
             Self::Space => 1,
             Self::Indent(n) => *n,
             Self::BreakLinePoint(_) => 0,
@@ -92,7 +95,7 @@ impl fmt::Display for LineComponent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Token(s) => write!(f, "{s}"),
-            Self::Internal(builder) => write!(f, "{builder}"),
+            Self::ProtectedZone { builder, .. } => write!(f, "{builder}"),
             Self::Space => write!(f, " "),
             Self::Indent(n) => write!(f, "{}", " ".repeat(*n)),
             Self::BreakLinePoint(_) => write!(f, ""),
@@ -146,10 +149,13 @@ impl LineBuilder {
     }
     /// Adds a a sub-builder as the next child.
     /// All subsequent children will be added to this sub builder until set as closed.
-    fn open_sub_builder(&mut self) {
+    fn open_sub_builder(&mut self, precedence: usize) {
         let active_builder = self.get_active_builder_mut();
         active_builder.flush_pending_break_line_points();
-        active_builder.push_child(LineComponent::Internal(LineBuilder::default()));
+        active_builder.push_child(LineComponent::ProtectedZone {
+            builder: LineBuilder::default(),
+            precedence,
+        });
     }
     /// Sets the last child, which is assumed to be a LineBuilder, as close.
     /// New children will be siblings of this subtree.
@@ -243,16 +249,21 @@ impl LineBuilder {
     /// Repeatedly calls break_line_tree until each line length is less than max_width.
     /// Returns a vec of strings, each one represents a line.
     fn break_line_tree(&self, max_line_width: usize, tab_size: usize) -> Vec<String> {
-        // TODO(gil): consider using a write buffer similar to 'write!()' to reduce string
-        // allocations.
+        // TODO(gil): improve the complexity of this function. Right now the line builder is
+        // entirely cloned for each protected zone, which results in a worst case complexity of
+        // O(n*m) where n is the line length and m is the number of protected zones. The actual
+        // complexity is lower since the line is broken into smaller pieces and each one is handeled
+        // separetly.
         if self.width() < max_line_width {
             return vec![self.to_string()];
         }
         let mut sub_builders = self.break_line_tree_single_level(tab_size);
-        // While the line is not broken into several lines, try to flatten it and then break it.
+        // If the line was not broken into several lines (i.e. only one sub_builder), unprotect a
+        // protected zone and try to break again.
         while sub_builders.len() == 1 {
-            if !sub_builders[0].is_flat() {
-                sub_builders = sub_builders[0].flatten().break_line_tree_single_level(tab_size);
+            if sub_builders[0].contains_protected_zone() {
+                sub_builders =
+                    sub_builders[0].unprotect_zone().break_line_tree_single_level(tab_size);
             } else {
                 // Can't break tree to fit within width
                 // TODO(Gil): Propagate error to user.
@@ -317,13 +328,16 @@ impl LineBuilder {
         // Splitted into two match statements since self is mutably borrowed in the second match,
         // and thus a mutable ref to self can't be returned in it.
         match self.children.last() {
-            Some(LineComponent::Internal(sub_builder)) if sub_builder.is_open => {}
+            Some(LineComponent::ProtectedZone { builder: sub_builder, .. })
+                if sub_builder.is_open => {}
             _ => {
                 return self;
             }
         }
         match self.children.last_mut() {
-            Some(LineComponent::Internal(sub_builder)) if sub_builder.is_open => {
+            Some(LineComponent::ProtectedZone { builder: sub_builder, .. })
+                if sub_builder.is_open =>
+            {
                 sub_builder.get_active_builder_mut()
             }
             _ => {
@@ -345,31 +359,51 @@ impl LineBuilder {
             )
             .join("\n")
     }
-    /// Creates a new LineBuilder where the first subchild which is a LineBuilder, is replaced by
-    /// all its children.
-    fn flatten(&self) -> LineBuilder {
-        let mut flattened_tree = LineBuilder::default();
-        let mut first_tree_found = false;
+    /// Returns the highest protected zone precedence (minimum number) from within all the protected
+    /// zones which are direct children of this builder, or None if there are no protected zones
+    /// direct-children.
+    fn get_highest_protected_zone_precedence(&self) -> Option<usize> {
+        self.children
+            .iter()
+            .filter_map(|child| {
+                if let LineComponent::ProtectedZone { precedence, .. } = child {
+                    Some(*precedence)
+                } else {
+                    None
+                }
+            })
+            .min()
+    }
+    /// Creates a new LineBuilder where the first subchild which is a protected zone, is now
+    /// unprotected.
+    fn unprotect_zone(&self) -> LineBuilder {
+        let mut unprotected_builder = LineBuilder::default();
+        let mut first_protected_zone_found = false;
+        let highest_precedence = self
+            .get_highest_protected_zone_precedence()
+            .expect("Tried to unprotect a line builder with no protected zones.");
         for child in self.children.iter() {
             match child {
-                LineComponent::Internal(sub_tree) if !first_tree_found => {
-                    first_tree_found = true;
+                LineComponent::ProtectedZone { builder: sub_tree, precedence }
+                    if *precedence == highest_precedence && !first_protected_zone_found =>
+                {
+                    first_protected_zone_found = true;
                     for sub_child in sub_tree.children.iter() {
-                        flattened_tree.push_child(sub_child.clone());
+                        unprotected_builder.push_child(sub_child.clone());
                     }
                 }
-                _ => flattened_tree.push_child(child.clone()),
+                _ => unprotected_builder.push_child(child.clone()),
             }
         }
-        flattened_tree
+        unprotected_builder
     }
-    /// Returns whether or not the line contains an internal LineBuilder.
-    fn is_flat(&self) -> bool {
-        !self.children.iter().any(|child| matches!(child, LineComponent::Internal(_)))
+    /// Returns whether or not the line contains a protected zone.
+    fn contains_protected_zone(&self) -> bool {
+        self.children.iter().any(|child| matches!(child, LineComponent::ProtectedZone { .. }))
     }
     /// Returns whether the line contains only indents.
     fn is_only_indents(&self) -> bool {
-        !self.children.iter().any(|child| !matches!(child, LineComponent::Indent(_)))
+        !self.children.iter().any(|child| !matches!(child, LineComponent::Indent { .. }))
     }
     fn get_leading_indent(&self) -> usize {
         let mut leading_indent = 0;
@@ -441,10 +475,9 @@ pub trait SyntaxNodeFormat {
         &self,
         db: &dyn SyntaxGroup,
     ) -> WrappingBreakLinePoints;
-    /// Returns true if the node is protected from breaking unless no other break points exist.
-    /// For example break points inside ExprParenthesized should only be used if there are no break
-    /// points outside the parentheses. Only applicable for internal nodes.
-    fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool;
+    /// If self is a protected zone, returns its precedence (highest precedence == lowest number).
+    /// Otherwise, returns None.
+    fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
 }
 
 pub struct Formatter<'a> {
@@ -485,18 +518,18 @@ impl<'a> Formatter<'a> {
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
-        let is_protected_zone = syntax_node.is_protected_breaking_node(self.db);
+        let protected_zone_precedence = syntax_node.get_protected_zone_precedence(self.db);
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
         self.append_break_line_point(node_break_points.leading);
-        if is_protected_zone {
-            self.line_state.line_buffer.open_sub_builder();
+        if let Some(precedence) = protected_zone_precedence {
+            self.line_state.line_buffer.open_sub_builder(precedence);
         }
         if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node, no_space_after);
         } else {
             self.format_internal(syntax_node, no_space_after);
         }
-        if is_protected_zone {
+        if protected_zone_precedence.is_some() {
             self.line_state.line_buffer.close_sub_builder();
         }
         self.append_break_line_point(node_break_points.trailing);

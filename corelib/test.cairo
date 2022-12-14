@@ -285,10 +285,12 @@ fn test_u256_operators() {
         'basic UF'
     );
     assert(
-        as_u256(4_u128, 3_u128) * as_u256(0_u128, 1_u128) == as_u256(4_u128, 3_u128), 'mul by 1'
+        as_u256(4_u128, 3_u128) * as_u256(0_u128, 1_u128) == as_u256(4_u128, 3_u128),
+        'mul by 1'
     );
     assert(
-        as_u256(4_u128, 3_u128) * as_u256(0_u128, 2_u128) == as_u256(8_u128, 6_u128), 'mul by 2'
+        as_u256(4_u128, 3_u128) * as_u256(0_u128, 2_u128) == as_u256(8_u128, 6_u128),
+        'mul by 2'
     );
     assert(
         as_u256(0_u128, pow_2_127()) * as_u256(0_u128, 2_u128) == as_u256(1_u128, 0_u128),
@@ -297,7 +299,8 @@ fn test_u256_operators() {
     assert(
         as_u256(0_u128, max_u128)
             * as_u256(
-                0_u128, max_u128
+                0_u128,
+                max_u128
             ) == as_u256(0xfffffffffffffffffffffffffffffffe_u128, 1_u128),
         'max_u128 * max_u128'
     );
