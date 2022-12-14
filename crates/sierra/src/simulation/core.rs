@@ -263,6 +263,20 @@ fn simulate_bool_libfunc(
             [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
+        BoolConcreteLibFunc::Not(_) => match inputs {
+            [CoreValue::Enum { index, .. }] => {
+                // The variant index defines the true/false "value". Index zero is false.
+                Ok((
+                    vec![CoreValue::Enum {
+                        value: Box::new(CoreValue::Struct(vec![])),
+                        index: 1_usize - *index,
+                    }],
+                    0,
+                ))
+            }
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
