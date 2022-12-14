@@ -47,3 +47,5 @@ func get_storage_var(ref system: System) -> felt {
         starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>()
     )
 }
+
+//! > expected_diagnostics
