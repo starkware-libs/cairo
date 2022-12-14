@@ -203,12 +203,9 @@ fn build_uint128_from_felt(
     // Write value as 2**128 * x + y.
     casm_builder.add_divmod_hint(value, uint128_limit, x, y);
     // Check x in [0, 2**128).
-    let rc0 = casm_builder.double_deref(range_check, 0);
-    casm_builder.assert_vars_eq(x, rc0);
+    casm_builder.buffer_write_and_inc(range_check, x);
     // Check y in [0, 2**128).
-    let rc1 = casm_builder.double_deref(range_check, 1);
-    casm_builder.assert_vars_eq(y, rc1);
-    let rc2 = casm_builder.double_deref(range_check, 2);
+    casm_builder.buffer_write_and_inc(range_check, y);
     // Check that value = 2**128 * x + y (mod PRIME).
     let assign_value = casm_builder.bin_op(Operation::Mul, x, uint128_limit);
     casm_builder.assert_vars_eq(x_2_128, assign_value);
@@ -230,15 +227,14 @@ fn build_uint128_from_felt(
     casm_builder.assert_vars_eq(rced_value, assign_value);
     casm_builder.label("WriteRcedValue".to_owned());
     // In both cases, range-check the calculated value.
-    casm_builder.assert_vars_eq(rced_value, rc2);
+    casm_builder.buffer_write_and_inc(range_check, rced_value);
     // If x != 0, jump to the end.
     casm_builder.jump_nz(x, "FailureHandle".to_owned());
     // Otherwise, start an infinite loop.
     casm_builder.label("InfiniteLoop".to_owned());
     casm_builder.jump("InfiniteLoop".to_owned());
     casm_builder.label("NoOverflow".to_owned());
-    let rc0 = casm_builder.double_deref(range_check, 0);
-    casm_builder.assert_vars_eq(value, rc0);
+    casm_builder.buffer_write_and_inc(range_check, value);
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
         casm_builder.build();
 
@@ -257,22 +253,18 @@ fn build_uint128_from_felt(
         }],
         [
             vec![
-                ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltBinaryOperator::Add,
-                    a: fallthrough_state.get_adjusted_as_cell_ref(range_check),
-                    b: DerefOrImmediate::Immediate(BigInt::from(1)),
-                })),
+                ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                    fallthrough_state.get_adjusted(range_check),
+                )),
                 ReferenceExpression::from_cell(CellExpression::Deref(
                     fallthrough_state.get_adjusted_as_cell_ref(value),
                 )),
             ]
             .into_iter(),
             vec![
-                ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltBinaryOperator::Add,
-                    a: label_state["FailureHandle"].get_adjusted_as_cell_ref(range_check),
-                    b: DerefOrImmediate::Immediate(BigInt::from(3)),
-                })),
+                ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                    label_state["FailureHandle"].get_adjusted(range_check),
+                )),
                 ReferenceExpression::from_cell(CellExpression::Deref(
                     label_state["FailureHandle"].get_adjusted_as_cell_ref(x),
                 )),
