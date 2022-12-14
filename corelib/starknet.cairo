@@ -7,8 +7,7 @@ extern type StorageAddress;
 extern type ContractAddress;
 
 // An Helper function to force the inclusion of `System` in the list of implicits.
-fn use_system_implicit() implicits(System) {
-}
+fn use_system_implicit() implicits(System) {}
 
 // Storage.
 extern fn storage_base_address_const<address>() -> StorageBaseAddress nopanic;
@@ -67,10 +66,10 @@ impl StorageAccessBool of StorageAccess::<bool> {
     }
     #[inline(always)]
     fn write(address_domain: felt, base: StorageBaseAddress, value: bool) -> Result::<(), felt> {
-            StorageAccess::<felt>::write(address_domain, base, if value {
-                1
-            } else {
-                0
+        StorageAccess::<felt>::write(address_domain, base, if value {
+            1
+        } else {
+            0
         })
     }
 }
@@ -99,13 +98,12 @@ impl StorageAccessU256 of StorageAccess::<u256> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u256, felt> {
         Result::Ok(
             u256 {
-            low: StorageAccess::<u128>::read(address_domain, base)?,
-            high: u128_from_felt(
-                storage_read_syscall(
-                    address_domain,
-                    storage_address_from_base_and_offset(base, 1_u8)
-                )?
-            )
+                low: StorageAccess::<u128>::read(address_domain, base)?,
+                high: u128_from_felt(
+                    storage_read_syscall(
+                        address_domain, storage_address_from_base_and_offset(base, 1_u8)
+                    )?
+                )
             }
         )
     }
