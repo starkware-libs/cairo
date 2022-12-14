@@ -13,6 +13,8 @@ func test_assert_true() {
 func test_bool_operators() {
     assert(true == true, 1);
     assert(false == false, 1);
+    assert(!true == false, 1);
+    assert(!false == true, 1);
     assert(true != false, 1);
     assert(false != true, 1);
     assert(!(false & false), 1);
