@@ -14,11 +14,10 @@ impl LegacyHashFelt of LegacyHash::<felt> {
 
 impl LegacyHashBool of LegacyHash::<bool> {
     fn hash(state: felt, value: bool) -> felt {
-        // TODO(gil): Fix formatting.
-            LegacyHash::<felt>::hash(state, if value {
-                1
-            } else {
-                0
+        LegacyHash::<felt>::hash(state, if value {
+            1
+        } else {
+            0
         })
     }
 }

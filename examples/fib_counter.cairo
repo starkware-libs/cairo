@@ -6,5 +6,5 @@ fn fib(a: felt, b: felt, n: felt) -> (felt, felt) {
             let (v, count) = fib(b, a + b, n - 1);
             (v, count + 1)
         },
-     }
+    }
 }
