@@ -1,3 +1,4 @@
+use defs::db::DefsGroup;
 use defs::ids::ModuleId;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
@@ -25,5 +26,35 @@ fn test_missing_module_file() {
 
             "
         },
+    );
+}
+
+#[test]
+fn test_inline_module_diagnostics() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let db = &mut db_val;
+    let crate_id = setup_test_crate(
+        db,
+        indoc! {"
+            mod a {
+                func bad() -> uint128 {
+                    return 5;
+                }
+            }
+       "},
+    );
+
+    let submodules = db.module_submodules(ModuleId::CrateRoot(crate_id)).unwrap();
+    let submodule_id = submodules.first().unwrap();
+
+    assert_eq!(
+        db.module_semantic_diagnostics(*submodule_id).unwrap().format(db),
+        indoc! {r#"
+            error: Unexpected return type. Expected: "core::integer::uint128", found: "core::felt".
+             --> lib.cairo:3:16
+                    return 5;
+                           ^
+
+            "#},
     );
 }
