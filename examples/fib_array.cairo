@@ -16,8 +16,7 @@ fn fib_inner(n: u128, mut arr: Array::<felt>) -> Array::<felt> {
         return arr;
     }
     array_append::<felt>(
-        arr,
-        unchecked_array_at(arr, length - 1_u128) + unchecked_array_at(arr, length - 2_u128)
+        arr, unchecked_array_at(arr, length - 1_u128) + unchecked_array_at(arr, length - 2_u128)
     );
     fib_inner(n, arr)
 }
@@ -31,5 +30,5 @@ fn unchecked_array_at(ref arr: Array::<felt>, idx: u128) -> felt {
             array_append::<felt>(data, 1);
             panic(data)
         },
-     }
+    }
 }

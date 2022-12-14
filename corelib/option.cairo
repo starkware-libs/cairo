@@ -1,1 +1,4 @@
-enum Option<T> { Some: T, None: (), }
+enum Option<T> {
+    Some: T,
+    None: (),
+}

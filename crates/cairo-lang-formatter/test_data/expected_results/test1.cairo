@@ -30,8 +30,8 @@ fn bar<T>(x: T) -> T {
 }
 
 
-struct A { }
-struct B { }
+struct A {}
+struct B {}
 
 // Calculates fib, but all variables are boxes.
 fn fib(a: Box::<felt>, b: Box::<felt>, n: Box::<felt>) -> Box::<felt> {
@@ -39,13 +39,12 @@ fn fib(a: Box::<felt>, b: Box::<felt>, n: Box::<felt>) -> Box::<felt> {
         0 => {
             a
         },
-         _ => {
+        _ => {
             fib(
                 b,
                 into_box::<felt>(unbox::<felt>(a) + unbox::<felt>(b)),
                 into_box::<felt>(unbox::<felt>(n) - 1),
-                
             )
         },
-     }
+    }
 }
