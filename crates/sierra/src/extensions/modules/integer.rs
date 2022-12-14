@@ -453,12 +453,7 @@ impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
         Ok(LibFuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type.clone()),
-                ParamSignature {
-                    ty: context.get_concrete_type(FeltType::id(), &[])?,
-                    allow_deferred: false,
-                    allow_add_const: false,
-                    allow_const: true,
-                },
+                ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
             ],
             branch_signatures: vec![
                 BranchSignature {
