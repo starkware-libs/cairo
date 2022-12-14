@@ -3,7 +3,10 @@ use traits::Copy;
 use traits::Drop;
 
 #[derive(Copy, Drop)]
-enum bool { False: (), True: (), }
+enum bool {
+    False: (),
+    True: (),
+}
 
 extern fn bool_and_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
 fn bool_and(a: bool, b: bool) -> bool implicits() nopanic {
@@ -16,7 +19,7 @@ fn bool_or(a: bool, b: bool) -> bool implicits() nopanic {
     match a {
         bool::False(x) => b,
         bool::True(x) => bool::True(()),
-     }
+    }
 }
 
 extern fn bool_not_impl(a: bool) -> (bool, ) implicits() nopanic;
@@ -57,7 +60,10 @@ fn felt_neg(a: felt) -> felt nopanic {
 
 extern type NonZero<T>;
 // TODO(spapini): Add generic impls for NonZero for Copy, Drop.
-enum JumpNzResult<T> { Zero: (), NonZero: NonZero::<T>, }
+enum JumpNzResult<T> {
+    Zero: (),
+    NonZero: NonZero::<T>,
+}
 extern fn unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
 
 impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
@@ -69,7 +75,7 @@ fn felt_eq(a: felt, b: felt) -> bool nopanic {
     match a - b {
         0 => bool::True(()),
         _ => bool::False(()),
-     }
+    }
 }
 fn felt_ne(a: felt, b: felt) -> bool nopanic {
     !(a == b)
@@ -206,8 +212,11 @@ use gas::get_gas;
 use gas::get_gas_all;
 
 // Panics.
-enum PanicResult<T> { Ok: T, Err: Array::<felt>, }
-enum never { }
+enum PanicResult<T> {
+    Ok: T,
+    Err: Array::<felt>,
+}
+enum never {}
 extern fn panic(data: Array::<felt>) -> never;
 
 fn assert(cond: bool, err_code: felt) {

@@ -1,1 +1,4 @@
-enum Result<T, E> { Ok: T, Err: E, }
+enum Result<T, E> {
+    Ok: T,
+    Err: E,
+}
