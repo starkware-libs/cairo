@@ -2,7 +2,10 @@
 extern type u128;
 extern fn u128_const<value>() -> u128 nopanic;
 
-enum U128sFromFeltResult { Narrow: u128, Wide: (u128, u128), }
+enum U128sFromFeltResult {
+    Narrow: u128,
+    Wide: (u128, u128),
+}
 extern fn u128s_from_felt(a: felt) -> U128sFromFeltResult implicits(RangeCheck) nopanic;
 
 #[panic_with('u128_from OF', u128_from_felt)]
@@ -10,7 +13,7 @@ fn u128_try_from_felt(a: felt) -> Option::<u128> implicits(RangeCheck) nopanic {
     match u128s_from_felt(a) {
         U128sFromFeltResult::Narrow(x) => Option::<u128>::Some(x),
         U128sFromFeltResult::Wide(x) => Option::<u128>::None(()),
-     }
+    }
 }
 
 extern fn u128_to_felt(a: u128) -> felt nopanic;
@@ -26,7 +29,7 @@ fn u128_wrapping_add(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
     match u128_overflowing_add(a, b) {
         Result::Ok(x) => x,
         Result::Err(x) => x,
-     }
+    }
 }
 
 extern fn u128_wide_mul(a: u128, b: u128) -> (u128, u128) implicits(RangeCheck) nopanic;
@@ -36,7 +39,7 @@ fn u128_overflowing_mul(a: u128, b: u128) -> (u128, bool) implicits(RangeCheck) 
     match u128_to_felt(top_word) {
         0 => (bottom_word, false),
         _ => (bottom_word, true),
-     }
+    }
 }
 
 #[panic_with('u128_add OF', u128_add)]
@@ -44,7 +47,7 @@ fn u128_checked_add(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) no
     match u128_overflowing_add(a, b) {
         Result::Ok(r) => Option::<u128>::Some(r),
         Result::Err(r) => Option::<u128>::None(()),
-     }
+    }
 }
 
 #[panic_with('u128_sub OF', u128_sub)]
@@ -52,7 +55,7 @@ fn u128_checked_sub(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) no
     match u128_overflowing_sub(a, b) {
         Result::Ok(r) => Option::<u128>::Some(r),
         Result::Err(r) => Option::<u128>::None(()),
-     }
+    }
 }
 
 #[panic_with('u128_mul OF', u128_mul)]
@@ -61,7 +64,7 @@ fn u128_checked_mul(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) no
     match u128_to_felt(top_word) {
         0 => Option::<u128>::Some(bottom_word),
         _ => Option::<u128>::None(()),
-     }
+    }
 }
 
 impl NonZeroU128Copy of Copy::<NonZero::<u128>>;
@@ -72,7 +75,7 @@ fn u128_checked_as_non_zero(a: u128) -> Option::<NonZero::<u128>> implicits() no
     match u128_jump_nz(a) {
         JumpNzResult::Zero(()) => Option::<NonZero::<u128>>::None(()),
         JumpNzResult::NonZero(x) => Option::<NonZero::<u128>>::Some(x),
-     }
+    }
 }
 
 fn u128_safe_div(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopanic {
@@ -166,14 +169,14 @@ fn u8_wrapping_add(a: u8, b: u8) -> u8 implicits(RangeCheck) nopanic {
     match u8_overflowing_add(a, b) {
         Result::Ok(x) => x,
         Result::Err(x) => x,
-     }
+    }
 }
 
 fn u8_wrapping_sub(a: u8, b: u8) -> u8 implicits(RangeCheck) nopanic {
     match u8_overflowing_sub(a, b) {
         Result::Ok(x) => x,
         Result::Err(x) => x,
-     }
+    }
 }
 
 #[panic_with('u8_add Overflow', u8_add)]
@@ -181,7 +184,7 @@ fn u8_checked_add(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
     match u8_overflowing_add(a, b) {
         Result::Ok(r) => Option::<u8>::Some(r),
         Result::Err(r) => Option::<u8>::None(()),
-     }
+    }
 }
 
 #[panic_with('u8_sub Overflow', u8_sub)]
@@ -189,43 +192,46 @@ fn u8_checked_sub(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
     match u8_overflowing_sub(a, b) {
         Result::Ok(r) => Option::<u8>::Some(r),
         Result::Err(r) => Option::<u8>::None(()),
-     }
+    }
 }
 
 
 #[derive(Copy, Drop)]
-struct u256 { low: u128, high: u128, }
+struct u256 {
+    low: u128,
+    high: u128,
+}
 
 fn u256_overflow_add(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
     let (high, overflow) = match u128_overflowing_add(a.high, b.high) {
         Result::Ok(high) => (high, false),
         Result::Err(high) => (high, true),
-     };
+    };
     match u128_overflowing_add(a.low, b.low) {
         Result::Ok(low) => (u256 { low, high }, overflow),
         Result::Err(low) => {
             match u128_overflowing_add(high, 1_u128) {
                 Result::Ok(high) => (u256 { low, high }, overflow),
                 Result::Err(high) => (u256 { low, high }, true),
-             }
+            }
         },
-     }
+    }
 }
 
 fn u256_overflow_sub(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
     let (high, overflow) = match u128_overflowing_sub(a.high, b.high) {
         Result::Ok(high) => (high, false),
         Result::Err(high) => (high, true),
-     };
+    };
     match u128_overflowing_sub(a.low, b.low) {
         Result::Ok(low) => (u256 { low, high }, overflow),
         Result::Err(low) => {
             match u128_overflowing_sub(high, 1_u128) {
                 Result::Ok(high) => (u256 { low, high }, overflow),
                 Result::Err(high) => (u256 { low, high }, true),
-             }
+            }
         },
-     }
+    }
 }
 
 fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) nopanic {
@@ -238,11 +244,11 @@ fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) nopanic {
             overflow_value1 != 0_u128 | overflow_value2 != 0_u128 | (a.high > 0_u128 & b.high > 0_u128)
         ),
         Result::Err(high) => (high, true),
-     };
+    };
     let (high, overflow) = match u128_overflowing_add(high, high3) {
         Result::Ok(high) => (high, overflow),
         Result::Err(high) => (high, true),
-     };
+    };
     (u256 { low, high }, overflow)
 }
 
@@ -322,5 +328,5 @@ fn u256_from_felt(a: felt) -> u256 implicits(RangeCheck) nopanic {
     match u128s_from_felt(a) {
         U128sFromFeltResult::Narrow(low) => u256 { low, high: 0_u128 },
         U128sFromFeltResult::Wide((high, low)) => u256 { low, high },
-     }
+    }
 }

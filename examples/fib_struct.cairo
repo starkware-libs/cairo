@@ -1,6 +1,10 @@
 // Calculates fib...
 #[derive(Copy, Drop)]
-struct FibResult { value: felt, index: felt, nothing: () }
+struct FibResult {
+    value: felt,
+    index: felt,
+    nothing: ()
+}
 
 fn fib(a: felt, b: felt, n: felt) -> FibResult {
     match n {
@@ -9,5 +13,5 @@ fn fib(a: felt, b: felt, n: felt) -> FibResult {
             let r = fib(b, a + b, n - 1);
             FibResult { value: r.value, nothing: (), index: r.index + 1 }
         },
-     }
+    }
 }

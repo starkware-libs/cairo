@@ -3,8 +3,7 @@ fn run_tests() {
 }
 
 fn assert(cond: bool, err_code: felt) {
-    if cond {
-    } else {
+    if cond {} else {
         let mut data = array_new::<felt>();
         array_append::<felt>(ref data, err_code);
         panic(data);
