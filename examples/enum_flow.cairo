@@ -1,12 +1,22 @@
-enum MyEnumShort { a: felt, b: felt }
-enum MyEnumLong { a: felt, b: felt, c: felt }
-enum MyEnumGeneric<S, T> { a: T, b: S, c: T }
+enum MyEnumShort {
+    a: felt,
+    b: felt
+}
+enum MyEnumLong {
+    a: felt,
+    b: felt,
+    c: felt
+}
+enum MyEnumGeneric<S, T> {
+    a: T,
+    b: S,
+    c: T
+}
 fn main() -> felt {
     let es0 = MyEnumShort::a(10);
     match_short(es0);
     let es1 = MyEnumShort::b(11);
     match_short(es1);
-
     let el0 = MyEnumLong::a(20);
     match_long(el0);
     let el1 = MyEnumLong::b(21);
@@ -24,10 +34,10 @@ fn match_short(e: MyEnumShort) -> felt {
         MyEnumShort::a(x) => {
             x
         },
-         MyEnumShort::b(x) => {
+        MyEnumShort::b(x) => {
             x
         },
-     }
+    }
 }
 
 fn match_long(e: MyEnumLong) -> felt {
@@ -35,11 +45,11 @@ fn match_long(e: MyEnumLong) -> felt {
         MyEnumLong::a(x) => {
             x
         },
-         MyEnumLong::b(x) => {
+        MyEnumLong::b(x) => {
             x
         },
-         MyEnumLong::c(x) => {
+        MyEnumLong::c(x) => {
             x
         },
-     }
+    }
 }
