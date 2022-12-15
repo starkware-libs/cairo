@@ -2,7 +2,7 @@
   "bytecode": [
     "0x480a7ffb7fff8000",
     "0x1104800180018000",
-    "0x9a",
+    "0x92",
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
     "0x1",
@@ -10,7 +10,7 @@
     "0x480680017fff8000",
     "0x3",
     "0x1104800180018000",
-    "0x9d",
+    "0x95",
     "0x20680017fff7fff",
     "0x6",
     "0x10780017fff7fff",
@@ -31,21 +31,17 @@
     "0x480680017fff8000",
     "0x0",
     "0x48297ffc80007ffd",
-    "0x484480017ffe8000",
-    "0x1",
     "0xa0680017fff8000",
-    "0x8",
-    "0x48307ffd80007ffe",
-    "0x4844800180007fff",
-    "0x1",
-    "0x400280007ffa7fff",
+    "0x6",
+    "0x48307ffe80007ffd",
+    "0x400280007ffa7ffd",
     "0x10780017fff7fff",
     "0x10",
-    "0x482480017ffe8000",
+    "0x482480017ffd8000",
     "0x1",
-    "0x48307fff80007ffc",
-    "0x400280007ffa7fff",
-    "0x48327ffc7ffc8000",
+    "0x48307ffd80007fff",
+    "0x400280007ffa7ffe",
+    "0x48327ffb7ffc8000",
     "0x482680017ffa8000",
     "0x1",
     "0x480a7ffc7fff8000",
@@ -87,25 +83,21 @@
     "0x1",
     "0x40137ffe7fff8000",
     "0x48307ffa80007ffb",
-    "0x484480017ffe8000",
-    "0x1",
     "0xa0680017fff8000",
-    "0x8",
-    "0x48307ffd80007ffe",
-    "0x4844800180007fff",
-    "0x1",
-    "0x400080007ff47fff",
+    "0x6",
+    "0x48307ffe80007ffd",
+    "0x400080007ff67ffd",
     "0x10780017fff7fff",
     "0x10",
-    "0x482480017ffe8000",
+    "0x482480017ffd8000",
     "0x1",
-    "0x48307fff80007ffc",
-    "0x400080007ff47fff",
-    "0x48307ffc7ff58000",
-    "0x482480017ff38000",
+    "0x48307ffd80007fff",
+    "0x400080007ff57ffe",
+    "0x48307ffb7ff68000",
+    "0x482480017ff48000",
     "0x1",
-    "0x48127ff97fff8000",
-    "0x48127ff97fff8000",
+    "0x48127ff47fff8000",
+    "0x48127ff47fff8000",
     "0x480680017fff8000",
     "0x0",
     "0x480080007ffb8000",
@@ -113,10 +105,10 @@
     "0xc",
     "0x40780017fff7fff",
     "0x2",
-    "0x482480017ff28000",
+    "0x482480017ff48000",
     "0x1",
-    "0x48127ff77fff8000",
-    "0x48127ff77fff8000",
+    "0x48127ff47fff8000",
+    "0x48127ff47fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x480680017fff8000",
@@ -143,7 +135,7 @@
     "0x480a80007fff8000",
     "0x48127ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff73",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff7b",
     "0x40780017fff7fff",
     "0x1",
     "0x400080007fff7ffe",
@@ -193,37 +185,37 @@
       ]
     ],
     [
-      33,
+      31,
       [
-        "%{ memory[ap + 0] = memory[ap + -1] < memory[ap + -2] %}"
+        "%{ memory[ap + 0] = memory[ap + -2] < memory[ap + -1] %}"
       ]
     ],
     [
-      74,
-      [
-        "%{ memory[ap + 0] = segments.add() %}"
-      ]
-    ],
-    [
-      89,
-      [
-        "%{ memory[ap + 0] = memory[ap + -1] < memory[ap + -2] %}"
-      ]
-    ],
-    [
-      130,
+      70,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      144,
+      83,
+      [
+        "%{ memory[ap + 0] = memory[ap + -2] < memory[ap + -1] %}"
+      ]
+    ],
+    [
+      122,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      161,
+      136,
+      [
+        "%{ memory[ap + 0] = segments.add() %}"
+      ]
+    ],
+    [
+      153,
       [
         "%{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + -3] + 0) %}"
       ]
