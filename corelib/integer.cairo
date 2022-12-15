@@ -42,7 +42,7 @@ func uint128_wrapping_add(a: uint128, b: uint128) -> uint128 implicits(RangeChec
 
 // TODO(orizi): Change to extern when added.
 func uint128_wide_mul(a: uint128, b: uint128) -> (uint128, uint128) implicits(RangeCheck) nopanic {
-    let u2_64 = uint128_const::<0x10000000000000000>();
+    let u2_64 = 0x10000000000000000_uint128;
     let nz_u2_64 = match uint128_checked_as_non_zero(u2_64) {
         Option::Some(x) => x,
         Option::None(x) => {
@@ -50,7 +50,6 @@ func uint128_wide_mul(a: uint128, b: uint128) -> (uint128, uint128) implicits(Ra
             return (a, b);
         },
     };
-    let u1 = uint128_const::<1>();
     let (a1, a0) = uint128_safe_divmod(a, nz_u2_64);
     let (b1, b0) = uint128_safe_divmod(b, nz_u2_64);
     let top_word = uint128_known_u64_mul(a1, b1);
@@ -62,11 +61,11 @@ func uint128_wide_mul(a: uint128, b: uint128) -> (uint128, uint128) implicits(Ra
     let (bottom_word,
     top_word) = match uint128_overflow_add(bottom_word, uint128_known_u64_mul(a0b1_l, u2_64)) {
         Result::Ok(bottom_word) => (bottom_word, top_word),
-        Result::Err(bottom_word) => (bottom_word, uint128_wrapping_add(top_word, u1)),
+        Result::Err(bottom_word) => (bottom_word, uint128_wrapping_add(top_word, 1_uint128)),
     };
     match uint128_overflow_add(bottom_word, uint128_known_u64_mul(a1b0_l, u2_64)) {
         Result::Ok(bottom_word) => (bottom_word, top_word),
-        Result::Err(bottom_word) => (bottom_word, uint128_wrapping_add(top_word, u1)),
+        Result::Err(bottom_word) => (bottom_word, uint128_wrapping_add(top_word, 1_uint128)),
     }
 }
 
@@ -185,7 +184,7 @@ func uint256_overflow_add(
     match uint128_overflow_add(a.low, b.low) {
         Result::Ok(low) => (uint256 { low, high }, overflow),
         Result::Err(low) => {
-            match uint128_overflow_add(high, uint128_const::<1>()) {
+            match uint128_overflow_add(high, 1_uint128) {
                 Result::Ok(high) => (uint256 { low, high }, overflow),
                 Result::Err(high) => (uint256 { low, high }, true),
             }
@@ -205,7 +204,7 @@ func uint256_overflow_sub(
     match uint128_overflow_sub(a.low, b.low) {
         Result::Ok(low) => (uint256 { low, high }, overflow),
         Result::Err(low) => {
-            match uint128_overflow_sub(high, uint128_const::<1>()) {
+            match uint128_overflow_sub(high, 1_uint128) {
                 Result::Ok(high) => (uint256 { low, high }, overflow),
                 Result::Err(high) => (uint256 { low, high }, true),
             }
@@ -214,13 +213,13 @@ func uint256_overflow_sub(
 }
 
 func uint256_overflow_mul(a: uint256, b: uint256) -> (uint256, bool) nopanic {
-    let u0 = uint128_const::<0>();
     let (low, high1) = uint128_wide_mul(a.low, b.low);
     let (high2, overflow_value1) = uint128_wide_mul(a.low, b.high);
     let (high3, overflow_value2) = uint128_wide_mul(a.high, b.low);
     let (high, overflow) = match uint128_overflow_add(high1, high2) {
         Result::Ok(high) => (
-            high, overflow_value1 != u0 | overflow_value2 != u0 | (a.high > u0 & b.high > u0)
+            high,
+            overflow_value1 != 0_uint128 | overflow_value2 != 0_uint128 | (a.high > 0_uint128 & b.high > 0_uint128)
         ),
         Result::Err(high) => (high, true),
     };
@@ -277,7 +276,7 @@ func uint256_ne(a: uint256, b: uint256) -> bool implicits() {
 
 func uint256_from_felt(a: felt) -> uint256 implicits(RangeCheck) nopanic {
     match uint128s_from_felt(a) {
-        Uint128sFromFeltResult::Narrow(low) => uint256 { low, high: uint128_const::<0>() },
+        Uint128sFromFeltResult::Narrow(low) => uint256 { low, high: 0_uint128 },
         Uint128sFromFeltResult::Wide((high, low)) => uint256 { low, high },
     }
 }
