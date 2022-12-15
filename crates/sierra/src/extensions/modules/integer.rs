@@ -444,7 +444,6 @@ impl NoGenericArgsGenericLibFunc for Uint128EqualLibFunc {
     }
 }
 
-
 /// LibFunc for comparing uint128s.
 #[derive(Default)]
 pub struct Uint128LessThanOrEqualLibFunc {}

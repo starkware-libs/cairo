@@ -380,8 +380,12 @@ fn build_uint128_eq(
             jump Equal;
         NotEqual:
     };
-    let CasmBuildResult { instructions, awaiting_relocations, label_state: _, 
-        fallthrough_state: _ } = casm_builder.build();
+    let CasmBuildResult {
+        instructions,
+        awaiting_relocations,
+        label_state: _,
+        fallthrough_state: _,
+    } = casm_builder.build();
 
     let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
     Ok(builder.build(
@@ -393,7 +397,6 @@ fn build_uint128_eq(
         vec![vec![].into_iter(), vec![].into_iter()].into_iter(),
     ))
 }
-
 
 fn build_uint128_le(
     builder: CompiledInvocationBuilder<'_>,

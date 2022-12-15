@@ -131,12 +131,10 @@ fn test_eq() {
                 jmp rel 0;
             }
             .instructions,
-            relocations: vec![
-                RelocationEntry {
+            relocations: vec![RelocationEntry {
                 instruction_idx: 2,
-                relocation: Relocation::RelativeStatementId(
-                StatementIdx(
-                1,))}],
+                relocation: Relocation::RelativeStatementId(StatementIdx(1,))
+            }],
             results: vec![
                 ReducedBranchChanges { refs: vec![], ap_change: ApChange::Known(1) },
                 ReducedBranchChanges { refs: vec![], ap_change: ApChange::Known(1) }
@@ -144,7 +142,6 @@ fn test_eq() {
         }
     );
 }
-
 
 #[test]
 fn test_le() {

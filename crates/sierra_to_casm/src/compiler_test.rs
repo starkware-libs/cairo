@@ -227,7 +227,6 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 jmp rel 2;
                 ret;
             "}; "uint128_eq")]
-
 #[test_case(indoc! {"
                 type uint128 = uint128;
                 type RangeCheck = RangeCheck;
