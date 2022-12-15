@@ -20,16 +20,16 @@ mod TestContract {
 mod __external { func __wrapper_test(
     ref system: System, mut data: Array::<felt>
 ) -> Array::<felt> {
-    if array::array_len::<felt>(data) != integer::uint128_from_felt(3) {
+    if array::array_len::<felt>(data) != 3_uint128 {
         panic(array::array_new::<felt>());
     }
-    let mut __arg_arg: felt = match array::array_at::<felt>(data, 0) {
-        Some(x) => x,
-        None(()) => panic(array::array_new::<felt>()),
+    let mut __arg_arg: felt = match array::array_at::<felt>(data, 0_uint128) {
+        Option::Some(x) => x,
+        Option::None(()) => panic(array::array_new::<felt>()),
     };
-    let __arg_num: felt = match array::array_at::<felt>(data, 1) {
-        Some(x) => x,
-        None(()) => panic(array::array_new::<felt>()),
+    let __arg_num: felt = match array::array_at::<felt>(data, 1_uint128) {
+        Option::Some(x) => x,
+        Option::None(()) => panic(array::array_new::<felt>()),
     };
     let res = test(system, __arg_arg, __arg_num);
     let mut arr = array::array_new::<felt>();
