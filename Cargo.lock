@@ -381,6 +381,7 @@ dependencies = [
  "clap 4.0.26",
  "db_utils",
  "defs",
+ "diagnostics",
  "filesystem",
  "log",
  "lowering",
@@ -1807,10 +1808,12 @@ dependencies = [
  "casm",
  "clap 4.0.26",
  "compiler",
+ "diagnostics",
  "itertools",
  "num-bigint",
  "salsa",
  "sierra",
+ "sierra_ap_change",
  "sierra_gas",
  "sierra_generator",
  "sierra_to_casm",
@@ -2045,14 +2048,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "sierra_ap_change"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "indoc",
+ "itertools",
+ "sierra",
+ "solver",
+ "test-case",
+ "test-log",
+ "thiserror",
+ "utils",
+]
+
+[[package]]
 name = "sierra_gas"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "good_lp",
  "indoc",
  "itertools",
  "sierra",
+ "solver",
  "test-case",
  "test-log",
  "thiserror",
@@ -2105,6 +2123,7 @@ dependencies = [
  "num-traits 0.2.15",
  "pretty_assertions",
  "sierra",
+ "sierra_ap_change",
  "sierra_gas",
  "test-case",
  "test-log",
@@ -2162,6 +2181,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "solver"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "good_lp",
+ "indoc",
+ "itertools",
+ "test-case",
+ "test-log",
+ "utils",
+]
+
+[[package]]
 name = "sprs"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2180,6 +2212,7 @@ dependencies = [
  "clap 4.0.26",
  "compiler",
  "defs",
+ "diagnostics",
  "env_logger",
  "formatter",
  "genco",
@@ -2197,6 +2230,7 @@ dependencies = [
  "serde_json",
  "sha3",
  "sierra",
+ "sierra_ap_change",
  "sierra_gas",
  "sierra_generator",
  "sierra_to_casm",
@@ -2381,6 +2415,7 @@ dependencies = [
  "compiler",
  "debug",
  "defs",
+ "diagnostics",
  "filesystem",
  "itertools",
  "num-bigint",

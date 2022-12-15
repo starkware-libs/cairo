@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, Maybe, ToMaybe};
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Arena;
 use syntax::node::ast;
@@ -52,40 +52,40 @@ pub fn free_function_declaration_diagnostics(
 pub fn free_function_declaration_signature(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<semantic::Signature> {
-    Some(db.priv_free_function_declaration_data(free_function_id)?.signature)
+) -> Maybe<semantic::Signature> {
+    Ok(db.priv_free_function_declaration_data(free_function_id)?.signature)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_attributes].
 pub fn free_function_declaration_attributes(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<Vec<Attribute>> {
-    Some(db.priv_free_function_declaration_data(free_function_id)?.attributes)
+) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_free_function_declaration_data(free_function_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_implicits].
 pub fn free_function_declaration_implicits(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<Vec<TypeId>> {
-    Some(db.priv_free_function_declaration_data(free_function_id)?.signature.implicits)
+) -> Maybe<Vec<TypeId>> {
+    Ok(db.priv_free_function_declaration_data(free_function_id)?.signature.implicits)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_generic_params].
 pub fn free_function_declaration_generic_params(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<Vec<GenericParamId>> {
-    Some(db.priv_free_function_declaration_data(free_function_id)?.generic_params)
+) -> Maybe<Vec<GenericParamId>> {
+    Ok(db.priv_free_function_declaration_data(free_function_id)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_resolved_lookback].
 pub fn free_function_declaration_resolved_lookback(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<Arc<ResolvedLookback>> {
-    Some(db.priv_free_function_declaration_data(free_function_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_free_function_declaration_data(free_function_id)?.resolved_lookback)
 }
 
 // --- Computation ---
@@ -94,11 +94,11 @@ pub fn free_function_declaration_resolved_lookback(
 pub fn priv_free_function_declaration_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<FreeFunctionDeclarationData> {
+) -> Maybe<FreeFunctionDeclarationData> {
     let module_file_id = free_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let function_syntax = module_data.free_functions.get(&free_function_id)?;
+    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let function_syntax = module_data.free_functions.get(&free_function_id).to_maybe()?;
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -121,7 +121,7 @@ pub fn priv_free_function_declaration_data(
 
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
-    Some(FreeFunctionDeclarationData {
+    Ok(FreeFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         generic_params,
@@ -169,16 +169,16 @@ pub fn free_function_definition_diagnostics(
 pub fn free_function_definition_body(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<semantic::ExprId> {
-    Some(db.priv_free_function_definition_data(free_function_id)?.definition.body)
+) -> Maybe<semantic::ExprId> {
+    Ok(db.priv_free_function_definition_data(free_function_id)?.definition.body)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_definition_direct_callees].
 pub fn free_function_definition_direct_callees(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<Vec<FunctionId>> {
-    Some(db.priv_free_function_definition_data(free_function_id)?.definition.direct_callees.clone())
+) -> Maybe<Vec<FunctionId>> {
+    Ok(db.priv_free_function_definition_data(free_function_id)?.definition.direct_callees.clone())
 }
 
 /// Query implementation of
@@ -186,34 +186,33 @@ pub fn free_function_definition_direct_callees(
 pub fn free_function_definition_direct_free_function_callees(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<Vec<FreeFunctionId>> {
-    Some(
-        db.free_function_definition_direct_callees(free_function_id)?
-            .into_iter()
-            .filter_map(|function_id| {
-                match db.lookup_intern_function(function_id).function.generic_function {
-                    GenericFunctionId::Free(free_function) => Some(free_function),
-                    _ => None,
-                }
-            })
-            .collect(),
-    )
+) -> Maybe<Vec<FreeFunctionId>> {
+    Ok(db
+        .free_function_definition_direct_callees(free_function_id)?
+        .into_iter()
+        .filter_map(|function_id| {
+            match db.lookup_intern_function(function_id).function.generic_function {
+                GenericFunctionId::Free(free_function) => Some(free_function),
+                _ => None,
+            }
+        })
+        .collect())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_definition].
 pub fn free_function_definition(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<Arc<FreeFunctionDefinition>> {
-    Some(db.priv_free_function_definition_data(free_function_id)?.definition)
+) -> Maybe<Arc<FreeFunctionDefinition>> {
+    Ok(db.priv_free_function_definition_data(free_function_id)?.definition)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_definition_resolved_lookback].
 pub fn free_function_definition_resolved_lookback(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<Arc<ResolvedLookback>> {
-    Some(db.priv_free_function_definition_data(free_function_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_free_function_definition_data(free_function_id)?.resolved_lookback)
 }
 
 // ---Computation ---
@@ -222,11 +221,11 @@ pub fn free_function_definition_resolved_lookback(
 pub fn priv_free_function_definition_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Option<FreeFunctionDefinitionData> {
+) -> Maybe<FreeFunctionDefinitionData> {
     let module_file_id = free_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let syntax = module_data.free_functions.get(&free_function_id)?.clone();
+    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let syntax = module_data.free_functions.get(&free_function_id).to_maybe()?.clone();
     // Compute signature semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;
     let resolver = Resolver::new(db, module_file_id, &declaration.generic_params);
@@ -264,7 +263,7 @@ pub fn priv_free_function_definition_data(
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
     let resolved_lookback = Arc::new(resolver.lookback);
-    Some(FreeFunctionDefinitionData {
+    Ok(FreeFunctionDefinitionData {
         diagnostics: diagnostics.build(),
         expr_lookup,
         resolved_lookback,
@@ -314,9 +313,9 @@ pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
         &self,
         free_function_id: FreeFunctionId,
         ptr: ast::ExprPtr,
-    ) -> Option<ExprId> {
+    ) -> Maybe<ExprId> {
         let definition_data = self.upcast().priv_free_function_definition_data(free_function_id)?;
-        definition_data.expr_lookup.get(&ptr).copied()
+        definition_data.expr_lookup.get(&ptr).copied().to_maybe()
     }
 }
 

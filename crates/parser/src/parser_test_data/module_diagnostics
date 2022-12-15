@@ -1,0 +1,52 @@
+//! > Missing semicolon.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+mod my_mod
+func foo() {}
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:1:11
+mod my_mod
+          ^
+
+//! > ==========================================================================
+
+//! > Missing lbrace.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+mod my_mod }
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:1:11
+mod my_mod }
+          ^
+
+error: Skipped tokens. Expected: item.
+ --> dummy_file.cairo:1:12
+mod my_mod }
+           ^
+
+//! > ==========================================================================
+
+//! > Missing rbrace.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+mod my_mod {
+func foo() {}
+
+//! > expected_diagnostics
+error: Missing token TerminalRBrace.
+ --> dummy_file.cairo:2:14
+func foo() {}
+             ^

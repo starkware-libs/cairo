@@ -1,4 +1,5 @@
 use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
+use diagnostics::ToOption;
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
 use syntax::node::ast::{self, BinaryOperator, UnaryOperator};
@@ -29,19 +30,19 @@ pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
 }
 
-pub fn get_core_ty_by_name(
+pub fn try_get_core_ty_by_name(
     db: &dyn SemanticGroup,
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
-) -> TypeId {
+) -> Result<TypeId, SemanticDiagnosticKind> {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let module_item_id = db
         .module_item_by_name(core_module, name.clone())
-        .unwrap_or_else(|| panic!("Type '{name}' was not found in core lib."));
+        .ok_or(SemanticDiagnosticKind::UnknownType)?;
     let generic_type = match module_item_id {
         ModuleItemId::Use(use_id) => {
-            db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
+            db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericType)
             })
         }
@@ -49,11 +50,19 @@ pub fn get_core_ty_by_name(
     }
     .unwrap_or_else(|| panic!("{name} is not a type."));
 
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
+    Ok(db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
         db,
         generic_type,
         generic_args,
-    )))
+    ))))
+}
+
+pub fn get_core_ty_by_name(
+    db: &dyn SemanticGroup,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> TypeId {
+    try_get_core_ty_by_name(db, name, generic_args).unwrap()
 }
 
 pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -195,7 +204,9 @@ pub fn unwrap_error_propagation_type(
         TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
             let name = enm.enum_id(db.upcast()).name(db.upcast());
             if name == "Option" || name == "Result" {
-                if let [ok_variant, err_variant] = db.concrete_enum_variants(enm)?.as_slice() {
+                if let [ok_variant, err_variant] =
+                    db.concrete_enum_variants(enm).to_option()?.as_slice()
+                {
                     Some((ok_variant.clone(), err_variant.clone()))
                 } else {
                     None
@@ -343,7 +354,7 @@ pub fn get_core_generic_function_id(db: &dyn SemanticGroup, name: SmolStr) -> Ge
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
     match module_item_id {
         ModuleItemId::Use(use_id) => {
-            db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
+            db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericFunction)
             })
         }
@@ -391,4 +402,24 @@ fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
 
 pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
     get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
+}
+
+/// Returns the name of the libfunc that creates a constant of type `ty`.
+pub fn try_get_const_libfunc_name_by_type(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Result<String, SemanticDiagnosticKind> {
+    let felt_ty = core_felt_ty(db);
+    let uint128_ty = get_core_ty_by_name(db, "uint128".into(), vec![]);
+    if ty == felt_ty {
+        Ok("felt_const".into())
+    } else if ty == uint128_ty {
+        Ok("uint128_const".into())
+    } else {
+        Err(SemanticDiagnosticKind::NoLiteralFunctionFound)
+    }
+}
+
+pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
+    try_get_const_libfunc_name_by_type(db, ty).unwrap()
 }

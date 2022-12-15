@@ -34,7 +34,6 @@ impl NoGenericArgsGenericType for GasBuiltinType {
 
 define_libfunc_hierarchy! {
     pub enum GasLibFunc {
-        BurnGas(BurnGasLibFunc),
         GetGas(GetGasLibFunc),
         RefundGas(RefundGasLibFunc),
     }, GasConcreteLibFunc
@@ -69,10 +68,10 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
                         },
                         OutputVarInfo {
                             ty: gas_builtin_type.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                         },
                     ],
-                    ap_change: SierraApChange::Known(2),
+                    ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Failure:
                 BranchSignature {
@@ -88,7 +87,7 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                         },
                     ],
-                    ap_change: SierraApChange::Known(3),
+                    ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
             fallthrough: Some(0),
@@ -113,23 +112,7 @@ impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
                 ty: gas_builtin_type,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
-    }
-}
-
-/// LibFunc for burning gas.
-/// Used to equalize gas costs across merging paths without using the gas builtin.
-/// If the gas builtin is available, it is typically better to use refund_gas.
-#[derive(Default)]
-pub struct BurnGasLibFunc {}
-impl NoGenericArgsGenericLibFunc for BurnGasLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("burn_gas");
-
-    fn specialize_signature(
-        &self,
-        _context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::Known(0)))
     }
 }

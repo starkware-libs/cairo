@@ -1,6 +1,6 @@
 use num_bigint::BigInt;
 
-use super::syscalls::SyscallPtrType;
+use super::syscalls::SystemType;
 use crate::extensions::felt::FeltType;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -49,10 +49,10 @@ impl NamedLibFunc for StorageAddressConstLibFunc {
         Ok(LibFuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
-                ty: context.get_concrete_type(FeltType::id(), &[])?,
+                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 
@@ -95,13 +95,13 @@ impl NoGenericArgsGenericLibFunc for StorageReadLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let syscall_ptr_ty = context.get_concrete_type(SyscallPtrType::id(), &[])?;
+        let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         Ok(LibFuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature {
-                    ty: syscall_ptr_ty.clone(),
+                    ty: system_ty.clone(),
                     allow_deferred: false,
                     allow_add_const: true,
                     allow_const: false,
@@ -110,17 +110,17 @@ impl NoGenericArgsGenericLibFunc for StorageReadLibFunc {
             ],
             vec![
                 OutputVarInfo {
-                    ty: syscall_ptr_ty,
+                    ty: system_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                         param_idx: 0,
                     }),
                 },
                 OutputVarInfo {
                     ty: felt_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 },
             ],
-            SierraApChange::Known(1),
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }

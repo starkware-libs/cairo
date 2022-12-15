@@ -61,7 +61,7 @@ impl<TType: GenericType, TLibFunc: GenericLibFunc> ProgramRegistry<TType, TLibFu
     /// Create a registry for the program.
     pub fn with_ap_change(
         program: &Program,
-        function_ap_change: HashMap<FunctionId, SierraApChange>,
+        function_ap_change: HashMap<FunctionId, usize>,
     ) -> Result<ProgramRegistry<TType, TLibFunc>, Box<ProgramRegistryError>> {
         let functions = get_functions(program)?;
         let (concrete_types, concrete_type_ids) = get_concrete_types_maps::<TType>(program)?;
@@ -179,7 +179,7 @@ pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
     pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
     pub concrete_types: &'a TypeMap<TType::Concrete>,
     /// AP changes information for Sierra user functions.
-    pub function_ap_change: HashMap<FunctionId, SierraApChange>,
+    pub function_ap_change: HashMap<FunctionId, usize>,
 }
 impl<TType: GenericType> TypeSpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
@@ -206,9 +206,10 @@ impl<TType: GenericType> SignatureSpecializationContext
     }
 
     fn try_get_function_ap_change(&self, function_id: &FunctionId) -> Option<SierraApChange> {
-        Some(match self.function_ap_change.get(function_id) {
-            Some(ap_change) => ap_change.clone(),
-            None => SierraApChange::Unknown,
+        Some(if self.function_ap_change.contains_key(function_id) {
+            SierraApChange::Known { new_vars_only: false }
+        } else {
+            SierraApChange::Unknown
         })
     }
 }

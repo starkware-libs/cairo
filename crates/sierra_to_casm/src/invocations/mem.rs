@@ -69,12 +69,12 @@ fn get_store_instructions(
         match cell_expr {
             CellExpression::Deref(operand) => add_instruction!(ctx, dst = operand),
             CellExpression::DoubleDeref(operand, offset) => {
-                add_instruction!(ctx, dst = [[operand] + offset])
+                add_instruction!(ctx, dst = [[&operand] + offset])
             }
             CellExpression::IntoSingleCellRef(operand) => add_instruction!(
                 ctx,
                 %{ memory dst = segments.add() %}
-                operand = [[dst]]
+                operand = [[&dst]]
             ),
             CellExpression::Immediate(operand) => add_instruction!(ctx, dst = operand),
             CellExpression::UnaryOp(UnaryOpExpression { op, a }) => match op {

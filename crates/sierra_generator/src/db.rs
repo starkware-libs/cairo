@@ -2,17 +2,18 @@ use std::sync::Arc;
 
 use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, ModuleId};
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, Maybe};
 use filesystem::ids::CrateId;
 use lowering::db::LoweringGroup;
 use semantic::corelib::get_core_ty_by_name;
 use semantic::{GenericArgumentId, Mutability};
+use sierra::extensions::lib_func::SierraApChange;
 use sierra::extensions::{ConcreteType, GenericTypeEx};
 use sierra::ids::ConcreteTypeId;
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::{ap_change, function_generator, pre_sierra, ApChange, SierraGeneratorDiagnostic};
+use crate::{ap_change, function_generator, pre_sierra, SierraGeneratorDiagnostic};
 
 #[salsa::query_group(SierraGenDatabase)]
 pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
@@ -39,22 +40,20 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
 
     /// Returns the matching sierra concrete type id for a given semantic type id.
     #[salsa::invoke(crate::types::get_concrete_type_id)]
-    fn get_concrete_type_id(
-        &self,
-        type_id: semantic::TypeId,
-    ) -> Option<sierra::ids::ConcreteTypeId>;
+    fn get_concrete_type_id(&self, type_id: semantic::TypeId)
+    -> Maybe<sierra::ids::ConcreteTypeId>;
 
     /// Returns the [sierra::program::FunctionSignature] object for the given function id.
     fn get_function_signature(
         &self,
         function_id: sierra::ids::FunctionId,
-    ) -> Option<Arc<sierra::program::FunctionSignature>>;
+    ) -> Maybe<Arc<sierra::program::FunctionSignature>>;
 
     /// Returns the [sierra::extensions::types::TypeInfo] object for the given type id.
     fn get_type_info(
         &self,
         concrete_type_id: sierra::ids::ConcreteTypeId,
-    ) -> Option<Arc<sierra::extensions::types::TypeInfo>>;
+    ) -> Maybe<Arc<sierra::extensions::types::TypeInfo>>;
 
     /// Private query to compute Sierra data about a free function.
     #[salsa::invoke(function_generator::priv_free_function_sierra_data)]
@@ -70,10 +69,8 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     ) -> Diagnostics<SierraGeneratorDiagnostic>;
     /// Returns the Sierra code (as [pre_sierra::Function]) for a given free function.
     #[salsa::invoke(function_generator::free_function_sierra)]
-    fn free_function_sierra(
-        &self,
-        function_id: FreeFunctionId,
-    ) -> Option<Arc<pre_sierra::Function>>;
+    fn free_function_sierra(&self, function_id: FreeFunctionId)
+    -> Maybe<Arc<pre_sierra::Function>>;
 
     /// Returns the Sierra diagnostics of a module.
     #[salsa::invoke(program_generator::module_sierra_diagnostics)]
@@ -87,32 +84,32 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     /// calls f2, then [Self::contains_cycle] will return `true` for all of these functions.
     #[salsa::invoke(ap_change::contains_cycle)]
     #[salsa::cycle(ap_change::contains_cycle_handle_cycle)]
-    fn contains_cycle(&self, function_id: FreeFunctionId) -> Option<bool>;
+    fn contains_cycle(&self, function_id: FreeFunctionId) -> Maybe<bool>;
 
     /// Returns the ap change of a given function if it is known at compile time or
-    /// [ApChange::Unknown] otherwise.
+    /// [SierraApChange::Unknown] otherwise.
     #[salsa::invoke(ap_change::get_ap_change)]
-    fn get_ap_change(&self, function_id: FreeFunctionId) -> Option<ApChange>;
+    fn get_ap_change(&self, function_id: FreeFunctionId) -> Maybe<SierraApChange>;
 
     /// Returns the [sierra::program::Program] object of the requested functions.
     #[salsa::invoke(program_generator::get_sierra_program_for_functions)]
     fn get_sierra_program_for_functions(
         &self,
         requested_function_ids: Vec<FreeFunctionId>,
-    ) -> Option<Arc<sierra::program::Program>>;
+    ) -> Maybe<Arc<sierra::program::Program>>;
 
     /// Returns the [sierra::program::Program] object of the requested crates.
     #[salsa::invoke(program_generator::get_sierra_program)]
     fn get_sierra_program(
         &self,
         requested_crate_ids: Vec<CrateId>,
-    ) -> Option<Arc<sierra::program::Program>>;
+    ) -> Maybe<Arc<sierra::program::Program>>;
 }
 
 fn get_function_signature(
     db: &dyn SierraGenGroup,
     function_id: sierra::ids::FunctionId,
-) -> Option<Arc<sierra::program::FunctionSignature>> {
+) -> Maybe<Arc<sierra::program::FunctionSignature>> {
     // TODO(yuval): add another version of this function that directly received semantic FunctionId.
     // Call it from function_generators::get_function_code. Take ret_types from the result instead
     // of only the explicit ret_type. Also use it for params instead of the current logic. Then use
@@ -126,7 +123,7 @@ fn get_function_signature(
         .function_all_implicits(semantic_function_id)?
         .iter()
         .map(|ty| db.get_concrete_type_id(*ty))
-        .collect::<Option<Vec<ConcreteTypeId>>>()?;
+        .collect::<Maybe<Vec<ConcreteTypeId>>>()?;
 
     // TODO(spapini): Handle ret_types in lowering.
     let mut ret_types = implicits.clone();
@@ -151,13 +148,13 @@ fn get_function_signature(
     }
     ret_types.push(db.get_concrete_type_id(return_type)?);
 
-    Some(Arc::new(sierra::program::FunctionSignature { param_types: all_params, ret_types }))
+    Ok(Arc::new(sierra::program::FunctionSignature { param_types: all_params, ret_types }))
 }
 
 fn get_type_info(
     db: &dyn SierraGenGroup,
     concrete_type_id: sierra::ids::ConcreteTypeId,
-) -> Option<Arc<sierra::extensions::types::TypeInfo>> {
+) -> Maybe<Arc<sierra::extensions::types::TypeInfo>> {
     let long_id = db.lookup_intern_concrete_type(concrete_type_id);
     let concrete_ty = sierra::extensions::core::CoreType::specialize_by_id(
         &SierraSignatureSpecializationContext(db),
@@ -165,5 +162,5 @@ fn get_type_info(
         &long_id.generic_args,
     )
     .expect("Got failure while specializing type.");
-    Some(Arc::new(concrete_ty.info().clone()))
+    Ok(Arc::new(concrete_ty.info().clone()))
 }

@@ -49,15 +49,14 @@ impl State {
     ) {
         // Clear the stack if needed.
         match branch_signature.ap_change {
-            SierraApChange::NotImplemented | SierraApChange::Unknown => {
-                self.clear_known_stack();
-            }
-            SierraApChange::Known(value) if value != 0 => {
+            SierraApChange::NotImplemented
+            | SierraApChange::Unknown
+            | SierraApChange::Known { new_vars_only: false } => {
                 // Clear the stack in this case since it's possible that undeclared (not part of the
                 // output) temporary variables are created by the libfunc.
                 self.clear_known_stack();
             }
-            SierraApChange::FinalizeLocals | SierraApChange::Known(_) => {}
+            SierraApChange::Known { new_vars_only: true } => {}
         }
 
         for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {
@@ -93,7 +92,9 @@ impl State {
                 );
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
-                self.known_stack.insert(res.clone(), *idx);
+                if let Some(idx) = idx {
+                    self.known_stack.insert(res.clone(), *idx);
+                }
                 self.temporary_variables.insert(res, output_info.ty.clone());
             }
             OutputVarReferenceInfo::SameAsParam { .. } | OutputVarReferenceInfo::NewLocalVar => {}

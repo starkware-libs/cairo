@@ -1,10 +1,15 @@
-use super::SpecializationError;
-use crate::ids::ConcreteTypeId;
+use self::enm::EnumType;
+use self::strct::StructType;
+use super::lib_func::SignatureSpecializationContext;
+use super::{NamedType, SpecializationError};
+use crate::ids::{ConcreteTypeId, UserTypeId};
 use crate::program::GenericArg;
 
 pub mod ap_tracking;
 pub mod array;
+pub mod boolean;
 pub mod boxing;
+pub mod branch_align;
 pub mod builtin_cost;
 pub mod dict_felt_to;
 pub mod drop;
@@ -33,4 +38,29 @@ fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationE
         [_] => Err(SpecializationError::UnsupportedGenericArg),
         _ => Err(SpecializationError::WrongNumberOfGenericArgs),
     }
+}
+
+/// Helper for Unit type def.
+fn get_unit_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_concrete_type(
+        StructType::id(),
+        &[GenericArg::UserType(UserTypeId::from_string("Tuple"))],
+    )
+}
+
+/// Helper for Bool type def.
+fn get_bool_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let unit_type = get_unit_type(context)?;
+    context.get_concrete_type(
+        EnumType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::bool")),
+            GenericArg::Type(unit_type.clone()),
+            GenericArg::Type(unit_type),
+        ],
+    )
 }

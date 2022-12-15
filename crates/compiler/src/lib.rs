@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::sync::Arc;
 
+use ::diagnostics::ToOption;
 use anyhow::{bail, Context, Result};
-use diagnostics::{check_diagnostics, eprint_diagnostic};
 use filesystem::db::FilesGroupEx;
 use filesystem::ids::CrateId;
 use sierra::program::Program;
@@ -10,6 +10,7 @@ use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
 use crate::db::RootDatabase;
+use crate::diagnostics::{check_diagnostics, eprint_diagnostic};
 use crate::project::{get_main_crate_ids_from_project, setup_project, ProjectConfig};
 
 pub mod db;
@@ -62,6 +63,7 @@ fn compile_prepared_db(
 
     let mut sierra_program = db
         .get_sierra_program(main_crate_ids)
+        .to_option()
         .context("Compilation failed without any diagnostics")?;
 
     if compiler_config.replace_ids {

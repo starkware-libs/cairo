@@ -1,0 +1,17 @@
+[package]
+name = "sierra_ap_change"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+itertools.workspace = true
+sierra = { path = "../sierra" }
+solver = { path = "../solver" }
+thiserror.workspace = true
+utils = { path = "../utils" }
+
+[dev-dependencies]
+env_logger.workspace = true
+indoc.workspace = true
+test-case.workspace = true
+test-log.workspace = true

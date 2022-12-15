@@ -1,5 +1,6 @@
 use defs::ids::GenericFunctionId;
 use num_bigint::BigInt;
+use semantic::corelib::get_const_libfunc_name_by_type;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::lib_func::LibFuncSignature;
 use sierra::extensions::GenericLibFuncEx;
@@ -120,12 +121,16 @@ fn get_libfunc_id_without_generics(
     })
 }
 
-pub fn felt_const_libfunc_id(
+pub fn const_libfunc_id_by_type(
     db: &dyn SierraGenGroup,
+    ty: semantic::TypeId,
     value: BigInt,
 ) -> sierra::ids::ConcreteLibFuncId {
     db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
-        generic_id: sierra::ids::GenericLibFuncId::from_string("felt_const"),
+        generic_id: sierra::ids::GenericLibFuncId::from_string(get_const_libfunc_name_by_type(
+            db.upcast(),
+            ty,
+        )),
         generic_args: vec![sierra::program::GenericArg::Value(value)],
     })
 }
@@ -151,8 +156,8 @@ pub fn dup_libfunc_id(
     get_libfunc_id_with_generic_arg(db, "dup", ty)
 }
 
-pub fn burn_gas_libfunc_id(db: &dyn SierraGenGroup) -> sierra::ids::ConcreteLibFuncId {
-    get_libfunc_id_without_generics(db, "burn_gas")
+pub fn branch_align_libfunc_id(db: &dyn SierraGenGroup) -> sierra::ids::ConcreteLibFuncId {
+    get_libfunc_id_without_generics(db, "branch_align")
 }
 
 pub fn jump_libfunc_id(db: &dyn SierraGenGroup) -> sierra::ids::ConcreteLibFuncId {
@@ -225,10 +230,15 @@ pub fn get_concrete_libfunc_id(
             let mut generic_args = vec![];
             for generic_arg in &concrete_function.generic_args {
                 generic_args.push(match generic_arg {
-                    semantic::GenericArgumentId::Type(ty) => sierra::program::GenericArg::Type(
+                    semantic::GenericArgumentId::Type(ty) => {
                         // TODO(lior): How should the following unwrap() be handled?
-                        db.get_concrete_type_id(*ty).unwrap(),
-                    ),
+                        sierra::program::GenericArg::Type(db.get_concrete_type_id(*ty).unwrap())
+                    }
+                    semantic::GenericArgumentId::Literal(literal_id) => {
+                        sierra::program::GenericArg::Value(
+                            db.lookup_intern_literal(*literal_id).value,
+                        )
+                    }
                 });
             }
 

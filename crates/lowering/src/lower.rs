@@ -1,6 +1,6 @@
 use debug::DebugWithDb;
 use defs::ids::{FreeFunctionId, LanguageElementId};
-use diagnostics::Diagnostics;
+use diagnostics::{skip_diagnostic, Diagnostics, Maybe, ToMaybe};
 use id_arena::Arena;
 use itertools::{chain, zip_eq, Itertools};
 use num_traits::Zero;
@@ -44,7 +44,7 @@ pub struct Lowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
     /// Block id for the start of the lowered function.
-    pub root: Option<BlockId>,
+    pub root: Maybe<BlockId>,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
@@ -52,7 +52,7 @@ pub struct Lowered {
 }
 
 /// Lowers a semantic free function.
-pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option<Lowered> {
+pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<Lowered> {
     log::trace!("Lowering a free function.");
     let function_def = db.free_function_definition(free_function_id)?;
     let generic_params = db.free_function_declaration_generic_params(free_function_id)?;
@@ -108,7 +108,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
             merger.run_in_subscope(ctx, input_var_tys, |ctx, scope, variables| {
                 let mut variables_iter = variables.into_iter();
                 for ty in implicits_ref {
-                    let var = variables_iter.next()?;
+                    let var = variables_iter.next().to_maybe()?;
                     scope.put_implicit(*ty, var);
                 }
 
@@ -121,7 +121,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
         });
     let root = block_sealed_opt
         .map(|block_sealed| merger_finalized.finalize_block(&mut ctx, block_sealed).block);
-    Some(Lowered {
+    Ok(Lowered {
         diagnostics: ctx.diagnostics.build(),
         root,
         variables: ctx.variables,
@@ -135,7 +135,7 @@ fn lower_block(
     scope: &mut BlockScope,
     expr_block: &semantic::ExprBlock,
     root: bool,
-) -> Option<BlockScopeEnd> {
+) -> Maybe<BlockScopeEnd> {
     log::trace!("Lowering a block.");
     for (i, stmt_id) in expr_block.statements.iter().enumerate() {
         let stmt = &ctx.function_def.statements[*stmt_id];
@@ -144,7 +144,7 @@ fn lower_block(
         // If flow is not reachable anymore, no need to continue emitting statements.
         match lowered_stmt {
             Ok(()) => {}
-            Err(StatementLoweringFlowError::Failed) => return None,
+            Err(StatementLoweringFlowError::Failed(diag_added)) => return Err(diag_added),
             Err(StatementLoweringFlowError::End(end)) => {
                 // TODO(spapini): We might want to report unreachable for expr that abruptly
                 // ends, e.g. `5 + {return; 6}`.
@@ -158,14 +158,14 @@ fn lower_block(
                         Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
                     );
                 }
-                return Some(end);
+                return Ok(end);
             }
         };
     }
 
     // Determine correct block end.
     match expr_block.tail {
-        None if !root => Some(BlockScopeEnd::Callsite(None)),
+        None if !root => Ok(BlockScopeEnd::Callsite(None)),
         _ => lower_tail_expr(ctx, scope, expr_block.tail, root),
     }
 }
@@ -177,7 +177,7 @@ pub fn lower_tail_expr(
     scope: &mut BlockScope,
     expr: Option<semantic::ExprId>,
     root: bool,
-) -> Option<BlockScopeEnd> {
+) -> Maybe<BlockScopeEnd> {
     log::trace!("Lowering a tail expression.");
     let mut lowered_expr = if let Some(expr) = expr {
         lower_expr(ctx, scope, expr)
@@ -196,8 +196,8 @@ pub fn lowered_expr_to_block_scope_end(
     scope: &mut BlockScope,
     lowered_expr: Result<LoweredExpr, LoweringFlowError>,
     root: bool,
-) -> Option<BlockScopeEnd> {
-    Some(match lowered_expr {
+) -> Maybe<BlockScopeEnd> {
+    Ok(match lowered_expr {
         Ok(LoweredExpr::Tuple(tys)) if !root && tys.is_empty() => BlockScopeEnd::Callsite(None),
         Ok(lowered_expr) => match lowered_expr.var(ctx, scope) {
             Ok(var) => BlockScopeEnd::Callsite(Some(var)),
@@ -216,7 +216,15 @@ pub fn lower_statement(
     match stmt {
         semantic::Statement::Expr(semantic::StatementExpr { expr, stable_ptr: _ }) => {
             log::trace!("Lowering an expression statement.");
-            lower_expr(ctx, scope, *expr)?;
+            let lowered_expr = lower_expr(ctx, scope, *expr)?;
+            // The LoweredExpr must be evaluated now to push/bring back variables in case it is
+            // LoweredExpr::ExternEnum.
+            match lowered_expr {
+                LoweredExpr::ExternEnum(x) => {
+                    x.var(ctx, scope)?;
+                }
+                LoweredExpr::AtVariable(_) | LoweredExpr::Tuple(_) => {}
+            }
         }
         semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
             log::trace!("Lowering a let statement.");
@@ -283,7 +291,8 @@ fn get_plain_full_return_vars(
         .iter()
         .map(|ty| scope.take_implicit(*ty))
         .collect::<Option<Vec<_>>>()
-        .ok_or(LoweringFlowError::Failed)?;
+        .to_maybe()
+        .map_err(LoweringFlowError::Failed)?;
 
     let ref_vars = ctx
         .ref_params
@@ -394,7 +403,7 @@ fn lower_expr(
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, scope),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, scope),
         semantic::Expr::PropagateError(expr) => lower_expr_error_propagate(ctx, expr, scope),
-        semantic::Expr::Missing(_) => Err(LoweringFlowError::Failed),
+        semantic::Expr::Missing(_) => Err(LoweringFlowError::Failed(skip_diagnostic())),
     }
 }
 
@@ -426,7 +435,7 @@ fn lower_expr_block(
                 lower_block(ctx, subscope, expr, false)
             })
         });
-    let block_sealed = block_sealed.ok_or(LoweringFlowError::Failed)?;
+    let block_sealed = block_sealed.map_err(LoweringFlowError::Failed)?;
     let block_finalized = finalized_merger.finalize_block(ctx, block_sealed);
 
     // Emit the statement.
@@ -461,12 +470,13 @@ fn lower_expr_function_call(
         .into_iter()
         .unzip();
     let callee_implicit_types =
-        ctx.db.function_all_implicits(expr.function).ok_or(LoweringFlowError::Failed)?;
+        ctx.db.function_all_implicits(expr.function).map_err(LoweringFlowError::Failed)?;
     let implicits = callee_implicit_types
         .iter()
         .map(|ty| scope.take_implicit(*ty))
         .collect::<Option<Vec<_>>>()
-        .ok_or(LoweringFlowError::Failed)?;
+        .to_maybe()
+        .map_err(LoweringFlowError::Failed)?;
     // TODO(orizi): Support ref args that are not the first arguments.
     let inputs = chain!(implicits, ref_inputs, arg_inputs.into_iter()).collect();
 
@@ -477,26 +487,43 @@ fn lower_expr_function_call(
     }
 
     // The following is relevant only to extern functions.
-    if expr.function.try_get_extern_function_id(ctx.db.upcast()).is_some() {
+    if let Some(extern_function_id) = expr.function.try_get_extern_function_id(ctx.db.upcast()) {
         if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
             ctx.db.lookup_intern_type(expr.ty)
         {
-            // It is still unknown whether we directly match on this enum result, or store it to a
-            // variable. Thus we can't perform the call. Performing it and rebinding variables are
-            // done on the 2 places where this result it used:
-            // 1. [lower_optimized_extern_match]
-            // 2. [context::LoweredExprExternEnum::var]
-            return Ok(LoweredExpr::ExternEnum(LoweredExprExternEnum {
+            let lowered_expr = LoweredExprExternEnum {
                 function: expr.function,
                 concrete_enum_id,
                 inputs,
                 ref_args: expr.ref_args.clone(),
                 implicits: callee_implicit_types,
-            }));
+            };
+
+            if let Ok(refs) = ctx.db.extern_function_declaration_refs(extern_function_id) {
+                if !refs.is_empty() {
+                    // Don't optimize in case the extern function has ref parameters.
+                    //
+                    // TODO(yuval): This is a temporary measure as there is a problem when a match
+                    // arm returns(moves) a variable that was passed to the
+                    // libfunc call in the match as a reference. To fix it, we
+                    // need: to ensure that if one arm uses a variable, all arms either use it or
+                    // drop it (all refs must be passed to all arms as inputs). Then, if a var that
+                    // was passed to the libfunc as a ref parameter is returned by one of the arms,
+                    // it must be rebound to do that (today it is returned as the same var id).
+                    return Ok(LoweredExpr::AtVariable(lowered_expr.var(ctx, scope)?));
+                }
+            }
+
+            // It is still unknown whether we directly match on this enum result, or store it to a
+            // variable. Thus we can't perform the call. Performing it and pushing/bringing-back
+            // variables are done on the 2 places where this result is used:
+            // 1. [lower_optimized_extern_match]
+            // 2. [context::LoweredExprExternEnum::var]
+            return Ok(LoweredExpr::ExternEnum(lowered_expr));
         }
     }
 
-    let may_panic = ctx.db.function_may_panic(expr.function).ok_or(LoweringFlowError::Failed)?;
+    let may_panic = ctx.db.function_may_panic(expr.function).map_err(LoweringFlowError::Failed)?;
     let expr_ty = if may_panic { get_panic_ty(ctx.db.upcast(), expr.ty) } else { expr.ty };
 
     let (implicit_outputs, ref_outputs, res) =
@@ -620,7 +647,7 @@ fn lower_expr_match(
                         }
                     })
                 });
-            block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
+            block_opts.collect::<Maybe<Vec<_>>>().map_err(LoweringFlowError::Failed)
         });
     let finalized_blocks =
         res?.into_iter().map(|sealed| finalized_merger.finalize_block(ctx, sealed).block);
@@ -648,7 +675,7 @@ fn lower_optimized_extern_match(
     log::trace!("Started lowering of an optimized extern match.");
     let concrete_variants = ctx.db.concrete_enum_variants(extern_enum.concrete_enum_id).unwrap();
     if match_arms.len() != concrete_variants.len() {
-        return Err(LoweringFlowError::Failed);
+        return Err(LoweringFlowError::Failed(skip_diagnostic()));
     }
     // Merge arm blocks.
     let (blocks, mut finalized_merger) = BlockFlowMerger::with(
@@ -691,7 +718,7 @@ fn lower_optimized_extern_match(
                         }
                     })
                 });
-            block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
+            block_opts.collect::<Maybe<Vec<_>>>().map_err(LoweringFlowError::Failed)
         },
     );
 
@@ -735,14 +762,16 @@ fn lower_expr_match_felt(
     {
         (literal, block0, block_otherwise)
     } else {
-        ctx.diagnostics.report(expr.stable_ptr.untyped(), OnlyMatchZeroIsSupported);
-        return Err(LoweringFlowError::Failed);
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), OnlyMatchZeroIsSupported),
+        ));
     };
 
     // Make sure literal is 0.
     if !literal.value.is_zero() {
-        ctx.diagnostics.report(literal.stable_ptr.untyped(), NonZeroValueInMatch);
-        return Err(LoweringFlowError::Failed);
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(literal.stable_ptr.untyped(), NonZeroValueInMatch),
+        ));
     }
 
     let semantic_db = ctx.db.upcast();
@@ -757,13 +786,13 @@ fn lower_expr_match_felt(
             merger.run_in_subscope(ctx, vec![non_zero_type], |ctx, subscope, _| {
                 lower_tail_expr(ctx, subscope, Some(*block_otherwise), false)
             });
-        Some((block0_end, block_otherwise_end))
+        Ok((block0_end, block_otherwise_end))
     });
-    let (block0_sealed, block_otherwise_sealed) = res.ok_or(LoweringFlowError::Failed)?;
+    let (block0_sealed, block_otherwise_sealed) = res.map_err(LoweringFlowError::Failed)?;
     let block0_finalized =
-        finalized_merger.finalize_block(ctx, block0_sealed.ok_or(LoweringFlowError::Failed)?);
+        finalized_merger.finalize_block(ctx, block0_sealed.map_err(LoweringFlowError::Failed)?);
     let block_otherwise_finalized = finalized_merger
-        .finalize_block(ctx, block_otherwise_sealed.ok_or(LoweringFlowError::Failed)?);
+        .finalize_block(ctx, block_otherwise_sealed.map_err(LoweringFlowError::Failed)?);
 
     let concrete_variants =
         vec![jump_nz_zero_variant(ctx.db.upcast()), jump_nz_nonzero_variant(ctx.db.upcast())];
@@ -791,20 +820,22 @@ fn extract_concrete_enum(
         ctx.db.lookup_intern_type(ctx.function_def.exprs[expr.matched_expr].ty()),
         TypeLongId::Concrete
     )
-    .ok_or(LoweringFlowError::Failed)?;
-    let concrete_enum_id =
-        try_extract_matches!(concrete_ty, ConcreteTypeId::Enum).ok_or(LoweringFlowError::Failed)?;
+    .to_maybe()
+    .map_err(LoweringFlowError::Failed)?;
+    let concrete_enum_id = try_extract_matches!(concrete_ty, ConcreteTypeId::Enum)
+        .to_maybe()
+        .map_err(LoweringFlowError::Failed)?;
     let enum_id = concrete_enum_id.enum_id(ctx.db.upcast());
-    let variants = ctx.db.enum_variants(enum_id).ok_or(LoweringFlowError::Failed)?;
+    let variants = ctx.db.enum_variants(enum_id).map_err(LoweringFlowError::Failed)?;
     let concrete_variants = variants
         .values()
         .map(|variant_id| {
             let variant =
-                ctx.db.variant_semantic(enum_id, *variant_id).ok_or(LoweringFlowError::Failed)?;
+                ctx.db.variant_semantic(enum_id, *variant_id).map_err(LoweringFlowError::Failed)?;
 
             ctx.db
                 .concrete_enum_variant(concrete_enum_id, &variant)
-                .ok_or(LoweringFlowError::Failed)
+                .map_err(LoweringFlowError::Failed)
         })
         .collect::<Result<Vec<_>, _>>()?;
 
@@ -851,11 +882,12 @@ fn lower_expr_member_access(
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a member-access expression: {:?}", expr.debug(&ctx.expr_formatter));
-    let members = ctx.db.struct_members(expr.struct_id).ok_or(LoweringFlowError::Failed)?;
+    let members = ctx.db.struct_members(expr.struct_id).map_err(LoweringFlowError::Failed)?;
     let member_idx = members
         .iter()
         .position(|(_, member)| member.id == expr.member)
-        .ok_or(LoweringFlowError::Failed)?;
+        .to_maybe()
+        .map_err(LoweringFlowError::Failed)?;
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
             input: lower_expr(ctx, scope, expr.expr)?.var(ctx, scope)?,
@@ -873,7 +905,7 @@ fn lower_expr_struct_ctor(
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a struct c'tor expression: {:?}", expr.debug(&ctx.expr_formatter));
-    let members = ctx.db.struct_members(expr.struct_id).ok_or(LoweringFlowError::Failed)?;
+    let members = ctx.db.struct_members(expr.struct_id).map_err(LoweringFlowError::Failed)?;
     let member_expr = UnorderedHashMap::from_iter(expr.members.iter().cloned());
     Ok(LoweredExpr::AtVariable(
         generators::StructConstruct {
@@ -975,9 +1007,9 @@ fn lower_error_propagate(
                 merger
                     .run_in_subscope(ctx, vec![ok_variant.ty], |_ctx, _subscope, arm_inputs| {
                         let [var] = <[_; 1]>::try_from(arm_inputs).ok().unwrap();
-                        Some(BlockScopeEnd::Callsite(Some(var)))
+                        Ok(BlockScopeEnd::Callsite(Some(var)))
                     })
-                    .ok_or(LoweringFlowError::Failed)?,
+                    .map_err(LoweringFlowError::Failed)?,
                 merger
                     .run_in_subscope(ctx, vec![err_variant.ty], |ctx, subscope, arm_inputs| {
                         let [var] = <[_; 1]>::try_from(arm_inputs).ok().unwrap();
@@ -987,14 +1019,17 @@ fn lower_error_propagate(
                         }
                         .add(ctx, subscope);
                         let res = if panic_error {
-                            get_plain_full_return_vars(ctx, subscope, vec![value_var]).ok()?
+                            get_plain_full_return_vars(ctx, subscope, vec![value_var])
+                                .ok()
+                                .to_maybe()?
                         } else {
                             get_full_return_vars(ctx, subscope, LoweredExpr::AtVariable(value_var))
-                                .ok()?
+                                .ok()
+                                .to_maybe()?
                         };
-                        Some(BlockScopeEnd::Return(res))
+                        Ok(BlockScopeEnd::Return(res))
                     })
-                    .ok_or(LoweringFlowError::Failed)?,
+                    .map_err(LoweringFlowError::Failed)?,
             ])
         });
     let finalized_blocks = res?.map(|sealed| finalized_merger.finalize_block(ctx, sealed).block);
@@ -1037,11 +1072,11 @@ fn lower_optimized_extern_error_propagate(
                             match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
 
                             let variant_expr = extern_facade_expr(ctx, ok_variant.ty, arm_inputs);
-                            Some(BlockScopeEnd::Callsite(Some(
-                                variant_expr.var(ctx, subscope).ok()?,
+                            Ok(BlockScopeEnd::Callsite(Some(
+                                variant_expr.var(ctx, subscope).ok().to_maybe()?,
                             )))
                         })
-                        .ok_or(LoweringFlowError::Failed)?
+                        .map_err(LoweringFlowError::Failed)?
                 },
                 {
                     let input_tys =
@@ -1050,25 +1085,28 @@ fn lower_optimized_extern_error_propagate(
                         .run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
                             match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
                             let variant_expr = extern_facade_expr(ctx, err_variant.ty, arm_inputs);
-                            let input = variant_expr.var(ctx, subscope).ok()?;
+                            let input = variant_expr.var(ctx, subscope).ok().to_maybe()?;
                             let value_var = generators::EnumConstruct {
                                 input,
                                 variant: func_err_variant.clone(),
                             }
                             .add(ctx, subscope);
                             let res = if panic_error {
-                                get_plain_full_return_vars(ctx, subscope, vec![value_var]).ok()?
+                                get_plain_full_return_vars(ctx, subscope, vec![value_var])
+                                    .ok()
+                                    .to_maybe()?
                             } else {
                                 get_full_return_vars(
                                     ctx,
                                     subscope,
                                     LoweredExpr::AtVariable(value_var),
                                 )
-                                .ok()?
+                                .ok()
+                                .to_maybe()?
                             };
-                            Some(BlockScopeEnd::Return(res))
+                            Ok(BlockScopeEnd::Return(res))
                         })
-                        .ok_or(LoweringFlowError::Failed)?
+                        .map_err(LoweringFlowError::Failed)?
                 },
             ])
         },
@@ -1141,10 +1179,10 @@ fn use_semantic_var(
     semantic_var: semantic::VarId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Result<LivingVar, LoweringFlowError> {
-    scope.use_semantic_variable(ctx, semantic_var).take_var().ok_or_else(|| {
-        ctx.diagnostics.report(stable_ptr, VariableMoved);
-        LoweringFlowError::Failed
-    })
+    scope
+        .use_semantic_variable(ctx, semantic_var)
+        .take_var()
+        .ok_or_else(|| LoweringFlowError::Failed(ctx.diagnostics.report(stable_ptr, VariableMoved)))
 }
 
 /// Retrieves a LivingVar that corresponds to a semantic var in the current scope.
@@ -1155,10 +1193,10 @@ fn take_semantic_var(
     semantic_var: semantic::VarId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Result<LivingVar, LoweringFlowError> {
-    scope.take_semantic_variable(ctx, semantic_var).take_var().ok_or_else(|| {
-        ctx.diagnostics.report(stable_ptr, VariableMoved);
-        LoweringFlowError::Failed
-    })
+    scope
+        .take_semantic_variable(ctx, semantic_var)
+        .take_var()
+        .ok_or_else(|| LoweringFlowError::Failed(ctx.diagnostics.report(stable_ptr, VariableMoved)))
 }
 
 /// Converts a CallBlockResult for a LoweredExpr.

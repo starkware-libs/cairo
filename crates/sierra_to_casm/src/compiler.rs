@@ -104,7 +104,7 @@ pub fn compile(
 
     let registry = ProgramRegistry::<CoreType, CoreLibFunc>::with_ap_change(
         program,
-        metadata.function_ap_change.clone(),
+        metadata.ap_change_info.function_ap_change.clone(),
     )
     .map_err(CompilationError::ProgramRegistryError)?;
     let type_sizes = get_type_size_map(program, &registry)

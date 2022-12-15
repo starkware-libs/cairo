@@ -7,6 +7,7 @@ use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use defs::db::DefsGroup;
 use defs::ids::{GenericFunctionId, LanguageElementId, ModuleId, ModuleItemId, TraitId};
+use diagnostics::ToOption;
 use itertools::join;
 use num_bigint::BigUint;
 use plugins::get_default_plugins;
@@ -101,11 +102,12 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
     let impl_id = db.lookup_intern_concrete_impl(concrete_impl_id).impl_id;
 
     let concrete_trait_id =
-        db.impl_trait(impl_id).with_context(|| "Failed to get contract trait.")?;
+        db.impl_trait(impl_id).to_option().with_context(|| "Failed to get contract trait.")?;
     let trait_id = db.lookup_intern_concrete_trait(concrete_trait_id).trait_id;
 
     let sierra_program = db
         .get_sierra_program(main_crate_ids)
+        .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
 
     let replacer = CanonicalReplacer::from_program(&sierra_program);

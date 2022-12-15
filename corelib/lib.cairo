@@ -7,12 +7,13 @@ enum bool { False: (), True: (), }
 impl BoolCopy of Copy::<bool>;
 impl BoolDrop of Drop::<bool>;
 
-// TODO(orizi): Change to extern when added.
-func bool_and(a: bool, b: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => bool::False(()),
-        bool::True(x) => b,
-    }
+// TODO(dorimedini): Once we can differentiate between the value-bool and the branch-bool, just do:
+// extern func bool_and(a: bool, b: bool) -> bool implicits() nopanic;
+// (this will also require renaming the libfunc from "bool_and_impl" back to "bool_and").
+extern func bool_and_impl(ref a: bool, b: bool) implicits() nopanic;
+func bool_and(mut a: bool, b: bool) -> bool implicits() nopanic {
+    bool_and_impl(a, b);
+    a
 }
 
 // TODO(orizi): Change to extern when added.
@@ -23,12 +24,13 @@ func bool_or(a: bool, b: bool) -> bool implicits() nopanic {
     }
 }
 
-// TODO(orizi): Change to extern when added.
-func bool_not(a: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => bool::True(()),
-        bool::True(x) => bool::False(()),
-    }
+// TODO(dorimedini): Once we can differentiate between the value-bool and the branch-bool, just do:
+// extern func bool_not(a: bool) -> bool implicits() nopanic;
+// (this will also require renaming the libfunc from "bool_not_impl" back to "bool_not").
+extern func bool_not_impl(ref a: bool) implicits() nopanic;
+func bool_not(mut a: bool) -> bool implicits() nopanic {
+    bool_not_impl(a);
+    a
 }
 
 // TODO(orizi): Change to extern when added.
@@ -53,6 +55,8 @@ func bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
 extern type RangeCheck;
 
 extern type felt;
+extern func felt_const<value>() -> felt nopanic;
+
 // TODO(spapini): Make unnamed.
 impl FeltCopy of Copy::<felt>;
 impl FeltDrop of Drop::<felt>;
@@ -118,6 +122,7 @@ use array::Array;
 use array::array_new;
 use array::array_append;
 use array::array_at;
+use array::array_len;
 
 // Result.
 mod result;
@@ -130,6 +135,7 @@ use option::Option;
 // Integer.
 mod integer;
 use integer::uint128;
+use integer::uint128_const;
 use integer::uint128_from_felt;
 use integer::uint128_to_felt;
 use integer::uint128_add;
@@ -155,8 +161,10 @@ use integer::uint256_from_felt;
 
 // Gas.
 mod gas;
+use gas::BuiltinCosts;
 use gas::GasBuiltin;
 use gas::get_gas;
+use gas::get_gas_all;
 
 // Panics.
 enum PanicResult<T> { Ok: T, Err: Array::<felt>, }
@@ -174,12 +182,11 @@ func assert(cond: bool, err_code: felt) {
 
 // Hash functions.
 mod hash;
-use hash::PedersenBuiltinCost;
 use hash::pedersen;
-use hash::pedersen_get_gas;
 
-// Syscall Ptr
-extern type SyscallPtr;
+// StarkNet
+mod starknet;
+use starknet::System;
 
 // Cheatcodes
 mod cheatcodes;

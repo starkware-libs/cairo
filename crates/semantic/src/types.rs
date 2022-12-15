@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId};
+use diagnostics::{skip_diagnostic, Maybe};
 use itertools::Itertools;
 use syntax::node::ast;
 use utils::OptionFrom;
@@ -138,6 +139,7 @@ impl ConcreteTypeId {
                     .iter()
                     .map(|arg| match arg {
                         crate::GenericArgumentId::Type(ty) => ty.format(db),
+                        crate::GenericArgumentId::Literal(literal_id) => literal_id.format(db),
                     })
                     .join(", ")
             )
@@ -208,21 +210,20 @@ pub fn resolve_type(
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, resolver, ty_syntax).unwrap_or_else(|| TypeId::missing(db))
+    maybe_resolve_type(db, diagnostics, resolver, ty_syntax).unwrap_or_else(|_| TypeId::missing(db))
 }
 pub fn maybe_resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
-) -> Option<TypeId> {
+) -> Maybe<TypeId> {
     let syntax_db = db.upcast();
-    Some(match ty_syntax {
+    Ok(match ty_syntax {
         ast::Expr::Path(path) => match resolver.resolve_concrete_path(diagnostics, path)? {
             ResolvedConcreteItem::Type(ty) => ty,
             _ => {
-                diagnostics.report(path, NotAType);
-                return None;
+                return Err(diagnostics.report(path, NotAType));
             }
         },
         ast::Expr::Parenthesized(expr_syntax) => {
@@ -238,8 +239,7 @@ pub fn maybe_resolve_type(
             db.intern_type(TypeLongId::Tuple(sub_tys))
         }
         _ => {
-            diagnostics.report(ty_syntax, UnknownType);
-            return None;
+            return Err(diagnostics.report(ty_syntax, UnknownType));
         }
     })
 }
@@ -248,7 +248,7 @@ pub fn maybe_resolve_type(
 pub fn generic_type_generic_params(
     db: &dyn SemanticGroup,
     generic_type: GenericTypeId,
-) -> Option<Vec<GenericParamId>> {
+) -> Maybe<Vec<GenericParamId>> {
     match generic_type {
         GenericTypeId::Struct(id) => db.struct_generic_params(id),
         GenericTypeId::Enum(id) => db.enum_generic_params(id),
@@ -269,9 +269,11 @@ pub fn substitute_generics(
                 concrete
                     .generic_args(db)
                     .iter()
-                    .map(|generic_arg| {
-                        let GenericArgumentId::Type(ty) = generic_arg;
-                        GenericArgumentId::Type(substitute_generics(db, substitution, *ty))
+                    .map(|generic_arg| match generic_arg {
+                        GenericArgumentId::Type(ty) => {
+                            GenericArgumentId::Type(substitute_generics(db, substitution, *ty))
+                        }
+                        GenericArgumentId::Literal(_) => *generic_arg,
                     })
                     .collect(),
             )))
@@ -281,9 +283,12 @@ pub fn substitute_generics(
         )),
         TypeLongId::GenericParameter(generic_param) => substitution
             .get(&generic_param)
-            .map(|generic_arg| {
-                let GenericArgumentId::Type(ty) = generic_arg;
-                *ty
+            .map(|generic_arg| match generic_arg {
+                GenericArgumentId::Type(ty) => *ty,
+                GenericArgumentId::Literal(_) => {
+                    // TODO(ilya): Add diagnostics: "Expected type. Got literal"
+                    TypeId::missing(db)
+                }
             })
             .unwrap_or(ty),
         TypeLongId::Missing => ty,
@@ -303,9 +308,9 @@ pub fn type_info(
     db: &dyn SemanticGroup,
     mut lookup_context: ImplLookupContext,
     ty: TypeId,
-) -> Option<TypeInfo> {
+) -> Maybe<TypeInfo> {
     // TODO(spapini): Validate Copy and Drop for structs and enums.
-    Some(match db.lookup_intern_type(ty) {
+    Ok(match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete_type_id) => {
             let module = concrete_type_id.generic_type(db).module(db.upcast());
             // Look for Copy and Drop trait also in the defining module.
@@ -324,14 +329,14 @@ pub fn type_info(
             let infos = tys
                 .into_iter()
                 .map(|ty| db.type_info(lookup_context.clone(), ty))
-                .collect::<Option<Vec<_>>>()?;
+                .collect::<Maybe<Vec<_>>>()?;
             let droppable = infos.iter().all(|info| info.droppable);
             let duplicatable = infos.iter().all(|info| info.duplicatable);
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::GenericParameter(_) => todo!(),
         TypeLongId::Missing => {
-            return None;
+            return Err(skip_diagnostic());
         }
     })
 }

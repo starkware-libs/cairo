@@ -36,7 +36,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                 ],
                 branch_signatures: vec![BranchSignature {
                     vars,
-                    ap_change: SierraApChange::Known(0),
+                    ap_change: SierraApChange::Known { new_vars_only: true },
                 }],
                 fallthrough: Some(0),
             }
@@ -55,7 +55,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                         param_idx: 0,
                     }),
                 }],
-                ap_change: SierraApChange::Known(0),
+                ap_change: SierraApChange::Known { new_vars_only: true },
             }],
             fallthrough: Some(0),
         },
@@ -63,7 +63,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],
-                ap_change: SierraApChange::Known(0),
+                ap_change: SierraApChange::Known { new_vars_only: true },
             }],
             fallthrough: Some(0),
         },
@@ -79,14 +79,14 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             let vars: Vec<_> = (0..4)
                 .map(|idx| OutputVarInfo {
                     ty: felt_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(idx) },
                 })
                 .collect();
             LibFuncSignature {
                 param_signatures: vec![],
                 branch_signatures: vec![BranchSignature {
                     vars,
-                    ap_change: SierraApChange::Known(6),
+                    ap_change: SierraApChange::Known { new_vars_only: false },
                 }],
                 fallthrough: Some(0),
             }
@@ -95,15 +95,35 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],
-                ap_change: SierraApChange::Known(0),
+                ap_change: SierraApChange::Known { new_vars_only: true },
             }],
             fallthrough: None,
         },
         "branch" => LibFuncSignature {
             param_signatures: vec![],
             branch_signatures: vec![
-                BranchSignature { vars: vec![], ap_change: SierraApChange::Known(0) },
-                BranchSignature { vars: vec![], ap_change: SierraApChange::Known(0) },
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+            ],
+            fallthrough: Some(1),
+        },
+        "branch_with_param" => LibFuncSignature {
+            param_signatures: vec![ParamSignature::new(felt_ty)],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
             ],
             fallthrough: Some(1),
         },
@@ -117,12 +137,21 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
                     ty: felt_ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 }],
-                ap_change: SierraApChange::Known(1),
+                ap_change: SierraApChange::Known { new_vars_only: true },
             }],
             fallthrough: Some(0),
         },
+        "temp_not_on_top" => LibFuncSignature::new_non_branch(
+            vec![],
+            vec![OutputVarInfo {
+                ty: felt_ty,
+                // Simulate the case where the returned value is not on the top of the stack.
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ),
         _ => panic!("get_branch_signatures() is not implemented for '{}'.", name),
     }
 }
@@ -176,6 +205,28 @@ fn store_temp_simple() {
             "label0:",
             "store_temp<felt>(5) -> (5)",
             "felt_add(5, 5) -> (6)",
+            "return()",
+        ]
+    );
+}
+
+#[test]
+fn store_temp_for_branch_command() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_branch(&db, "branch_with_param", &["2"], 0),
+        dummy_label(0),
+        dummy_return_statement(&[]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec![
+            "felt_add(0, 1) -> (2)",
+            "store_temp<felt>(2) -> (2)",
+            "branch_with_param(2) { label0() fallthrough() }",
+            "label0:",
             "return()",
         ]
     );
@@ -366,13 +417,28 @@ fn push_values_clear_known_stack() {
         vec![
             "store_temp<felt>(0) -> (100)",
             "store_temp<felt>(1) -> (101)",
-            "store_temp<felt>(100) -> (200)",
-            "store_temp<felt>(101) -> (201)",
+            "rename<felt>(100) -> (200)",
+            "rename<felt>(101) -> (201)",
             "nope() -> ()",
             "rename<felt>(200) -> (300)",
             "rename<felt>(201) -> (301)",
             "return(0)",
         ]
+    );
+}
+
+#[test]
+fn push_values_temp_not_on_top() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "temp_not_on_top", &[], &["0"]),
+        dummy_push_values(&db, &[("0", "100")]),
+        dummy_return_statement(&["0"]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec!["temp_not_on_top() -> (0)", "store_temp<felt>(0) -> (100)", "return(0)",]
     );
 }
 

@@ -20,13 +20,13 @@ fn test_add() {
         ),
         ReducedCompiledInvocation {
             instructions: casm! {
-                [ap + 0] = [fp + 1] + [ap - 7], ap++;
-                %{ memory[ap + 0] = memory [ap - 1] < (BigInt::from(2).pow(128)) %}
-                jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap - 2] + (-BigInt::from(2).pow(128)), ap++;
+                [ap + 1] = [fp + 1] + [ap - 7], ap++;
+                %{ memory[ap + -1] = memory [ap + 0] < (BigInt::from(2).pow(128)) %}
+                jmp rel 7 if [ap + -1] != 0, ap++;
+                [ap - 1] = [ap + 0] + (BigInt::from(2).pow(128)), ap++;
                 [ap - 1] = [[fp + 2]];
                 jmp rel 0;
-                [ap - 2] = [[fp + 2]];
+                [ap - 1] = [[fp + 2]];
             }
             .instructions,
             relocations: vec![RelocationEntry {
@@ -35,7 +35,7 @@ fn test_add() {
             }],
             results: vec![
                 ReducedBranchChanges {
-                    refs: vec![ref_expr!([fp + 2] + 1), ref_expr!([ap - 2])],
+                    refs: vec![ref_expr!([fp + 2] + 1), ref_expr!([ap - 1])],
                     ap_change: ApChange::Known(2)
                 },
                 ReducedBranchChanges {
@@ -56,13 +56,13 @@ fn test_sub() {
         ),
         ReducedCompiledInvocation {
             instructions: casm! {
-                [ap - 1] = [ap + 0] + [fp + 7], ap++;
-                %{ memory[ap + 0] = memory [ap - 1] < (BigInt::from(2).pow(128)) %}
-                jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap - 2] + (BigInt::from(2).pow(128)), ap++;
+                [ap - 1] = [ap + 1] + [fp + 7], ap++;
+                %{ memory[ap + -1] = memory [ap + 0] < (BigInt::from(2).pow(128)) %}
+                jmp rel 7 if [ap + -1] != 0, ap++;
+                [ap + 0] = [ap - 1] + (BigInt::from(2).pow(128)), ap++;
                 [ap - 1] = [[ap - 5]];
                 jmp rel 0;
-                [ap - 2] = [[ap - 4]];
+                [ap - 1] = [[ap - 4]];
             }
             .instructions,
             relocations: vec![RelocationEntry {
@@ -71,7 +71,7 @@ fn test_sub() {
             }],
             results: vec![
                 ReducedBranchChanges {
-                    refs: vec![ref_expr!([ap - 4] + 1), ref_expr!([ap - 2])],
+                    refs: vec![ref_expr!([ap - 4] + 1), ref_expr!([ap - 1])],
                     ap_change: ApChange::Known(2)
                 },
                 ReducedBranchChanges {

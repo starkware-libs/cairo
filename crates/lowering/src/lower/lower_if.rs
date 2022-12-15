@@ -1,4 +1,5 @@
 use debug::DebugWithDb;
+use diagnostics::Maybe;
 use num_traits::Zero;
 use semantic::corelib;
 use utils::extract_matches;
@@ -74,14 +75,14 @@ pub fn lower_expr_if_bool(
         let else_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
             lower_optional_else_block(ctx, subscope, expr.else_block)
         });
-        Some((main_block_scope, else_block_scope))
+        Ok((main_block_scope, else_block_scope))
     });
 
-    let (main_block_sealed, else_block_sealed) = res.ok_or(LoweringFlowError::Failed)?;
+    let (main_block_sealed, else_block_sealed) = res.map_err(LoweringFlowError::Failed)?;
     let main_finalized =
-        finalized_merger.finalize_block(ctx, main_block_sealed.ok_or(LoweringFlowError::Failed)?);
+        finalized_merger.finalize_block(ctx, main_block_sealed.map_err(LoweringFlowError::Failed)?);
     let else_finalized =
-        finalized_merger.finalize_block(ctx, else_block_sealed.ok_or(LoweringFlowError::Failed)?);
+        finalized_merger.finalize_block(ctx, else_block_sealed.map_err(LoweringFlowError::Failed)?);
 
     // Emit the statement.
     let block_result = (generators::MatchEnum {
@@ -145,14 +146,14 @@ pub fn lower_expr_if_eq(
             merger.run_in_subscope(ctx, vec![non_zero_type], |ctx, subscope, _| {
                 lower_optional_else_block(ctx, subscope, expr.else_block)
             });
-        Some((main_block_scope, else_block_scope))
+        Ok((main_block_scope, else_block_scope))
     });
 
-    let (main_block_sealed, else_block_sealed) = res.ok_or(LoweringFlowError::Failed)?;
+    let (main_block_sealed, else_block_sealed) = res.map_err(LoweringFlowError::Failed)?;
     let main_finalized =
-        finalized_merger.finalize_block(ctx, main_block_sealed.ok_or(LoweringFlowError::Failed)?);
+        finalized_merger.finalize_block(ctx, main_block_sealed.map_err(LoweringFlowError::Failed)?);
     let else_finalized =
-        finalized_merger.finalize_block(ctx, else_block_sealed.ok_or(LoweringFlowError::Failed)?);
+        finalized_merger.finalize_block(ctx, else_block_sealed.map_err(LoweringFlowError::Failed)?);
 
     // Emit the statement.
     let block_result = (generators::MatchExtern {
@@ -174,7 +175,7 @@ fn lower_optional_else_block(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     else_expr_opt: Option<semantic::ExprId>,
-) -> Option<BlockScopeEnd> {
+) -> Maybe<BlockScopeEnd> {
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {
         Some(else_expr) => match &ctx.function_def.exprs[else_expr] {

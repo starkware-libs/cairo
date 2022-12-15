@@ -52,8 +52,8 @@ fn build_pedersen_hash(
     }
 
     let instructions = casm! {
-        x = [[pedersen_base] + pedersen_offset];
-        y = [[pedersen_base] + (pedersen_offset + 1)];
+        x = [[&pedersen_base] + pedersen_offset];
+        y = [[&pedersen_base] + (pedersen_offset + 1)];
     }
     .instructions;
     let output_expressions = [vec![

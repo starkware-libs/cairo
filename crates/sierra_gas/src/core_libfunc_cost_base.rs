@@ -1,14 +1,17 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
-use sierra::extensions::builtin_cost::{BuiltinCostConcreteLibFunc, CostTokenType};
+use sierra::extensions::boolean::BoolConcreteLibFunc;
+use sierra::extensions::builtin_cost::{
+    BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
+};
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Box, BuiltinCost, DictFeltTo, Drop, Dup, Enum, Felt, FunctionCall,
-    Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup, Enum,
+    Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
-use sierra::extensions::gas::GasConcreteLibFunc::{BurnGas, GetGas, RefundGas};
+use sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
     Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
@@ -18,6 +21,8 @@ use sierra::extensions::mem::MemConcreteLibFunc::{
 };
 use sierra::extensions::strct::StructConcreteLibFunc;
 use sierra::program::Function;
+
+use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
@@ -50,6 +55,8 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             let func_content_cost = ops.function_cost(function);
             vec![ops.add(ops.const_cost(2), func_content_cost)]
         }
+        Bool(BoolConcreteLibFunc::And(_)) => vec![ops.const_cost(0)],
+        Bool(BoolConcreteLibFunc::Not(_)) => vec![ops.const_cost(1)],
         Gas(GetGas(_)) => {
             vec![
                 ops.sub(ops.const_cost(3), ops.statement_var_cost(CostTokenType::Step)),
@@ -57,12 +64,11 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             ]
         }
         Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Step)],
-        Gas(BurnGas(_)) => {
-            // TODO(lior): Fix BurnGas Sierra->casm code to handle all token types.
+        BranchAlign(_) => {
             let cost = CostTokenType::iter()
                 .map(|token_type| ops.statement_var_cost(*token_type))
                 .reduce(|x, y| ops.add(x, y));
-            vec![cost.unwrap()]
+            vec![ops.add(cost.unwrap(), ops.const_cost(1))]
         }
         Array(ArrayConcreteLibFunc::New(_)) => vec![ops.const_cost(1)],
         Array(ArrayConcreteLibFunc::Append(_)) => vec![ops.const_cost(2)],
@@ -98,13 +104,18 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Pedersen(_) => {
             vec![ops.add(ops.const_cost(2), ops.const_cost_token(1, CostTokenType::Pedersen))]
         }
-        BuiltinCost(BuiltinCostConcreteLibFunc::BuiltinGetGas(libfunc)) => {
+        BuiltinCost(BuiltinCostConcreteLibFunc::BuiltinGetGas(_)) => {
+            let cost = CostTokenType::iter()
+                .map(|token_type| ops.statement_var_cost(*token_type))
+                .reduce(|x, y| ops.add(x, y));
+            // Compute the (maximal) number of steps for the computation of the requested cost.
+            let compute_requested_cost_steps = BuiltinCostGetGasLibFunc::max_cost() as i32;
             vec![
-                ops.sub(ops.const_cost(3), ops.statement_var_cost(libfunc.token_type)),
-                ops.const_cost(5),
+                ops.sub(ops.const_cost(compute_requested_cost_steps + 3), cost.unwrap()),
+                ops.const_cost(compute_requested_cost_steps + 5),
             ]
         }
-        &CoreConcreteLibFunc::StarkNet(_) => todo!(),
+        CoreConcreteLibFunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
         &CoreConcreteLibFunc::Cheatcodes(_) => todo!(),
     }
 }
@@ -144,7 +155,7 @@ fn integer_libfunc_cost<Ops: CostOperations>(
             vec![ops.const_cost(0)]
         }
         Uint128Concrete::FromFelt(_) => {
-            vec![ops.const_cost(3), ops.const_cost(7)]
+            vec![ops.const_cost(2), ops.const_cost(11)]
         }
         Uint128Concrete::JumpNotZero(_) => {
             vec![ops.const_cost(1), ops.const_cost(1)]

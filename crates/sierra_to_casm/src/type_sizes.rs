@@ -20,11 +20,11 @@ pub fn get_type_size_map(
         let size = match ty {
             CoreTypeConcrete::Felt(_)
             | CoreTypeConcrete::GasBuiltin(_)
-            | CoreTypeConcrete::BuiltinCost(_)
+            | CoreTypeConcrete::BuiltinCosts(_)
             | CoreTypeConcrete::Uint128(_)
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::SyscallPtr(_)) => Some(1),
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_)) => Some(1),
             CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageAddress(_)) => Some(1),
             CoreTypeConcrete::Pedersen(_) => Some(1),
             CoreTypeConcrete::Array(_)
