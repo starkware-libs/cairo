@@ -46,69 +46,56 @@ func test_felt_operators() {
 // TODO(orizi): Use uint128 literals when supported.
 #[test]
 func test_uint128_operators() {
-    let u0 = uint128_const::<0>();
-    let u1 = uint128_const::<1>();
-    let u2 = uint128_const::<2>();
-    let u3 = uint128_const::<3>();
-    let u4 = uint128_const::<4>();
-    let u5 = uint128_const::<5>();
-    let u6 = uint128_const::<6>();
-    let u7 = uint128_const::<7>();
-    let u8 = uint128_const::<8>();
-    let u9 = uint128_const::<9>();
-    let u231 = uint128_const::<231>();
-    let u1000 = uint128_const::<1000>();
-    let u1231 = uint128_const::<1231>();
-    assert(u1 + u3 == u4, 1);
-    assert(u3 + u6 == u9, 1);
-    assert(u3 - u1 == u2, 1);
-    assert(u1231 - u231 == u1000, 1);
-    assert(u1 * u3 == u3, 1);
-    assert(u2 * u4 == u8, 1);
-    assert(u8 / u2 == u4, 1);
-    assert(u8 % u2 == u0, 1);
-    assert(u7 / u3 == u2, 1);
-    assert(u7 % u3 == u1, 1);
-    assert(u1 < u4, 1);
-    assert(u1 <= u4, 1);
-    assert(!(u4 < u4), 1);
-    assert(u4 <= u4, 1);
-    assert(u5 > u2, 1);
-    assert(u5 >= u2, 1);
-    assert(!(u3 > u3), 1);
-    assert(u3 >= u3, 1);
+    assert(1_uint128 + 3_uint128 == 4_uint128, 1);
+    assert(3_uint128 + 6_uint128 == 9_uint128, 1);
+    assert(3_uint128 - 1_uint128 == 2_uint128, 1);
+    assert(1231_uint128 - 231_uint128 == 1000_uint128, 1);
+    assert(1_uint128 * 3_uint128 == 3_uint128, 1);
+    assert(2_uint128 * 4_uint128 == 8_uint128, 1);
+    assert(8_uint128 / 2_uint128 == 4_uint128, 1);
+    assert(8_uint128 % 2_uint128 == 0_uint128, 1);
+    assert(7_uint128 / 3_uint128 == 2_uint128, 1);
+    assert(7_uint128 % 3_uint128 == 1_uint128, 1);
+    assert(1_uint128 < 4_uint128, 1);
+    assert(1_uint128 <= 4_uint128, 1);
+    assert(!(4_uint128 < 4_uint128), 1);
+    assert(4_uint128 <= 4_uint128, 1);
+    assert(5_uint128 > 2_uint128, 1);
+    assert(5_uint128 >= 2_uint128, 1);
+    assert(!(3_uint128 > 3_uint128), 1);
+    assert(3_uint128 >= 3_uint128, 1);
 }
 
 func pow_2_127() -> uint128 {
-    uint128_const::<170141183460469231731687303715884105728>()
+    0x80000000000000000000000000000000_uint128
 }
 
 func pow_2_64() -> uint128 {
-    uint128_const::<18446744073709551616>()
+    0x10000000000000000_uint128
 }
 
 #[test]
 #[should_panic]
 func test_uint128_sub_overflow_1() {
-    uint128_const::<0>() - uint128_const::<1>();
+    0_uint128 - 1_uint128;
 }
 
 #[test]
 #[should_panic]
 func test_uint128_sub_overflow_2() {
-    uint128_const::<0>() - uint128_const::<3>();
+    0_uint128 - 3_uint128;
 }
 
 #[test]
 #[should_panic]
 func test_uint128_sub_overflow_3() {
-    uint128_const::<1>() - uint128_const::<3>();
+    1_uint128 - 3_uint128;
 }
 
 #[test]
 #[should_panic]
 func test_uint128_sub_overflow_4() {
-    uint128_const::<100>() - uint128_const::<1000>();
+    100_uint128 - 1000_uint128;
 }
 
 #[test]
@@ -120,7 +107,7 @@ func test_uint128_add_overflow_1() {
 #[test]
 #[should_panic]
 func test_uint128_add_overflow_2() {
-    (pow_2_127() + uint128_const::<12>()) + pow_2_127();
+    (pow_2_127() + 12_uint128) + pow_2_127();
 }
 
 #[test]
@@ -132,25 +119,25 @@ func test_uint128_mul_overflow_1() {
 #[test]
 #[should_panic]
 func test_uint128_mul_overflow_2() {
-    (pow_2_64() + uint128_const::<1>()) * pow_2_64();
+    (pow_2_64() + 1_uint128) * pow_2_64();
 }
 
 #[test]
 #[should_panic]
 func test_uint128_mul_overflow_3() {
-    uint128_const::<2>() * pow_2_127();
+    2_uint128 * pow_2_127();
 }
 
 #[test]
 #[should_panic]
 func test_uint128_div_by_0() {
-    uint128_const::<2>() / uint128_const::<0>();
+    2_uint128 / 0_uint128;
 }
 
 #[test]
 #[should_panic]
 func test_uint128_mod_by_0() {
-    uint128_const::<2>() % uint128_const::<0>();
+    2_uint128 % 0_uint128;
 }
 
 // TODO(orizi): Remove when uint256 literals are supported.
@@ -160,11 +147,11 @@ func as_uint256(high: uint128, low: uint128) -> uint256 {
 
 #[test]
 func test_uint256_from_felt() {
-    assert(uint256_from_felt(1) == as_uint256(uint128_const::<0>(), uint128_const::<1>()), 1);
+    assert(uint256_from_felt(1) == as_uint256(0_uint128, 1_uint128), 1);
     assert(
         uint256_from_felt(
             170141183460469231731687303715884105728 * 2
-        ) == as_uint256(uint128_const::<1>(), uint128_const::<0>()),
+        ) == as_uint256(1_uint128, 0_uint128),
         1
     );
 }
@@ -173,45 +160,33 @@ func test_uint256_from_felt() {
 #[test]
 func test_uint256_operators() {
     assert(
-        as_uint256(uint128_const::<1>(), uint128_const::<1>())
-            + as_uint256(
-                uint128_const::<3>(), uint128_const::<2>()
-            ) == as_uint256(uint128_const::<4>(), uint128_const::<3>()),
+        as_uint256(1_uint128, 1_uint128)
+            + as_uint256(3_uint128, 2_uint128) == as_uint256(4_uint128, 3_uint128),
         1
     );
     assert(
-        as_uint256(uint128_const::<1>(), pow_2_127())
-            + as_uint256(
-                uint128_const::<3>(), pow_2_127()
-            ) == as_uint256(uint128_const::<5>(), uint128_const::<0>()),
+        as_uint256(1_uint128, pow_2_127())
+            + as_uint256(3_uint128, pow_2_127()) == as_uint256(5_uint128, 0_uint128),
         1
     );
     assert(
-        as_uint256(uint128_const::<4>(), uint128_const::<3>())
-            - as_uint256(
-                uint128_const::<1>(), uint128_const::<1>()
-            ) == as_uint256(uint128_const::<3>(), uint128_const::<2>()),
+        as_uint256(4_uint128, 3_uint128)
+            - as_uint256(1_uint128, 1_uint128) == as_uint256(3_uint128, 2_uint128),
         1
     );
     assert(
-        as_uint256(uint128_const::<5>(), uint128_const::<0>())
-            - as_uint256(
-                uint128_const::<1>(), pow_2_127()
-            ) == as_uint256(uint128_const::<3>(), pow_2_127()),
+        as_uint256(5_uint128, 0_uint128)
+            - as_uint256(1_uint128, pow_2_127()) == as_uint256(3_uint128, pow_2_127()),
         1
     );
     assert(
-        as_uint256(uint128_const::<4>(), uint128_const::<3>())
-            * as_uint256(
-                uint128_const::<0>(), uint128_const::<1>()
-            ) == as_uint256(uint128_const::<4>(), uint128_const::<3>()),
+        as_uint256(4_uint128, 3_uint128)
+            * as_uint256(0_uint128, 1_uint128) == as_uint256(4_uint128, 3_uint128),
         1
     );
     assert(
-        as_uint256(uint128_const::<4>(), uint128_const::<3>())
-            * as_uint256(
-                uint128_const::<0>(), uint128_const::<2>()
-            ) == as_uint256(uint128_const::<8>(), uint128_const::<6>()),
+        as_uint256(4_uint128, 3_uint128)
+            * as_uint256(0_uint128, 2_uint128) == as_uint256(8_uint128, 6_uint128),
         1
     );
 }
@@ -219,28 +194,25 @@ func test_uint256_operators() {
 #[test]
 #[should_panic]
 func test_uint256_add_overflow() {
-    as_uint256(pow_2_127(), uint128_const::<1>()) + as_uint256(pow_2_127(), uint128_const::<1>());
+    as_uint256(pow_2_127(), 1_uint128) + as_uint256(pow_2_127(), 1_uint128);
 }
 
 #[test]
 #[should_panic]
 func test_uint256_sub_overflow() {
-    as_uint256(uint128_const::<1>(), uint128_const::<1>())
-        - as_uint256(uint128_const::<1>(), uint128_const::<2>());
+    as_uint256(1_uint128, 1_uint128) - as_uint256(1_uint128, 2_uint128);
 }
 
 #[test]
 #[should_panic]
 func test_uint256_mul_overflow_1() {
-    as_uint256(uint128_const::<1>(), uint128_const::<1>())
-        * as_uint256(uint128_const::<1>(), uint128_const::<2>());
+    as_uint256(1_uint128, 1_uint128) * as_uint256(1_uint128, 2_uint128);
 }
 
 #[test]
 #[should_panic]
 func test_uint256_mul_overflow_2() {
-    as_uint256(uint128_const::<0>(), pow_2_127())
-        * as_uint256(uint128_const::<2>(), uint128_const::<0>());
+    as_uint256(0_uint128, pow_2_127()) * as_uint256(2_uint128, 0_uint128);
 }
 
 // TODO(orizi): Switch to operators and literals when added.
@@ -261,19 +233,19 @@ func test_array_helper(idx: uint128) -> felt {
 
 #[test]
 func test_array() {
-    assert(test_array_helper(uint128_const::<0>()) == 10, 1);
-    assert(test_array_helper(uint128_const::<1>()) == 11, 1);
-    assert(test_array_helper(uint128_const::<2>()) == 12, 1);
+    assert(test_array_helper(0_uint128) == 10, 1);
+    assert(test_array_helper(1_uint128) == 11, 1);
+    assert(test_array_helper(2_uint128) == 12, 1);
 }
 
 #[test]
 #[should_panic]
 func test_array_out_of_bound_1() {
-    test_array_helper(uint128_const::<3>());
+    test_array_helper(3_uint128);
 }
 
 #[test]
 #[should_panic]
 func test_array_out_of_bound_2() {
-    test_array_helper(uint128_const::<11>());
+    test_array_helper(11_uint128);
 }
