@@ -335,7 +335,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RedundantModifier { current_modifier, previous_modifier } => {
                 format!(
                     "`{current_modifier}` modifier was specified after another modifier \
-                     (`{previous_modifier}`). Only a single modifier is allowed. "
+                     (`{previous_modifier}`). Only a single modifier is allowed."
                 )
             }
             SemanticDiagnosticKind::ReferenceLocalVariable => {

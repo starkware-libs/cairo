@@ -49,7 +49,7 @@ fn test_struct() {
     let module_id = test_module.module_id;
 
     let struct_id = extract_matches!(
-        db.module_item_by_name(module_id, "A".into()).unwrap(),
+        db.module_item_by_name(module_id, "A".into()).unwrap().unwrap(),
         ModuleItemId::Struct
     );
     let actual = db

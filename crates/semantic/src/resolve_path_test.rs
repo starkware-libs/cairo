@@ -36,7 +36,7 @@ fn test_resolve_path() {
     let module_id = test_module.module_id;
 
     let free_function_id = extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap(),
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     );
     let expr_formatter = ExprFormatter { db, free_function_id };
@@ -88,11 +88,11 @@ fn test_resolve_path_super() {
     );
     let test_module = ModuleId::CrateRoot(crate_id);
     let inner2_module_id = ModuleId::Submodule(extract_matches!(
-        db.module_item_by_name(test_module, "inner2".into()).unwrap(),
+        db.module_item_by_name(test_module, "inner2".into()).unwrap().unwrap(),
         ModuleItemId::Submodule
     ));
     let struct_id = extract_matches!(
-        db.module_item_by_name(inner2_module_id, "InnerStruct2".into()).unwrap(),
+        db.module_item_by_name(inner2_module_id, "InnerStruct2".into()).unwrap().unwrap(),
         ModuleItemId::Struct
     );
     let members = db.struct_members(struct_id).unwrap();
