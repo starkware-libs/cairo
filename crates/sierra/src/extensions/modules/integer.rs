@@ -149,9 +149,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                             },
                             OutputVarInfo {
                                 ty: ty.clone(),
-                                ref_info: OutputVarReferenceInfo::Deferred(
-                                    DeferredOutputKind::Generic,
-                                ),
+                                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                             },
                         ],
                         ap_change: SierraApChange::Known { new_vars_only: false },
@@ -166,9 +164,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                             },
                             OutputVarInfo {
                                 ty,
-                                ref_info: OutputVarReferenceInfo::Deferred(
-                                    DeferredOutputKind::Generic,
-                                ),
+                                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                             },
                         ],
                         ap_change: SierraApChange::Known { new_vars_only: false },
@@ -481,11 +477,11 @@ impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
                         },
                         OutputVarInfo {
                             ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                         },
                         OutputVarInfo {
                             ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
