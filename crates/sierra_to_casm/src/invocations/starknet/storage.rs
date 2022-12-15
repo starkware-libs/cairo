@@ -36,7 +36,7 @@ pub fn build_storage_read(
 
     let mut instructions = casm! {
         [ap] = selector, ap++;
-        [ap] = [[system_base] + system_offset];
+        [ap - 1] = [[system_base] + system_offset];
         storage_address = [[system_base] + (system_offset + 1)];
     }
     .instructions;
