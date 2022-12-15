@@ -1,4 +1,3 @@
-use casm::hints::Hint;
 use casm::operand::{BinOpOperand, DerefOrImmediate, ResOperand};
 use casm::{casm, deref};
 use num_bigint::BigInt;
@@ -34,22 +33,14 @@ pub fn build_storage_read(
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     }
 
-    let mut instructions = casm! {
+    let instructions = casm! {
         [ap] = selector, ap++;
         [ap - 1] = [[system_base] + system_offset];
         storage_address = [[system_base] + (system_offset + 1)];
-        // Syscall hint goes here.
+        %{ syscall_handler.syscall(segments=segments, syscall_ptr=[&system_base] + system_offset) %}
         [ap] = [[system_base] + (system_offset + 2)], ap++;
     }
     .instructions;
-
-    instructions.last_mut().unwrap().hints = vec![Hint::SystemCall {
-        system: ResOperand::BinOp(BinOpOperand {
-            op: casm::operand::Operation::Add,
-            a: system_base,
-            b: DerefOrImmediate::Immediate(BigInt::from_i16(system_offset).unwrap()),
-        }),
-    }];
 
     let output_expressions = [vec![
         // System
