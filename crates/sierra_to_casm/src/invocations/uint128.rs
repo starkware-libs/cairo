@@ -45,6 +45,7 @@ pub fn build(
         Uint128Concrete::FromFelt(_) => build_uint128_from_felt(builder),
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
         Uint128Concrete::LessThan(_) => build_uint128_lt(builder),
+        Uint128Concrete::Equal(_) => build_uint128_eq(builder),
         Uint128Concrete::LessThanOrEqual(_) => build_uint128_le(builder),
     }
 }
@@ -351,6 +352,48 @@ fn build_uint128_lt(
             .into_iter(),
     ))
 }
+
+fn build_uint128_eq(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let (a, b) = match builder.refs {
+        [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
+            (try_unpack_deref(expr_a)?, try_unpack_deref(expr_b)?)
+        }
+        refs => {
+            return Err(InvocationError::WrongNumberOfArguments {
+                expected: 2,
+                actual: refs.len(),
+            });
+        }
+    };
+    let target_statement_id = get_bool_comparison_target_statement_id(&builder);
+    let mut casm_builder = CasmBuilder::default();
+    let a = casm_builder.add_var(ResOperand::Deref(a));
+    let b = casm_builder.add_var(ResOperand::Deref(b));
+    casm_build_extend! {casm_builder,
+            // res = a - b => (res == 0) <==> (a == b)
+            alloc res;
+            a = res + b;
+
+            jump NotEqual if res != 0;
+            jump Equal;
+        NotEqual:
+    };
+    let CasmBuildResult { instructions, awaiting_relocations, label_state: _, 
+        fallthrough_state: _ } = casm_builder.build();
+
+    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
+    Ok(builder.build(
+        instructions,
+        vec![RelocationEntry {
+            instruction_idx: *relocation_index,
+            relocation: Relocation::RelativeStatementId(target_statement_id),
+        }],
+        vec![vec![].into_iter(), vec![].into_iter()].into_iter(),
+    ))
+}
+
 
 fn build_uint128_le(
     builder: CompiledInvocationBuilder<'_>,

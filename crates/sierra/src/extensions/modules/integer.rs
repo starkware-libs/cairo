@@ -41,6 +41,7 @@ define_libfunc_hierarchy! {
     pub enum Uint128LibFunc {
         Operation(Uint128OperationLibFunc),
         LessThan(Uint128LessThanLibFunc),
+        Equal(Uint128EqualLibFunc),
         LessThanOrEqual(Uint128LessThanOrEqualLibFunc),
         Const(Uint128ConstLibFunc),
         FromFelt(Uint128sFromFeltLibFunc),
@@ -413,6 +414,36 @@ impl NoGenericArgsGenericLibFunc for Uint128LessThanLibFunc {
         })
     }
 }
+
+/// LibFunc for comparing uint128s` equality.
+#[derive(Default)]
+pub struct Uint128EqualLibFunc {}
+impl NoGenericArgsGenericLibFunc for Uint128EqualLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_eq");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let uint128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let branch_signatures = (0..2)
+            .map(|_| BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            })
+            .collect();
+
+        Ok(LibFuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(uint128_ty.clone()),
+                ParamSignature::new(uint128_ty),
+            ],
+            branch_signatures,
+            fallthrough: Some(0),
+        })
+    }
+}
+
 
 /// LibFunc for comparing uint128s.
 #[derive(Default)]
