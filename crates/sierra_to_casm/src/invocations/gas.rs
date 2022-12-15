@@ -83,7 +83,7 @@ fn build_get_gas(
         [ap + 0] = (gas_counter_value.unchecked_apply_known_ap_change(1)) +
             (1 - requested_count as i128), ap++;
         [ap + 0] = [ap - 1] * (-1), ap++;
-        [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
+        [ap - 1] = [[&range_check.unchecked_apply_known_ap_change(3)]];
 
         jmp rel 0; // Fixed in relocations.
     };
@@ -92,7 +92,7 @@ fn build_get_gas(
     let success_branch = casm! {
        // requested_count - 1 < gas_counter_value => requested_count <= gas_counter:
        [ap + 0] = (gas_counter_value.unchecked_apply_known_ap_change(1)) + (-requested_count as i128), ap++;
-       [ap - 1] = [[range_check.unchecked_apply_known_ap_change(2)]];
+       [ap - 1] = [[&range_check.unchecked_apply_known_ap_change(2)]];
     };
 
     Ok(builder.build(
