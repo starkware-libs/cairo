@@ -262,7 +262,9 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
                 let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
                     parent: Some(module_file),
                     name: generated.name,
-                    content: Arc::new(generated.content),
+                    // TODO(ilya): Check if we can can a decent error message without formatting
+                    // here.
+                    content: Arc::new(formatter::format_string(syntax_db, generated.content)),
                 }));
                 res.generated_file_info.push(Some(GeneratedFileInfo {
                     diagnostic_mapper: generated.diagnostic_mapper,

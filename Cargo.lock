@@ -614,6 +614,7 @@ dependencies = [
  "debug",
  "diagnostics",
  "filesystem",
+ "formatter",
  "indexmap",
  "indoc",
  "itertools",
