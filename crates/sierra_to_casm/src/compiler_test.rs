@@ -232,13 +232,13 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
             "},
             false,
             indoc! {"
-                [ap + 0] = [fp + -4] + [fp + -3], ap++;
-                %{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
-                jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap + -2] + -340282366920938463463374607431768211456, ap++;
+                [ap + 1] = [fp + -4] + [fp + -3], ap++;
+                %{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
+                jmp rel 7 if [ap + -1] != 0, ap++;
+                [ap + -1] = [ap + 0] + 340282366920938463463374607431768211456, ap++;
                 [ap + -1] = [[fp + -5] + 0];
                 jmp rel 6;
-                [ap + -2] = [[fp + -5] + 0];
+                [ap + -1] = [[fp + -5] + 0];
                 [ap + 0] = [fp + -5] + 1, ap++;
                 ret;
                 [ap + 0] = [fp + -5] + 1, ap++;

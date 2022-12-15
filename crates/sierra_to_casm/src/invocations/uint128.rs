@@ -58,61 +58,85 @@ fn build_uint128_op(
     match op {
         IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
             let failure_handle_statement_id = get_bool_comparison_target_statement_id(&builder);
-            let uint128_limit: BigInt = BigInt::from(u128::MAX) + 1;
-            // The code up to the success branch.
-            let mut before_success_branch = match op {
-                IntOperator::OverflowingAdd => casm! {
-                    [ap + 0] = a + b, ap++;
-                    %{ memory[ap + 0] = memory [ap - 1] < (uint128_limit.clone()) %}
-                    jmp rel 0 if [ap + 0] != 0, ap++;
-                    // Overflow:
-                    // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
-                    [ap + 0] = [ap - 2] + (-uint128_limit), ap++;
-                    [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
-                    jmp rel 0; // Fixed in relocations.
-                },
-                IntOperator::OverflowingSub => casm! {
-                    a = [ap + 0] + b, ap++;
-                    %{ memory[ap + 0] = memory [ap - 1] < (uint128_limit.clone())  %}
-                    jmp rel 0 if [ap + 0] != 0, ap++;
-                    // Underflow:
-                    // Here we know that 0 - (2**128 - 1) <= a - b < 0.
-                    [ap + 0] = [ap - 2] + uint128_limit, ap++;
-                    [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
-                    jmp rel 0; // Fixed in relocations.
-                },
+            let mut casm_builder = CasmBuilder::default();
+            let uint128_limit =
+                casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
+            let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+            let a = casm_builder.add_var(ResOperand::Deref(a));
+            let b = casm_builder.add_var(ResOperand::Deref(b));
+            let (possible_overflow, overflow_fixed) = match op {
+                IntOperator::OverflowingAdd => {
+                    casm_build_extend! {casm_builder,
+                        alloc no_overflow;
+                        alloc a_plus_b;
+                        a_plus_b = a + b;
+                        no_overflow = a_plus_b < uint128_limit;
+                        jump NoOverflow if no_overflow != 0;
+                        // Overflow:
+                        // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
+                        alloc wrapping_a_plus_b;
+                        a_plus_b = wrapping_a_plus_b + uint128_limit;
+                    };
+                    (a_plus_b, wrapping_a_plus_b)
+                }
+                IntOperator::OverflowingSub => {
+                    casm_build_extend! {casm_builder,
+                        alloc no_overflow;
+                        alloc a_minus_b;
+                        a = a_minus_b + b;
+                        no_overflow = a_minus_b < uint128_limit;
+                        jump NoOverflow if no_overflow != 0;
+                        // Underflow:
+                        // Here we know that 0 - (2**128 - 1) <= a - b < 0.
+                        alloc wrapping_a_minus_b;
+                        wrapping_a_minus_b = a_minus_b + uint128_limit;
+                    };
+                    (a_minus_b, wrapping_a_minus_b)
+                }
                 _ => unreachable!("Only supported options in arm."),
             };
-            patch_jnz_to_end(&mut before_success_branch, 1);
-            let relocation_index = before_success_branch.instructions.len() - 1;
-            let success_branch = casm! {
-                // No overflow:
-                [ap - 2] = [[range_check.unchecked_apply_known_ap_change(2)]];
+            casm_build_extend! {casm_builder,
+                    *(range_check++) = overflow_fixed;
+                    jump Target;
+                NoOverflow:
+                   *(range_check++) = possible_overflow;
             };
-
+            let CasmBuildResult {
+                instructions,
+                awaiting_relocations,
+                label_state,
+                fallthrough_state,
+            } = casm_builder.build();
+            // TODO(orizi): Extract the assertion out of the libfunc implementation.
+            assert_eq!(
+                core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+                [fallthrough_state.ap_change, label_state["Target"].ap_change]
+                    .map(sierra_ap_change::ApChange::Known)
+            );
+            let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
             Ok(builder.build(
-                chain!(before_success_branch.instructions, success_branch.instructions).collect(),
+                instructions,
                 vec![RelocationEntry {
-                    instruction_idx: relocation_index,
+                    instruction_idx: *relocation_index,
                     relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
                 }],
                 [
                     vec![
-                        ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                            op: FeltBinaryOperator::Add,
-                            a: range_check.unchecked_apply_known_ap_change(2),
-                            b: DerefOrImmediate::from(1),
-                        })),
-                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-2))),
+                        ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                            fallthrough_state.get_adjusted(range_check),
+                        )),
+                        ReferenceExpression::from_cell(CellExpression::Deref(
+                            fallthrough_state.get_adjusted_as_cell_ref(possible_overflow),
+                        )),
                     ]
                     .into_iter(),
                     vec![
-                        ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                            op: FeltBinaryOperator::Add,
-                            a: range_check.unchecked_apply_known_ap_change(3),
-                            b: DerefOrImmediate::from(1),
-                        })),
-                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-1))),
+                        ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                            label_state["Target"].get_adjusted(range_check),
+                        )),
+                        ReferenceExpression::from_cell(CellExpression::Deref(
+                            label_state["Target"].get_adjusted_as_cell_ref(overflow_fixed),
+                        )),
                     ]
                     .into_iter(),
                 ]
