@@ -148,7 +148,7 @@ impl Environment {
 pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr) -> Expr {
     maybe_compute_expr_semantic(ctx, syntax).unwrap_or_else(|diag_added| {
         Expr::Missing(ExprMissing {
-            ty: TypeId::missing(ctx.db),
+            ty: TypeId::missing(ctx.db, diag_added),
             stable_ptr: syntax.stable_ptr(),
             diag_added,
         })
@@ -371,7 +371,11 @@ struct FlowMergeTypeHelper {
 }
 impl FlowMergeTypeHelper {
     fn new(db: &dyn SemanticGroup) -> Self {
-        Self { never_type: never_ty(db), missing_type: TypeId::missing(db), final_type: None }
+        Self {
+            never_type: never_ty(db),
+            missing_type: TypeId::missing(db, skip_diagnostic()),
+            final_type: None,
+        }
     }
 
     /// Attempt merge a branch into the helper, on error will return the conflicting types.
@@ -563,7 +567,7 @@ fn compute_pattern_semantic(
                     .ok_or_else(|| {
                         // Don't add a diagnostic if the type is missing.
                         // A diagnostic should've already been added.
-                        if ty != TypeId::missing(ctx.db) {
+                        if !ty.is_missing(ctx.db) {
                             ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty })
                         } else {
                             // TODO(lior): Take the DiagnosticAdded from the missing type.
@@ -627,7 +631,7 @@ fn compute_pattern_semantic(
                     .ok_or_else(|| {
                         // Don't add a diagnostic if the type is missing.
                         // A diagnostic should've already been added.
-                        if ty != TypeId::missing(ctx.db) {
+                        if !ty.is_missing(ctx.db) {
                             ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty })
                         } else {
                             // TODO(lior): Take the DiagnosticAdded from the missing type.
@@ -910,7 +914,7 @@ fn member_access_expr(
         TypeLongId::GenericParameter(_) => Err(ctx
             .diagnostics
             .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name })),
-        TypeLongId::Missing => Err(skip_diagnostic()),
+        TypeLongId::Missing(diag_added) => Err(diag_added),
     }
 }
 
@@ -990,7 +994,7 @@ fn expr_function_call(
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
         // added).
         // TODO(lior): Add a test to missing type once possible.
-        if arg_typ != param_typ && arg_typ != TypeId::missing(ctx.db) {
+        if arg_typ != param_typ && !arg_typ.is_missing(ctx.db) {
             ctx.diagnostics.report_by_ptr(
                 arg.stable_ptr().untyped(),
                 WrongArgumentType { expected_ty: param_typ, actual_ty: arg_typ },
@@ -1039,7 +1043,7 @@ pub fn compute_statement_semantic(
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
                         resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
-                    if inferred_type != TypeId::missing(db) && explicit_type != inferred_type {
+                    if !inferred_type.is_missing(db) && explicit_type != inferred_type {
                         ctx.diagnostics.report(
                             &let_syntax.rhs(syntax_db),
                             WrongArgumentType {

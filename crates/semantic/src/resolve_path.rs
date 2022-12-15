@@ -642,13 +642,14 @@ fn conform_generic_args(
     stable_ptr: SyntaxStablePtrId,
 ) {
     if generic_args.len() != generic_params.len() {
-        diagnostics.report_by_ptr(
+        let diag_added = diagnostics.report_by_ptr(
             stable_ptr,
             WrongNumberOfGenericArguments {
                 expected: generic_params.len(),
                 actual: generic_args.len(),
             },
         );
-        generic_args.resize(generic_params.len(), GenericArgumentId::Type(TypeId::missing(db)));
+        generic_args
+            .resize(generic_params.len(), GenericArgumentId::Type(TypeId::missing(db, diag_added)));
     }
 }
