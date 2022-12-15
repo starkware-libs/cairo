@@ -41,9 +41,18 @@ impl TypeId {
         db.lookup_intern_type(*self).format(db)
     }
 
+    /// Returns [Maybe::Err] if the type is [TypeLongId::Missing].
+    pub fn check_not_missing(&self, db: &dyn SemanticGroup) -> Maybe<()> {
+        if let TypeLongId::Missing(diag_added) = db.lookup_intern_type(*self) {
+            Err(diag_added)
+        } else {
+            Ok(())
+        }
+    }
+
     /// Returns `true` if the type is [TypeLongId::Missing].
     pub fn is_missing(&self, db: &dyn SemanticGroup) -> bool {
-        matches!(db.lookup_intern_type(*self), TypeLongId::Missing(_))
+        self.check_not_missing(db).is_err()
     }
 }
 impl TypeLongId {
