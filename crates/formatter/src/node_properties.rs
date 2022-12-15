@@ -5,7 +5,9 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
 use syntax::node::SyntaxNode;
 
-use crate::formatter::{BreakLinePointProperties, BreakLinePointType, SyntaxNodeFormat};
+use crate::formatter::{
+    BreakLinePointIndentation, BreakLinePointProperties, SyntaxNodeFormat, WrappingBreakLinePoints,
+};
 
 fn parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
     Some(syntax_node.parent()?.kind(db))
@@ -147,59 +149,64 @@ impl SyntaxNodeFormat for SyntaxNode {
             _ => 0,
         }
     }
-    fn add_break_line_point_before(&self, db: &dyn SyntaxGroup) -> bool {
-        matches!(
-            self.kind(db),
-            SyntaxKind::TokenPlus
-                | SyntaxKind::TokenMinus
-                | SyntaxKind::TokenMul
-                | SyntaxKind::TokenDiv
-                | SyntaxKind::TokenMod
-        )
-    }
-    fn add_break_line_point_after(&self, _db: &dyn SyntaxGroup) -> bool {
-        false
-    }
-    fn is_breakable_list(&self, db: &dyn SyntaxGroup) -> bool {
-        matches!(
-            self.kind(db),
-            SyntaxKind::StructArgList | SyntaxKind::ParamList | SyntaxKind::ExprList
-        )
-    }
+    // TODO(Gil): Add all protected zones and break points when the formatter is stable.
     fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool {
         matches!(
             self.kind(db),
             SyntaxKind::ExprParenthesized
-                | SyntaxKind::StructArgList
-                | SyntaxKind::ParamList
                 | SyntaxKind::ExprList
+                | SyntaxKind::MatchArms
+                | SyntaxKind::StructArgList
+                | SyntaxKind::PatternStructParamList
+                | SyntaxKind::PatternList
+                | SyntaxKind::ParamList
+                | SyntaxKind::ImplicitsList
+                | SyntaxKind::MemberList
+                | SyntaxKind::AttributeArgList
+                | SyntaxKind::GenericArgList
+                | SyntaxKind::GenericParamList
+                | SyntaxKind::ExprListParenthesized
         )
     }
-    fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties {
+    fn get_wrapping_break_line_point_properties(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> WrappingBreakLinePoints {
         match self.kind(db) {
-            SyntaxKind::ExprList => BreakLinePointProperties {
-                precedence: 10,
-                break_type: BreakLinePointType::ListBreak,
-            },
-            SyntaxKind::StructArgList => BreakLinePointProperties {
-                precedence: 11,
-                break_type: BreakLinePointType::ListBreak,
-            },
-            SyntaxKind::ParamList => BreakLinePointProperties {
-                precedence: 12,
-                break_type: BreakLinePointType::ListBreak,
-            },
-            SyntaxKind::TokenPlus | SyntaxKind::TokenMinus => BreakLinePointProperties {
-                precedence: 100,
-                break_type: BreakLinePointType::Dangling,
-            },
-            SyntaxKind::TokenMul | SyntaxKind::TokenDiv | SyntaxKind::TokenMod => {
-                BreakLinePointProperties {
-                    precedence: 101,
-                    break_type: BreakLinePointType::Dangling,
+            SyntaxKind::ParamList | SyntaxKind::StructArgList | SyntaxKind::ExprList => {
+                WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties {
+                        precedence: 0,
+                        break_indentation: BreakLinePointIndentation::IndentedWithTail,
+                    }),
+                    trailing: Some(BreakLinePointProperties {
+                        precedence: 0,
+                        break_indentation: BreakLinePointIndentation::IndentedWithTail,
+                    }),
                 }
             }
-            _ => unreachable!(),
+            SyntaxKind::TerminalComma => WrappingBreakLinePoints {
+                leading: None,
+                trailing: Some(BreakLinePointProperties {
+                    precedence: 0,
+                    break_indentation: BreakLinePointIndentation::NotIndented,
+                }),
+            },
+            SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => WrappingBreakLinePoints {
+                leading: Some(BreakLinePointProperties {
+                    precedence: 1,
+                    break_indentation: BreakLinePointIndentation::Indented,
+                }),
+                trailing: None,
+            },
+            SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv => WrappingBreakLinePoints {
+                leading: Some(BreakLinePointProperties {
+                    precedence: 2,
+                    break_indentation: BreakLinePointIndentation::Indented,
+                }),
+                trailing: None,
+            },
+            _ => WrappingBreakLinePoints { leading: None, trailing: None },
         }
     }
 }

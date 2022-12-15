@@ -9,6 +9,7 @@ cairo-rs.workspace = true
 clap.workspace = true
 compiler = { path = "../compiler" }
 casm = { path = "../casm" }
+diagnostics = { path = "../diagnostics" }
 num-bigint.workspace = true
 sierra = { path = "../sierra" }
 sierra_ap_change = { path = "../sierra_ap_change" }

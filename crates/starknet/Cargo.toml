@@ -8,6 +8,7 @@ anyhow.workspace = true
 clap.workspace = true
 compiler = { path = "../compiler" }
 defs = { path = "../defs" }
+diagnostics = { path = "../diagnostics" }
 genco.workspace = true
 itertools.workspace = true
 log.workspace = true
@@ -31,6 +32,7 @@ plugins = { path = "../plugins" }
 parser = { path = "../parser" }
 
 [dev-dependencies]
+diagnostics = { path = "../diagnostics" }
 env_logger.workspace = true
 formatter = { path = "../formatter" }
 indoc.workspace = true

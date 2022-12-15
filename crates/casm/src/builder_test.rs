@@ -2,7 +2,7 @@ use indoc::indoc;
 use itertools::join;
 
 use super::CasmBuilder;
-use crate::res;
+use crate::{casm_build_extend, res};
 
 #[test]
 fn test_ap_change_fixes() {
@@ -31,8 +31,10 @@ fn test_ap_change_fixes() {
 #[test]
 fn test_awaiting_relocations() {
     let mut builder = CasmBuilder::default();
-    builder.add_ap(5);
-    builder.jump("Target".to_owned());
+    casm_build_extend! {builder,
+        ap += 5;
+        jump Target;
+    };
     let result = builder.build();
     assert_eq!(result.label_state.len(), 1);
     assert_eq!(result.label_state["Target"].ap_change, 5);
@@ -49,9 +51,11 @@ fn test_awaiting_relocations() {
 #[test]
 fn test_noop_branch() {
     let mut builder = CasmBuilder::default();
-    builder.add_ap(3);
-    builder.jump("Target".to_owned());
-    builder.label("Target".to_owned());
+    casm_build_extend! {builder,
+        ap += 3;
+        jump Target;
+        Target:
+    };
     let result = builder.build();
     assert!(result.label_state.is_empty());
     assert!(result.awaiting_relocations.is_empty());
@@ -68,12 +72,14 @@ fn test_noop_branch() {
 #[test]
 fn test_allocations() {
     let mut builder = CasmBuilder::default();
-    let a = builder.alloc_var();
-    let b = builder.alloc_var();
-    let c = builder.alloc_var();
-    builder.assert_vars_eq(a, b);
-    builder.assert_vars_eq(b, c);
-    builder.assert_vars_eq(c, a);
+    casm_build_extend! {builder,
+        alloc a;
+        alloc b;
+        alloc c;
+        a = b;
+        b = c;
+        c = a;
+    };
     let result = builder.build();
     assert!(result.label_state.is_empty());
     assert!(result.awaiting_relocations.is_empty());
@@ -92,10 +98,55 @@ fn test_allocations() {
 #[should_panic]
 fn test_allocations_not_enough_commands() {
     let mut builder = CasmBuilder::default();
-    let a = builder.alloc_var();
-    let b = builder.alloc_var();
-    let c = builder.alloc_var();
-    builder.assert_vars_eq(a, b);
-    builder.assert_vars_eq(b, c);
+    casm_build_extend! {builder,
+        alloc a;
+        alloc b;
+        alloc c;
+        a = b;
+        b = c;
+    };
+    builder.build();
+}
+
+#[test]
+fn test_aligned_branch_intersect() {
+    let mut builder = CasmBuilder::default();
+    let var = builder.add_var(res!([ap + 7]));
+    casm_build_extend! {builder,
+        alloc _unused;
+        jump X if var != 0;
+        jump ONE_ALLOC;
+        X:
+        ONE_ALLOC:
+    };
+    let result = builder.build();
+    assert!(result.label_state.is_empty());
+    assert!(result.awaiting_relocations.is_empty());
+    assert_eq!(result.fallthrough_state.ap_change, 1);
+    assert_eq!(result.fallthrough_state.allocated, 1);
+    assert_eq!(
+        join(result.instructions.iter().map(|inst| format!("{inst};\n")), ""),
+        indoc! {"
+            jmp rel 4 if [ap + 7] != 0, ap++;
+            jmp rel 2;
+        "}
+    );
+}
+
+#[test]
+#[should_panic]
+fn test_unaligned_branch_intersect() {
+    let mut builder = CasmBuilder::default();
+    let var = builder.add_var(res!([ap + 7]));
+    casm_build_extend! {builder,
+        jump X if var != 0;
+        // A single alloc in this branch.
+        alloc _unused;
+        jump ONESIDED_ALLOC;
+        // No allocs in this branch.
+        X:
+        // When the merge occurs here we will panic on a mismatch.
+        ONESIDED_ALLOC:
+    };
     builder.build();
 }

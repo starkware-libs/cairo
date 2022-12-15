@@ -11,6 +11,7 @@ use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use debug::DebugWithDb;
 use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleItemId};
+use diagnostics::ToOption;
 use filesystem::ids::CrateId;
 use itertools::Itertools;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
@@ -51,6 +52,7 @@ fn main() -> anyhow::Result<()> {
     let all_tests = find_all_tests(db, main_crate_ids);
     let sierra_program = db
         .get_sierra_program_for_functions(all_tests.iter().map(|t| t.func_id).collect())
+        .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
     let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
     let named_tests = all_tests

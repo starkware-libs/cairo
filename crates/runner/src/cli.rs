@@ -7,6 +7,7 @@ use clap::Parser;
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
+use diagnostics::ToOption;
 use runner::SierraCasmRunner;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
@@ -41,6 +42,7 @@ fn main() -> anyhow::Result<()> {
 
     let sierra_program = db
         .get_sierra_program(main_crate_ids)
+        .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
     let runner = SierraCasmRunner::new(
         replace_sierra_ids_in_program(db, &sierra_program),

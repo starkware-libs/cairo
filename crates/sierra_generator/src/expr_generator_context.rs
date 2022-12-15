@@ -1,6 +1,6 @@
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{FreeFunctionId, LanguageElementId, ModuleFileId};
-use diagnostics::DiagnosticsBuilder;
+use diagnostics::{DiagnosticsBuilder, Maybe};
 use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 
@@ -97,7 +97,7 @@ impl<'a> ExprGeneratorContext<'a> {
     pub fn get_variable_sierra_type(
         &self,
         var: lowering::VariableId,
-    ) -> Option<sierra::ids::ConcreteTypeId> {
+    ) -> Maybe<sierra::ids::ConcreteTypeId> {
         self.db.get_concrete_type_id(self.lowered.variables[var].ty)
     }
 

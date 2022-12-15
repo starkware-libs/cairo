@@ -5,6 +5,7 @@ use num_bigint::BigInt;
 use utils::extract_matches;
 
 use crate::ap_change::ApplyApChange;
+use crate::deref_or_immediate;
 use crate::hints::Hint;
 use crate::instructions::{
     AddApInstruction, AssertEqInstruction, Instruction, InstructionBody, JnzInstruction,
@@ -235,6 +236,32 @@ impl CasmBuilder {
         self.statements.push(Statement::Final(instruction));
     }
 
+    /// Writes and increments a buffer.
+    /// Useful for RangeCheck and similar buffers.
+    /// `buffer` must be a cell reference, or a cell reference with a small added constant.
+    /// `value` must be a cell reference.
+    pub fn buffer_write_and_inc(&mut self, buffer: Var, value: Var) {
+        let (base, offset) = match self.get_value(buffer, false) {
+            ResOperand::Deref(cell) => (cell, 0),
+            ResOperand::BinOp(BinOpOperand {
+                op: Operation::Add,
+                a,
+                b: DerefOrImmediate::Immediate(imm),
+            }) => (a, imm.try_into().expect("Too many buffer writes.")),
+            _ => panic!("Not a valid buffer."),
+        };
+        let location = self.add_var(ResOperand::DoubleDeref(base, offset));
+        self.main_state.vars.insert(
+            buffer,
+            ResOperand::BinOp(BinOpOperand {
+                op: Operation::Add,
+                a: base,
+                b: deref_or_immediate!(offset + 1),
+            }),
+        );
+        self.assert_vars_eq(value, location);
+    }
+
     /// Increases AP by `size`.
     pub fn add_ap(&mut self, size: usize) {
         let instruction = self.get_instruction(
@@ -280,7 +307,7 @@ impl CasmBuilder {
     pub fn jump(&mut self, label: String) {
         let instruction = self.get_instruction(
             InstructionBody::Jump(JumpInstruction {
-                target: DerefOrImmediate::Immediate(BigInt::from(0)),
+                target: deref_or_immediate!(0),
                 relative: true,
             }),
             true,
@@ -299,7 +326,7 @@ impl CasmBuilder {
         let instruction = self.get_instruction(
             InstructionBody::Jnz(JnzInstruction {
                 condition: cell,
-                jump_offset: DerefOrImmediate::Immediate(BigInt::from(0)),
+                jump_offset: deref_or_immediate!(0),
             }),
             true,
         );
@@ -366,4 +393,59 @@ impl Default for CasmBuilder {
             reachable: true,
         }
     }
+}
+
+#[macro_export]
+macro_rules! casm_build_extend {
+    ($builder:ident,) => {};
+    ($builder:ident, alloc $var:ident; $($tok:tt)*) => {
+        let $var = $builder.alloc_var();
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, ap += $value:expr; $($tok:tt)*) => {
+        $builder.add_ap($value);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, $dst:ident = $res:ident; $($tok:tt)*) => {
+        $builder.assert_vars_eq($dst, $res);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
+        {
+            let var = $builder.bin_op($crate::operand::Operation::Add, $a, $b);
+            $builder.assert_vars_eq($dst, var);
+        }
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
+        {
+            let var = $builder.bin_op($crate::operand::Operation::Mul, $a, $b);
+            $builder.assert_vars_eq($dst, var);
+        }
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, jump $target:ident; $($tok:tt)*) => {
+        $builder.jump(std::stringify!($target).to_owned());
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
+        $builder.jump_nz($condition, std::stringify!($target).to_owned());
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, $label:ident: $($tok:tt)*) => {
+        $builder.label(std::stringify!($label).to_owned());
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, * ( $buffer:ident ++ ) = $value:ident; $($tok:tt)*) => {
+        $builder.buffer_write_and_inc($buffer, $value);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, ($q:ident, $r:ident) = divmod ( $lhs:ident , $rhs:ident ); $($tok:tt)*) => {
+        $builder.add_divmod_hint($lhs, $rhs, $q, $r);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, $dst:ident = $lhs:ident < $rhs:ident; $($tok:tt)*) => {
+        $builder.add_less_than_hint($lhs, $rhs, $dst);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
 }

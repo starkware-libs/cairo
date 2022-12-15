@@ -7,6 +7,7 @@ use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use defs::db::DefsGroup;
 use defs::ids::{GenericFunctionId, LanguageElementId, ModuleId, ModuleItemId, TraitId};
+use diagnostics::ToOption;
 use itertools::join;
 use num_bigint::BigUint;
 use plugins::get_default_plugins;
@@ -106,6 +107,7 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
 
     let sierra_program = db
         .get_sierra_program(main_crate_ids)
+        .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
 
     let replacer = CanonicalReplacer::from_program(&sierra_program);
