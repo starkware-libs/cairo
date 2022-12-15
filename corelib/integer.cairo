@@ -15,12 +15,8 @@ fn u128_try_from_felt(a: felt) -> Option::<u128> implicits(RangeCheck) nopanic {
 
 extern fn u128_to_felt(a: u128) -> felt nopanic;
 
-extern fn u128_overflow_add(
-    a: u128, b: u128
-) -> Result::<u128, u128> implicits(RangeCheck) nopanic;
-extern fn u128_overflow_sub(
-    a: u128, b: u128
-) -> Result::<u128, u128> implicits(RangeCheck) nopanic;
+extern fn u128_overflow_add(a: u128, b: u128) -> Result::<u128, u128> implicits(RangeCheck) nopanic;
+extern fn u128_overflow_sub(a: u128, b: u128) -> Result::<u128, u128> implicits(RangeCheck) nopanic;
 
 fn u128_wrapping_add(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
     match u128_overflow_add(a, b) {
