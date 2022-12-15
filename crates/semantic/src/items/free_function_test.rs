@@ -32,7 +32,7 @@ fn test_expr_lookup() {
     let module_id = test_module.module_id;
 
     let free_function_id = extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap(),
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     );
     let expr_formatter = ExprFormatter { db, free_function_id };

@@ -31,7 +31,7 @@ fn test_impl() {
     .unwrap();
 
     let impl_id = extract_matches!(
-        db.module_item_by_name(test_module.module_id, "Contract".into()).unwrap(),
+        db.module_item_by_name(test_module.module_id, "Contract".into()).unwrap().unwrap(),
         ModuleItemId::Impl
     );
 

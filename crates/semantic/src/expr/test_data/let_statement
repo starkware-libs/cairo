@@ -14,22 +14,22 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed. 
+error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:13
     let mut ref mut ref ref a = 3;
             ^*^
 
-error: `mut` modifier was specified after another modifier (`mut`). Only a single modifier is allowed. 
+error: `mut` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:17
     let mut ref mut ref ref a = 3;
                 ^*^
 
-error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed. 
+error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:21
     let mut ref mut ref ref a = 3;
                     ^*^
 
-error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed. 
+error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:25
     let mut ref mut ref ref a = 3;
                         ^*^
@@ -52,7 +52,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: `mut` modifier was specified after another modifier (`ref`). Only a single modifier is allowed. 
+error: `mut` modifier was specified after another modifier (`ref`). Only a single modifier is allowed.
  --> lib.cairo:2:13
     let ref mut a = 3;
             ^*^

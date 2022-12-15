@@ -123,7 +123,7 @@ fn test_only_include_dependecies(func_name: &str, sierra_used_funcs: &[&str]) {
         .iter()
         .find_map(|module_id| {
             try_extract_matches!(
-                db.module_item_by_name(*module_id, func_name.into()).unwrap(),
+                db.module_item_by_name(*module_id, func_name.into()).unwrap().unwrap(),
                 ModuleItemId::FreeFunction
             )
         })

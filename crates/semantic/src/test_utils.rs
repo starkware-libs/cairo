@@ -3,7 +3,6 @@ use std::sync::Arc;
 use db_utils::Upcast;
 use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
 use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
-use diagnostics::ToOption;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateId, CrateLongId, Directory};
 use parser::db::ParserDatabase;
@@ -136,7 +135,7 @@ pub fn setup_test_function(
     let (test_module, diagnostics) = setup_test_module(db, &content).split();
     let generic_function_id = db
         .module_item_by_name(test_module.module_id, function_name.into())
-        .to_option()
+        .expect("Failed to load module")
         .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function {function_name} was not found."));
     let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
