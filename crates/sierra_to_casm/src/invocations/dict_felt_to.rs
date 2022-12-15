@@ -548,9 +548,9 @@ impl DictFeltToAccess {
         let prev_value = self.prev_value;
         let new_value = self.new_value;
         casm! {
-           key = [[dict_view.end] + dict_view.end_offset as i16];
-           prev_value = [[dict_view.end] + (dict_view.end_offset + 1) as i16];
-           new_value = [[dict_view.end] + (dict_view.end_offset + 2) as i16];
+           key = [[&dict_view.end] + dict_view.end_offset as i16];
+           prev_value = [[&dict_view.end] + (dict_view.end_offset + 1) as i16];
+           new_value = [[&dict_view.end] + (dict_view.end_offset + 2) as i16];
         }
         .instructions
     }

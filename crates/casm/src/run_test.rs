@@ -100,7 +100,7 @@ fn test_allocate_segment() {
         casm! {
             [ap] = 1337, ap++;
             %{ memory[ap] = segments.add() %}
-            [ap - 1] = [[deref!([ap])]];
+            [ap - 1] = [[&deref!([ap])]];
             ret;
         }
         .instructions,
