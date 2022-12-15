@@ -66,20 +66,20 @@ fn serialize_array_felt_helper(ref serialized: Array::<felt>, ref input: Array::
     match get_gas() {
         Option::Some(_) => {
         },
-        Option::None(_) => {
+         Option::None(_) => {
             let mut data = array_new();
             array_append(ref data, 'Out of gas');
             panic(data);
         },
-    }
+     }
     match array_pop_front(ref input) {
         Option::Some(value) => {
             Serde::<felt>::serialize(ref serialized, value);
             serialize_array_felt_helper(ref serialized, ref input);
         },
-        Option::None(_) => {
+         Option::None(_) => {
         },
-    }
+     }
 }
 
 fn deserialize_array_felt_helper(
@@ -89,12 +89,12 @@ fn deserialize_array_felt_helper(
     match get_gas() {
         Option::Some(_) => {
         },
-        Option::None(_) => {
+         Option::None(_) => {
             let mut data = array_new();
             array_append(ref data, 'Out of gas');
             panic(data);
         },
-    }
+     }
     if remaining == 0 {
         return Option::<Array::<felt>>::Some(curr_output);
     }

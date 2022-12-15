@@ -24,10 +24,10 @@ fn match_short(e: MyEnumShort) -> felt {
         MyEnumShort::a(x) => {
             x
         },
-        MyEnumShort::b(x) => {
+         MyEnumShort::b(x) => {
             x
         },
-    }
+     }
 }
 
 fn match_long(e: MyEnumLong) -> felt {
@@ -35,11 +35,11 @@ fn match_long(e: MyEnumLong) -> felt {
         MyEnumLong::a(x) => {
             x
         },
-        MyEnumLong::b(x) => {
+         MyEnumLong::b(x) => {
             x
         },
-        MyEnumLong::c(x) => {
+         MyEnumLong::c(x) => {
             x
         },
-    }
+     }
 }
