@@ -186,10 +186,12 @@ impl SyntaxNodeFormat for SyntaxNode {
                     leading: Some(BreakLinePointProperties {
                         precedence: 0,
                         break_indentation: BreakLinePointIndentation::IndentedWithTail,
+                        is_optional: true,
                     }),
                     trailing: Some(BreakLinePointProperties {
                         precedence: 0,
                         break_indentation: BreakLinePointIndentation::IndentedWithTail,
+                        is_optional: true,
                     }),
                 }
             }
@@ -198,12 +200,14 @@ impl SyntaxNodeFormat for SyntaxNode {
                 trailing: Some(BreakLinePointProperties {
                     precedence: 0,
                     break_indentation: BreakLinePointIndentation::NotIndented,
+                    is_optional: true,
                 }),
             },
             SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => WrappingBreakLinePoints {
                 leading: Some(BreakLinePointProperties {
                     precedence: 1,
                     break_indentation: BreakLinePointIndentation::Indented,
+                    is_optional: true,
                 }),
                 trailing: None,
             },
@@ -211,6 +215,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 leading: Some(BreakLinePointProperties {
                     precedence: 2,
                     break_indentation: BreakLinePointIndentation::Indented,
+                    is_optional: true,
                 }),
                 trailing: None,
             },
