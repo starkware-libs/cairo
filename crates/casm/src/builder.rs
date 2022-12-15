@@ -411,15 +411,15 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         {
-            let var = $builder.bin_op($crate::operand::Operation::Add, $a, $b);
-            $builder.assert_vars_eq($dst, var);
+            let __sum = $builder.bin_op($crate::operand::Operation::Add, $a, $b);
+            $builder.assert_vars_eq($dst, __sum);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
         {
-            let var = $builder.bin_op($crate::operand::Operation::Mul, $a, $b);
-            $builder.assert_vars_eq($dst, var);
+            let __product = $builder.bin_op($crate::operand::Operation::Mul, $a, $b);
+            $builder.assert_vars_eq($dst, __product);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
