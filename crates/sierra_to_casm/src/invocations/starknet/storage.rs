@@ -1,6 +1,6 @@
-use casm::casm;
 use casm::hints::Hint;
 use casm::operand::{BinOpOperand, DerefOrImmediate, ResOperand};
+use casm::{casm, deref};
 use num_bigint::BigInt;
 use num_traits::FromPrimitive;
 use sierra::extensions::felt::FeltBinaryOperator;
@@ -36,8 +36,10 @@ pub fn build_storage_read(
 
     let mut instructions = casm! {
         [ap] = selector, ap++;
-        [ap] = [[system_base] + system_offset];
+        [ap - 1] = [[system_base] + system_offset];
         storage_address = [[system_base] + (system_offset + 1)];
+        // Syscall hint goes here.
+        [ap] = [[system_base] + (system_offset + 2)], ap++;
     }
     .instructions;
 
@@ -50,6 +52,7 @@ pub fn build_storage_read(
     }];
 
     let output_expressions = [vec![
+        // System
         ReferenceExpression {
             cells: vec![CellExpression::BinOp(BinOpExpression {
                 op: FeltBinaryOperator::Add,
@@ -57,9 +60,8 @@ pub fn build_storage_read(
                 b: DerefOrImmediate::Immediate(BigInt::from_i16(system_offset).unwrap() + 3),
             })],
         },
-        ReferenceExpression {
-            cells: vec![CellExpression::DoubleDeref(system_base, system_offset + 2)],
-        },
+        // Read value
+        ReferenceExpression::from_cell(CellExpression::Deref(deref!([ap - 1]))),
     ]
     .into_iter()]
     .into_iter();

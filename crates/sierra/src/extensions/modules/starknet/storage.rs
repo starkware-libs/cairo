@@ -117,7 +117,7 @@ impl NoGenericArgsGenericLibFunc for StorageReadLibFunc {
                 },
                 OutputVarInfo {
                     ty: felt_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 },
             ],
             SierraApChange::Known { new_vars_only: false },
