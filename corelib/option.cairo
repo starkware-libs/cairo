@@ -9,7 +9,7 @@ fn option_unwrap<T>(val: Option::<T>) -> T {
             array_append::<felt>(ref data, 'option_unwrap failed.')
             panic(data)
         },
-    }
+     }
 }
 
 /// Returns `true` if the `Option` is `Option::Some`.
@@ -18,7 +18,7 @@ fn option_is_some<T>(val: Option::<T>) -> bool {
     match val {
         Option::Some(x) => true,
         Option::None(()) => false,
-    }
+     }
 }
 
 /// Returns `true` if the `Option` is `Option::None`.
@@ -26,5 +26,5 @@ fn option_is_none<T>(val: Option::<T>) -> bool {
     match val {
         Option::Some(x) => false,
         Option::None(()) => true,
-    }
+     }
 }

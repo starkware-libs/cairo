@@ -52,14 +52,17 @@ pub struct BreakLinePointProperties {
     /// Indicates whether a breakpoint is optional. An optional breakpoint may be broken only if
     /// the line is too long. A non-optional breakpoint is always broken.
     pub is_optional: bool,
+    /// Indicates to put a space instead of the break line point if it were not broken.
+    pub space_if_not_broken: bool,
 }
 impl BreakLinePointProperties {
     pub fn new(
         precedence: usize,
         break_indentation: BreakLinePointIndentation,
         is_optional: bool,
+        space_if_not_broken: bool,
     ) -> Self {
-        Self { precedence, break_indentation, is_optional }
+        Self { precedence, break_indentation, is_optional, space_if_not_broken }
     }
 }
 
@@ -93,7 +96,7 @@ impl LineComponent {
             Self::ProtectedZone { builder, .. } => builder.width(),
             Self::Space => 1,
             Self::Indent(n) => *n,
-            Self::BreakLinePoint(_) => 0,
+            Self::BreakLinePoint(properties) => usize::from(properties.space_if_not_broken),
         }
     }
 }
@@ -104,7 +107,9 @@ impl fmt::Display for LineComponent {
             Self::ProtectedZone { builder, .. } => write!(f, "{builder}"),
             Self::Space => write!(f, " "),
             Self::Indent(n) => write!(f, "{}", " ".repeat(*n)),
-            Self::BreakLinePoint(_) => write!(f, ""),
+            Self::BreakLinePoint(properties) => {
+                write!(f, "{}", if properties.space_if_not_broken { " " } else { "" })
+            }
         }
     }
 }
@@ -457,7 +462,7 @@ struct PendingLineState {
     /// Intermidiate representation of the text to be emitted.
     line_buffer: LineBuilder,
     /// Should the next space between tokens be ignored.
-    no_space_after: bool,
+    force_no_space_after: bool,
     /// Current indentation of the produced line.
     indentation: String,
 }
@@ -466,7 +471,7 @@ impl PendingLineState {
     pub fn new() -> Self {
         Self {
             line_buffer: LineBuilder::default(),
-            no_space_after: true,
+            force_no_space_after: true,
             indentation: String::new(),
         }
     }
@@ -474,7 +479,7 @@ impl PendingLineState {
     pub fn reset(&mut self, indentation: String) {
         self.indentation = indentation;
         self.line_buffer.clear();
-        self.no_space_after = true;
+        self.force_no_space_after = true;
     }
     pub fn is_empty(&self) -> bool {
         self.line_buffer.is_empty()
@@ -639,15 +644,16 @@ impl<'a> Formatter<'a> {
     }
     /// Appends a token node to the result.
     fn append_token(&mut self, text: SmolStr, syntax_node: &SyntaxNode, no_space_after: bool) {
-        if !syntax_node.force_no_space_before(self.db) && !self.line_state.no_space_after {
+        if !syntax_node.force_no_space_before(self.db) && !self.line_state.force_no_space_after {
             self.line_state.line_buffer.push_space();
         }
-        self.line_state.no_space_after = no_space_after;
+        self.line_state.force_no_space_after = no_space_after;
         self.line_state.line_buffer.push_str(&text);
     }
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
         if let Some(properties) = properties {
             self.line_state.line_buffer.push_break_line_point(properties);
+            self.line_state.force_no_space_after = true;
         }
     }
     /// Returns the leading indentation according to the current indent and the tab size.
