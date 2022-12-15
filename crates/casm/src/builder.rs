@@ -207,23 +207,22 @@ impl CasmBuilder {
         var
     }
 
-    /// Adds a hint for `dst = lhs < rhs`.
-    pub fn add_less_than_hint(&mut self, lhs: Var, rhs: Var, dst: Var) {
-        self.current_hints.push(Hint::TestLessThan {
-            lhs: self.as_deref_or_imm(lhs, true),
-            rhs: self.as_deref_or_imm(rhs, true),
-            dst: self.as_cell_ref(dst, true),
-        });
-    }
-
-    /// Adds a hint for `(quotient, remainder) = divmod(lhs, rhs)`.
-    pub fn add_divmod_hint(&mut self, lhs: Var, rhs: Var, quotient: Var, remainder: Var) {
-        self.current_hints.push(Hint::DivMod {
-            lhs: self.as_deref_or_imm(lhs, true),
-            rhs: self.as_deref_or_imm(rhs, true),
-            quotient: self.as_cell_ref(quotient, true),
-            remainder: self.as_cell_ref(remainder, true),
-        });
+    /// Adds a hint, generated from `inputs` which are cell refs or immediates and `outputs` which
+    /// must be cell refs.
+    pub fn add_hint<
+        const INPUTS_COUNT: usize,
+        const OUTPUTS_COUNT: usize,
+        F: FnOnce([DerefOrImmediate; INPUTS_COUNT], [CellRef; OUTPUTS_COUNT]) -> Hint,
+    >(
+        &mut self,
+        f: F,
+        inputs: [Var; INPUTS_COUNT],
+        outputs: [Var; OUTPUTS_COUNT],
+    ) {
+        self.current_hints.push(f(
+            inputs.map(|v| self.as_deref_or_imm(v, true)),
+            outputs.map(|v| self.as_cell_ref(v, true)),
+        ));
     }
 
     /// Adds an assertion that `dst = res`.
@@ -440,12 +439,18 @@ macro_rules! casm_build_extend {
         $builder.buffer_write_and_inc($buffer, $value);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, ($q:ident, $r:ident) = divmod ( $lhs:ident , $rhs:ident ); $($tok:tt)*) => {
-        $builder.add_divmod_hint($lhs, $rhs, $q, $r);
-        $crate::casm_build_extend!($builder, $($tok)*)
-    };
-    ($builder:ident, $dst:ident = $lhs:ident < $rhs:ident; $($tok:tt)*) => {
-        $builder.add_less_than_hint($lhs, $rhs, $dst);
+    ($builder:ident, hint $hint_name:ident {
+            $($input_name:ident : $input_value:ident),*
+        } into {
+            $($output_name:ident : $output_value:ident),*
+        }; $($tok:tt)*) => {
+        $builder.add_hint(
+            |[$($input_name),*], [$($output_name),*]| $crate::hints::Hint::$hint_name {
+                $($input_name,)* $($output_name,)*
+            },
+            [$($input_value,)*],
+            [$($output_value,)*],
+        );
         $crate::casm_build_extend!($builder, $($tok)*)
     };
 }
