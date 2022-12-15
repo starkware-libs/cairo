@@ -49,10 +49,17 @@ pub struct BreakLinePointProperties {
     pub precedence: usize,
     /// Dictates the breaking indentation behaviour.
     pub break_indentation: BreakLinePointIndentation,
+    /// Indicates whether a breakpoint is optional. An optional breakpoint may be broken only if
+    /// the line is too long. A non-optional breakpoint is always broken.
+    pub is_optional: bool,
 }
 impl BreakLinePointProperties {
-    pub fn new(precedence: usize, break_indentation: BreakLinePointIndentation) -> Self {
-        Self { precedence, break_indentation }
+    pub fn new(
+        precedence: usize,
+        break_indentation: BreakLinePointIndentation,
+        is_optional: bool,
+    ) -> Self {
+        Self { precedence, break_indentation, is_optional }
     }
 }
 
@@ -245,8 +252,8 @@ impl LineBuilder {
             vec![]
         }
     }
-    /// Repeatedly calls break_line_tree until each line length is less than max_width.
-    /// Returns a vec of strings, each one represents a line.
+    /// Repeatedly calls break_line_tree until no break_line_point or protected zone exists in the
+    /// tree. Returns a vec of strings, each one represents a line.
     fn break_line_tree(&self, max_line_width: usize, tab_size: usize) -> Vec<String> {
         // TODO(gil): improve the complexity of this function. Right now the line builder is
         // entirely cloned for each protected zone, which results in a worst case complexity of
@@ -256,20 +263,26 @@ impl LineBuilder {
         if self.width() < max_line_width {
             return vec![self.to_string()];
         }
-        let mut sub_builders = self.break_line_tree_single_level(tab_size);
-        // If the line was not broken into several lines (i.e. only one sub_builder), unprotect a
-        // protected zone and try to break again.
+        let mut sub_builders = self.break_line_tree_single_level(max_line_width, tab_size);
+        // If the line was not broken into several lines (i.e. only one sub_builder), open the
+        // highest precedence protected zone and try to break again.
         while sub_builders.len() == 1 {
-            if sub_builders[0].contains_protected_zone() {
+            // Break the line according to the break_line_points.
+            // TODO(Gil): remove the "contains_break_line_points" and return from the breaking
+            // function if there are more break points to break.
+            if sub_builders[0].contains_break_line_points() {
                 sub_builders =
-                    sub_builders[0].unprotect_zone().break_line_tree_single_level(tab_size);
+                    sub_builders[0].break_line_tree_single_level(max_line_width, tab_size)
+            // No break_line_points, open the highest precedence protected zone.
+            } else if sub_builders[0].contains_protected_zone() {
+                sub_builders = vec![sub_builders[0].open_protected_zone()];
             } else {
-                // Can't break tree to fit within width
-                // TODO(Gil): Propagate error to user.
+                // All break line points were already broken or removed.
+                // TODO(Gil): Propagate error to user if line is still too long.
                 return vec![self.to_string()];
             }
         }
-        // Keep breaking recursively the new lines if they are still too long
+        // Keep breaking recursively the new lines.
         sub_builders
             .iter()
             .flat_map(|tree| tree.break_line_tree(max_line_width, tab_size))
@@ -277,14 +290,20 @@ impl LineBuilder {
     }
     /// Breaks the LineTree once into a vector of LineTrees according to the highest precedence
     /// (lowest precedence number) break line point found in the LineTree.
-    fn break_line_tree_single_level(&self, tab_size: usize) -> Vec<LineBuilder> {
+    fn break_line_tree_single_level(
+        &self,
+        max_line_width: usize,
+        tab_size: usize,
+    ) -> Vec<LineBuilder> {
         let mut breaking_positions = self.get_current_break_positions();
         if breaking_positions.is_empty() {
             return vec![self.clone()];
         }
-        let break_line_point_indentation_type =
-            extract_matches!(&self.children[breaking_positions[0]], LineComponent::BreakLinePoint)
-                .break_indentation;
+        let break_line_point_properties =
+            extract_matches!(&self.children[breaking_positions[0]], LineComponent::BreakLinePoint);
+        if self.width() <= max_line_width && break_line_point_properties.is_optional {
+            return vec![self.remove_all_optional_break_line_points()];
+        }
         let base_indent = self.get_leading_indent();
         let mut trees: Vec<LineBuilder> = vec![];
         let n_children = self.children.len();
@@ -296,7 +315,7 @@ impl LineBuilder {
         // Iterate over the break line points and collect each part between them into one new
         // LineBuilder.
         for (i, current_line_end) in breaking_positions.iter().enumerate() {
-            let added_indent = match break_line_point_indentation_type {
+            let added_indent = match break_line_point_properties.break_indentation {
                 BreakLinePointIndentation::Indented if i != 0 => tab_size,
                 BreakLinePointIndentation::IndentedWithTail
                     if i != 0 && i != n_break_points - 1 =>
@@ -375,7 +394,7 @@ impl LineBuilder {
     }
     /// Creates a new LineBuilder where the first subchild which is a protected zone, is now
     /// unprotected.
-    fn unprotect_zone(&self) -> LineBuilder {
+    fn open_protected_zone(&self) -> LineBuilder {
         let mut unprotected_builder = LineBuilder::default();
         let mut first_protected_zone_found = false;
         let highest_precedence = self
@@ -411,6 +430,29 @@ impl LineBuilder {
             leading_indent += indent_size
         }
         leading_indent
+    }
+    /// Returns whether the line contains a break point.
+    fn contains_break_line_points(&self) -> bool {
+        self.children.iter().any(|child| matches!(child, LineComponent::BreakLinePoint(_)))
+    }
+    // Removes all the break line points.
+    fn remove_all_optional_break_line_points(&self) -> LineBuilder {
+        LineBuilder {
+            children: self
+                .children
+                .iter()
+                .map(|child| match child {
+                    LineComponent::BreakLinePoint(node_properties)
+                        if node_properties.is_optional =>
+                    {
+                        LineComponent::Token(child.to_string())
+                    }
+                    _ => child.clone(),
+                })
+                .collect_vec(),
+            is_open: true,
+            pending_break_line_points: vec![],
+        }
     }
 }
 
