@@ -23,7 +23,7 @@ pub fn build(
             let struct_type = &libfunc.param_signatures()[0].ty;
             let cells = match builder.refs {
                 [ReferenceValue { expression: ReferenceExpression { cells }, .. }]
-                    if cells.len() == builder.program_info.type_sizes[struct_type] =>
+                    if cells.len() == builder.program_info.type_sizes[struct_type] as usize =>
                 {
                     cells
                 }
@@ -37,10 +37,10 @@ pub fn build(
             };
             let output_types = libfunc.output_types();
             assert_eq!(output_types.len(), 1, "Wrong number of branches configured.");
-            let mut offset = 0;
+            let mut offset = 0_usize;
             let mut outputs = vec![];
             for ty in &output_types[0] {
-                let size = builder.program_info.type_sizes[ty];
+                let size = builder.program_info.type_sizes[ty] as usize;
                 outputs
                     .push(ReferenceExpression { cells: cells[offset..(offset + size)].to_vec() });
                 offset += size;

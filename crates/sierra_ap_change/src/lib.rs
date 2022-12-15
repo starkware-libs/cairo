@@ -59,12 +59,12 @@ pub fn calc_ap_changes(program: &Program) -> Result<ApChangeInfo, ApChangeError>
             .map(|ap_change| {
                 Ok(match ap_change {
                     ApChange::KnownByTypeSize(ty) => Effects {
-                        ap_change: ApChange::Known(registry.get_type(&ty)?.info().size),
+                        ap_change: ApChange::Known(registry.get_type(&ty)?.info().size as usize),
                         locals: 0,
                     },
                     ApChange::AtLocalsFinalizationByTypeSize(ty) => Effects {
                         ap_change: ApChange::Known(0),
-                        locals: registry.get_type(&ty)?.info().size,
+                        locals: registry.get_type(&ty)?.info().size as usize,
                     },
                     _ => Effects { ap_change, locals: 0 },
                 })
