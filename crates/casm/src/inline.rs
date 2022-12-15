@@ -195,6 +195,24 @@ macro_rules! casm_extend {
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
+    ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=$addr:tt + $offset:tt) %} $($tok:tt)*) => {
+        $ctx.current_hints.push($crate::hints::Hint::SystemCall {
+            system: ResOperand::BinOp(BinOpOperand {
+                op: casm::operand::Operation::Add,
+                a: $crate::deref!($addr),
+                b: $crate::deref_or_immediate!(BigInt::from_i16($offset).unwrap()),
+            })});
+        $crate::casm_extend!($ctx, $($tok)*)
+    };
+    ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=$addr:tt) %} $($tok:tt)*) => {
+        $ctx.current_hints.push($crate::hints::Hint::SystemCall {
+            system: ResOperand::BinOp(BinOpOperand {
+                op: casm::operand::Operation::Add,
+                a: $crate::deref!($addr),
+                b: $crate::deref_or_immediate!(0),
+            })});
+        $crate::casm_extend!($ctx, $($tok)*)
+    };
 }
 
 #[macro_export]
@@ -233,14 +251,32 @@ pub struct CasmContext {
 
 #[macro_export]
 macro_rules! deref {
-    ([$reg:ident + $offset:expr]) => {
-        $crate::operand::CellRef { register: $crate::reg!($reg), offset: $offset }
+    ([ap + $offset:expr]) => {
+        $crate::operand::CellRef { register: $crate::reg!(ap), offset: $offset }
     };
-    ([$reg:ident - $offset:expr]) => {
-        $crate::operand::CellRef { register: $crate::reg!($reg), offset: -$offset }
+    ([fp + $offset:expr]) => {
+        $crate::operand::CellRef { register: $crate::reg!(fp), offset: $offset }
     };
-    ([$reg:ident]) => {
-        $crate::operand::CellRef { register: $crate::reg!($reg), offset: 0 }
+    ([& $var:ident + $offset:expr]) => {
+        $crate::operand::CellRef { register: $var.register, offset: $var.offset + $offset }
+    };
+    ([ap - $offset:expr]) => {
+        $crate::operand::CellRef { register: $crate::reg!(ap), offset: -$offset }
+    };
+    ([fp - $offset:expr]) => {
+        $crate::operand::CellRef { register: $crate::reg!(fp), offset: -$offset }
+    };
+    ([& $var:ident - $offset:expr]) => {
+        $crate::operand::CellRef { register: $var.register, offset: $var.offset - $offset }
+    };
+    ([ap]) => {
+        $crate::operand::CellRef { register: $crate::reg!(ap), offset: 0 }
+    };
+    ([fp]) => {
+        $crate::operand::CellRef { register: $crate::reg!(fp), offset: 0 }
+    };
+    ([& $var:ident]) => {
+        $var
     };
     ($a:expr) => {
         $a
