@@ -133,7 +133,7 @@ fn test_eq() {
             .instructions,
             relocations: vec![RelocationEntry {
                 instruction_idx: 2,
-                relocation: Relocation::RelativeStatementId(StatementIdx(1,))
+                relocation: Relocation::RelativeStatementId(StatementIdx(1))
             }],
             results: vec![
                 ReducedBranchChanges { refs: vec![], ap_change: ApChange::Known(1) },
