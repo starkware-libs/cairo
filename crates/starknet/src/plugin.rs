@@ -206,9 +206,9 @@ fn generate_entry_point_wrapper(
         let mut_modifier = if is_ref { "mut " } else { "" };
         // TODO(yuval): use panicable version of `array_at` once panic_with supports generic
         // params.
-        arg_definitions.append(quote! {let $mut_modifier$(arg_name.clone()): felt = match array::array_at::<felt>(data, $idx) {
-                    Some(x) => x,
-                    None(()) => panic(array::array_new::<felt>()),
+        arg_definitions.append(quote! {let $mut_modifier$(arg_name.clone()): felt = match array::array_at::<felt>(data, $(idx)_uint128) {
+                    Option::Some(x) => x,
+                    Option::None(()) => panic(array::array_new::<felt>()),
                 };});
 
         if is_ref {
@@ -224,7 +224,7 @@ fn generate_entry_point_wrapper(
     // TODO(yuval): change to uint128 literal once it's supported.
     Some(quote! {
         func $wrapper_name(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
-            if array::array_len::<felt>(data) != integer::uint128_from_felt($params_len) {
+            if array::array_len::<felt>(data) != $(params_len)_uint128 {
                 // TODO(yuval): add error message.
                 panic(array::array_new::<felt>());
             }
