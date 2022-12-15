@@ -31,5 +31,5 @@ fn unchecked_array_at(ref arr: Array::<felt>, idx: u128) -> felt {
             array_append::<felt>(data, 1);
             panic(data)
         },
-    }
+     }
 }

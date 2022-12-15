@@ -360,7 +360,7 @@ fn test_array_helper(idx: u128) -> felt {
             array_append::<felt>(data, 'array index OOB');
             panic(data)
         },
-    }
+     }
 }
 
 #[test]

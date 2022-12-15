@@ -69,10 +69,10 @@ fn pop_and_compare(ref arr: Array::<felt>, value: felt, err: felt) {
         Option::Some(x) => {
             assert(x == value, err);
         },
-        Option::None(_) => {
+         Option::None(_) => {
             panic(single_element_arr('Got empty result data'))
         },
-    };
+     };
 }
 
 fn assert_empty(mut arr: Array::<felt>) {
