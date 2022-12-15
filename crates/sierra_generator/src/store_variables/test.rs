@@ -1,4 +1,6 @@
 use pretty_assertions::assert_eq;
+use semantic::corelib::get_core_ty_by_name;
+use semantic::GenericArgumentId;
 use sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange,
@@ -22,6 +24,13 @@ use crate::test_utils::{
 fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -> LibFuncSignature {
     let libfunc_long_id = db.lookup_intern_concrete_lib_func(libfunc);
     let felt_ty = db.get_concrete_type_id(db.core_felt_ty()).expect("Can't find core::felt.");
+    let array_ty = db
+        .get_concrete_type_id(get_core_ty_by_name(
+            db.upcast(),
+            "Array".into(),
+            vec![GenericArgumentId::Type(db.core_felt_ty())],
+        ))
+        .expect("Can't find core::Array<core::felt>.");
     let name = libfunc_long_id.generic_id.debug_name.unwrap();
     match name.as_str() {
         "felt_add" => {
@@ -51,6 +60,27 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
                     ty: felt_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                }],
+                ap_change: SierraApChange::Known { new_vars_only: true },
+            }],
+            fallthrough: Some(0),
+        },
+        "array_append" => LibFuncSignature {
+            param_signatures: vec![
+                ParamSignature {
+                    ty: array_ty.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(felt_ty),
+            ],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty: array_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                         param_idx: 0,
                     }),
@@ -624,6 +654,73 @@ fn consecutive_const_additions() {
             "store_temp<felt>(8) -> (8)",
             "rename<felt>(8) -> (9)",
             "return(9)",
+        ]
+    );
+}
+
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+#[test]
+fn consecutive_const_additions_with_branch() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "felt_add3", &["2"], &["3"]),
+        dummy_simple_statement(&db, "felt_add3", &["3"], &["4"]),
+        dummy_simple_branch(&db, "branch", &[], 0),
+        dummy_label(0),
+        dummy_push_values(&db, &[("4", "5")]),
+        dummy_return_statement(&["5"]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec![
+            "felt_add(0, 1) -> (2)",
+            "store_temp<felt>(2) -> (2)",
+            "felt_add3(2) -> (3)",
+            // There is no need to add a store_temp() instruction between two `felt_add3()`.
+            "felt_add3(3) -> (4)",
+            // TODO(orizi): Prevent this store from occuring, as the variable won't be used.
+            "store_temp<felt>(3) -> (3)",
+            "store_temp<felt>(4) -> (4)",
+            "branch() { label0() fallthrough() }",
+            "label0:",
+            // Return.
+            "rename<felt>(4) -> (5)",
+            "return(5)",
+        ]
+    );
+}
+
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+#[test]
+fn consecutive_appends_with_branch() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "array_append", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "array_append", &["2", "3"], &["4"]),
+        dummy_simple_statement(&db, "array_append", &["4", "5"], &["6"]),
+        dummy_simple_branch(&db, "branch", &[], 0),
+        dummy_label(0),
+        dummy_push_values(&db, &[("6", "7")]),
+        dummy_return_statement(&["7"]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec![
+            "array_append(0, 1) -> (2)",
+            "array_append(2, 3) -> (4)",
+            "array_append(4, 5) -> (6)",
+            // TODO(orizi): Remove illegal stores of consumed variable.
+            "store_temp<Array<felt>>(2) -> (2)",
+            "store_temp<Array<felt>>(4) -> (4)",
+            "store_temp<Array<felt>>(6) -> (6)",
+            "branch() { label0() fallthrough() }",
+            "label0:",
+            // Return.
+            "rename<felt>(6) -> (7)",
+            "return(7)",
         ]
     );
 }
