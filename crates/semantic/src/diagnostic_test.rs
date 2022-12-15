@@ -8,7 +8,15 @@ use crate::db::SemanticGroup;
 use crate::semantic_test;
 use crate::test_utils::{setup_test_crate, test_expr_diagnostics, SemanticDatabaseForTesting};
 
-semantic_test!(diagnostics_tests, ["src/diagnostic_test_data/tests"], test_expr_diagnostics);
+semantic_test!(
+    diagnostics_tests,
+    [
+        "src/diagnostic_test_data/tests",
+        "src/diagnostic_test_data/not_found",
+        "src/diagnostic_test_data/missing"
+    ],
+    test_expr_diagnostics
+);
 
 #[test]
 fn test_missing_module_file() {
