@@ -70,7 +70,7 @@ fn build_uint128_op(
                         alloc no_overflow;
                         alloc a_plus_b;
                         a_plus_b = a + b;
-                        no_overflow = a_plus_b < uint128_limit;
+                        hint TestLessThan {lhs: a_plus_b, rhs: uint128_limit} into {dst: no_overflow};
                         jump NoOverflow if no_overflow != 0;
                         // Overflow:
                         // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
@@ -84,7 +84,7 @@ fn build_uint128_op(
                         alloc no_overflow;
                         alloc a_minus_b;
                         a = a_minus_b + b;
-                        no_overflow = a_minus_b < uint128_limit;
+                        hint TestLessThan {lhs: a_minus_b, rhs: uint128_limit} into {dst: no_overflow};
                         jump NoOverflow if no_overflow != 0;
                         // Underflow:
                         // Here we know that 0 - (2**128 - 1) <= a - b < 0.
@@ -220,7 +220,7 @@ fn build_uint128_from_felt(
     let minus_max_x = casm_builder.add_var(ResOperand::Immediate(BigInt::from(-max_x)));
     casm_build_extend! {casm_builder,
             alloc is_uint128;
-            is_uint128 = value < uint128_limit;
+            hint TestLessThan { lhs: value, rhs: uint128_limit } into { dst: is_uint128 };
             jump NoOverflow if is_uint128 != 0;
             // Allocating all values required so that `x` and `y` would be last.
             alloc x_2_128;
@@ -229,7 +229,7 @@ fn build_uint128_from_felt(
             alloc x;
             alloc y;
             // Write value as 2**128 * x + y.
-            (x, y) = divmod(value, uint128_limit);
+            hint DivMod { lhs: value, rhs: uint128_limit } into { quotient: x, remainder: y };
             // Check x in [0, 2**128).
             *(range_check++) = x;
             // Check y in [0, 2**128).
