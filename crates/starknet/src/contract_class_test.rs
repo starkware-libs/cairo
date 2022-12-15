@@ -1,12 +1,11 @@
-use std::path::PathBuf;
-
 use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_utils::compare_contents_or_fix_with_path;
 
 use crate::abi;
-use crate::contract_class::{compile_path, ContractClass, ContractEntryPoint, ContractEntryPoints};
+use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
+use crate::test_utils::{get_example_file_path, get_test_contract};
 
 #[test]
 fn test_serialization() {
@@ -52,20 +51,9 @@ fn test_serialization() {
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
 }
 
-/// Returns a path to example contract that matches `name`.
-pub fn get_example_file_path(file_name: &str) -> PathBuf {
-    // Pop the "/sierra_to_casm" suffix.
-    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.extend(["test_data", file_name].into_iter());
-    path
-}
-
 #[test]
 fn test_compile_path() {
-    let path = get_example_file_path("test_contract.cairo");
-
-    let replace_ids = true;
-    let contract = compile_path(&path, replace_ids).unwrap();
+    let contract = get_test_contract();
 
     compare_contents_or_fix_with_path(
         &get_example_file_path("test_contract.json"),
