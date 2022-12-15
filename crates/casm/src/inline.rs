@@ -195,6 +195,24 @@ macro_rules! casm_extend {
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
+    ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=$addr:tt + $offset:tt) %} $($tok:tt)*) => {
+        $ctx.current_hints.push($crate::hints::Hint::SystemCall {
+            system: ResOperand::BinOp(BinOpOperand {
+                op: casm::operand::Operation::Add,
+                a: $crate::deref!($addr),
+                b: $crate::deref_or_immediate!(BigInt::from_i16($offset).unwrap()),
+            })});
+        $crate::casm_extend!($ctx, $($tok)*)
+    };
+    ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=$addr:tt) %} $($tok:tt)*) => {
+        $ctx.current_hints.push($crate::hints::Hint::SystemCall {
+            system: ResOperand::BinOp(BinOpOperand {
+                op: casm::operand::Operation::Add,
+                a: $crate::deref!($addr),
+                b: $crate::deref_or_immediate!(0),
+            })});
+        $crate::casm_extend!($ctx, $($tok)*)
+    };
 }
 
 #[macro_export]
