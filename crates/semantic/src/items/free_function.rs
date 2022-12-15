@@ -97,7 +97,7 @@ pub fn priv_free_function_declaration_data(
 ) -> Maybe<FreeFunctionDeclarationData> {
     let module_file_id = free_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let module_data = db.module_data(module_file_id.0)?;
     let function_syntax = module_data.free_functions.get(&free_function_id).to_maybe()?;
     let generic_params = semantic_generic_params(
         db,
@@ -224,7 +224,7 @@ pub fn priv_free_function_definition_data(
 ) -> Maybe<FreeFunctionDefinitionData> {
     let module_file_id = free_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let module_data = db.module_data(module_file_id.0)?;
     let syntax = module_data.free_functions.get(&free_function_id).to_maybe()?.clone();
     // Compute signature semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;

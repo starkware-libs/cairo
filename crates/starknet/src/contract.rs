@@ -38,7 +38,7 @@ pub fn find_contract_structs(db: &dyn SemanticGroup) -> Vec<ContractDeclaration>
     for crate_id in db.crates() {
         let modules = db.crate_modules(crate_id);
         for module_id in modules.iter() {
-            let Some(module_items) = db.module_items(*module_id) else {
+            let Ok(module_items) = db.module_items(*module_id) else {
                 continue;
             };
 

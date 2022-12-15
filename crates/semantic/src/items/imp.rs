@@ -89,7 +89,7 @@ pub fn priv_impl_declaration_data(
     // selector.
     let module_file_id = impl_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let module_data = db.module_data(module_file_id.0)?;
     let impl_ast = module_data.impls.get(&impl_id).to_maybe()?;
     let syntax_db = db.upcast();
 
@@ -170,7 +170,7 @@ pub fn priv_impl_definition_data(
     let declaration_data = db.priv_impl_declaration_data(impl_id)?;
     let concrete_trait = declaration_data.concrete_trait?;
 
-    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let module_data = db.module_data(module_file_id.0)?;
     let impl_ast = module_data.impls.get(&impl_id).to_maybe()?;
     let syntax_db = db.upcast();
 
@@ -315,7 +315,7 @@ pub fn find_impls_at_module(
     concrete_trait_id: ConcreteTraitId,
 ) -> Maybe<Vec<ConcreteImplId>> {
     let mut res = Vec::new();
-    let impls = db.module_data(module_id).to_maybe()?.impls;
+    let impls = db.module_data(module_id)?.impls;
     // TODO(spapini): Index better.
     for impl_id in impls.keys().copied() {
         let Ok(imp_data)= db.priv_impl_declaration_data(impl_id) else {continue};
@@ -355,10 +355,10 @@ pub fn find_impls_at_context(
             res.extend(imps);
         }
     }
-    for submodule in db.module_submodules(lookup_context.module_id).to_maybe()? {
+    for submodule in db.module_submodules(lookup_context.module_id)? {
         res.extend(find_impls_at_module(db, submodule, concrete_trait_id)?);
     }
-    for use_id in db.module_data(lookup_context.module_id).to_maybe()?.uses.keys() {
+    for use_id in db.module_data(lookup_context.module_id)?.uses.keys() {
         if let Ok(ResolvedGenericItem::Module(submodule)) = db.use_resolved_item(*use_id) {
             res.extend(find_impls_at_module(db, submodule, concrete_trait_id)?);
         }

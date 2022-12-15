@@ -81,7 +81,7 @@ pub fn priv_struct_semantic_data(db: &dyn SemanticGroup, struct_id: StructId) ->
     let module_file_id = struct_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): Add generic args when they are supported on structs.
-    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let module_data = db.module_data(module_file_id.0)?;
     let struct_ast = module_data.structs.get(&struct_id).to_maybe()?;
     let syntax_db = db.upcast();
 

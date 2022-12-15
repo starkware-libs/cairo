@@ -187,7 +187,7 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
     for crate_id in main_crates {
         let modules = db.crate_modules(crate_id);
         for module_id in modules.iter() {
-            let Some(module_items) = db.module_items(*module_id) else {
+            let Ok(module_items) = db.module_items(*module_id) else {
                 continue;
             };
 

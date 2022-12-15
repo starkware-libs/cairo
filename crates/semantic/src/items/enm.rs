@@ -96,7 +96,7 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe
     // selector.
     let module_file_id = enum_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let module_data = db.module_data(module_file_id.0)?;
     let enum_ast = module_data.enums.get(&enum_id).to_maybe()?;
     let syntax_db = db.upcast();
 

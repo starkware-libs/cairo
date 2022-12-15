@@ -18,15 +18,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn free_function_lowered(&self, free_function: FreeFunctionId) -> Maybe<Arc<Lowered>>;
 
     /// Aggregates module level semantic diagnostics.
-    // TODO(lior): Convert return type to `Maybe`.
     fn module_lowering_diagnostics(
         &self,
         module_id: ModuleId,
-    ) -> Option<Diagnostics<LoweringDiagnostic>>;
+    ) -> Maybe<Diagnostics<LoweringDiagnostic>>;
 
     /// Aggregates file level lowering diagnostics.
-    fn file_lowering_diagnostics(&self, file_id: FileId)
-    -> Option<Diagnostics<LoweringDiagnostic>>;
+    fn file_lowering_diagnostics(&self, file_id: FileId) -> Maybe<Diagnostics<LoweringDiagnostic>>;
 
     // --- Queries related to implicits ---
 
@@ -91,7 +89,7 @@ fn free_function_lowered(
 fn module_lowering_diagnostics(
     db: &dyn LoweringGroup,
     module_id: ModuleId,
-) -> Option<Diagnostics<LoweringDiagnostic>> {
+) -> Maybe<Diagnostics<LoweringDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
     for (_name, item) in db.module_items(module_id)?.items.iter() {
         match item {
@@ -112,18 +110,18 @@ fn module_lowering_diagnostics(
             ModuleItemId::ExternFunction(_) => {}
         }
     }
-    Some(diagnostics.build())
+    Ok(diagnostics.build())
 }
 
 fn file_lowering_diagnostics(
     db: &dyn LoweringGroup,
     file_id: FileId,
-) -> Option<Diagnostics<LoweringDiagnostic>> {
+) -> Maybe<Diagnostics<LoweringDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
     for module_id in db.file_modules(file_id)? {
-        if let Some(module_diagnostics) = db.module_lowering_diagnostics(module_id) {
+        if let Ok(module_diagnostics) = db.module_lowering_diagnostics(module_id) {
             diagnostics.extend(module_diagnostics)
         }
     }
-    Some(diagnostics.build())
+    Ok(diagnostics.build())
 }

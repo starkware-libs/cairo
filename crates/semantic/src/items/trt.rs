@@ -96,7 +96,7 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
     let syntax_db = db.upcast();
     let module_file_id = trait_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let module_data = db.module_data(module_file_id.0)?;
     let trait_ast = module_data.traits.get(&trait_id).to_maybe()?;
 
     // Generic params.

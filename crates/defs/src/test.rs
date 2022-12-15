@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use db_utils::Upcast;
 use debug::debug::DebugWithDb;
+use diagnostics::ToOption;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;
@@ -74,9 +75,12 @@ fn test_resolve() {
         "},
     );
     let db = &db_val;
-    assert!(db.module_item_by_name(module_id, "doesnt_exist".into()).is_none());
+    assert!(db.module_item_by_name(module_id, "doesnt_exist".into()).is_err());
     let felt_add = db.module_item_by_name(module_id, "felt_add".into());
-    assert_eq!(format!("{:?}", felt_add.debug(db)), "Some(ExternFunctionId(test::felt_add))");
+    assert_eq!(
+        format!("{:?}", felt_add.to_option().debug(db)),
+        "Some(ExternFunctionId(test::felt_add))"
+    );
     match db.module_item_by_name(module_id, "felt_add".into()).unwrap() {
         crate::ids::ModuleItemId::ExternFunction(_) => {}
         _ => panic!("Expected an extern function"),
@@ -201,12 +205,12 @@ fn test_plugin() {
     let module_id = ModuleId::CrateRoot(crate_id);
 
     assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).debug(db)),
+        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).to_option().debug(db)),
         "Some(FreeFunctionId(test::foo))"
     );
 
     assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "B".into()).debug(db)),
+        format!("{:?}", db.module_item_by_name(module_id, "B".into()).to_option().debug(db)),
         "Some(ExternTypeId(test::B))"
     );
 }

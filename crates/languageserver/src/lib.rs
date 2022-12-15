@@ -413,7 +413,7 @@ impl LanguageServer for Backend {
                 ),
             };
 
-            let file = if let Some(files) = db.module_files(module_id) {
+            let file = if let Ok(files) = db.module_files(module_id) {
                 files[file_index.0]
             } else {
                 return Ok(None);
