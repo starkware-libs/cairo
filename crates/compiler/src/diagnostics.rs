@@ -50,7 +50,7 @@ pub fn check_diagnostics(
                 }
             }
 
-            if let Some(diag) = db.module_lowering_diagnostics(*module_id) {
+            if let Ok(diag) = db.module_lowering_diagnostics(*module_id) {
                 if !diag.get_all().is_empty() {
                     found_diagnostics = true;
                     on_diagnostic(diag.format(db));

@@ -8,7 +8,7 @@ use defs::ids::{
     GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
     StructId, SubmoduleId, TraitFunctionId, TraitId, UseId, VariantId,
 };
-use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
+use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
 use filesystem::ids::FileId;
 use parser::db::ParserGroup;
@@ -79,7 +79,7 @@ pub trait SemanticGroup:
 
     // Returns the attributes of a module
     #[salsa::invoke(items::attribute::module_attributes)]
-    fn module_attributes(&self, module_id: ModuleId) -> Option<Vec<Attribute>>;
+    fn module_attributes(&self, module_id: ModuleId) -> Maybe<Vec<Attribute>>;
 
     // Struct.
     // =======
@@ -513,13 +513,13 @@ fn module_semantic_diagnostics(
     module_id: ModuleId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (module_file_id, plugin_diag) in db.module_data(module_id).to_maybe()?.plugin_diagnostics {
+    for (module_file_id, plugin_diag) in db.module_data(module_id)?.plugin_diagnostics {
         diagnostics.add(SemanticDiagnostic {
             stable_location: StableLocation::new(module_file_id, plugin_diag.stable_ptr),
             kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
         });
     }
-    for (_name, item) in db.module_items(module_id).to_maybe()?.items.iter() {
+    for (_name, item) in db.module_items(module_id)?.items.iter() {
         match item {
             // Add signature diagnostics.
             ModuleItemId::Use(use_id) => {
@@ -546,8 +546,7 @@ fn module_semantic_diagnostics(
                 // Note that the parent module does not report the diagnostics of its submodules.
                 match submodule_id {
                     SubmoduleId::File(file_submodule_id) => {
-                        if let Some(file_id) =
-                            db.module_main_file(ModuleId::Submodule(*submodule_id))
+                        if let Ok(file_id) = db.module_main_file(ModuleId::Submodule(*submodule_id))
                         {
                             if db.file_content(file_id).is_none() {
                                 // Note that the error location is in the parent module, not the
@@ -579,7 +578,7 @@ fn file_semantic_diagnostics(
     file_id: FileId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for module_id in db.file_modules(file_id).to_maybe()? {
+    for module_id in db.file_modules(file_id)? {
         if let Ok(module_diagnostics) = db.module_semantic_diagnostics(module_id) {
             diagnostics.extend(module_diagnostics)
         }
