@@ -146,8 +146,12 @@ impl Environment {
 
 /// Computes the semantic model of an expression.
 pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr) -> Expr {
-    maybe_compute_expr_semantic(ctx, syntax).unwrap_or_else(|_| {
-        Expr::Missing(ExprMissing { ty: TypeId::missing(ctx.db), stable_ptr: syntax.stable_ptr() })
+    maybe_compute_expr_semantic(ctx, syntax).unwrap_or_else(|diag_added| {
+        Expr::Missing(ExprMissing {
+            ty: TypeId::missing(ctx.db),
+            stable_ptr: syntax.stable_ptr(),
+            diag_added,
+        })
     })
 }
 
