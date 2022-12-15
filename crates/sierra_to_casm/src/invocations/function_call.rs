@@ -4,7 +4,6 @@ use casm::casm;
 use casm::operand::{CellRef, Register};
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::ConcreteLibFunc;
-use utils::casts::usize_as_i16;
 
 use super::{
     check_references_on_stack, CompiledInvocation, CompiledInvocationBuilder, InvocationError,
@@ -32,11 +31,11 @@ pub fn build(
             .get(output_type)
             .ok_or(InvocationError::UnknownVariableData)?;
         refs.push_front(ReferenceExpression {
-            cells: ((offset - usize_as_i16(*size) + 1)..(offset + 1))
+            cells: ((offset - size + 1)..(offset + 1))
                 .map(|i| CellExpression::Deref(CellRef { register: Register::AP, offset: i }))
                 .collect(),
         });
-        offset -= usize_as_i16(*size);
+        offset -= size;
     }
 
     Ok(builder.build(

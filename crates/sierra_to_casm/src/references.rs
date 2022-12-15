@@ -8,7 +8,6 @@ use sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
-use utils::casts::usize_as_i16;
 use utils::try_extract_matches;
 use {casm, sierra};
 
@@ -188,7 +187,7 @@ pub fn build_function_arguments_refs(
                 param.id.clone(),
                 ReferenceValue {
                     expression: ReferenceExpression {
-                        cells: ((offset - usize_as_i16(*size) + 1)..(offset + 1))
+                        cells: ((offset - size + 1)..(offset + 1))
                             .map(|i| {
                                 CellExpression::Deref(CellRef { register: Register::FP, offset: i })
                             })
@@ -201,7 +200,7 @@ pub fn build_function_arguments_refs(
         {
             return Err(ReferencesError::InvalidFunctionDeclaration(func.clone()));
         }
-        offset -= usize_as_i16(*size);
+        offset -= size;
     }
     Ok(refs)
 }

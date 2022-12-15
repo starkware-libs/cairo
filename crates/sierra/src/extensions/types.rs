@@ -114,7 +114,7 @@ pub struct TypeInfo {
     /// Can the type be (trivially) duplicated.
     pub duplicatable: bool,
     /// The size of an element of this type.
-    pub size: usize,
+    pub size: i16,
 }
 
 /// Trait for a specialized type.

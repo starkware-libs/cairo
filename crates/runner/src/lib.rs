@@ -146,7 +146,7 @@ impl SierraCasmRunner {
                     // The run resulted successfully, returning the inner value.
                     let inner_ty = extract_matches!(&long_id.generic_args[1], GenericArg::Type);
                     let inner_ty_size =
-                        self.sierra_program_registry.get_type(inner_ty)?.info().size;
+                        self.sierra_program_registry.get_type(inner_ty)?.info().size as usize;
                     RunResultValue::Success(
                         values.into_iter().skip(1).take(inner_ty_size).collect(),
                     )
@@ -167,7 +167,7 @@ impl SierraCasmRunner {
     ) -> Result<Vec<(sierra::ids::ConcreteTypeId, Vec<BigInt>)>, RunnerError> {
         let mut results_data = vec![];
         for ty in func.signature.ret_types.iter().rev() {
-            let size = self.sierra_program_registry.get_type(ty)?.info().size;
+            let size = self.sierra_program_registry.get_type(ty)?.info().size as usize;
             let values: Vec<BigInt> =
                 cells[(ap - size)..ap].iter().cloned().map(|cell| cell.unwrap()).collect();
             ap -= size;
@@ -224,7 +224,7 @@ impl SierraCasmRunner {
                 }
             } else {
                 let arg_size = self.sierra_program_registry.get_type(ty)?.info().size;
-                expected_arguments_size += arg_size;
+                expected_arguments_size += arg_size as usize;
                 for _ in 0..arg_size {
                     if let Some(value) = arg_iter.next() {
                         casm_extend! {ctx,

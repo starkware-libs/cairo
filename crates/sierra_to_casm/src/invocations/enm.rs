@@ -88,7 +88,7 @@ fn build_enum_init(
         .get(&builder.libfunc.param_signatures()[0].ty)
         .ok_or(InvocationError::UnknownTypeData)?
         .to_owned();
-    if init_arg_cells.len() != variant_size {
+    if init_arg_cells.len() != variant_size as usize {
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     }
     // Pad the variant to match the size of the largest variant
@@ -98,7 +98,7 @@ fn build_enum_init(
     let num_padding = enum_size - 1 - variant_size;
     let inner_value = chain!(
         init_arg_cells.clone(),
-        repeat_n(CellExpression::Immediate(BigInt::from(0)), num_padding)
+        repeat_n(CellExpression::Immediate(BigInt::from(0)), num_padding as usize)
     )
     .collect();
 
@@ -147,7 +147,7 @@ fn build_enum_match(
             .type_sizes
             .get(branch_output)
             .ok_or(InvocationError::UnknownTypeData)?;
-        branch_output_sizes.push(*branch_output_size);
+        branch_output_sizes.push(*branch_output_size as usize);
     }
     let output_expressions = branch_output_sizes.into_iter().map(|size| {
         // The size of an output must be smaller than the size of `matched_var.inner_value` as the
@@ -297,7 +297,8 @@ impl ReferenceExpressionView for EnumView {
         enum_concrete_type: &ConcreteTypeId,
     ) -> Result<Self, Self::Error> {
         let enum_size = get_enum_size(program_info, enum_concrete_type)
-            .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?;
+            .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?
+            as usize;
         // Verify the size.
         if expr.cells.len() != enum_size {
             return Err(ReferencesError::InvalidReferenceTypeForArgument);
@@ -327,6 +328,6 @@ impl ReferenceExpressionView for EnumView {
 fn get_enum_size(
     program_info: &ProgramInfo<'_>,
     concrete_enum_type: &ConcreteTypeId,
-) -> Option<usize> {
+) -> Option<i16> {
     Some(program_info.type_sizes.get(concrete_enum_type)?.to_owned())
 }

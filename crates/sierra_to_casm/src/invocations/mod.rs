@@ -194,7 +194,7 @@ impl CompiledInvocationBuilder<'_> {
                         }
                     }
                     sierra_ap_change::ApChange::KnownByTypeSize(ty) => {
-                        ApChange::Known(self.program_info.type_sizes[&ty])
+                        ApChange::Known(self.program_info.type_sizes[&ty] as usize)
                     }
                     sierra_ap_change::ApChange::FunctionCall(id) => self
                         .program_info

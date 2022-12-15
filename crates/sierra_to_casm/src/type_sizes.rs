@@ -7,7 +7,7 @@ use sierra::ids::ConcreteTypeId;
 use sierra::program::Program;
 use sierra::program_registry::ProgramRegistry;
 
-pub type TypeSizeMap = HashMap<ConcreteTypeId, usize>;
+pub type TypeSizeMap = HashMap<ConcreteTypeId, i16>;
 
 /// Returns a mapping for the sizes of all types for the given program.
 pub fn get_type_size_map(
