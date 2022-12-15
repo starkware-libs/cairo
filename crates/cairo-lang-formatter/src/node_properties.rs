@@ -202,19 +202,35 @@ impl SyntaxNodeFormat for SyntaxNode {
         db: &dyn SyntaxGroup,
     ) -> WrappingBreakLinePoints {
         match self.kind(db) {
-            SyntaxKind::ParamList
-            | SyntaxKind::StructArgList
-            | SyntaxKind::ExprList
-            | SyntaxKind::ArgList => WrappingBreakLinePoints {
+            SyntaxKind::ParamList | SyntaxKind::ExprList | SyntaxKind::ArgList => {
+                WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties {
+                        precedence: 0,
+                        break_indentation: BreakLinePointIndentation::IndentedWithTail,
+                        is_optional: true,
+                        space_if_not_broken: false,
+                    }),
+                    trailing: Some(BreakLinePointProperties {
+                        precedence: 0,
+                        break_indentation: BreakLinePointIndentation::IndentedWithTail,
+                        is_optional: true,
+                        space_if_not_broken: false,
+                    }),
+                }
+            }
+
+            SyntaxKind::StructArgList => WrappingBreakLinePoints {
                 leading: Some(BreakLinePointProperties {
                     precedence: 0,
                     break_indentation: BreakLinePointIndentation::IndentedWithTail,
                     is_optional: true,
+                    space_if_not_broken: true,
                 }),
                 trailing: Some(BreakLinePointProperties {
                     precedence: 0,
                     break_indentation: BreakLinePointIndentation::IndentedWithTail,
                     is_optional: true,
+                    space_if_not_broken: true,
                 }),
             },
             SyntaxKind::TerminalComma => WrappingBreakLinePoints {
@@ -223,21 +239,36 @@ impl SyntaxNodeFormat for SyntaxNode {
                     precedence: 0,
                     break_indentation: BreakLinePointIndentation::NotIndented,
                     is_optional: true,
+                    space_if_not_broken: true,
                 }),
             },
-            SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => WrappingBreakLinePoints {
+            SyntaxKind::TerminalPlus => WrappingBreakLinePoints {
                 leading: Some(BreakLinePointProperties {
                     precedence: 1,
                     break_indentation: BreakLinePointIndentation::Indented,
                     is_optional: true,
+                    space_if_not_broken: true,
                 }),
                 trailing: None,
             },
+            SyntaxKind::TerminalMinus if parent_kind(db, self) != Some(SyntaxKind::ExprUnary) => {
+                WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties {
+                        precedence: 1,
+                        break_indentation: BreakLinePointIndentation::Indented,
+                        is_optional: true,
+                        space_if_not_broken: true,
+                    }),
+                    trailing: None,
+                }
+            }
+
             SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv => WrappingBreakLinePoints {
                 leading: Some(BreakLinePointProperties {
                     precedence: 2,
                     break_indentation: BreakLinePointIndentation::Indented,
                     is_optional: true,
+                    space_if_not_broken: true,
                 }),
                 trailing: None,
             },

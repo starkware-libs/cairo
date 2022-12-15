@@ -6,31 +6,31 @@ use traits::Add;
 #[derive(Copy, Drop)]
 enum bool { False: (), True: (), }
 
-extern fn bool_and_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+extern fn bool_and_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
 fn bool_and(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r,) = bool_and_impl(a, b);
+    let (r, ) = bool_and_impl(a, b);
     r
 }
 
-extern fn bool_or_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+extern fn bool_or_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
 fn bool_or(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r,) = bool_or_impl(a, b);
+    let (r, ) = bool_or_impl(a, b);
     r
 }
 
-extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;
+extern fn bool_not_impl(a: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
 fn bool_not(a: bool) -> bool implicits() nopanic {
-    let (r,) = bool_not_impl(a);
+    let (r, ) = bool_not_impl(a);
     r
 }
 
-extern fn bool_xor_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+extern fn bool_xor_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
 fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r,) = bool_xor_impl(a, b);
+    let (r, ) = bool_xor_impl(a, b);
     r
 }
 
@@ -81,7 +81,7 @@ fn felt_eq(a: felt, b: felt) -> bool nopanic {
     match a - b {
         0 => bool::True(()),
         _ => bool::False(()),
-    }
+     }
 }
 #[inline(always)]
 fn felt_ne(a: felt, b: felt) -> bool nopanic {

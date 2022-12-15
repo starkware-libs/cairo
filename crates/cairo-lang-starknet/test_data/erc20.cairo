@@ -121,6 +121,6 @@ mod ERC20 {
                 array_append(ref err_data, revert_reason);
                 panic(err_data)
             },
-        }
+         }
     }
 }
