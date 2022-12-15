@@ -222,7 +222,7 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     // It differs from the module_file when processing an inline module.
     let mut parent_file = module_file;
 
-    let file_syntax = db.file_syntax(module_file).to_maybe()?;
+    let file_syntax = db.file_syntax(module_file)?;
     let mut item_asts = match module_id {
         ModuleId::CrateRoot(_)
         | ModuleId::Submodule(SubmoduleId::File(_))
@@ -336,7 +336,7 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
             Some(file) => module_file = file,
             None => break,
         };
-        item_asts = db.file_syntax(module_file).to_maybe()?.items(syntax_db);
+        item_asts = db.file_syntax(module_file)?.items(syntax_db);
         parent_file = module_file;
     }
     Ok(res)
