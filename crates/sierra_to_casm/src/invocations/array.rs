@@ -1,6 +1,6 @@
 use casm::ap_change::ApplyApChange;
-use casm::casm;
 use casm::operand::{ap_cell_ref, CellRef, DerefOrImmediate};
+use casm::{casm, casm_extend};
 use itertools::chain;
 use num_bigint::BigInt;
 use sierra::extensions::array::ArrayConcreteLibFunc;
@@ -66,7 +66,7 @@ fn build_array_new(
 fn build_array_append(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (mut array_view, element_to_append) = match builder.refs {
+    let (mut array_view, elem) = match builder.refs {
         [
             ReferenceValue { expression: expr_arr, .. },
             ReferenceValue { expression: expr_elem, .. },
@@ -75,15 +75,7 @@ fn build_array_append(
             let array_view =
                 ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-            let elem_val = match expr_elem
-                .try_unpack_single()
-                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
-            {
-                CellExpression::Deref(op) => DerefOrImmediate::Deref(op),
-                CellExpression::Immediate(op) => DerefOrImmediate::from(op),
-                _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-            };
-            (array_view, elem_val)
+            (array_view, expr_elem)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -92,24 +84,15 @@ fn build_array_append(
             });
         }
     };
-    if array_view.end_offset != 0 {
-        // TODO(Gil): handle when DoubleDeref will support a BinOp variant, e.g. [[ap+1]+1]
-        return Err(InvocationError::NotImplemented(builder.invocation.clone()));
+    let mut ctx = casm! {};
+    for expr in &elem.cells {
+        let cell = try_extract_matches!(expr, CellExpression::Deref)
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+        casm_extend!(ctx, (*cell) = [[&array_view.end] + array_view.end_offset];);
+        array_view.end_offset += 1;
     }
-    match element_to_append {
-        DerefOrImmediate::Immediate(_) => {
-            // TODO(Gil): handle when assertion of immediate to DoubleDeref (e.g. [[ap+0]] = 1)
-            // will be supported.
-            Err(InvocationError::NotImplemented(builder.invocation.clone()))
-        }
-        DerefOrImmediate::Deref(op) => {
-            let instructions = casm! { op = [[&array_view.end]]; }.instructions;
-            array_view.end_offset += 1;
-            let output_expressions =
-                [vec![array_view.to_reference_expression()].into_iter()].into_iter();
-            Ok(builder.build(instructions, vec![], output_expressions))
-        }
-    }
+    let output_expressions = [vec![array_view.to_reference_expression()].into_iter()].into_iter();
+    Ok(builder.build(ctx.instructions, vec![], output_expressions))
 }
 
 /// Handles a Sierra statement for fetching an array element at a specific index.
