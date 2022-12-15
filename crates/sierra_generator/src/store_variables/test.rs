@@ -712,9 +712,6 @@ fn consecutive_appends_with_branch() {
             "array_append(0, 1) -> (2)",
             "array_append(2, 3) -> (4)",
             "array_append(4, 5) -> (6)",
-            // TODO(orizi): Remove illegal stores of consumed variable.
-            "store_temp<Array<felt>>(2) -> (2)",
-            "store_temp<Array<felt>>(4) -> (4)",
             "store_temp<Array<felt>>(6) -> (6)",
             "branch() { label0() fallthrough() }",
             "label0:",
