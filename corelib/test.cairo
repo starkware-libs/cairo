@@ -48,6 +48,8 @@ func test_felt_operators() {
 // TODO(orizi): Use uint128 literals when supported.
 #[test]
 func test_uint128_operators() {
+    assert(1_uint128 == 1_uint128, 1);
+    assert(!(1_uint128 == 2_uint128), 1);
     assert(1_uint128 + 3_uint128 == 4_uint128, 1);
     assert(3_uint128 + 6_uint128 == 9_uint128, 1);
     assert(3_uint128 - 1_uint128 == 2_uint128, 1);

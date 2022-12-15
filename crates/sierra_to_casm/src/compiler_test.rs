@@ -210,6 +210,23 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [fp + -5] + 1, ap++;
                 ret;
             "}; "uint128_lt")]
+#[test_case(indoc!{"
+                type uint128 = uint128;
+
+                libfunc revoke_ap_tracking = revoke_ap_tracking;
+                libfunc uint128_eq = uint128_eq;
+
+                revoke_ap_tracking() -> ();
+                uint128_eq([1], [2]) {fallthrough() 2() };
+                return ();
+
+                test_program@0([1]: uint128, [2]: uint128) -> ();
+            "}, false, indoc!{"
+                [fp + -4] = [ap + 0] + [fp + -3], ap++;
+                jmp rel 4 if [ap + -1] != 0;
+                jmp rel 2;
+                ret;
+            "}; "uint128_eq")]
 #[test_case(indoc! {"
                 type uint128 = uint128;
                 type RangeCheck = RangeCheck;

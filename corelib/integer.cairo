@@ -148,6 +148,7 @@ extern func uint128_safe_divmod(
 ) implicits(RangeCheck) nopanic;
 
 extern func uint128_lt(a: uint128, b: uint128) -> bool implicits(RangeCheck) nopanic;
+extern func uint128_eq(a: uint128, b: uint128) -> bool implicits() nopanic;
 extern func uint128_le(a: uint128, b: uint128) -> bool implicits(RangeCheck) nopanic;
 
 func uint128_gt(a: uint128, b: uint128) -> bool implicits(RangeCheck) nopanic {
@@ -156,11 +157,6 @@ func uint128_gt(a: uint128, b: uint128) -> bool implicits(RangeCheck) nopanic {
 
 func uint128_ge(a: uint128, b: uint128) -> bool implicits(RangeCheck) nopanic {
     uint128_le(b, a)
-}
-
-// TODO(orizi): Change to extern when added.
-func uint128_eq(a: uint128, b: uint128) -> bool implicits() nopanic {
-    uint128_to_felt(a) == uint128_to_felt(b)
 }
 
 func uint128_ne(a: uint128, b: uint128) -> bool implicits() nopanic {
