@@ -81,7 +81,7 @@ fn build_builtin_get_gas(
         let offset = token_type.offset_in_builtin_costs();
 
         // Fetch the cost of a single instance.
-        casm_extend!(compute_requested_amount, [ap] = [[translated_builtin_cost] + offset], ap++; );
+        casm_extend!(compute_requested_amount, [ap] = [[&translated_builtin_cost] + offset], ap++; );
         compute_requested_amount_ap_change += 1;
 
         // If necessary, multiply by the number of instances.
@@ -139,7 +139,7 @@ fn build_builtin_get_gas(
         // In this case amount > gas_counter_value, so amount - gas_counter_value - 1 >= 0.
         [ap - 2] = [ap + 0] + (gas_counter_value.unchecked_apply_known_ap_change(1)), ap++;
         [ap + 0] = [ap - 1] + (-1), ap++;
-        [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
+        [ap - 1] = [[&range_check.unchecked_apply_known_ap_change(3)]];
 
         jmp rel 0; // Fixed in relocations.
     };
@@ -151,7 +151,7 @@ fn build_builtin_get_gas(
     let success_branch = casm! {
        // Compute the remaining gas and check that it is nonnegative.
        (gas_counter_value.unchecked_apply_known_ap_change(1)) = [ap + 0] + [ap - 2], ap++;
-       [ap - 1] = [[range_check.unchecked_apply_known_ap_change(2)]];
+       [ap - 1] = [[&range_check.unchecked_apply_known_ap_change(2)]];
     };
 
     Ok(builder.build(

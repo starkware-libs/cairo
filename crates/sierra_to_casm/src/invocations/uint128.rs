@@ -154,12 +154,12 @@ fn build_uint128_op(
                 // `b * q + r = a`, and if `b = 2`, `a = 1` and `r = 0`, we can take `q` to be the
                 // inverse of 2 (`(PRIME + 1) / 2`, much larger than 2^128) and pass this
                 // constraint.
-                [ap + 0] = [[range_check]], ap++;
-                [ap + 0] = [[range_check.unchecked_apply_known_ap_change(1)] + 1], ap++;
+                [ap + 0] = [[&range_check]], ap++;
+                [ap + 0] = [[&range_check.unchecked_apply_known_ap_change(1)] + 1], ap++;
                 // Verify `r < b` by constraining `0 <= b - (r + 1)`.
                 [ap + 0] = [ap + -1] + 1, ap++;
                 (b.unchecked_apply_known_ap_change(3)) = [ap + 0] + [ap + -1], ap++;
-                [ap + -1] = [[range_check.unchecked_apply_known_ap_change(4)] + 2], ap++;
+                [ap + -1] = [[&range_check.unchecked_apply_known_ap_change(4)] + 2], ap++;
                 // Verify `b * q + r = a`.
                 [ap + -1] = [ap + -5] * (b.unchecked_apply_known_ap_change(5));
                 (a.unchecked_apply_known_ap_change(5)) = [ap + -1] + [ap + -4];
@@ -316,7 +316,7 @@ fn build_uint128_lt(
         [ap + 0] = (a.unchecked_apply_known_ap_change(1)) + 1, ap++; // Compute `a + 1`.
         // Compute `b - a - 1`.
         (b.unchecked_apply_known_ap_change(2)) = [ap + 0] + [ap + -1], ap++;
-        [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
+        [ap - 1] = [[&range_check.unchecked_apply_known_ap_change(3)]];
         jmp rel 0; // Fixed in relocations.
     };
     let ge_code = casm! {
@@ -324,7 +324,7 @@ fn build_uint128_lt(
         // Compute `a - b`.
         (a.unchecked_apply_known_ap_change(1)) = [ap + 0] + (b.unchecked_apply_known_ap_change(1)),
             ap++;
-        [ap - 1] = [[range_check.unchecked_apply_known_ap_change(2)]];
+        [ap - 1] = [[&range_check.unchecked_apply_known_ap_change(2)]];
     };
 
     // Since the jump offset of the positive (X<Y) case depends only on the above CASM code,
@@ -368,14 +368,14 @@ fn build_uint128_le(
         // Compute `b - a`.
         (b.unchecked_apply_known_ap_change(1)) = [ap + 0] + (a.unchecked_apply_known_ap_change(1)),
             ap++;
-        [ap - 1] = [[range_check.unchecked_apply_known_ap_change(2)]];
+        [ap - 1] = [[&range_check.unchecked_apply_known_ap_change(2)]];
         jmp rel 0; // Fixed in relocations.
     };
     let gt_code = casm! {
         // `a > b` <===> `a - b - 1 >= 0`.
         [ap + 0] = (b.unchecked_apply_known_ap_change(1)) + 1, ap++; // Compute `b + 1`.
         (a.unchecked_apply_known_ap_change(2)) = [ap + 0] + [ap - 1], ap++; // Compute `a - b - 1`.
-        [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
+        [ap - 1] = [[&range_check.unchecked_apply_known_ap_change(3)]];
     };
 
     // Since the jump offset of the positive (X<Y) case depends only on the above CASM code,
