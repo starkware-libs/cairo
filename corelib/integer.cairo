@@ -70,11 +70,7 @@ func uint128_wide_mul(a: uint128, b: uint128) -> (uint128, uint128) implicits(Ra
     }
 }
 
-func uint128_overflow_mul(
-    a: uint128, b: uint128
-    ) -> (
-    uint128, bool
-) implicits(RangeCheck) nopanic {
+func uint128_overflow_mul(a: uint128, b: uint128) -> (uint128, bool) implicits(RangeCheck) nopanic {
     let (bottom_word, top_word) = uint128_wide_mul(a, b);
     match uint128_to_felt(top_word) {
         0 => (bottom_word, false),
@@ -173,11 +169,7 @@ extern func uint128_jump_nz(a: uint128) -> JumpNzResult::<uint128> implicits() n
 #[derive(Copy, Drop)]
 struct uint256 { low: uint128, high: uint128, }
 
-func uint256_overflow_add(
-    a: uint256, b: uint256
-    ) -> (
-    uint256, bool
-) implicits(RangeCheck) nopanic {
+func uint256_overflow_add(a: uint256, b: uint256) -> (uint256, bool) implicits(RangeCheck) nopanic {
     let (high, overflow) = match uint128_overflow_add(a.high, b.high) {
         Result::Ok(high) => (high, false),
         Result::Err(high) => (high, true),
@@ -193,11 +185,7 @@ func uint256_overflow_add(
     }
 }
 
-func uint256_overflow_sub(
-    a: uint256, b: uint256
-    ) -> (
-    uint256, bool
-) implicits(RangeCheck) nopanic {
+func uint256_overflow_sub(a: uint256, b: uint256) -> (uint256, bool) implicits(RangeCheck) nopanic {
     let (high, overflow) = match uint128_overflow_sub(a.high, b.high) {
         Result::Ok(high) => (high, false),
         Result::Err(high) => (high, true),
