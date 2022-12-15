@@ -13,6 +13,9 @@ use crate::contract::starknet_keccak;
 static CONTRACT_IMPL_ATTR: &str = "ContractImpl";
 pub static WRAPPER_PREFIX: &str = "__wrapper_";
 static CONTRACT_ATTR: &str = "contract";
+static EXTERNAL_ATTR: &str = "external";
+
+pub static EXTERNAL_MODULE: &str = "__external";
 
 #[cfg(test)]
 #[path = "plugin_test.rs"]
@@ -41,7 +44,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         return PluginResult::default();
     }
 
-    let _body = match module_ast.body(db) {
+    let body = match module_ast.body(db) {
         MaybeModuleBody::Some(body) => body,
         MaybeModuleBody::None(empty_body) => {
             return PluginResult {
@@ -54,8 +57,38 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         }
     };
 
-    // TODO(ilya): Generate wrappers for external functions.
-    PluginResult::default()
+    let mut functions_tokens = rust::Tokens::new();
+
+    for item in body.items(db).elements(db) {
+        let item_function = match item {
+            ast::Item::FreeFunction(f) => f,
+            // Nothing to do for other items.
+            _ => continue,
+        };
+
+        if item_function
+            .attributes(db)
+            .elements(db)
+            .iter()
+            .any(|attr| attr.attr(db).text(db) == EXTERNAL_ATTR)
+        {
+            // TODO(ilya): propagate the diagnostics in case of failure.
+            if let Some(generated_function) = generate_entry_point_wrapper(db, &item_function) {
+                functions_tokens.append(generated_function);
+            }
+        }
+    }
+
+    let external_entry_points: rust::Tokens = quote! {
+        mod $EXTERNAL_MODULE {
+            $functions_tokens
+        }
+    };
+
+    PluginResult {
+        code: Some(("entry_points".into(), external_entry_points.to_string().unwrap())),
+        diagnostics: vec![],
+    }
 }
 
 /// If the struct is annotated with CONTRACT_ATTR, generate getter functions for
@@ -113,6 +146,8 @@ fn handle_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
             // Impl should only have free functions.
             _ => unreachable!(),
         };
+
+        // TODO(ilya): propagate the diagnostics in case of failure.
         if let Some(generated_function) = generate_entry_point_wrapper(db, &item_function) {
             functions_tokens.append(generated_function);
         }
