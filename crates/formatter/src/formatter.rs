@@ -51,14 +51,17 @@ pub struct BreakLinePointProperties {
     /// Indicates whether a breakpoint is optional. An optional breakpoint may be broken only if
     /// the line is too long. A non-optional breakpoint is always broken.
     pub is_optional: bool,
+    /// Indicates to put a space instead of the break line point if it were not broken.
+    pub space_if_ignored: bool,
 }
 impl BreakLinePointProperties {
     pub fn new(
         precedence: usize,
         break_indentation: BreakLinePointIndentation,
         is_optional: bool,
+        space_if_ignored: bool,
     ) -> Self {
-        Self { precedence, break_indentation, is_optional }
+        Self { precedence, break_indentation, is_optional, space_if_ignored }
     }
 }
 
@@ -95,7 +98,7 @@ impl LineComponent {
             Self::ProtectedZone { builder, .. } => builder.width(),
             Self::Space => 1,
             Self::Indent(n) => *n,
-            Self::BreakLinePoint(_) => 0,
+            Self::BreakLinePoint(properties) => usize::from(properties.space_if_ignored),
             Self::Comment { content, is_leading } => {
                 if *is_leading {
                     0
@@ -113,7 +116,9 @@ impl fmt::Display for LineComponent {
             Self::ProtectedZone { builder, .. } => write!(f, "{builder}"),
             Self::Space => write!(f, " "),
             Self::Indent(n) => write!(f, "{}", " ".repeat(*n)),
-            Self::BreakLinePoint(_) => write!(f, ""),
+            Self::BreakLinePoint(properties) => {
+                write!(f, "{}", if properties.space_if_ignored { " " } else { "" })
+            }
             Self::Comment { content, .. } => write!(f, "{content}"),
         }
     }
@@ -673,6 +678,7 @@ impl<'a> Formatter<'a> {
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
         if let Some(properties) = properties {
             self.line_state.line_buffer.push_break_line_point(properties);
+            self.line_state.no_space_after = true;
         }
     }
     /// Returns the leading indentation according to the current indent and the tab size.
