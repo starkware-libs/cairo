@@ -26,6 +26,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
         CoreConcreteLibFunc::BranchAlign(_) => vec![ApChange::FromMetadata],
         CoreConcreteLibFunc::Bool(libfunc) => match libfunc {
             BoolConcreteLibFunc::And(_) => vec![ApChange::Known(0)],
+            BoolConcreteLibFunc::Not(_) => vec![ApChange::Known(1)],
         },
         CoreConcreteLibFunc::Box(_) => vec![ApChange::Known(0)],
         // TODO(lior): Check/Fix.
