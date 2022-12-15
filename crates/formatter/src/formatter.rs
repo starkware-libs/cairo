@@ -84,6 +84,9 @@ enum LineComponent {
     Indent(usize),
     /// An optional break line point, that will be used if the line is too long.
     BreakLinePoint(BreakLinePointProperties),
+    /// A comment in the code, leading comments are not accounted for the line width since they
+    /// appear in a separate line.
+    Comment { content: String, is_leading: bool },
 }
 impl LineComponent {
     pub fn width(&self) -> usize {
@@ -93,6 +96,13 @@ impl LineComponent {
             Self::Space => 1,
             Self::Indent(n) => *n,
             Self::BreakLinePoint(_) => 0,
+            Self::Comment { content, is_leading } => {
+                if *is_leading {
+                    0
+                } else {
+                    content.len()
+                }
+            }
         }
     }
 }
@@ -104,6 +114,7 @@ impl fmt::Display for LineComponent {
             Self::Space => write!(f, " "),
             Self::Indent(n) => write!(f, "{}", " ".repeat(*n)),
             Self::BreakLinePoint(_) => write!(f, ""),
+            Self::Comment { content, .. } => write!(f, "{content}"),
         }
     }
 }
@@ -201,6 +212,10 @@ impl LineBuilder {
     /// component of another type (i.e. not a break line point) is appended.
     fn flush_pending_break_line_points(&mut self) {
         self.children.append(&mut self.pending_break_line_points);
+    }
+    /// Appends a comment to the line.
+    pub fn push_comment(&mut self, content: &str, is_leading: bool) {
+        self.push_child(LineComponent::Comment { content: content.to_string(), is_leading });
     }
     /// The width, in number of chars, of the whole LineTree.
     fn width(&self) -> usize {
@@ -603,19 +618,30 @@ impl<'a> Formatter<'a> {
         let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
 
         // The first newlines is the leading trivia correspond exactly to empty lines.
-        self.format_trivia(leading_trivia, self.empty_lines_allowance);
+        self.format_trivia(leading_trivia, self.empty_lines_allowance, true);
         self.empty_lines_allowance = 0;
         self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
         let allowed_newlines = usize::from(syntax_node.allow_newline_after(self.db));
-        self.format_trivia(trailing_trivia, allowed_newlines);
+        self.format_trivia(trailing_trivia, allowed_newlines, false);
     }
     /// Appends a trivia node (if needed) to the result.
-    fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, mut allowed_newlines: usize) {
+    fn format_trivia(
+        &mut self,
+        trivia: syntax::node::ast::Trivia,
+        mut allowed_newlines: usize,
+        is_leading: bool,
+    ) {
         for trivium in trivia.elements(self.db) {
             match trivium {
                 ast::Trivium::SingleLineComment(_) => {
                     allowed_newlines = 2;
-                    self.format_token(&trivium.as_syntax_node(), true);
+                    if !is_leading {
+                        self.line_state.line_buffer.push_space();
+                    }
+                    self.line_state
+                        .line_buffer
+                        .push_comment(&trivium.as_syntax_node().text(self.db).unwrap(), is_leading);
+                    self.line_state.no_space_after = true;
                 }
                 ast::Trivium::Whitespace(_) => {}
                 ast::Trivium::Newline(_) => {
