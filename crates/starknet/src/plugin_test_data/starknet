@@ -48,3 +48,5 @@ mod storage_var { func read(ref system: System) -> felt {
     )
 }
 }
+
+//! > expected_diagnostics

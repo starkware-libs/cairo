@@ -1,7 +1,9 @@
-use defs::db::{MacroPlugin, PluginResult};
+use std::vec;
+
+use defs::db::{MacroPlugin, PluginDiagnostic, PluginResult};
 use genco::prelude::*;
 use itertools::join;
-use syntax::node::ast::{ItemFreeFunction, MaybeImplBody, Modifier, Param};
+use syntax::node::ast::{ItemFreeFunction, MaybeImplBody, MaybeModuleBody, Modifier, Param};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -22,12 +24,38 @@ pub struct StarkNetPlugin {}
 impl MacroPlugin for StarkNetPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
+            ast::Item::Module(module_ast) => handle_mod(db, module_ast),
             ast::Item::Impl(impl_ast) => handle_impl(db, impl_ast),
             ast::Item::Struct(struct_ast) => handle_struct(db, struct_ast),
             // TODO(yuval): diagnostic
             _ => PluginResult::default(),
         }
     }
+}
+
+/// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
+fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
+    let attrs = module_ast.attributes(db).elements(db);
+    if !attrs.iter().any(|attr| attr.attr(db).text(db) == CONTRACT_ATTR) {
+        // TODO(ilya): diagnostic
+        return PluginResult::default();
+    }
+
+    let _body = match module_ast.body(db) {
+        MaybeModuleBody::Some(body) => body,
+        MaybeModuleBody::None(empty_body) => {
+            return PluginResult {
+                code: None,
+                diagnostics: vec![PluginDiagnostic {
+                    message: "Contracts without body are not supported.".to_string(),
+                    stable_ptr: empty_body.stable_ptr().untyped(),
+                }],
+            };
+        }
+    };
+
+    // TODO(ilya): Generate wrappers for external functions.
+    PluginResult::default()
 }
 
 /// If the struct is annotated with CONTRACT_ATTR, generate getter functions for
@@ -75,6 +103,7 @@ fn handle_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
         // TODO(yuval): diagnostic
         MaybeImplBody::None(_) => return PluginResult::default(),
     };
+
     let impl_items = body.items(db);
     let mut functions_tokens = rust::Tokens::new();
     functions_tokens.append(impl_items.as_syntax_node().get_text(db).as_str());

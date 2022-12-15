@@ -1,0 +1,16 @@
+//! > Test diagnostics from invalid contract.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[contract]
+mod TestContract;
+
+//! > generated_cairo_code
+
+//! > expected_diagnostics
+error: Contracts without body are not supported.
+ --> dummy_file.cairo:2:17
+mod TestContract;
+                ^
