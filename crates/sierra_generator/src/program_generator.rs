@@ -226,7 +226,7 @@ pub fn get_sierra_program(
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {
-            for (free_func_id, _) in db.module_data(*module_id).to_maybe()?.free_functions {
+            for (free_func_id, _) in db.module_data(*module_id)?.free_functions {
                 requested_function_ids.push(free_func_id)
             }
         }

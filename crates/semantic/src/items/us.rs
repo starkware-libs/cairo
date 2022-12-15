@@ -25,7 +25,7 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Maybe<
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): Add generic args when they are supported on structs.
     let mut resolver = Resolver::new(db, module_file_id, &[]);
-    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let module_data = db.module_data(module_file_id.0)?;
     let use_ast = module_data.uses.get(&use_id).to_maybe()?;
     let syntax_db = db.upcast();
     let resolved_item = resolver.resolve_generic_path(&mut diagnostics, &use_ast.name(syntax_db));
@@ -41,7 +41,7 @@ pub fn priv_use_semantic_data_cycle(
 ) -> Maybe<UseData> {
     let module_file_id = use_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0).to_maybe()?;
+    let module_data = db.module_data(module_file_id.0)?;
     let use_ast = module_data.uses.get(use_id).to_maybe()?;
     let syntax_db = db.upcast();
     let err = Err(diagnostics.report(&use_ast.name(syntax_db), SemanticDiagnosticKind::UseCycle));

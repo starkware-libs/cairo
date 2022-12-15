@@ -352,10 +352,13 @@ impl<'db> Resolver<'db> {
                 if ident == "super" {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
+                // TODO(lior): Consider changing module_item_by_name to return Maybe<Option<>> so
+                //   that if module_items fails (unrelated to the specific identifier) we won't
+                //   report a diagnostic here.
                 let module_item = self
                     .db
                     .module_item_by_name(*module_id, ident)
-                    .ok_or_else(|| diagnostics.report(identifier, PathNotFound))?;
+                    .map_err(|_| diagnostics.report(identifier, PathNotFound))?;
                 let generic_item = self.module_item_to_generic_item(diagnostics, module_item)?;
                 Ok(self.specialize_generic_module_item(
                     diagnostics,
@@ -459,7 +462,7 @@ impl<'db> Resolver<'db> {
                 let module_item = self
                     .db
                     .module_item_by_name(*module_id, ident)
-                    .ok_or_else(|| diagnostics.report(identifier, PathNotFound))?;
+                    .map_err(|_| diagnostics.report(identifier, PathNotFound))?;
                 self.module_item_to_generic_item(diagnostics, module_item)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
@@ -541,7 +544,7 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
 
         // If an item with this name is found inside the current module, use the current module.
-        if self.db.module_item_by_name(self.module_file_id.0, ident.clone()).is_some() {
+        if self.db.module_item_by_name(self.module_file_id.0, ident.clone()).is_ok() {
             return Some(self.module_file_id.0);
         }
 

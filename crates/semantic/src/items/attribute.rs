@@ -1,5 +1,6 @@
 use debug::DebugWithDb;
 use defs::ids::ModuleId;
+use diagnostics::Maybe;
 use smol_str::SmolStr;
 use syntax::node::ast::OptionAttributeArgs;
 use syntax::node::db::SyntaxGroup;
@@ -54,8 +55,8 @@ pub fn ast_attributes_to_semantic(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::module_attributes].
-pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<Vec<Attribute>> {
-    Some(match module_id {
+pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<Vec<Attribute>> {
+    Ok(match module_id {
         ModuleId::CrateRoot(_) | ModuleId::VirtualSubmodule(_) => vec![],
         ModuleId::Submodule(submodule_id) => {
             let module_ast =
