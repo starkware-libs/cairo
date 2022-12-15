@@ -289,7 +289,7 @@ impl LanguageServer for Backend {
         let db = self.db().await;
         let file_uri = params.text_document.uri;
         let file = self.file(&db, file_uri.clone());
-        let syntax = if let Some(syntax) = db.file_syntax(file) {
+        let syntax = if let Ok(syntax) = db.file_syntax(file) {
             syntax
         } else {
             eprintln!("Semantic analysis failed. File '{file_uri}' does not exist.");
@@ -306,7 +306,7 @@ impl LanguageServer for Backend {
         let db = self.db().await;
         let file_uri = params.text_document.uri;
         let file = self.file(&db, file_uri.clone());
-        let syntax = if let Some(syntax) = db.file_syntax(file) {
+        let syntax = if let Ok(syntax) = db.file_syntax(file) {
             syntax
         } else {
             eprintln!("Formatting failed. File '{file_uri}' does not exist.");
@@ -424,7 +424,7 @@ impl LanguageServer for Backend {
             } else {
                 return Ok(None);
             };
-            let syntax = if let Some(syntax) = db.file_syntax(file) {
+            let syntax = if let Ok(syntax) = db.file_syntax(file) {
                 syntax
             } else {
                 eprintln!("Formatting failed. File '{file_uri}' does not exist.");
@@ -516,7 +516,7 @@ fn get_node_and_lookup_items(
     let filename = file.file_name(db.upcast());
 
     // Get syntax for file.
-    let syntax = db.file_syntax(file).on_none(|| {
+    let syntax = db.file_syntax(file).to_option().on_none(|| {
         eprintln!("Formatting failed. File '{filename}' does not exist.");
     })?;
 
