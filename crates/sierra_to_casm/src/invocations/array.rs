@@ -103,7 +103,7 @@ fn build_array_append(
             Err(InvocationError::NotImplemented(builder.invocation.clone()))
         }
         DerefOrImmediate::Deref(op) => {
-            let instructions = casm! { op = [[array_view.end]]; }.instructions;
+            let instructions = casm! { op = [[&array_view.end]]; }.instructions;
             array_view.end_offset += 1;
             let output_expressions =
                 [vec![array_view.to_reference_expression()].into_iter()].into_iter();
@@ -174,7 +174,7 @@ fn build_array_at(
                 // construction, so is the offset.
                 [ap + -1] = [ap + 0] * (element_size), ap++;
                 // Assert offset - length >= 0.
-                [ap + -1] = [[(range_check.unchecked_apply_known_ap_change(5))]];
+                [ap + -1] = [[&range_check.unchecked_apply_known_ap_change(5)]];
                 jmp rel 0;
             };
             let success_branch = casm! {
@@ -184,7 +184,7 @@ fn build_array_at(
                 // Compute length-(offset+1).
                 [ap + -4] = [ap + 0] + [ap + -1], ap++;
                 // Assert length-(offset+1) is in [0, 2^128).
-                [ap + -1] = [[(range_check.unchecked_apply_known_ap_change(5))]];
+                [ap + -1] = [[&range_check.unchecked_apply_known_ap_change(5)]];
                 // Compute address of target cell.
                 [ap + 0] = (array_view.start.unchecked_apply_known_ap_change(5)) + [ap + -4], ap++;
             };

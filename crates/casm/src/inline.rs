@@ -337,10 +337,10 @@ macro_rules! res {
     ([[fp $($op:tt $offset:expr)?] - $outer:expr]) => {
         $crate::operand::ResOperand::DoubleDeref($crate::deref!([fp $($op $offset)?]), -$outer)
     };
-    ([[$a:expr]]) => {
+    ([[&$a:expr]]) => {
         $crate::operand::ResOperand::DoubleDeref($a, 0)
     };
-    ([[$a:expr] + $b:expr]) => {
+    ([[&$a:expr] + $b:expr]) => {
         $crate::operand::ResOperand::DoubleDeref($a, $b)
     };
     ($a:tt) => {
