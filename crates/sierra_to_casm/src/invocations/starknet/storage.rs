@@ -1,5 +1,4 @@
 use casm::casm;
-use casm::hints::Hint;
 use casm::operand::{BinOpOperand, DerefOrImmediate, ResOperand};
 use num_bigint::BigInt;
 use num_traits::FromPrimitive;
@@ -34,22 +33,17 @@ pub fn build_storage_read(
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     }
 
-    let mut instructions = casm! {
-        [ap] = selector, ap++;
-        [ap] = [[system_base] + system_offset];
+    let instructions = casm! {
+        [ap] = selector;
+        [ap] = [[system_base] + system_offset], ap++;
         storage_address = [[system_base] + (system_offset + 1)];
+        %{ syscall_handler.syscall(segments=segments, syscall_ptr=[system_base] + system_offset) %}
+        ap += 0;
     }
     .instructions;
 
-    instructions.last_mut().unwrap().hints = vec![Hint::SystemCall {
-        system: ResOperand::BinOp(BinOpOperand {
-            op: casm::operand::Operation::Add,
-            a: system_base,
-            b: DerefOrImmediate::Immediate(BigInt::from_i16(system_offset).unwrap()),
-        }),
-    }];
-
     let output_expressions = [vec![
+        // System
         ReferenceExpression {
             cells: vec![CellExpression::BinOp(BinOpExpression {
                 op: FeltBinaryOperator::Add,
@@ -57,6 +51,7 @@ pub fn build_storage_read(
                 b: DerefOrImmediate::Immediate(BigInt::from_i16(system_offset).unwrap() + 3),
             })],
         },
+        // Read value
         ReferenceExpression {
             cells: vec![CellExpression::DoubleDeref(system_base, system_offset + 2)],
         },
