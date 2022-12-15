@@ -45,6 +45,7 @@ pub fn build(
         Uint128Concrete::FromFelt(_) => build_uint128_from_felt(builder),
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
         Uint128Concrete::LessThan(_) => build_uint128_lt(builder),
+        Uint128Concrete::Equal(_) => build_uint128_eq(builder),
         Uint128Concrete::LessThanOrEqual(_) => build_uint128_le(builder),
     }
 }
@@ -349,6 +350,58 @@ fn build_uint128_lt(
                 .into_iter()
             })
             .into_iter(),
+    ))
+}
+
+// Handle uint128 equality check.
+fn build_uint128_eq(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let (a, b) = match builder.refs {
+        [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
+            (try_unpack_deref(expr_a)?, try_unpack_deref(expr_b)?)
+        }
+        refs => {
+            return Err(InvocationError::WrongNumberOfArguments {
+                expected: 2,
+                actual: refs.len(),
+            });
+        }
+    };
+
+    // The target line to jump to if a != b.
+    let target_statement_id = get_bool_comparison_target_statement_id(&builder);
+
+    let mut casm_builder = CasmBuilder::default();
+    let a = casm_builder.add_var(ResOperand::Deref(a));
+    let b = casm_builder.add_var(ResOperand::Deref(b));
+    casm_build_extend! {casm_builder,
+
+            // diff = a - b => (diff == 0) <==> (a == b)
+            alloc diff;
+            a = diff + b;
+
+            jump NotEqual if diff != 0;
+            jump Equal;
+        NotEqual:
+    };
+    let CasmBuildResult { instructions, awaiting_relocations, fallthrough_state, label_state } =
+        casm_builder.build();
+
+    // TODO(orizi): Extract the assertion out of the libfunc implementation.
+    assert_eq!(
+        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+        [fallthrough_state.ap_change, label_state["Equal"].ap_change]
+            .map(sierra_ap_change::ApChange::Known)
+    );
+    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
+    Ok(builder.build(
+        instructions,
+        vec![RelocationEntry {
+            instruction_idx: *relocation_index,
+            relocation: Relocation::RelativeStatementId(target_statement_id),
+        }],
+        vec![vec![].into_iter(), vec![].into_iter()].into_iter(),
     ))
 }
 
