@@ -18,6 +18,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn free_function_lowered(&self, free_function: FreeFunctionId) -> Maybe<Arc<Lowered>>;
 
     /// Aggregates module level semantic diagnostics.
+    // TODO(lior): Convert return type to `Maybe`.
     fn module_lowering_diagnostics(
         &self,
         module_id: ModuleId,

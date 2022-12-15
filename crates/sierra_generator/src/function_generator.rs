@@ -6,7 +6,7 @@ use std::collections::hash_map::Entry;
 use std::sync::Arc;
 
 use defs::ids::{FreeFunctionId, GenericFunctionId};
-use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
+use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use itertools::zip_eq;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::lib_func::LibFuncSignature;
@@ -68,7 +68,7 @@ fn get_function_code(
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = db.free_function_declaration_signature(function_id).to_maybe()?;
+    let signature = db.free_function_declaration_signature(function_id)?;
     let lowered_function = &*db.free_function_lowered(function_id)?;
     let block = &lowered_function.blocks[lowered_function.root?];
 

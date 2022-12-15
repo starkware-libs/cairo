@@ -44,7 +44,7 @@ pub fn find_contract_structs(db: &dyn SemanticGroup) -> Vec<ContractDeclaration>
 
             for item in module_items.items.values() {
                 if let ModuleItemId::Struct(struct_id) = item {
-                    if let Some(attrs) = db.struct_attributes(*struct_id) {
+                    if let Ok(attrs) = db.struct_attributes(*struct_id) {
                         if let [attr] = attrs.as_slice() {
                             if attr.id == "contract" {
                                 contracts.push(ContractDeclaration {
@@ -80,12 +80,12 @@ pub fn resolve_contract_impls(
     for expr in &contract.impls {
         match expr {
             ast::Expr::Path(path) => match resolver.resolve_concrete_path(&mut diagnostics, path) {
-                Some(ResolvedConcreteItem::Impl(concrete_impl_id)) => impls.push(concrete_impl_id),
-                Some(_item) => anyhow::bail!(
+                Ok(ResolvedConcreteItem::Impl(concrete_impl_id)) => impls.push(concrete_impl_id),
+                Ok(_item) => anyhow::bail!(
                     "`{}` is not an `impl`.",
                     path.as_syntax_node().get_text(syntax_db)
                 ),
-                None => {
+                Err(_) => {
                     anyhow::bail!(
                         "Failed to resolve `{}`.",
                         path.as_syntax_node().get_text(syntax_db)

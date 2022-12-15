@@ -16,7 +16,7 @@ use defs::ids::{
     FreeFunctionLongId, ImplLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleItemId,
     StructLongId, TraitLongId, UseLongId,
 };
-use diagnostics::{DiagnosticEntry, Diagnostics};
+use diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use filesystem::ids::{FileId, FileLongId};
 use filesystem::span::TextPosition;
@@ -601,8 +601,10 @@ fn get_expr_hint(
     }
     let expr_node = ast::Expr::from_syntax_node(syntax_db, node);
     // Lookup semantic expression.
-    let expr_id =
-        db.lookup_expr_by_ptr(free_function_id, expr_node.stable_ptr()).on_none(|| {
+    let expr_id = db
+        .lookup_expr_by_ptr(free_function_id, expr_node.stable_ptr())
+        .to_option()
+        .on_none(|| {
             eprintln!("Hover failed. Semantic model not found for expression.");
         })?;
     let semantic_expr = db.expr_semantic(free_function_id, expr_id);

@@ -8,7 +8,9 @@ use defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
-use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
+use diagnostics::{
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
+};
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
@@ -27,17 +29,25 @@ impl SemanticDiagnostics {
     pub fn build(self) -> Diagnostics<SemanticDiagnostic> {
         self.diagnostics.build()
     }
-    pub fn report<TNode: TypedSyntaxNode>(&mut self, node: &TNode, kind: SemanticDiagnosticKind) {
+    pub fn report<TNode: TypedSyntaxNode>(
+        &mut self,
+        node: &TNode,
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded {
         self.diagnostics.add(SemanticDiagnostic {
             stable_location: StableLocation::from_ast(self.module_file_id, node),
             kind,
-        });
+        })
     }
-    pub fn report_by_ptr(&mut self, stable_ptr: SyntaxStablePtrId, kind: SemanticDiagnosticKind) {
+    pub fn report_by_ptr(
+        &mut self,
+        stable_ptr: SyntaxStablePtrId,
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded {
         self.diagnostics.add(SemanticDiagnostic {
             stable_location: StableLocation::new(self.module_file_id, stable_ptr),
             kind,
-        });
+        })
     }
 }
 

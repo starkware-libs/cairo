@@ -193,7 +193,7 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
 
             for item in module_items.items.values() {
                 if let ModuleItemId::FreeFunction(func_id) = item {
-                    if let Some(attrs) = db.free_function_declaration_attributes(*func_id) {
+                    if let Ok(attrs) = db.free_function_declaration_attributes(*func_id) {
                         let mut is_test = false;
                         let mut ignored = false;
                         let mut should_panic = false;

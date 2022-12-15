@@ -3,6 +3,7 @@ use std::sync::Arc;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
 use defs::ids::{ModuleId, ModuleItemId};
+use diagnostics::ToOption;
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;
@@ -41,7 +42,7 @@ fn test_resolve_path() {
     let expr_formatter = ExprFormatter { db, free_function_id };
     let body = db.free_function_definition_body(free_function_id);
     assert_eq!(
-        format!("{:?}", body.debug(&expr_formatter)),
+        format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
          FunctionCall(ExprFunctionCall { function: test::bar<Type((core::felt, Q)),>, ref_args: \
          [], args: [Var(ExprVar { var: ParamId(test::value), ty: test::S::<core::felt> })], ty: \
