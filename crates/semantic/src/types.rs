@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId};
-use diagnostics::{skip_diagnostic, Maybe};
+use diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use itertools::Itertools;
 use syntax::node::ast;
 use utils::OptionFrom;
@@ -23,7 +23,7 @@ pub enum TypeLongId {
     /// during inference.
     Tuple(Vec<TypeId>),
     GenericParameter(GenericParamId),
-    Missing,
+    Missing(DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
     fn option_from(other: TypeLongId) -> Option<Self> {
@@ -33,11 +33,17 @@ impl OptionFrom<TypeLongId> for ConcreteTypeId {
 
 define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type);
 impl TypeId {
-    pub fn missing(db: &dyn SemanticGroup) -> Self {
-        db.intern_type(TypeLongId::Missing)
+    pub fn missing(db: &dyn SemanticGroup, diag_added: DiagnosticAdded) -> Self {
+        db.intern_type(TypeLongId::Missing(diag_added))
     }
+
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         db.lookup_intern_type(*self).format(db)
+    }
+
+    /// Returns `true` if the type is [TypeLongId::Missing].
+    pub fn is_missing(&self, db: &dyn SemanticGroup) -> bool {
+        matches!(db.lookup_intern_type(*self), TypeLongId::Missing(_))
     }
 }
 impl TypeLongId {
@@ -54,7 +60,7 @@ impl TypeLongId {
             TypeLongId::GenericParameter(generic_param) => {
                 generic_param.name(db.upcast()).to_string()
             }
-            TypeLongId::Missing => "<missing>".to_string(),
+            TypeLongId::Missing(_) => "<missing>".to_string(),
         }
     }
 }
@@ -210,7 +216,8 @@ pub fn resolve_type(
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, resolver, ty_syntax).unwrap_or_else(|_| TypeId::missing(db))
+    maybe_resolve_type(db, diagnostics, resolver, ty_syntax)
+        .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
 }
 pub fn maybe_resolve_type(
     db: &dyn SemanticGroup,
@@ -287,11 +294,11 @@ pub fn substitute_generics(
                 GenericArgumentId::Type(ty) => *ty,
                 GenericArgumentId::Literal(_) => {
                     // TODO(ilya): Add diagnostics: "Expected type. Got literal"
-                    TypeId::missing(db)
+                    TypeId::missing(db, skip_diagnostic())
                 }
             })
             .unwrap_or(ty),
-        TypeLongId::Missing => ty,
+        TypeLongId::Missing(_) => ty,
     }
 }
 
@@ -335,8 +342,8 @@ pub fn type_info(
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::GenericParameter(_) => todo!(),
-        TypeLongId::Missing => {
-            return Err(skip_diagnostic());
+        TypeLongId::Missing(diag_added) => {
+            return Err(diag_added);
         }
     })
 }
