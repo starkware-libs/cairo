@@ -403,7 +403,9 @@ fn lower_expr(
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, scope),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, scope),
         semantic::Expr::PropagateError(expr) => lower_expr_error_propagate(ctx, expr, scope),
-        semantic::Expr::Missing(_) => Err(LoweringFlowError::Failed(skip_diagnostic())),
+        semantic::Expr::Missing(semantic::ExprMissing { diag_added, .. }) => {
+            Err(LoweringFlowError::Failed(*diag_added))
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 use debug::DebugWithDb;
 use defs::ids::{MemberId, StructId, VarId};
+use diagnostics::DiagnosticAdded;
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Id;
 use num_bigint::BigInt;
@@ -273,4 +274,6 @@ pub struct ExprMissing {
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,
+    #[hide_field_debug_with_db]
+    pub diag_added: DiagnosticAdded,
 }
