@@ -285,11 +285,10 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [fp + -4], ap++;
                 [ap + 0] = 1, ap++;
                 // Statement # 27 - Getting gas for the main loop.
-                %{ memory[ap + 0] = 799 < memory[ap + -2] %}
-                jmp rel 9 if [ap + 0] != 0, ap++;
-                [ap + -3] = [ap + 0] + 799, ap++;
-                [ap + 0] = [ap + -1] * -1, ap++;
-                [ap + -1] = [[ap + -6] + 0];
+                %{ memory[ap + 0] = 800 <= memory[ap + -2] %}
+                jmp rel 7 if [ap + 0] != 0, ap++;
+                [ap + 0] = [ap + -3] + 340282366920938463463374607431768210656, ap++;
+                [ap + -1] = [[ap + -5] + 0];
                 jmp rel 18;
 
                 // Statement # 28
@@ -301,14 +300,14 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [ap + -6] + 1, ap++;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -6] + [ap + -12], ap++;
-                jmp rel -18 if [ap + -4] != 0;
+                jmp rel -16 if [ap + -4] != 0;
                 // Statement # 48 - n == 0, so we can return the latest a.
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3] + 5, ap++;
                 [ap + 0] = [ap + -3], ap++;
                 ret;
-                [ap + 0] = [ap + -6] + 1, ap++;
-                [ap + 0] = [ap + -6], ap++;
+                [ap + 0] = [ap + -5] + 1, ap++;
+                [ap + 0] = [ap + -5], ap++;
                 [ap + 0] = -1, ap++;
                 ret;
             "};
@@ -333,10 +332,9 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
 
                 // Statement # 17 - Get gas for the recursive calls.
-                %{ memory[ap + 0] = 3699 < memory[fp + -4] %}
-                jmp rel 9 if [ap + 0] != 0, ap++;
-                [fp + -4] = [ap + 0] + 3699, ap++;
-                [ap + 0] = [ap + -1] * -1, ap++;
+                %{ memory[ap + 0] = 3700 <= memory[fp + -4] %}
+                jmp rel 7 if [ap + 0] != 0, ap++;
+                [ap + 0] = [fp + -4] + 340282366920938463463374607431768207756, ap++;
                 [ap + -1] = [[fp + -5] + 0];
                 jmp rel 25;
                 [fp + -4] = [ap + 0] + 3700, ap++;
@@ -348,12 +346,12 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [ap + -4], ap++;
                 [ap + -7] = [fp + 4] + 1;
                 [ap + 0] = [ap + -7], ap++;
-                call rel -38;
+                call rel -36;
                 [fp + 5] = [ap + -1];
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [fp + 4], ap++;
-                call rel -44;
+                call rel -42;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [fp + 5] + [ap + -3], ap++;

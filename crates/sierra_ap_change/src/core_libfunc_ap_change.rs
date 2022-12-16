@@ -45,7 +45,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             vec![ApChange::FunctionCall(libfunc.function.id.clone())]
         }
         CoreConcreteLibFunc::Gas(libfunc) => match libfunc {
-            GasConcreteLibFunc::GetGas(_) => vec![ApChange::Known(2), ApChange::Known(3)],
+            GasConcreteLibFunc::GetGas(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             GasConcreteLibFunc::RefundGas(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibFunc::Uint128(libfunc) => match libfunc {
