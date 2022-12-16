@@ -1,6 +1,6 @@
 use super::as_single_type;
-use super::integer::Uint128Type;
 use super::range_check::RangeCheckType;
+use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
