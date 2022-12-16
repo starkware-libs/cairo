@@ -83,24 +83,33 @@ fn build_builtin_get_gas(
         .clone()
         .map(|(_, requested_count)| if requested_count == 1 { 2 } else { 3 })
         .sum();
-    let optimized_out_writes = (BuiltinCostGetGasLibFunc::max_cost() as i64) - (initial_writes + 1);
+    let optimized_out_writes =
+        (BuiltinCostGetGasLibFunc::cost_computation_max_steps() as i64) - initial_writes;
 
     let requested_steps = variable_values[&(builder.idx, CostTokenType::Step)];
+    // The number of instructions that we may choose to add `ap++` to, not already taken by the
+    // basic flow required allocs.
+    let free_incrementing_instruction_count = 1;
     // The cost of this libfunc is computed assuming all the cost types are used (and all are > 1).
     // Since in practice this is rarely the case, refund according to the actual number of steps
     // produced by the libfunc, with an additional cost for `ap += <fix size>` if required.
-    let refund_steps: i64 = optimized_out_writes;
+    let refund_steps: i64 = if optimized_out_writes <= free_incrementing_instruction_count {
+        optimized_out_writes
+    } else {
+        optimized_out_writes - 1
+    };
     assert!(
         refund_steps >= 0,
         "Internal compiler error: BuiltinCostGetGasLibFunc::max_cost() is wrong."
     );
-    let step_requested_count = casm_builder
+    let mut total_requested_count = casm_builder
         .add_var(ResOperand::Immediate(BigInt::from((requested_steps - refund_steps) * STEP_COST)));
-    casm_build_extend! {casm_builder,
-        alloc step_requested_count_cell;
-        assert step_requested_count_cell = step_requested_count;
-    };
-    let mut total_requested_count = step_requested_count_cell;
+    for _ in 0..optimized_out_writes {
+        casm_builder.alloc_var();
+    }
+    if optimized_out_writes > free_incrementing_instruction_count {
+        casm_builder.add_ap((optimized_out_writes - free_incrementing_instruction_count) as usize);
+    }
     for (token_type, requested_count) in token_requested_counts {
         let offset = token_type.offset_in_builtin_costs();
         // Fetch the cost of a single instance.
@@ -126,11 +135,11 @@ fn build_builtin_get_gas(
         // Add to the cumulative sum.
         casm_build_extend! {casm_builder,
             alloc updated_total_requested_count;
-            assert updated_total_requested_count = total_requested_count + multi_cost;
+            assert updated_total_requested_count = multi_cost + total_requested_count;
         };
         total_requested_count = updated_total_requested_count;
     }
-    let minus_one = casm_builder.add_var(ResOperand::Immediate(BigInt::from(-1)));
+    let uint128_limit = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
 
     casm_build_extend! {casm_builder,
         alloc has_enough_gas;
@@ -138,9 +147,9 @@ fn build_builtin_get_gas(
         jump HasEnoughGas if has_enough_gas != 0;
         // In this case amount > gas_counter_value, so amount - gas_counter_value - 1 >= 0.
         alloc gas_diff;
-        assert total_requested_count = gas_diff + gas_counter;
+        assert gas_counter = gas_diff + total_requested_count;
         alloc fixed_gas_diff;
-        assert fixed_gas_diff = gas_diff + minus_one;
+        assert fixed_gas_diff = gas_diff + uint128_limit;
         assert *(range_check++) = fixed_gas_diff;
         jump Failure;
         HasEnoughGas:
