@@ -168,9 +168,9 @@ test_expr_diagnostics
 //! > expr_code
 {
     let a = 123_felt;
-    let a = 123_uint128;
+    let a = 123_u128;
     let b = 123_NonZero;
-    let b = 123_uint129;
+    let b = 123_u129;
 }
 
 //! > module_code
@@ -187,5 +187,5 @@ error: A literal with this type cannot be created.
 
 error: Unknown type.
  --> lib.cairo:8:13
-    let b = 123_uint129;
-            ^*********^
+    let b = 123_u129;
+            ^******^
