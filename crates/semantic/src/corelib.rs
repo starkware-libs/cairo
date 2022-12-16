@@ -273,55 +273,55 @@ pub fn core_binary_operator(
     type2.check_not_missing(db)?;
 
     let felt_ty = core_felt_ty(db);
-    let uint128_ty = get_core_ty_by_name(db, "uint128".into(), vec![]);
-    let uint256_ty = get_core_ty_by_name(db, "uint256".into(), vec![]);
+    let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
+    let u256_ty = get_core_ty_by_name(db, "u256".into(), vec![]);
     let bool_ty = core_bool_ty(db);
     let unsupported_operator = |op: &str| {
         Ok(Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 }))
     };
     let function_name = match binary_op {
         BinaryOperator::Plus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_add",
-        BinaryOperator::Plus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_add",
-        BinaryOperator::Plus(_) if [type1, type2] == [uint256_ty, uint256_ty] => "uint256_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_add",
         BinaryOperator::Plus(_) => return unsupported_operator("+"),
         BinaryOperator::Minus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_sub",
-        BinaryOperator::Minus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_sub",
-        BinaryOperator::Minus(_) if [type1, type2] == [uint256_ty, uint256_ty] => "uint256_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_sub",
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
         BinaryOperator::Mul(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_mul",
-        BinaryOperator::Mul(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_mul",
-        BinaryOperator::Mul(_) if [type1, type2] == [uint256_ty, uint256_ty] => "uint256_mul",
+        BinaryOperator::Mul(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_mul",
+        BinaryOperator::Mul(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_mul",
         BinaryOperator::Mul(_) => return unsupported_operator("*"),
         BinaryOperator::Div(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_div",
-        BinaryOperator::Div(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_div",
+        BinaryOperator::Div(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_div",
         BinaryOperator::Div(_) => return unsupported_operator("/"),
-        BinaryOperator::Mod(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_mod",
+        BinaryOperator::Mod(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_mod",
         BinaryOperator::Mod(_) => return unsupported_operator("%"),
         BinaryOperator::EqEq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_eq",
         BinaryOperator::EqEq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_eq",
-        BinaryOperator::EqEq(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_eq",
-        BinaryOperator::EqEq(_) if [type1, type2] == [uint256_ty, uint256_ty] => "uint256_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_eq",
         BinaryOperator::EqEq(_) => return unsupported_operator("=="),
         BinaryOperator::Neq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ne",
         BinaryOperator::Neq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_ne",
-        BinaryOperator::Neq(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_ne",
-        BinaryOperator::Neq(_) if [type1, type2] == [uint256_ty, uint256_ty] => "uint256_ne",
+        BinaryOperator::Neq(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_ne",
+        BinaryOperator::Neq(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_ne",
         BinaryOperator::Neq(_) => return unsupported_operator("!="),
         BinaryOperator::And(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_and",
         BinaryOperator::And(_) => return unsupported_operator("&"),
         BinaryOperator::Or(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_or",
         BinaryOperator::Or(_) => return unsupported_operator("|"),
         BinaryOperator::LE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_le",
-        BinaryOperator::LE(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_le",
+        BinaryOperator::LE(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_le",
         BinaryOperator::LE(_) => return unsupported_operator("<="),
         BinaryOperator::GE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ge",
-        BinaryOperator::GE(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_ge",
+        BinaryOperator::GE(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_ge",
         BinaryOperator::GE(_) => return unsupported_operator(">="),
         BinaryOperator::LT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_lt",
-        BinaryOperator::LT(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_lt",
+        BinaryOperator::LT(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_lt",
         BinaryOperator::LT(_) => return unsupported_operator("<"),
         BinaryOperator::GT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_gt",
-        BinaryOperator::GT(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_gt",
+        BinaryOperator::GT(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_gt",
         BinaryOperator::GT(_) => return unsupported_operator(">"),
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
@@ -420,11 +420,11 @@ pub fn try_get_const_libfunc_name_by_type(
     ty: TypeId,
 ) -> Result<String, SemanticDiagnosticKind> {
     let felt_ty = core_felt_ty(db);
-    let uint128_ty = get_core_ty_by_name(db, "uint128".into(), vec![]);
+    let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
     if ty == felt_ty {
         Ok("felt_const".into())
-    } else if ty == uint128_ty {
-        Ok("uint128_const".into())
+    } else if ty == u128_ty {
+        Ok("u128_const".into())
     } else {
         Err(SemanticDiagnosticKind::NoLiteralFunctionFound)
     }

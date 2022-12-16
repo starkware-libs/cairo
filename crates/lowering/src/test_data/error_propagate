@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(a: Result::<Result::<uint128, felt>, felt>) -> Result::<felt, felt> {
+func foo(a: Result::<Result::<u128, felt>, felt>) -> Result::<felt, felt> {
     a??;
     Result::<felt, felt>::Ok(1)
 }
@@ -20,7 +20,7 @@ foo
 
 //! > lowering_format
 blk0:
-Inputs: v1: core::result::Result::<core::integer::uint128, core::felt>
+Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
 Statements:
 Drops:
 End:
@@ -35,7 +35,7 @@ End:
   Return(v3)
 
 blk2:
-Inputs: v5: core::integer::uint128
+Inputs: v5: core::integer::u128
 Statements:
 Drops:
 End:
@@ -50,13 +50,13 @@ End:
   Return(v7)
 
 blk4 (root):
-Inputs: v0: core::result::Result::<core::result::Result::<core::integer::uint128, core::felt>, core::felt>
+Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
 Statements:
-  (v4: core::result::Result::<core::integer::uint128, core::felt>) <- match_enum(v0) {
+  (v4: core::result::Result::<core::integer::u128, core::felt>) <- match_enum(v0) {
     Result::Ok => blk0,
     Result::Err => blk1,
   }
-  (v8: core::integer::uint128) <- match_enum(v4) {
+  (v8: core::integer::u128) <- match_enum(v4) {
     Result::Ok => blk2,
     Result::Err => blk3,
   }
