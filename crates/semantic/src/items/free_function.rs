@@ -239,15 +239,18 @@ pub fn priv_free_function_definition_data(
         environment,
     );
     let expr = compute_expr_block_semantic(&mut ctx, &syntax.body(db.upcast()))?;
-    if expr.ty() != declaration.signature.return_type
-        && !expr.ty().is_missing(db)
-        && expr.ty() != never_ty(db)
+    let expr_ty = expr.ty();
+    let signature_return_ty = declaration.signature.return_type;
+    if expr_ty != signature_return_ty
+        && !expr_ty.is_missing(db)
+        && !signature_return_ty.is_missing(db)
+        && expr_ty != never_ty(db)
     {
         ctx.diagnostics.report(
             &syntax.body(db.upcast()),
             SemanticDiagnosticKind::WrongReturnType {
-                expected_ty: declaration.signature.return_type,
-                actual_ty: expr.ty(),
+                expected_ty: signature_return_ty,
+                actual_ty: expr_ty,
             },
         );
     }

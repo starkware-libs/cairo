@@ -1081,14 +1081,11 @@ pub fn compute_statement_semantic(
         ast::Statement::Return(return_syntax) => {
             let expr_syntax = return_syntax.expr(syntax_db);
             let expr = compute_expr_semantic(ctx, &expr_syntax);
-            if expr.ty() != ctx.signature.return_type {
-                ctx.diagnostics.report(
-                    &expr_syntax,
-                    WrongReturnType {
-                        expected_ty: ctx.signature.return_type,
-                        actual_ty: expr.ty(),
-                    },
-                );
+            let expr_ty = expr.ty();
+            let expected_ty = ctx.signature.return_type;
+            if expr_ty != expected_ty && !expected_ty.is_missing(db) && !expr_ty.is_missing(db) {
+                ctx.diagnostics
+                    .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
             }
             semantic::Statement::Return(semantic::StatementReturn {
                 expr: ctx.exprs.alloc(expr),
