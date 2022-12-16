@@ -48,7 +48,7 @@ fn test_enum() {
     let module_id = test_module.module_id;
 
     let enum_id = extract_matches!(
-        db.module_item_by_name(module_id, "A".into()).unwrap(),
+        db.module_item_by_name(module_id, "A".into()).unwrap().unwrap(),
         ModuleItemId::Enum
     );
     let actual = db

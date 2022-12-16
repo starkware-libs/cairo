@@ -135,7 +135,7 @@ fn test_member_access() {
     .unwrap();
     let db = &db_val;
     let foo_id = extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap(),
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     );
     let expr_formatter = ExprFormatter { db, free_function_id: foo_id };
@@ -581,7 +581,7 @@ fn test_function_body() {
     )
     .unwrap();
     let db = &db_val;
-    let item_id = db.module_item_by_name(test_function.module_id, "foo".into()).unwrap();
+    let item_id = db.module_item_by_name(test_function.module_id, "foo".into()).unwrap().unwrap();
 
     let function_id = extract_matches!(item_id, ModuleItemId::FreeFunction);
     let body = db.free_function_definition_body(function_id).unwrap();

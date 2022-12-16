@@ -142,7 +142,7 @@ fn get_entry_points(
                 impl_module_id,
                 format!("{}{}", WRAPPER_PREFIX, &function_name).into(),
             )
-            .to_option()
+            .expect("Failed to load module.")
             .with_context(|| format!("The `{}` entry point was not found.", function_name))?;
 
         let free_func_id = try_extract_matches!(item, ModuleItemId::FreeFunction)

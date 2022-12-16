@@ -24,9 +24,6 @@ error: Path not found.
 
 //! > Test trying to access a function from a module whose file is missing.
 
-//! > test_comments
-// TODO(lior): Remove the "Path not found" diagnostic on "bar".
-
 //! > test_function_name
 test_expr_diagnostics
 
@@ -43,8 +40,3 @@ error: File not found.
  --> lib.cairo:1:1
 mod module_does_not_exist;
 ^************************^
-
-error: Path not found.
- --> lib.cairo:3:24
-module_does_not_exist::bar()
-                       ^*^

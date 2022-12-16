@@ -81,7 +81,13 @@ pub trait DefsGroup:
     fn module_data(&self, module_id: ModuleId) -> Maybe<ModuleData>;
     fn module_submodules(&self, module_id: ModuleId) -> Maybe<Vec<ModuleId>>;
     fn module_items(&self, module_id: ModuleId) -> Maybe<ModuleItems>;
-    fn module_item_by_name(&self, module_id: ModuleId, name: SmolStr) -> Maybe<ModuleItemId>;
+    /// Returns [Maybe::Err] if the module was not properly resolved.
+    /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
+    fn module_item_by_name(
+        &self,
+        module_id: ModuleId,
+        name: SmolStr,
+    ) -> Maybe<Option<ModuleItemId>>;
 
     // Plugins.
     #[salsa::input]
@@ -399,7 +405,7 @@ fn module_item_by_name(
     db: &dyn DefsGroup,
     module_id: ModuleId,
     name: SmolStr,
-) -> Maybe<ModuleItemId> {
+) -> Maybe<Option<ModuleItemId>> {
     let module_items = db.module_items(module_id)?;
-    module_items.items.get(&name).copied().to_maybe()
+    Ok(module_items.items.get(&name).copied())
 }

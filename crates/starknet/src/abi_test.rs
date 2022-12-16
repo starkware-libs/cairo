@@ -23,7 +23,7 @@ fn test_abi() {
 
     let db = &db_val;
     let trait_id = extract_matches!(
-        db.module_item_by_name(module_id, "MyAbi".into()).unwrap(),
+        db.module_item_by_name(module_id, "MyAbi".into()).unwrap().unwrap(),
         ModuleItemId::Trait
     );
     let abi = Contract::from_trait(db, trait_id).unwrap();

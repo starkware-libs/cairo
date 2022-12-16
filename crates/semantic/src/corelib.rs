@@ -39,7 +39,8 @@ pub fn try_get_core_ty_by_name(
     // This should not fail if the corelib is present.
     let module_item_id = db
         .module_item_by_name(core_module, name.clone())
-        .map_err(|_| SemanticDiagnosticKind::UnknownType)?;
+        .map_err(|_| SemanticDiagnosticKind::UnknownType)?
+        .ok_or(SemanticDiagnosticKind::UnknownType)?;
     let generic_type = match module_item_id {
         ModuleItemId::Use(use_id) => {
             db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
@@ -70,7 +71,7 @@ pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
     // This should not fail if the corelib is present.
     let generic_type = db
         .module_item_by_name(core_module, "bool".into())
-        .to_option()
+        .expect("Failed to load core lib.")
         .and_then(GenericTypeId::option_from)
         .expect("Type bool was not found in core lib.");
     db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
@@ -87,7 +88,7 @@ pub fn core_bool_enum(db: &dyn SemanticGroup) -> ConcreteEnumId {
     // This should not fail if the corelib is present.
     let enum_id = db
         .module_item_by_name(core_module, "bool".into())
-        .to_option()
+        .expect("Failed to load core lib.")
         .and_then(EnumId::option_from)
         .expect("Type bool was not found in core lib.");
     db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] })
@@ -167,7 +168,7 @@ pub fn get_enum_concrete_variant(
     variant_name: &str,
 ) -> ConcreteVariant {
     let module_id = core_module(db);
-    let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap();
+    let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap().unwrap();
     let enum_id = extract_matches!(enum_item, ModuleItemId::Enum);
     let concrete_enum_id = db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args });
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
@@ -186,7 +187,7 @@ pub fn never_ty(db: &dyn SemanticGroup) -> TypeId {
     // This should not fail if the corelib is present.
     let generic_type = db
         .module_item_by_name(core_module, "never".into())
-        .to_option()
+        .expect("Failed to load core lib.")
         .and_then(GenericTypeId::option_from)
         .expect("Type bool was not found in core lib.");
     db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
@@ -357,7 +358,8 @@ pub fn get_core_generic_function_id(db: &dyn SemanticGroup, name: SmolStr) -> Ge
     let core_module = db.core_module();
     let module_item_id = db
         .module_item_by_name(core_module, name.clone())
-        .unwrap_or_else(|_| panic!("Function '{name}' was not found in core lib."));
+        .expect("Failed to load core lib.")
+        .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
     match module_item_id {
         ModuleItemId::Use(use_id) => {
             db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
@@ -399,8 +401,10 @@ fn get_core_concrete_trait(
 fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
-    let use_id =
-        extract_matches!(db.module_item_by_name(core_module, name).unwrap(), ModuleItemId::Use);
+    let use_id = extract_matches!(
+        db.module_item_by_name(core_module, name).unwrap().unwrap(),
+        ModuleItemId::Use
+    );
     let trait_id =
         extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait);
     trait_id

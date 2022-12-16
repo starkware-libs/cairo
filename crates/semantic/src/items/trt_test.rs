@@ -24,7 +24,7 @@ fn test_trait() {
     .unwrap();
 
     let trait_id = extract_matches!(
-        db.module_item_by_name(test_module.module_id, "MyContract".into()).unwrap(),
+        db.module_item_by_name(test_module.module_id, "MyContract".into()).unwrap().unwrap(),
         ModuleItemId::Trait
     );
 
