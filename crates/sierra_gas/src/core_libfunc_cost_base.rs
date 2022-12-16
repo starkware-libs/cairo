@@ -12,14 +12,14 @@ use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
-use sierra::extensions::integer::{
-    IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
-    Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
-};
 use sierra::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use sierra::extensions::strct::StructConcreteLibFunc;
+use sierra::extensions::uint128::{
+    IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
+    Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
+};
 use sierra::program::Function;
 
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;

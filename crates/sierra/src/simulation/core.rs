@@ -21,15 +21,15 @@ use crate::extensions::felt::{
 };
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
 use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
-use crate::extensions::integer::{
-    IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
-    Uint128ConstConcreteLibFunc, Uint128OperationConcreteLibFunc,
-    Uint128OperationWithConstConcreteLibFunc,
-};
 use crate::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::strct::StructConcreteLibFunc;
+use crate::extensions::uint128::{
+    IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
+    Uint128ConstConcreteLibFunc, Uint128OperationConcreteLibFunc,
+    Uint128OperationWithConstConcreteLibFunc,
+};
 use crate::ids::FunctionId;
 
 // TODO(spapini): Proper errors when converting from bigint to u128.
