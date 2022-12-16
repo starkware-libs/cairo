@@ -1,7 +1,6 @@
-%{ memory[ap + 0] = 2799 < memory[fp + -6] %}
-jmp rel 9 if [ap + 0] != 0, ap++;
-[fp + -6] = [ap + 0] + 2799, ap++;
-[ap + 0] = [ap + -1] * -1, ap++;
+%{ memory[ap + 0] = 2800 <= memory[fp + -6] %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -6] + 340282366920938463463374607431768208656, ap++;
 [ap + -1] = [[fp + -7] + 0];
 jmp rel 10;
 [fp + -6] = [ap + 0] + 2800, ap++;
@@ -29,7 +28,7 @@ jmp rel 27;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -5] + [fp + -4], ap++;
 [fp + -3] = [ap + 0] + 1, ap++;
-call rel -44;
+call rel -42;
 jmp rel 7 if [ap + -3] != 0;
 jmp rel 2;
 [ap + 0] = [ap + -2], ap++;
