@@ -168,7 +168,7 @@ test_expr_diagnostics
 //! > expr_code
 {
     let a = 123_felt;
-    let a = 123_uint128;
+    let a = 123_u128;
     let b = 123_NonZero;
     let b = 123_uint129;
 }
