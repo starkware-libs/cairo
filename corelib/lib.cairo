@@ -88,7 +88,7 @@ func felt_ne(a: felt, b: felt) -> bool nopanic {
 
 // TODO(orizi): Change to extern when added.
 func felt_lt(a: felt, b: felt) -> bool implicits(RangeCheck) {
-    uint128_lt(uint128_from_felt(a), uint128_from_felt(b))
+    u128_lt(u128_from_felt(a), u128_from_felt(b))
 }
 
 func felt_gt(a: felt, b: felt) -> bool implicits(RangeCheck) {
@@ -134,30 +134,30 @@ use option::Option;
 
 // Integer.
 mod integer;
-use integer::uint128;
-use integer::uint128_const;
-use integer::uint128_from_felt;
-use integer::uint128_to_felt;
-use integer::uint128_add;
-use integer::uint128_sub;
-use integer::uint128_mul;
-use integer::uint128_as_non_zero;
-use integer::uint128_div;
-use integer::uint128_mod;
-use integer::uint128_lt;
-use integer::uint128_le;
-use integer::uint128_gt;
-use integer::uint128_ge;
-use integer::uint128_eq;
-use integer::uint128_ne;
-use integer::uint128_jump_nz;
-use integer::uint256;
-use integer::uint256_add;
-use integer::uint256_sub;
-use integer::uint256_mul;
-use integer::uint256_eq;
-use integer::uint256_ne;
-use integer::uint256_from_felt;
+use integer::u128;
+use integer::u128_const;
+use integer::u128_from_felt;
+use integer::u128_to_felt;
+use integer::u128_add;
+use integer::u128_sub;
+use integer::u128_mul;
+use integer::u128_as_non_zero;
+use integer::u128_div;
+use integer::u128_mod;
+use integer::u128_lt;
+use integer::u128_le;
+use integer::u128_gt;
+use integer::u128_ge;
+use integer::u128_eq;
+use integer::u128_ne;
+use integer::u128_jump_nz;
+use integer::u256;
+use integer::u256_add;
+use integer::u256_sub;
+use integer::u256_mul;
+use integer::u256_eq;
+use integer::u256_ne;
+use integer::u256_from_felt;
 
 // Gas.
 mod gas;
