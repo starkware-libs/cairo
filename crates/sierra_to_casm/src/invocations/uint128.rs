@@ -5,7 +5,7 @@ use casm::{casm, casm_build_extend};
 use itertools::chain;
 use num_bigint::BigInt;
 use sierra::extensions::felt::FeltBinaryOperator;
-use sierra::extensions::integer::{
+use sierra::extensions::uint128::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
     Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
 };
