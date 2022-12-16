@@ -263,7 +263,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
             indoc! {"
                 jmp rel 8 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4] + 14, ap++;
+                [ap + 0] = [fp + -4] + 13, ap++;
                 [ap + 0] = 1, ap++;
                 ret;
 
@@ -271,7 +271,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [fp + -3] = [ap + 0] + 1, ap++;
                 jmp rel 8 if [ap + -1] != 0;
                 [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4] + 12, ap++;
+                [ap + 0] = [fp + -4] + 11, ap++;
                 [ap + 0] = 1, ap++;
                 ret;
 
@@ -303,7 +303,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 jmp rel -16 if [ap + -4] != 0;
                 // Statement # 48 - n == 0, so we can return the latest a.
                 [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3] + 5, ap++;
+                [ap + 0] = [ap + -3] + 4, ap++;
                 [ap + 0] = [ap + -3], ap++;
                 ret;
                 [ap + 0] = [ap + -5] + 1, ap++;
@@ -318,7 +318,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = 1, ap++;
                 jmp rel 7 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4] + 7, ap++;
+                [ap + 0] = [fp + -4] + 6, ap++;
                 [ap + 0] = [ap + -3], ap++;
                 ret;
 
@@ -327,17 +327,17 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 jmp rel 7 if [ap + -1] != 0;
                 [ap + 0] = [fp + -5], ap++;
                 // Statement # 12 - n == 1, so we return updated gb and 1.
-                [ap + 0] = [fp + -4] + 5, ap++;
+                [ap + 0] = [fp + -4] + 4, ap++;
                 [ap + 0] = [ap + -4], ap++;
                 ret;
 
                 // Statement # 17 - Get gas for the recursive calls.
-                %{ memory[ap + 0] = 3700 <= memory[fp + -4] %}
+                %{ memory[ap + 0] = 3600 <= memory[fp + -4] %}
                 jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [fp + -4] + 340282366920938463463374607431768207756, ap++;
+                [ap + 0] = [fp + -4] + 340282366920938463463374607431768207856, ap++;
                 [ap + -1] = [[fp + -5] + 0];
                 jmp rel 25;
-                [fp + -4] = [ap + 0] + 3700, ap++;
+                [fp + -4] = [ap + 0] + 3600, ap++;
                 [ap + -1] = [[fp + -5] + 0];
 
                 // Statement # 21 - Performing both recursive calculations and returning their sum.
