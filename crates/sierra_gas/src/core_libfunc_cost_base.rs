@@ -60,7 +60,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Gas(GetGas(_)) => {
             vec![
                 ops.sub(ops.const_cost(3), ops.statement_var_cost(CostTokenType::Step)),
-                ops.const_cost(5),
+                ops.const_cost(4),
             ]
         }
         Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Step)],
