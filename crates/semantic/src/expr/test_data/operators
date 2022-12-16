@@ -20,11 +20,6 @@ error: Binary operator '*' is not supported for types 'test::MyType' and 'test::
     a + a * a;
           ^
 
-error: Binary operator '+' is not supported for types 'test::MyType' and '<missing>'.
- --> lib.cairo:3:7
-    a + a * a;
-      ^
-
 //! > ==========================================================================
 
 //! > Test operators.

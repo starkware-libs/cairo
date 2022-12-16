@@ -1,5 +1,5 @@
 use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
-use diagnostics::ToOption;
+use diagnostics::{Maybe, ToOption};
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
 use syntax::node::ast::{self, BinaryOperator, UnaryOperator};
@@ -265,15 +265,18 @@ pub fn core_binary_operator(
     binary_op: &BinaryOperator,
     type1: TypeId,
     type2: TypeId,
-) -> Result<FunctionId, SemanticDiagnosticKind> {
+) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
     // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
     //   traits.
+    type1.check_not_missing(db)?;
+    type2.check_not_missing(db)?;
+
     let felt_ty = core_felt_ty(db);
     let uint128_ty = get_core_ty_by_name(db, "uint128".into(), vec![]);
     let uint256_ty = get_core_ty_by_name(db, "uint256".into(), vec![]);
     let bool_ty = core_bool_ty(db);
     let unsupported_operator = |op: &str| {
-        Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 })
+        Ok(Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 }))
     };
     let function_name = match binary_op {
         BinaryOperator::Plus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_add",
@@ -319,9 +322,9 @@ pub fn core_binary_operator(
         BinaryOperator::GT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_gt",
         BinaryOperator::GT(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_gt",
         BinaryOperator::GT(_) => return unsupported_operator(">"),
-        _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
+        _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
-    Ok(get_core_function_id(db, function_name.into(), vec![]))
+    Ok(Ok(get_core_function_id(db, function_name.into(), vec![])))
 }
 
 pub fn felt_eq(db: &dyn SemanticGroup) -> FunctionId {
