@@ -1,0 +1,74 @@
+//! > Unknown return type
+
+//! > test_comments
+// TODO(lior): Remove the "Unexpected return type" diagnostic.
+// TODO(lior): Remove the "Not a struct" diagnostic.
+// TODO(lior): Fix the "Path not found" diagnostic wording.
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{}
+
+//! > module_code
+func foo1() -> UnknownType {
+    0
+}
+func foo2() -> UnknownType {
+    return 0;
+}
+func foo3() -> felt {
+    UnknownType{}
+}
+func foo4() -> felt {
+    return UnknownType{};
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Path not found.
+ --> lib.cairo:1:16
+func foo1() -> UnknownType {
+               ^*********^
+
+error: Unexpected return type. Expected: "<missing>", found: "core::felt".
+ --> lib.cairo:1:28
+func foo1() -> UnknownType {
+                           ^
+
+error: Path not found.
+ --> lib.cairo:4:16
+func foo2() -> UnknownType {
+               ^*********^
+
+error: Unexpected return type. Expected: "<missing>", found: "core::felt".
+ --> lib.cairo:5:12
+    return 0;
+           ^
+
+error: Path not found.
+ --> lib.cairo:8:5
+    UnknownType{}
+    ^*********^
+
+error: Not a struct.
+ --> lib.cairo:8:5
+    UnknownType{}
+    ^*********^
+
+error: Path not found.
+ --> lib.cairo:11:12
+    return UnknownType{};
+           ^*********^
+
+error: Not a struct.
+ --> lib.cairo:11:12
+    return UnknownType{};
+           ^*********^
+
+error: Unexpected return type. Expected: "core::felt", found: "<missing>".
+ --> lib.cairo:11:12
+    return UnknownType{};
+           ^***********^
