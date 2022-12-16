@@ -72,22 +72,17 @@ fn build_get_gas(
         b: deref_or_immediate!(range_check_offset),
     }));
     let gas_counter = casm_builder.add_var(ResOperand::Deref(gas_counter_value));
-    let requested_count_minus_1 =
-        casm_builder.add_var(ResOperand::Immediate((requested_count - 1).into()));
+    let gas_counter_fix =
+        casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1 - requested_count));
     let requested_count = casm_builder.add_var(ResOperand::Immediate(requested_count.into()));
-    let minus_1 = casm_builder.add_var(ResOperand::Immediate((-1).into()));
 
     casm_build_extend! {casm_builder,
         alloc has_enough_gas;
-        hint TestLessThan {lhs: requested_count_minus_1, rhs: gas_counter} into {dst: has_enough_gas};
+        hint TestLessThanOrEqual {lhs: requested_count, rhs: gas_counter} into {dst: has_enough_gas};
         jump HasEnoughGas if has_enough_gas != 0;
-        // requested_count - 1 >= gas_counter_value => requested_count > gas_counter:
-        // TODO(orizi): Make into one command when wider constants are supported.
         alloc gas_diff;
-        assert gas_counter = gas_diff + requested_count_minus_1;
-        alloc minus_gas_diff;
-        assert minus_gas_diff = gas_diff * minus_1;
-        assert *(range_check++) = minus_gas_diff;
+        assert gas_diff = gas_counter + gas_counter_fix;
+        assert *(range_check++) = gas_diff;
         jump Failure;
         HasEnoughGas:
         alloc updated_gas;
