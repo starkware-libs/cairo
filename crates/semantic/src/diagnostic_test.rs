@@ -45,7 +45,7 @@ fn test_inline_module_diagnostics() {
         db,
         indoc! {"
             mod a {
-                func bad() -> uint128 {
+                func bad() -> u128 {
                     return 5;
                 }
             }
@@ -58,7 +58,7 @@ fn test_inline_module_diagnostics() {
     assert_eq!(
         db.module_semantic_diagnostics(*submodule_id).unwrap().format(db),
         indoc! {r#"
-            error: Unexpected return type. Expected: "core::integer::uint128", found: "core::felt".
+            error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt".
              --> lib.cairo:3:16
                     return 5;
                            ^

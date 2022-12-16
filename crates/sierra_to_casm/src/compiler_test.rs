@@ -182,19 +182,19 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
             "branch align")]
 #[test_case(indoc!{"
                 type RangeCheck = RangeCheck;
-                type uint128 = uint128;
+                type u128 = u128;
 
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
-                libfunc uint128_lt = uint128_lt;
-                libfunc store_uint128 = store_temp<uint128>;
+                libfunc u128_lt = u128_lt;
+                libfunc store_u128 = store_temp<u128>;
                 libfunc store_rc = store_temp<RangeCheck>;
 
                 revoke_ap_tracking() -> ();
-                uint128_lt([1], [2], [3]) {fallthrough([1]) 2([1]) };
+                u128_lt([1], [2], [3]) {fallthrough([1]) 2([1]) };
                 store_rc([1]) -> ([1]);
                 return ([1]);
 
-                test_program@0([1]: RangeCheck, [2]: uint128, [3]: uint128) -> (RangeCheck);
+                test_program@0([1]: RangeCheck, [2]: u128, [3]: u128) -> (RangeCheck);
             "}, false, indoc!{"
                 %{ memory[ap + 0] = memory[fp + -3] <= memory[fp + -4] %}
                 jmp rel 8 if [ap + 0] != 0, ap++;
@@ -209,26 +209,26 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 // Store range_check and return.
                 [ap + 0] = [fp + -5] + 1, ap++;
                 ret;
-            "}; "uint128_lt")]
+            "}; "u128_lt")]
 #[test_case(indoc! {"
-                type uint128 = uint128;
+                type u128 = u128;
                 type RangeCheck = RangeCheck;
 
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
-                libfunc uint128_overflow_add = uint128_overflow_add;
-                libfunc drop<uint128> = drop<uint128>;
+                libfunc u128_overflow_add = u128_overflow_add;
+                libfunc drop<u128> = drop<u128>;
                 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 
                 revoke_ap_tracking() -> ();
-                uint128_overflow_add([1], [2], [3]) {fallthrough([1], [2]) 5([1], [2]) };
-                drop<uint128>([2]) -> ();
+                u128_overflow_add([1], [2], [3]) {fallthrough([1], [2]) 5([1], [2]) };
+                drop<u128>([2]) -> ();
                 store_temp<RangeCheck>([1]) -> ([1]);
                 return ([1]);
-                drop<uint128>([2]) -> ();
+                drop<u128>([2]) -> ();
                 store_temp<RangeCheck>([1]) -> ([1]);
                 return ([1]);
 
-                test_program@0([1]: RangeCheck, [2]: uint128, [3]: uint128) -> (RangeCheck);
+                test_program@0([1]: RangeCheck, [2]: u128, [3]: u128) -> (RangeCheck);
             "},
             false,
             indoc! {"
@@ -748,12 +748,12 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
             "Invalid reference expression for felt_add")]
 #[test_case(indoc! {"
                 type felt = felt;
-                type uint128 = uint128;
+                type u128 = u128;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) -> ([3]);
                 return([3]);
 
-                test_program@0([1]: uint128, [2]: uint128) -> (felt);
+                test_program@0([1]: u128, [2]: u128) -> (felt);
             "},
             "One of the arguments does not match the expected type of the libfunc or return \
  statement.";

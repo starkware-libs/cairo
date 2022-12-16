@@ -14,7 +14,7 @@ fn test_abi() {
         &mut db_val,
         indoc! {"
             trait MyAbi {
-                func foo(a: felt, b: uint128) -> Option::<()>;
+                func foo(a: felt, b: u128) -> Option::<()>;
             }
         "},
     )
@@ -42,7 +42,7 @@ fn test_abi() {
                 },
                 {
                   "name": "b",
-                  "ty": "core::integer::uint128"
+                  "ty": "core::integer::u128"
                 }
               ],
               "output_ty": "core::option::Option::<()>"

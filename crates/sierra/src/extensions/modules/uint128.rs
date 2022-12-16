@@ -17,12 +17,12 @@ use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
 
-/// Type for uint128.
+/// Type for u128.
 #[derive(Default)]
 pub struct Uint128Type {}
 impl NoGenericArgsGenericType for Uint128Type {
     type Concrete = InfoOnlyConcreteType;
-    const ID: GenericTypeId = GenericTypeId::new_inline("uint128");
+    const ID: GenericTypeId = GenericTypeId::new_inline("u128");
 
     fn specialize(&self) -> Self::Concrete {
         InfoOnlyConcreteType {
@@ -53,7 +53,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct Uint128Traits {}
 impl JumpNotZeroTraits for Uint128Traits {
-    const JUMP_NOT_ZERO: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_jump_nz");
+    const JUMP_NOT_ZERO: GenericLibFuncId = GenericLibFuncId::new_inline("u128_jump_nz");
     const GENERIC_TYPE_ID: GenericTypeId = <Uint128Type as NamedType>::ID;
 }
 pub type Uint128JumpNotZeroLibFunc = JumpNotZeroLibFunc<Uint128Traits>;
@@ -67,7 +67,7 @@ pub enum IntOperator {
     DivMod,
 }
 
-/// Libfunc for uint128 operations.
+/// Libfunc for u128 operations.
 pub struct Uint128OperationLibFunc {
     pub operator: IntOperator,
 }
@@ -80,13 +80,10 @@ impl GenericLibFunc for Uint128OperationLibFunc {
     type Concrete = Uint128OperationConcreteLibFunc;
 
     fn by_id(id: &GenericLibFuncId) -> Option<Self> {
-        const OVERFLOWING_ADD: GenericLibFuncId =
-            GenericLibFuncId::new_inline("uint128_overflow_add");
-        const OVERFLOWING_SUB: GenericLibFuncId =
-            GenericLibFuncId::new_inline("uint128_overflow_sub");
-        const OVERFLOWING_MUL: GenericLibFuncId =
-            GenericLibFuncId::new_inline("uint128_overflow_mul");
-        const DIVMOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_safe_divmod");
+        const OVERFLOWING_ADD: GenericLibFuncId = GenericLibFuncId::new_inline("u128_overflow_add");
+        const OVERFLOWING_SUB: GenericLibFuncId = GenericLibFuncId::new_inline("u128_overflow_sub");
+        const OVERFLOWING_MUL: GenericLibFuncId = GenericLibFuncId::new_inline("u128_overflow_mul");
+        const DIVMOD: GenericLibFuncId = GenericLibFuncId::new_inline("u128_safe_divmod");
         match id {
             id if id == &OVERFLOWING_ADD => Some(Self::new(IntOperator::OverflowingAdd)),
             id if id == &OVERFLOWING_SUB => Some(Self::new(IntOperator::OverflowingSub)),
@@ -287,7 +284,7 @@ impl SignatureBasedConcreteLibFunc for Uint128BinaryOperationConcreteLibFunc {
     }
 }
 
-/// uint128 operations with a const.
+/// u128 operations with a const.
 pub struct Uint128OperationWithConstConcreteLibFunc {
     pub operator: IntOperator,
     pub c: u128,
@@ -306,12 +303,12 @@ impl SignatureBasedConcreteLibFunc for Uint128OperationWithConstConcreteLibFunc 
     }
 }
 
-/// LibFunc for creating a constant uint128.
+/// LibFunc for creating a constant u128.
 #[derive(Default)]
 pub struct Uint128ConstLibFunc {}
 impl NamedLibFunc for Uint128ConstLibFunc {
     type Concrete = Uint128ConstConcreteLibFunc;
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_const");
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("u128_const");
 
     fn specialize_signature(
         &self,
@@ -357,21 +354,21 @@ impl SignatureBasedConcreteLibFunc for Uint128ConstConcreteLibFunc {
     }
 }
 
-fn get_uint128_comparison_types(
+fn get_u128_comparison_types(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<(ConcreteTypeId, ConcreteTypeId), SpecializationError> {
-    // Returns uint128 and range_check types.
+    // Returns u128 and range_check types.
     Ok((
         context.get_concrete_type(Uint128Type::id(), &[])?,
         context.get_concrete_type(RangeCheckType::id(), &[])?,
     ))
 }
 
-/// Utility method to output the two branches of uint128 comparison signatures.
-fn get_uint128_comparison_branch_signatures(
+/// Utility method to output the two branches of u128 comparison signatures.
+fn get_u128_comparison_branch_signatures(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<Vec<BranchSignature>, SpecializationError> {
-    let (_, range_check_type) = get_uint128_comparison_types(context)?;
+    let (_, range_check_type) = get_u128_comparison_types(context)?;
     Ok((0..2)
         .map(|_| BranchSignature {
             vars: vec![OutputVarInfo {
@@ -385,47 +382,47 @@ fn get_uint128_comparison_branch_signatures(
         .collect())
 }
 
-/// Utility method to output the parameter signatures of uint128 comparison signatures.
-fn get_uint128_comparison_param_signatures(
+/// Utility method to output the parameter signatures of u128 comparison signatures.
+fn get_u128_comparison_param_signatures(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<Vec<ParamSignature>, SpecializationError> {
-    let (uint128_type, range_check_type) = get_uint128_comparison_types(context)?;
+    let (u128_type, range_check_type) = get_u128_comparison_types(context)?;
     Ok(vec![
         ParamSignature::new(range_check_type),
-        ParamSignature::new(uint128_type.clone()),
-        ParamSignature::new(uint128_type),
+        ParamSignature::new(u128_type.clone()),
+        ParamSignature::new(u128_type),
     ])
 }
 
-/// LibFunc for comparing uint128s.
+/// LibFunc for comparing u128s.
 #[derive(Default)]
 pub struct Uint128LessThanLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128LessThanLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_lt");
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("u128_lt");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature {
-            param_signatures: get_uint128_comparison_param_signatures(context)?,
-            branch_signatures: get_uint128_comparison_branch_signatures(context)?,
+            param_signatures: get_u128_comparison_param_signatures(context)?,
+            branch_signatures: get_u128_comparison_branch_signatures(context)?,
             fallthrough: Some(0),
         })
     }
 }
 
-/// LibFunc for comparing uint128s` equality.
+/// LibFunc for comparing u128s` equality.
 #[derive(Default)]
 pub struct Uint128EqualLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128EqualLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_eq");
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("u128_eq");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let uint128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
         let branch_signatures = (0..2)
             .map(|_| BranchSignature {
                 vars: vec![],
@@ -435,8 +432,8 @@ impl NoGenericArgsGenericLibFunc for Uint128EqualLibFunc {
 
         Ok(LibFuncSignature {
             param_signatures: vec![
-                ParamSignature::new(uint128_ty.clone()),
-                ParamSignature::new(uint128_ty),
+                ParamSignature::new(u128_ty.clone()),
+                ParamSignature::new(u128_ty),
             ],
             branch_signatures,
             fallthrough: Some(0),
@@ -444,32 +441,32 @@ impl NoGenericArgsGenericLibFunc for Uint128EqualLibFunc {
     }
 }
 
-/// LibFunc for comparing uint128s.
+/// LibFunc for comparing u128s.
 #[derive(Default)]
 pub struct Uint128LessThanOrEqualLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128LessThanOrEqualLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_le");
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("u128_le");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature {
-            param_signatures: get_uint128_comparison_param_signatures(context)?,
-            branch_signatures: get_uint128_comparison_branch_signatures(context)?,
+            param_signatures: get_u128_comparison_param_signatures(context)?,
+            branch_signatures: get_u128_comparison_branch_signatures(context)?,
             fallthrough: Some(0),
         })
     }
 }
 
-/// LibFunc for converting a felt into a uint128, or the number and the overflow in the case of
+/// LibFunc for converting a felt into a u128, or the number and the overflow in the case of
 /// failure.
 #[derive(Default)]
 pub struct Uint128sFromFeltLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
-    // TODO(lior): Rename to split_felt and remove the branches. Add a separate uint128_from_felt()
+    // TODO(lior): Rename to split_felt and remove the branches. Add a separate u128_from_felt()
     //   for the conversion.
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128s_from_felt");
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("u128s_from_felt");
 
     fn specialize_signature(
         &self,
@@ -522,11 +519,11 @@ impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
     }
 }
 
-/// LibFunc for converting a uint128 into a felt.
+/// LibFunc for converting a u128 into a felt.
 #[derive(Default)]
 pub struct Uint128ToFeltLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128ToFeltLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_to_felt");
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("u128_to_felt");
 
     fn specialize_signature(
         &self,

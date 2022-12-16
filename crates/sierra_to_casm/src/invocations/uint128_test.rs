@@ -15,7 +15,7 @@ use crate::relocations::{Relocation, RelocationEntry};
 fn test_add() {
     assert_eq!(
         compile_libfunc(
-            "uint128_overflow_add",
+            "u128_overflow_add",
             vec![ref_expr!([fp + 2]), ref_expr!([fp + 1]), ref_expr!([ap - 7])]
         ),
         ReducedCompiledInvocation {
@@ -51,7 +51,7 @@ fn test_add() {
 fn test_sub() {
     assert_eq!(
         compile_libfunc(
-            "uint128_overflow_sub",
+            "u128_overflow_sub",
             vec![ref_expr!([ap - 2]), ref_expr!([ap - 1]), ref_expr!([fp + 7])]
         ),
         ReducedCompiledInvocation {
@@ -87,7 +87,7 @@ fn test_sub() {
 fn test_lt() {
     assert_eq!(
         compile_libfunc(
-            "uint128_lt",
+            "u128_lt",
             vec![ref_expr!([fp - 5]), ref_expr!([ap - 7]), ref_expr!([ap - 6])]
         ),
         ReducedCompiledInvocation {
@@ -123,7 +123,7 @@ fn test_lt() {
 #[test]
 fn test_eq() {
     assert_eq!(
-        compile_libfunc("uint128_eq", vec![ref_expr!([fp - 4]), ref_expr!([fp - 3])]),
+        compile_libfunc("u128_eq", vec![ref_expr!([fp - 4]), ref_expr!([fp - 3])]),
         ReducedCompiledInvocation {
             instructions: casm! {
                 [fp + -4] = [ap + 0] + [fp + -3], ap++;
@@ -147,7 +147,7 @@ fn test_eq() {
 fn test_le() {
     assert_eq!(
         compile_libfunc(
-            "uint128_le",
+            "u128_le",
             vec![ref_expr!([fp - 5]), ref_expr!([ap - 7]), ref_expr!([ap - 6])]
         ),
         ReducedCompiledInvocation {
