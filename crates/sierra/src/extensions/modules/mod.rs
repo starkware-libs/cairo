@@ -18,7 +18,6 @@ pub mod enm;
 pub mod felt;
 pub mod function_call;
 pub mod gas;
-pub mod integer;
 pub mod jump_not_zero;
 pub mod mem;
 pub mod non_zero;
@@ -27,6 +26,7 @@ pub mod range_check;
 pub mod squashed_dict_felt_to;
 pub mod starknet;
 pub mod strct;
+pub mod uint128;
 pub mod unconditional_jump;
 pub mod uninitialized;
 

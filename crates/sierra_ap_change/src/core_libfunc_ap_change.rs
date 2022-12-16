@@ -6,10 +6,10 @@ use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::gas::GasConcreteLibFunc;
-use sierra::extensions::integer::{IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc};
 use sierra::extensions::mem::MemConcreteLibFunc;
 use sierra::extensions::starknet::StarkNetConcreteLibFunc;
 use sierra::extensions::strct::StructConcreteLibFunc;
+use sierra::extensions::uint128::{IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc};
 
 use crate::ApChange;
 
