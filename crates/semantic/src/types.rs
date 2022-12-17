@@ -11,7 +11,7 @@ use utils::OptionFrom;
 use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::items::imp::{find_impls_at_context, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{semantic, GenericArgumentId};
@@ -236,12 +236,14 @@ pub fn maybe_resolve_type(
 ) -> Maybe<TypeId> {
     let syntax_db = db.upcast();
     Ok(match ty_syntax {
-        ast::Expr::Path(path) => match resolver.resolve_concrete_path(diagnostics, path)? {
-            ResolvedConcreteItem::Type(ty) => ty,
-            _ => {
-                return Err(diagnostics.report(path, NotAType));
+        ast::Expr::Path(path) => {
+            match resolver.resolve_concrete_path(diagnostics, path, NotFoundItemType::Type)? {
+                ResolvedConcreteItem::Type(ty) => ty,
+                _ => {
+                    return Err(diagnostics.report(path, NotAType));
+                }
             }
-        },
+        }
         ast::Expr::Parenthesized(expr_syntax) => {
             resolve_type(db, diagnostics, resolver, &expr_syntax.expr(syntax_db))
         }

@@ -5,7 +5,7 @@ use diagnostics::{Diagnostics, Maybe, ToMaybe};
 use diagnostics_proc_macros::DebugWithDb;
 
 use crate::db::SemanticGroup;
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::resolve_path::{ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::SemanticDiagnostic;
 
@@ -28,7 +28,11 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Maybe<
     let module_data = db.module_data(module_file_id.0)?;
     let use_ast = module_data.uses.get(&use_id).to_maybe()?;
     let syntax_db = db.upcast();
-    let resolved_item = resolver.resolve_generic_path(&mut diagnostics, &use_ast.name(syntax_db));
+    let resolved_item = resolver.resolve_generic_path(
+        &mut diagnostics,
+        &use_ast.name(syntax_db),
+        NotFoundItemType::Identifier,
+    );
     let resolved_lookback = Arc::new(resolver.lookback);
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolved_lookback })
 }

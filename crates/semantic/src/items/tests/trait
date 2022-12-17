@@ -44,7 +44,7 @@ impl MyImpl2<T> of MyTrait::<T> {
 }
 
 //! > expected_diagnostics
-error: Path not found.
+error: Type not found.
  --> lib.cairo:3:40
     func param_test(ref a: uint128) -> bad_type nopanic;
                                        ^******^
@@ -149,7 +149,7 @@ impl MyImpl3 of NonExistingTrait;
 impl MyImpl4 of foo;
 
 //! > expected_diagnostics
-error: Path not found.
+error: Trait not found.
  --> lib.cairo:3:17
 impl MyImpl3 of NonExistingTrait;
                 ^**************^

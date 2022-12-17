@@ -1,7 +1,7 @@
 use defs::ids::{LanguageElementId, ModuleItemId, StructId};
 use num_bigint::BigUint;
 use semantic::db::SemanticGroup;
-use semantic::diagnostic::SemanticDiagnostics;
+use semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use semantic::resolve_path::{ResolvedConcreteItem, Resolver};
 use semantic::ConcreteImplId;
 use sha3::{Digest, Keccak256};
@@ -79,19 +79,24 @@ pub fn resolve_contract_impls(
     // TODO(ilya): Add error locations.
     for expr in &contract.impls {
         match expr {
-            ast::Expr::Path(path) => match resolver.resolve_concrete_path(&mut diagnostics, path) {
-                Ok(ResolvedConcreteItem::Impl(concrete_impl_id)) => impls.push(concrete_impl_id),
-                Ok(_item) => anyhow::bail!(
-                    "`{}` is not an `impl`.",
-                    path.as_syntax_node().get_text(syntax_db)
-                ),
-                Err(_) => {
-                    anyhow::bail!(
-                        "Failed to resolve `{}`.",
+            ast::Expr::Path(path) => {
+                match resolver.resolve_concrete_path(&mut diagnostics, path, NotFoundItemType::Impl)
+                {
+                    Ok(ResolvedConcreteItem::Impl(concrete_impl_id)) => {
+                        impls.push(concrete_impl_id)
+                    }
+                    Ok(_item) => anyhow::bail!(
+                        "`{}` is not an `impl`.",
                         path.as_syntax_node().get_text(syntax_db)
-                    )
+                    ),
+                    Err(_) => {
+                        anyhow::bail!(
+                            "Failed to resolve `{}`.",
+                            path.as_syntax_node().get_text(syntax_db)
+                        )
+                    }
                 }
-            },
+            }
 
             _ => {
                 anyhow::bail!(

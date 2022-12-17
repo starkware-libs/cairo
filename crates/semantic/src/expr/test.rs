@@ -549,7 +549,7 @@ fn test_expr_call_failures() {
     assert_eq!(
         diagnostics,
         indoc! { "
-            error: Path not found.
+            error: Function not found.
              --> lib.cairo:2:1
             foo()
             ^*^

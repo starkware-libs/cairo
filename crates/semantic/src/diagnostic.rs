@@ -308,7 +308,16 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidLhsForAssignment => {
                 "Invalid left-hand side of assignment.".into()
             }
-            SemanticDiagnosticKind::PathNotFound => "Path not found.".into(),
+            SemanticDiagnosticKind::PathNotFound(item_type) => match item_type {
+                NotFoundItemType::Identifier => "Identifier not found.".into(),
+                NotFoundItemType::Function => "Function not found.".into(),
+                NotFoundItemType::Type => "Type not found.".into(),
+                NotFoundItemType::Trait => "Trait not found.".into(),
+                NotFoundItemType::Impl => "Impl not found.".into(),
+            },
+            SemanticDiagnosticKind::SuperUsedInRootModule => {
+                "'super' cannot be used for the crate's root module.".into()
+            }
             SemanticDiagnosticKind::UnexpectedLiteralPattern { ty } => format!(
                 r#"Unexpected type for literal pattern. Expected: felt. Got: "{}""#,
                 ty.format(db),
@@ -515,7 +524,8 @@ pub enum SemanticDiagnosticKind {
     InvalidLhsForAssignment,
     InvalidMemberExpression,
     InvalidPath,
-    PathNotFound,
+    PathNotFound(NotFoundItemType),
+    SuperUsedInRootModule,
     RedundantModifier {
         current_modifier: SmolStr,
         previous_modifier: SmolStr,
@@ -549,4 +559,13 @@ pub enum SemanticDiagnosticKind {
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum NotFoundItemType {
+    Identifier,
+    Function,
+    Type,
+    Trait,
+    Impl,
 }
