@@ -749,6 +749,7 @@ fn struct_ctor_expr(
 
     // Extract struct.
     let ty = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
+    ty.check_not_missing(db)?;
 
     let concrete_struct = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
         .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))

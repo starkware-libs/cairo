@@ -1,7 +1,6 @@
 //! > Unknown return type
 
 //! > test_comments
-// TODO(lior): Remove the "Not a struct" diagnostic.
 // TODO(lior): Fix the "Path not found" diagnostic wording.
 
 //! > test_function_name
@@ -42,17 +41,7 @@ error: Path not found.
     UnknownType{}
     ^*********^
 
-error: Not a struct.
- --> lib.cairo:8:5
-    UnknownType{}
-    ^*********^
-
 error: Path not found.
- --> lib.cairo:11:12
-    return UnknownType{};
-           ^*********^
-
-error: Not a struct.
  --> lib.cairo:11:12
     return UnknownType{};
            ^*********^
