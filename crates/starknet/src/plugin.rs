@@ -25,8 +25,7 @@ impl MacroPlugin for StarkNetPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
             ast::Item::Module(module_ast) => handle_mod(db, module_ast),
-            ast::Item::Struct(struct_ast) => handle_struct(db, struct_ast),
-            // TODO(yuval): diagnostic
+            // Nothing to do for other items.
             _ => PluginResult::default(),
         }
     }
@@ -55,26 +54,32 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
     let contract_name = module_ast.name(db).text(db).to_string();
     let mut functions_tokens = rust::Tokens::new();
+
+    let mut storage_code = "".to_string();
     for item in body.items(db).elements(db) {
-        let item_function = match item {
-            ast::Item::FreeFunction(f) => f,
+        match item {
+            ast::Item::FreeFunction(item_function) => {
+                if item_function
+                    .attributes(db)
+                    .elements(db)
+                    .iter()
+                    .any(|attr| attr.attr(db).text(db) == EXTERNAL_ATTR)
+                {
+                    // TODO(ilya): propagate the diagnostics in case of failure.
+                    if let Some(generated_function) =
+                        generate_entry_point_wrapper(db, &contract_name, &item_function)
+                    {
+                        functions_tokens.append(generated_function);
+                    }
+                }
+            }
+
+            ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == "Storage" => {
+                storage_code = handle_storage_struct(db, item_struct);
+            }
             // Nothing to do for other items.
             _ => continue,
         };
-
-        if item_function
-            .attributes(db)
-            .elements(db)
-            .iter()
-            .any(|attr| attr.attr(db).text(db) == EXTERNAL_ATTR)
-        {
-            // TODO(ilya): propagate the diagnostics in case of failure.
-            if let Some(generated_function) =
-                generate_entry_point_wrapper(db, &contract_name, &item_function)
-            {
-                functions_tokens.append(generated_function);
-            }
-        }
     }
 
     let external_entry_points: rust::Tokens = quote! {
@@ -84,21 +89,13 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         }
     };
 
-    PluginResult {
-        code: Some(("entry_points".into(), external_entry_points.to_string().unwrap())),
-        diagnostics: vec![],
-    }
+    let contract_code = format!("{}\n{}", storage_code, external_entry_points.to_string().unwrap());
+
+    PluginResult { code: Some(("contract".into(), contract_code)), diagnostics: vec![] }
 }
 
-/// If the struct is annotated with CONTRACT_ATTR, generate getter functions for
-/// its members.
-fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
-    let attrs = struct_ast.attributes(db).elements(db);
-    if !attrs.iter().any(|attr| attr.attr(db).text(db) == CONTRACT_ATTR) {
-        // TODO(ilya): diagnostic
-        return PluginResult::default();
-    }
-
+/// Generate getters and setters for the variables in the storage struct.
+fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> String {
     let mut code_tokens = rust::Tokens::new();
 
     for member in struct_ast.members(db).elements(db) {
@@ -120,10 +117,7 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginRes
 
         code_tokens.append(generated_submodule)
     }
-    PluginResult {
-        code: Some(("contract_storage".into(), code_tokens.to_string().unwrap())),
-        diagnostics: vec![],
-    }
+    code_tokens.to_string().unwrap()
 }
 
 /// Generates Cairo code for an entry point wrapper.
