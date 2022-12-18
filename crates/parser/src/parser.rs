@@ -597,6 +597,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFalse => Some(self.take::<TerminalFalse>().into()),
             SyntaxKind::TerminalTrue => Some(self.take::<TerminalTrue>().into()),
             SyntaxKind::TerminalLiteralNumber => Some(self.take::<TerminalLiteralNumber>().into()),
+            SyntaxKind::TerminalShortString => Some(self.take::<TerminalShortString>().into()),
             SyntaxKind::TerminalLParen => {
                 // Note that LBrace is allowed inside parenthesis, even if `lbrace_allowed` is
                 // [LbraceAllowed::Forbid].
@@ -814,6 +815,7 @@ impl<'a> Parser<'a> {
         // TODO(yuval): Support "Or" patterns.
         Some(match self.peek().kind {
             SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
+            SyntaxKind::TerminalShortString => self.take::<TerminalShortString>().into(),
             SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
             SyntaxKind::TerminalIdentifier => {
                 // TODO(ilya): Consider parsing a single identifier as PatternIdentifier rather
@@ -1138,6 +1140,8 @@ impl<'a> Parser<'a> {
     fn try_parse_generic_arg(&mut self) -> Option<ExprGreen> {
         if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
             Some(self.take::<TerminalLiteralNumber>().into())
+        } else if self.peek().kind == SyntaxKind::TerminalShortString {
+            Some(self.take::<TerminalShortString>().into())
         } else {
             self.try_parse_type_expr()
         }

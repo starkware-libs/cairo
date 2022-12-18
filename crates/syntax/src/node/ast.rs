@@ -163,6 +163,7 @@ impl TypedSyntaxNode for Trivium {
 pub enum Expr {
     Path(ExprPath),
     Literal(TerminalLiteralNumber),
+    ShortString(TerminalShortString),
     False(TerminalFalse),
     True(TerminalTrue),
     Parenthesized(ExprParenthesized),
@@ -191,6 +192,11 @@ impl From<ExprPathPtr> for ExprPtr {
 }
 impl From<TerminalLiteralNumberPtr> for ExprPtr {
     fn from(value: TerminalLiteralNumberPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalShortStringPtr> for ExprPtr {
+    fn from(value: TerminalShortStringPtr) -> Self {
         Self(value.0)
     }
 }
@@ -266,6 +272,11 @@ impl From<ExprPathGreen> for ExprGreen {
 }
 impl From<TerminalLiteralNumberGreen> for ExprGreen {
     fn from(value: TerminalLiteralNumberGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalShortStringGreen> for ExprGreen {
+    fn from(value: TerminalShortStringGreen) -> Self {
         Self(value.0)
     }
 }
@@ -350,6 +361,9 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::TerminalLiteralNumber => {
                 Expr::Literal(TerminalLiteralNumber::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalShortString => {
+                Expr::ShortString(TerminalShortString::from_syntax_node(db, node))
+            }
             SyntaxKind::TerminalFalse => Expr::False(TerminalFalse::from_syntax_node(db, node)),
             SyntaxKind::TerminalTrue => Expr::True(TerminalTrue::from_syntax_node(db, node)),
             SyntaxKind::ExprParenthesized => {
@@ -378,6 +392,7 @@ impl TypedSyntaxNode for Expr {
         match self {
             Expr::Path(x) => x.as_syntax_node(),
             Expr::Literal(x) => x.as_syntax_node(),
+            Expr::ShortString(x) => x.as_syntax_node(),
             Expr::False(x) => x.as_syntax_node(),
             Expr::True(x) => x.as_syntax_node(),
             Expr::Parenthesized(x) => x.as_syntax_node(),
@@ -2986,6 +3001,7 @@ impl TypedSyntaxNode for ArgListBraced {
 pub enum Pattern {
     Underscore(TerminalUnderscore),
     Literal(TerminalLiteralNumber),
+    ShortString(TerminalShortString),
     Identifier(PatternIdentifier),
     Struct(PatternStruct),
     Tuple(PatternTuple),
@@ -3006,6 +3022,11 @@ impl From<TerminalUnderscorePtr> for PatternPtr {
 }
 impl From<TerminalLiteralNumberPtr> for PatternPtr {
     fn from(value: TerminalLiteralNumberPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalShortStringPtr> for PatternPtr {
+    fn from(value: TerminalShortStringPtr) -> Self {
         Self(value.0)
     }
 }
@@ -3041,6 +3062,11 @@ impl From<TerminalUnderscoreGreen> for PatternGreen {
 }
 impl From<TerminalLiteralNumberGreen> for PatternGreen {
     fn from(value: TerminalLiteralNumberGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalShortStringGreen> for PatternGreen {
+    fn from(value: TerminalShortStringGreen) -> Self {
         Self(value.0)
     }
 }
@@ -3087,6 +3113,9 @@ impl TypedSyntaxNode for Pattern {
             SyntaxKind::TerminalLiteralNumber => {
                 Pattern::Literal(TerminalLiteralNumber::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalShortString => {
+                Pattern::ShortString(TerminalShortString::from_syntax_node(db, node))
+            }
             SyntaxKind::PatternIdentifier => {
                 Pattern::Identifier(PatternIdentifier::from_syntax_node(db, node))
             }
@@ -3101,6 +3130,7 @@ impl TypedSyntaxNode for Pattern {
         match self {
             Pattern::Underscore(x) => x.as_syntax_node(),
             Pattern::Literal(x) => x.as_syntax_node(),
+            Pattern::ShortString(x) => x.as_syntax_node(),
             Pattern::Identifier(x) => x.as_syntax_node(),
             Pattern::Struct(x) => x.as_syntax_node(),
             Pattern::Tuple(x) => x.as_syntax_node(),
@@ -8749,6 +8779,147 @@ impl TypedSyntaxNode for TerminalLiteralNumber {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TerminalLiteralNumberPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenShortString {
+    node: SyntaxNode,
+}
+impl Token for TokenShortString {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenShortStringGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenShortString,
+            details: GreenNodeDetails::Token(text),
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.node.0.green).details, GreenNodeDetails::Token)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenShortStringPtr(pub SyntaxStablePtrId);
+impl TokenShortStringPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenShortStringGreen(pub GreenId);
+impl TokenShortStringGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.0).details, GreenNodeDetails::Token)
+    }
+}
+impl TypedSyntaxNode for TokenShortString {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenShortString);
+    type StablePtr = TokenShortStringPtr;
+    type Green = TokenShortStringGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenShortStringGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenMissing,
+            details: GreenNodeDetails::Token("".into()),
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenShortString)
+            }
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenShortStringPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalShortString {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Terminal for TerminalShortString {
+    const KIND: SyntaxKind = SyntaxKind::TerminalShortString;
+    type TokenType = TokenShortString;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalShortString as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TerminalShortStringGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalShortString,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalShortString {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenShortString {
+        TokenShortString::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalShortStringPtr(pub SyntaxStablePtrId);
+impl TerminalShortStringPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalShortStringGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalShortString {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalShortString);
+    type StablePtr = TerminalShortStringPtr;
+    type Green = TerminalShortStringGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalShortStringGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalShortString,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    Trivia::missing(db).0,
+                    TokenShortString::missing(db).0,
+                    Trivia::missing(db).0,
+                ],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalShortString,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalShortString
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalShortStringPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
