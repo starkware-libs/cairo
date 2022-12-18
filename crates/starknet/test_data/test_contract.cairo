@@ -1,5 +1,7 @@
 #[contract]
-mod TestContract { func internal_func(ref system: System) -> felt {
+mod TestContract { struct Storage { my_storage_var: felt, }
+
+func internal_func(ref system: System) -> felt {
     1
 }
 
@@ -14,8 +16,3 @@ func test(
     x + internal_func(system)
 }
 }
-
-
-// TODO(ilya): Convert to new format.
-#[contract]
-struct Storage { my_storage_var: felt, }
