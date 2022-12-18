@@ -29,9 +29,7 @@ fn test_storage_write() {
             [ap + 4] = [[fp + 2] + 2]
             [ap + 5] = [[fp + 2] + 3]
             %{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + 2] + 0) %}
-            [ap + 0] = [[fp + 2] + 4], ap++
             [ap + 0] = [[fp + 2] + 5], ap++
-            [ap + 0] = [[fp + 2] + 6], ap++
-            jmp rel 0 if [ap + -2] != 0"}
+            jmp rel 0 if [ap + -1] != 0"}
     );
 }
