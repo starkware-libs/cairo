@@ -225,6 +225,10 @@ impl CasmBuilder {
         ));
     }
 
+    pub fn add_system_call(&mut self, var: Var) {
+        self.current_hints.push(Hint::SystemCall { system: self.get_value(var, true) });
+    }
+
     /// Adds an assertion that `dst = res`.
     /// `dst` must be a cell reference.
     pub fn assert_vars_eq(&mut self, dst: Var, res: Var) {
@@ -451,6 +455,10 @@ macro_rules! casm_build_extend {
             [$($input_value,)*],
             [$($output_value,)*],
         );
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, system_call $syscall_ptr:ident; $($tok:tt)*) => {
+        $builder.add_system_call($syscall_ptr);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
 }

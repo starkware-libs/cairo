@@ -284,6 +284,7 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("struct_deconstruct", vec![value_arg(4)] => Err(UnsupportedGenericArg);
             "struct_deconstruct<4>")]
 #[test_case("storage_read_syscall", vec![] => Ok(()); "storage_read_syscall")]
+#[test_case("storage_write_syscall", vec![] => Ok(()); "storage_write_syscall")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
