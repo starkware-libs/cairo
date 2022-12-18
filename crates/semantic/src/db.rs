@@ -6,7 +6,7 @@ use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
     GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
-    StructId, SubmoduleId, TraitFunctionId, TraitId, UseId, VariantId,
+    StructId, TraitFunctionId, TraitId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -544,24 +544,18 @@ fn module_semantic_diagnostics(
             }
             ModuleItemId::Submodule(submodule_id) => {
                 // Note that the parent module does not report the diagnostics of its submodules.
-                match submodule_id {
-                    SubmoduleId::File(file_submodule_id) => {
-                        if let Ok(file_id) = db.module_main_file(ModuleId::Submodule(*submodule_id))
-                        {
-                            if db.file_content(file_id).is_none() {
-                                // Note that the error location is in the parent module, not the
-                                // submodule.
-                                diagnostics.add(SemanticDiagnostic {
-                                    stable_location: StableLocation::new(
-                                        file_submodule_id.module_file(db.upcast()),
-                                        file_submodule_id.stable_ptr(db.upcast()).untyped(),
-                                    ),
-                                    kind: SemanticDiagnosticKind::FileNotFound,
-                                });
-                            }
-                        }
+                if let Ok(file_id) = db.module_main_file(ModuleId::Submodule(*submodule_id)) {
+                    if db.file_content(file_id).is_none() {
+                        // Note that the error location is in the parent module, not the
+                        // submodule.
+                        diagnostics.add(SemanticDiagnostic {
+                            stable_location: StableLocation::new(
+                                submodule_id.module_file(db.upcast()),
+                                submodule_id.stable_ptr(db.upcast()).untyped(),
+                            ),
+                            kind: SemanticDiagnosticKind::FileNotFound,
+                        });
                     }
-                    SubmoduleId::Inline(_) => {}
                 }
             }
             ModuleItemId::ExternType(_) => {}

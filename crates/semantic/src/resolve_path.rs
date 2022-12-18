@@ -348,7 +348,9 @@ impl<'db> Resolver<'db> {
                 ModuleId::CrateRoot(_) => {
                     return Some(Err(diagnostics.report(segment, SuperUsedInRootModule)));
                 }
-                ModuleId::Submodule(submodule_id) => submodule_id.parent(self.db.upcast()),
+                ModuleId::Submodule(submodule_id) => {
+                    self.db.lookup_intern_submodule(submodule_id).0.0
+                }
                 ModuleId::VirtualSubmodule(submodule_id) => {
                     self.db.lookup_intern_virtual_submodule(submodule_id).parent
                 }
