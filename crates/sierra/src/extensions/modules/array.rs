@@ -78,7 +78,7 @@ impl SignatureOnlyGenericLibFunc for ArrayNewLibFunc {
             vec![],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(ArrayType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
             }],
             SierraApChange::Known { new_vars_only: false },
         ))
@@ -128,12 +128,21 @@ impl SignatureOnlyGenericLibFunc for ArrayAppendLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
-        Ok(LibFuncSignature::new_non_branch(
-            vec![arr_ty.clone(), ty],
-            // TODO(lior): Change `Deferred` into `AddConst` once added.
+        Ok(LibFuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: arr_ty.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(ty),
+            ],
             vec![OutputVarInfo {
                 ty: arr_ty,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                    param_idx: 0,
+                }),
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
