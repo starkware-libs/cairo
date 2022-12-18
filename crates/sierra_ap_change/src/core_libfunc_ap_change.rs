@@ -29,8 +29,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             BoolConcreteLibFunc::Not(_) => vec![ApChange::Known(1)],
         },
         CoreConcreteLibFunc::Box(_) => vec![ApChange::Known(0)],
-        // TODO(lior): Check/Fix.
-        CoreConcreteLibFunc::BuiltinCost(_) => vec![ApChange::Known(2), ApChange::Known(3)],
+        CoreConcreteLibFunc::BuiltinCost(_) => vec![ApChange::Known(5), ApChange::Known(6)],
         CoreConcreteLibFunc::Drop(_) | CoreConcreteLibFunc::Dup(_) => vec![ApChange::Known(0)],
         CoreConcreteLibFunc::Felt(libfunc) => match libfunc {
             FeltConcrete::BinaryOperation(_)

@@ -1,17 +1,19 @@
-use casm::ap_change::ApplyApChange;
-use casm::operand::{CellRef, DerefOrImmediate, Register};
-use casm::{casm, casm_extend};
-use itertools::chain;
+use casm::builder::{CasmBuildResult, CasmBuilder};
+use casm::operand::{BinOpOperand, Operation, ResOperand};
+use casm::{casm_build_extend, deref_or_immediate};
+use num_bigint::BigInt;
 use sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
 };
-use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::program::{BranchInfo, BranchTarget};
-use utils::try_extract_matches;
+use sierra_ap_change::core_libfunc_ap_change;
 
-use super::{patch_jnz_to_end, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::gas::STEP_COST;
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{
+    try_unpack_deref, try_unpack_deref_with_offset, CellExpression, ReferenceExpression,
+    ReferenceValue,
+};
 use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra gas operations.
@@ -29,20 +31,23 @@ fn build_builtin_get_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     // TODO(lior): Share code with get_gas().
-    let (range_check_expression, gas_counter_expression, builtin_cost_expression) =
-        match builder.refs {
-            [
-                ReferenceValue { expression: range_check_expression, .. },
-                ReferenceValue { expression: gas_counter_expression, .. },
-                ReferenceValue { expression: builtin_cost_expression, .. },
-            ] => (range_check_expression, gas_counter_expression, builtin_cost_expression),
-            refs => {
-                return Err(InvocationError::WrongNumberOfArguments {
-                    expected: 2,
-                    actual: refs.len(),
-                });
-            }
-        };
+    let ((range_check, range_check_offset), gas_counter, builtin_cost) = match builder.refs {
+        [
+            ReferenceValue { expression: range_check_expression, .. },
+            ReferenceValue { expression: gas_counter_expression, .. },
+            ReferenceValue { expression: builtin_cost_expression, .. },
+        ] => (
+            try_unpack_deref_with_offset(range_check_expression)?,
+            try_unpack_deref(gas_counter_expression)?,
+            try_unpack_deref(builtin_cost_expression)?,
+        ),
+        refs => {
+            return Err(InvocationError::WrongNumberOfArguments {
+                expected: 3,
+                actual: refs.len(),
+            });
+        }
+    };
 
     let failure_handle_statement_id = match builder.invocation.branches.as_slice() {
         [
@@ -52,141 +57,129 @@ fn build_builtin_get_gas(
         _ => panic!("malformed invocation"),
     };
 
-    let builtin_cost = try_extract_matches!(
-        builtin_cost_expression
-            .try_unpack_single()
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        CellExpression::Deref
-    )
-    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-
-    // Compute the requested amount of gas. An instruction of the form `[ap] = *, ap++;` will be
-    // prepended after the `for` loop. It will take care of [CostTokenType::Step] and the refund.
-    let mut compute_requested_amount = casm! {};
-    let mut compute_requested_amount_ap_change: usize = 1;
-    for token_type in CostTokenType::iter() {
-        if *token_type == CostTokenType::Step {
-            continue;
-        }
-        let requested_count = *variable_values
-            .get(&(builder.idx, *token_type))
-            .ok_or(InvocationError::UnknownVariableData)?;
-        if requested_count == 0 {
-            continue;
-        }
-        let translated_builtin_cost =
-            builtin_cost.unchecked_apply_known_ap_change(compute_requested_amount_ap_change);
-        let offset = token_type.offset_in_builtin_costs();
-
-        // Fetch the cost of a single instance.
-        casm_extend!(compute_requested_amount, [ap] = [[&translated_builtin_cost] + offset], ap++; );
-        compute_requested_amount_ap_change += 1;
-
-        // If necessary, multiply by the number of instances.
-        if requested_count != 1 {
-            casm_extend!(compute_requested_amount, [ap] = [ap - 1] * requested_count, ap++; );
-            compute_requested_amount_ap_change += 1;
-        }
-
-        // Add to the cumulative sum.
-        casm_extend!(compute_requested_amount, [ap] = [ap - 2] + [ap - 1], ap++; );
-        compute_requested_amount_ap_change += 1;
+    if !CostTokenType::iter().all(|token| variable_values.contains_key(&(builder.idx, *token))) {
+        return Err(InvocationError::UnknownVariableData);
     }
 
-    // Prepend with an instruction that handles the steps (including the refund).
-    let requested_steps = *variable_values
-        .get(&(builder.idx, CostTokenType::Step))
-        .ok_or(InvocationError::UnknownVariableData)?;
+    let mut casm_builder = CasmBuilder::default();
+    let range_check = casm_builder.add_var(ResOperand::BinOp(BinOpOperand {
+        op: Operation::Add,
+        a: range_check,
+        b: deref_or_immediate!(range_check_offset),
+    }));
+    let gas_counter = casm_builder.add_var(ResOperand::Deref(gas_counter));
+    let builtin_cost = casm_builder.add_var(ResOperand::Deref(builtin_cost));
+    let token_requested_counts = CostTokenType::iter().filter_map(|token_type| {
+        if *token_type == CostTokenType::Step {
+            return None;
+        };
+        let requested_count = variable_values[&(builder.idx, *token_type)];
+        if requested_count == 0 { None } else { Some((token_type, requested_count)) }
+    });
+
+    // The actual number of writes for calculating the requested gas amount.
+    let initial_writes: i64 = token_requested_counts
+        .clone()
+        .map(|(_, requested_count)| if requested_count == 1 { 2 } else { 3 })
+        .sum();
+    let optimized_out_writes = (BuiltinCostGetGasLibFunc::max_cost() as i64) - (initial_writes + 1);
+
+    let requested_steps = variable_values[&(builder.idx, CostTokenType::Step)];
     // The cost of this libfunc is computed assuming all the cost types are used (and all are > 1).
     // Since in practice this is rarely the case, refund according to the actual number of steps
-    // produced by the libfunc.
-    let refund_steps = (BuiltinCostGetGasLibFunc::max_cost() as i64)
-        - ((compute_requested_amount.instructions.len() as i64) + 1);
+    // produced by the libfunc, with an additional cost for `ap += <fix size>` if required.
+    let refund_steps: i64 = optimized_out_writes;
     assert!(
         refund_steps >= 0,
         "Internal compiler error: BuiltinCostGetGasLibFunc::max_cost() is wrong."
     );
-    let compute_requested_amount_steps =
-        casm! { [ap] = ((requested_steps - refund_steps) * STEP_COST), ap++; };
+    let step_requested_count = casm_builder
+        .add_var(ResOperand::Immediate(BigInt::from((requested_steps - refund_steps) * STEP_COST)));
+    casm_build_extend! {casm_builder,
+        alloc step_requested_count_cell;
+        assert step_requested_count_cell = step_requested_count;
+    };
+    let mut total_requested_count = step_requested_count_cell;
+    for (token_type, requested_count) in token_requested_counts {
+        let offset = token_type.offset_in_builtin_costs();
+        // Fetch the cost of a single instance.
+        let single_cost_val = casm_builder.double_deref(builtin_cost, offset);
 
-    let gas_counter_value = try_extract_matches!(
-        gas_counter_expression
-            .try_unpack_single()
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        CellExpression::Deref
-    )
-    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?
-    .unchecked_apply_known_ap_change(compute_requested_amount_ap_change);
-    let range_check = try_extract_matches!(
-        range_check_expression
-            .try_unpack_single()
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        CellExpression::Deref
-    )
-    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?
-    .unchecked_apply_known_ap_change(compute_requested_amount_ap_change);
+        casm_build_extend! {casm_builder,
+            alloc single_cost;
+            assert single_cost = single_cost_val;
+        };
 
-    // The code up to the success branch.
-    let mut before_success_branch = casm! {
-        // Non-deterministically check if there is enough gas.
-        %{
-            memory[ap + 0] = memory[ap - 1] <= memory gas_counter_value
-        %}
-        jmp rel 0 if [ap + 0] != 0, ap++;
+        // If necessary, multiply by the number of instances.
+        let multi_cost = if requested_count != 1 {
+            let requested_count =
+                casm_builder.add_var(ResOperand::Immediate(requested_count.into()));
+            casm_build_extend! {casm_builder,
+                alloc multi_cost;
+                assert multi_cost = single_cost * requested_count;
+            };
+            multi_cost
+        } else {
+            single_cost
+        };
+        // Add to the cumulative sum.
+        casm_build_extend! {casm_builder,
+            alloc updated_total_requested_count;
+            assert updated_total_requested_count = total_requested_count + multi_cost;
+        };
+        total_requested_count = updated_total_requested_count;
+    }
+    let minus_one = casm_builder.add_var(ResOperand::Immediate(BigInt::from(-1)));
 
+    casm_build_extend! {casm_builder,
+        alloc has_enough_gas;
+        hint TestLessThanOrEqual {lhs: total_requested_count, rhs: gas_counter} into {dst: has_enough_gas};
+        jump HasEnoughGas if has_enough_gas != 0;
         // In this case amount > gas_counter_value, so amount - gas_counter_value - 1 >= 0.
-        [ap - 2] = [ap + 0] + (gas_counter_value.unchecked_apply_known_ap_change(1)), ap++;
-        [ap + 0] = [ap - 1] + (-1), ap++;
-        [ap - 1] = [[&range_check.unchecked_apply_known_ap_change(3)]];
-
-        jmp rel 0; // Fixed in relocations.
-    };
-    patch_jnz_to_end(&mut before_success_branch, 0);
-    let relocation_index = compute_requested_amount_steps.instructions.len()
-        + compute_requested_amount.instructions.len()
-        + before_success_branch.instructions.len()
-        - 1;
-    let success_branch = casm! {
-       // Compute the remaining gas and check that it is nonnegative.
-       (gas_counter_value.unchecked_apply_known_ap_change(1)) = [ap + 0] + [ap - 2], ap++;
-       [ap - 1] = [[&range_check.unchecked_apply_known_ap_change(2)]];
+        alloc gas_diff;
+        assert total_requested_count = gas_diff + gas_counter;
+        alloc fixed_gas_diff;
+        assert fixed_gas_diff = gas_diff + minus_one;
+        assert *(range_check++) = fixed_gas_diff;
+        jump Failure;
+        HasEnoughGas:
+        alloc updated_gas;
+        assert gas_counter = updated_gas + total_requested_count;
+        assert *(range_check++) = updated_gas;
     };
 
+    let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
+        casm_builder.build();
+    // TODO(orizi): Extract the assertion out of the libfunc implementation.
+    assert_eq!(
+        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+        [fallthrough_state.ap_change, label_state["Failure"].ap_change]
+            .map(sierra_ap_change::ApChange::Known)
+    );
+    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
     Ok(builder.build(
-        chain!(
-            compute_requested_amount_steps.instructions,
-            compute_requested_amount.instructions,
-            before_success_branch.instructions,
-            success_branch.instructions
-        )
-        .collect(),
+        instructions,
         vec![RelocationEntry {
-            instruction_idx: relocation_index,
+            instruction_idx: *relocation_index,
             relocation: Relocation::RelativeStatementId(*failure_handle_statement_id),
         }],
         [
             vec![
-                ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltBinaryOperator::Add,
-                    a: range_check.unchecked_apply_known_ap_change(2),
-                    b: DerefOrImmediate::from(1),
-                })),
-                ReferenceExpression::from_cell(CellExpression::Deref(CellRef {
-                    register: Register::AP,
-                    offset: -1,
-                })),
+                ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                    fallthrough_state.get_adjusted(range_check),
+                )),
+                ReferenceExpression::from_cell(CellExpression::Deref(
+                    fallthrough_state.get_adjusted_as_cell_ref(updated_gas),
+                )),
             ]
             .into_iter(),
             vec![
-                ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltBinaryOperator::Add,
-                    a: range_check.unchecked_apply_known_ap_change(3),
-                    b: DerefOrImmediate::from(1),
-                })),
+                ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                    label_state["Failure"].get_adjusted(range_check),
+                )),
                 ReferenceExpression::from_cell(CellExpression::Deref(
-                    gas_counter_value.unchecked_apply_known_ap_change(3),
+                    label_state["Failure"].get_adjusted_as_cell_ref(gas_counter),
                 )),
             ]
             .into_iter(),
