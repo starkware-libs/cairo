@@ -2447,6 +2447,7 @@ dependencies = [
 name = "tests"
 version = "0.1.0"
 dependencies = [
+ "assert_matches",
  "cairo-rs",
  "casm",
  "compiler",
@@ -2467,6 +2468,7 @@ dependencies = [
  "syntax",
  "test-case",
  "test_utils",
+ "utils",
 ]
 
 [[package]]
