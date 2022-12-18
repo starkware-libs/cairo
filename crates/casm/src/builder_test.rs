@@ -76,9 +76,9 @@ fn test_allocations() {
         alloc a;
         alloc b;
         alloc c;
-        a = b;
-        b = c;
-        c = a;
+        assert a = b;
+        assert b = c;
+        assert c = a;
     };
     let result = builder.build();
     assert!(result.label_state.is_empty());
@@ -102,8 +102,8 @@ fn test_allocations_not_enough_commands() {
         alloc a;
         alloc b;
         alloc c;
-        a = b;
-        b = c;
+        assert a = b;
+        assert b = c;
     };
     builder.build();
 }
