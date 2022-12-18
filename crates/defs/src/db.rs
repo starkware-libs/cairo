@@ -8,7 +8,7 @@ use filesystem::ids::{CrateId, Directory, FileId, FileLongId, VirtualFile};
 use itertools::chain;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
-use syntax::node::ast::{ItemModule, MaybeModuleBody};
+use syntax::node::ast::MaybeModuleBody;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -223,27 +223,16 @@ pub struct ModuleItems {
 // TODO(spapini): Make this private.
 fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     let syntax_db = db.upcast();
-    let mut module_file = db.module_main_file(module_id)?;
-    // The parent file of plugin-generated files
-    // It differs from the module_file when processing an inline module.
-    let mut parent_file = module_file;
+    let module_file = db.module_main_file(module_id)?;
 
     let file_syntax = db.file_syntax(module_file)?;
-    let mut item_asts = match module_id {
+    let item_asts = match module_id {
         ModuleId::CrateRoot(_)
         | ModuleId::Submodule(SubmoduleId::File(_))
         | ModuleId::VirtualSubmodule(_) => file_syntax.items(syntax_db),
         ModuleId::Submodule(SubmoduleId::Inline(inline_submodule_id)) => {
-            // Create an empty dummy file for domains separation between virtual submodules
-            // of the parent module and virtual submodules of the inline module.
-            parent_file = db.intern_file(FileLongId::Virtual(VirtualFile {
-                parent: Some(module_file),
-                name: format!("__{}", inline_submodule_id.name(db)).into(),
-                content: Arc::new(String::new()),
-            }));
-
-            let item_module_ast =
-                ItemModule::from_ptr(syntax_db, &file_syntax, inline_submodule_id.stable_ptr(db));
+            let item_module_ast = &db.module_data(inline_submodule_id.parent(db))?.submodules
+                [SubmoduleId::Inline(inline_submodule_id)];
 
             extract_matches!(
                 item_module_ast.body(syntax_db),
@@ -254,9 +243,10 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
         }
     };
 
-    let mut file_queue = VecDeque::new();
+    let mut module_queue = VecDeque::new();
+    module_queue.push_back((module_file, item_asts));
     let mut res = ModuleData::default();
-    loop {
+    while let Some((module_file, item_asts)) = module_queue.pop_front() {
         let file_index = FileIndex(res.files.len());
         let module_file_id = ModuleFileId(module_id, file_index);
         res.files.push(module_file);
@@ -270,12 +260,12 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
 
                 let Some((name, content)) = result.code else { continue };
                 let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
-                    parent: Some(parent_file),
+                    parent: Some(module_file),
                     name: name.clone(),
                     content: Arc::new(content),
                 }));
                 // TODO(ilya): Consider using non-virtual submodules for plugin-generated content.
-                file_queue.push_back(new_file);
+                module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
             }
             match item_ast {
                 ast::Item::Module(module) => {
@@ -337,13 +327,6 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
                 }
             }
         }
-
-        match file_queue.pop_front() {
-            Some(file) => module_file = file,
-            None => break,
-        };
-        item_asts = db.file_syntax(module_file)?.items(syntax_db);
-        parent_file = module_file;
     }
     Ok(res)
 }
