@@ -327,10 +327,12 @@ pub enum SierraApChange {
     /// The libfunc changes `ap` in an unknown way.
     Unknown,
     /// The libfunc changes `ap` in a known (during compilation) way.
-    /// `new_vars_only` is `true` if all the new stack cells created by the libfunc are its output
-    /// variables (as described in [OutputVarReferenceInfo::NewTempVar] in
-    /// [`BranchSignature::vars`]).
-    Known { new_vars_only: bool },
+    Known {
+        /// `true` if all the new stack cells created by the libfunc are its output
+        /// variables (as described in [OutputVarReferenceInfo::NewTempVar] in
+        /// [`BranchSignature::vars`]).
+        new_vars_only: bool,
+    },
     /// Indicates that the value of ApChange was not assigned properly yet. Behaves as `Unknown`.
     /// This will be removed, once all places using it are fixed.
     // TODO(lior): Remove this value once it is no longer used.

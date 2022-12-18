@@ -13,8 +13,7 @@ use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
-    get_bool_comparison_target_statement_id, patch_jnz_to_end,
-    unwrap_range_check_based_binary_op_refs,
+    get_non_fallthrough_statement_id, patch_jnz_to_end, unwrap_range_check_based_binary_op_refs,
 };
 use crate::references::{
     try_unpack_deref, BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue,
@@ -58,7 +57,7 @@ fn build_uint128_op(
     let (range_check, a, b) = unwrap_range_check_based_binary_op_refs(&builder)?;
     match op {
         IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
-            let failure_handle_statement_id = get_bool_comparison_target_statement_id(&builder);
+            let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
             let mut casm_builder = CasmBuilder::default();
             let uint128_limit =
                 casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
@@ -205,7 +204,7 @@ fn build_uint128_from_felt(
             });
         }
     };
-    let failure_handle_statement_id = get_bool_comparison_target_statement_id(&builder);
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let uint128_bound: BigInt = BigInt::from(u128::MAX) + 1; // = 2**128.
     // Represent the maximal possible value (PRIME - 1) as 2**128 * max_x + max_y.
     let max_x: i128 = 10633823966279327296825105735305134080;
@@ -305,7 +304,7 @@ fn build_uint128_lt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let (range_check, a, b) = unwrap_range_check_based_binary_op_refs(&builder)?;
-    let target_statement_id = get_bool_comparison_target_statement_id(&builder);
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
 
     // Split the code into two blocks, to get the offset of the first block as the jump target in
     // case `a >= b`.
@@ -370,7 +369,7 @@ fn build_uint128_eq(
     };
 
     // The target line to jump to if a != b.
-    let target_statement_id = get_bool_comparison_target_statement_id(&builder);
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
 
     let mut casm_builder = CasmBuilder::default();
     let a = casm_builder.add_var(ResOperand::Deref(a));
@@ -409,7 +408,7 @@ fn build_uint128_le(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let (range_check, a, b) = unwrap_range_check_based_binary_op_refs(&builder)?;
-    let target_statement_id = get_bool_comparison_target_statement_id(&builder);
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
 
     // Split the code into two blocks, to get the offset of the first block as the jump target in
     // case `a > b`.

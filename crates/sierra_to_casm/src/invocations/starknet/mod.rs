@@ -7,7 +7,7 @@ use crate::invocations::InvocationError;
 use crate::references::{CellExpression, ReferenceExpression};
 
 mod storage;
-use storage::build_storage_read;
+use storage::{build_storage_read, build_storage_write};
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -16,6 +16,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         StarkNetConcreteLibFunc::StorageRead(_) => build_storage_read(builder),
+        StarkNetConcreteLibFunc::StorageWrite(_) => build_storage_write(builder),
         StarkNetConcreteLibFunc::StorageAddressConst(libfunc) => {
             build_storage_address_const(builder, libfunc)
         }
