@@ -6,9 +6,8 @@ use compiler::db::RootDatabase;
 use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use defs::db::DefsGroup;
-use defs::ids::{GenericFunctionId, LanguageElementId, ModuleId, ModuleItemId, TraitId};
+use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::ToOption;
-use itertools::join;
 use num_bigint::BigUint;
 use plugins::get_default_plugins;
 use semantic::db::SemanticGroup;
@@ -19,12 +18,11 @@ use sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
 use thiserror::Error;
-use utils::try_extract_matches;
 
 use crate::abi;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint};
-use crate::contract::{find_contract_structs, resolve_contract_impls, starknet_keccak};
-use crate::plugin::{StarkNetPlugin, WRAPPER_PREFIX};
+use crate::contract::{find_contracts, get_external_functions, starknet_keccak};
+use crate::plugin::StarkNetPlugin;
 
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
@@ -79,34 +77,19 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
         anyhow::bail!("Failed to compile: {}", path.display());
     }
 
-    let contracts = find_contract_structs(db);
+    let contracts = find_contracts(db, &main_crate_ids);
     let contract = match &contracts[..] {
         [contract] => contract,
         [] => anyhow::bail!("Contract not found."),
         _ => {
-            anyhow::bail!(
-                "Compilation unit must include only one contract. found: {}.",
-                join(contracts.iter().map(|contract| contract.struct_id.name(db)), ", ")
-            )
+            // TODO(ilya): Add contract names.
+            anyhow::bail!("Compilation unit must include only one contract.",)
         }
     };
 
-    let concrete_impl_id = match resolve_contract_impls(db, contract)?[..] {
-        [concrete_impl_id] => concrete_impl_id,
-        [] => anyhow::bail!("A contract must have at least one impl."),
-        _ => {
-            anyhow::bail!("Only contracts with a single impl are currently supported.")
-        }
-    };
-
-    let impl_id = db.lookup_intern_concrete_impl(concrete_impl_id).impl_id;
-
-    let concrete_trait_id =
-        db.impl_trait(impl_id).to_option().with_context(|| "Failed to get contract trait.")?;
-    let trait_id = db.lookup_intern_concrete_trait(concrete_trait_id).trait_id;
-
+    let external_functions = get_external_functions(db, contract)?;
     let sierra_program = db
-        .get_sierra_program(main_crate_ids)
+        .get_sierra_program_for_functions(external_functions.clone())
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
 
@@ -117,40 +100,23 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
         replacer.apply(&sierra_program)
     };
 
-    let entry_points_by_type = get_entry_points(db, impl_id.module(db), trait_id, &replacer)?;
-
-    Ok(ContractClass {
-        sierra_program,
-        entry_points_by_type,
-        abi: abi::Contract::from_trait(db, trait_id)
-            .with_context(|| "Failed to extract contract ABI.")?,
-    })
+    let entry_points_by_type = get_entry_points(db, &external_functions, &replacer)?;
+    // TODO(ilya): fix abi.
+    let abi = abi::Contract::default();
+    Ok(ContractClass { sierra_program, entry_points_by_type, abi })
 }
 
 /// Return the entry points given a trait and a module_id where they are implemented.
 fn get_entry_points(
     db: &mut RootDatabase,
-    impl_module_id: ModuleId,
-    trait_id: TraitId,
+    external_functions: &[FreeFunctionId],
     replacer: &CanonicalReplacer,
 ) -> Result<ContractEntryPoints, anyhow::Error> {
-    let trait_functions = db.trait_functions(trait_id).unwrap();
     let mut entry_points_by_type = ContractEntryPoints::default();
-    for function_name in trait_functions.keys() {
-        let item = db
-            .module_item_by_name(
-                impl_module_id,
-                format!("{}{}", WRAPPER_PREFIX, &function_name).into(),
-            )
-            .expect("Failed to load module.")
-            .with_context(|| format!("The `{}` entry point was not found.", function_name))?;
-
-        let free_func_id = try_extract_matches!(item, ModuleItemId::FreeFunction)
-            .with_context(|| format!("Expected `{}` to be a function.", function_name))?;
-
+    for free_func_id in external_functions {
         let func_id = db.intern_function(FunctionLongId {
             function: ConcreteFunction {
-                generic_function: GenericFunctionId::Free(free_func_id),
+                generic_function: GenericFunctionId::Free(*free_func_id),
                 generic_args: vec![],
             },
         });
@@ -158,7 +124,7 @@ fn get_entry_points(
         let sierra_id = db.intern_sierra_function(func_id);
 
         entry_points_by_type.external.push(ContractEntryPoint {
-            selector: starknet_keccak(function_name.as_bytes()),
+            selector: starknet_keccak(free_func_id.name(db).as_bytes()),
             function_idx: replacer.replace_function_id(&sierra_id).id as usize,
         });
     }
