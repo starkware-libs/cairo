@@ -56,6 +56,7 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib_u128_checked")]
 #[test_case("fib_gas")]
 #[test_case("fib_local")]
+#[test_case("fib_shortstring")]
 #[test_case("fib_unary")]
 #[test_case("enum_flow")]
 #[test_case("corelib_usage")]
@@ -77,6 +78,7 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib_u128_checked", false)]
 #[test_case("fib_gas", true)]
 #[test_case("fib_local", false)]
+#[test_case("fib_shortstring", false)]
 #[test_case("fib_unary", false)]
 #[test_case("enum_flow", false)]
 #[test_case("corelib_usage", false)]
@@ -108,6 +110,7 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("fib_u128_checked")]
 #[test_case("fib_gas")]
 #[test_case("fib_local")]
+#[test_case("fib_shortstring")]
 #[test_case("fib_unary")]
 #[test_case("corelib_usage")]
 #[test_case("hash_chain")]
@@ -163,6 +166,12 @@ fn lowering_test(name: &str) {
     &[6].map(BigInt::from) =>
     RunResultValue::Success(vec![BigInt::from(13)]);
     "fib_local"
+)]
+#[test_case(
+    "fib_shortstring",
+    &[6].map(BigInt::from) =>
+    RunResultValue::Success(vec![BigInt::from(1269)]);
+    "fib_shortstring"
 )]
 #[test_case(
     "fib_unary",

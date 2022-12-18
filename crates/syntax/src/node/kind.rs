@@ -86,6 +86,8 @@ pub enum SyntaxKind {
     TerminalIdentifier,
     TokenLiteralNumber,
     TerminalLiteralNumber,
+    TokenShortString,
+    TerminalShortString,
     TokenFalse,
     TerminalFalse,
     TokenTrue,
@@ -213,6 +215,7 @@ impl SyntaxKind {
             *self,
             SyntaxKind::TokenIdentifier
                 | SyntaxKind::TokenLiteralNumber
+                | SyntaxKind::TokenShortString
                 | SyntaxKind::TokenFalse
                 | SyntaxKind::TokenTrue
                 | SyntaxKind::TokenExtern
@@ -282,6 +285,7 @@ impl SyntaxKind {
             *self,
             SyntaxKind::TerminalIdentifier
                 | SyntaxKind::TerminalLiteralNumber
+                | SyntaxKind::TerminalShortString
                 | SyntaxKind::TerminalFalse
                 | SyntaxKind::TerminalTrue
                 | SyntaxKind::TerminalExtern
