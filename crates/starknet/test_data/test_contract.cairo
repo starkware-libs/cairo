@@ -4,7 +4,9 @@ trait ITestContract { func test(ref system: System, arg1: felt, arg2: felt) -> f
 impl TestContractImpl of ITestContract { func test(
     ref system: System, arg1: felt, arg2: felt
 ) -> felt {
-    my_storage_var::read(system)
+    let x = my_storage_var::read(system);
+    my_storage_var::write(system, x + 1);
+    x
 }
 }
 
