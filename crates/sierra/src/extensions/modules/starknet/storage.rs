@@ -192,8 +192,7 @@ impl NoGenericArgsGenericLibFunc for StorageWriteLibFunc {
                         // Revert reason
                         OutputVarInfo {
                             ty: felt_ty,
-                            // TODO(yuval/orizi): once casm is optimized, change this to Some(0).
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },

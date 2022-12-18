@@ -121,17 +121,11 @@ pub fn build_storage_write(
         assert *(system++) = storage_address;
         assert *(system++) = value;
         system_call original_system;
-        // TODO(yuval/orizi): Return double deref directly, without allocating a variable.
-        alloc updated_gas_builtin;
-        assert *(system++) = updated_gas_builtin;
+        ref updated_gas_builtin = *(system++);
         // `revert_reason` is 0 on success, nonzero on failure/revert.
         alloc revert_reason;
         assert *(system++) = revert_reason;
-        // TODO(yuval/orizi): change to "system++;" once it's supported. When supported, also change
-        // the NewTempVar of revert reason output var in the signature to point to idx 0 instead of
-        // None.
-        alloc ignore;
-        assert *(system++) = ignore;
+        ref _ignore = *(system++);
         jump Failure if revert_reason != 0;
     };
 
@@ -153,8 +147,8 @@ pub fn build_storage_write(
         [
             // Success branch - return (gas builtin, system)
             vec![
-                ReferenceExpression::from_cell(CellExpression::Deref(
-                    fallthrough_state.get_adjusted_as_cell_ref(updated_gas_builtin),
+                ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                    fallthrough_state.get_adjusted(updated_gas_builtin),
                 )),
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
                     fallthrough_state.get_adjusted(system),
@@ -163,8 +157,8 @@ pub fn build_storage_write(
             .into_iter(),
             // Failure branch - return (gas builtin, system, revert_reason)
             vec![
-                ReferenceExpression::from_cell(CellExpression::Deref(
-                    label_state["Failure"].get_adjusted_as_cell_ref(updated_gas_builtin),
+                ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                    label_state["Failure"].get_adjusted(updated_gas_builtin),
                 )),
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
                     label_state["Failure"].get_adjusted(system),
