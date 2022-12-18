@@ -5,7 +5,7 @@ test_partial_parser_tree
 
 //! > cairo_code
 func f() {
-    let a = 0x123 + 456;
+    let a = 0x123 + 456 + 'abc';
 }
 
 //! > top_level_kind
@@ -21,7 +21,10 @@ ExprPath
     ├── type_clause (kind: OptionTypeClauseEmpty) []
     ├── eq (kind: TokenEq): '='
     ├── rhs (kind: ExprBinary)
-    │   ├── lhs (kind: TokenLiteralNumber): '0x123'
+    │   ├── lhs (kind: ExprBinary)
+    │   │   ├── lhs (kind: TokenLiteralNumber): '0x123'
+    │   │   ├── op (kind: TokenPlus): '+'
+    │   │   └── rhs (kind: TokenLiteralNumber): '456'
     │   ├── op (kind: TokenPlus): '+'
-    │   └── rhs (kind: TokenLiteralNumber): '456'
+    │   └── rhs (kind: TokenShortString): ''abc''
     └── semicolon (kind: TokenSemicolon): ';'

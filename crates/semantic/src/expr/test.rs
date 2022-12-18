@@ -39,6 +39,9 @@ semantic_test!(
 #[test_case("12_felt", 12, "felt")]
 #[test_case("16_u128", 16, "u128")]
 #[test_case("0x16_u128", 0x16, "u128")]
+#[test_case("'a'", 0x61, "felt")]
+#[test_case("'B'_u128", 0x42, "u128")]
+#[test_case("'hello world'_u128", 0x68656c6c6f20776f726c64, "u128")]
 fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_expr = setup_test_expr(&mut db_val, expr, "", "").unwrap();

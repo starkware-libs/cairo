@@ -9,6 +9,7 @@ use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
 use diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
 use id_arena::Arena;
 use itertools::zip_eq;
+use num_bigint::{BigInt, Sign};
 use smol_str::SmolStr;
 use syntax::node::ast::{BlockOrIf, PatternStructParam};
 use syntax::node::db::SyntaxGroup;
@@ -167,6 +168,9 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Path(path) => resolve_variable(ctx, path),
         ast::Expr::Literal(literal_syntax) => {
             Ok(Expr::Literal(literal_to_semantic(ctx, literal_syntax)?))
+        }
+        ast::Expr::ShortString(literal_syntax) => {
+            Ok(Expr::Literal(short_string_to_semantic(ctx, literal_syntax)?))
         }
         ast::Expr::False(syntax) => Ok(false_literal_expr(ctx, syntax.stable_ptr().into())),
         ast::Expr::True(syntax) => Ok(true_literal_expr(ctx, syntax.stable_ptr().into())),
@@ -560,6 +564,15 @@ fn compute_pattern_semantic(
             }
             Pattern::Literal(PatternLiteral { literal, ty })
         }
+        ast::Pattern::ShortString(short_string_pattern) => {
+            let literal = short_string_to_semantic(ctx, &short_string_pattern)?;
+            if ty != core_felt_ty(ctx.db) {
+                return Err(ctx
+                    .diagnostics
+                    .report(&short_string_pattern, UnexpectedLiteralPattern { ty }));
+            }
+            Pattern::Literal(PatternLiteral { literal, ty })
+        }
         ast::Pattern::Enum(enum_pattern) => {
             // Check that type is an enum, and get the concrete enum from it.
             let concrete_enum =
@@ -856,6 +869,29 @@ fn literal_to_semantic(
     try_get_const_libfunc_name_by_type(db, ty)
         .map_err(|err| ctx.diagnostics.report(literal_syntax, err))?;
     Ok(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
+}
+
+/// Creates the semantic model of a short string from its AST.
+fn short_string_to_semantic(
+    ctx: &mut ComputationContext<'_>,
+    short_string_syntax: &ast::TerminalShortString,
+) -> Maybe<ExprLiteral> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+    let text = short_string_syntax.text(syntax_db);
+
+    if let Some((literal, suffix)) = text[1..].rsplit_once('\'') {
+        let ty = if !suffix.is_empty() {
+            try_get_core_ty_by_name(db, suffix[1..].into(), vec![])
+                .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?
+        } else {
+            db.core_felt_ty()
+        };
+        let value = BigInt::from_bytes_be(Sign::Plus, literal.as_bytes());
+        Ok(ExprLiteral { value, ty, stable_ptr: short_string_syntax.stable_ptr().into() })
+    } else {
+        unreachable!();
+    }
 }
 
 /// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper
