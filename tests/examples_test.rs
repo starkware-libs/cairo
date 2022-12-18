@@ -187,14 +187,21 @@ fn run_function_test(name: &str, params: &[BigInt]) -> RunResultValue {
     result.value
 }
 
-#[test_case(7, 14)]
-#[test_case(10, 20)]
-fn run_fib_array_len(n: usize, arr_len: usize) {
+#[test_case(2, 1)]
+#[test_case(3, 2)]
+#[test_case(4, 3)]
+#[test_case(5, 5)]
+#[test_case(6, 8)]
+#[test_case(7, 13)]
+#[test_case(8, 21)]
+#[test_case(9, 34)]
+#[test_case(10, 55)]
+fn run_fib_array_len(n: usize, last: usize) {
     assert_matches!(
         &extract_matches!(
             run_function_test("fib_array", &[n].map(BigInt::from)),
             RunResultValue::Success
         )[..],
-        [_, _, actual_len] if actual_len == &BigInt::from(arr_len)
+        [_, _, actual_last, actual_len] if actual_last == &BigInt::from(last) && actual_len == &BigInt::from(n)
     );
 }
