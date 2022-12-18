@@ -130,7 +130,7 @@ fn build_store_temp(
         instructions,
         vec![],
         [[ReferenceExpression {
-            cells: (-usize_as_i16(type_size)..0)
+            cells: (-type_size..0)
                 .map(|i| CellExpression::Deref(CellRef { register: Register::AP, offset: i }))
                 .collect(),
         }]
@@ -168,7 +168,7 @@ fn build_store_local(
                 .map(|i| {
                     CellExpression::Deref(CellRef {
                         register: Register::FP,
-                        offset: dst.offset + usize_as_i16(i),
+                        offset: dst.offset + i,
                     })
                 })
                 .collect(),
@@ -208,7 +208,7 @@ fn build_alloc_local(
     let (slot, frame_state) = frame_state::handle_alloc_local(
         builder.environment.frame_state,
         builder.environment.ap_tracking,
-        allocation_size,
+        allocation_size as usize,
     )?;
     builder.environment.frame_state = frame_state;
 
