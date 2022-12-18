@@ -25,7 +25,6 @@ use db_utils::define_short_id;
 use debug::debug::DebugWithDb;
 use filesystem::ids::{CrateId, FileId};
 use smol_str::SmolStr;
-use syntax::node::ast::ItemModulePtr;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::stable_ptr::SyntaxStablePtr;
@@ -280,62 +279,12 @@ define_language_element_id_as_enum! {
     }
 }
 define_language_element_id!(
-    FileSubmoduleId,
-    FileSubmoduleLongId,
+    SubmoduleId,
+    SubmoduleLongId,
     ast::ItemModule,
-    lookup_intern_file_submodule,
+    lookup_intern_submodule,
     name
 );
-impl FileSubmoduleId {
-    pub fn parent(&self, db: &dyn DefsGroup) -> ModuleId {
-        db.lookup_intern_file_submodule(*self).0.0
-    }
-}
-define_language_element_id!(
-    InlineSubmoduleId,
-    InlineSubmoduleLongId,
-    ast::ItemModule,
-    lookup_intern_inline_submodule,
-    name
-);
-impl InlineSubmoduleId {
-    pub fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
-        db.lookup_intern_inline_submodule(*self).0
-    }
-
-    pub fn parent(&self, db: &dyn DefsGroup) -> ModuleId {
-        self.module_file_id(db).0
-    }
-}
-define_language_element_id_as_enum! {
-    pub enum SubmoduleId {
-        File(FileSubmoduleId),
-        Inline(InlineSubmoduleId),
-    }
-}
-impl SubmoduleId {
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-        match self {
-            SubmoduleId::File(id) => id.name(db),
-            SubmoduleId::Inline(id) => id.name(db),
-        }
-    }
-
-    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ItemModulePtr {
-        match self {
-            SubmoduleId::File(id) => id.stable_ptr(db),
-            SubmoduleId::Inline(id) => id.stable_ptr(db),
-        }
-    }
-
-    pub fn parent(&self, db: &dyn DefsGroup) -> ModuleId {
-        match self {
-            SubmoduleId::File(id) => id.parent(db),
-            SubmoduleId::Inline(id) => id.parent(db),
-        }
-    }
-}
-
 define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use, name);
 define_language_element_id!(
     FreeFunctionId,
