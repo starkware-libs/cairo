@@ -1,4 +1,4 @@
-// Returns an array of size n with the values of the Fibonacci sequence.
+// Returns an array of size n with the values of the Fibonacci sequence, each element twice.
 func fib(n: felt) -> Array::<felt> {
     fib_inner(1, 1, n, array_new::<felt>())
 }
@@ -8,6 +8,7 @@ func fib_inner(a: felt, b: felt, remaining: felt, mut arr: Array::<felt>) -> Arr
         return arr;
     }
 
+    array_append::<felt>(arr, a);
     array_append::<felt>(arr, a);
     fib_inner(b, a + b, remaining - 1, arr)
 }
