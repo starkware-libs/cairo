@@ -11,12 +11,21 @@ fn test_ap_change_fixes() {
     let fp_at_minus_3 = builder.add_var(res!([fp - 3]));
     let imm5 = builder.add_var(res!(5));
     let ap_at_5 = builder.add_var(res!([ap + 5]));
-    builder.add_ap(2);
+    casm_build_extend! {builder,
+        ref ap_at_5_mul5 = ap_at_5 * imm5;
+        ap += 2;
+        ref fp_at_minus_3_plus_ap_at_5 = fp_at_minus_3 + ap_at_5;
+    };
     let result = builder.build();
     assert_eq!(result.fallthrough_state.get_adjusted(ap_at_7_mul_34), res!([ap + 5] * 34));
     assert_eq!(result.fallthrough_state.get_adjusted(fp_at_minus_3), res!([fp - 3]));
     assert_eq!(result.fallthrough_state.get_adjusted(ap_at_5), res!([ap + 3]));
     assert_eq!(result.fallthrough_state.get_adjusted(imm5), res!(5));
+    assert_eq!(result.fallthrough_state.get_adjusted(ap_at_5_mul5), res!([ap + 3] * 5));
+    assert_eq!(
+        result.fallthrough_state.get_adjusted(fp_at_minus_3_plus_ap_at_5),
+        res!([fp - 3] + [ap + 3])
+    );
     assert_eq!(result.fallthrough_state.ap_change, 2);
     assert!(result.label_state.is_empty());
     assert_eq!(
