@@ -15,7 +15,7 @@ foo
 extern func bar() -> bad_type;
 
 //! > expected_diagnostics
-error: Path not found.
+error: Type not found.
  --> lib.cairo:1:22
 extern func bar() -> bad_type;
                      ^******^

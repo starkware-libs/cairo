@@ -23,7 +23,7 @@ use super::strct::SemanticStructEx;
 use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::{
@@ -104,7 +104,7 @@ pub fn priv_impl_declaration_data(
 
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
     let concrete_trait = resolver
-        .resolve_concrete_path(&mut diagnostics, &trait_path_syntax)
+        .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
         .and_then(|option_concrete_path| {
             try_extract_matches!(option_concrete_path, ResolvedConcreteItem::Trait)
                 .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))

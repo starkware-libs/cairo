@@ -30,7 +30,7 @@ use crate::corelib::{
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::modifiers::compute_mutability;
 use crate::items::strct::SemanticStructEx;
@@ -278,7 +278,8 @@ fn compute_expr_function_call_semantic(
     let syntax_db = db.upcast();
 
     let path = syntax.path(syntax_db);
-    let item = ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path)?;
+    let item =
+        ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path, NotFoundItemType::Function)?;
     let args_syntax = syntax.arguments(syntax_db);
     let arg_exprs: Vec<_> = args_syntax
         .expressions(syntax_db)
@@ -577,7 +578,11 @@ fn compute_pattern_semantic(
 
             // Extract the enum variant from the path syntax.
             let path = enum_pattern.path(syntax_db);
-            let item = ctx.resolver.resolve_generic_path(ctx.diagnostics, &path)?;
+            let item = ctx.resolver.resolve_generic_path(
+                ctx.diagnostics,
+                &path,
+                NotFoundItemType::Identifier,
+            )?;
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
                 .ok_or_else(|| ctx.diagnostics.report(&path, NotAVariant))?;
 

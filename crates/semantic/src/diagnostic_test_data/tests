@@ -40,7 +40,7 @@ error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternTy
 3 + 4 +;
        ^
 
-error: Path not found.
+error: Function not found.
  --> lib.cairo:3:5
 1 + foo()
     ^*^
@@ -69,12 +69,12 @@ func foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Path not found.
+error: Identifier not found.
  --> lib.cairo:8:3
   bad_module::foo();
   ^********^
 
-error: Path not found.
+error: 'super' cannot be used for the crate's root module.
  --> lib.cairo:9:3
   super::foo();
   ^***^
