@@ -401,11 +401,8 @@ impl<'db> Resolver<'db> {
                             .report(identifier, NoSuchVariant { enum_id, variant_name: ident })
                     })?;
                     let variant = self.db.variant_semantic(enum_id, *variant_id)?;
-                    // TODO(lior): Should we report diagnostic if `concrete_enum_variant` failed?
-                    let concrete_variant = self
-                        .db
-                        .concrete_enum_variant(concrete_enum_id, &variant)
-                        .map_err(|_| diagnostics.report(identifier, PathNotFound(item_type)))?;
+                    let concrete_variant =
+                        self.db.concrete_enum_variant(concrete_enum_id, &variant)?;
                     Ok(ResolvedConcreteItem::Variant(concrete_variant))
                 } else {
                     Err(diagnostics.report(identifier, InvalidPath))
@@ -487,11 +484,7 @@ impl<'db> Resolver<'db> {
                 self.module_item_to_generic_item(diagnostics, module_item)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
-                // TODO(lior): Should we report a diagnostic if `enum_variants()` failed?
-                let variants = self
-                    .db
-                    .enum_variants(*enum_id)
-                    .map_err(|_| diagnostics.report(identifier, UnknownEnum))?;
+                let variants = self.db.enum_variants(*enum_id)?;
                 let variant_id = variants.get(&ident).ok_or_else(|| {
                     diagnostics.report(
                         identifier,
