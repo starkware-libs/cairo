@@ -106,16 +106,20 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginRes
         let name = member.name(db).text(db).to_string();
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
 
-        let getter = quote! {
+        let generated_submodule = quote! {
             mod $name {
                 func read(ref system: System) -> felt {
                     starknet::storage_read_syscall(
-                        system, starknet::storage_address_const::<$address>())
+                        system, starknet::storage_address_const::<$(address.clone())>())
+                }
+                func write(ref system: System, value: felt) -> Result::<(), felt> {
+                    starknet::storage_write_syscall(
+                        system, starknet::storage_address_const::<$address>(), value)
                 }
             }
         };
 
-        code_tokens.append(getter)
+        code_tokens.append(generated_submodule)
     }
     PluginResult {
         code: Some(("contract_storage".into(), code_tokens.to_string().unwrap())),
