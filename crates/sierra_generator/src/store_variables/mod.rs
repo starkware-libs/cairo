@@ -185,7 +185,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         allow_add_const: bool,
         allow_const: bool,
     ) -> bool {
-        if let Some(deferred_info) = self.state().deferred_variables.get(arg) {
+        if let Some(deferred_info) = self.state().deferred_variables.get(arg).cloned() {
             match deferred_info.kind {
                 state::DeferredVariableKind::Const => {
                     if !allow_const {
@@ -203,6 +203,17 @@ impl<'a> AddStoreVariableStatements<'a> {
                     }
                 }
             };
+            // In this case, the deferred value can be used directly by the libfunc and does not
+            // require a store statement. If its type is not duplicatable, we remove it
+            // from the deferred_variables map to ensure it won't be stored later.
+            if !self
+                .db
+                .get_type_info(deferred_info.ty)
+                .expect("All types should be valid at this point.")
+                .duplicatable
+            {
+                self.state().deferred_variables.swap_remove(arg);
+            }
         }
 
         if self.state().temporary_variables.get(arg).is_some() {
