@@ -13,7 +13,6 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
-use utils::extract_matches;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
@@ -27,9 +26,7 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_virtual_submodule(&self, virtual_submodule: VirtualSubmodule) -> VirtualSubmoduleId;
     #[salsa::interned]
-    fn intern_file_submodule(&self, id: FileSubmoduleLongId) -> FileSubmoduleId;
-    #[salsa::interned]
-    fn intern_inline_submodule(&self, id: InlineSubmoduleLongId) -> InlineSubmoduleId;
+    fn intern_submodule(&self, id: SubmoduleLongId) -> SubmoduleId;
     #[salsa::interned]
     fn intern_use(&self, id: UseLongId) -> UseId;
     #[salsa::interned]
@@ -129,15 +126,21 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
         ModuleId::CrateRoot(crate_id) => {
             db.crate_root_dir(crate_id).to_maybe()?.file(db.upcast(), "lib.cairo".into())
         }
-        ModuleId::Submodule(SubmoduleId::File(submodule_id)) => {
+        ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.module(db);
-            let name = submodule_id.name(db);
-            db.module_dir(parent)?.file(db.upcast(), format!("{name}.cairo").into())
-        }
-        ModuleId::Submodule(SubmoduleId::Inline(submodule_id)) => {
-            // We return the file where the inline module was defined.
-            // It can be either the file of the parent module or a plugin-generated virtual file.
-            db.module_file(submodule_id.module_file_id(db))?
+            let item_module_ast = &db.module_data(parent)?.submodules[submodule_id];
+            match item_module_ast.body(db.upcast()) {
+                MaybeModuleBody::Some(_) => {
+                    // This is an inline module, we return the file where the inline module was
+                    // defined. It can be either the file of the parent module
+                    // or a plugin-generated virtual file.
+                    db.module_main_file(parent)?
+                }
+                MaybeModuleBody::None(_) => {
+                    let name = submodule_id.name(db);
+                    db.module_dir(parent)?.file(db.upcast(), format!("{name}.cairo").into())
+                }
+            }
         }
         ModuleId::VirtualSubmodule(virtual_submodule_id) => {
             db.lookup_intern_virtual_submodule(virtual_submodule_id).file
@@ -227,19 +230,15 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
 
     let file_syntax = db.file_syntax(module_file)?;
     let item_asts = match module_id {
-        ModuleId::CrateRoot(_)
-        | ModuleId::Submodule(SubmoduleId::File(_))
-        | ModuleId::VirtualSubmodule(_) => file_syntax.items(syntax_db),
-        ModuleId::Submodule(SubmoduleId::Inline(inline_submodule_id)) => {
-            let item_module_ast = &db.module_data(inline_submodule_id.parent(db))?.submodules
-                [SubmoduleId::Inline(inline_submodule_id)];
+        ModuleId::CrateRoot(_) | ModuleId::VirtualSubmodule(_) => file_syntax.items(syntax_db),
+        ModuleId::Submodule(submodule_id) => {
+            let item_module_ast =
+                &db.module_data(submodule_id.module(db))?.submodules[submodule_id];
 
-            extract_matches!(
-                item_module_ast.body(syntax_db),
-                MaybeModuleBody::Some,
-                "Expected an inline module."
-            )
-            .items(syntax_db)
+            match item_module_ast.body(syntax_db) {
+                MaybeModuleBody::Some(body) => body.items(syntax_db),
+                MaybeModuleBody::None(_) => file_syntax.items(syntax_db),
+            }
         }
     };
 
@@ -269,18 +268,8 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
             }
             match item_ast {
                 ast::Item::Module(module) => {
-                    let item_id = match module.body(syntax_db) {
-                        MaybeModuleBody::Some(_) => {
-                            SubmoduleId::Inline(db.intern_inline_submodule(InlineSubmoduleLongId(
-                                module_file_id,
-                                module.stable_ptr(),
-                            )))
-                        }
-                        MaybeModuleBody::None(_) => SubmoduleId::File(db.intern_file_submodule(
-                            FileSubmoduleLongId(module_file_id, module.stable_ptr()),
-                        )),
-                    };
-
+                    let item_id =
+                        db.intern_submodule(SubmoduleLongId(module_file_id, module.stable_ptr()));
                     res.submodules.insert(item_id, module);
                 }
                 ast::Item::Use(us) => {
