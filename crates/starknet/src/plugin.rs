@@ -3,18 +3,15 @@ use std::vec;
 use defs::db::{MacroPlugin, PluginDiagnostic, PluginResult};
 use genco::prelude::*;
 use itertools::join;
-use syntax::node::ast::{ItemFreeFunction, MaybeImplBody, MaybeModuleBody, Modifier, Param};
+use syntax::node::ast::{ItemFreeFunction, MaybeModuleBody, Modifier, Param};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::contract::starknet_keccak;
 
-static CONTRACT_IMPL_ATTR: &str = "ContractImpl";
-pub static WRAPPER_PREFIX: &str = "__wrapper_";
-static CONTRACT_ATTR: &str = "contract";
-static EXTERNAL_ATTR: &str = "external";
-
+pub static CONTRACT_ATTR: &str = "contract";
+pub static EXTERNAL_ATTR: &str = "external";
 pub static EXTERNAL_MODULE: &str = "__external";
 
 #[cfg(test)]
@@ -28,7 +25,6 @@ impl MacroPlugin for StarkNetPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
             ast::Item::Module(module_ast) => handle_mod(db, module_ast),
-            ast::Item::Impl(impl_ast) => handle_impl(db, impl_ast),
             ast::Item::Struct(struct_ast) => handle_struct(db, struct_ast),
             // TODO(yuval): diagnostic
             _ => PluginResult::default(),
@@ -57,8 +53,8 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         }
     };
 
+    let contract_name = module_ast.name(db).text(db).to_string();
     let mut functions_tokens = rust::Tokens::new();
-
     for item in body.items(db).elements(db) {
         let item_function = match item {
             ast::Item::FreeFunction(f) => f,
@@ -73,7 +69,9 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             .any(|attr| attr.attr(db).text(db) == EXTERNAL_ATTR)
         {
             // TODO(ilya): propagate the diagnostics in case of failure.
-            if let Some(generated_function) = generate_entry_point_wrapper(db, &item_function) {
+            if let Some(generated_function) =
+                generate_entry_point_wrapper(db, &contract_name, &item_function)
+            {
                 functions_tokens.append(generated_function);
             }
         }
@@ -81,6 +79,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
     let external_entry_points: rust::Tokens = quote! {
         mod $EXTERNAL_MODULE {
+            use super::$(contract_name);
             $functions_tokens
         }
     };
@@ -127,44 +126,10 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginRes
     }
 }
 
-/// If the impl is annotated with CONTRACT_IMPL_ATTR, generates wrappers for
-/// the functions in the impl.
-fn handle_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
-    let attrs = impl_ast.attributes(db).elements(db);
-    if !attrs.iter().any(|attr| attr.attr(db).text(db) == CONTRACT_IMPL_ATTR) {
-        // TODO(yuval): diagnostic
-        return PluginResult::default();
-    }
-    let body = match impl_ast.body(db) {
-        MaybeImplBody::Some(body) => body,
-        // TODO(yuval): diagnostic
-        MaybeImplBody::None(_) => return PluginResult::default(),
-    };
-
-    let impl_items = body.items(db);
-    let mut functions_tokens = rust::Tokens::new();
-    functions_tokens.append(impl_items.as_syntax_node().get_text(db).as_str());
-    for impl_item in impl_items.elements(db) {
-        let item_function = match impl_item {
-            ast::Item::FreeFunction(f) => f,
-            // Impl should only have free functions.
-            _ => unreachable!(),
-        };
-
-        // TODO(ilya): propagate the diagnostics in case of failure.
-        if let Some(generated_function) = generate_entry_point_wrapper(db, &item_function) {
-            functions_tokens.append(generated_function);
-        }
-    }
-    PluginResult {
-        code: Some(("entry_points".into(), functions_tokens.to_string().unwrap())),
-        diagnostics: vec![],
-    }
-}
-
-/// Generates Cairo code for an entry point wrapper (expanded from attribute CONTRACT_IMPL_ATTR).
+/// Generates Cairo code for an entry point wrapper.
 fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
+    contract_name: &str,
     function: &ItemFreeFunction,
 ) -> Option<rust::Tokens> {
     let mut successful_expansion = true;
@@ -222,11 +187,11 @@ fn generate_entry_point_wrapper(
     }
     let param_names_tokens = join(arg_names.into_iter(), ", ");
 
-    let wrapped_name = function.name(db).text(db).to_string();
-    let wrapper_name = format!("{}{}", WRAPPER_PREFIX, wrapped_name);
+    let function_name = function.name(db).text(db).to_string();
+    let wrapped_name = format!("{contract_name}::{function_name}");
 
     Some(quote! {
-        func $wrapper_name(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+        func $function_name(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
             if array::array_len::<felt>(data) != $(params_len)_u128 {
                 // TODO(yuval): add error message.
                 panic(array::array_new::<felt>());
