@@ -13,7 +13,7 @@ use super::{
     patch_jnz_to_end, CompiledInvocation, CompiledInvocationBuilder, InvocationError,
     ReferenceExpressionView,
 };
-use crate::invocations::{get_bool_comparison_target_statement_id, ProgramInfo};
+use crate::invocations::{get_non_fallthrough_statement_id, ProgramInfo};
 use crate::references::{
     try_unpack_deref, BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue,
     ReferencesError,
@@ -185,9 +185,9 @@ fn build_array_at(
             let array_ref = array_view.to_reference_expression();
             let relocations = vec![RelocationEntry {
                 instruction_idx: relocation_idx,
-                relocation: Relocation::RelativeStatementId(
-                    get_bool_comparison_target_statement_id(&builder),
-                ),
+                relocation: Relocation::RelativeStatementId(get_non_fallthrough_statement_id(
+                    &builder,
+                )),
             }];
             let output_expressions = [
                 vec![

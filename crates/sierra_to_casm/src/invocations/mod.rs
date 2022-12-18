@@ -299,11 +299,10 @@ trait ReferenceExpressionView: Sized {
     fn to_reference_expression(self) -> ReferenceExpression;
 }
 
-// Utility for boolean functions.
+/// Fetches, verifies and returns the range check, a and b references.
 pub fn unwrap_range_check_based_binary_op_refs(
     builder: &CompiledInvocationBuilder<'_>,
 ) -> Result<(CellRef, CellRef, CellRef), InvocationError> {
-    // Fetches, verifies and returns the range check, a and b references.
     match builder.refs {
         [
             ReferenceValue { expression: range_check_expression, .. },
@@ -318,11 +317,9 @@ pub fn unwrap_range_check_based_binary_op_refs(
     }
 }
 
-// Utility for boolean functions.
-pub fn get_bool_comparison_target_statement_id(
-    builder: &CompiledInvocationBuilder<'_>,
-) -> StatementIdx {
-    // Fetch the jump target.
+/// Fetches the non-fallthrough jump target of the invocation, assuming this invocation is a
+/// conditional jump.
+pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>) -> StatementIdx {
     match builder.invocation.branches.as_slice() {
         [
             BranchInfo { target: BranchTarget::Fallthrough, .. },
