@@ -115,23 +115,23 @@ pub fn build_storage_write(
     let value = casm_builder.add_var(ResOperand::Deref(value));
     casm_build_extend! {casm_builder,
         alloc selector;
-        selector = selector_imm;
-        *(system++) = selector;
-        *(system++) = gas_builtin;
-        *(system++) = storage_address;
-        *(system++) = value;
+        assert selector = selector_imm;
+        assert *(system++) = selector;
+        assert *(system++) = gas_builtin;
+        assert *(system++) = storage_address;
+        assert *(system++) = value;
         system_call original_system;
         // TODO(yuval/orizi): Return double deref directly, without allocating a variable.
         alloc updated_gas_builtin;
-        *(system++) = updated_gas_builtin;
+        assert *(system++) = updated_gas_builtin;
         // `revert_reason` is 0 on success, nonzero on failure/revert.
         alloc revert_reason;
-        *(system++) = revert_reason;
+        assert *(system++) = revert_reason;
         // TODO(yuval/orizi): change to "system++;" once it's supported. When supported, also change
         // the NewTempVar of revert reason output var in the signature to point to idx 0 instead of
         // None.
         alloc ignore;
-        *(system++) = ignore;
+        assert *(system++) = ignore;
         jump Failure if revert_reason != 0;
     };
 

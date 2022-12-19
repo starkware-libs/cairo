@@ -69,13 +69,13 @@ fn build_uint128_op(
                     casm_build_extend! {casm_builder,
                         alloc no_overflow;
                         alloc a_plus_b;
-                        a_plus_b = a + b;
+                        assert a_plus_b = a + b;
                         hint TestLessThan {lhs: a_plus_b, rhs: uint128_limit} into {dst: no_overflow};
                         jump NoOverflow if no_overflow != 0;
                         // Overflow:
                         // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
                         alloc wrapping_a_plus_b;
-                        a_plus_b = wrapping_a_plus_b + uint128_limit;
+                        assert a_plus_b = wrapping_a_plus_b + uint128_limit;
                     };
                     (a_plus_b, wrapping_a_plus_b)
                 }
@@ -83,23 +83,23 @@ fn build_uint128_op(
                     casm_build_extend! {casm_builder,
                         alloc no_overflow;
                         alloc a_minus_b;
-                        a = a_minus_b + b;
+                        assert a = a_minus_b + b;
                         hint TestLessThan {lhs: a_minus_b, rhs: uint128_limit} into {dst: no_overflow};
                         jump NoOverflow if no_overflow != 0;
                         // Underflow:
                         // Here we know that 0 - (2**128 - 1) <= a - b < 0.
                         alloc wrapping_a_minus_b;
-                        wrapping_a_minus_b = a_minus_b + uint128_limit;
+                        assert wrapping_a_minus_b = a_minus_b + uint128_limit;
                     };
                     (a_minus_b, wrapping_a_minus_b)
                 }
                 _ => unreachable!("Only supported options in arm."),
             };
             casm_build_extend! {casm_builder,
-                    *(range_check++) = overflow_fixed;
+                    assert *(range_check++) = overflow_fixed;
                     jump Target;
                 NoOverflow:
-                   *(range_check++) = possible_overflow;
+                    assert *(range_check++) = possible_overflow;
             };
             let CasmBuildResult {
                 instructions,
@@ -231,32 +231,32 @@ fn build_uint128_from_felt(
             // Write value as 2**128 * x + y.
             hint DivMod { lhs: value, rhs: uint128_limit } into { quotient: x, remainder: y };
             // Check x in [0, 2**128).
-            *(range_check++) = x;
+            assert *(range_check++) = x;
             // Check y in [0, 2**128).
-            *(range_check++) = y;
+            assert *(range_check++) = y;
             // Check that value = 2**128 * x + y (mod PRIME).
-            x_2_128 = x * uint128_limit;
-            value = x_2_128 + y;
+            assert x_2_128 = x * uint128_limit;
+            assert value = x_2_128 + y;
             // Check that there is no overflow in the computation of 2**128 * x + y.
             // Start by checking if x==max_x.
-            x_minus_max_x = x + minus_max_x;
+            assert x_minus_max_x = x + minus_max_x;
             jump XNotMaxX if x_minus_max_x != 0;
             // If x == max_x, check that y <= max_y.
-            rced_value = y + le_max_y_fix;
+            assert rced_value = y + le_max_y_fix;
             jump WriteRcedValue;
         XNotMaxX:
             // If x != max_x, check that x < max_x.
-            rced_value = x + lt_max_x_fix;
+            assert rced_value = x + lt_max_x_fix;
         WriteRcedValue:
             // In both cases, range-check the calculated value.
-            *(range_check++) = rced_value;
+            assert *(range_check++) = rced_value;
             // If x != 0, jump to the end.
             jump FailureHandle if x != 0;
         InfiniteLoop:
             // Otherwise, start an infinite loop.
             jump InfiniteLoop;
         NoOverflow:
-            *(range_check++) = value;
+            assert *(range_check++) = value;
     };
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
         casm_builder.build();
@@ -378,7 +378,7 @@ fn build_uint128_eq(
 
             // diff = a - b => (diff == 0) <==> (a == b)
             alloc diff;
-            a = diff + b;
+            assert a = diff + b;
 
             jump NotEqual if diff != 0;
             jump Equal;

@@ -145,7 +145,7 @@ fn build_array_at(
     casm_build_extend! {casm_builder,
         alloc array_cell_size;
         // Compute the length of the array (in felts).
-        array_end = array_cell_size + array_start;
+        assert array_end = array_cell_size + array_start;
     };
     let element_offset = if element_size == 1 {
         index
@@ -153,7 +153,7 @@ fn build_array_at(
         casm_build_extend! {casm_builder,
             alloc element_offset;
             // Compute the length of the array (in felts).
-            element_offset = index * element_size_var;
+            assert element_offset = index * element_size_var;
         };
         element_offset
     };
@@ -166,7 +166,7 @@ fn build_array_at(
         jump InRange if is_in_range != 0;
         // Index out of bounds. Compute offset - length.
         alloc offset_length_diff;
-        element_offset = offset_length_diff + array_cell_size;
+        assert element_offset = offset_length_diff + array_cell_size;
     };
     let array_length = if element_size == 1 {
         array_cell_size
@@ -175,27 +175,27 @@ fn build_array_at(
             // Divide by element size. We assume the length is divisible by element size, and by
             // construction, so is the offset.
             alloc array_length;
-            array_cell_size = array_length * element_size_var;
+            assert array_cell_size = array_length * element_size_var;
         };
         array_length
     };
     casm_build_extend! {casm_builder,
         // Assert offset - length >= 0.
-        *(range_check++) = array_length;
+        assert *(range_check++) = array_length;
         jump FailureHandle;
         InRange:
         // Assert offset < length, or that length-(offset+1) is in [0, 2^128).
         // Compute offset+1.
         alloc element_offset_plus_1;
-        element_offset_plus_1 = element_offset + one;
+        assert element_offset_plus_1 = element_offset + one;
         // Compute length-(offset+1).
         alloc offset_length_diff;
-        element_offset_plus_1 = offset_length_diff + array_cell_size;
+        assert element_offset_plus_1 = offset_length_diff + array_cell_size;
         // Assert length-(offset+1) is in [0, 2^128).
-        *(range_check++) = element_offset_plus_1;
+        assert *(range_check++) = element_offset_plus_1;
         // Compute address of target cell.
         alloc target_cell;
-        target_cell = array_start + element_offset;
+        assert target_cell = array_start + element_offset;
     };
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
         casm_builder.build();

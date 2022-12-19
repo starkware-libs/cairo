@@ -410,18 +410,18 @@ macro_rules! casm_build_extend {
         $builder.add_ap($value);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, $dst:ident = $res:ident; $($tok:tt)*) => {
+    ($builder:ident, assert $dst:ident = $res:ident; $($tok:tt)*) => {
         $builder.assert_vars_eq($dst, $res);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
+    ($builder:ident, assert $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         {
             let __sum = $builder.bin_op($crate::operand::Operation::Add, $a, $b);
             $builder.assert_vars_eq($dst, __sum);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
+    ($builder:ident, assert $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
         {
             let __product = $builder.bin_op($crate::operand::Operation::Mul, $a, $b);
             $builder.assert_vars_eq($dst, __product);
@@ -440,7 +440,7 @@ macro_rules! casm_build_extend {
         $builder.label(std::stringify!($label).to_owned());
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, * ( $buffer:ident ++ ) = $value:ident; $($tok:tt)*) => {
+    ($builder:ident, assert * ( $buffer:ident ++ ) = $value:ident; $($tok:tt)*) => {
         $builder.buffer_write_and_inc($buffer, $value);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
