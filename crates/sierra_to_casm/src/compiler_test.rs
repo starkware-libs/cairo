@@ -196,15 +196,14 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 
                 test_program@0([1]: RangeCheck, [2]: u128, [3]: u128) -> (RangeCheck);
             "}, false, indoc!{"
-                %{ memory[ap + 0] = memory[fp + -3] <= memory[fp + -4] %}
-                jmp rel 8 if [ap + 0] != 0, ap++;
-                // a >= b.
-                [ap + 0] = [fp + -4] + 1, ap++;
-                [fp + -3] = [ap + 0] + [ap + -1], ap++;
-                [ap + -1] = [[fp + -5] + 0];
-                jmp rel 4;
+                [fp + -4] = [ap + 1] + [fp + -3], ap++;
+                %{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
+                jmp rel 7 if [ap + -1] != 0, ap++;
                 // a < b.
-                [fp + -4] = [ap + 0] + [fp + -3], ap++;
+                [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+                [ap + -1] = [[fp + -5] + 0];
+                jmp rel 3;
+                // a < b.
                 [ap + -1] = [[fp + -5] + 0];
                 // Store range_check and return.
                 [ap + 0] = [fp + -5] + 1, ap++;
