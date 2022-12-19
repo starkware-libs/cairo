@@ -1,7 +1,11 @@
-use defs::db::DefsGroup;
+use std::sync::Arc;
+
+use defs::db::{DefsGroup, MacroPlugin, PluginResult};
 use defs::ids::ModuleId;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
+use syntax::node::ast;
+use syntax::node::db::SyntaxGroup;
 use test_log::test;
 
 use crate::db::SemanticGroup;
@@ -37,10 +41,44 @@ fn test_missing_module_file() {
     );
 }
 
+// A dummy plugin that adds an inline module with a semantic error (per function
+// in the original module).
+// Used to test error location inside plugin generated inline modules.
+#[derive(Debug)]
+struct AddInlineModuleDummyPlugin {}
+
+impl MacroPlugin for AddInlineModuleDummyPlugin {
+    fn generate_code(
+        &self,
+        _db: &dyn SyntaxGroup,
+        item_ast: syntax::node::ast::Item,
+    ) -> PluginResult {
+        match item_ast {
+            ast::Item::FreeFunction(_) => PluginResult {
+                code: Some((
+                    "virt2".into(),
+                    indoc! {"
+                                mod inner_mod {{
+                                    func bad() -> uint128 {
+                                        return 6;
+                                    }
+                                }}
+                            "
+                    }
+                    .to_string(),
+                )),
+                diagnostics: vec![],
+            },
+            _ => PluginResult { code: None, diagnostics: vec![] },
+        }
+    }
+}
+
 #[test]
 fn test_inline_module_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let db = &mut db_val;
+    db.set_macro_plugins(vec![Arc::new(AddInlineModuleDummyPlugin {})]);
     let crate_id = setup_test_crate(
         db,
         indoc! {"
@@ -61,6 +99,21 @@ fn test_inline_module_diagnostics() {
             error: Unexpected return type. Expected: "core::integer::uint128", found: "core::felt".
              --> lib.cairo:3:16
                     return 5;
+                           ^
+
+            "#},
+    );
+
+    // Test diagnostics within a generated inline module.
+    let submodule_submodules = db.module_submodules(*submodule_id).unwrap();
+    let subsubmodule_id = submodule_submodules.first().unwrap();
+
+    assert_eq!(
+        db.module_semantic_diagnostics(*subsubmodule_id).unwrap().format(db),
+        indoc! {r#"
+            error: Unexpected return type. Expected: "core::integer::uint128", found: "core::felt".
+             --> virt2:3:16
+                    return 6;
                            ^
 
             "#},

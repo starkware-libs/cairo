@@ -134,7 +134,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
                     // This is an inline module, we return the file where the inline module was
                     // defined. It can be either the file of the parent module
                     // or a plugin-generated virtual file.
-                    db.module_main_file(parent)?
+                    db.module_file(submodule_id.module_file_id(db))?
                 }
                 MaybeModuleBody::None(_) => {
                     let name = submodule_id.name(db);
