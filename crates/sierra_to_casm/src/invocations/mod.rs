@@ -37,6 +37,7 @@ mod mem;
 mod misc;
 mod pedersen;
 mod starknet;
+mod cheatcodes;
 
 mod strct;
 mod uint128;
@@ -280,6 +281,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibFunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
         CoreConcreteLibFunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
+        CoreConcreteLibFunc::Cheatcodes(libfunc) => cheatcodes::build(libfunc, builder),
     }
 }
 

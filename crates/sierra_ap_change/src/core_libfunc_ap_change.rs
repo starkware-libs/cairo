@@ -1,6 +1,7 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::boolean::BoolConcreteLibFunc;
 use sierra::extensions::builtin_cost::BuiltinCostGetGasLibFunc;
+use sierra::extensions::cheatcodes::CheatcodesConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
@@ -109,5 +110,8 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             }
             StarkNetConcreteLibFunc::StorageAddressConst(_) => vec![ApChange::Known(0)],
         },
-    }
+        CoreConcreteLibFunc::Cheatcodes(libfunc) => match libfunc {
+            CheatcodesConcreteLibFunc::Roll(_) => vec![ApChange::Known(2)],
+        }   
+     }
 }

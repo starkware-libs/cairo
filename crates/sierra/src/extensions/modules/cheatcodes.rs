@@ -28,6 +28,6 @@ impl NoGenericArgsGenericLibFunc for RollLibFunc {
         Ok(LibFuncSignature::new_non_branch(vec![
             felt_ty_a,
             felt_ty_b
-        ], vec![], SierraApChange::Known(0)))
+        ], vec![], SierraApChange::Known { new_vars_only: true} ))
     }
 }
