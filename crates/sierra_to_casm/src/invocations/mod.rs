@@ -258,6 +258,7 @@ pub fn compile_invocation(
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(libfunc) => felt::build(libfunc, builder),
+        CoreConcreteLibFunc::Bitwise(_) => panic!("Not implemented."),
         CoreConcreteLibFunc::Bool(libfunc) => boolean::build(libfunc, builder),
         CoreConcreteLibFunc::Uint128(libfunc) => uint128::build(libfunc, builder),
         CoreConcreteLibFunc::Gas(libfunc) => gas::build(libfunc, builder),
