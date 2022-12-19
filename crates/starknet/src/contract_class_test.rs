@@ -52,6 +52,14 @@ fn test_serialization() {
 }
 
 #[test]
+fn test_full_contract_deseralization() {
+    let contract = get_test_contract();
+    let serialized = serde_json::to_string_pretty(&contract).unwrap();
+    println!("{}", contract.sierra_program);
+    assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
+}
+
+#[test]
 fn test_compile_path() {
     let contract = get_test_contract();
 

@@ -156,6 +156,8 @@ GenericArgsString: String = {
 ConcreteLabel: String = {
     <base:PathLabel> "::" "<" <generic_args:GenericArgsString> ">" => format!("{base}::<{generic_args}>"),
     <base:PathLabel> "<" <generic_args:GenericArgsString> ">" => format!("{base}<{generic_args}>"),
+    "(" <generic_args:GenericArgsString> ")" => format!("({generic_args})"),
+    "(" ")" => format!("()"),
     PathLabel => <>,
 }
 
