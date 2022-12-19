@@ -19,8 +19,7 @@ fn test_storage_read() {
             instructions: casm! {
                 [ap + 0] = 31066245855454734213960397939u128, ap++;
                 [ap + -1] = [[fp + 1] + 0];
-                // TODO(orizi): Fix wrong AP change.
-                [ap + 5] = [[fp + 1] + 1];
+                [ap + 4] = [[fp + 1] + 1];
                 %{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + 1] + 0) %}
                 [ap + 0] = [[fp + 1] + 2], ap++;
             }
