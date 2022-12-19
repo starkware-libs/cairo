@@ -135,6 +135,7 @@ impl HintProcessor for CairoHintProcessor {
             Hint::ExitScope => todo!(),
             Hint::DictSquashHints { .. } => todo!(),
             Hint::SystemCall { .. } => todo!(),
+            Hint::Bitwise { .. } => todo!(),
         };
         Ok(())
     }

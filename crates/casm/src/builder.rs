@@ -230,6 +230,10 @@ impl CasmBuilder {
         self.current_hints.push(Hint::SystemCall { system: self.get_value(system_var, true) });
     }
 
+    pub fn add_bitwise(&mut self, ptr: Var) {
+        self.current_hints.push(Hint::Bitwise { ptr: self.get_value(ptr, true) });
+    }
+
     /// Adds an assertion that `dst = res`.
     /// `dst` must be a cell reference.
     pub fn assert_vars_eq(&mut self, dst: Var, res: Var) {
@@ -518,6 +522,10 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, system_call $syscall_ptr:ident; $($tok:tt)*) => {
         $builder.add_system_call($syscall_ptr);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, bitwise $bitwise_ptr:ident; $($tok:tt)*) => {
+        $builder.add_bitwise($bitwise_ptr);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
 }

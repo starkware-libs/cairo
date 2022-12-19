@@ -1,3 +1,4 @@
+extern type Bitwise;
 extern type u128;
 impl U128Copy of Copy::<u128>;
 impl U128Drop of Drop::<u128>;
@@ -151,6 +152,16 @@ func u128_ge(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic {
 
 func u128_ne(a: u128, b: u128) -> bool implicits() nopanic {
     !(a == b)
+}
+
+extern func bitwise(a: u128, b: u128) -> (u128, u128, u128) implicits(Bitwise) nopanic;
+func u128_and(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
+    let (v, _, _) = bitwise(a, b);
+    v
+}
+func u128_or(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
+    let (_, v, _) = bitwise(a, b);
+    v
 }
 
 extern func u128_jump_nz(a: u128) -> JumpNzResult::<u128> implicits() nopanic;
