@@ -287,7 +287,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 // Statement # 27 - Getting gas for the main loop.
                 %{ memory[ap + 0] = 799 < memory[ap + -2] %}
                 jmp rel 9 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap + -3] + -799, ap++;
+                [ap + -3] = [ap + 0] + 799, ap++;
                 [ap + 0] = [ap + -1] * -1, ap++;
                 [ap + -1] = [[ap + -6] + 0];
                 jmp rel 18;
@@ -295,7 +295,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 // Statement # 28
                 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
                 // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
-                [ap + 0] = [ap + -3] + -800, ap++;
+                [ap + -3] = [ap + 0] + 800, ap++;
                 [ap + -1] = [[ap + -5] + 0];
                 [ap + -6] = [ap + 0] + 1, ap++;
                 [ap + 0] = [ap + -6] + 1, ap++;
@@ -335,11 +335,11 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 // Statement # 17 - Get gas for the recursive calls.
                 %{ memory[ap + 0] = 3699 < memory[fp + -4] %}
                 jmp rel 9 if [ap + 0] != 0, ap++;
-                [ap + 0] = [fp + -4] + -3699, ap++;
+                [fp + -4] = [ap + 0] + 3699, ap++;
                 [ap + 0] = [ap + -1] * -1, ap++;
                 [ap + -1] = [[fp + -5] + 0];
                 jmp rel 25;
-                [ap + 0] = [fp + -4] + -3700, ap++;
+                [fp + -4] = [ap + 0] + 3700, ap++;
                 [ap + -1] = [[fp + -5] + 0];
 
                 // Statement # 21 - Performing both recursive calculations and returning their sum.
