@@ -79,8 +79,9 @@ define_libfunc_hierarchy! {
 pub struct BuiltinCostGetGasLibFunc {}
 impl BuiltinCostGetGasLibFunc {
     /// Returns the maximal number of steps required for the computation of the requested cost.
-    pub fn max_cost() -> usize {
-        1 + (CostTokenType::iter().len() - 1) * 3
+    /// The number of steps is also the change in `ap` (every step includes `ap++`).
+    pub fn cost_computation_max_steps() -> usize {
+        (CostTokenType::iter().len() - 1) * 3
     }
 }
 
@@ -96,7 +97,12 @@ impl NoGenericArgsGenericLibFunc for BuiltinCostGetGasLibFunc {
         let builtin_costs_type = context.get_concrete_type(BuiltinCostsType::id(), &[])?;
         Ok(LibFuncSignature {
             param_signatures: vec![
-                ParamSignature::new(range_check_type.clone()),
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
                 ParamSignature::new(gas_builtin_type.clone()),
                 ParamSignature::new(builtin_costs_type),
             ],

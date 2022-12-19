@@ -109,7 +109,8 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
                 .map(|token_type| ops.statement_var_cost(*token_type))
                 .reduce(|x, y| ops.add(x, y));
             // Compute the (maximal) number of steps for the computation of the requested cost.
-            let compute_requested_cost_steps = BuiltinCostGetGasLibFunc::max_cost() as i32;
+            let compute_requested_cost_steps =
+                BuiltinCostGetGasLibFunc::cost_computation_max_steps() as i32;
             vec![
                 ops.sub(ops.const_cost(compute_requested_cost_steps + 3), cost.unwrap()),
                 ops.const_cost(compute_requested_cost_steps + 5),
