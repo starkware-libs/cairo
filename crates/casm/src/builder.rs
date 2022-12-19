@@ -259,7 +259,7 @@ impl CasmBuilder {
             ResOperand::BinOp(BinOpOperand {
                 op: Operation::Add,
                 a: cell,
-                b: deref_or_immediate!(offset + 1),
+                b: deref_or_immediate!(BigInt::from(offset) + 1),
             }),
         );
         self.add_var(ResOperand::DoubleDeref(cell, offset))
