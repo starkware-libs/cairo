@@ -4,9 +4,7 @@ use sierra::extensions::boolean::BoolConcreteLibFunc;
 use sierra::extensions::felt::FeltBinaryOperator;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{
-    try_unpack_deref, BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue,
-};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
 
 /// Builds instructions for Sierra bool operations.
 pub fn build(
@@ -25,7 +23,7 @@ fn build_bool_and(
 ) -> Result<CompiledInvocation, InvocationError> {
     let (a, b) = match builder.refs {
         [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
-            (try_unpack_deref(expr_a)?, try_unpack_deref(expr_b)?)
+            (expr_a.try_unpack_single()?.to_deref()?, expr_b.try_unpack_single()?.to_deref()?)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -52,7 +50,7 @@ fn build_bool_not(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let a = match builder.refs {
-        [ReferenceValue { expression, .. }] => try_unpack_deref(expression)?,
+        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 1,
