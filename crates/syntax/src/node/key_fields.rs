@@ -90,6 +90,8 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::TerminalIdentifier => vec![],
         SyntaxKind::TokenLiteralNumber => vec![],
         SyntaxKind::TerminalLiteralNumber => vec![],
+        SyntaxKind::TokenShortString => vec![],
+        SyntaxKind::TerminalShortString => vec![],
         SyntaxKind::TokenFalse => vec![],
         SyntaxKind::TerminalFalse => vec![],
         SyntaxKind::TokenTrue => vec![],

@@ -17,6 +17,7 @@ pub fn get_spec() -> Vec<Node> {
             .missing("Missing")
             .node("Path")
             .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
+            .node_with_explicit_kind("ShortString", "TerminalShortString")
             .node_with_explicit_kind("False", "TerminalFalse")
             .node_with_explicit_kind("True", "TerminalTrue")
             .node("Parenthesized")
@@ -157,6 +158,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_enum(EnumBuilder::new("Pattern")
         .node_with_explicit_kind("Underscore", "TerminalUnderscore")
         .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
+        .node_with_explicit_kind("ShortString", "TerminalShortString")
         .node("Identifier")
         .node("Struct")
         .node("Tuple")
@@ -433,6 +435,7 @@ pub fn get_spec() -> Vec<Node> {
     // --- Tokens + Terminals ---
     .add_token_and_terminal("Identifier")
     .add_token_and_terminal("LiteralNumber")
+    .add_token_and_terminal("ShortString")
     .add_keyword_token_and_terminal("False")
     .add_keyword_token_and_terminal("True")
     .add_keyword_token_and_terminal("Extern")

@@ -108,7 +108,7 @@ impl<'a> Lexer<'a> {
     /// Token matchers.
     /// =================================================================================
 
-    /// Takes an hex or decimal number.
+    /// Takes a hex or decimal number.
     fn take_token_literal_number(&mut self) -> TokenKind {
         if self.peek() == Some('0') {
             self.take();
@@ -127,6 +127,22 @@ impl<'a> Lexer<'a> {
             self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
         }
         TokenKind::LiteralNumber
+    }
+
+    /// Takes a short string.
+    fn take_token_short_string(&mut self) -> TokenKind {
+        if self.peek() == Some('\'') {
+            self.take();
+            // TODO(alon) support '\'' escaping.
+            self.take_while(|c| c != '\'' && c.is_ascii());
+            self.take();
+        }
+
+        // Parse _type suffix.
+        if self.peek() == Some('_') {
+            self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
+        }
+        TokenKind::ShortString
     }
 
     /// Assumes the next character is [a-zA-Z_].
@@ -189,6 +205,7 @@ impl<'a> Lexer<'a> {
         let kind = if let Some(current) = self.peek() {
             match current {
                 '0'..='9' => self.take_token_literal_number(),
+                '\'' => self.take_token_short_string(),
                 ',' => self.take_token_of_kind(TokenKind::Comma),
                 ';' => self.take_token_of_kind(TokenKind::Semicolon),
                 '?' => self.take_token_of_kind(TokenKind::QuestionMark),
@@ -275,6 +292,7 @@ enum TokenKind {
 
     // Literals.
     LiteralNumber,
+    ShortString,
 
     // Keywords.
     False,
@@ -347,6 +365,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
     match kind {
         TokenKind::Identifier => SyntaxKind::TerminalIdentifier,
         TokenKind::LiteralNumber => SyntaxKind::TerminalLiteralNumber,
+        TokenKind::ShortString => SyntaxKind::TerminalShortString,
         TokenKind::False => SyntaxKind::TerminalFalse,
         TokenKind::True => SyntaxKind::TerminalTrue,
         TokenKind::Extern => SyntaxKind::TerminalExtern,
