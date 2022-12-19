@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
-use defs::db::{DefsGroup, MacroPlugin, PluginResult};
+use defs::db::DefsGroup;
 use defs::ids::ModuleId;
+use defs::plugin::{
+    DynDiagnosticMapper, MacroPlugin, PluginGeneratedFile, PluginResult, TrivialMapper,
+};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use syntax::node::ast;
@@ -55,18 +58,18 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
     ) -> PluginResult {
         match item_ast {
             ast::Item::FreeFunction(_) => PluginResult {
-                code: Some((
-                    "virt2".into(),
-                    indoc! {"
-                                mod inner_mod {{
-                                    func bad() -> u128 {
-                                        return 6;
-                                    }
-                                }}
-                            "
-                    }
+                code: Some(PluginGeneratedFile {
+                    name: "virt2".into(),
+                    content: indoc! {"
+                        mod inner_mod {{
+                            func bad() -> u128 {
+                                return 6;
+                            }
+                        }}
+                    "}
                     .to_string(),
-                )),
+                    diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+                }),
                 diagnostics: vec![],
             },
             _ => PluginResult { code: None, diagnostics: vec![] },

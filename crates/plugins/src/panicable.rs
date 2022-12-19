@@ -1,4 +1,7 @@
-use defs::db::{MacroPlugin, PluginDiagnostic, PluginResult};
+use defs::plugin::{
+    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    TrivialMapper,
+};
 use itertools::Itertools;
 use syntax::node::ast::AttributeList;
 use syntax::node::db::SyntaxGroup;
@@ -98,9 +101,9 @@ fn generate_panicable_code(
             .map(|param| param.name(db).as_syntax_node().get_text(db))
             .join(", ");
         return PluginResult {
-            code: Some((
-                "panicable".into(),
-                indoc::formatdoc!(
+            code: Some(PluginGeneratedFile {
+                name: "panicable".into(),
+                content: indoc::formatdoc!(
                     r#"
                     func {panicable_name}({params}) -> {inner_ty_text} {{
                         match {function_name}({args}) {{
@@ -116,7 +119,8 @@ fn generate_panicable_code(
                     }}
                 "#
                 ),
-            )),
+                diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+            }),
             diagnostics: vec![],
         };
     }
