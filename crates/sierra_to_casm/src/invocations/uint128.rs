@@ -10,10 +10,7 @@ use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{
-    try_unpack_deref, try_unpack_deref_with_offset, CellExpression, ReferenceExpression,
-    ReferenceValue,
-};
+use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
 #[cfg(test)]
@@ -55,15 +52,16 @@ pub fn unwrap_range_check_based_binary_op_refs(
             ReferenceValue { expression: expr_a, .. },
             ReferenceValue { expression: expr_b, .. },
         ] => {
-            let (range_check, offset) = try_unpack_deref_with_offset(range_check_expression)?;
+            let (range_check, offset) =
+                range_check_expression.try_unpack_single()?.to_deref_with_offset()?;
             Ok((
                 ResOperand::BinOp(BinOpOperand {
                     op: Operation::Add,
                     a: range_check,
                     b: deref_or_immediate!(offset),
                 }),
-                try_unpack_deref(expr_a)?,
-                try_unpack_deref(expr_b)?,
+                expr_a.try_unpack_single()?.to_deref()?,
+                expr_b.try_unpack_single()?.to_deref()?,
             ))
         }
         refs => Err(InvocationError::WrongNumberOfArguments { expected: 3, actual: refs.len() }),
@@ -269,7 +267,10 @@ fn build_u128_from_felt(
         [
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: expr_value, .. },
-        ] => (try_unpack_deref_with_offset(range_check_expression)?, try_unpack_deref(expr_value)?),
+        ] => (
+            range_check_expression.try_unpack_single()?.to_deref_with_offset()?,
+            expr_value.try_unpack_single()?.to_deref()?,
+        ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 2,
@@ -486,7 +487,7 @@ fn build_u128_eq(
 ) -> Result<CompiledInvocation, InvocationError> {
     let (a, b) = match builder.refs {
         [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
-            (try_unpack_deref(expr_a)?, try_unpack_deref(expr_b)?)
+            (expr_a.try_unpack_single()?.to_deref()?, expr_b.try_unpack_single()?.to_deref()?)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {

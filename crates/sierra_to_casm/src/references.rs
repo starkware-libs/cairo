@@ -98,6 +98,29 @@ impl CellExpression {
             }),
         }
     }
+
+    /// Extract the cell reference from the cell expression.
+    pub fn to_deref(&self) -> Result<CellRef, InvocationError> {
+        try_extract_matches!(self, CellExpression::Deref)
+            .cloned()
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
+    }
+
+    /// Given `[ref] + offset` returns `([ref], offset)`.
+    pub fn to_deref_with_offset(&self) -> Result<(CellRef, i16), InvocationError> {
+        match self {
+            CellExpression::Deref(cell) => Ok((*cell, 0i16)),
+            CellExpression::BinOp(BinOpExpression {
+                op: FeltBinaryOperator::Add,
+                a: cell,
+                b: DerefOrImmediate::Immediate(offset),
+            }) => Ok((
+                *cell,
+                offset.to_i16().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+            )),
+            _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
+        }
+    }
 }
 
 /// A collection of Cell Expression which represents one logical object.
@@ -112,11 +135,11 @@ impl ReferenceExpression {
         Self { cells: vec![cell_expr] }
     }
     /// If there is only one cell in the ReferenceExpression returns the contained CellExpression.
-    pub fn try_unpack_single(&self) -> Result<CellExpression, ReferencesError> {
+    pub fn try_unpack_single(&self) -> Result<CellExpression, InvocationError> {
         if let [cell_expr] = &self.cells[..] {
             Ok(cell_expr.clone())
         } else {
-            Err(ReferencesError::InvalidReferenceTypeForArgument)
+            Err(InvocationError::InvalidReferenceExpressionForArgument)
         }
     }
 }
@@ -214,31 +237,5 @@ pub fn check_types_match(
         Ok(())
     } else {
         Err(ReferencesError::InvalidReferenceTypeForArgument)
-    }
-}
-
-/// Extract the cell reference from the reference expression.
-pub fn try_unpack_deref(expr: &ReferenceExpression) -> Result<CellRef, InvocationError> {
-    expr.try_unpack_single()
-        .ok()
-        .and_then(|cell| try_extract_matches!(cell, CellExpression::Deref))
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
-}
-
-/// Given `[ref] + offset` returns `([ref], offset)`.
-pub fn try_unpack_deref_with_offset(
-    expr: &ReferenceExpression,
-) -> Result<(CellRef, i16), InvocationError> {
-    match expr.try_unpack_single() {
-        Ok(CellExpression::Deref(cell)) => Ok((cell, 0i16)),
-        Ok(CellExpression::BinOp(BinOpExpression {
-            op: FeltBinaryOperator::Add,
-            a: cell,
-            b: DerefOrImmediate::Immediate(offset),
-        })) => Ok((
-            cell,
-            offset.to_i16().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
-        )),
-        _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
     }
 }

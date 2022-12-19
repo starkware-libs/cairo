@@ -18,8 +18,7 @@ use super::{
     ReferenceExpressionView,
 };
 use crate::references::{
-    try_unpack_deref, BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue,
-    ReferencesError,
+    BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue, ReferencesError,
 };
 
 /// Builds instructions for Sierra single cell dict operations.
@@ -41,7 +40,7 @@ fn build_dict_felt_to_new(
 ) -> Result<CompiledInvocation, InvocationError> {
     let default_value = match builder.refs {
         [ReferenceValue { expression: expr_default_value, .. }] => {
-            try_unpack_deref(expr_default_value)?
+            expr_default_value.try_unpack_single()?.to_deref()?
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -85,7 +84,7 @@ fn build_dict_felt_to_read(
             let dict_view =
                 DictFeltToView::try_get_view(expr_dict, &builder.program_info, concrete_dict_type)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-            let key = try_unpack_deref(expr_key)?;
+            let key = expr_key.try_unpack_single()?.to_deref()?;
             (dict_view, key)
         }
         refs => {
@@ -147,8 +146,8 @@ fn build_dict_felt_to_write(
             let dict_view =
                 DictFeltToView::try_get_view(expr_dict, &builder.program_info, concrete_dict_type)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-            let key = try_unpack_deref(expr_key)?;
-            let value = try_unpack_deref(expr_value)?;
+            let key = expr_key.try_unpack_single()?.to_deref()?;
+            let value = expr_value.try_unpack_single()?.to_deref()?;
             (dict_view, key, value)
         }
         refs => {
@@ -203,7 +202,7 @@ fn build_dict_felt_to_squash(
             let dict_view =
                 DictFeltToView::try_get_view(expr_dict, &builder.program_info, concrete_dict_type)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-            let range_check = try_unpack_deref(expr_range_check)?;
+            let range_check = expr_range_check.try_unpack_single()?.to_deref()?;
             (range_check, dict_view)
         }
         refs => {
