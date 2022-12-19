@@ -225,9 +225,10 @@ impl CasmBuilder {
         ));
     }
 
-    /// Adds a system call hint with the given system var.
-    pub fn add_system_call(&mut self, system_var: Var) {
-        self.current_hints.push(Hint::SystemCall { system: self.get_value(system_var, true) });
+    /// Adds a hint, generated from `inputs` which are cell refs or immediates and `outputs` which
+    /// must be cell refs.
+    pub fn add_buffer_hint<F: FnOnce(ResOperand) -> Hint>(&mut self, f: F, buffer: Var) {
+        self.current_hints.push(f(self.get_value(buffer, true)));
     }
 
     /// Adds an assertion that `dst = res`.
@@ -516,8 +517,13 @@ macro_rules! casm_build_extend {
         );
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, system_call $syscall_ptr:ident; $($tok:tt)*) => {
-        $builder.add_system_call($syscall_ptr);
+    ($builder:ident, hint $hint_name:ident {
+        $buffer_name:ident : $buffer_value:ident
+    }; $($tok:tt)*) => {
+        $builder.add_buffer_hint(
+            |$buffer_name| $crate::hints::Hint::$hint_name { $buffer_name },
+            $buffer_value,
+        );
         $crate::casm_build_extend!($builder, $($tok)*)
     };
 }
