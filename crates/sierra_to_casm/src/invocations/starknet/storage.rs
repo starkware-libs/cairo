@@ -1,16 +1,14 @@
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::operand::{BinOpOperand, DerefOrImmediate, Operation, ResOperand};
-use casm::{casm, casm_build_extend, deref, deref_or_immediate};
+use casm::operand::{BinOpOperand, Operation, ResOperand};
+use casm::{casm_build_extend, deref_or_immediate};
 use num_bigint::BigInt;
-use num_traits::FromPrimitive;
-use sierra::extensions::felt::FeltBinaryOperator;
 use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
 use crate::references::{
-    try_unpack_deref, try_unpack_deref_with_offset, BinOpExpression, CellExpression,
-    ReferenceExpression, ReferenceValue,
+    try_unpack_deref, try_unpack_deref_with_offset, CellExpression, ReferenceExpression,
+    ReferenceValue,
 };
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -22,8 +20,7 @@ mod test;
 pub fn build_storage_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let selector = BigInt::from_bytes_le(num_bigint::Sign::Plus, "storage_read".as_bytes());
-
+    let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "storage_read".as_bytes());
     let ((system_base, system_offset), storage_address) = match builder.refs {
         [
             ReferenceValue { expression: expr_system, .. },
@@ -41,30 +38,46 @@ pub fn build_storage_read(
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     }
 
-    let instructions = casm! {
-        [ap] = selector, ap++;
-        [ap - 1] = [[&system_base] + system_offset];
-        storage_address = [[&system_base] + (system_offset + 1)];
-        %{ syscall_handler.syscall(segments=segments, syscall_ptr=[&system_base] + system_offset) %}
-        [ap] = [[&system_base] + (system_offset + 2)], ap++;
-    }
-    .instructions;
+    let mut casm_builder = CasmBuilder::default();
+    let system_res_operand = ResOperand::BinOp(BinOpOperand {
+        op: Operation::Add,
+        a: system_base,
+        b: deref_or_immediate!(system_offset),
+    });
+    let system = casm_builder.add_var(system_res_operand.clone());
+    let original_system = casm_builder.add_var(system_res_operand);
+    let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
+    let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
+    casm_build_extend! {casm_builder,
+        alloc selector;
+        assert selector = selector_imm;
+        assert *(system++) = selector;
+        assert *(system++) = storage_address;
+        system_call original_system;
+        alloc read_value;
+        assert *(system++) = read_value;
+    };
 
-    let output_expressions = [vec![
-        // System
-        ReferenceExpression {
-            cells: vec![CellExpression::BinOp(BinOpExpression {
-                op: FeltBinaryOperator::Add,
-                a: system_base,
-                b: DerefOrImmediate::Immediate(BigInt::from_i16(system_offset).unwrap() + 3),
-            })],
-        },
-        // Read value
-        ReferenceExpression::from_cell(CellExpression::Deref(deref!([ap - 1]))),
-    ]
-    .into_iter()]
-    .into_iter();
-    Ok(builder.build(instructions, vec![], output_expressions))
+    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+    // TODO(orizi): Extract the assertion out of the libfunc implementation.
+    assert_eq!(
+        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+        [sierra_ap_change::ApChange::Known(fallthrough_state.ap_change)]
+    );
+    Ok(builder.build(
+        instructions,
+        vec![],
+        [vec![
+            ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                fallthrough_state.get_adjusted(system),
+            )),
+            ReferenceExpression::from_cell(CellExpression::Deref(
+                fallthrough_state.get_adjusted_as_cell_ref(read_value),
+            )),
+        ]
+        .into_iter()]
+        .into_iter(),
+    ))
 }
 
 /// Builds instructions for StarkNet write system call.
@@ -99,16 +112,13 @@ pub fn build_storage_write(
     }
 
     let mut casm_builder = CasmBuilder::default();
-    let system = casm_builder.add_var(ResOperand::BinOp(BinOpOperand {
+    let system_res_operand = ResOperand::BinOp(BinOpOperand {
         op: Operation::Add,
         a: system_base,
         b: deref_or_immediate!(system_offset),
-    }));
-    let original_system = casm_builder.add_var(ResOperand::BinOp(BinOpOperand {
-        op: Operation::Add,
-        a: system_base,
-        b: deref_or_immediate!(system_offset),
-    }));
+    });
+    let system = casm_builder.add_var(system_res_operand.clone());
+    let original_system = casm_builder.add_var(system_res_operand);
     let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
     let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
