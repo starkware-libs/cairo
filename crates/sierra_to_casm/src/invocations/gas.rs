@@ -77,15 +77,15 @@ fn build_get_gas(
     let requested_count = casm_builder.add_var(ResOperand::Immediate(requested_count.into()));
 
     casm_build_extend! {casm_builder,
-        alloc has_enough_gas;
+        tempvar has_enough_gas;
         hint TestLessThanOrEqual {lhs: requested_count, rhs: gas_counter} into {dst: has_enough_gas};
         jump HasEnoughGas if has_enough_gas != 0;
-        alloc gas_diff;
+        tempvar gas_diff;
         assert gas_diff = gas_counter + gas_counter_fix;
         assert *(range_check++) = gas_diff;
         jump Failure;
         HasEnoughGas:
-        alloc updated_gas;
+        tempvar updated_gas;
         assert gas_counter = updated_gas + requested_count;
         assert *(range_check++) = updated_gas;
     };

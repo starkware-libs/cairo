@@ -49,12 +49,12 @@ pub fn build_storage_read(
     let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
     casm_build_extend! {casm_builder,
-        alloc selector;
+        tempvar selector;
         assert selector = selector_imm;
         assert *(system++) = selector;
         assert *(system++) = storage_address;
         system_call original_system;
-        alloc read_value;
+        tempvar read_value;
         assert *(system++) = read_value;
     };
 
@@ -124,18 +124,18 @@ pub fn build_storage_write(
     let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
     let value = casm_builder.add_var(ResOperand::Deref(value));
     casm_build_extend! {casm_builder,
-        alloc selector;
+        tempvar selector;
         assert selector = selector_imm;
         assert *(system++) = selector;
         assert *(system++) = gas_builtin;
         assert *(system++) = storage_address;
         assert *(system++) = value;
         system_call original_system;
-        ref updated_gas_builtin = *(system++);
+        let updated_gas_builtin = *(system++);
         // `revert_reason` is 0 on success, nonzero on failure/revert.
-        alloc revert_reason;
+        tempvar revert_reason;
         assert *(system++) = revert_reason;
-        ref _ignore = *(system++);
+        let _ignore = *(system++);
         jump Failure if revert_reason != 0;
     };
 
