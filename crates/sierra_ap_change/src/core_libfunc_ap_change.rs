@@ -24,6 +24,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             ArrayConcreteLibFunc::At(_) => vec![ApChange::Known(5), ApChange::Known(3)],
             ArrayConcreteLibFunc::Len(_) => vec![ApChange::Known(0)],
         },
+        CoreConcreteLibFunc::Bitwise(_) => vec![ApChange::Known(0)],
         CoreConcreteLibFunc::BranchAlign(_) => vec![ApChange::FromMetadata],
         CoreConcreteLibFunc::Bool(libfunc) => match libfunc {
             BoolConcreteLibFunc::And(_) => vec![ApChange::Known(0)],

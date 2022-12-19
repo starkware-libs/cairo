@@ -1,5 +1,6 @@
 use super::ap_tracking::RevokeApTrackingLibFunc;
 use super::array::{ArrayLibFunc, ArrayType};
+use super::bitwise::BitwiseLibFunc;
 use super::boolean::BoolLibFunc;
 use super::branch_align::BranchAlignLibFunc;
 use super::builtin_cost::{BuiltinCostLibFunc, BuiltinCostsType};
@@ -47,6 +48,7 @@ define_libfunc_hierarchy! {
     pub enum CoreLibFunc {
         ApTracking(RevokeApTrackingLibFunc),
         Array(ArrayLibFunc),
+        Bitwise(BitwiseLibFunc),
         BranchAlign(BranchAlignLibFunc),
         Bool(BoolLibFunc),
         Box(BoxLibFunc),
