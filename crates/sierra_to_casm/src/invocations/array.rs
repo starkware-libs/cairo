@@ -1,17 +1,16 @@
-use casm::ap_change::ApplyApChange;
-use casm::operand::{ap_cell_ref, CellRef, DerefOrImmediate};
-use casm::{casm, casm_extend};
-use itertools::chain;
+use casm::builder::{CasmBuildResult, CasmBuilder};
+use casm::operand::{ap_cell_ref, CellRef, DerefOrImmediate, ResOperand};
+use casm::{casm, casm_build_extend, casm_extend};
 use num_bigint::BigInt;
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
+use sierra_ap_change::core_libfunc_ap_change;
 use utils::try_extract_matches;
 
 use super::{
-    patch_jnz_to_end, CompiledInvocation, CompiledInvocationBuilder, InvocationError,
-    ReferenceExpressionView,
+    CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
 };
 use crate::invocations::{get_non_fallthrough_statement_id, ProgramInfo};
 use crate::references::{
@@ -133,87 +132,126 @@ fn build_array_at(
         return Err(InvocationError::NotImplemented(builder.invocation.clone()));
     }
 
-    match index {
-        DerefOrImmediate::Immediate(_) => {
-            // TODO(Gil): handle when assertion of immediate to DoubleDeref (e.g. [[ap+0]] = 1)
-            // will be supported.
-            Err(InvocationError::NotImplemented(builder.invocation.clone()))
-        }
-        DerefOrImmediate::Deref(index_cell) => {
-            // TODO(dorimedini): Optimize for the case element_size==1.
-            let mut index_out_of_bounds_branch = casm! {
-                // Compute the length of the array (in felts).
-                (array_view.end) = [ap + 0] + (array_view.start), ap++;
-                // Compute the element offset (in felts).
-                [ap + 0] = (index_cell.unchecked_apply_known_ap_change(1)) * (element_size), ap++;
-                // Check offset is in range. Note that the offset may be as large as
-                // `2^15 * (2^128 - 1)`, but still, `length - offset` is in [0, 2^128) if and only
-                // if `offset <= length`.
-                %{ memory[ap + 0] = memory[ap + -1] < memory[ap + -2] %}
-                jmp rel 0 if [ap + 0] != 0, ap++;
-                // Index out of bounds. Compute offset - length.
-                [ap + -2] = [ap + 0] + [ap + -3], ap++;
-                // Divide by element size. We assume the length is divisible by element size, and by
-                // construction, so is the offset.
-                [ap + -1] = [ap + 0] * (element_size), ap++;
-                // Assert offset - length >= 0.
-                [ap + -1] = [[&range_check.unchecked_apply_known_ap_change(5)]];
-                jmp rel 0;
-            };
-            let success_branch = casm! {
-                // Assert offset < length, or that length-(offset+1) is in [0, 2^128).
-                // Compute offset+1.
-                [ap + 0] = [ap + -2] + 1, ap++;
-                // Compute length-(offset+1).
-                [ap + -4] = [ap + 0] + [ap + -1], ap++;
-                // Assert length-(offset+1) is in [0, 2^128).
-                [ap + -1] = [[&range_check.unchecked_apply_known_ap_change(5)]];
-                // Compute address of target cell.
-                [ap + 0] = (array_view.start.unchecked_apply_known_ap_change(5)) + [ap + -4], ap++;
-            };
-
-            // Backpatch the JNZ target. It's the second instruction.
-            patch_jnz_to_end(&mut index_out_of_bounds_branch, 2);
-
-            // First (success) branch has AP change 4, second (failure) has AP change 3.
-            // Both branches invoke range check once. Success branch also outputs the double-deref
-            // (array cell value).
-            let relocation_idx = index_out_of_bounds_branch.instructions.len() - 1;
-            let instructions =
-                chain!(index_out_of_bounds_branch.instructions, success_branch.instructions)
-                    .collect();
-            let array_ref = array_view.to_reference_expression();
-            let relocations = vec![RelocationEntry {
-                instruction_idx: relocation_idx,
-                relocation: Relocation::RelativeStatementId(get_non_fallthrough_statement_id(
-                    &builder,
-                )),
-            }];
-            let output_expressions = [
-                vec![
-                    ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                        op: FeltBinaryOperator::Add,
-                        a: range_check.unchecked_apply_known_ap_change(6),
-                        b: DerefOrImmediate::from(1),
-                    })),
-                    array_ref.clone(),
-                    ReferenceExpression::from_cell(CellExpression::DoubleDeref(ap_cell_ref(-1), 0)),
-                ]
-                .into_iter(),
-                vec![
-                    ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                        op: FeltBinaryOperator::Add,
-                        a: range_check.unchecked_apply_known_ap_change(5),
-                        b: DerefOrImmediate::from(1),
-                    })),
-                    array_ref,
-                ]
-                .into_iter(),
-            ]
-            .into_iter();
-            Ok(builder.build(instructions, relocations, output_expressions))
-        }
-    }
+    let mut casm_builder = CasmBuilder::default();
+    let index = casm_builder.add_var(match index {
+        DerefOrImmediate::Immediate(imm) => ResOperand::Immediate(imm),
+        DerefOrImmediate::Deref(cell) => ResOperand::Deref(cell),
+    });
+    let array_start = casm_builder.add_var(ResOperand::Deref(array_view.start));
+    let array_end = casm_builder.add_var(ResOperand::Deref(array_view.end));
+    let element_size_var = casm_builder.add_var(ResOperand::Immediate(element_size.into()));
+    let one = casm_builder.add_var(ResOperand::Immediate(1.into()));
+    let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+    casm_build_extend! {casm_builder,
+        alloc array_cell_size;
+        // Compute the length of the array (in felts).
+        array_end = array_cell_size + array_start;
+    };
+    let element_offset = if element_size == 1 {
+        index
+    } else {
+        casm_build_extend! {casm_builder,
+            alloc element_offset;
+            // Compute the length of the array (in felts).
+            element_offset = index * element_size_var;
+        };
+        element_offset
+    };
+    casm_build_extend! {casm_builder,
+        // Check offset is in range. Note that the offset may be as large as
+        // `2^15 * (2^128 - 1)`, but still, `length - offset` is in [0, 2^128) if and only
+        // if `offset <= length`.
+        alloc is_in_range;
+        hint TestLessThan {lhs: element_offset, rhs: array_cell_size} into {dst: is_in_range};
+        jump InRange if is_in_range != 0;
+        // Index out of bounds. Compute offset - length.
+        alloc offset_length_diff;
+        element_offset = offset_length_diff + array_cell_size;
+    };
+    let array_length = if element_size == 1 {
+        array_cell_size
+    } else {
+        casm_build_extend! {casm_builder,
+            // Divide by element size. We assume the length is divisible by element size, and by
+            // construction, so is the offset.
+            alloc array_length;
+            array_cell_size = array_length * element_size_var;
+        };
+        array_length
+    };
+    casm_build_extend! {casm_builder,
+        // Assert offset - length >= 0.
+        *(range_check++) = array_length;
+        jump FailureHandle;
+        InRange:
+        // Assert offset < length, or that length-(offset+1) is in [0, 2^128).
+        // Compute offset+1.
+        alloc element_offset_plus_1;
+        element_offset_plus_1 = element_offset + one;
+        // Compute length-(offset+1).
+        alloc offset_length_diff;
+        element_offset_plus_1 = offset_length_diff + array_cell_size;
+        // Assert length-(offset+1) is in [0, 2^128).
+        *(range_check++) = element_offset_plus_1;
+        // Compute address of target cell.
+        alloc target_cell;
+        target_cell = array_start + element_offset;
+    };
+    let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
+        casm_builder.build();
+    // TODO(orizi): Extract the assertion out of the libfunc implementation.
+    assert_eq!(
+        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+        [fallthrough_state.ap_change, label_state["FailureHandle"].ap_change]
+            .map(sierra_ap_change::ApChange::Known)
+    );
+    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
+    let relocations = vec![RelocationEntry {
+        instruction_idx: *relocation_index,
+        relocation: Relocation::RelativeStatementId(get_non_fallthrough_statement_id(&builder)),
+    }];
+    let output_expressions = [
+        vec![
+            ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                fallthrough_state.get_adjusted(range_check),
+            )),
+            ReferenceExpression {
+                cells: vec![
+                    CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(array_start)),
+                    CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(array_end)),
+                ],
+            },
+            ReferenceExpression {
+                cells: (0..element_size)
+                    .map(|i| {
+                        CellExpression::DoubleDeref(
+                            fallthrough_state.get_adjusted_as_cell_ref(target_cell),
+                            i,
+                        )
+                    })
+                    .collect(),
+            },
+        ]
+        .into_iter(),
+        vec![
+            ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                label_state["FailureHandle"].get_adjusted(range_check),
+            )),
+            ReferenceExpression {
+                cells: vec![
+                    CellExpression::Deref(
+                        label_state["FailureHandle"].get_adjusted_as_cell_ref(array_start),
+                    ),
+                    CellExpression::Deref(
+                        label_state["FailureHandle"].get_adjusted_as_cell_ref(array_end),
+                    ),
+                ],
+            },
+        ]
+        .into_iter(),
+    ]
+    .into_iter();
+    Ok(builder.build(instructions, relocations, output_expressions))
 }
 
 /// Handles a Sierra statement for getting the length of an array.
