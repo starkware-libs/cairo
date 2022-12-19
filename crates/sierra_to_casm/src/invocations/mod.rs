@@ -17,7 +17,7 @@ use {casm, sierra};
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
-use crate::references::{try_unpack_deref, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::RelocationEntry;
 use crate::type_sizes::TypeSizeMap;
 
@@ -294,24 +294,6 @@ trait ReferenceExpressionView: Sized {
     ) -> Result<Self, Self::Error>;
     /// Converts the view into a ReferenceExpression.
     fn to_reference_expression(self) -> ReferenceExpression;
-}
-
-/// Fetches, verifies and returns the range check, a and b references.
-pub fn unwrap_range_check_based_binary_op_refs(
-    builder: &CompiledInvocationBuilder<'_>,
-) -> Result<(CellRef, CellRef, CellRef), InvocationError> {
-    match builder.refs {
-        [
-            ReferenceValue { expression: range_check_expression, .. },
-            ReferenceValue { expression: expr_a, .. },
-            ReferenceValue { expression: expr_b, .. },
-        ] => Ok((
-            try_unpack_deref(range_check_expression)?,
-            try_unpack_deref(expr_a)?,
-            try_unpack_deref(expr_b)?,
-        )),
-        refs => Err(InvocationError::WrongNumberOfArguments { expected: 3, actual: refs.len() }),
-    }
 }
 
 /// Fetches the non-fallthrough jump target of the invocation, assuming this invocation is a
