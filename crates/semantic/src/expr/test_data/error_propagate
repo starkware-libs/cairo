@@ -54,21 +54,21 @@ error: Return type "core::felt" does not wrap error "()"
 test_function_diagnostics
 
 //! > function
-func foo() -> Result::<felt, uint128> {
+func foo() -> Result::<felt, u128> {
     with_err()?;
-    Result::<felt, uint128>::Ok(with_err2()?)
+    Result::<felt, u128>::Ok(with_err2()?)
 }
 
 //! > function_name
 foo
 
 //! > module_code
-func with_err() -> Result::<(), uint128> {
-    Result::<(), uint128>::Ok(())
+func with_err() -> Result::<(), u128> {
+    Result::<(), u128>::Ok(())
 }
 
-func with_err2() -> Result::<felt, uint128> {
-    Result::<felt, uint128>::Ok((0))
+func with_err2() -> Result::<felt, u128> {
+    Result::<felt, u128>::Ok((0))
 }
 
 //! > expected_diagnostics
@@ -90,12 +90,12 @@ func foo() -> felt {
 foo
 
 //! > module_code
-func with_err() -> Result::<felt, uint128> {
-    Result::<felt, uint128>::Ok((0))
+func with_err() -> Result::<felt, u128> {
+    Result::<felt, u128>::Ok((0))
 }
 
 //! > expected_diagnostics
-error: Return type "core::felt" does not wrap error "core::integer::uint128"
+error: Return type "core::felt" does not wrap error "core::integer::u128"
  --> lib.cairo:5:5
     with_err()?;
     ^*********^
@@ -108,7 +108,7 @@ error: Return type "core::felt" does not wrap error "core::integer::uint128"
 test_function_diagnostics
 
 //! > function
-func foo() -> Result::<felt, uint128> {
+func foo() -> Result::<felt, u128> {
     with_other_err()?;
     Result::<felt, felt>::Ok((0))
 }
@@ -122,15 +122,15 @@ func with_other_err() -> Result::<felt, felt> {
 }
 
 //! > expected_diagnostics
-error: Return type "core::result::Result::<core::felt, core::integer::uint128>" does not wrap error "core::felt"
+error: Return type "core::result::Result::<core::felt, core::integer::u128>" does not wrap error "core::felt"
  --> lib.cairo:5:5
     with_other_err()?;
     ^***************^
 
-error: Unexpected return type. Expected: "core::result::Result::<core::felt, core::integer::uint128>", found: "core::result::Result::<core::felt, core::felt>".
- --> lib.cairo:4:39
-func foo() -> Result::<felt, uint128> {
-                                      ^
+error: Unexpected return type. Expected: "core::result::Result::<core::felt, core::integer::u128>", found: "core::result::Result::<core::felt, core::felt>".
+ --> lib.cairo:4:36
+func foo() -> Result::<felt, u128> {
+                                   ^
 
 //! > ==========================================================================
 

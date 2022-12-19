@@ -59,7 +59,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                     "virt2".into(),
                     indoc! {"
                                 mod inner_mod {{
-                                    func bad() -> uint128 {
+                                    func bad() -> u128 {
                                         return 6;
                                     }
                                 }}
@@ -83,7 +83,7 @@ fn test_inline_module_diagnostics() {
         db,
         indoc! {"
             mod a {
-                func bad() -> uint128 {
+                func bad() -> u128 {
                     return 5;
                 }
             }
@@ -96,7 +96,7 @@ fn test_inline_module_diagnostics() {
     assert_eq!(
         db.module_semantic_diagnostics(*submodule_id).unwrap().format(db),
         indoc! {r#"
-            error: Unexpected return type. Expected: "core::integer::uint128", found: "core::felt".
+            error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt".
              --> lib.cairo:3:16
                     return 5;
                            ^
@@ -111,7 +111,7 @@ fn test_inline_module_diagnostics() {
     assert_eq!(
         db.module_semantic_diagnostics(*subsubmodule_id).unwrap().format(db),
         indoc! {r#"
-            error: Unexpected return type. Expected: "core::integer::uint128", found: "core::felt".
+            error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt".
              --> virt2:3:16
                     return 6;
                            ^

@@ -51,8 +51,8 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib_array")]
 #[test_case("fib_counter")]
 #[test_case("fib_struct")]
-#[test_case("fib_uint128")]
-#[test_case("fib_uint128_checked")]
+#[test_case("fib_u128")]
+#[test_case("fib_u128_checked")]
 #[test_case("fib_gas")]
 #[test_case("fib_local")]
 #[test_case("fib_unary")]
@@ -72,8 +72,8 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib_array", false)]
 #[test_case("fib_counter", false)]
 #[test_case("fib_struct", false)]
-#[test_case("fib_uint128", false)]
-#[test_case("fib_uint128_checked", false)]
+#[test_case("fib_u128", false)]
+#[test_case("fib_u128_checked", false)]
 #[test_case("fib_gas", true)]
 #[test_case("fib_local", false)]
 #[test_case("fib_unary", false)]
@@ -103,8 +103,8 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("fib_array")]
 #[test_case("fib_counter")]
 #[test_case("fib_struct")]
-#[test_case("fib_uint128")]
-#[test_case("fib_uint128_checked")]
+#[test_case("fib_u128")]
+#[test_case("fib_u128_checked")]
 #[test_case("fib_gas")]
 #[test_case("fib_local")]
 #[test_case("fib_unary")]
@@ -134,28 +134,28 @@ fn lowering_test(name: &str) {
     "fib_struct"
 )]
 #[test_case(
-    "fib_uint128_checked",
+    "fib_u128_checked",
     &[1, 1, 10].map(BigInt::from),
     RunResultValue::Success([/*ok*/0, /*fib*/89].map(BigInt::from).into_iter().collect());
-    "fib_uint128_checked"
+    "fib_u128_checked"
 )]
 #[test_case(
-    "fib_uint128_checked",
+    "fib_u128_checked",
     &[1, 1, 200].map(BigInt::from),
     RunResultValue::Success([/*err*/1, /*padding*/0].map(BigInt::from).into_iter().collect());
-    "fib_uint128_checked_overflow"
+    "fib_u128_checked_overflow"
 )]
 #[test_case(
-    "fib_uint128",
+    "fib_u128",
     &[1, 1, 10].map(BigInt::from),
     RunResultValue::Success(vec![BigInt::from(89)]);
-    "fib_uint128"
+    "fib_u128"
 )]
 #[test_case(
-    "fib_uint128",
+    "fib_u128",
     &[1, 1, 200].map(BigInt::from),
     RunResultValue::Panic(vec![BigInt::from(1)]);
-    "fib_uint128_overflow"
+    "fib_u128_overflow"
 )]
 #[test_case(
     "fib_local",
