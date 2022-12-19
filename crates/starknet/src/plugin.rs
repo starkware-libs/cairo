@@ -1,6 +1,9 @@
 use std::vec;
 
-use defs::db::{MacroPlugin, PluginDiagnostic, PluginResult};
+use defs::plugin::{
+    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    TrivialMapper,
+};
 use genco::prelude::*;
 use itertools::join;
 use syntax::node::ast::{ItemFreeFunction, MaybeImplBody, MaybeModuleBody, Modifier, Param};
@@ -86,7 +89,11 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     };
 
     PluginResult {
-        code: Some(("entry_points".into(), external_entry_points.to_string().unwrap())),
+        code: Some(PluginGeneratedFile {
+            name: "entry_points".into(),
+            content: external_entry_points.to_string().unwrap(),
+            diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+        }),
         diagnostics: vec![],
     }
 }
@@ -122,7 +129,11 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginRes
         code_tokens.append(generated_submodule)
     }
     PluginResult {
-        code: Some(("contract_storage".into(), code_tokens.to_string().unwrap())),
+        code: Some(PluginGeneratedFile {
+            name: "contract_storage".into(),
+            content: code_tokens.to_string().unwrap(),
+            diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+        }),
         diagnostics: vec![],
     }
 }
@@ -157,7 +168,11 @@ fn handle_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
         }
     }
     PluginResult {
-        code: Some(("entry_points".into(), functions_tokens.to_string().unwrap())),
+        code: Some(PluginGeneratedFile {
+            name: "entry_points".into(),
+            content: functions_tokens.to_string().unwrap(),
+            diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+        }),
         diagnostics: vec![],
     }
 }

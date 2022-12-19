@@ -5,8 +5,8 @@ use defs::db::DefsGroup;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
-    StructId, TraitFunctionId, TraitId, UseId, VariantId,
+    GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
+    ModuleItemId, StructId, TraitFunctionId, TraitId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -513,7 +513,8 @@ fn module_semantic_diagnostics(
     module_id: ModuleId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (module_file_id, plugin_diag) in db.module_data(module_id)?.plugin_diagnostics {
+    let module_data = db.module_data(module_id)?;
+    for (module_file_id, plugin_diag) in module_data.plugin_diagnostics {
         diagnostics.add(SemanticDiagnostic {
             stable_location: StableLocation::new(module_file_id, plugin_diag.stable_ptr),
             kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
@@ -564,6 +565,28 @@ fn module_semantic_diagnostics(
             }
         }
     }
+
+    // Map diagnostics.
+    let orig_diagnostics = diagnostics.build();
+    let all_diags = orig_diagnostics.get_all();
+    let mut diagnostics = DiagnosticsBuilder::default();
+    diagnostics.extend(orig_diagnostics);
+    for diag in all_diags {
+        let file_index = diag.stable_location.module_file_id.1;
+        if let Some(file_info) = &module_data.generated_file_info[file_index.0] {
+            let generating_module_file_id = ModuleFileId(module_id, file_info.origin);
+            for plugin_diag in file_info.diagnostic_mapper.map_diag(&diag) {
+                diagnostics.add(SemanticDiagnostic {
+                    stable_location: StableLocation::new(
+                        generating_module_file_id,
+                        plugin_diag.stable_ptr,
+                    ),
+                    kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+                });
+            }
+        }
+    }
+
     Ok(diagnostics.build())
 }
 

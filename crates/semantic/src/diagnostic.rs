@@ -2,12 +2,12 @@
 #[path = "diagnostic_test.rs"]
 mod test;
 
-use defs::db::PluginDiagnostic;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
+use defs::plugin::PluginDiagnostic;
 use diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
 };

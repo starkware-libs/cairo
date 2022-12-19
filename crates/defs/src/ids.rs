@@ -249,7 +249,7 @@ impl DebugWithDb<dyn DefsGroup> for ModuleId {
     }
 }
 /// Index of file in module.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, Hash, PartialEq, Eq)]
 pub struct FileIndex(pub usize);
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ModuleFileId(pub ModuleId, pub FileIndex);
