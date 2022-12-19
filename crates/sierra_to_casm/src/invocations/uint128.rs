@@ -1,6 +1,6 @@
 use casm::ap_change::ApplyApChange;
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::operand::{ap_cell_ref, DerefOrImmediate, ResOperand};
+use casm::operand::{DerefOrImmediate, ResOperand};
 use casm::{casm, casm_build_extend};
 use itertools::chain;
 use num_bigint::BigInt;
@@ -144,9 +144,24 @@ fn build_u128_op(
             ))
         }
         IntOperator::DivMod => {
-            let code = casm! {
-                %{ (memory[ap + 0], memory[ap + 1]) = divmod(a, b) %}
-                // Both `q` and `r` must be u128.
+            let mut casm_builder = CasmBuilder::default();
+            let u128_bound_minus_u64_bound = casm_builder
+                .add_var(ResOperand::Immediate(BigInt::from(u128::MAX) - BigInt::from(u64::MAX)));
+            let u64_bound = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u64::MAX) + 1));
+            let one = casm_builder.add_var(ResOperand::Immediate(BigInt::from(1)));
+            let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+            let a = casm_builder.add_var(ResOperand::Deref(a));
+            let b = casm_builder.add_var(ResOperand::Deref(b));
+            casm_build_extend! {casm_builder,
+                tempvar r_plus_1;
+                tempvar b_minus_r_minus_1;
+                tempvar q_is_small;
+                tempvar b_or_q_bound_rc_value;
+                tempvar bq;
+                tempvar q;
+                tempvar r;
+                hint DivMod { lhs: a, rhs: b } into { quotient: q, remainder: r };
+                // Both `q` and `r` must be uint128.
                 // We must check `r` explicitly: we later check that `0 <= b - (r + 1)` and
                 // `b * q + r = a`, however, if `r = -1` we may pass both of these checks (say, if
                 // `b = a + 1` and `q = 1`).
@@ -154,28 +169,65 @@ fn build_u128_op(
                 // `b * q + r = a`, and if `b = 2`, `a = 1` and `r = 0`, we can take `q` to be the
                 // inverse of 2 (`(PRIME + 1) / 2`, much larger than 2^128) and pass this
                 // constraint.
-                [ap + 0] = [[&range_check]], ap++;
-                [ap + 0] = [[&range_check.unchecked_apply_known_ap_change(1)] + 1], ap++;
+                assert *(range_check++) = q;
+                assert *(range_check++) = r;
                 // Verify `r < b` by constraining `0 <= b - (r + 1)`.
-                [ap + 0] = [ap + -1] + 1, ap++;
-                (b.unchecked_apply_known_ap_change(3)) = [ap + 0] + [ap + -1], ap++;
-                [ap + -1] = [[&range_check.unchecked_apply_known_ap_change(4)] + 2], ap++;
+                assert r_plus_1 = r + one;
+                assert b = b_minus_r_minus_1 + r_plus_1;
+                assert *(range_check++) = b_minus_r_minus_1;
                 // Verify `b * q + r = a`.
-                [ap + -1] = [ap + -5] * (b.unchecked_apply_known_ap_change(5));
-                (a.unchecked_apply_known_ap_change(5)) = [ap + -1] + [ap + -4];
+                // Since both `b` and `q` can be 2^128-1, we may overflow on `b * q`. To verify this
+                // is not the case, use the fact that `b * q` must be less than 2^128. We know
+                // `min(b, q)` must be less than 2^64. We guess which is less and verify.
+                hint TestLessThan {lhs: q, rhs: u64_bound} into {dst: q_is_small};
+                jump QIsSmall if q_is_small != 0;
+                // `q >= 2^64`, so to verify `b < 2^64` we assert `2^128 - 2^64 + b` is in the range
+                // check bound.
+                assert b_or_q_bound_rc_value = b + u128_bound_minus_u64_bound;
+                jump VerifyBQ;
+                QIsSmall:
+                // `q < 2^64`, compute `2^64 - q`.
+                assert b_or_q_bound_rc_value = q + u128_bound_minus_u64_bound;
+                VerifyBQ:
+                // Now, b_or_q_bound_rc_value contains either `2^128 - 2^64 + q` or
+                // `2^128 - 2^64 + b`. Verify this value is in [0, 2^128).
+                assert *(range_check++) = b_or_q_bound_rc_value;
+                // Range validations done; verify `b * q + r = a` and that's it.
+                assert bq = b * q;
+                assert a = bq + r;
             };
+
+            let CasmBuildResult {
+                instructions,
+                awaiting_relocations,
+                label_state: _,
+                fallthrough_state,
+            } = casm_builder.build();
+            // TODO(orizi): Extract the assertion out of the libfunc implementation.
+            assert_eq!(
+                core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+                [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
+            );
+
+            assert!(
+                awaiting_relocations.is_empty(),
+                "Malformed casm builder usage (no non-fallthrough branch in divmod)."
+            );
+
             Ok(builder.build(
-                code.instructions,
+                instructions,
                 vec![],
                 vec![
                     vec![
-                        ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                            op: FeltBinaryOperator::Add,
-                            a: range_check.unchecked_apply_known_ap_change(5),
-                            b: DerefOrImmediate::from(3),
-                        })),
-                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-5))),
-                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-4))),
+                        ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                            fallthrough_state.get_adjusted(range_check),
+                        )),
+                        ReferenceExpression::from_cell(CellExpression::Deref(
+                            fallthrough_state.get_adjusted_as_cell_ref(q),
+                        )),
+                        ReferenceExpression::from_cell(CellExpression::Deref(
+                            fallthrough_state.get_adjusted_as_cell_ref(r),
+                        )),
                     ]
                     .into_iter(),
                 ]
