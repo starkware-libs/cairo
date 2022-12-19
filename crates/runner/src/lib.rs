@@ -103,7 +103,7 @@ impl SierraCasmRunner {
                 false
             } else {
                 // TODO(orizi): Actually return the range check data.
-                *ty != "RangeCheck".into()
+                *ty != "RangeCheck".into() && *ty != "Bitwise".into() && *ty != "Pedersen".into()
             }
         });
         assert!(results_data.len() <= 1);
@@ -199,7 +199,7 @@ impl SierraCasmRunner {
         let mut expected_arguments_size = 0;
         let mut ctx = casm! {};
         for ty in func.signature.param_types.iter() {
-            if ty == &"RangeCheck".into() {
+            if ty == &"RangeCheck".into() || ty == &"Bitwise".into() || ty == &"Pedersen".into() {
                 // TODO(orizi): Use the vm's range check segment.
                 casm_extend! {ctx,
                     %{ memory[ap + 0] = segments.add() %}
