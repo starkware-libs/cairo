@@ -5,8 +5,8 @@ mod test;
 use std::iter::Peekable;
 
 use defs::ids::{
-    GenericFunctionId, GenericParamId, GenericTypeId, ImplId, ModuleFileId, ModuleId, ModuleItemId,
-    TraitId,
+    GenericFunctionId, GenericParamId, GenericTypeId, ImplId, LanguageElementId, ModuleFileId,
+    ModuleId, ModuleItemId, TraitId,
 };
 use diagnostics::Maybe;
 use diagnostics_proc_macros::DebugWithDb;
@@ -348,9 +348,7 @@ impl<'db> Resolver<'db> {
                 ModuleId::CrateRoot(_) => {
                     return Some(Err(diagnostics.report(segment, SuperUsedInRootModule)));
                 }
-                ModuleId::Submodule(submodule_id) => {
-                    self.db.lookup_intern_submodule(submodule_id).0.0
-                }
+                ModuleId::Submodule(submodule_id) => submodule_id.module(self.db.upcast()),
                 ModuleId::VirtualSubmodule(submodule_id) => {
                     self.db.lookup_intern_virtual_submodule(submodule_id).parent
                 }
