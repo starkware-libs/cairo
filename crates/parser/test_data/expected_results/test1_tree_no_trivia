@@ -303,7 +303,7 @@
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
     │   │       │   │   │   │       ├── ident (kind: TokenIdentifier): 'func2'
-    │   │       │   │   │   │       ├── seperator (kind: TokenColonColon): '::'
+    │   │       │   │   │   │       ├── separator (kind: TokenColonColon): '::'
     │   │       │   │   │   │       └── generic_args (kind: GenericArgs)
     │   │       │   │   │   │           ├── langle (kind: TokenLT): '<'
     │   │       │   │   │   │           ├── generic_args (kind: GenericArgList)

@@ -883,7 +883,7 @@
     │   │       │   │   │   │       │   │   └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │       │   ├── token (kind: TokenIdentifier): 'func2'
     │   │       │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       ├── seperator (kind: TerminalColonColon)
+    │   │       │   │   │   │       ├── separator (kind: TerminalColonColon)
     │   │       │   │   │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │       │   ├── token (kind: TokenColonColon): '::'
     │   │       │   │   │   │       │   └── trailing_trivia (kind: Trivia) []

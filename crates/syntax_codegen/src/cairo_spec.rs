@@ -36,7 +36,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_struct(StructBuilder::new("PathSegmentSimple").node("ident", "TerminalIdentifier"))
     .add_struct(StructBuilder::new("PathSegmentWithGenericArgs")
         .node("ident", "TerminalIdentifier")
-        .node("seperator", "TerminalColonColon")
+        .node("separator", "TerminalColonColon")
         .node("generic_args", "GenericArgs")
         )
     .add_separated_list("ExprPath", "PathSegment", "TerminalColonColon")

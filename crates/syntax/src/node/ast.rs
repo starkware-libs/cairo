@@ -677,10 +677,10 @@ impl PathSegmentWithGenericArgs {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         ident: TerminalIdentifierGreen,
-        seperator: TerminalColonColonGreen,
+        separator: TerminalColonColonGreen,
         generic_args: GenericArgsGreen,
     ) -> PathSegmentWithGenericArgsGreen {
-        let children: Vec<GreenId> = vec![ident.0, seperator.0, generic_args.0];
+        let children: Vec<GreenId> = vec![ident.0, separator.0, generic_args.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         PathSegmentWithGenericArgsGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::PathSegmentWithGenericArgs,
@@ -692,7 +692,7 @@ impl PathSegmentWithGenericArgs {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn seperator(&self, db: &dyn SyntaxGroup) -> TerminalColonColon {
+    pub fn separator(&self, db: &dyn SyntaxGroup) -> TerminalColonColon {
         TerminalColonColon::from_syntax_node(db, self.children[1].clone())
     }
     pub fn generic_args(&self, db: &dyn SyntaxGroup) -> GenericArgs {
