@@ -1,17 +1,18 @@
 use std::path::PathBuf;
 
+use assert_matches::assert_matches;
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use filesystem::ids::CrateId;
 use num_bigint::BigInt;
-use pretty_assertions::assert_eq;
 use runner::{RunResultValue, SierraCasmRunner};
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use sierra_to_casm::test_utils::build_metadata;
 use test_case::test_case;
 use test_utils::compare_contents_or_fix_with_path;
+use utils::extract_matches;
 
 /// Setups the cairo lowering to sierra db for the matching example.
 fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
@@ -117,75 +118,83 @@ fn lowering_test(name: &str) {
 
 #[test_case(
     "fib",
-    &[1, 1, 7].map(BigInt::from),
+    &[1, 1, 7].map(BigInt::from) =>
     RunResultValue::Success(vec![BigInt::from(21)]);
     "fib"
 )]
 #[test_case(
     "fib_counter",
-    &[1, 1, 8].map(BigInt::from),
+    &[1, 1, 8].map(BigInt::from) =>
     RunResultValue::Success([34, 8].map(BigInt::from).into_iter().collect());
     "fib_counter"
 )]
 #[test_case(
     "fib_struct",
-    &[1, 1, 9].map(BigInt::from),
+    &[1, 1, 9].map(BigInt::from) =>
     RunResultValue::Success([55, 9].map(BigInt::from).into_iter().collect());
     "fib_struct"
 )]
 #[test_case(
     "fib_u128_checked",
-    &[1, 1, 10].map(BigInt::from),
+    &[1, 1, 10].map(BigInt::from) =>
     RunResultValue::Success([/*ok*/0, /*fib*/89].map(BigInt::from).into_iter().collect());
     "fib_u128_checked"
 )]
 #[test_case(
     "fib_u128_checked",
-    &[1, 1, 200].map(BigInt::from),
+    &[1, 1, 200].map(BigInt::from) =>
     RunResultValue::Success([/*err*/1, /*padding*/0].map(BigInt::from).into_iter().collect());
     "fib_u128_checked_overflow"
 )]
 #[test_case(
     "fib_u128",
-    &[1, 1, 10].map(BigInt::from),
+    &[1, 1, 10].map(BigInt::from) =>
     RunResultValue::Success(vec![BigInt::from(89)]);
     "fib_u128"
 )]
 #[test_case(
     "fib_u128",
-    &[1, 1, 200].map(BigInt::from),
+    &[1, 1, 200].map(BigInt::from) =>
     RunResultValue::Panic(vec![BigInt::from(1)]);
     "fib_u128_overflow"
 )]
 #[test_case(
     "fib_local",
-    &[6].map(BigInt::from),
+    &[6].map(BigInt::from) =>
     RunResultValue::Success(vec![BigInt::from(13)]);
     "fib_local"
 )]
 #[test_case(
     "fib_unary",
-    &[7].map(BigInt::from),
+    &[7].map(BigInt::from) =>
     RunResultValue::Success(vec![BigInt::from(21)]);
     "fib_unary"
 )]
 #[test_case(
     "hash_chain",
-    &[3].map(BigInt::from),
-    RunResultValue::Success(vec![BigInt::parse_bytes(
-        b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()])
+    &[3].map(BigInt::from)
+    // RunResultValue::Success(vec![BigInt::parse_bytes(
+    //     b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()])
     => ignore["reason"];
     "hash_chain")]
-#[test_case(
-    "testing",
-    &[],
-    RunResultValue::Success(vec![]);
-    "testing")]
-fn run_function_test(name: &str, params: &[BigInt], expected: RunResultValue) {
+#[test_case("testing", &[] => RunResultValue::Success(vec![]); "testing")]
+fn run_function_test(name: &str, params: &[BigInt]) -> RunResultValue {
     let runner = SierraCasmRunner::new(checked_compile_to_sierra(name), false)
         .expect("Failed setting up runner.");
     let result = runner
         .run_function(/* find first */ "", params, &None)
         .expect("Failed running the function.");
-    assert_eq!(result.value, expected);
+    result.value
+}
+
+#[test_case(7, 14)]
+#[test_case(10, 20)]
+fn run_fib_array_len(n: usize, arr_len: usize) {
+    assert_matches!(
+        &extract_matches!(
+            run_function_test("fib_array", &[n].map(BigInt::from)),
+            RunResultValue::Success
+        )[..],
+        [_, _, actual_len] if actual_len == &BigInt::from(arr_len)
+    );
 }
