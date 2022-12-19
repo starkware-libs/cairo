@@ -5,11 +5,11 @@ use num_bigint::BigInt;
 use sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
 };
-use sierra::program::{BranchInfo, BranchTarget};
 use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::gas::STEP_COST;
+use crate::invocations::get_non_fallthrough_statement_id;
 use crate::references::{
     try_unpack_deref, try_unpack_deref_with_offset, CellExpression, ReferenceExpression,
     ReferenceValue,
@@ -49,13 +49,7 @@ fn build_builtin_get_gas(
         }
     };
 
-    let failure_handle_statement_id = match builder.invocation.branches.as_slice() {
-        [
-            BranchInfo { target: BranchTarget::Fallthrough, .. },
-            BranchInfo { target: BranchTarget::Statement(statement_id), .. },
-        ] => statement_id,
-        _ => panic!("malformed invocation"),
-    };
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
 
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
     if !CostTokenType::iter().all(|token| variable_values.contains_key(&(builder.idx, *token))) {
@@ -171,7 +165,7 @@ fn build_builtin_get_gas(
         instructions,
         vec![RelocationEntry {
             instruction_idx: *relocation_index,
-            relocation: Relocation::RelativeStatementId(*failure_handle_statement_id),
+            relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
         }],
         [
             vec![
