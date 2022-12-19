@@ -10,10 +10,7 @@ use sierra_ap_change::core_libfunc_ap_change;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::gas::STEP_COST;
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{
-    try_unpack_deref, try_unpack_deref_with_offset, CellExpression, ReferenceExpression,
-    ReferenceValue,
-};
+use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra gas operations.
@@ -37,9 +34,9 @@ fn build_builtin_get_gas(
             ReferenceValue { expression: gas_counter_expression, .. },
             ReferenceValue { expression: builtin_cost_expression, .. },
         ] => (
-            try_unpack_deref_with_offset(range_check_expression)?,
-            try_unpack_deref(gas_counter_expression)?,
-            try_unpack_deref(builtin_cost_expression)?,
+            range_check_expression.try_unpack_single()?.to_deref_with_offset()?,
+            gas_counter_expression.try_unpack_single()?.to_deref()?,
+            builtin_cost_expression.try_unpack_single()?.to_deref()?,
         ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {

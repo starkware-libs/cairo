@@ -10,10 +10,7 @@ use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::pedersen::PedersenConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{
-    try_unpack_deref, try_unpack_deref_with_offset, BinOpExpression, CellExpression,
-    ReferenceExpression, ReferenceValue,
-};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -35,9 +32,9 @@ fn build_pedersen_hash(
             ReferenceValue { expression: expr_x, .. },
             ReferenceValue { expression: expr_y, .. },
         ] => (
-            try_unpack_deref_with_offset(expr_pedersen)?,
-            try_unpack_deref(expr_x)?,
-            try_unpack_deref(expr_y)?,
+            expr_pedersen.try_unpack_single()?.to_deref_with_offset()?,
+            expr_x.try_unpack_single()?.to_deref()?,
+            expr_y.try_unpack_single()?.to_deref()?,
         ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
