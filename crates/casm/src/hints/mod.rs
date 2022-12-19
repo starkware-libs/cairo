@@ -59,6 +59,10 @@ pub enum Hint {
     SystemCall {
         system: ResOperand,
     },
+    /// Represents a hint that calls the bitwise builtin.
+    Bitwise {
+        ptr: ResOperand,
+    },
 }
 
 impl Display for Hint {
@@ -131,6 +135,7 @@ impl Display for Hint {
             Hint::SystemCall { system } => {
                 write!(f, " syscall_handler.syscall(segments=segments, syscall_ptr={}) ", system)?
             }
+            Hint::Bitwise { ptr } => write!(f, " bitwise_handler(bitwise_ptr={}) ", ptr)?,
         }
         write!(f, "%}}")
     }
