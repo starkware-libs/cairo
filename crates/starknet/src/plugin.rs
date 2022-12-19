@@ -1,6 +1,9 @@
 use std::vec;
 
-use defs::db::{MacroPlugin, PluginDiagnostic, PluginResult};
+use defs::plugin::{
+    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    TrivialMapper,
+};
 use genco::prelude::*;
 use itertools::join;
 use syntax::node::ast::{ItemFreeFunction, MaybeModuleBody, Modifier, Param};
@@ -91,7 +94,14 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
     let contract_code = format!("{}\n{}", storage_code, external_entry_points.to_string().unwrap());
 
-    PluginResult { code: Some(("contract".into(), contract_code)), diagnostics: vec![] }
+    PluginResult {
+        code: Some(PluginGeneratedFile {
+            name: "contract".into(),
+            content: contract_code,
+            diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+        }),
+        diagnostics: vec![],
+    }
 }
 
 /// Generate getters and setters for the variables in the storage struct.
