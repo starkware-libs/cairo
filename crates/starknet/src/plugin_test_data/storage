@@ -6,8 +6,10 @@ test_expand_contract
 //! > cairo_code
 // TODO(ilya): update format.
 #[contract]
-struct TestContract {
-    storage_var: felt,
+mod TestContract {
+    struct Storage {
+        storage_var: felt,
+    }
 }
 
 //! > generated_cairo_code
@@ -24,6 +26,8 @@ func write(ref system: System, value: felt) -> Result::<(), felt> {
         value
     )
 }
+}
+mod __external { use super::TestContract;
 }
 
 //! > expected_diagnostics
