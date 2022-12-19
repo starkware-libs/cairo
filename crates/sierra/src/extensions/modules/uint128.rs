@@ -104,11 +104,18 @@ impl GenericLibFunc for Uint128OperationLibFunc {
         let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         match self.operator {
-            IntOperator::DivMod => Ok(LibFuncSignature::new_non_branch(
+            IntOperator::DivMod => Ok(LibFuncSignature::new_non_branch_ex(
                 vec![
-                    range_check_type.clone(),
-                    ty.clone(),
-                    context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?,
+                    ParamSignature {
+                        ty: range_check_type.clone(),
+                        allow_deferred: false,
+                        allow_add_const: true,
+                        allow_const: false,
+                    },
+                    ParamSignature::new(ty.clone()),
+                    ParamSignature::new(
+                        context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?,
+                    ),
                 ],
                 vec![
                     OutputVarInfo {
@@ -132,7 +139,12 @@ impl GenericLibFunc for Uint128OperationLibFunc {
             | IntOperator::OverflowingSub
             | IntOperator::OverflowingMul => Ok(LibFuncSignature {
                 param_signatures: vec![
-                    ParamSignature::new(range_check_type.clone()),
+                    ParamSignature {
+                        ty: range_check_type.clone(),
+                        allow_deferred: false,
+                        allow_add_const: true,
+                        allow_const: false,
+                    },
                     ParamSignature::new(ty.clone()),
                     ParamSignature::new(ty.clone()),
                 ],
@@ -317,7 +329,12 @@ fn get_u128_comparison_param_signatures(
 ) -> Result<Vec<ParamSignature>, SpecializationError> {
     let (u128_type, range_check_type) = get_u128_comparison_types(context)?;
     Ok(vec![
-        ParamSignature::new(range_check_type),
+        ParamSignature {
+            ty: range_check_type,
+            allow_deferred: false,
+            allow_add_const: true,
+            allow_const: false,
+        },
         ParamSignature::new(u128_type.clone()),
         ParamSignature::new(u128_type),
     ])
@@ -404,7 +421,12 @@ impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibFuncSignature {
             param_signatures: vec![
-                ParamSignature::new(range_check_type.clone()),
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
                 ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
             ],
             branch_signatures: vec![
