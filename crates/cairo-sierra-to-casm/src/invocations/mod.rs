@@ -38,6 +38,7 @@ mod misc;
 mod nullable;
 mod pedersen;
 mod starknet;
+mod cheatcodes;
 
 mod strct;
 mod uint128;
@@ -351,29 +352,27 @@ pub fn compile_invocation(
         CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
-        CoreConcreteLibfunc::Felt(libfunc) => felt::build(libfunc, builder),
-        CoreConcreteLibfunc::Bitwise(_) => bitwise::build(builder),
-        CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
-        CoreConcreteLibfunc::Ec(libfunc) => ec::build(libfunc, builder),
-        CoreConcreteLibfunc::Uint128(libfunc) => uint128::build(libfunc, builder),
-        CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
-        CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
-        CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),
-        CoreConcreteLibfunc::Drop(_) => misc::build_drop(builder),
-        CoreConcreteLibfunc::Dup(_) => misc::build_dup(builder),
-        CoreConcreteLibfunc::Mem(libfunc) => mem::build(libfunc, builder),
-        CoreConcreteLibfunc::UnwrapNonZero(_) => misc::build_identity(builder),
-        CoreConcreteLibfunc::FunctionCall(libfunc) => function_call::build(libfunc, builder),
-        CoreConcreteLibfunc::UnconditionalJump(_) => misc::build_jump(builder),
-        CoreConcreteLibfunc::ApTracking(_) => misc::build_revoke_ap_tracking(builder),
-        CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
-        CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
-        CoreConcreteLibfunc::Struct(libfunc) => strct::build(libfunc, builder),
-        CoreConcreteLibfunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
-        CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
-        CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
-        CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
-        CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
+        CoreConcreteLibFunc::Felt(libfunc) => felt::build(libfunc, builder),
+        CoreConcreteLibFunc::Bool(libfunc) => boolean::build(libfunc, builder),
+        CoreConcreteLibFunc::Uint128(libfunc) => uint128::build(libfunc, builder),
+        CoreConcreteLibFunc::Gas(libfunc) => gas::build(libfunc, builder),
+        CoreConcreteLibFunc::BranchAlign(_) => misc::build_branch_align(builder),
+        CoreConcreteLibFunc::Array(libfunc) => array::build(libfunc, builder),
+        CoreConcreteLibFunc::Drop(_) => misc::build_drop(builder),
+        CoreConcreteLibFunc::Dup(_) => misc::build_dup(builder),
+        CoreConcreteLibFunc::Mem(libfunc) => mem::build(libfunc, builder),
+        CoreConcreteLibFunc::UnwrapNonZero(_) => misc::build_identity(builder),
+        CoreConcreteLibFunc::FunctionCall(libfunc) => function_call::build(libfunc, builder),
+        CoreConcreteLibFunc::UnconditionalJump(_) => misc::build_jump(builder),
+        CoreConcreteLibFunc::ApTracking(_) => misc::build_revoke_ap_tracking(builder),
+        CoreConcreteLibFunc::Box(libfunc) => boxing::build(libfunc, builder),
+        CoreConcreteLibFunc::Enum(libfunc) => enm::build(libfunc, builder),
+        CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
+        CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
+        CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
+        CoreConcreteLibFunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
+        CoreConcreteLibFunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
+        CoreConcreteLibFunc::Cheatcodes(libfunc) => cheatcodes::build(libfunc, builder),
     }
 }
 
