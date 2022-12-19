@@ -67,28 +67,28 @@ fn build_u128_op(
             let (possible_overflow, overflow_fixed) = match op {
                 IntOperator::OverflowingAdd => {
                     casm_build_extend! {casm_builder,
-                        alloc no_overflow;
-                        alloc a_plus_b;
+                        tempvar no_overflow;
+                        tempvar a_plus_b;
                         assert a_plus_b = a + b;
                         hint TestLessThan {lhs: a_plus_b, rhs: u128_limit} into {dst: no_overflow};
                         jump NoOverflow if no_overflow != 0;
                         // Overflow:
                         // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
-                        alloc wrapping_a_plus_b;
+                        tempvar wrapping_a_plus_b;
                         assert a_plus_b = wrapping_a_plus_b + u128_limit;
                     };
                     (a_plus_b, wrapping_a_plus_b)
                 }
                 IntOperator::OverflowingSub => {
                     casm_build_extend! {casm_builder,
-                        alloc no_overflow;
-                        alloc a_minus_b;
+                        tempvar no_overflow;
+                        tempvar a_minus_b;
                         assert a = a_minus_b + b;
                         hint TestLessThan {lhs: a_minus_b, rhs: u128_limit} into {dst: no_overflow};
                         jump NoOverflow if no_overflow != 0;
                         // Underflow:
                         // Here we know that 0 - (2**128 - 1) <= a - b < 0.
-                        alloc wrapping_a_minus_b;
+                        tempvar wrapping_a_minus_b;
                         assert wrapping_a_minus_b = a_minus_b + u128_limit;
                     };
                     (a_minus_b, wrapping_a_minus_b)
@@ -218,15 +218,15 @@ fn build_u128_from_felt(
     let lt_max_x_fix = casm_builder.add_var(ResOperand::Immediate(u128_bound - max_x));
     let minus_max_x = casm_builder.add_var(ResOperand::Immediate(BigInt::from(-max_x)));
     casm_build_extend! {casm_builder,
-            alloc is_u128;
+            tempvar is_u128;
             hint TestLessThan { lhs: value, rhs: u128_limit } into { dst: is_u128 };
             jump NoOverflow if is_u128 != 0;
             // Allocating all values required so that `x` and `y` would be last.
-            alloc x_2_128;
-            alloc x_minus_max_x;
-            alloc rced_value;
-            alloc x;
-            alloc y;
+            tempvar x_2_128;
+            tempvar x_minus_max_x;
+            tempvar rced_value;
+            tempvar x;
+            tempvar y;
             // Write value as 2**128 * x + y.
             hint DivMod { lhs: value, rhs: u128_limit } into { quotient: x, remainder: y };
             // Check x in [0, 2**128).
@@ -375,7 +375,7 @@ fn build_u128_eq(
     let b = casm_builder.add_var(ResOperand::Deref(b));
     casm_build_extend! {casm_builder,
             // diff = a - b => (diff == 0) <==> (a == b)
-            alloc diff;
+            tempvar diff;
             assert a = diff + b;
 
             jump NotEqual if diff != 0;

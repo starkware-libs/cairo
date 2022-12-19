@@ -12,9 +12,9 @@ fn test_ap_change_fixes() {
     let imm5 = builder.add_var(res!(5));
     let ap_at_5 = builder.add_var(res!([ap + 5]));
     casm_build_extend! {builder,
-        ref ap_at_5_mul5 = ap_at_5 * imm5;
+        let ap_at_5_mul5 = ap_at_5 * imm5;
         ap += 2;
-        ref fp_at_minus_3_plus_ap_at_5 = fp_at_minus_3 + ap_at_5;
+        let fp_at_minus_3_plus_ap_at_5 = fp_at_minus_3 + ap_at_5;
     };
     let result = builder.build();
     assert_eq!(result.fallthrough_state.get_adjusted(ap_at_7_mul_34), res!([ap + 5] * 34));
@@ -82,9 +82,9 @@ fn test_noop_branch() {
 fn test_allocations() {
     let mut builder = CasmBuilder::default();
     casm_build_extend! {builder,
-        alloc a;
-        alloc b;
-        alloc c;
+        tempvar a;
+        tempvar b;
+        tempvar c;
         assert a = b;
         assert b = c;
         assert c = a;
@@ -108,9 +108,9 @@ fn test_allocations() {
 fn test_allocations_not_enough_commands() {
     let mut builder = CasmBuilder::default();
     casm_build_extend! {builder,
-        alloc a;
-        alloc b;
-        alloc c;
+        tempvar a;
+        tempvar b;
+        tempvar c;
         assert a = b;
         assert b = c;
     };
@@ -122,7 +122,7 @@ fn test_aligned_branch_intersect() {
     let mut builder = CasmBuilder::default();
     let var = builder.add_var(res!([ap + 7]));
     casm_build_extend! {builder,
-        alloc _unused;
+        tempvar _unused;
         jump X if var != 0;
         jump ONE_ALLOC;
         X:
@@ -149,8 +149,8 @@ fn test_unaligned_branch_intersect() {
     let var = builder.add_var(res!([ap + 7]));
     casm_build_extend! {builder,
         jump X if var != 0;
-        // A single alloc in this branch.
-        alloc _unused;
+        // A single tempvar in this branch.
+        tempvar _unused;
         jump ONESIDED_ALLOC;
         // No allocs in this branch.
         X:
