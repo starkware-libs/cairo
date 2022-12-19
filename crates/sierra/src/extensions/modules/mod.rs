@@ -7,6 +7,7 @@ use crate::program::GenericArg;
 
 pub mod ap_tracking;
 pub mod array;
+pub mod bitwise;
 pub mod boolean;
 pub mod boxing;
 pub mod branch_align;

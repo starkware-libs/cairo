@@ -9,8 +9,8 @@ use super::LibFuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibFunc;
 use crate::extensions::boolean::BoolConcreteLibFunc;
 use crate::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Bool, BranchAlign, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem,
-    Struct, Uint128, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Enum, Felt, FunctionCall, Gas,
+    Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
@@ -48,6 +48,14 @@ pub fn simulate<
     simulate_function: SimulateFunction,
 ) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
     match libfunc {
+        Bitwise(_) => match &inputs[..] {
+            [CoreValue::Felt(a), CoreValue::Felt(b)] => Ok((
+                vec![CoreValue::Felt(a & b), CoreValue::Felt(a | b), CoreValue::Felt(a ^ b)],
+                0,
+            )),
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         Drop(_) => match &inputs[..] {
             [_] => Ok((vec![], 0)),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
