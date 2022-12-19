@@ -7,7 +7,7 @@ use defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
-use defs::plugin::PluginDiagnostic;
+use defs::plugin::{PluginDiagnostic, PluginMappedDiagnostic};
 use diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
 };
@@ -393,7 +393,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        self.stable_location.diagnostic_location(db.upcast())
+        let location = self.stable_location.diagnostic_location(db.upcast());
+        match &self.kind {
+            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, .. } => {
+                DiagnosticLocation { span: diagnostic.span, ..location }
+            }
+            _ => location,
+        }
     }
 }
 
@@ -576,7 +582,7 @@ pub enum SemanticDiagnosticKind {
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
     WrappedPluginDiagnostic {
-        diagnostic: PluginDiagnostic,
+        diagnostic: PluginMappedDiagnostic,
         original_diag: Box<SemanticDiagnostic>,
     },
 }

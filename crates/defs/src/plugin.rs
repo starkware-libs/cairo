@@ -2,15 +2,18 @@ use std::any::Any;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use filesystem::span::TextSpan;
 use smol_str::SmolStr;
 use syntax::node::ast;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::ids::SyntaxStablePtrId;
 
+use crate::db::DefsGroup;
+
 /// A trait for mapping plugin generated diagnostics to more readable diagnostics.
 pub trait DiagnosticMapper: std::fmt::Debug + Sync + Send {
     fn as_any(&self) -> &dyn Any;
-    fn map_diag(&self, diag: &dyn Any) -> Option<PluginDiagnostic>;
+    fn map_diag(&self, db: &dyn DefsGroup, diag: &dyn Any) -> Option<PluginMappedDiagnostic>;
     fn eq(&self, other: &dyn DiagnosticMapper) -> bool;
 }
 
@@ -43,7 +46,11 @@ impl DiagnosticMapper for TrivialMapper {
         self
     }
 
-    fn map_diag(&self, _diag: &dyn std::any::Any) -> Option<PluginDiagnostic> {
+    fn map_diag(
+        &self,
+        _db: &dyn DefsGroup,
+        _diag: &dyn std::any::Any,
+    ) -> Option<PluginMappedDiagnostic> {
         None
     }
 
@@ -70,6 +77,12 @@ pub struct PluginResult {
     pub code: Option<PluginGeneratedFile>,
     /// Diagnostics.
     pub diagnostics: Vec<PluginDiagnostic>,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PluginMappedDiagnostic {
+    pub span: TextSpan,
+    pub message: String,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

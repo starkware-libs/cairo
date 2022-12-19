@@ -286,12 +286,6 @@ define_language_element_id!(
     name
 );
 
-impl SubmoduleId {
-    pub fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
-        db.lookup_intern_submodule(*self).0
-    }
-}
-
 define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use, name);
 define_language_element_id!(
     FreeFunctionId,
