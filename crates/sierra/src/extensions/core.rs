@@ -17,6 +17,7 @@ use super::modules::mem::MemLibFunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibFunc};
 use super::modules::uint128::{Uint128LibFunc, Uint128Type};
 use super::modules::unconditional_jump::UnconditionalJumpLibFunc;
+use super::nullable::{NullableLibFunc, NullableType};
 use super::pedersen::{PedersenLibFunc, PedersenType};
 use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
@@ -35,6 +36,7 @@ define_type_hierarchy! {
         BuiltinCosts(BuiltinCostsType),
         Uint128(Uint128Type),
         NonZero(NonZeroType),
+        Nullable(NullableType),
         RangeCheck(RangeCheckType),
         Uninitialized(UninitializedType),
         Enum(EnumType),
@@ -63,6 +65,7 @@ define_libfunc_hierarchy! {
         Gas(GasLibFunc),
         Uint128(Uint128LibFunc),
         Mem(MemLibFunc),
+        Nullable(NullableLibFunc),
         UnwrapNonZero(UnwrapNonZeroLibFunc),
         UnconditionalJump(UnconditionalJumpLibFunc),
         Enum(EnumLibFunc),

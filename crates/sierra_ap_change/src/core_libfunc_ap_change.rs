@@ -111,5 +111,6 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             }
             StarkNetConcreteLibFunc::StorageAddressConst(_) => vec![ApChange::Known(0)],
         },
+        CoreConcreteLibFunc::Nullable(_) => unimplemented!("Nullable is not implemented yet."),
     }
 }

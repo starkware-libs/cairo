@@ -305,6 +305,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibFunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
         CoreConcreteLibFunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
+        CoreConcreteLibFunc::Nullable(_) => unimplemented!("Nullable is not implemented yet."),
     }
 }
 

@@ -247,8 +247,11 @@ pub fn simulate<
         CoreConcreteLibFunc::BuiltinCost(_) => {
             todo!("Simulation of the builtin cost functionality is not implemented yet.")
         }
-        &CoreConcreteLibFunc::StarkNet(_) => {
+        CoreConcreteLibFunc::StarkNet(_) => {
             unimplemented!("Simulation of the StarkNet functionalities is not implemented yet.")
+        }
+        CoreConcreteLibFunc::Nullable(_) => {
+            unimplemented!("Simulation of nullable is not implemented yet.")
         }
     }
 }
