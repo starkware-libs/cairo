@@ -132,13 +132,8 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
                 ops.const_cost(compute_requested_cost_steps + 5),
             ]
         }
-        CoreConcreteLibfunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
-        CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
-            NullableConcreteLibfunc::Null(_) => vec![ops.const_cost(0)],
-            NullableConcreteLibfunc::IntoNullable(_) => vec![ops.const_cost(0)],
-            NullableConcreteLibfunc::FromNullable(_) => vec![ops.const_cost(1), ops.const_cost(1)],
-        },
-        &CoreConcreteLibFunc::Cheatcodes(_) => todo!(),
+        CoreConcreteLibFunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
+        CoreConcreteLibFunc::Cheatcodes(_) => vec![ops.const_cost(0)],
     }
 }
 
