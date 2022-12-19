@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use db_utils::Upcast;
-use defs::db::{init_defs_group, DefsDatabase, DefsGroup, MacroPlugin};
+use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
 use defs::ids::ModuleId;
+use defs::plugin::MacroPlugin;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;

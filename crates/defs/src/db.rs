@@ -11,11 +11,11 @@ use smol_str::SmolStr;
 use syntax::node::ast::MaybeModuleBody;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
-use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
+use crate::plugin::{DynDiagnosticMapper, MacroPlugin, PluginDiagnostic};
 
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
@@ -90,30 +90,6 @@ pub trait DefsGroup:
     // Plugins.
     #[salsa::input]
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
-}
-
-/// Result of plugin code generation.
-#[derive(Default)]
-pub struct PluginResult {
-    /// Filename, content.
-    pub code: Option<(SmolStr, String)>,
-    /// Diagnostics.
-    pub diagnostics: Vec<PluginDiagnostic>,
-}
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct PluginDiagnostic {
-    pub stable_ptr: SyntaxStablePtrId,
-    pub message: String,
-}
-
-// TOD(spapini): Move to another place.
-/// A trait for a macro plugin: external plugin that generates additional code for items.
-pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
-    /// Generates code for an item. If no code should be generated returns None.
-    /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
-    /// with that name and content should be created.
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult;
 }
 
 /// Initializes a database with DefsGroup.
@@ -204,6 +180,15 @@ fn file_modules(db: &dyn DefsGroup, file_id: FileId) -> Maybe<Vec<ModuleId>> {
     db.priv_file_to_module_mapping().get(&file_id).cloned().to_maybe()
 }
 
+/// Information about the generation of a virtual file within a module.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FileInfo {
+    pub diagnostic_mapper: DynDiagnosticMapper,
+    /// The file index from which the current file was generated. Both files are assumed to be
+    /// within the same module.
+    pub origin: FileIndex,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
     pub submodules: OrderedHashMap<SubmoduleId, ast::ItemModule>,
@@ -216,6 +201,7 @@ pub struct ModuleData {
     pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
     pub extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
     pub files: Vec<FileId>,
+    pub generated_file_info: Vec<Option<FileInfo>>,
     pub plugin_diagnostics: Vec<(ModuleFileId, PluginDiagnostic)>,
 }
 
@@ -246,6 +232,7 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     let mut module_queue = VecDeque::new();
     module_queue.push_back((module_file, item_asts));
     let mut res = ModuleData::default();
+    res.generated_file_info.push(None);
     while let Some((module_file, item_asts)) = module_queue.pop_front() {
         let file_index = FileIndex(res.files.len());
         let module_file_id = ModuleFileId(module_id, file_index);
@@ -258,11 +245,15 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
                     res.plugin_diagnostics.push((module_file_id, plugin_diag));
                 }
 
-                let Some((name, content)) = result.code else { continue };
+                let Some(generated) = result.code else { continue };
                 let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
                     parent: Some(module_file),
-                    name: name.clone(),
-                    content: Arc::new(content),
+                    name: generated.name,
+                    content: Arc::new(generated.content),
+                }));
+                res.generated_file_info.push(Some(FileInfo {
+                    diagnostic_mapper: generated.diagnostic_mapper,
+                    origin: file_index,
                 }));
                 module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
             }

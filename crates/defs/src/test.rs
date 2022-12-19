@@ -10,10 +10,12 @@ use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::extract_matches;
 
-use crate::db::{
-    init_defs_group, DefsDatabase, DefsGroup, MacroPlugin, PluginDiagnostic, PluginResult,
-};
+use crate::db::{init_defs_group, DefsDatabase, DefsGroup};
 use crate::ids::{ModuleId, ModuleItemId};
+use crate::plugin::{
+    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    TrivialMapper,
+};
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
@@ -167,14 +169,19 @@ impl MacroPlugin for DummyPlugin {
     ) -> PluginResult {
         match item_ast {
             ast::Item::Struct(struct_ast) => PluginResult {
-                code: Some((
-                    "virt".into(),
-                    format!("func foo(x:{}){{}}", struct_ast.name(db).text(db)),
-                )),
+                code: Some(PluginGeneratedFile {
+                    name: "virt".into(),
+                    content: format!("func foo(x:{}){{}}", struct_ast.name(db).text(db)),
+                    diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+                }),
                 diagnostics: vec![],
             },
             ast::Item::FreeFunction(item) => PluginResult {
-                code: Some(("virt2".into(), "extern type B;".into())),
+                code: Some(PluginGeneratedFile {
+                    name: "virt2".into(),
+                    content: "extern type B;".into(),
+                    diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+                }),
                 diagnostics: vec![PluginDiagnostic {
                     stable_ptr: item.stable_ptr().untyped(),
                     message: "bla".into(),
