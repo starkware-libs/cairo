@@ -197,16 +197,16 @@ macro_rules! casm_extend {
     };
     ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=$addr:tt + $offset:tt) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::SystemCall {
-            system: ResOperand::BinOp(BinOpOperand {
+            system: $crate::operand::ResOperand::BinOp($crate::operand::BinOpOperand {
                 op: casm::operand::Operation::Add,
                 a: $crate::deref!($addr),
-                b: $crate::deref_or_immediate!(BigInt::from_i16($offset).unwrap()),
+                b: $crate::deref_or_immediate!(num_bigint::BigInt::from($offset)),
             })});
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=$addr:tt) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::SystemCall {
-            system: ResOperand::BinOp(BinOpOperand {
+            system: $crate::operand::ResOperand::BinOp($crate::operand::BinOpOperand {
                 op: casm::operand::Operation::Add,
                 a: $crate::deref!($addr),
                 b: $crate::deref_or_immediate!(0),
