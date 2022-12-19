@@ -177,7 +177,7 @@ pub struct ReducedBranchChanges {
 
 /// Information from [CompiledInvocation] we should test when only testing a libfunc lowering by
 /// itself.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub struct ReducedCompiledInvocation {
     /// A vector of instructions that implement the invocation.
     pub instructions: Vec<Instruction>,
@@ -201,6 +201,18 @@ impl ReducedCompiledInvocation {
                 })
                 .collect(),
         }
+    }
+}
+impl std::fmt::Debug for ReducedCompiledInvocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ReducedCompiledInvocation")
+            .field(
+                "instructions",
+                &self.instructions.iter().map(|inst| format!("{inst};")).collect_vec(),
+            )
+            .field("relocations", &self.relocations)
+            .field("results", &self.results)
+            .finish()
     }
 }
 
