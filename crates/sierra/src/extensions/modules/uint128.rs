@@ -98,10 +98,13 @@ impl GenericLibFunc for Uint128OperationLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
+        if !args.is_empty() {
+            return Err(SpecializationError::WrongNumberOfGenericArgs);
+        }
         let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        match (args, self.operator) {
-            ([], IntOperator::DivMod) => Ok(LibFuncSignature::new_non_branch(
+        match self.operator {
+            IntOperator::DivMod => Ok(LibFuncSignature::new_non_branch(
                 vec![
                     range_check_type.clone(),
                     ty.clone(),
@@ -125,12 +128,9 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                 ],
                 SierraApChange::Known { new_vars_only: false },
             )),
-            (
-                [],
-                IntOperator::OverflowingAdd
-                | IntOperator::OverflowingSub
-                | IntOperator::OverflowingMul,
-            ) => Ok(LibFuncSignature {
+            IntOperator::OverflowingAdd
+            | IntOperator::OverflowingSub
+            | IntOperator::OverflowingMul => Ok(LibFuncSignature {
                 param_signatures: vec![
                     ParamSignature::new(range_check_type.clone()),
                     ParamSignature::new(ty.clone()),
@@ -170,77 +170,6 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                 ],
                 fallthrough: Some(0),
             }),
-            ([GenericArg::Value(c)], IntOperator::DivMod) if !c.is_zero() => {
-                Ok(LibFuncSignature::new_non_branch(
-                    vec![range_check_type.clone(), ty.clone()],
-                    vec![
-                        OutputVarInfo {
-                            ty: range_check_type,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
-                        OutputVarInfo {
-                            ty: ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
-                        },
-                        OutputVarInfo {
-                            ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
-                        },
-                    ],
-                    SierraApChange::Known { new_vars_only: false },
-                ))
-            }
-            (
-                [GenericArg::Value(_c)],
-                IntOperator::OverflowingAdd
-                | IntOperator::OverflowingSub
-                | IntOperator::OverflowingMul,
-            ) => Ok(LibFuncSignature {
-                param_signatures: vec![
-                    ParamSignature::new(range_check_type.clone()),
-                    ParamSignature::new(ty.clone()),
-                ],
-                branch_signatures: vec![
-                    BranchSignature {
-                        vars: vec![
-                            OutputVarInfo {
-                                ty: range_check_type.clone(),
-                                ref_info: OutputVarReferenceInfo::Deferred(
-                                    DeferredOutputKind::AddConst { param_idx: 0 },
-                                ),
-                            },
-                            OutputVarInfo {
-                                ty: ty.clone(),
-                                ref_info: OutputVarReferenceInfo::Deferred(
-                                    DeferredOutputKind::Generic,
-                                ),
-                            },
-                        ],
-                        ap_change: SierraApChange::NotImplemented,
-                    },
-                    BranchSignature {
-                        vars: vec![
-                            OutputVarInfo {
-                                ty: range_check_type,
-                                ref_info: OutputVarReferenceInfo::Deferred(
-                                    DeferredOutputKind::AddConst { param_idx: 0 },
-                                ),
-                            },
-                            OutputVarInfo {
-                                ty,
-                                ref_info: OutputVarReferenceInfo::Deferred(
-                                    DeferredOutputKind::Generic,
-                                ),
-                            },
-                        ],
-                        ap_change: SierraApChange::NotImplemented,
-                    },
-                ],
-                fallthrough: Some(0),
-            }),
-            _ => Err(SpecializationError::UnsupportedGenericArg),
         }
     }
 
