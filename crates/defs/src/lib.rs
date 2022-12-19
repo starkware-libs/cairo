@@ -4,5 +4,6 @@
 pub mod db;
 pub mod diagnostic_utils;
 pub mod ids;
+pub mod plugin;
 #[cfg(test)]
 mod test;

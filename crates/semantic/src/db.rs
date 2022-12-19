@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use db_utils::Upcast;
-use defs::db::DefsGroup;
+use defs::db::{DefsGroup, FileInfo};
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
-    StructId, TraitFunctionId, TraitId, UseId, VariantId,
+    GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
+    ModuleItemId, StructId, TraitFunctionId, TraitId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -513,7 +513,8 @@ fn module_semantic_diagnostics(
     module_id: ModuleId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (module_file_id, plugin_diag) in db.module_data(module_id)?.plugin_diagnostics {
+    let module_data = db.module_data(module_id)?;
+    for (module_file_id, plugin_diag) in module_data.plugin_diagnostics {
         diagnostics.add(SemanticDiagnostic {
             stable_location: StableLocation::new(module_file_id, plugin_diag.stable_ptr),
             kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
@@ -564,7 +565,55 @@ fn module_semantic_diagnostics(
             }
         }
     }
-    Ok(diagnostics.build())
+
+    Ok(map_diagnostics(module_id, &module_data.generated_file_info, diagnostics.build()).1)
+}
+
+/// Transforms diagnostics that originate from plugin generated files. Uses the plugin's diagnostic
+/// mapper.
+fn map_diagnostics(
+    module_id: ModuleId,
+    generated_file_info: &[Option<FileInfo>],
+    original_diagnostics: Diagnostics<SemanticDiagnostic>,
+) -> (bool, Diagnostics<SemanticDiagnostic>) {
+    let mut diagnostics = DiagnosticsBuilder::default();
+    let mut has_change: bool = false;
+
+    for tree in &original_diagnostics.0.subtrees {
+        let (changed, new_diags) = map_diagnostics(module_id, generated_file_info, tree.clone());
+        diagnostics.extend(new_diags);
+        has_change |= changed;
+    }
+
+    for diag in &original_diagnostics.0.leaves {
+        assert_eq!(diag.stable_location.module_file_id.0, module_id, "Unexpected module id.");
+        let file_index = diag.stable_location.module_file_id.1;
+        if let Some(file_info) = &generated_file_info[file_index.0] {
+            let generating_module_file_id = ModuleFileId(module_id, file_info.origin);
+            if let Some(plugin_diag) = file_info.diagnostic_mapper.map_diag(diag) {
+                diagnostics.add(SemanticDiagnostic {
+                    stable_location: StableLocation::new(
+                        generating_module_file_id,
+                        plugin_diag.stable_ptr,
+                    ),
+                    kind: SemanticDiagnosticKind::WrappedPluginDiagnostic {
+                        diagnostic: plugin_diag,
+                        original_diag: Box::new(diag.clone()),
+                    },
+                });
+                has_change = true;
+                continue;
+            }
+        }
+
+        diagnostics.add(diag.clone());
+    }
+
+    if !has_change {
+        return (false, original_diagnostics);
+    }
+
+    (has_change, diagnostics.build())
 }
 
 fn file_semantic_diagnostics(
