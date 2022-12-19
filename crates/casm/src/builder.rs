@@ -444,7 +444,7 @@ impl Default for CasmBuilder {
 #[macro_export]
 macro_rules! casm_build_extend {
     ($builder:ident,) => {};
-    ($builder:ident, alloc $var:ident; $($tok:tt)*) => {
+    ($builder:ident, tempvar $var:ident; $($tok:tt)*) => {
         let $var = $builder.alloc_var();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
@@ -474,19 +474,19 @@ macro_rules! casm_build_extend {
         $builder.buffer_write_and_inc($buffer, $value);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, ref $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
+    ($builder:ident, let $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::operand::Operation::Add, $a, $b);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, ref $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
+    ($builder:ident, let $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::operand::Operation::Mul, $a, $b);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, ref $dst:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
+    ($builder:ident, let $dst:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         let $dst = $builder.get_ref_and_inc($buffer);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, ref $dst:ident = $buffer:ident [ $offset:ident ] ; $($tok:tt)*) => {
+    ($builder:ident, let $dst:ident = $buffer:ident [ $offset:ident ] ; $($tok:tt)*) => {
         let $dst = $builder.double_deref($buffer, $offset);
         $crate::casm_build_extend!($builder, $($tok)*)
     };

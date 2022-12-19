@@ -116,7 +116,7 @@ fn build_builtin_get_gas(
         let single_cost_val = casm_builder.double_deref(builtin_cost, offset);
 
         casm_build_extend! {casm_builder,
-            alloc single_cost;
+            tempvar single_cost;
             assert single_cost = single_cost_val;
         };
 
@@ -125,7 +125,7 @@ fn build_builtin_get_gas(
             let requested_count =
                 casm_builder.add_var(ResOperand::Immediate(requested_count.into()));
             casm_build_extend! {casm_builder,
-                alloc multi_cost;
+                tempvar multi_cost;
                 assert multi_cost = single_cost * requested_count;
             };
             multi_cost
@@ -134,7 +134,7 @@ fn build_builtin_get_gas(
         };
         // Add to the cumulative sum.
         casm_build_extend! {casm_builder,
-            alloc updated_total_requested_count;
+            tempvar updated_total_requested_count;
             assert updated_total_requested_count = multi_cost + total_requested_count;
         };
         total_requested_count = updated_total_requested_count;
@@ -142,18 +142,18 @@ fn build_builtin_get_gas(
     let uint128_limit = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
 
     casm_build_extend! {casm_builder,
-        alloc has_enough_gas;
+        tempvar has_enough_gas;
         hint TestLessThanOrEqual {lhs: total_requested_count, rhs: gas_counter} into {dst: has_enough_gas};
         jump HasEnoughGas if has_enough_gas != 0;
         // In this case amount > gas_counter_value, so amount - gas_counter_value - 1 >= 0.
-        alloc gas_diff;
+        tempvar gas_diff;
         assert gas_counter = gas_diff + total_requested_count;
-        alloc fixed_gas_diff;
+        tempvar fixed_gas_diff;
         assert fixed_gas_diff = gas_diff + uint128_limit;
         assert *(range_check++) = fixed_gas_diff;
         jump Failure;
         HasEnoughGas:
-        alloc updated_gas;
+        tempvar updated_gas;
         assert gas_counter = updated_gas + total_requested_count;
         assert *(range_check++) = updated_gas;
     };
