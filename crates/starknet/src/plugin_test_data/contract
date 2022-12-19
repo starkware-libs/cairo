@@ -17,9 +17,8 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod __external { func __wrapper_test(
-    ref system: System, mut data: Array::<felt>
-) -> Array::<felt> {
+mod __external { use super::TestContract;
+func test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
     if array::array_len::<felt>(data) != 3_u128 {
         panic(array::array_new::<felt>());
     }
@@ -31,7 +30,7 @@ mod __external { func __wrapper_test(
         Option::Some(x) => x,
         Option::None(()) => panic(array::array_new::<felt>()),
     };
-    let res = test(system, __arg_arg, __arg_num);
+    let res = TestContract::test(system, __arg_arg, __arg_num);
     let mut arr = array::array_new::<felt>();
     array::array_append::<felt>(arr, __arg_arg);
     array::array_append::<felt>(arr, res);

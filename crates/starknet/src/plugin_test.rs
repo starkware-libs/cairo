@@ -45,10 +45,6 @@ pub fn test_expand_contract(
     ])
 }
 
-parser_test!(
-    test_old_format_valid_expansion,
-    ["src/plugin_test_data/starknet",],
-    test_expand_contract
-);
 parser_test!(test_diagnostics, ["src/plugin_test_data/diagnostics",], test_expand_contract);
-parser_test!(test_valid_expansion, ["src/plugin_test_data/contract",], test_expand_contract);
+parser_test!(test_wrapper_expansion, ["src/plugin_test_data/contract",], test_expand_contract);
+parser_test!(test_storage_expansion, ["src/plugin_test_data/storage",], test_expand_contract);

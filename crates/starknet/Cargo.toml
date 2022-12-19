@@ -9,6 +9,7 @@ clap.workspace = true
 compiler = { path = "../compiler" }
 defs = { path = "../defs" }
 diagnostics = { path = "../diagnostics" }
+filesystem = { path = "../filesystem" }
 genco.workspace = true
 itertools.workspace = true
 log.workspace = true
