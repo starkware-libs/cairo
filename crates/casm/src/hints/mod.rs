@@ -59,6 +59,7 @@ pub enum Hint {
     SystemCall {
         system: ResOperand,
     },
+    Roll
 }
 
 impl Display for Hint {
@@ -130,6 +131,9 @@ impl Display for Hint {
             Hint::DictSquashHints { hint_index } => dict_squash::fmt_hint_by_index(f, *hint_index)?,
             Hint::SystemCall { system } => {
                 write!(f, " syscall_handler.syscall(segments=segments, syscall_ptr={}) ", system)?
+            }
+            Hint::Roll => {
+                write!(f, " print(\"XD\") ")?
             }
         }
         write!(f, "%}}")
