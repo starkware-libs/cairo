@@ -5,8 +5,8 @@ use defs::db::{DefsGroup, FileInfo};
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, StructId, TraitFunctionId, TraitId, UseId, VariantId,
+    GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
+    StructId, TraitFunctionId, TraitId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -14,6 +14,7 @@ use filesystem::ids::FileId;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use syntax::node::ast;
+use syntax::node::stable_ptr::SyntaxStablePtr;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -566,12 +567,19 @@ fn module_semantic_diagnostics(
         }
     }
 
-    Ok(map_diagnostics(module_id, &module_data.generated_file_info, diagnostics.build()).1)
+    Ok(map_diagnostics(
+        db.upcast(),
+        module_id,
+        &module_data.generated_file_info,
+        diagnostics.build(),
+    )
+    .1)
 }
 
 /// Transforms diagnostics that originate from plugin generated files. Uses the plugin's diagnostic
 /// mapper.
 fn map_diagnostics(
+    db: &dyn DefsGroup,
     module_id: ModuleId,
     generated_file_info: &[Option<FileInfo>],
     original_diagnostics: Diagnostics<SemanticDiagnostic>,
@@ -580,7 +588,8 @@ fn map_diagnostics(
     let mut has_change: bool = false;
 
     for tree in &original_diagnostics.0.subtrees {
-        let (changed, new_diags) = map_diagnostics(module_id, generated_file_info, tree.clone());
+        let (changed, new_diags) =
+            map_diagnostics(db, module_id, generated_file_info, tree.clone());
         diagnostics.extend(new_diags);
         has_change |= changed;
     }
@@ -588,13 +597,13 @@ fn map_diagnostics(
     for diag in &original_diagnostics.0.leaves {
         assert_eq!(diag.stable_location.module_file_id.0, module_id, "Unexpected module id.");
         let file_index = diag.stable_location.module_file_id.1;
+        println!("stable_location: {:?}", diag.stable_location.module_file_id);
         if let Some(file_info) = &generated_file_info[file_index.0] {
-            let generating_module_file_id = ModuleFileId(module_id, file_info.origin);
-            if let Some(plugin_diag) = file_info.diagnostic_mapper.map_diag(diag) {
+            if let Some(plugin_diag) = file_info.diagnostic_mapper.map_diag(db, diag) {
                 diagnostics.add(SemanticDiagnostic {
                     stable_location: StableLocation::new(
-                        generating_module_file_id,
-                        plugin_diag.stable_ptr,
+                        file_info.origin,
+                        db.intern_stable_ptr(SyntaxStablePtr::Root),
                     ),
                     kind: SemanticDiagnosticKind::WrappedPluginDiagnostic {
                         diagnostic: plugin_diag,
@@ -605,7 +614,6 @@ fn map_diagnostics(
                 continue;
             }
         }
-
         diagnostics.add(diag.clone());
     }
 

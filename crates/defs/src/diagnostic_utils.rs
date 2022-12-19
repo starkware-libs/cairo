@@ -9,7 +9,7 @@ use crate::ids::ModuleFileId;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StableLocation {
     pub module_file_id: ModuleFileId,
-    stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: SyntaxStablePtrId,
 }
 impl StableLocation {
     pub fn new(module_file_id: ModuleFileId, stable_ptr: SyntaxStablePtrId) -> Self {
@@ -21,7 +21,7 @@ impl StableLocation {
     }
 
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
-    pub fn diagnostic_location(&self, db: &(dyn DefsGroup + 'static)) -> DiagnosticLocation {
+    pub fn diagnostic_location(&self, db: &dyn DefsGroup) -> DiagnosticLocation {
         let file_id =
             db.module_file(self.module_file_id).expect("Module in diagnostic does not exist");
         let syntax_node = db
@@ -35,7 +35,7 @@ impl StableLocation {
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
     pub fn diagnostic_location_until(
         &self,
-        db: &(dyn DefsGroup + 'static),
+        db: &dyn DefsGroup,
         until_stable_ptr: SyntaxStablePtrId,
     ) -> DiagnosticLocation {
         let syntax_db = db.upcast();
