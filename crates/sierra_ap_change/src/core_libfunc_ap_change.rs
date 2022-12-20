@@ -94,7 +94,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             }
         },
         CoreConcreteLibFunc::DictFeltTo(libfunc) => match libfunc {
-            DictFeltToConcreteLibFunc::New(_) => vec![ApChange::Known(1)],
+            DictFeltToConcreteLibFunc::New(_) => vec![ApChange::Known(6)],
             DictFeltToConcreteLibFunc::Read(_) => vec![ApChange::Known(1)],
             DictFeltToConcreteLibFunc::Write(_) => vec![ApChange::Known(1)],
             DictFeltToConcreteLibFunc::Squash(_) => vec![ApChange::Unknown],
