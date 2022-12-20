@@ -1,6 +1,6 @@
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::casm_build_extend;
-use casm::operand::ResOperand;
+use casm::operand::{BinOpOperand, CellRef, Operation, ResOperand};
+use casm::{casm_build_extend, deref_or_immediate};
 use num_bigint::BigInt;
 use sierra::extensions::uint128::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
@@ -9,10 +9,11 @@ use sierra::extensions::uint128::{
 use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{
-    get_non_fallthrough_statement_id, unwrap_range_check_based_binary_op_refs,
+use crate::invocations::get_non_fallthrough_statement_id;
+use crate::references::{
+    try_unpack_deref, try_unpack_deref_with_offset, CellExpression, ReferenceExpression,
+    ReferenceValue,
 };
-use crate::references::{try_unpack_deref, CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
 #[cfg(test)]
@@ -44,6 +45,31 @@ pub fn build(
     }
 }
 
+/// Fetches, verifies and returns the range check, a and b references.
+pub fn unwrap_range_check_based_binary_op_refs(
+    builder: &CompiledInvocationBuilder<'_>,
+) -> Result<(ResOperand, CellRef, CellRef), InvocationError> {
+    match builder.refs {
+        [
+            ReferenceValue { expression: range_check_expression, .. },
+            ReferenceValue { expression: expr_a, .. },
+            ReferenceValue { expression: expr_b, .. },
+        ] => {
+            let (range_check, offset) = try_unpack_deref_with_offset(range_check_expression)?;
+            Ok((
+                ResOperand::BinOp(BinOpOperand {
+                    op: Operation::Add,
+                    a: range_check,
+                    b: deref_or_immediate!(offset),
+                }),
+                try_unpack_deref(expr_a)?,
+                try_unpack_deref(expr_b)?,
+            ))
+        }
+        refs => Err(InvocationError::WrongNumberOfArguments { expected: 3, actual: refs.len() }),
+    }
+}
+
 /// Handles a u128 operation with the given op.
 fn build_u128_op(
     builder: CompiledInvocationBuilder<'_>,
@@ -56,7 +82,7 @@ fn build_u128_op(
             let mut casm_builder = CasmBuilder::default();
             let u128_limit =
                 casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
-            let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+            let range_check = casm_builder.add_var(range_check);
             let a = casm_builder.add_var(ResOperand::Deref(a));
             let b = casm_builder.add_var(ResOperand::Deref(b));
             let (possible_overflow, overflow_fixed) = match op {
@@ -144,7 +170,7 @@ fn build_u128_op(
                 .add_var(ResOperand::Immediate(BigInt::from(u128::MAX) - BigInt::from(u64::MAX)));
             let u64_bound = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u64::MAX) + 1));
             let one = casm_builder.add_var(ResOperand::Immediate(BigInt::from(1)));
-            let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+            let range_check = casm_builder.add_var(range_check);
             let a = casm_builder.add_var(ResOperand::Deref(a));
             let b = casm_builder.add_var(ResOperand::Deref(b));
             casm_build_extend! {casm_builder,
@@ -239,11 +265,11 @@ fn build_u128_op(
 fn build_u128_from_felt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (range_check, value) = match builder.refs {
+    let ((range_check, range_check_offset), value) = match builder.refs {
         [
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: expr_value, .. },
-        ] => (try_unpack_deref(range_check_expression)?, try_unpack_deref(expr_value)?),
+        ] => (try_unpack_deref_with_offset(range_check_expression)?, try_unpack_deref(expr_value)?),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 2,
@@ -258,7 +284,11 @@ fn build_u128_from_felt(
     let max_y: i128 = 0;
     let mut casm_builder = CasmBuilder::default();
     // Defining params and constants.
-    let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+    let range_check = casm_builder.add_var(ResOperand::BinOp(BinOpOperand {
+        a: range_check,
+        b: deref_or_immediate!(range_check_offset),
+        op: Operation::Add,
+    }));
     let value = casm_builder.add_var(ResOperand::Deref(value));
     let u128_limit = casm_builder.add_var(ResOperand::Immediate(u128_bound.clone()));
     let le_max_y_fix = casm_builder.add_var(ResOperand::Immediate(u128_bound.clone() - max_y - 1));
@@ -353,7 +383,7 @@ fn build_u128_lt(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     let u128_limit = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
-    let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+    let range_check = casm_builder.add_var(range_check);
     let a = casm_builder.add_var(ResOperand::Deref(a));
     let b = casm_builder.add_var(ResOperand::Deref(b));
     casm_build_extend! {casm_builder,
@@ -405,7 +435,7 @@ fn build_u128_le(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     let u128_limit = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
-    let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+    let range_check = casm_builder.add_var(range_check);
     let a = casm_builder.add_var(ResOperand::Deref(a));
     let b = casm_builder.add_var(ResOperand::Deref(b));
     casm_build_extend! {casm_builder,
