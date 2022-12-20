@@ -59,7 +59,11 @@ pub enum Hint {
     SystemCall {
         system: ResOperand,
     },
-    Roll
+    Roll {
+        address: DerefOrImmediate,
+        caller_address: DerefOrImmediate,
+        dst: CellRef,
+    },
 }
 
 impl Display for Hint {
@@ -132,8 +136,9 @@ impl Display for Hint {
             Hint::SystemCall { system } => {
                 write!(f, " syscall_handler.syscall(segments=segments, syscall_ptr={}) ", system)?
             }
-            Hint::Roll => {
-                write!(f, " print(\"XD\") ")?
+            Hint::Roll { address, caller_address , dst} => {
+                write!(f, " memory{dst} = 0; ")?;
+                write!(f, " roll(address={}, caller_address={}) ", address, caller_address)?
             }
         }
         write!(f, "%}}")
