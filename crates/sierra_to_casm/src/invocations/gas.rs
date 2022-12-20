@@ -10,10 +10,7 @@ use utils::try_extract_matches;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{
-    try_unpack_deref, try_unpack_deref_with_offset, BinOpExpression, CellExpression,
-    ReferenceExpression, ReferenceValue,
-};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
 pub const STEP_COST: i64 = 100;
@@ -46,8 +43,8 @@ fn build_get_gas(
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: gas_counter_expression, .. },
         ] => (
-            try_unpack_deref_with_offset(range_check_expression)?,
-            try_unpack_deref(gas_counter_expression)?,
+            range_check_expression.try_unpack_single()?.to_deref_with_offset()?,
+            gas_counter_expression.try_unpack_single()?.to_deref()?,
         ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
