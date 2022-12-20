@@ -195,7 +195,7 @@ macro_rules! casm_extend {
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
-    ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=$addr:tt + $offset:tt) %} $($tok:tt)*) => {
+    ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=memory $addr:tt + $offset:tt) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::SystemCall {
             system: $crate::operand::ResOperand::BinOp($crate::operand::BinOpOperand {
                 op: casm::operand::Operation::Add,
@@ -204,7 +204,7 @@ macro_rules! casm_extend {
             })});
         $crate::casm_extend!($ctx, $($tok)*)
     };
-    ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=$addr:tt) %} $($tok:tt)*) => {
+    ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=memory $addr:tt) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::SystemCall {
             system: $crate::operand::ResOperand::Deref($crate::deref!($addr))
         });

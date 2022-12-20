@@ -91,6 +91,6 @@ fn test_syscall_hint_format() {
 
     assert_eq!(
         Hint::SystemCall { system }.to_string(),
-        "%{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + -3] + 3) %}"
+        "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -3] + 3) %}"
     );
 }
