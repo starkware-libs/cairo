@@ -1,5 +1,6 @@
 use super::ap_tracking::RevokeApTrackingLibFunc;
 use super::array::{ArrayLibFunc, ArrayType};
+use super::bitwise::{BitwiseLibFunc, BitwiseType};
 use super::boolean::BoolLibFunc;
 use super::branch_align::BranchAlignLibFunc;
 use super::builtin_cost::{BuiltinCostLibFunc, BuiltinCostsType};
@@ -26,6 +27,7 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 define_type_hierarchy! {
     pub enum CoreType {
         Array(ArrayType),
+        Bitwise(BitwiseType),
         Box(BoxType),
         Felt(FeltType),
         GasBuiltin(GasBuiltinType),
@@ -47,6 +49,7 @@ define_libfunc_hierarchy! {
     pub enum CoreLibFunc {
         ApTracking(RevokeApTrackingLibFunc),
         Array(ArrayLibFunc),
+        Bitwise(BitwiseLibFunc),
         BranchAlign(BranchAlignLibFunc),
         Bool(BoolLibFunc),
         Box(BoxLibFunc),
