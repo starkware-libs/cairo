@@ -335,13 +335,13 @@
     [
       246,
       [
-        "%{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + -3]) %}"
+        "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -3]) %}"
       ]
     ],
     [
       259,
       [
-        "%{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + -4]) %}"
+        "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -4]) %}"
       ]
     ]
   ],

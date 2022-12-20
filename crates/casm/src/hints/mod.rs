@@ -67,6 +67,15 @@ impl Display for Hint {
             DerefOrImmediate::Deref(d) => write!(f, "memory{d}"),
             DerefOrImmediate::Immediate(i) => write!(f, "{i}"),
         };
+        let fmt_res_operand = |f: &mut Formatter<'_>, v: &ResOperand| match v {
+            ResOperand::Deref(d) => write!(f, "memory{d}"),
+            ResOperand::DoubleDeref(d, i) => write!(f, "memory[memory{d} + {i}]"),
+            ResOperand::Immediate(i) => write!(f, "{i}"),
+            ResOperand::BinOp(bin_op) => {
+                write!(f, "memory{} {} ", bin_op.a, bin_op.op)?;
+                fmt_access_or_const(f, &bin_op.b)
+            }
+        };
         write!(f, "%{{")?;
         match self {
             Hint::AllocSegment { dst } => write!(f, " memory{dst} = segments.add() ")?,
@@ -129,7 +138,9 @@ impl Display for Hint {
             Hint::ExitScope => write!(f, " vm_exit_scope() ")?,
             Hint::DictSquashHints { hint_index } => dict_squash::fmt_hint_by_index(f, *hint_index)?,
             Hint::SystemCall { system } => {
-                write!(f, " syscall_handler.syscall(segments=segments, syscall_ptr={}) ", system)?
+                write!(f, " syscall_handler.syscall(syscall_ptr=",)?;
+                fmt_res_operand(f, system)?;
+                write!(f, ") ")?;
             }
         }
         write!(f, "%}}")
