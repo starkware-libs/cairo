@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::Maybe;
 use itertools::Itertools;
+use semantic::corelib::get_core_ty_by_name;
 use semantic::TypeId;
 use utils::strongly_connected_components::{compute_scc, GraphNode};
 
@@ -89,7 +90,23 @@ pub fn free_function_all_implicits_vec(
 ) -> Maybe<Vec<TypeId>> {
     let implicits_set = db.free_function_all_implicits(function)?;
     let mut implicits_vec = implicits_set.into_iter().collect_vec();
-    implicits_vec.sort();
+
+    let semantic_db = db.upcast();
+
+    // The following type need to precedence other types for compatibility with the StarkNet OS.
+    let precedence = ["RangeCheck", "Pedersen", "GasBuiltin"]
+        .iter()
+        .map(|name| get_core_ty_by_name(semantic_db, name.into(), vec![]))
+        .collect_vec();
+
+    implicits_vec.sort_by_cached_key(|type_id| {
+        if let Some(idx) = precedence.iter().position(|item| item == type_id) {
+            return (idx, "".to_string());
+        }
+
+        (precedence.len(), type_id.format(semantic_db))
+    });
+
     Ok(implicits_vec)
 }
 
