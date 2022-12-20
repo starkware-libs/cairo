@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use casm::ap_change::ApplyApChange;
-use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
+use casm::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
 use num_bigint::BigInt;
 use num_traits::cast::ToPrimitive;
 use sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
@@ -119,6 +119,24 @@ impl CellExpression {
                 offset.to_i16().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
             )),
             _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
+        }
+    }
+
+    /// Returns the reference as a buffer with at least `required_slack` next cells that can be
+    /// written as an instruction offset.
+    pub fn to_buffer(&self, required_slack: i16) -> Result<ResOperand, InvocationError> {
+        let (base, offset) = self.to_deref_with_offset()?;
+        offset
+            .checked_add(required_slack)
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+        if offset == 0 {
+            Ok(ResOperand::Deref(base))
+        } else {
+            Ok(ResOperand::BinOp(BinOpOperand {
+                op: casm::operand::Operation::Add,
+                a: base,
+                b: DerefOrImmediate::Immediate(offset.into()),
+            }))
         }
     }
 }

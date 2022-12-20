@@ -20,7 +20,7 @@ fn test_storage_read() {
                 [ap + 0] = 31066245855454734213960397939u128, ap++;
                 [ap + -1] = [[fp + 1] + 0];
                 [ap + 4] = [[fp + 1] + 1];
-                %{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + 1] + 0) %}
+                %{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + 1]) %}
                 [ap + 0] = [[fp + 1] + 2], ap++;
             }
             .instructions,
@@ -52,7 +52,7 @@ fn test_storage_write() {
                 [fp + 1] = [[fp + 2] + 1];
                 [ap + 4] = [[fp + 2] + 2];
                 [ap + 5] = [[fp + 2] + 3];
-                %{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + 2] + 0) %}
+                %{ syscall_handler.syscall(segments=segments, syscall_ptr=[fp + 2]) %}
                 [ap + 0] = [[fp + 2] + 5], ap++;
                 jmp rel 0 if [ap + -1] != 0;
             }

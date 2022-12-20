@@ -206,11 +206,8 @@ macro_rules! casm_extend {
     };
     ($ctx:ident, %{ syscall_handler.syscall(segments=segments, syscall_ptr=$addr:tt) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::SystemCall {
-            system: $crate::operand::ResOperand::BinOp($crate::operand::BinOpOperand {
-                op: casm::operand::Operation::Add,
-                a: $crate::deref!($addr),
-                b: $crate::deref_or_immediate!(0),
-            })});
+            system: $crate::operand::ResOperand::Deref($crate::deref!($addr))
+        });
         $crate::casm_extend!($ctx, $($tok)*)
     };
 }
