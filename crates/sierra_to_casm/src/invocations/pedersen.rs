@@ -2,15 +2,14 @@
 #[path = "pedersen_test.rs"]
 mod test;
 
-use casm::casm;
-use casm::operand::DerefOrImmediate;
-use num_bigint::BigInt;
-use num_traits::FromPrimitive;
-use sierra::extensions::felt::FeltBinaryOperator;
+use casm::builder::{CasmBuildResult, CasmBuilder};
+use casm::operand::{BinOpOperand, Operation, ResOperand};
+use casm::{casm_build_extend, deref_or_immediate};
 use sierra::extensions::pedersen::PedersenConcreteLibFunc;
+use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -48,24 +47,40 @@ fn build_pedersen_hash(
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     }
 
-    let instructions = casm! {
-        x = [[&pedersen_base] + pedersen_offset];
-        y = [[&pedersen_base] + (pedersen_offset + 1)];
-    }
-    .instructions;
-    let output_expressions = [vec![
-        ReferenceExpression {
-            cells: vec![CellExpression::BinOp(BinOpExpression {
-                op: FeltBinaryOperator::Add,
-                a: pedersen_base,
-                b: DerefOrImmediate::Immediate(BigInt::from_i16(pedersen_offset).unwrap() + 3),
-            })],
-        },
-        ReferenceExpression {
-            cells: vec![CellExpression::DoubleDeref(pedersen_base, pedersen_offset + 2)],
-        },
-    ]
-    .into_iter()]
-    .into_iter();
-    Ok(builder.build(instructions, vec![], output_expressions))
+    let mut casm_builder = CasmBuilder::default();
+    let original_pedersen = ResOperand::BinOp(BinOpOperand {
+        op: Operation::Add,
+        a: pedersen_base,
+        b: deref_or_immediate!(pedersen_offset),
+    });
+    let pedersen = casm_builder.add_var(original_pedersen.clone());
+    let _original_pedersen = casm_builder.add_var(original_pedersen);
+    let x = casm_builder.add_var(ResOperand::Deref(x));
+    let y = casm_builder.add_var(ResOperand::Deref(y));
+    casm_build_extend! {casm_builder,
+        assert *(pedersen++) = x;
+        assert *(pedersen++) = y;
+        // TODO(orizi): Add pederesen hash hint: `hint Pedersen { ptr: original_pedersen };`.
+        let result = *(pedersen++);
+    };
+    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+    // TODO(orizi): Extract the assertion out of the libfunc implementation.
+    assert_eq!(
+        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+        [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
+    );
+    Ok(builder.build(
+        instructions,
+        vec![],
+        [vec![
+            ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                fallthrough_state.get_adjusted(pedersen),
+            )),
+            ReferenceExpression::from_cell(CellExpression::from_res_operand(
+                fallthrough_state.get_adjusted(result),
+            )),
+        ]
+        .into_iter()]
+        .into_iter(),
+    ))
 }
