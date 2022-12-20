@@ -53,7 +53,7 @@ pub fn build_storage_read(
         assert selector = selector_imm;
         assert *(system++) = selector;
         assert *(system++) = storage_address;
-        system_call original_system;
+        hint SystemCall { system: original_system };
         tempvar read_value;
         assert *(system++) = read_value;
     };
@@ -130,7 +130,7 @@ pub fn build_storage_write(
         assert *(system++) = gas_builtin;
         assert *(system++) = storage_address;
         assert *(system++) = value;
-        system_call original_system;
+        hint SystemCall { system: original_system };
         let updated_gas_builtin = *(system++);
         // `revert_reason` is 0 on success, nonzero on failure/revert.
         tempvar revert_reason;
