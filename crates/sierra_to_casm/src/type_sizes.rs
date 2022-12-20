@@ -28,7 +28,8 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
-            | CoreTypeConcrete::Pedersen(_) => Some(1),
+            | CoreTypeConcrete::Pedersen(_)
+            | CoreTypeConcrete::DictManager(_) => Some(1),
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::DictFeltTo(_)
             | CoreTypeConcrete::SquashedDictFeltTo(_) => Some(2),
