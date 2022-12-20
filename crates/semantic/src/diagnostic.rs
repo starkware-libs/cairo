@@ -2,12 +2,12 @@
 #[path = "diagnostic_test.rs"]
 mod test;
 
-use defs::db::PluginDiagnostic;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
+use defs::plugin::PluginDiagnostic;
 use diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
 };
@@ -383,6 +383,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
+            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, original_diag: _ } => {
+                // TODO(spapini): Support nested diagnostics.
+                format!("Plugin diagnostic: {}", diagnostic.message)
+            }
         }
     }
 
@@ -567,6 +571,10 @@ pub enum SemanticDiagnosticKind {
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
+    WrappedPluginDiagnostic {
+        diagnostic: PluginDiagnostic,
+        original_diag: Box<SemanticDiagnostic>,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
