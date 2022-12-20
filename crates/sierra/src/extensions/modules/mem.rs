@@ -1,13 +1,13 @@
-use super::as_single_type;
 use super::uninitialized::UninitializedType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureOnlyGenericLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureAndTypeGenericLibFunc, SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
+    WrapSignatureAndTypeGenericLibFunc,
 };
 use crate::extensions::{
-    NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibFunc, SpecializationError,
+    args_as_single_type, NamedType, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo,
+    SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId};
 use crate::program::GenericArg;
@@ -25,17 +25,15 @@ define_libfunc_hierarchy! {
 
 /// LibFunc for storing a value into temporary memory.
 #[derive(Default)]
-pub struct StoreTempLibFunc {}
-impl NamedLibFunc for StoreTempLibFunc {
-    type Concrete = StoreTempConcreteLibFunc;
+pub struct StoreTempLibFuncWrapped {}
+impl SignatureAndTypeGenericLibFunc for StoreTempLibFuncWrapped {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("store_temp");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
+        ty: ConcreteTypeId,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(args)?;
         context.as_type_specialization_context().get_type_info(ty.clone())?;
         Ok(LibFuncSignature::new_non_branch_ex(
             vec![ParamSignature {
@@ -51,80 +49,36 @@ impl NamedLibFunc for StoreTempLibFunc {
             SierraApChange::Known { new_vars_only: true },
         ))
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = as_single_type(args)?;
-        Ok(StoreTempConcreteLibFunc {
-            ty,
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
-    }
 }
-
-pub struct StoreTempConcreteLibFunc {
-    pub ty: ConcreteTypeId,
-    pub signature: LibFuncSignature,
-}
-impl SignatureBasedConcreteLibFunc for StoreTempConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
-    }
-}
+pub type StoreTempLibFunc = WrapSignatureAndTypeGenericLibFunc<StoreTempLibFuncWrapped>;
 
 /// LibFunc for aligning the temporary buffer for flow control merge.
 #[derive(Default)]
-pub struct AlignTempsLibFunc {}
-impl NamedLibFunc for AlignTempsLibFunc {
-    type Concrete = AlignTempsConcreteLibFunc;
+pub struct AlignTempsLibFuncWrapped {}
+impl SignatureAndTypeGenericLibFunc for AlignTempsLibFuncWrapped {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("align_temps");
 
     fn specialize_signature(
         &self,
         _context: &dyn SignatureSpecializationContext,
-        _args: &[GenericArg],
+        _ty: ConcreteTypeId,
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::NotImplemented))
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(AlignTempsConcreteLibFunc {
-            ty: as_single_type(args)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
-    }
 }
-
-pub struct AlignTempsConcreteLibFunc {
-    pub ty: ConcreteTypeId,
-    pub signature: LibFuncSignature,
-}
-impl SignatureBasedConcreteLibFunc for AlignTempsConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
-    }
-}
+pub type AlignTempsLibFunc = WrapSignatureAndTypeGenericLibFunc<AlignTempsLibFuncWrapped>;
 
 /// LibFunc for storing a value into local memory.
 #[derive(Default)]
-pub struct StoreLocalLibFunc {}
-impl NamedLibFunc for StoreLocalLibFunc {
-    type Concrete = StoreLocalConcreteLibFunc;
+pub struct StoreLocalLibFuncWrapped {}
+impl SignatureAndTypeGenericLibFunc for StoreLocalLibFuncWrapped {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("store_local");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
+        ty: ConcreteTypeId,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(args)?;
         let uninitialized_type =
             context.get_wrapped_concrete_type(UninitializedType::id(), ty.clone())?;
         Ok(LibFuncSignature::new_non_branch_ex(
@@ -141,29 +95,8 @@ impl NamedLibFunc for StoreLocalLibFunc {
             SierraApChange::Known { new_vars_only: true },
         ))
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = as_single_type(args)?;
-        Ok(StoreLocalConcreteLibFunc {
-            ty,
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
-    }
 }
-
-pub struct StoreLocalConcreteLibFunc {
-    pub ty: ConcreteTypeId,
-    pub signature: LibFuncSignature,
-}
-impl SignatureBasedConcreteLibFunc for StoreLocalConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
-    }
-}
+pub type StoreLocalLibFunc = WrapSignatureAndTypeGenericLibFunc<StoreLocalLibFuncWrapped>;
 
 /// LibFunc for finalizing the locals for current function.
 #[derive(Default)]
@@ -184,27 +117,16 @@ impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
 }
 
 /// LibFunc for allocating locals for later stores.
-pub struct AllocLocalConcreteLibFunc {
-    pub ty: ConcreteTypeId,
-    pub signature: LibFuncSignature,
-}
-impl SignatureBasedConcreteLibFunc for AllocLocalConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
-    }
-}
 #[derive(Default)]
-pub struct AllocLocalLibFunc {}
-impl NamedLibFunc for AllocLocalLibFunc {
-    type Concrete = AllocLocalConcreteLibFunc;
+pub struct AllocLocalLibFuncWrapped {}
+impl SignatureAndTypeGenericLibFunc for AllocLocalLibFuncWrapped {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("alloc_local");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
+        ty: ConcreteTypeId,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
@@ -214,19 +136,8 @@ impl NamedLibFunc for AllocLocalLibFunc {
             SierraApChange::Known { new_vars_only: true },
         ))
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = as_single_type(args)?;
-        Ok(AllocLocalConcreteLibFunc {
-            ty,
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
-    }
 }
+pub type AllocLocalLibFunc = WrapSignatureAndTypeGenericLibFunc<AllocLocalLibFuncWrapped>;
 
 /// LibFunc for renaming an identifier - used to align identities for flow control merge.
 #[derive(Default)]
@@ -239,7 +150,7 @@ impl SignatureOnlyGenericLibFunc for RenameLibFunc {
         _context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(args)?;
+        let ty = args_as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![ty.clone()],
             vec![OutputVarInfo {

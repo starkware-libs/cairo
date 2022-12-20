@@ -1,14 +1,16 @@
-use super::as_single_type;
 use super::range_check::RangeCheckType;
 use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
+    SierraApChange, SignatureAndTypeGenericLibFunc, SignatureOnlyGenericLibFunc,
+    SignatureSpecializationContext, WrapSignatureAndTypeGenericLibFunc,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{
+    args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
+};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
@@ -24,7 +26,7 @@ impl NamedType for ArrayType {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = as_single_type(args)?;
+        let ty = args_as_single_type(args)?;
         let info = context.get_type_info(ty.clone())?;
         if info.storable {
             Ok(ArrayConcreteType {
@@ -73,7 +75,7 @@ impl SignatureOnlyGenericLibFunc for ArrayNewLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(args)?;
+        let ty = args_as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
@@ -87,16 +89,15 @@ impl SignatureOnlyGenericLibFunc for ArrayNewLibFunc {
 
 /// LibFunc for getting the length of the array.
 #[derive(Default)]
-pub struct ArrayLenLibFunc {}
-impl SignatureOnlyGenericLibFunc for ArrayLenLibFunc {
+pub struct ArrayLenLibFuncWrapped {}
+impl SignatureAndTypeGenericLibFunc for ArrayLenLibFuncWrapped {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("array_len");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
+        ty: ConcreteTypeId,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(args)?;
         let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![arr_type.clone()],
@@ -114,19 +115,19 @@ impl SignatureOnlyGenericLibFunc for ArrayLenLibFunc {
         ))
     }
 }
+pub type ArrayLenLibFunc = WrapSignatureAndTypeGenericLibFunc<ArrayLenLibFuncWrapped>;
 
 /// LibFunc for pushing a value into the end of an array.
 #[derive(Default)]
-pub struct ArrayAppendLibFunc {}
-impl SignatureOnlyGenericLibFunc for ArrayAppendLibFunc {
+pub struct ArrayAppendLibFuncWrapped {}
+impl SignatureAndTypeGenericLibFunc for ArrayAppendLibFuncWrapped {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("array_append");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
+        ty: ConcreteTypeId,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(args)?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         Ok(LibFuncSignature::new_non_branch_ex(
             vec![
@@ -148,20 +149,20 @@ impl SignatureOnlyGenericLibFunc for ArrayAppendLibFunc {
         ))
     }
 }
+pub type ArrayAppendLibFunc = WrapSignatureAndTypeGenericLibFunc<ArrayAppendLibFuncWrapped>;
 
 /// LibFunc for fetching a value from a specific array index.
 #[derive(Default)]
-pub struct ArrayAtLibFunc {}
-impl SignatureOnlyGenericLibFunc for ArrayAtLibFunc {
+pub struct ArrayAtLibFuncWrapped {}
+impl SignatureAndTypeGenericLibFunc for ArrayAtLibFuncWrapped {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("array_at");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
+        ty: ConcreteTypeId,
     ) -> Result<LibFuncSignature, SpecializationError> {
         // Value type must be duplicatable.
-        let ty = as_single_type(args)?;
         if !context.get_type_info(ty.clone())?.duplicatable {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
@@ -214,3 +215,4 @@ impl SignatureOnlyGenericLibFunc for ArrayAtLibFunc {
         Ok(LibFuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
     }
 }
+pub type ArrayAtLibFunc = WrapSignatureAndTypeGenericLibFunc<ArrayAtLibFuncWrapped>;

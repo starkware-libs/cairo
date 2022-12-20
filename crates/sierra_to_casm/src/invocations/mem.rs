@@ -3,10 +3,8 @@ use casm::instructions::Instruction;
 use casm::operand::{CellRef, DerefOrImmediate, Register};
 use casm::{casm, casm_extend};
 use sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
-use sierra::extensions::mem::{
-    AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
-    StoreTempConcreteLibFunc,
-};
+use sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
+use sierra::extensions::mem::MemConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use utils::casts::usize_as_i16;
 use utils::try_extract_matches;
@@ -23,15 +21,15 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        MemConcreteLibFunc::StoreTemp(StoreTempConcreteLibFunc { ty, .. }) => {
+        MemConcreteLibFunc::StoreTemp(SignatureAndTypeConcreteLibFunc { ty, .. }) => {
             build_store_temp(builder, ty)
         }
         MemConcreteLibFunc::Rename(_) => misc::build_identity(builder),
         MemConcreteLibFunc::FinalizeLocals(_) => build_finalize_locals(builder),
-        MemConcreteLibFunc::AllocLocal(AllocLocalConcreteLibFunc { ty, .. }) => {
+        MemConcreteLibFunc::AllocLocal(SignatureAndTypeConcreteLibFunc { ty, .. }) => {
             build_alloc_local(builder, ty)
         }
-        MemConcreteLibFunc::StoreLocal(StoreLocalConcreteLibFunc { ty, .. }) => {
+        MemConcreteLibFunc::StoreLocal(SignatureAndTypeConcreteLibFunc { ty, .. }) => {
             build_store_local(builder, ty)
         }
         MemConcreteLibFunc::AlignTemps(_) => {
