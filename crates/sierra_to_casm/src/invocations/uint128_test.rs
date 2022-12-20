@@ -85,6 +85,7 @@ fn test_sub() {
 
 #[test]
 fn test_lt() {
+    let u128_limit: BigInt = BigInt::from(u128::MAX) + 1;
     assert_eq!(
         compile_libfunc(
             "u128_lt",
@@ -92,14 +93,13 @@ fn test_lt() {
         ),
         ReducedCompiledInvocation {
             instructions: casm! {
-                %{ memory[ap + 0] = memory[ap - 6] <= memory[ap - 7] %}
-                jmp rel 8 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap + -8] + 1, ap++;
-                [ap + -8] = [ap + 0] + [ap + -1], ap++;
+                [ap + -7] = [ap + 1] + [ap + -6], ap++;
+                %{ memory[ap - 1] = memory[ap + 0] < (u128_limit.clone()) %}
+                jmp rel 7 if [ap + -1] != 0, ap++;
+                [ap + 0] = [ap + -1] + u128_limit, ap++;
                 [ap - 1] = [[fp - 5]];
                 jmp rel 0;
-                [ap + -8] = [ap + 0] + [ap + -7], ap++;
-                [ap - 1] = [[fp + -5]];
+                [ap - 1] = [[fp - 5]];
             }
             .instructions,
             relocations: vec![RelocationEntry {
@@ -114,6 +114,43 @@ fn test_lt() {
                 ReducedBranchChanges {
                     refs: vec![ref_expr!([fp - 5] + 1)],
                     ap_change: ApChange::Known(3)
+                }
+            ]
+        }
+    );
+}
+
+#[test]
+fn test_le() {
+    let u128_limit: BigInt = BigInt::from(u128::MAX) + 1;
+    assert_eq!(
+        compile_libfunc(
+            "u128_le",
+            vec![ref_expr!([fp - 5]), ref_expr!([ap - 7]), ref_expr!([ap - 6])]
+        ),
+        ReducedCompiledInvocation {
+            instructions: casm! {
+                [ap + -6] = [ap + 1] + [ap + -7], ap++;
+                %{ memory[ap + -1] = (u128_limit.clone()) <= memory[ap + 0] %}
+                jmp rel 5 if [ap + -1] != 0, ap++;
+                [ap - 1] = [[fp + -5]];
+                jmp rel 0;
+                [ap + 0] = [ap + -1] + u128_limit, ap++;
+                [ap - 1] = [[fp + -5]];
+            }
+            .instructions,
+            relocations: vec![RelocationEntry {
+                instruction_idx: 3,
+                relocation: Relocation::RelativeStatementId(StatementIdx(1))
+            }],
+            results: vec![
+                ReducedBranchChanges {
+                    refs: vec![ref_expr!([fp - 5] + 1)],
+                    ap_change: ApChange::Known(3)
+                },
+                ReducedBranchChanges {
+                    refs: vec![ref_expr!([fp - 5] + 1)],
+                    ap_change: ApChange::Known(2)
                 }
             ]
         }
@@ -138,43 +175,6 @@ fn test_eq() {
             results: vec![
                 ReducedBranchChanges { refs: vec![], ap_change: ApChange::Known(1) },
                 ReducedBranchChanges { refs: vec![], ap_change: ApChange::Known(1) }
-            ]
-        }
-    );
-}
-
-#[test]
-fn test_le() {
-    assert_eq!(
-        compile_libfunc(
-            "u128_le",
-            vec![ref_expr!([fp - 5]), ref_expr!([ap - 7]), ref_expr!([ap - 6])]
-        ),
-        ReducedCompiledInvocation {
-            instructions: casm! {
-                %{ memory[ap + 0] = memory[ap - 6] < memory[ap - 7] %}
-                jmp rel 6 if [ap + 0] != 0, ap++;
-                [ap + -7] = [ap + 0] + [ap + -8], ap++;
-                [ap - 1] = [[fp + -5]];
-                jmp rel 0;
-                [ap + 0] = [ap + -7] + 1, ap++;
-                [ap + -9] = [ap + 0] + [ap + -1], ap++;
-                [ap - 1] = [[fp - 5]];
-            }
-            .instructions,
-            relocations: vec![RelocationEntry {
-                instruction_idx: 3,
-                relocation: Relocation::RelativeStatementId(StatementIdx(1))
-            }],
-            results: vec![
-                ReducedBranchChanges {
-                    refs: vec![ref_expr!([fp - 5] + 1)],
-                    ap_change: ApChange::Known(3)
-                },
-                ReducedBranchChanges {
-                    refs: vec![ref_expr!([fp - 5] + 1)],
-                    ap_change: ApChange::Known(2)
-                }
             ]
         }
     );
