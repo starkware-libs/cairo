@@ -1916,6 +1916,7 @@ dependencies = [
  "test-case",
  "test-log",
  "test_utils",
+ "unescaper",
  "utils",
 ]
 
@@ -2678,6 +2679,15 @@ name = "ucd-trie"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e79c4d996edb816c91e4308506774452e55e95c3c9de07b6729e17e15a5ef81"
+
+[[package]]
+name = "unescaper"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "995483205de764db1185c9461a000fff73fa4b9ee2bbe4c8b4027a94692700fe"
+dependencies = [
+ "thiserror",
+]
 
 [[package]]
 name = "unicode-bidi"

@@ -1,7 +1,6 @@
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::operand::{ap_cell_ref, CellRef, DerefOrImmediate, ResOperand};
+use casm::operand::{ap_cell_ref, BinOpOperand, CellRef, DerefOrImmediate, ResOperand};
 use casm::{casm, casm_build_extend, casm_extend};
-use num_bigint::BigInt;
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::ConcreteLibFunc;
@@ -301,6 +300,20 @@ pub struct ArrayView {
     /// Never negative.
     pub end_offset: i16,
 }
+impl ArrayView {
+    /// Returns the end as a `ResOperand`.
+    fn end_operand(&self) -> ResOperand {
+        if self.end_offset == 0 {
+            ResOperand::Deref(self.end)
+        } else {
+            ResOperand::BinOp(BinOpOperand {
+                op: casm::operand::Operation::Add,
+                a: self.end,
+                b: DerefOrImmediate::Immediate(self.end_offset.into()),
+            })
+        }
+    }
+}
 
 impl ReferenceExpressionView for ArrayView {
     type Error = InvocationError;
@@ -319,20 +332,11 @@ impl ReferenceExpressionView for ArrayView {
     }
 
     fn to_reference_expression(self) -> ReferenceExpression {
-        let start_ref = CellExpression::Deref(self.start);
-        if self.end_offset == 0 {
-            ReferenceExpression { cells: vec![start_ref, CellExpression::Deref(self.end)] }
-        } else {
-            ReferenceExpression {
-                cells: vec![
-                    CellExpression::Deref(self.start),
-                    CellExpression::BinOp(BinOpExpression {
-                        op: FeltBinaryOperator::Add,
-                        a: self.end,
-                        b: DerefOrImmediate::Immediate(BigInt::from(self.end_offset)),
-                    }),
-                ],
-            }
+        ReferenceExpression {
+            cells: vec![
+                CellExpression::Deref(self.start),
+                CellExpression::from_res_operand(self.end_operand()),
+            ],
         }
     }
 }

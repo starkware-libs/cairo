@@ -25,6 +25,7 @@ smol_str.workspace = true
 syntax = { path = "../syntax" }
 utils = { path = "../utils" }
 plugins = { path = "../plugins" }
+unescaper.workspace = true
 
 [dev-dependencies]
 assert_matches.workspace = true

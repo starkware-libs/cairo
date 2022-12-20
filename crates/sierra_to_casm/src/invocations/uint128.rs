@@ -1,6 +1,6 @@
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::operand::{BinOpOperand, CellRef, Operation, ResOperand};
-use casm::{casm_build_extend, deref_or_immediate};
+use casm::casm_build_extend;
+use casm::operand::{CellRef, ResOperand};
 use num_bigint::BigInt;
 use sierra::extensions::uint128::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
@@ -51,19 +51,12 @@ pub fn unwrap_range_check_based_binary_op_refs(
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: expr_a, .. },
             ReferenceValue { expression: expr_b, .. },
-        ] => {
-            let (range_check, offset) =
-                range_check_expression.try_unpack_single()?.to_deref_with_offset()?;
-            Ok((
-                ResOperand::BinOp(BinOpOperand {
-                    op: Operation::Add,
-                    a: range_check,
-                    b: deref_or_immediate!(offset),
-                }),
-                expr_a.try_unpack_single()?.to_deref()?,
-                expr_b.try_unpack_single()?.to_deref()?,
-            ))
-        }
+        ] => Ok((
+            range_check_expression.try_unpack_single()?.to_buffer(0)?,
+            expr_a.try_unpack_single()?.to_deref()?,
+            expr_b.try_unpack_single()?.to_deref()?,
+        )),
+
         refs => Err(InvocationError::WrongNumberOfArguments { expected: 3, actual: refs.len() }),
     }
 }
@@ -263,12 +256,12 @@ fn build_u128_op(
 fn build_u128_from_felt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let ((range_check, range_check_offset), value) = match builder.refs {
+    let (range_check, value) = match builder.refs {
         [
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: expr_value, .. },
         ] => (
-            range_check_expression.try_unpack_single()?.to_deref_with_offset()?,
+            range_check_expression.try_unpack_single()?.to_buffer(3)?,
             expr_value.try_unpack_single()?.to_deref()?,
         ),
         refs => {
@@ -285,11 +278,7 @@ fn build_u128_from_felt(
     let max_y: i128 = 0;
     let mut casm_builder = CasmBuilder::default();
     // Defining params and constants.
-    let range_check = casm_builder.add_var(ResOperand::BinOp(BinOpOperand {
-        a: range_check,
-        b: deref_or_immediate!(range_check_offset),
-        op: Operation::Add,
-    }));
+    let range_check = casm_builder.add_var(range_check);
     let value = casm_builder.add_var(ResOperand::Deref(value));
     let u128_limit = casm_builder.add_var(ResOperand::Immediate(u128_bound.clone()));
     let le_max_y_fix = casm_builder.add_var(ResOperand::Immediate(u128_bound.clone() - max_y - 1));
