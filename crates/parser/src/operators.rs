@@ -24,7 +24,8 @@ pub fn get_binary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         | SyntaxKind::TerminalGE => Some(4),
         SyntaxKind::TerminalAnd => Some(5),
         SyntaxKind::TerminalOr => Some(6),
-        SyntaxKind::TerminalEq => Some(7),
+        SyntaxKind::TerminalXor => Some(7),
+        SyntaxKind::TerminalEq => Some(8),
 
         // TODO(yuval): add more operators.
         _ => None,

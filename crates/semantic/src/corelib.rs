@@ -311,6 +311,8 @@ pub fn core_binary_operator(
         BinaryOperator::And(_) => return unsupported_operator("&"),
         BinaryOperator::Or(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_or",
         BinaryOperator::Or(_) => return unsupported_operator("|"),
+        BinaryOperator::Xor(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_xor",
+        BinaryOperator::Xor(_) => return unsupported_operator("^"),
         BinaryOperator::LE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_le",
         BinaryOperator::LE(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_le",
         BinaryOperator::LE(_) => return unsupported_operator("<="),
