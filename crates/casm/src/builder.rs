@@ -496,6 +496,10 @@ macro_rules! casm_build_extend {
         let $dst = $builder.double_deref($buffer, $offset);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
+    ($builder:ident, let $dst:ident = $buffer:ident [ $offset:literal ] ; $($tok:tt)*) => {
+        let $dst = $builder.double_deref($buffer, $offset);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
     ($builder:ident, let $dst:ident = $src:ident; $($tok:tt)*) => {
         let $dst = $builder.duplicate_var($src);
         $crate::casm_build_extend!($builder, $($tok)*)
