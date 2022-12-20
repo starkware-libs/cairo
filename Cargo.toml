@@ -76,4 +76,5 @@ thiserror = "1.0.32"
 tokio = { version = "1.18.2", features = ["full", "sync"] }
 toml = "0.4.2"
 tower-lsp = "0.17.0"
+unescaper = "0.1.1"
 xshell = "0.2.2"

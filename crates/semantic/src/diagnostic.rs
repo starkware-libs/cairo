@@ -351,6 +351,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`ref` is only allowed for function parameters, not for local variables."
                     .to_string()
             }
+            SemanticDiagnosticKind::ShortStringMustBeAscii => {
+                "Short strings can only include ASCII characters.".into()
+            }
+            SemanticDiagnosticKind::IllegalStringEscaping(err) => {
+                format!("Invalid string escaping:\n{err}")
+            }
             SemanticDiagnosticKind::InvalidCopyTraitImpl => {
                 "Invalid copy trait implementation.".into()
             }
@@ -547,6 +553,8 @@ pub enum SemanticDiagnosticKind {
         expected_enum: EnumId,
         actual_enum: EnumId,
     },
+    ShortStringMustBeAscii,
+    IllegalStringEscaping(String),
     InvalidCopyTraitImpl,
     InvalidDropTraitImpl,
     InvalidImplItem {
