@@ -2221,6 +2221,7 @@ dependencies = [
  "indoc",
  "itertools",
  "log",
+ "lowering",
  "num-bigint",
  "num-integer",
  "num-traits 0.2.15",
