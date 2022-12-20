@@ -15,7 +15,7 @@ use diagnostics::ToOption;
 use filesystem::ids::CrateId;
 use itertools::Itertools;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use runner::SierraCasmRunner;
+use runner::{RunResultValue, SierraCasmRunner};
 use semantic::db::SemanticGroup;
 use semantic::{ConcreteFunction, FunctionLongId};
 use sierra_generator::db::SierraGenGroup;
@@ -34,7 +34,7 @@ struct Args {
 /// The status of a ran test.
 enum TestStatus {
     Success,
-    Fail,
+    Fail(RunResultValue),
     Ignore,
 }
 
@@ -73,7 +73,8 @@ fn main() -> anyhow::Result<()> {
             )
         })
         .collect_vec();
-    let TestsSummary { passed, failed, ignored } = run_tests(named_tests, sierra_program)?;
+    let TestsSummary { passed, failed, ignored, failed_run_results } =
+        run_tests(named_tests, sierra_program)?;
     if failed.is_empty() {
         println!(
             "test result: {}. {} passed; {} failed; {} ignored",
@@ -85,8 +86,37 @@ fn main() -> anyhow::Result<()> {
         Ok(())
     } else {
         println!("failures:");
-        for failure in &failed {
-            println!("   {failure}");
+        for (failure, run_result) in failed.iter().zip_eq(failed_run_results) {
+            print!("   {failure} - ");
+            match run_result {
+                RunResultValue::Success(_) => {
+                    println!("expected panic but finished successfully.");
+                }
+                RunResultValue::Panic(values) => {
+                    print!("panicked with [");
+                    for value in &values {
+                        let bytes = value.to_bytes_be().1;
+                        let mut is_end = false;
+                        let mut as_string = String::default();
+                        if bytes.iter().all(|byte| {
+                            if *byte == 0 {
+                                is_end = true;
+                                true
+                            } else if is_end || !byte.is_ascii() {
+                                false
+                            } else {
+                                as_string.push(*byte as char);
+                                true
+                            }
+                        }) {
+                            print!("{value} ('{as_string}'), ");
+                        } else {
+                            print!("{value}, ",);
+                        }
+                    }
+                    println!("].")
+                }
+            }
         }
         println!();
         bail!(
@@ -104,6 +134,7 @@ struct TestsSummary {
     passed: Vec<String>,
     failed: Vec<String>,
     ignored: Vec<String>,
+    failed_run_results: Vec<RunResultValue>,
 }
 
 /// Runs the tests and process the results for a summary.
@@ -112,8 +143,12 @@ fn run_tests(
     sierra_program: sierra::program::Program,
 ) -> anyhow::Result<TestsSummary> {
     println!("running {} tests", named_tests.len());
-    let wrapped_summary =
-        Mutex::new(Ok(TestsSummary { passed: vec![], failed: vec![], ignored: vec![] }));
+    let wrapped_summary = Mutex::new(Ok(TestsSummary {
+        passed: vec![],
+        failed: vec![],
+        ignored: vec![],
+        failed_run_results: vec![],
+    }));
     named_tests
         .into_par_iter()
         .map(|(name, test)| -> anyhow::Result<(String, TestStatus)> {
@@ -127,14 +162,12 @@ fn run_tests(
                 .with_context(|| "Failed to run the function.")?;
             Ok((
                 name,
-                match (result.value, test.expectation) {
-                    (runner::RunResultValue::Success(_), TestExpectation::Success)
-                    | (runner::RunResultValue::Panic(_), TestExpectation::Panics) => {
-                        TestStatus::Success
-                    }
-                    (runner::RunResultValue::Success(_), TestExpectation::Panics)
-                    | (runner::RunResultValue::Panic(_), TestExpectation::Success) => {
-                        TestStatus::Fail
+                match (&result.value, test.expectation) {
+                    (RunResultValue::Success(_), TestExpectation::Success)
+                    | (RunResultValue::Panic(_), TestExpectation::Panics) => TestStatus::Success,
+                    (RunResultValue::Success(_), TestExpectation::Panics)
+                    | (RunResultValue::Panic(_), TestExpectation::Success) => {
+                        TestStatus::Fail(result.value)
                     }
                 },
             ))
@@ -154,7 +187,10 @@ fn run_tests(
             let summary = wrapped_summary.as_mut().unwrap();
             let (res_type, status_str) = match status {
                 TestStatus::Success => (&mut summary.passed, "ok".bright_green()),
-                TestStatus::Fail => (&mut summary.failed, "fail".bright_red()),
+                TestStatus::Fail(run_result) => {
+                    summary.failed_run_results.push(run_result);
+                    (&mut summary.failed, "fail".bright_red())
+                }
                 TestStatus::Ignore => (&mut summary.ignored, "ignored".bright_yellow()),
             };
             println!("test {name} ... {status_str}",);
