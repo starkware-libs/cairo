@@ -73,6 +73,7 @@ libfunc rename<core::PanicResult::<core::felt>> = rename<core::PanicResult::<cor
 libfunc enum_init<core::PanicResult::<core::felt>, 0> = enum_init<core::PanicResult::<core::felt>, 0>;
 libfunc function_call<user@core::integer::u128_checked_sub> = function_call<user@core::integer::u128_checked_sub>;
 libfunc enum_match<core::option::Option::<core::integer::u128>> = enum_match<core::option::Option::<core::integer::u128>>;
+libfunc felt_const<141676643251868248439803718> = felt_const<141676643251868248439803718>;
 libfunc enum_init<core::PanicResult::<core::integer::u128>, 1> = enum_init<core::PanicResult::<core::integer::u128>, 1>;
 libfunc store_temp<core::PanicResult::<core::integer::u128>> = store_temp<core::PanicResult::<core::integer::u128>>;
 libfunc rename<core::PanicResult::<core::integer::u128>> = rename<core::PanicResult::<core::integer::u128>>;
@@ -329,7 +330,7 @@ jump() { 254() };
 drop<Unit>([9]) -> ();
 branch_align() -> ();
 array_new<felt>() -> ([12]);
-felt_const<1>() -> ([13]);
+felt_const<141676643251868248439803718>() -> ([13]);
 store_temp<felt>([13]) -> ([13]);
 array_append<felt>([12], [13]) -> ([14]);
 enum_init<core::PanicResult::<core::integer::u128>, 1>([14]) -> ([15]);

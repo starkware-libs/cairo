@@ -3,12 +3,10 @@ impl U128Copy of Copy::<u128>;
 impl U128Drop of Drop::<u128>;
 extern func u128_const<value>() -> u128 nopanic;
 
-// TODO(orizi): Change all error codes into short-strings.
-
 enum U128sFromFeltResult { Narrow: u128, Wide: (u128, u128), }
 extern func u128s_from_felt(a: felt) -> U128sFromFeltResult implicits(RangeCheck) nopanic;
 
-#[panic_with(1, u128_from_felt)]
+#[panic_with('u128_from OF', u128_from_felt)]
 func u128_try_from_felt(a: felt) -> Option::<u128> implicits(RangeCheck) nopanic {
     match u128s_from_felt(a) {
         U128sFromFeltResult::Narrow(x) => Option::<u128>::Some(x),
@@ -77,7 +75,7 @@ func u128_overflow_mul(a: u128, b: u128) -> (u128, bool) implicits(RangeCheck) n
     }
 }
 
-#[panic_with(1, u128_add)]
+#[panic_with('u128_add OF', u128_add)]
 func u128_checked_add(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) nopanic {
     match u128_overflow_add(a, b) {
         Result::Ok(r) => Option::<u128>::Some(r),
@@ -85,7 +83,7 @@ func u128_checked_add(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) 
     }
 }
 
-#[panic_with(1, u128_sub)]
+#[panic_with('u128_sub OF', u128_sub)]
 func u128_checked_sub(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) nopanic {
     match u128_overflow_sub(a, b) {
         Result::Ok(r) => Option::<u128>::Some(r),
@@ -93,7 +91,7 @@ func u128_checked_sub(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) 
     }
 }
 
-#[panic_with(1, u128_mul)]
+#[panic_with('u128_mul OF', u128_mul)]
 func u128_checked_mul(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) nopanic {
     let (bottom_word, top_word) = u128_wide_mul(a, b);
     match u128_to_felt(top_word) {
@@ -105,7 +103,7 @@ func u128_checked_mul(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) 
 impl NonZeroU128Copy of Copy::<NonZero::<u128>>;
 impl NonZeroU128Drop of Drop::<NonZero::<u128>>;
 
-#[panic_with(1, u128_as_non_zero)]
+#[panic_with('u128 is 0', u128_as_non_zero)]
 func u128_checked_as_non_zero(a: u128) -> Option::<NonZero::<u128>> implicits() nopanic {
     match u128_jump_nz(a) {
         JumpNzResult::Zero(()) => Option::<NonZero::<u128>>::None(()),
@@ -208,7 +206,7 @@ func u256_overflow_mul(a: u256, b: u256) -> (u256, bool) nopanic {
     (u256 { low, high }, overflow)
 }
 
-#[panic_with(1, u256_add)]
+#[panic_with('u256_add OF', u256_add)]
 func u256_checked_add(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) nopanic {
     let (r, overflow) = u256_overflow_add(a, b);
     if overflow {
@@ -218,7 +216,7 @@ func u256_checked_add(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) 
     }
 }
 
-#[panic_with(1, u256_sub)]
+#[panic_with('u256_sub OF', u256_sub)]
 func u256_checked_sub(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) nopanic {
     let (r, overflow) = u256_overflow_sub(a, b);
     if overflow {
@@ -228,7 +226,7 @@ func u256_checked_sub(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) 
     }
 }
 
-#[panic_with(1, u256_mul)]
+#[panic_with('u256_mul OF', u256_mul)]
 func u256_checked_mul(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) nopanic {
     let (r, overflow) = u256_overflow_mul(a, b);
     if overflow {
