@@ -1,7 +1,6 @@
-use super::as_single_type;
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{ConcreteType, NamedType, SpecializationError};
+use crate::extensions::{args_as_single_type, ConcreteType, NamedType, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
 
@@ -25,7 +24,7 @@ impl NamedType for UninitializedType {
                 duplicatable: false,
                 size: 0,
             },
-            ty: as_single_type(args)?,
+            ty: args_as_single_type(args)?,
         })
     }
 }
