@@ -8,8 +8,11 @@ use compiler::project::setup_project;
 use defs::db::DefsGroup;
 use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::ToOption;
+use itertools::Itertools;
+use lowering::db::LoweringGroup;
 use num_bigint::BigUint;
 use plugins::get_default_plugins;
+use semantic::corelib::get_core_ty_by_name;
 use semantic::db::SemanticGroup;
 use semantic::{ConcreteFunction, FunctionLongId};
 use serde::{Deserialize, Serialize};
@@ -68,6 +71,14 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&path))?;
+
+    // Override implicit precedence for compatibility with the StarkNet OS.
+    db.set_implicit_precedence(Arc::new(
+        ["RangeCheck", "Pedersen", "GasBuiltin"]
+            .iter()
+            .map(|name| get_core_ty_by_name(db, name.into(), vec![]))
+            .collect_vec(),
+    ));
 
     let mut plugins = get_default_plugins();
     plugins.push(Arc::new(StarkNetPlugin {}));
