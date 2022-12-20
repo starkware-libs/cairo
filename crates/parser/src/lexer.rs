@@ -131,12 +131,22 @@ impl<'a> Lexer<'a> {
 
     /// Takes a short string.
     fn take_token_short_string(&mut self) -> TokenKind {
-        if self.peek() == Some('\'') {
-            self.take();
-            // TODO(alon) support '\'' escaping.
-            self.take_while(|c| c != '\'' && c.is_ascii());
-            self.take();
+        self.take();
+        let mut escaped = false;
+        loop {
+            if escaped {
+                escaped = false;
+                self.take();
+            } else if self.peek() == Some('\\') {
+                escaped = true;
+                self.take();
+            } else if self.peek() == Some('\'') {
+                break;
+            } else {
+                self.take();
+            }
         }
+        self.take();
 
         // Parse _type suffix.
         if self.peek() == Some('_') {

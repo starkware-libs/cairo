@@ -1,8 +1,7 @@
-use super::as_single_type;
 use crate::extensions::lib_func::{
     LibFuncSignature, SierraApChange, SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
 };
-use crate::extensions::SpecializationError;
+use crate::extensions::{args_as_single_type, SpecializationError};
 use crate::ids::GenericLibFuncId;
 use crate::program::GenericArg;
 
@@ -17,7 +16,7 @@ impl SignatureOnlyGenericLibFunc for DropLibFunc {
         context: &dyn SignatureSpecializationContext,
         generic_args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(generic_args)?;
+        let ty = args_as_single_type(generic_args)?;
         let info = context.get_type_info(ty.clone())?;
         if info.droppable {
             Ok(LibFuncSignature::new_non_branch(

@@ -1,4 +1,7 @@
-use defs::db::{MacroPlugin, PluginDiagnostic, PluginResult};
+use defs::plugin::{
+    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    TrivialMapper,
+};
 use syntax::node::ast::AttributeList;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -70,6 +73,13 @@ fn generate_derive_code_for_type(
     if impls.is_empty() {
         PluginResult { code: None, diagnostics: vec![] }
     } else {
-        PluginResult { code: Some(("impls".into(), impls.join(""))), diagnostics: vec![] }
+        PluginResult {
+            code: Some(PluginGeneratedFile {
+                name: "impls".into(),
+                content: impls.join(""),
+                diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+            }),
+            diagnostics: vec![],
+        }
     }
 }

@@ -2,12 +2,12 @@
 #[path = "diagnostic_test.rs"]
 mod test;
 
-use defs::db::PluginDiagnostic;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
+use defs::plugin::PluginDiagnostic;
 use diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
 };
@@ -61,7 +61,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
-            SemanticDiagnosticKind::FileNotFound => "File not found.".into(),
+            SemanticDiagnosticKind::ModuleFileNotFound { path } => {
+                format!("Module file not found. Expected path: {path}")
+            }
             SemanticDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
             SemanticDiagnosticKind::UnsupportedUnaryOperator { op, ty } => {
@@ -351,6 +353,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`ref` is only allowed for function parameters, not for local variables."
                     .to_string()
             }
+            SemanticDiagnosticKind::ShortStringMustBeAscii => {
+                "Short strings can only include ASCII characters.".into()
+            }
+            SemanticDiagnosticKind::IllegalStringEscaping(err) => {
+                format!("Invalid string escaping:\n{err}")
+            }
             SemanticDiagnosticKind::InvalidCopyTraitImpl => {
                 "Invalid copy trait implementation.".into()
             }
@@ -377,6 +385,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
+            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, original_diag: _ } => {
+                // TODO(spapini): Support nested diagnostics.
+                format!("Plugin diagnostic: {}", diagnostic.message)
+            }
         }
     }
 
@@ -387,7 +399,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SemanticDiagnosticKind {
-    FileNotFound,
+    ModuleFileNotFound {
+        path: String,
+    },
     Unsupported,
     UnknownLiteral,
     UnsupportedUnaryOperator {
@@ -547,6 +561,8 @@ pub enum SemanticDiagnosticKind {
         expected_enum: EnumId,
         actual_enum: EnumId,
     },
+    ShortStringMustBeAscii,
+    IllegalStringEscaping(String),
     InvalidCopyTraitImpl,
     InvalidDropTraitImpl,
     InvalidImplItem {
@@ -559,6 +575,10 @@ pub enum SemanticDiagnosticKind {
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
+    WrappedPluginDiagnostic {
+        diagnostic: PluginDiagnostic,
+        original_diag: Box<SemanticDiagnostic>,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

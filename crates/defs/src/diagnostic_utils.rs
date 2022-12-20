@@ -8,7 +8,7 @@ use crate::ids::ModuleFileId;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StableLocation {
-    module_file_id: ModuleFileId,
+    pub module_file_id: ModuleFileId,
     stable_ptr: SyntaxStablePtrId,
 }
 impl StableLocation {
