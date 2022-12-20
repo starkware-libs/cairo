@@ -3,8 +3,8 @@
 mod test;
 
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::operand::{BinOpOperand, Operation, ResOperand};
-use casm::{casm_build_extend, deref_or_immediate};
+use casm::casm_build_extend;
+use casm::operand::ResOperand;
 use sierra::extensions::pedersen::PedersenConcreteLibFunc;
 use sierra_ap_change::core_libfunc_ap_change;
 
@@ -25,13 +25,13 @@ pub fn build(
 fn build_pedersen_hash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let ((pedersen_base, pedersen_offset), x, y) = match builder.refs {
+    let (original_pedersen, x, y) = match builder.refs {
         [
             ReferenceValue { expression: expr_pedersen, .. },
             ReferenceValue { expression: expr_x, .. },
             ReferenceValue { expression: expr_y, .. },
         ] => (
-            expr_pedersen.try_unpack_single()?.to_deref_with_offset()?,
+            expr_pedersen.try_unpack_single()?.to_buffer(2)?,
             expr_x.try_unpack_single()?.to_deref()?,
             expr_y.try_unpack_single()?.to_deref()?,
         ),
@@ -43,16 +43,7 @@ fn build_pedersen_hash(
         }
     };
 
-    if pedersen_offset > i16::MAX - 2 {
-        return Err(InvocationError::InvalidReferenceExpressionForArgument);
-    }
-
     let mut casm_builder = CasmBuilder::default();
-    let original_pedersen = ResOperand::BinOp(BinOpOperand {
-        op: Operation::Add,
-        a: pedersen_base,
-        b: deref_or_immediate!(pedersen_offset),
-    });
     let pedersen = casm_builder.add_var(original_pedersen.clone());
     let _original_pedersen = casm_builder.add_var(original_pedersen);
     let x = casm_builder.add_var(ResOperand::Deref(x));
