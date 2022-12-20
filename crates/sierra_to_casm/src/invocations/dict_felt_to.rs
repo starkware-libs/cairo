@@ -2,15 +2,17 @@ use std::str::FromStr;
 use std::vec;
 
 use casm::ap_change::ApplyApChange;
+use casm::builder::{CasmBuildResult, CasmBuilder};
 use casm::hints::Hint;
 use casm::instructions::{AddApInstruction, Instruction, InstructionBody};
 use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
-use casm::{casm, casm_extend};
+use casm::{casm, casm_build_extend, casm_extend};
 use num_bigint::BigInt;
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
+use sierra_ap_change::core_libfunc_ap_change;
 use utils::try_extract_matches;
 
 use super::{
@@ -39,9 +41,9 @@ pub fn build(
 fn build_dict_felt_to_new(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let default_value = match builder.refs {
-        [ReferenceValue { expression: expr_default_value, .. }] => {
-            try_unpack_deref(expr_default_value)?
+    let dict_manager_ptr_ref = match builder.refs {
+        [ReferenceValue { expression: expr_dict_manager, .. }] => {
+            try_unpack_deref(expr_dict_manager)?
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -50,23 +52,53 @@ fn build_dict_felt_to_new(
             });
         }
     };
-
+    let mut casm_builder = CasmBuilder::default();
+    let dict_manager_ptr = casm_builder.add_var(ResOperand::Deref(dict_manager_ptr_ref));
+    // Previous dict info
+    let dict_infos_start = casm_builder.add_var(ResOperand::DoubleDeref(dict_manager_ptr_ref, 0));
+    let n_dicts = casm_builder.add_var(ResOperand::DoubleDeref(dict_manager_ptr_ref, 1));
+    let n_destructed = casm_builder.add_var(ResOperand::DoubleDeref(dict_manager_ptr_ref, 2));
+    // New dict info
+    let new_dict_infos_start =
+        casm_builder.add_var(ResOperand::DoubleDeref(dict_manager_ptr_ref, 3));
+    let new_n_dicts = casm_builder.add_var(ResOperand::DoubleDeref(dict_manager_ptr_ref, 4));
+    let new_n_destructed = casm_builder.add_var(ResOperand::DoubleDeref(dict_manager_ptr_ref, 5));
+    let imm_1 = casm_builder.add_var(ResOperand::Immediate(1.into()));
+    let imm_3 = casm_builder.add_var(ResOperand::Immediate(3.into()));
+    casm_build_extend! {casm_builder,
+        tempvar new_dict_end;
+        hint AllocDictFeltTo {dict_manager_ptr: dict_manager_ptr} into {new_dict_end_dst: new_dict_end};
+        tempvar temp_dict_infos_start;
+        tempvar temp_n_dicts;
+        tempvar temp_n_dicts_plus1;
+        tempvar temp_n_destructed;
+        assert temp_dict_infos_start = dict_infos_start;
+        assert temp_n_dicts = n_dicts;
+        assert temp_n_dicts_plus1 = temp_n_dicts + imm_1;
+        assert temp_n_destructed = n_destructed;
+        assert temp_dict_infos_start = new_dict_infos_start;
+        assert temp_n_dicts_plus1 = new_n_dicts;
+        assert temp_n_destructed = new_n_destructed;
+        tempvar new_dict_manager_ptr;
+        // TODO(Gil): add view to dict manager and return offseted end instead of store.
+        assert new_dict_manager_ptr = dict_manager_ptr + imm_3;
+    };
+    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+    assert_eq!(
+        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+        [sierra_ap_change::ApChange::Known(fallthrough_state.ap_change)]
+    );
     Ok(builder.build(
-        vec![Instruction {
-            body: InstructionBody::AddAp(AddApInstruction { operand: ResOperand::from(1) }),
-            inc_ap: false,
-            hints: vec![Hint::AllocDictFeltTo {
-                dst: CellRef { register: Register::AP, offset: 0 },
-                default_value,
-            }],
-        }],
+        instructions,
         vec![],
-        [[ReferenceExpression {
-            cells: vec![
-                CellExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
-                CellExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
-            ],
-        }]
+        [[
+            ReferenceExpression::from_cell(CellExpression::Deref(
+                fallthrough_state.get_adjusted_as_cell_ref(new_dict_manager_ptr),
+            )),
+            ReferenceExpression::from_cell(CellExpression::Deref(
+                fallthrough_state.get_adjusted_as_cell_ref(new_dict_end),
+            )),
+        ]
         .into_iter()]
         .into_iter(),
     ))
@@ -90,11 +122,12 @@ fn build_dict_felt_to_read(
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
-                expected: 2,
+                expected: 3,
                 actual: refs.len(),
             });
         }
     };
+
     let mut instructions = vec![Instruction {
         body: InstructionBody::AddAp(AddApInstruction { operand: ResOperand::from(1) }),
         inc_ap: false,
@@ -213,7 +246,6 @@ fn build_dict_felt_to_squash(
             });
         }
     };
-    let mut start_expr = dict_view.start;
     let mut end_expr = dict_view.end;
     let end_offset = dict_view.end_offset;
     // ceil((PRIME / 2) / 2 ** 128).
@@ -225,11 +257,9 @@ fn build_dict_felt_to_squash(
         "1206167596222043737899107594365023368541035738443865566657697352045290673494",
     )
     .unwrap();
-    start_expr = start_expr.unchecked_apply_known_ap_change(1);
     end_expr = end_expr.unchecked_apply_known_ap_change(2);
     let mut casm_ctx = casm!(
         [ap] = range_check, ap++;
-        [ap] = start_expr, ap++;
         [ap] = end_expr + end_offset, ap++;
         call rel 61;
         jmp rel 174;
@@ -453,8 +483,6 @@ fn build_dict_felt_to_squash(
 // TODO(Gil): Dict is just a specific use case of appendable array, consider using ArrayView.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DictFeltToView {
-    /// A ref to the cell in which the start address of the dict change list is stored.
-    pub start: CellRef,
     /// A ref to the cell in which the last stored end_of_the_dict_change_list is stored.
     /// The end of the list is the next cell to write a change into (i.e. \[\[end\] + end_offset\]
     /// is not initialized).
@@ -472,12 +500,10 @@ impl ReferenceExpressionView for DictFeltToView {
         _program_info: &ProgramInfo<'_>,
         _concrete_type_id: &ConcreteTypeId,
     ) -> Result<Self, Self::Error> {
-        if expr.cells.len() != 2 {
+        if expr.cells.len() != 1 {
             return Err(ReferencesError::InvalidReferenceTypeForArgument);
         };
-        let start = try_extract_matches!(expr.cells[0], CellExpression::Deref)
-            .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?;
-        let (end, end_offset) = match &expr.cells[1] {
+        let (end, end_offset) = match &expr.cells[0] {
             CellExpression::Deref(op) => (*op, 0u16),
             CellExpression::BinOp(binop) => {
                 if binop.op != FeltBinaryOperator::Add {
@@ -496,23 +522,19 @@ impl ReferenceExpressionView for DictFeltToView {
                 return Err(ReferencesError::InvalidReferenceTypeForArgument);
             }
         };
-        Ok(DictFeltToView { start, end, end_offset })
+        Ok(DictFeltToView { end, end_offset })
     }
 
     fn to_reference_expression(self) -> ReferenceExpression {
-        let start_ref = CellExpression::Deref(self.start);
         if self.end_offset == 0 {
-            ReferenceExpression { cells: vec![start_ref, CellExpression::Deref(self.end)] }
+            ReferenceExpression { cells: vec![CellExpression::Deref(self.end)] }
         } else {
             ReferenceExpression {
-                cells: vec![
-                    CellExpression::Deref(self.end),
-                    CellExpression::BinOp(BinOpExpression {
-                        op: FeltBinaryOperator::Add,
-                        a: self.end,
-                        b: DerefOrImmediate::Immediate(BigInt::from(self.end_offset)),
-                    }),
-                ],
+                cells: vec![CellExpression::BinOp(BinOpExpression {
+                    op: FeltBinaryOperator::Add,
+                    a: self.end,
+                    b: DerefOrImmediate::Immediate(BigInt::from(self.end_offset)),
+                })],
             }
         }
     }
@@ -521,14 +543,13 @@ impl ReferenceExpressionView for DictFeltToView {
 impl ApplyApChange for DictFeltToView {
     fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
         Some(DictFeltToView {
-            start: self.start.apply_known_ap_change(ap_change)?,
             end: self.end.apply_known_ap_change(ap_change)?,
             end_offset: self.end_offset,
         })
     }
 
     fn can_apply_unknown(&self) -> bool {
-        self.start.can_apply_unknown() && self.end.can_apply_unknown()
+        self.end.can_apply_unknown()
     }
 }
 
