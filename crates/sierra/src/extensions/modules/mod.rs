@@ -30,15 +30,6 @@ pub mod uint128;
 pub mod unconditional_jump;
 pub mod uninitialized;
 
-/// Helper for extracting the type from the template arguments.
-fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
-    match args {
-        [GenericArg::Type(ty)] => Ok(ty.clone()),
-        [_] => Err(SpecializationError::UnsupportedGenericArg),
-        _ => Err(SpecializationError::WrongNumberOfGenericArgs),
-    }
-}
-
 /// Helper for Unit type def.
 fn get_unit_type(
     context: &dyn SignatureSpecializationContext,
