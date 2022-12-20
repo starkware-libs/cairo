@@ -14,6 +14,7 @@ pub mod branch_align;
 pub mod builtin_cost;
 pub mod consts;
 pub mod dict_felt_to;
+pub mod dict_manager;
 pub mod drop;
 pub mod duplicate;
 pub mod enm;

@@ -15,9 +15,9 @@ pub enum Hint {
     AllocSegment {
         dst: CellRef,
     },
+    // Allocates a new dict segment, and write its start address into the dict_infos segment.
     AllocDictFeltTo {
-        dst: CellRef,
-        default_value: CellRef,
+        dict_manager_ptr: ResOperand,
     },
     DictFeltToRead {
         dict_ptr: CellRef,
@@ -83,16 +83,25 @@ impl Display for Hint {
         write!(f, "%{{")?;
         match self {
             Hint::AllocSegment { dst } => write!(f, " memory{dst} = segments.add() ")?,
-            Hint::AllocDictFeltTo { dst, default_value } => writedoc!(
-                f,
-                "
+            Hint::AllocDictFeltTo { dict_manager_ptr } => {
+                writedoc!(
+                    f,
+                    "
 
-                    if '__dict_manager' not in globals():
-                        from starkware.cairo.common.dict import DictManager
-                        __dict_manager = DictManager()
-                    memory{dst} = __dict_manager.new_default_dict(segments, memory{default_value})
+                        if '__dict_manager' not in globals():
+                            from starkware.cairo.common.dict import DictManager
+                            __dict_manager = DictManager()
+                        # memory[dict_manager_ptr] is the address of the current dict manager
+                        n_dicts = memory[memory{dict_manager_ptr} + 1]
+                        # memory[memory[dict_manager_ptr] + 0] is the address of the dict infos \
+                     segment
+                        # n_dicts * 3 is added to get the address of the new DictInfo
+                        memory[memory[memory{dict_manager_ptr} + 0] + n_dicts * 3] = (
+                            __dict_manager.new_default_dict(segments, 0, temp_segment=n_dicts > 0)
+                        )
                 "
-            )?,
+                )?;
+            }
             // TODO(Gil): get the 3 from DictAccess or pass it as an argument.
             Hint::DictFeltToRead { dict_ptr, dict_offset, key, value_dst } => {
                 writedoc!(
@@ -110,12 +119,12 @@ impl Display for Hint {
                     f,
                     "
 
-                    dict_tracker = __dict_manager.get_tracker(memory{dict_ptr} + {dict_offset})
-                    dict_tracker.current_ptr += 3
-                    memory{prev_value_dst} = dict_tracker.data[memory{key}]
-                    dict_tracker.data[memory{key}] = memory{value}
+                        dict_tracker = __dict_manager.get_tracker(memory{dict_ptr} + {dict_offset})
+                        dict_tracker.current_ptr += 3
+                        memory{prev_value_dst} = dict_tracker.data[memory{key}]
+                        dict_tracker.data[memory{key}] = memory{value}
                 "
-                )?
+                )?;
             }
             Hint::TestLessThan { lhs, rhs, dst } => {
                 write!(f, " memory{dst} = ")?;

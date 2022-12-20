@@ -88,7 +88,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             vec![ops.const_cost(0)]
         }
         DictFeltTo(DictFeltToConcreteLibFunc::New(_)) => {
-            vec![ops.const_cost(1)]
+            vec![ops.const_cost(7)]
         }
         DictFeltTo(DictFeltToConcreteLibFunc::Read(_)) => {
             vec![ops.const_cost(4)]

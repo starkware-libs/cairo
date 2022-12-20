@@ -1,3 +1,4 @@
+use super::dict_manager::DictManagerType;
 use super::felt::FeltType;
 use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
@@ -14,7 +15,7 @@ use crate::extensions::{
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
-/// Type representing a dictionary from a felt to any type of size one.
+/// Type representing a dictionary from a felt to types of size one.
 #[derive(Default)]
 pub struct DictFeltToType {}
 impl NamedType for DictFeltToType {
@@ -28,16 +29,16 @@ impl NamedType for DictFeltToType {
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = args_as_single_type(args)?;
         let info = context.get_type_info(ty.clone())?;
-        // TODO(Gil): the implementation support values of size 1. Remove when other sizes are
-        // supported.
-        if info.storable && info.size == 1 {
+        // TODO(Gil): the implementation support values of size 1. Remove the check when other sizes
+        // are supported.
+        if info.storable && info.droppable && info.duplicatable && info.size == 1 {
             Ok(DictFeltToConcreteType {
                 info: TypeInfo {
                     long_id: Self::concrete_type_long_id(args),
                     duplicatable: false,
                     droppable: info.droppable,
                     storable: true,
-                    size: 2,
+                    size: 1,
                 },
                 ty,
             })
@@ -79,13 +80,19 @@ impl SignatureOnlyGenericLibFunc for DictFeltToNewLibFunc {
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let dict_manager_ty = context.get_concrete_type(DictManagerType::id(), &[])?;
         Ok(LibFuncSignature::new_non_branch(
-            vec![felt_ty],
-            vec![OutputVarInfo {
-                ty: context.get_wrapped_concrete_type(DictFeltToType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-            }],
+            vec![dict_manager_ty.clone()],
+            vec![
+                OutputVarInfo {
+                    ty: dict_manager_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+                OutputVarInfo {
+                    ty: context.get_wrapped_concrete_type(DictFeltToType::id(), ty)?,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+            ],
             SierraApChange::Known { new_vars_only: false },
         ))
     }
@@ -130,8 +137,9 @@ impl SignatureOnlyGenericLibFunc for DictFeltToReadLibFunc {
         let generic_ty = args_as_single_type(args)?;
         let dict_ty =
             context.get_wrapped_concrete_type(DictFeltToType::id(), generic_ty.clone())?;
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         Ok(LibFuncSignature::new_non_branch(
-            vec![dict_ty.clone(), generic_ty.clone()],
+            vec![dict_ty.clone(), felt_ty],
             vec![
                 OutputVarInfo {
                     ty: dict_ty,
