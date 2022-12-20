@@ -23,8 +23,8 @@ pub fn build(
     match libfunc {
         ArrayConcreteLibFunc::New(_) => build_array_new(builder),
         ArrayConcreteLibFunc::Append(_) => build_array_append(builder),
-        ArrayConcreteLibFunc::At(_) => build_array_at(builder),
-        ArrayConcreteLibFunc::Len(_) => build_array_len(builder),
+        ArrayConcreteLibFunc::At(libfunc) => build_array_at(&libfunc.ty, builder),
+        ArrayConcreteLibFunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
     }
 }
 
@@ -92,16 +92,16 @@ fn build_array_append(
 
 /// Handles a Sierra statement for fetching an array element at a specific index.
 fn build_array_at(
+    elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (range_check, array_view, element_size, index) = match builder.refs {
+    let (range_check, array_view, index) = match builder.refs {
         [
             ReferenceValue { expression: expr_range_check, .. },
             ReferenceValue { expression: expr_arr, .. },
             ReferenceValue { expression: expr_value, .. },
         ] => {
-            let concrete_array_type = &builder.libfunc.param_signatures()[0].ty;
-            let array_element_size = builder.program_info.type_sizes[concrete_array_type];
+            let concrete_array_type = &builder.libfunc.param_signatures()[1].ty;
             let array_view =
                 ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
@@ -110,12 +110,7 @@ fn build_array_at(
                 CellExpression::Immediate(op) => DerefOrImmediate::from(op),
                 _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             };
-            (
-                expr_range_check.try_unpack_single()?.to_deref()?,
-                array_view,
-                array_element_size,
-                elem_value,
-            )
+            (expr_range_check.try_unpack_single()?.to_deref()?, array_view, elem_value)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -124,6 +119,7 @@ fn build_array_at(
             });
         }
     };
+    let element_size = builder.program_info.type_sizes[elem_ty];
 
     if array_view.end_offset != 0 {
         // TODO(Gil): handle when DoubleDeref will support a BinOp variant, e.g. [[ap+1]+1]
@@ -254,6 +250,7 @@ fn build_array_at(
 
 /// Handles a Sierra statement for getting the length of an array.
 fn build_array_len(
+    elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let array_view = match builder.refs {
@@ -274,16 +271,46 @@ fn build_array_len(
         // [end]-[start]+offset as a CellRef.
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     }
-    let len_ref_expr = ReferenceExpression {
-        cells: vec![CellExpression::BinOp(BinOpExpression {
+    let element_size = builder.program_info.type_sizes[elem_ty];
+    if element_size == 1 {
+        let len_ref_expr = ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
             op: FeltBinaryOperator::Sub,
             a: array_view.end,
             b: DerefOrImmediate::Deref(array_view.start),
-        })],
+        }));
+        let output_expressions = [array_view.to_reference_expression(), len_ref_expr].into_iter();
+        return Ok(builder.build_only_reference_changes(output_expressions));
+    }
+    let mut casm_builder = CasmBuilder::default();
+    let start = casm_builder.add_var(ResOperand::Deref(array_view.start));
+    let end = casm_builder.add_var(ResOperand::Deref(array_view.end));
+    let element_size = casm_builder.add_var(ResOperand::Immediate(element_size.into()));
+    casm_build_extend! {casm_builder,
+        tempvar end_total_offset;
+        assert end = start + end_total_offset;
+        tempvar length;
+        assert end_total_offset = length * element_size;
     };
-
-    let output_expressions = [array_view.to_reference_expression(), len_ref_expr].into_iter();
-    Ok(builder.build_only_reference_changes(output_expressions))
+    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+    // TODO(orizi): Extract the assertion out of the libfunc implementation.
+    assert_eq!(
+        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+        [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
+    );
+    let output_expressions = [vec![
+        ReferenceExpression {
+            cells: vec![
+                CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(start)),
+                CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(end)),
+            ],
+        },
+        ReferenceExpression::from_cell(CellExpression::Deref(
+            fallthrough_state.get_adjusted_as_cell_ref(length),
+        )),
+    ]
+    .into_iter()]
+    .into_iter();
+    Ok(builder.build(instructions, vec![], output_expressions))
 }
 
 /// A struct representing an actual array value in the Sierra program.
