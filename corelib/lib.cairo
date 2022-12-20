@@ -183,6 +183,7 @@ func assert(cond: bool, err_code: felt) {
 // Hash functions.
 mod hash;
 use hash::pedersen;
+use hash::Pedersen;
 
 // StarkNet
 mod starknet;

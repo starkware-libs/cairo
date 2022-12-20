@@ -74,6 +74,15 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns all the functions in the same strongly connected component as the given function.
     #[salsa::invoke(crate::lower::implicits::function_scc)]
     fn function_scc(&self, function_id: FreeFunctionId) -> Vec<FreeFunctionId>;
+
+    /// An array that sets the precedence of implicit types.
+    #[salsa::input]
+    fn implicit_precedence(&self) -> Arc<Vec<TypeId>>;
+}
+
+pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
+    // Initialize inputs.
+    db.set_implicit_precedence(Arc::new(vec![]));
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

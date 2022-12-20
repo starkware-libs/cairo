@@ -29,6 +29,7 @@ num-bigint.workspace = true
 num-traits.workspace = true
 num-integer.workspace = true
 utils = { path = "../utils" }
+lowering = { path = "../lowering" }
 plugins = { path = "../plugins" }
 parser = { path = "../parser" }
 
