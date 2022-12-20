@@ -1,10 +1,8 @@
 use assert_matches::assert_matches;
 use casm::ap_change::ApChange;
-use casm::inline::CasmContext;
-use casm::instructions::{Instruction, InstructionBody};
-use casm::operand::{CellRef, DerefOrImmediate, Register};
+use casm::instructions::Instruction;
+use casm::operand::{CellRef, Register};
 use itertools::zip_eq;
-use num_bigint::BigInt;
 use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::lib_func::BranchSignature;
@@ -13,14 +11,13 @@ use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use sierra_ap_change::core_libfunc_ap_change::core_libfunc_ap_change;
 use thiserror::Error;
-use utils::extract_matches;
 use utils::ordered_hash_map::OrderedHashMap;
 use {casm, sierra};
 
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
-use crate::references::{try_unpack_deref, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::RelocationEntry;
 use crate::type_sizes::TypeSizeMap;
 
@@ -299,24 +296,6 @@ trait ReferenceExpressionView: Sized {
     fn to_reference_expression(self) -> ReferenceExpression;
 }
 
-/// Fetches, verifies and returns the range check, a and b references.
-pub fn unwrap_range_check_based_binary_op_refs(
-    builder: &CompiledInvocationBuilder<'_>,
-) -> Result<(CellRef, CellRef, CellRef), InvocationError> {
-    match builder.refs {
-        [
-            ReferenceValue { expression: range_check_expression, .. },
-            ReferenceValue { expression: expr_a, .. },
-            ReferenceValue { expression: expr_b, .. },
-        ] => Ok((
-            try_unpack_deref(range_check_expression)?,
-            try_unpack_deref(expr_a)?,
-            try_unpack_deref(expr_b)?,
-        )),
-        refs => Err(InvocationError::WrongNumberOfArguments { expected: 3, actual: refs.len() }),
-    }
-}
-
 /// Fetches the non-fallthrough jump target of the invocation, assuming this invocation is a
 /// conditional jump.
 pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>) -> StatementIdx {
@@ -327,22 +306,4 @@ pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>)
         ] => *target_statement_id,
         _ => panic!("malformed invocation"),
     }
-}
-
-/// Patches the jnz statement target to the end of the CASM context.
-fn patch_jnz_to_end(context: &mut CasmContext, instruction_idx: usize) {
-    // Compute the offset.
-    let mut offset = context.current_code_offset;
-    for i in 0..instruction_idx {
-        offset -= context.instructions[i].body.op_size();
-    }
-    // Replace the jmp target.
-    *extract_matches!(
-        &mut extract_matches!(
-            &mut context.instructions[instruction_idx].body,
-            InstructionBody::Jnz
-        )
-        .jump_offset,
-        DerefOrImmediate::Immediate
-    ) = BigInt::from(offset);
 }

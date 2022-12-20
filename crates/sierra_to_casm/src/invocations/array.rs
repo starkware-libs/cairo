@@ -1,7 +1,6 @@
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::operand::{ap_cell_ref, CellRef, DerefOrImmediate, ResOperand};
+use casm::operand::{ap_cell_ref, BinOpOperand, CellRef, DerefOrImmediate, ResOperand};
 use casm::{casm, casm_build_extend, casm_extend};
-use num_bigint::BigInt;
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::ConcreteLibFunc;
@@ -13,10 +12,7 @@ use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
 };
 use crate::invocations::{get_non_fallthrough_statement_id, ProgramInfo};
-use crate::references::{
-    try_unpack_deref, BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue,
-    ReferencesError,
-};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra array operations.
@@ -109,15 +105,17 @@ fn build_array_at(
             let array_view =
                 ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-            let elem_value = match expr_value
-                .try_unpack_single()
-                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
-            {
+            let elem_value = match expr_value.try_unpack_single()? {
                 CellExpression::Deref(op) => DerefOrImmediate::Deref(op),
                 CellExpression::Immediate(op) => DerefOrImmediate::from(op),
                 _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             };
-            (try_unpack_deref(expr_range_check)?, array_view, array_element_size, elem_value)
+            (
+                expr_range_check.try_unpack_single()?.to_deref()?,
+                array_view,
+                array_element_size,
+                elem_value,
+            )
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -302,57 +300,43 @@ pub struct ArrayView {
     /// Never negative.
     pub end_offset: i16,
 }
+impl ArrayView {
+    /// Returns the end as a `ResOperand`.
+    fn end_operand(&self) -> ResOperand {
+        if self.end_offset == 0 {
+            ResOperand::Deref(self.end)
+        } else {
+            ResOperand::BinOp(BinOpOperand {
+                op: casm::operand::Operation::Add,
+                a: self.end,
+                b: DerefOrImmediate::Immediate(self.end_offset.into()),
+            })
+        }
+    }
+}
 
 impl ReferenceExpressionView for ArrayView {
-    type Error = ReferencesError;
+    type Error = InvocationError;
 
     fn try_get_view(
         expr: &ReferenceExpression,
         _program_info: &ProgramInfo<'_>,
         _concrete_type_id: &ConcreteTypeId,
     ) -> Result<Self, Self::Error> {
-        if expr.cells.len() != 2 {
-            return Err(ReferencesError::InvalidReferenceTypeForArgument);
+        let [start, end] = &expr.cells[..] else {
+            return Err(InvocationError::InvalidReferenceExpressionForArgument);
         };
-        let start = try_extract_matches!(expr.cells[0], CellExpression::Deref)
-            .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?;
-        let (end, end_offset) = match &expr.cells[1] {
-            CellExpression::Deref(op) => (*op, 0),
-            CellExpression::BinOp(binop) => {
-                if binop.op != FeltBinaryOperator::Add {
-                    return Err(ReferencesError::InvalidReferenceTypeForArgument);
-                }
-                (
-                    binop.a,
-                    i16::try_from(
-                        try_extract_matches!(&binop.b, DerefOrImmediate::Immediate)
-                            .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?,
-                    )
-                    .unwrap(),
-                )
-            }
-            _ => {
-                return Err(ReferencesError::InvalidReferenceTypeForArgument);
-            }
-        };
+        let start = start.to_deref()?;
+        let (end, end_offset) = end.to_deref_with_offset()?;
         Ok(ArrayView { start, end, end_offset })
     }
 
     fn to_reference_expression(self) -> ReferenceExpression {
-        let start_ref = CellExpression::Deref(self.start);
-        if self.end_offset == 0 {
-            ReferenceExpression { cells: vec![start_ref, CellExpression::Deref(self.end)] }
-        } else {
-            ReferenceExpression {
-                cells: vec![
-                    CellExpression::Deref(self.start),
-                    CellExpression::BinOp(BinOpExpression {
-                        op: FeltBinaryOperator::Add,
-                        a: self.end,
-                        b: DerefOrImmediate::Immediate(BigInt::from(self.end_offset)),
-                    }),
-                ],
-            }
+        ReferenceExpression {
+            cells: vec![
+                CellExpression::Deref(self.start),
+                CellExpression::from_res_operand(self.end_operand()),
+            ],
         }
     }
 }

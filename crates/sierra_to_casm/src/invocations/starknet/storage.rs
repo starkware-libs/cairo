@@ -1,15 +1,12 @@
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::operand::{BinOpOperand, Operation, ResOperand};
-use casm::{casm_build_extend, deref_or_immediate};
+use casm::casm_build_extend;
+use casm::operand::ResOperand;
 use num_bigint::BigInt;
 use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{
-    try_unpack_deref, try_unpack_deref_with_offset, CellExpression, ReferenceExpression,
-    ReferenceValue,
-};
+use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
 #[cfg(test)]
@@ -21,11 +18,14 @@ pub fn build_storage_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "storage_read".as_bytes());
-    let ((system_base, system_offset), storage_address) = match builder.refs {
+    let (original_system, storage_address) = match builder.refs {
         [
             ReferenceValue { expression: expr_system, .. },
             ReferenceValue { expression: expr_address, .. },
-        ] => (try_unpack_deref_with_offset(expr_system)?, try_unpack_deref(expr_address)?),
+        ] => (
+            expr_system.try_unpack_single()?.to_buffer(3)?,
+            expr_address.try_unpack_single()?.to_deref()?,
+        ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 2,
@@ -34,18 +34,9 @@ pub fn build_storage_read(
         }
     };
 
-    if system_offset > i16::MAX - 2 {
-        return Err(InvocationError::InvalidReferenceExpressionForArgument);
-    }
-
     let mut casm_builder = CasmBuilder::default();
-    let system_res_operand = ResOperand::BinOp(BinOpOperand {
-        op: Operation::Add,
-        a: system_base,
-        b: deref_or_immediate!(system_offset),
-    });
-    let system = casm_builder.add_var(system_res_operand.clone());
-    let original_system = casm_builder.add_var(system_res_operand);
+    let system = casm_builder.add_var(original_system.clone());
+    let original_system = casm_builder.add_var(original_system);
     let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
     casm_build_extend! {casm_builder,
@@ -53,7 +44,7 @@ pub fn build_storage_read(
         assert selector = selector_imm;
         assert *(system++) = selector;
         assert *(system++) = storage_address;
-        system_call original_system;
+        hint SystemCall { system: original_system };
         tempvar read_value;
         assert *(system++) = read_value;
     };
@@ -87,17 +78,17 @@ pub fn build_storage_write(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "storage_write".as_bytes());
 
-    let (gas_builtin, (system_base, system_offset), storage_address, value) = match builder.refs {
+    let (gas_builtin, original_system, storage_address, value) = match builder.refs {
         [
             ReferenceValue { expression: expr_gas_builtin, .. },
             ReferenceValue { expression: expr_system, .. },
             ReferenceValue { expression: expr_address, .. },
             ReferenceValue { expression: expr_value, .. },
         ] => (
-            try_unpack_deref(expr_gas_builtin)?,
-            try_unpack_deref_with_offset(expr_system)?,
-            try_unpack_deref(expr_address)?,
-            try_unpack_deref(expr_value)?,
+            expr_gas_builtin.try_unpack_single()?.to_deref()?,
+            expr_system.try_unpack_single()?.to_buffer(6)?,
+            expr_address.try_unpack_single()?.to_deref()?,
+            expr_value.try_unpack_single()?.to_deref()?,
         ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -106,19 +97,9 @@ pub fn build_storage_write(
             });
         }
     };
-
-    if system_offset > i16::MAX - 1 {
-        return Err(InvocationError::InvalidReferenceExpressionForArgument);
-    }
-
     let mut casm_builder = CasmBuilder::default();
-    let system_res_operand = ResOperand::BinOp(BinOpOperand {
-        op: Operation::Add,
-        a: system_base,
-        b: deref_or_immediate!(system_offset),
-    });
-    let system = casm_builder.add_var(system_res_operand.clone());
-    let original_system = casm_builder.add_var(system_res_operand);
+    let system = casm_builder.add_var(original_system.clone());
+    let original_system = casm_builder.add_var(original_system);
     let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
     let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
@@ -130,7 +111,7 @@ pub fn build_storage_write(
         assert *(system++) = gas_builtin;
         assert *(system++) = storage_address;
         assert *(system++) = value;
-        system_call original_system;
+        hint SystemCall { system: original_system };
         let updated_gas_builtin = *(system++);
         // `revert_reason` is 0 on success, nonzero on failure/revert.
         tempvar revert_reason;

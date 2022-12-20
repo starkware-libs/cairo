@@ -1,6 +1,6 @@
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::operand::{BinOpOperand, DerefOrImmediate, Operation, ResOperand};
-use casm::{casm_build_extend, deref_or_immediate};
+use casm::casm_build_extend;
+use casm::operand::{DerefOrImmediate, ResOperand};
 use num_bigint::BigInt;
 use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::felt::FeltBinaryOperator;
@@ -10,10 +10,7 @@ use utils::try_extract_matches;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{
-    try_unpack_deref, try_unpack_deref_with_offset, BinOpExpression, CellExpression,
-    ReferenceExpression, ReferenceValue,
-};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
 pub const STEP_COST: i64 = 100;
@@ -41,13 +38,13 @@ fn build_get_gas(
         .get(&(builder.idx, CostTokenType::Step))
         .ok_or(InvocationError::UnknownVariableData)?
         * STEP_COST;
-    let ((range_check, range_check_offset), gas_counter_value) = match builder.refs {
+    let (range_check, gas_counter_value) = match builder.refs {
         [
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: gas_counter_expression, .. },
         ] => (
-            try_unpack_deref_with_offset(range_check_expression)?,
-            try_unpack_deref(gas_counter_expression)?,
+            range_check_expression.try_unpack_single()?.to_buffer(1)?,
+            gas_counter_expression.try_unpack_single()?.to_deref()?,
         ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -60,11 +57,7 @@ fn build_get_gas(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
 
     let mut casm_builder = CasmBuilder::default();
-    let range_check = casm_builder.add_var(ResOperand::BinOp(BinOpOperand {
-        op: Operation::Add,
-        a: range_check,
-        b: deref_or_immediate!(range_check_offset),
-    }));
+    let range_check = casm_builder.add_var(range_check);
     let gas_counter = casm_builder.add_var(ResOperand::Deref(gas_counter_value));
     let gas_counter_fix =
         casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1 - requested_count));
