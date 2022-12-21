@@ -1,3 +1,4 @@
+use super::args_as_single_type;
 use super::error::{ExtensionError, SpecializationError};
 use super::type_specialization_context::TypeSpecializationContext;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
@@ -200,6 +201,7 @@ pub trait SignatureOnlyGenericLibFunc: Default {
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError>;
 }
+
 impl<T: SignatureOnlyGenericLibFunc> NamedLibFunc for T {
     type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = <Self as SignatureOnlyGenericLibFunc>::ID;
@@ -219,6 +221,47 @@ impl<T: SignatureOnlyGenericLibFunc> NamedLibFunc for T {
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
             signature: self.specialize_signature(context.upcast(), args)?,
+        })
+    }
+}
+
+/// Trait for implementing a specialization generator expecting a single generic param type, and
+/// creating a concrete lib func containing that type as well.
+pub trait SignatureAndTypeGenericLibFunc: Default {
+    const ID: GenericLibFuncId;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibFuncSignature, SpecializationError>;
+}
+
+/// Wrapper to prevent implementation collisions for `NamedLibFunc`.
+#[derive(Default)]
+pub struct WrapSignatureAndTypeGenericLibFunc<T: SignatureAndTypeGenericLibFunc>(T);
+
+impl<T: SignatureAndTypeGenericLibFunc> NamedLibFunc for WrapSignatureAndTypeGenericLibFunc<T> {
+    type Concrete = SignatureAndTypeConcreteLibFunc;
+    const ID: GenericLibFuncId = <T as SignatureAndTypeGenericLibFunc>::ID;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        self.0.specialize_signature(context, args_as_single_type(args)?)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        Ok(SignatureAndTypeConcreteLibFunc {
+            ty: ty.clone(),
+            signature: self.0.specialize_signature(context.upcast(), ty)?,
         })
     }
 }
@@ -405,17 +448,6 @@ pub trait SignatureBasedConcreteLibFunc {
     fn signature(&self) -> &LibFuncSignature;
 }
 
-/// Struct providing a ConcreteLibFunc only with a signature - should not be implemented for
-/// concrete libfuncs that require any extra data.
-pub struct SignatureOnlyConcreteLibFunc {
-    pub signature: LibFuncSignature,
-}
-impl SignatureBasedConcreteLibFunc for SignatureOnlyConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
-    }
-}
-
 impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibFunc
     for TSignatureBasedConcreteLibFunc
 {
@@ -427,6 +459,28 @@ impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibF
     }
     fn fallthrough(&self) -> Option<usize> {
         self.signature().fallthrough
+    }
+}
+
+/// Struct providing a ConcreteLibFunc only with a signature and a type.
+pub struct SignatureAndTypeConcreteLibFunc {
+    pub ty: ConcreteTypeId,
+    pub signature: LibFuncSignature,
+}
+impl SignatureBasedConcreteLibFunc for SignatureAndTypeConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
+    }
+}
+
+/// Struct providing a ConcreteLibFunc only with a signature - should not be implemented for
+/// concrete libfuncs that require any extra data.
+pub struct SignatureOnlyConcreteLibFunc {
+    pub signature: LibFuncSignature,
+}
+impl SignatureBasedConcreteLibFunc for SignatureOnlyConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
     }
 }
 

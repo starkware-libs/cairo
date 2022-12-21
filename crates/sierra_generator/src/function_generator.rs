@@ -106,10 +106,11 @@ fn get_function_code(
 
     // Generate the return statement if necessary.
     match &block.end {
-        lowering::BlockEnd::Callsite(returned_variables) => {
+        lowering::BlockEnd::Callsite(returned_variables)
+        | lowering::BlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(&mut context, returned_variables)?);
         }
-        lowering::BlockEnd::Return(_) | lowering::BlockEnd::Unreachable => {}
+        lowering::BlockEnd::Unreachable => {}
     };
 
     let statements = add_store_statements(

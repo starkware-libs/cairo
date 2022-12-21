@@ -1,4 +1,4 @@
-use defs::db::{MacroPlugin, PluginResult};
+use defs::plugin::{MacroPlugin, PluginGeneratedFile, PluginResult};
 use diagnostics::{format_diagnostics, DiagnosticLocation};
 use parser::parser_test;
 use parser::test_utils::create_virtual_file;
@@ -33,7 +33,7 @@ pub fn test_expand_contract(
         }));
 
         let content = match code {
-            Some((_path, content)) => content,
+            Some(PluginGeneratedFile { content, .. }) => content,
             None => continue,
         };
         generated_items.push(formatter::format_string(db, content));

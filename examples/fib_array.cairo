@@ -7,7 +7,7 @@ func fib(n: u128) -> (Array::<felt>, felt, u128) {
     let mut arr = fib_inner(n, arr);
     let len = array_len::<felt>(arr);
     let last = unchecked_array_at(arr, len - 1_u128);
-    (arr, last, len)
+    return (arr, last, len);
 }
 
 func fib_inner(n: u128, mut arr: Array::<felt>) -> Array::<felt> {

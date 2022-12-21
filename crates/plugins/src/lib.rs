@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use defs::db::MacroPlugin;
+use defs::plugin::MacroPlugin;
 
 use crate::derive::DerivePlugin;
 use crate::panicable::PanicablePlugin;

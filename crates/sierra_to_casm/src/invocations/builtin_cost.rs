@@ -1,6 +1,6 @@
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::operand::{BinOpOperand, Operation, ResOperand};
-use casm::{casm_build_extend, deref_or_immediate};
+use casm::casm_build_extend;
+use casm::operand::ResOperand;
 use num_bigint::BigInt;
 use sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
@@ -10,10 +10,7 @@ use sierra_ap_change::core_libfunc_ap_change;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::gas::STEP_COST;
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{
-    try_unpack_deref, try_unpack_deref_with_offset, CellExpression, ReferenceExpression,
-    ReferenceValue,
-};
+use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra gas operations.
@@ -31,15 +28,15 @@ fn build_builtin_get_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     // TODO(lior): Share code with get_gas().
-    let ((range_check, range_check_offset), gas_counter, builtin_cost) = match builder.refs {
+    let (range_check, gas_counter, builtin_cost) = match builder.refs {
         [
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: gas_counter_expression, .. },
             ReferenceValue { expression: builtin_cost_expression, .. },
         ] => (
-            try_unpack_deref_with_offset(range_check_expression)?,
-            try_unpack_deref(gas_counter_expression)?,
-            try_unpack_deref(builtin_cost_expression)?,
+            range_check_expression.try_unpack_single()?.to_buffer(1)?,
+            gas_counter_expression.try_unpack_single()?.to_deref()?,
+            builtin_cost_expression.try_unpack_single()?.to_deref()?,
         ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -57,11 +54,7 @@ fn build_builtin_get_gas(
     }
 
     let mut casm_builder = CasmBuilder::default();
-    let range_check = casm_builder.add_var(ResOperand::BinOp(BinOpOperand {
-        op: Operation::Add,
-        a: range_check,
-        b: deref_or_immediate!(range_check_offset),
-    }));
+    let range_check = casm_builder.add_var(range_check);
     let gas_counter = casm_builder.add_var(ResOperand::Deref(gas_counter));
     let builtin_cost = casm_builder.add_var(ResOperand::Deref(builtin_cost));
     let token_requested_counts = CostTokenType::iter().filter_map(|token_type| {
