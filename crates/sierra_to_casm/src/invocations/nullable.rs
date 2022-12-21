@@ -1,5 +1,6 @@
 use sierra::extensions::nullable::NullableConcreteLibFunc;
 
+use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{CellExpression, ReferenceExpression};
 
@@ -10,9 +11,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         NullableConcreteLibFunc::Null(_) => build_nullable_null(builder),
-        NullableConcreteLibFunc::IntoNullable(_) => {
-            todo!("into_nullable() is not implemented.");
-        }
+        NullableConcreteLibFunc::IntoNullable(_) => build_identity(builder),
     }
 }
 
