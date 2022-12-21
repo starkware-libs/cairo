@@ -10,7 +10,10 @@ casm = { path = "../crates/casm" }
 compiler = { path = "../crates/compiler" }
 defs = { path = "../crates/defs" }
 diagnostics = { path = "../crates/diagnostics" }
+env_logger.workspace = true
 filesystem = { path = "../crates/filesystem" }
+itertools.workspace = true
+log.workspace = true
 num-bigint.workspace = true
 parser = { path = "../crates/parser" }
 plugins = { path = "../crates/plugins" }
@@ -26,7 +29,12 @@ test_utils = { path = "../crates/test_utils" }
 utils = { path = "../crates/utils" }
 salsa.workspace = true
 test-case.workspace = true
+test-log.workspace = true
 
 [[test]]
 name = "examples_test"
 path = "examples_test.rs"
+
+[[test]]
+name = "e2e_test"
+path = "e2e_test.rs"
