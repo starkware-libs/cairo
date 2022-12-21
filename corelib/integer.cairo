@@ -151,6 +151,21 @@ func u128_ne(a: u128, b: u128) -> bool implicits() nopanic {
     !(a == b)
 }
 
+extern type Bitwise;
+extern func bitwise(a: u128, b: u128) -> (u128, u128, u128) implicits(Bitwise) nopanic;
+func u128_and(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
+    let (v, _, _) = bitwise(a, b);
+    v
+}
+func u128_or(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
+    let (_, v, _) = bitwise(a, b);
+    v
+}
+func u128_xor(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
+    let (_, _, v) = bitwise(a, b);
+    v
+}
+
 extern func u128_jump_nz(a: u128) -> JumpNzResult::<u128> implicits() nopanic;
 
 #[derive(Copy, Drop)]

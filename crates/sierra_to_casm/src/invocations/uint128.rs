@@ -2,10 +2,7 @@ use casm::builder::{CasmBuildResult, CasmBuilder};
 use casm::casm_build_extend;
 use casm::operand::{CellRef, ResOperand};
 use num_bigint::BigInt;
-use sierra::extensions::uint128::{
-    IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
-    Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
-};
+use sierra::extensions::uint128::{IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc};
 use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -23,12 +20,9 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Binary(
-            Uint128BinaryOperationConcreteLibFunc { operator, .. },
-        )) => build_u128_op(builder, *operator),
-        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Const(
-            Uint128OperationWithConstConcreteLibFunc { operator: _, c: _, .. },
-        )) => Err(InvocationError::NotImplemented(builder.invocation.clone())),
+        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc { operator, .. }) => {
+            build_u128_op(builder, *operator)
+        }
         Uint128Concrete::JumpNotZero(_) => misc::build_jump_nz(builder),
         Uint128Concrete::Const(libfunc) => Ok(builder.build_only_reference_changes(
             [ReferenceExpression::from_cell(CellExpression::Immediate(BigInt::from(libfunc.c)))]
