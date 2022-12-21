@@ -10,6 +10,9 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         NullableConcreteLibFunc::Null(_) => build_nullable_null(builder),
+        NullableConcreteLibFunc::IntoNullable(_) => {
+            todo!("into_nullable() is not implemented.");
+        }
     }
 }
 
