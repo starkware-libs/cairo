@@ -4,8 +4,9 @@ use sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
 };
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup, Enum,
-    Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup,
+    Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump,
+    UnwrapNonZero,
 };
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
@@ -16,10 +17,7 @@ use sierra::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use sierra::extensions::strct::StructConcreteLibFunc;
-use sierra::extensions::uint128::{
-    IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
-    Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
-};
+use sierra::extensions::uint128::{IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc};
 use sierra::program::Function;
 
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
@@ -55,6 +53,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             let func_content_cost = ops.function_cost(function);
             vec![ops.add(ops.const_cost(2), func_content_cost)]
         }
+        Bitwise(_) => vec![ops.const_cost(5)],
         Bool(BoolConcreteLibFunc::And(_)) => vec![ops.const_cost(0)],
         Bool(BoolConcreteLibFunc::Not(_)) => vec![ops.const_cost(1)],
         Gas(GetGas(_)) => {
@@ -127,30 +126,18 @@ fn integer_libfunc_cost<Ops: CostOperations>(
 ) -> Vec<Ops::CostType> {
     // TODO(orizi): When sierra_to_casm actually supports integers - fix costs.
     match libfunc {
-        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Binary(
-            Uint128BinaryOperationConcreteLibFunc { operator, .. },
-        )) => match operator {
-            IntOperator::DivMod => {
-                vec![ops.const_cost(7)]
+        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc { operator, .. }) => {
+            match operator {
+                IntOperator::DivMod => {
+                    vec![ops.const_cost(7)]
+                }
+                IntOperator::OverflowingAdd
+                | IntOperator::OverflowingSub
+                | IntOperator::OverflowingMul => {
+                    vec![ops.const_cost(3), ops.const_cost(4)]
+                }
             }
-            IntOperator::OverflowingAdd
-            | IntOperator::OverflowingSub
-            | IntOperator::OverflowingMul => {
-                vec![ops.const_cost(3), ops.const_cost(4)]
-            }
-        },
-        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Const(
-            Uint128OperationWithConstConcreteLibFunc { operator, .. },
-        )) => match operator {
-            IntOperator::DivMod => {
-                vec![ops.const_cost(5)]
-            }
-            IntOperator::OverflowingAdd
-            | IntOperator::OverflowingSub
-            | IntOperator::OverflowingMul => {
-                vec![ops.const_cost(3), ops.const_cost(4)]
-            }
-        },
+        }
         Uint128Concrete::Const(_) | Uint128Concrete::ToFelt(_) => {
             vec![ops.const_cost(0)]
         }

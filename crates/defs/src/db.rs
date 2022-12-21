@@ -11,11 +11,11 @@ use smol_str::SmolStr;
 use syntax::node::ast::MaybeModuleBody;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
-use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
+use crate::plugin::{DynDiagnosticMapper, MacroPlugin, PluginDiagnostic};
 
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
@@ -92,30 +92,6 @@ pub trait DefsGroup:
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
 }
 
-/// Result of plugin code generation.
-#[derive(Default)]
-pub struct PluginResult {
-    /// Filename, content.
-    pub code: Option<(SmolStr, String)>,
-    /// Diagnostics.
-    pub diagnostics: Vec<PluginDiagnostic>,
-}
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct PluginDiagnostic {
-    pub stable_ptr: SyntaxStablePtrId,
-    pub message: String,
-}
-
-// TOD(spapini): Move to another place.
-/// A trait for a macro plugin: external plugin that generates additional code for items.
-pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
-    /// Generates code for an item. If no code should be generated returns None.
-    /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
-    /// with that name and content should be created.
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult;
-}
-
 /// Initializes a database with DefsGroup.
 pub fn init_defs_group(db: &mut (dyn DefsGroup + 'static)) {
     // Initialize inputs.
@@ -135,7 +111,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
                     // This is an inline module, we return the file where the inline module was
                     // defined. It can be either the file of the parent module
                     // or a plugin-generated virtual file.
-                    db.module_file(submodule_id.module_file_id(db))?
+                    db.module_file(submodule_id.module_file(db))?
                 }
                 MaybeModuleBody::None(_) => {
                     let name = submodule_id.name(db);
@@ -204,6 +180,14 @@ fn file_modules(db: &dyn DefsGroup, file_id: FileId) -> Maybe<Vec<ModuleId>> {
     db.priv_file_to_module_mapping().get(&file_id).cloned().to_maybe()
 }
 
+/// Information about the generation of a virtual file.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GeneratedFileInfo {
+    pub diagnostic_mapper: DynDiagnosticMapper,
+    /// The module and file index from which the current file was generated.
+    pub origin: ModuleFileId,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
     pub submodules: OrderedHashMap<SubmoduleId, ast::ItemModule>,
@@ -216,6 +200,8 @@ pub struct ModuleData {
     pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
     pub extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
     pub files: Vec<FileId>,
+    /// Generation info for each file. Virtual files have Some. Other files have None.
+    pub generated_file_info: Vec<Option<GeneratedFileInfo>>,
     pub plugin_diagnostics: Vec<(ModuleFileId, PluginDiagnostic)>,
 }
 
@@ -230,14 +216,26 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     let module_file = db.module_main_file(module_id)?;
 
     let file_syntax = db.file_syntax(module_file)?;
+    let mut main_file_info: Option<GeneratedFileInfo> = None;
     let item_asts = match module_id {
         ModuleId::CrateRoot(_) | ModuleId::VirtualSubmodule(_) => file_syntax.items(syntax_db),
         ModuleId::Submodule(submodule_id) => {
-            let item_module_ast =
-                &db.module_data(submodule_id.module(db))?.submodules[submodule_id];
+            let parent_module_data = db.module_data(submodule_id.module(db))?;
+            let item_module_ast = &parent_module_data.submodules[submodule_id];
 
             match item_module_ast.body(syntax_db) {
-                MaybeModuleBody::Some(body) => body.items(syntax_db),
+                MaybeModuleBody::Some(body) => {
+                    // TODO(spapini): Diagnostics in this module that get mapped to parent module
+                    // should lie in that modules ModuleData, or somehow collected by its
+                    // diagnostics collector function.
+
+                    // If this is an inline module, copy its generation file info from the parent
+                    // module, from the file where this submodule was defined.
+                    main_file_info = parent_module_data.generated_file_info
+                        [submodule_id.file_index(db).0]
+                        .clone();
+                    body.items(syntax_db)
+                }
                 MaybeModuleBody::None(_) => file_syntax.items(syntax_db),
             }
         }
@@ -246,6 +244,8 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     let mut module_queue = VecDeque::new();
     module_queue.push_back((module_file, item_asts));
     let mut res = ModuleData::default();
+
+    res.generated_file_info.push(main_file_info);
     while let Some((module_file, item_asts)) = module_queue.pop_front() {
         let file_index = FileIndex(res.files.len());
         let module_file_id = ModuleFileId(module_id, file_index);
@@ -258,11 +258,15 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
                     res.plugin_diagnostics.push((module_file_id, plugin_diag));
                 }
 
-                let Some((name, content)) = result.code else { continue };
+                let Some(generated) = result.code else { continue };
                 let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
                     parent: Some(module_file),
-                    name: name.clone(),
-                    content: Arc::new(content),
+                    name: generated.name,
+                    content: Arc::new(generated.content),
+                }));
+                res.generated_file_info.push(Some(GeneratedFileInfo {
+                    diagnostic_mapper: generated.diagnostic_mapper,
+                    origin: module_file_id,
                 }));
                 module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
             }

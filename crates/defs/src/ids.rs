@@ -249,7 +249,7 @@ impl DebugWithDb<dyn DefsGroup> for ModuleId {
     }
 }
 /// Index of file in module.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, Hash, PartialEq, Eq)]
 pub struct FileIndex(pub usize);
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ModuleFileId(pub ModuleId, pub FileIndex);
@@ -285,12 +285,6 @@ define_language_element_id!(
     lookup_intern_submodule,
     name
 );
-
-impl SubmoduleId {
-    pub fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
-        db.lookup_intern_submodule(*self).0
-    }
-}
 
 define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use, name);
 define_language_element_id!(

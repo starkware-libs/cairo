@@ -26,6 +26,7 @@ semantic_test!(
         "src/expr/test_data/generics",
         "src/expr/test_data/if",
         "src/expr/test_data/let_statement",
+        "src/expr/test_data/literal",
         "src/expr/test_data/match",
         "src/expr/test_data/operators",
         "src/expr/test_data/pattern",
@@ -42,6 +43,8 @@ semantic_test!(
 #[test_case("'a'", 0x61, "felt")]
 #[test_case("'B'_u128", 0x42, "u128")]
 #[test_case("'hello world'_u128", 0x68656c6c6f20776f726c64, "u128")]
+#[test_case(r"'\''", 39, "felt")]
+#[test_case(r"'\x12\x34'_u128", 0x1234, "u128")]
 fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_expr = setup_test_expr(&mut db_val, expr, "", "").unwrap();

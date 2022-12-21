@@ -15,7 +15,7 @@ use num_bigint::BigInt;
 
 use crate::hints::Hint;
 use crate::instructions::Instruction;
-use crate::operand::{CellRef, DerefOrImmediate, Register};
+use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
 
 #[cfg(test)]
 #[path = "run_test.rs"]
@@ -90,6 +90,10 @@ impl HintProcessor for CairoHintProcessor {
     ) -> Result<(), VirtualMachineError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         // Retrieve a value located at memory[x].
+        let get_relocatable_from_cellref =
+            |c: CellRef| -> Result<Relocatable, VirtualMachineError> {
+                Ok(vm.get_relocatable(&cell_ref_to_relocatable(c, vm))?.as_ref().clone())
+            };
         let get_val = |x: DerefOrImmediate| -> Result<BigInt, VirtualMachineError> {
             match x {
                 DerefOrImmediate::Deref(d) => {
@@ -135,6 +139,31 @@ impl HintProcessor for CairoHintProcessor {
             Hint::ExitScope => todo!(),
             Hint::DictSquashHints { .. } => todo!(),
             Hint::SystemCall { .. } => todo!(),
+            Hint::Bitwise { ptr } => {
+                let prime = get_prime();
+                let bitwise_ptr = match ptr {
+                    ResOperand::Deref(val) => get_relocatable_from_cellref(*val)?,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
+                        get_relocatable_from_cellref(*a)?
+                            .add_int_mod(&get_val(b.clone())?, &prime)?
+                    }
+                    _ => panic!("Unexpected param type for Bitwise hint {ptr}."),
+                };
+                let x = vm.get_integer(bitwise_ptr.clone())?.as_ref().clone();
+                let y = vm
+                    .get_integer(bitwise_ptr.add_int_mod(&BigInt::from(1), &prime)?)?
+                    .as_ref()
+                    .clone();
+                vm.insert_value(
+                    bitwise_ptr.add_int_mod(&BigInt::from(2), &prime)?,
+                    x.clone() & y.clone(),
+                )?;
+                vm.insert_value(
+                    bitwise_ptr.add_int_mod(&BigInt::from(3), &prime)?,
+                    x.clone() | y.clone(),
+                )?;
+                vm.insert_value(bitwise_ptr.add_int_mod(&BigInt::from(4), &prime)?, x ^ y)?;
+            }
         };
         Ok(())
     }

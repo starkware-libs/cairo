@@ -1,10 +1,8 @@
 use assert_matches::assert_matches;
 use casm::ap_change::ApChange;
-use casm::inline::CasmContext;
-use casm::instructions::{Instruction, InstructionBody};
-use casm::operand::{CellRef, DerefOrImmediate, Register};
+use casm::instructions::Instruction;
+use casm::operand::{CellRef, Register};
 use itertools::zip_eq;
-use num_bigint::BigInt;
 use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::lib_func::BranchSignature;
@@ -13,18 +11,18 @@ use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use sierra_ap_change::core_libfunc_ap_change::core_libfunc_ap_change;
 use thiserror::Error;
-use utils::extract_matches;
 use utils::ordered_hash_map::OrderedHashMap;
 use {casm, sierra};
 
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
-use crate::references::{try_unpack_deref, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::RelocationEntry;
 use crate::type_sizes::TypeSizeMap;
 
 mod array;
+mod bitwise;
 mod boolean;
 mod boxing;
 mod builtin_cost;
@@ -84,9 +82,15 @@ impl BranchChanges {
     fn new(
         ap_change: ApChange,
         gas_change: OrderedHashMap<CostTokenType, i64>,
-        expressions: impl Iterator<Item = ReferenceExpression>,
+        expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
     ) -> Self {
+        assert_eq!(
+            expressions.len(),
+            branch_signature.vars.len(),
+            "The number of expressions does not match the number of expected results in the \
+             branch."
+        );
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
                 .map(|(expression, var_info)| {
@@ -166,7 +170,9 @@ impl CompiledInvocationBuilder<'_> {
         self,
         instructions: Vec<Instruction>,
         relocations: Vec<RelocationEntry>,
-        output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
+        output_expressions: impl ExactSizeIterator<
+            Item = impl ExactSizeIterator<Item = ReferenceExpression>,
+        >,
     ) -> CompiledInvocation {
         let gas_changes = sierra_gas::core_libfunc_cost::core_libfunc_cost(
             &self.program_info.metadata.gas_info,
@@ -174,12 +180,30 @@ impl CompiledInvocationBuilder<'_> {
             self.libfunc,
         );
 
+        let branch_signatures = self.libfunc.branch_signatures();
+        assert_eq!(
+            branch_signatures.len(),
+            output_expressions.len(),
+            "The number of output expressions does not match signature."
+        );
+        let ap_changes = core_libfunc_ap_change(self.libfunc);
+        assert_eq!(
+            branch_signatures.len(),
+            ap_changes.len(),
+            "The number of ap changes does not match signature."
+        );
+        assert_eq!(
+            branch_signatures.len(),
+            gas_changes.len(),
+            "The number of gas changes does not match signature."
+        );
+
         CompiledInvocation {
             instructions,
             relocations,
             results: zip_eq(
-                zip_eq(self.libfunc.branch_signatures(), gas_changes),
-                zip_eq(output_expressions, core_libfunc_ap_change(self.libfunc)),
+                zip_eq(branch_signatures, gas_changes),
+                zip_eq(output_expressions, ap_changes),
             )
             .map(|((branch_signature, gas_change), (expressions, ap_change))| {
                 let ap_change = match ap_change {
@@ -234,7 +258,7 @@ impl CompiledInvocationBuilder<'_> {
     /// Creates a new invocation with only reference changes.
     fn build_only_reference_changes(
         self,
-        output_expressions: impl Iterator<Item = ReferenceExpression>,
+        output_expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
     ) -> CompiledInvocation {
         self.build(vec![], vec![], [output_expressions].into_iter())
     }
@@ -261,6 +285,7 @@ pub fn compile_invocation(
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(libfunc) => felt::build(libfunc, builder),
+        CoreConcreteLibFunc::Bitwise(_) => bitwise::build(builder),
         CoreConcreteLibFunc::Bool(libfunc) => boolean::build(libfunc, builder),
         CoreConcreteLibFunc::Uint128(libfunc) => uint128::build(libfunc, builder),
         CoreConcreteLibFunc::Gas(libfunc) => gas::build(libfunc, builder),
@@ -299,24 +324,6 @@ trait ReferenceExpressionView: Sized {
     fn to_reference_expression(self) -> ReferenceExpression;
 }
 
-/// Fetches, verifies and returns the range check, a and b references.
-pub fn unwrap_range_check_based_binary_op_refs(
-    builder: &CompiledInvocationBuilder<'_>,
-) -> Result<(CellRef, CellRef, CellRef), InvocationError> {
-    match builder.refs {
-        [
-            ReferenceValue { expression: range_check_expression, .. },
-            ReferenceValue { expression: expr_a, .. },
-            ReferenceValue { expression: expr_b, .. },
-        ] => Ok((
-            try_unpack_deref(range_check_expression)?,
-            try_unpack_deref(expr_a)?,
-            try_unpack_deref(expr_b)?,
-        )),
-        refs => Err(InvocationError::WrongNumberOfArguments { expected: 3, actual: refs.len() }),
-    }
-}
-
 /// Fetches the non-fallthrough jump target of the invocation, assuming this invocation is a
 /// conditional jump.
 pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>) -> StatementIdx {
@@ -327,22 +334,4 @@ pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>)
         ] => *target_statement_id,
         _ => panic!("malformed invocation"),
     }
-}
-
-/// Patches the jnz statement target to the end of the CASM context.
-fn patch_jnz_to_end(context: &mut CasmContext, instruction_idx: usize) {
-    // Compute the offset.
-    let mut offset = context.current_code_offset;
-    for i in 0..instruction_idx {
-        offset -= context.instructions[i].body.op_size();
-    }
-    // Replace the jmp target.
-    *extract_matches!(
-        &mut extract_matches!(
-            &mut context.instructions[instruction_idx].body,
-            InstructionBody::Jnz
-        )
-        .jump_offset,
-        DerefOrImmediate::Immediate
-    ) = BigInt::from(offset);
 }

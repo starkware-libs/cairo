@@ -15,6 +15,7 @@ use syntax::node::ast::{BlockOrIf, PatternStructParam};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
+use unescaper::unescape;
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::unordered_hash_map::UnorderedHashMap;
 use utils::unordered_hash_set::UnorderedHashSet;
@@ -887,8 +888,18 @@ fn short_string_to_semantic(
         } else {
             db.core_felt_ty()
         };
-        let value = BigInt::from_bytes_be(Sign::Plus, literal.as_bytes());
-        Ok(ExprLiteral { value, ty, stable_ptr: short_string_syntax.stable_ptr().into() })
+        let unescaped_literal = unescape(literal).map_err(|err| {
+            ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{}", err)))
+        })?;
+        if unescaped_literal.is_ascii() {
+            Ok(ExprLiteral {
+                value: BigInt::from_bytes_be(Sign::Plus, unescaped_literal.as_bytes()),
+                ty,
+                stable_ptr: short_string_syntax.stable_ptr().into(),
+            })
+        } else {
+            Err(ctx.diagnostics.report(short_string_syntax, ShortStringMustBeAscii))
+        }
     } else {
         unreachable!();
     }

@@ -1,4 +1,7 @@
-use defs::db::{MacroPlugin, PluginDiagnostic, PluginResult};
+use defs::plugin::{
+    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    TrivialMapper,
+};
 use itertools::Itertools;
 use syntax::node::ast::AttributeList;
 use syntax::node::db::SyntaxGroup;
@@ -69,7 +72,7 @@ fn generate_panicable_code(
 
         let Some((err_value, panicable_name)) = try_extract_matches!(attr.args(db), ast::OptionAttributeArgs::AttributeArgs).and_then(
             |args| {
-            if let [ast::Expr::Literal(err_value), ast::Expr::Path(name)] = &args.arg_list(db).elements(db)[..] {
+            if let [ast::Expr::ShortString(err_value), ast::Expr::Path(name)] = &args.arg_list(db).elements(db)[..] {
                 // TODO(orizi): Once generic user functions are supported, support generic params, e.g. for `array_at<T>`.
                 if let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] {
                     Some((err_value.text(db), segment.ident(db).text(db)))
@@ -98,9 +101,9 @@ fn generate_panicable_code(
             .map(|param| param.name(db).as_syntax_node().get_text(db))
             .join(", ");
         return PluginResult {
-            code: Some((
-                "panicable".into(),
-                indoc::formatdoc!(
+            code: Some(PluginGeneratedFile {
+                name: "panicable".into(),
+                content: indoc::formatdoc!(
                     r#"
                     func {panicable_name}({params}) -> {inner_ty_text} {{
                         match {function_name}({args}) {{
@@ -116,7 +119,8 @@ fn generate_panicable_code(
                     }}
                 "#
                 ),
-            )),
+                diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+            }),
             diagnostics: vec![],
         };
     }

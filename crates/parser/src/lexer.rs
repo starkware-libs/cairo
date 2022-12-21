@@ -131,12 +131,22 @@ impl<'a> Lexer<'a> {
 
     /// Takes a short string.
     fn take_token_short_string(&mut self) -> TokenKind {
-        if self.peek() == Some('\'') {
-            self.take();
-            // TODO(alon) support '\'' escaping.
-            self.take_while(|c| c != '\'' && c.is_ascii());
-            self.take();
+        self.take();
+        let mut escaped = false;
+        loop {
+            if escaped {
+                escaped = false;
+                self.take();
+            } else if self.peek() == Some('\\') {
+                escaped = true;
+                self.take();
+            } else if self.peek() == Some('\'') {
+                break;
+            } else {
+                self.take();
+            }
         }
+        self.take();
 
         // Parse _type suffix.
         if self.peek() == Some('_') {
@@ -237,6 +247,7 @@ impl<'a> Lexer<'a> {
                 }
                 '&' => self.pick_kind('&', TokenKind::AndAnd, TokenKind::And),
                 '|' => self.pick_kind('|', TokenKind::OrOr, TokenKind::Or),
+                '^' => self.take_token_of_kind(TokenKind::Xor),
                 _ => self.take_token_of_kind(TokenKind::BadCharacters),
             }
         } else {
@@ -324,6 +335,7 @@ enum TokenKind {
     AndAnd,
     Or,
     OrOr,
+    Xor,
     EqEq,
     Neq,
     GE,
@@ -389,6 +401,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
         TokenKind::Or => SyntaxKind::TerminalOr,
         TokenKind::OrOr => SyntaxKind::TerminalOrOr,
+        TokenKind::Xor => SyntaxKind::TerminalXor,
         TokenKind::EqEq => SyntaxKind::TerminalEqEq,
         TokenKind::Neq => SyntaxKind::TerminalNeq,
         TokenKind::GE => SyntaxKind::TerminalGE,

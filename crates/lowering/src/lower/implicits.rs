@@ -89,7 +89,17 @@ pub fn free_function_all_implicits_vec(
 ) -> Maybe<Vec<TypeId>> {
     let implicits_set = db.free_function_all_implicits(function)?;
     let mut implicits_vec = implicits_set.into_iter().collect_vec();
-    implicits_vec.sort();
+
+    let semantic_db = db.upcast();
+    let precedence = db.implicit_precedence();
+    implicits_vec.sort_by_cached_key(|type_id| {
+        if let Some(idx) = precedence.iter().position(|item| item == type_id) {
+            return (idx, "".to_string());
+        }
+
+        (precedence.len(), type_id.format(semantic_db))
+    });
+
     Ok(implicits_vec)
 }
 

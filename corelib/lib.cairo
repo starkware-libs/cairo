@@ -150,6 +150,9 @@ use integer::u128_gt;
 use integer::u128_ge;
 use integer::u128_eq;
 use integer::u128_ne;
+use integer::u128_and;
+use integer::u128_or;
+use integer::u128_xor;
 use integer::u128_jump_nz;
 use integer::u256;
 use integer::u256_add;
@@ -183,6 +186,7 @@ func assert(cond: bool, err_code: felt) {
 // Hash functions.
 mod hash;
 use hash::pedersen;
+use hash::Pedersen;
 
 // StarkNet
 mod starknet;

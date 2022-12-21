@@ -1,4 +1,3 @@
-use super::as_single_type;
 use super::felt::FeltType;
 use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
@@ -9,7 +8,9 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{
+    args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
+};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
@@ -25,7 +26,7 @@ impl NamedType for DictFeltToType {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = as_single_type(args)?;
+        let ty = args_as_single_type(args)?;
         let info = context.get_type_info(ty.clone())?;
         // TODO(Gil): the implementation support values of size 1. Remove when other sizes are
         // supported.
@@ -77,7 +78,7 @@ impl SignatureOnlyGenericLibFunc for DictFeltToNewLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(args)?;
+        let ty = args_as_single_type(args)?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         Ok(LibFuncSignature::new_non_branch(
             vec![felt_ty],
@@ -101,7 +102,7 @@ impl SignatureOnlyGenericLibFunc for DictFeltToWriteLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(args)?;
+        let ty = args_as_single_type(args)?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         let dict_ty = context.get_wrapped_concrete_type(DictFeltToType::id(), ty.clone())?;
         Ok(LibFuncSignature::new_non_branch(
@@ -126,7 +127,7 @@ impl SignatureOnlyGenericLibFunc for DictFeltToReadLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let generic_ty = as_single_type(args)?;
+        let generic_ty = args_as_single_type(args)?;
         let dict_ty =
             context.get_wrapped_concrete_type(DictFeltToType::id(), generic_ty.clone())?;
         Ok(LibFuncSignature::new_non_branch(
@@ -157,7 +158,7 @@ impl SignatureOnlyGenericLibFunc for DictFeltToSquashLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let generic_ty = as_single_type(args)?;
+        let generic_ty = args_as_single_type(args)?;
         let dict_ty =
             context.get_wrapped_concrete_type(DictFeltToType::id(), generic_ty.clone())?;
         let squashed_dict_ty =

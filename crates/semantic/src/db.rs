@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use db_utils::Upcast;
-use defs::db::DefsGroup;
+use defs::db::{DefsGroup, GeneratedFileInfo};
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
@@ -10,10 +10,11 @@ use defs::ids::{
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
-use filesystem::ids::FileId;
+use filesystem::ids::{FileId, FileLongId};
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use syntax::node::ast;
+use syntax::node::stable_ptr::SyntaxStablePtr;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -513,7 +514,8 @@ fn module_semantic_diagnostics(
     module_id: ModuleId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (module_file_id, plugin_diag) in db.module_data(module_id)?.plugin_diagnostics {
+    let module_data = db.module_data(module_id)?;
+    for (module_file_id, plugin_diag) in module_data.plugin_diagnostics {
         diagnostics.add(SemanticDiagnostic {
             stable_location: StableLocation::new(module_file_id, plugin_diag.stable_ptr),
             kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
@@ -548,12 +550,18 @@ fn module_semantic_diagnostics(
                     if db.file_content(file_id).is_none() {
                         // Note that the error location is in the parent module, not the
                         // submodule.
+
+                        let path = match db.lookup_intern_file(file_id) {
+                            FileLongId::OnDisk(path) => path.display().to_string(),
+                            FileLongId::Virtual(_) => panic!("Expected OnDisk file."),
+                        };
+
                         diagnostics.add(SemanticDiagnostic {
                             stable_location: StableLocation::new(
                                 submodule_id.module_file(db.upcast()),
                                 submodule_id.stable_ptr(db.upcast()).untyped(),
                             ),
-                            kind: SemanticDiagnosticKind::FileNotFound,
+                            kind: SemanticDiagnosticKind::ModuleFileNotFound { path },
                         });
                     }
                 }
@@ -564,7 +572,64 @@ fn module_semantic_diagnostics(
             }
         }
     }
-    Ok(diagnostics.build())
+
+    Ok(map_diagnostics(
+        db.upcast(),
+        module_id,
+        &module_data.generated_file_info,
+        diagnostics.build(),
+    )
+    .1)
+}
+
+/// Transforms diagnostics that originate from plugin generated files. Uses the plugin's diagnostic
+/// mapper.
+fn map_diagnostics(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+    generated_file_info: &[Option<GeneratedFileInfo>],
+    original_diagnostics: Diagnostics<SemanticDiagnostic>,
+) -> (bool, Diagnostics<SemanticDiagnostic>) {
+    let mut diagnostics = DiagnosticsBuilder::default();
+    let mut has_change: bool = false;
+
+    for tree in &original_diagnostics.0.subtrees {
+        let (changed, new_diags) =
+            map_diagnostics(db, module_id, generated_file_info, tree.clone());
+        diagnostics.extend(new_diags);
+        has_change |= changed;
+    }
+
+    for diag in &original_diagnostics.0.leaves {
+        assert_eq!(diag.stable_location.module_file_id.0, module_id, "Unexpected module id.");
+        let file_index = diag.stable_location.module_file_id.1;
+        if let Some(file_info) = &generated_file_info[file_index.0] {
+            if let Some(plugin_diag) = file_info.diagnostic_mapper.map_diag(db, diag) {
+                // We don't have a real location, so we give a dummy location in the correct file.
+                // SemanticDiagnostic struct knowns to give the proper span for
+                // WrappedPluginDiagnostic.
+                diagnostics.add(SemanticDiagnostic {
+                    stable_location: StableLocation::new(
+                        file_info.origin,
+                        db.intern_stable_ptr(SyntaxStablePtr::Root),
+                    ),
+                    kind: SemanticDiagnosticKind::WrappedPluginDiagnostic {
+                        diagnostic: plugin_diag,
+                        original_diag: Box::new(diag.clone()),
+                    },
+                });
+                has_change = true;
+                continue;
+            }
+        }
+        diagnostics.add(diag.clone());
+    }
+
+    if !has_change {
+        return (false, original_diagnostics);
+    }
+
+    (has_change, diagnostics.build())
 }
 
 fn file_semantic_diagnostics(
