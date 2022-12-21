@@ -1,19 +1,17 @@
-use num_bigint::BigInt;
-
 use super::syscalls::SystemType;
+use crate::extensions::consts::{ConstGenLibFunc, WrapConstGenLibFunc};
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureSpecializationContext, SpecializationContext,
+    SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
-    NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType,
-    OutputVarReferenceInfo, SignatureBasedConcreteLibFunc, SpecializationError,
+    NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    SpecializationError,
 };
 use crate::ids::{GenericLibFuncId, GenericTypeId};
-use crate::program::GenericArg;
 
 /// Type for StarkNet storage address, a value in the range [0, 2 ** 251 - 256).
 #[derive(Default)]
@@ -37,54 +35,13 @@ impl NoGenericArgsGenericType for StorageAddressType {
 
 /// LibFunc for creating a constant storage address.
 #[derive(Default)]
-pub struct StorageAddressConstLibFunc {}
-impl NamedLibFunc for StorageAddressConstLibFunc {
-    type Concrete = StorageAddressConstConcreteLibFunc;
+pub struct StorageAddressConstLibFuncWrapped {}
+impl ConstGenLibFunc for StorageAddressConstLibFuncWrapped {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("storage_address_const");
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-        _args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(
-            vec![],
-            vec![OutputVarInfo {
-                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
-            }],
-            SierraApChange::Known { new_vars_only: true },
-        ))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        match args {
-            [GenericArg::Value(c)] => Ok(StorageAddressConstConcreteLibFunc {
-                c: c.clone(),
-                signature: <Self as NamedLibFunc>::specialize_signature(
-                    self,
-                    context.upcast(),
-                    args,
-                )?,
-            }),
-            _ => Err(SpecializationError::UnsupportedGenericArg),
-        }
-    }
+    const GENERIC_TYPE_ID: GenericTypeId = <StorageAddressType as NoGenericArgsGenericType>::ID;
 }
 
-pub struct StorageAddressConstConcreteLibFunc {
-    pub c: BigInt,
-    pub signature: LibFuncSignature,
-}
-impl SignatureBasedConcreteLibFunc for StorageAddressConstConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
-    }
-}
+pub type StorageAddressConstLibFunc = WrapConstGenLibFunc<StorageAddressConstLibFuncWrapped>;
 
 /// LibFunc for a storage read system call.
 #[derive(Default)]
