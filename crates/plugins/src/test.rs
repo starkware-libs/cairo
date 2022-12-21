@@ -79,13 +79,13 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
 #[test_case(
     vec![Arc::new(PanicablePlugin{})],
     indoc! {"
-        #[panic_with(1, foo_improved)]
+        #[panic_with('1', foo_improved)]
         extern func foo(a: felt, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
-        #[panic_with(2, bar_changed)]
+        #[panic_with('2', bar_changed)]
         extern func bar() -> Result::<felt, Err> nopanic;
 
-        #[panic_with(3, non_extern_stuff)]
+        #[panic_with('3', non_extern_stuff)]
         func non_extern(_: some_type) -> Option::<(felt, other)> nopanic {
             (4, 56)
         }
@@ -99,7 +99,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                     },
                     Option::None (v) => {
                         let mut data = array_new::<felt>();
-                        array_append::<felt>(data, 1);
+                        array_append::<felt>(data, '1');
                         panic(data)
                     },
                 }
@@ -113,7 +113,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                     },
                     Result::Err (v) => {
                         let mut data = array_new::<felt>();
-                        array_append::<felt>(data, 2);
+                        array_append::<felt>(data, '2');
                         panic(data)
                     },
                 }
@@ -127,7 +127,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                     },
                     Option::None (v) => {
                         let mut data = array_new::<felt>();
-                        array_append::<felt>(data, 3);
+                        array_append::<felt>(data, '3');
                         panic(data)
                     },
                 }

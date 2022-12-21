@@ -155,7 +155,7 @@ fn lowering_test(name: &str) {
 #[test_case(
     "fib_u128",
     &[1, 1, 200].map(BigInt::from) =>
-    RunResultValue::Panic(vec![BigInt::from(1)]);
+    RunResultValue::Panic(vec![BigInt::from_bytes_be(num_bigint::Sign::Plus, b"u128_add OF")]);
     "fib_u128_overflow"
 )]
 #[test_case(
