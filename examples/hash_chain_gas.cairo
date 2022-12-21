@@ -9,7 +9,7 @@ func hash_chain(n: felt, costs: BuiltinCosts) -> felt {
         },
         Option::None(x) => {
             let mut data = array_new::<felt>();
-            array_append::<felt>(data, 1);
+            array_append::<felt>(data, 'OOG');
             panic(data);
         },
     }

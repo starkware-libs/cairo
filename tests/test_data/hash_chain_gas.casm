@@ -21,7 +21,7 @@ jmp rel 9;
 jmp rel 17;
 %{ memory[ap + 0] = segments.add() %}
 ap += 1;
-[ap + 0] = 1, ap++;
+[ap + 0] = 5197639, ap++;
 [ap + -1] = [[ap + -2] + 0];
 [ap + 0] = [fp + -7] + 1, ap++;
 [ap + 0] = [fp + -6], ap++;

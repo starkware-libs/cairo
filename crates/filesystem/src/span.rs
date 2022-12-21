@@ -36,6 +36,9 @@ impl TextSpan {
     pub fn width(&self) -> u32 {
         (self.end - self.start) as u32
     }
+    pub fn contains(&self, other: Self) -> bool {
+        self.start <= other.start && self.end >= other.end
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -64,6 +64,10 @@ pub enum Hint {
         caller_address: DerefOrImmediate,
         dst: CellRef,
     },
+    /// Represents a hint that calls the bitwise builtin.
+    Bitwise {
+        ptr: ResOperand,
+    },
 }
 
 impl Display for Hint {
@@ -151,6 +155,8 @@ impl Display for Hint {
                 write!(f, " memory{dst} = 0; ")?;
                 write!(f, " roll(address={}, caller_address={}) ", address, caller_address)?
             }
+            // TODO(Dori): Implement bitwise_handler in python.
+            Hint::Bitwise { ptr } => write!(f, " bitwise_handler(bitwise_ptr={}) ", ptr)?,
         }
         write!(f, "%}}")
     }

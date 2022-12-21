@@ -1,5 +1,5 @@
 use num_bigint::BigInt;
-use sierra::extensions::starknet::storage::StorageAddressConstConcreteLibFunc;
+use sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
 use sierra::extensions::starknet::StarkNetConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder};
@@ -26,7 +26,7 @@ pub fn build(
 /// Handles the storage_address_const libfunc.
 fn build_storage_address_const(
     builder: CompiledInvocationBuilder<'_>,
-    libfunc: &StorageAddressConstConcreteLibFunc,
+    libfunc: &SignatureAndConstConcreteLibFunc,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound = (BigInt::from(1) << 251) - 256;
     if libfunc.c >= addr_bound {

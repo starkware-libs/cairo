@@ -1,9 +1,8 @@
-use num_traits::Zero;
-
 use super::felt::FeltType;
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
 use super::non_zero::NonZeroType;
 use super::range_check::RangeCheckType;
+use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
@@ -15,7 +14,6 @@ use crate::extensions::{
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
-use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
 
 /// Type for u128.
 #[derive(Default)]
@@ -190,55 +188,18 @@ impl GenericLibFunc for Uint128OperationLibFunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        match args {
-            [] => {
-                Ok(Uint128OperationConcreteLibFunc::Binary(Uint128BinaryOperationConcreteLibFunc {
-                    operator: self.operator,
-                    signature: self.specialize_signature(context.upcast(), args)?,
-                }))
-            }
-            [GenericArg::Value(c)] => {
-                if matches!(self.operator, IntOperator::DivMod) && c.is_zero() {
-                    Err(SpecializationError::UnsupportedGenericArg)
-                } else {
-                    Ok(Uint128OperationConcreteLibFunc::Const(
-                        Uint128OperationWithConstConcreteLibFunc {
-                            operator: self.operator,
-                            c: u128::try_from(c).unwrap(),
-                            signature: self.specialize_signature(context.upcast(), args)?,
-                        },
-                    ))
-                }
-            }
-            _ => Err(SpecializationError::UnsupportedGenericArg),
-        }
+        Ok(Uint128OperationConcreteLibFunc {
+            operator: self.operator,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }
 
-pub struct Uint128BinaryOperationConcreteLibFunc {
+pub struct Uint128OperationConcreteLibFunc {
     pub operator: IntOperator,
     pub signature: LibFuncSignature,
 }
-impl SignatureBasedConcreteLibFunc for Uint128BinaryOperationConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
-    }
-}
-
-/// u128 operations with a const.
-pub struct Uint128OperationWithConstConcreteLibFunc {
-    pub operator: IntOperator,
-    pub c: u128,
-    pub signature: LibFuncSignature,
-}
-define_concrete_libfunc_hierarchy! {
-    pub enum Uint128OperationConcreteLibFunc {
-        Binary(Uint128BinaryOperationConcreteLibFunc),
-        Const(Uint128OperationWithConstConcreteLibFunc),
-    }
-}
-
-impl SignatureBasedConcreteLibFunc for Uint128OperationWithConstConcreteLibFunc {
+impl SignatureBasedConcreteLibFunc for Uint128OperationConcreteLibFunc {
     fn signature(&self) -> &LibFuncSignature {
         &self.signature
     }
