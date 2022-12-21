@@ -95,22 +95,22 @@ fn build_array_at(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (range_check, array_view, index) = match builder.refs {
+    let (range_check, array_view, index_deref_or_imm) = match builder.refs {
         [
             ReferenceValue { expression: expr_range_check, .. },
             ReferenceValue { expression: expr_arr, .. },
-            ReferenceValue { expression: expr_value, .. },
+            ReferenceValue { expression: expr_index, .. },
         ] => {
             let concrete_array_type = &builder.libfunc.param_signatures()[1].ty;
             let array_view =
                 ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-            let elem_value = match expr_value.try_unpack_single()? {
+            let index_deref_or_imm = match expr_index.try_unpack_single()? {
                 CellExpression::Deref(op) => DerefOrImmediate::Deref(op),
                 CellExpression::Immediate(op) => DerefOrImmediate::from(op),
                 _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             };
-            (expr_range_check.try_unpack_single()?.to_deref()?, array_view, elem_value)
+            (expr_range_check.try_unpack_single()?.to_deref()?, array_view, index_deref_or_imm)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -127,7 +127,7 @@ fn build_array_at(
     }
 
     let mut casm_builder = CasmBuilder::default();
-    let index = casm_builder.add_var(match index {
+    let index = casm_builder.add_var(match index_deref_or_imm {
         DerefOrImmediate::Immediate(imm) => ResOperand::Immediate(imm),
         DerefOrImmediate::Deref(cell) => ResOperand::Deref(cell),
     });
