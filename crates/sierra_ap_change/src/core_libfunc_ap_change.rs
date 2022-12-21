@@ -101,6 +101,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
         },
         CoreConcreteLibFunc::Pedersen(_) => vec![ApChange::Known(0)],
         CoreConcreteLibFunc::StarkNet(libfunc) => match libfunc {
+            StarkNetConcreteLibFunc::ContractAddressConst(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibFunc::CallContract(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
