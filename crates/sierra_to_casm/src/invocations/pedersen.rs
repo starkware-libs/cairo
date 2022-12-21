@@ -25,7 +25,7 @@ pub fn build(
 fn build_pedersen_hash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (original_pedersen, x, y) = match builder.refs {
+    let (pedersen, x, y) = match builder.refs {
         [
             ReferenceValue { expression: expr_pedersen, .. },
             ReferenceValue { expression: expr_x, .. },
@@ -44,11 +44,11 @@ fn build_pedersen_hash(
     };
 
     let mut casm_builder = CasmBuilder::default();
-    let pedersen = casm_builder.add_var(original_pedersen.clone());
-    let _original_pedersen = casm_builder.add_var(original_pedersen);
+    let pedersen = casm_builder.add_var(pedersen);
     let x = casm_builder.add_var(ResOperand::Deref(x));
     let y = casm_builder.add_var(ResOperand::Deref(y));
     casm_build_extend! {casm_builder,
+        let _original_pedersen = pedersen;
         assert *(pedersen++) = x;
         assert *(pedersen++) = y;
         // TODO(orizi): Add pederesen hash hint: `hint Pedersen { ptr: original_pedersen };`.
