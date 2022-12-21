@@ -10,6 +10,7 @@ compiler = { path = "../compiler" }
 convert_case.workspace = true
 defs = { path = "../defs" }
 diagnostics = { path = "../diagnostics" }
+indoc.workspace = true
 filesystem = { path = "../filesystem" }
 genco.workspace = true
 itertools.workspace = true
@@ -33,6 +34,7 @@ utils = { path = "../utils" }
 lowering = { path = "../lowering" }
 plugins = { path = "../plugins" }
 parser = { path = "../parser" }
+pretty_assertions.workspace = true
 
 [dev-dependencies]
 diagnostics = { path = "../diagnostics" }
