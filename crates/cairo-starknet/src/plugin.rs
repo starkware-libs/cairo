@@ -122,10 +122,12 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
             ast::TraitItem::Function(func) => {
                 let declaration = func.declaration(db);
 
-                let mut has_ref_params = false;
-                for param in declaration.signature(db).parameters(db).elements(db) {
+                let mut skip_generation = false;
+                let mut serialization_code = vec![];
+                let signature = declaration.signature(db);
+                for param in signature.parameters(db).elements(db) {
                     if is_ref_param(db, &param) {
-                        has_ref_params = true;
+                        skip_generation = true;
 
                         diagnostics.push(PluginDiagnostic {
                             message: "`ref` parameters are not supported in the ABI of a contract."
@@ -133,15 +135,51 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                             stable_ptr: param.modifiers(db).stable_ptr().untyped(),
                         })
                     }
+
+                    let param_type = param.type_clause(db).ty(db);
+                    let type_name = &param_type.as_syntax_node().get_text(db);
+                    if let Some((ser_func, _)) = get_type_serde_funcs(type_name) {
+                        serialization_code.push(RewriteNode::interpolate_patched(
+                            &formatdoc!("        {ser_func}(calldata, $arg_name$);\n"),
+                            HashMap::from([(
+                                "arg_name".to_string(),
+                                RewriteNode::Copied(param.name(db).as_syntax_node()),
+                            )]),
+                        ));
+                    } else {
+                        diagnostics.push(PluginDiagnostic {
+                            stable_ptr: param_type.stable_ptr().untyped(),
+                            message: format!("Could not find serialization for type `{type_name}`"),
+                        });
+                        skip_generation = true;
+                    }
                 }
-                if has_ref_params {
+
+                if skip_generation {
                     // TODO(ilya): Consider generating an empty wrapper to avoid:
                     // Unknown function error.
                     continue;
                 }
 
-                let mut func_declaration = RewriteNode::from_ast(&declaration);
+                let ret_decode = match signature.ret_ty(db) {
+                    OptionReturnTypeClause::Empty(_) => "".to_string(),
+                    OptionReturnTypeClause::ReturnTypeClause(ty) => {
+                        let ret_type_ast = ty.ty(db);
+                        let type_name = ret_type_ast.as_syntax_node().get_text(db);
+                        let Some((_, deser_func)) = get_type_serde_funcs(&type_name) else {
+                            diagnostics.push(PluginDiagnostic {
+                                stable_ptr: ret_type_ast.stable_ptr().untyped(),
+                                message: format!(
+                                    "Could not find deserialization for type `{type_name}`"),
+                            });
+                            continue;
+                        };
 
+                        format!("        {deser_func}(ret_data)")
+                    }
+                };
+
+                let mut func_declaration = RewriteNode::from_ast(&declaration);
                 func_declaration
                     .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
                     .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
@@ -155,11 +193,14 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                         ],
                     );
 
-                let func_body = " {
+                functions.push(RewriteNode::interpolate_patched(
+                    "$func_decl$ {
         let calldata = array_new::<felt>();
-        // TODO(ilya): Encode calldata.
+$serialization_code$
         let ret_data = match starknet::call_contract_syscall(
-                contract_address, calldata) {
+            contract_address,
+            calldata,
+        ) {
             Result::Ok(ret_data) => ret_data,
             Result::Err((reason, _ret_data)) => {
                 let mut err_data = array_new::<felt>();
@@ -167,25 +208,27 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                 array_append::<felt>(err_data, reason);
                 // TODO(ilya): Handle ret_data.
                 panic(err_data)
-            }
+            },
         };
-        // TODO(ilya): Decode ret_data and return it.
+$deserialization_code$
     }
-";
-
-                functions.push(RewriteNode::Modified(ModifiedNode {
-                    children: vec![
-                        RewriteNode::from_ast(&func.attributes(db)),
-                        func_declaration,
-                        RewriteNode::Text(func_body.to_string()),
-                    ],
-                }))
+",
+                    HashMap::from([
+                        ("func_decl".to_string(), func_declaration),
+                        (
+                            "serialization_code".to_string(),
+                            RewriteNode::Modified(ModifiedNode { children: serialization_code }),
+                        ),
+                        ("deserialization_code".to_string(), RewriteNode::Text(ret_decode)),
+                    ]),
+                ));
             }
         }
     }
 
+    let mut builder = PatchBuilder::new(db);
     let dispatcher_name = format!("{}Dispatcher", trait_ast.name(db).text(db));
-    let dispatcher_code = RewriteNode::interpolate_patched(
+    builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
             "mod {dispatcher_name} {{
                 $body$
@@ -195,9 +238,7 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
             "body".to_string(),
             RewriteNode::Modified(ModifiedNode { children: functions }),
         )]),
-    );
-    let mut builder = PatchBuilder::new(db);
-    builder.add_modified(dispatcher_code);
+    ));
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: dispatcher_name.into(),

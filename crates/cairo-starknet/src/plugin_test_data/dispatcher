@@ -25,9 +25,13 @@ trait IContract {
 mod IContractDispatcher {
         fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
         let calldata = array_new::<felt>();
-        // TODO(ilya): Encode calldata.
+        serde::serialize_felt(calldata, arg);
+        serde::serialize_felt(calldata, num);
+
         let ret_data = match starknet::call_contract_syscall(
-                contract_address, calldata) {
+            contract_address,
+            calldata,
+        ) {
             Result::Ok(ret_data) => ret_data,
             Result::Err((reason, _ret_data)) => {
                 let mut err_data = array_new::<felt>();
@@ -35,16 +39,18 @@ mod IContractDispatcher {
                 array_append::<felt>(err_data, reason);
                 // TODO(ilya): Handle ret_data.
                 panic(err_data)
-            }
+            },
         };
-        // TODO(ilya): Decode ret_data and return it.
+        serde::deserialize_felt(ret_data)
     }
 
     fn empty(contract_address: ContractAddress, ) {
         let calldata = array_new::<felt>();
-        // TODO(ilya): Encode calldata.
+
         let ret_data = match starknet::call_contract_syscall(
-                contract_address, calldata) {
+            contract_address,
+            calldata,
+        ) {
             Result::Ok(ret_data) => ret_data,
             Result::Err((reason, _ret_data)) => {
                 let mut err_data = array_new::<felt>();
@@ -52,9 +58,9 @@ mod IContractDispatcher {
                 array_append::<felt>(err_data, reason);
                 // TODO(ilya): Handle ret_data.
                 panic(err_data)
-            }
+            },
         };
-        // TODO(ilya): Decode ret_data and return it.
+
     }
 
 }
