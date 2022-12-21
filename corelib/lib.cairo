@@ -118,6 +118,7 @@ use box::unbox;
 
 // Nullable
 mod nullable;
+use nullable::FromNullableResult;
 use nullable::Nullable;
 use nullable::null;
 use nullable::into_nullable;

@@ -177,7 +177,8 @@ pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Opti
                 if let Some(ty_b) = b.temporary_variables.get(&var) {
                     assert_eq!(
                         ty_a, *ty_b,
-                        "Internal compiler error: Found different types for the same variable."
+                        "Internal compiler error: Found different types for the same variable: \
+                         {var}."
                     );
                     temporary_variables.insert(var, ty_a);
                 }
