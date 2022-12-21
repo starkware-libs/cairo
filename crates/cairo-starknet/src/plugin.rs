@@ -1,27 +1,72 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::vec;
 
 use cairo_defs::plugin::{
-    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginDiagnostic,
+    PluginGeneratedFile, PluginResult,
 };
-use cairo_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
+use cairo_diagnostics::DiagnosticEntry;
+use cairo_semantic::db::SemanticGroup;
+use cairo_semantic::patcher::{ModifiedNode, PatchBuilder, RewriteNode};
+use cairo_semantic::plugin::{
+    AsDynGeneratedFileAuxData, AsDynMacroPlugin, DiagnosticMapper, DynDiagnosticMapper,
+    PluginMappedDiagnostic, SemanticPlugin, TrivialMapper,
+};
+use cairo_semantic::SemanticDiagnostic;
 use cairo_syntax::node::ast::{
-    ItemFreeFunction, MaybeModuleBody, Modifier, OptionReturnTypeClause, Param,
+    ItemFreeFunction, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause, Param,
 };
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use genco::prelude::*;
+use indoc::formatdoc;
 use itertools::join;
 
 use crate::contract::starknet_keccak;
 
+const ABI_ATTR: &str = "abi";
 const CONTRACT_ATTR: &str = "contract";
 const EXTERNAL_ATTR: &str = "external";
 const VIEW_ATTR: &str = "view";
 pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
+
+use cairo_semantic::patcher::Patches;
+
+/// The diagnostics remapper of the pluging.
+#[derive(Debug, PartialEq, Eq)]
+pub struct DiagnosticRemapper {
+    patches: Patches,
+}
+impl GeneratedFileAuxData for DiagnosticRemapper {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool {
+        if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
+    }
+}
+impl AsDynGeneratedFileAuxData for DiagnosticRemapper {
+    fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
+        self
+    }
+}
+impl DiagnosticMapper for DiagnosticRemapper {
+    fn map_diag(
+        &self,
+        db: &(dyn SemanticGroup + 'static),
+        diag: &dyn std::any::Any,
+    ) -> Option<PluginMappedDiagnostic> {
+        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
+        let span = self
+            .patches
+            .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
+        Some(PluginMappedDiagnostic { span, message: diag.format(db) })
+    }
+}
 
 #[cfg(test)]
 #[path = "plugin_test.rs"]
@@ -34,6 +79,7 @@ impl MacroPlugin for StarkNetPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
             ast::Item::Module(module_ast) => handle_mod(db, module_ast),
+            ast::Item::Trait(trait_ast) => handle_trait(db, trait_ast),
             // Nothing to do for other items.
             _ => PluginResult::default(),
         }
@@ -48,6 +94,122 @@ impl AsDynMacroPlugin for StarkNetPlugin {
     }
 }
 impl SemanticPlugin for StarkNetPlugin {}
+
+/// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
+fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
+    let attrs = trait_ast.attributes(db).elements(db);
+    if !attrs.iter().any(|attr| attr.attr(db).text(db) == ABI_ATTR) {
+        return PluginResult::default();
+    }
+    let body = match trait_ast.body(db) {
+        MaybeTraitBody::Some(body) => body,
+        MaybeTraitBody::None(empty_body) => {
+            return PluginResult {
+                code: None,
+                diagnostics: vec![PluginDiagnostic {
+                    message: "ABIs without body are not supported.".to_string(),
+                    stable_ptr: empty_body.stable_ptr().untyped(),
+                }],
+                remove_original_item: false,
+            };
+        }
+    };
+
+    let mut diagnostics = vec![];
+    let mut functions = vec![];
+    for item_ast in body.items(db).elements(db) {
+        match item_ast {
+            ast::TraitItem::Function(func) => {
+                let declaration = func.declaration(db);
+
+                let mut has_ref_params = false;
+                for param in declaration.signature(db).parameters(db).elements(db) {
+                    if is_ref_param(db, &param) {
+                        has_ref_params = true;
+
+                        diagnostics.push(PluginDiagnostic {
+                            message: "`ref` parameters are not supported in the ABI of a contract."
+                                .to_string(),
+                            stable_ptr: param.modifiers(db).stable_ptr().untyped(),
+                        })
+                    }
+                }
+                if has_ref_params {
+                    // TODO(ilya): Consider generating an empty wrapper to avoid:
+                    // Unknown function error.
+                    continue;
+                }
+
+                let mut func_declaration = RewriteNode::from_ast(&declaration);
+
+                func_declaration
+                    .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+                    .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
+                    .modify(db)
+                    .children
+                    .splice(
+                        0..0,
+                        [
+                            RewriteNode::Text("contract_address: ContractAddress".to_string()),
+                            RewriteNode::Text(", ".to_string()),
+                        ],
+                    );
+
+                let func_body = " {
+        let calldata = array_new::<felt>();
+        // TODO(ilya): Encode calldata.
+        let ret_data = match starknet::call_contract_syscall(
+                contract_address, calldata) {
+            Result::Ok(ret_data) => ret_data,
+            Result::Err((reason, _ret_data)) => {
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, 'call_contract_syscall failed');
+                array_append::<felt>(err_data, reason);
+                // TODO(ilya): Handle ret_data.
+                panic(err_data)
+            }
+        };
+        // TODO(ilya): Decode ret_data and return it.
+    }
+";
+
+                functions.push(RewriteNode::Modified(ModifiedNode {
+                    children: vec![
+                        RewriteNode::from_ast(&func.attributes(db)),
+                        func_declaration,
+                        RewriteNode::Text(func_body.to_string()),
+                    ],
+                }))
+            }
+        }
+    }
+
+    let mut builder = PatchBuilder::new(db);
+
+    let dispatcher_name = format!("{}Dispatcher", trait_ast.name(db).text(db));
+    builder.interpolate_patched(
+        &formatdoc!(
+            "mod {dispatcher_name} {{
+            $body$
+            }}",
+        ),
+        HashMap::from([(
+            "body".to_string(),
+            RewriteNode::Modified(ModifiedNode { children: functions }),
+        )]),
+    );
+    PluginResult {
+        code: Some(PluginGeneratedFile {
+            name: dispatcher_name.into(),
+            content: builder.code,
+            aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(DiagnosticRemapper {
+                patches: builder.patches,
+            })),
+        }),
+        diagnostics,
+        remove_original_item: false,
+    }
+}
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
 fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
@@ -201,7 +363,6 @@ fn generate_entry_point_wrapper(
         };
 
         let is_ref = is_ref_param(db, &param);
-
         arg_names.push(arg_name.clone());
         let mut_modifier = if is_ref { "mut " } else { "" };
         // TODO(yuval): use panicable version of deserializations when supported.
