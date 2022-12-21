@@ -16,6 +16,7 @@ cairo-diagnostics = { path = "../cairo-diagnostics" }
 cairo-filesystem = { path = "../cairo-filesystem" }
 genco.workspace = true
 itertools.workspace = true
+indoc.workspace = true
 log.workspace = true
 cairo-semantic = { path = "../cairo-semantic" }
 serde.workspace = true

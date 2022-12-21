@@ -2,26 +2,70 @@ use std::sync::Arc;
 use std::vec;
 
 use cairo_defs::plugin::{
-    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginDiagnostic,
+    PluginGeneratedFile, PluginResult,
 };
-use cairo_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
+use cairo_diagnostics::DiagnosticEntry;
+use cairo_semantic::db::SemanticGroup;
+use cairo_semantic::patcher::{PatchBuilder, RewriteNode};
+use cairo_semantic::plugin::{
+    AsDynGeneratedFileAuxData, AsDynMacroPlugin, DiagnosticMapper, DynDiagnosticMapper,
+    PluginMappedDiagnostic, SemanticPlugin, TrivialMapper,
+};
+use cairo_semantic::SemanticDiagnostic;
 use cairo_syntax::node::ast::{
-    ItemFreeFunction, MaybeModuleBody, Modifier, OptionReturnTypeClause, Param,
+    ItemFreeFunction, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause, Param,
 };
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::helpers::GetIdentifier;
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use genco::prelude::*;
+use indoc::indoc;
 use itertools::join;
 
 use crate::contract::starknet_keccak;
 
+const ABI_ATTR: &str = "abi";
 const CONTRACT_ATTR: &str = "contract";
 const EXTERNAL_ATTR: &str = "external";
 const VIEW_ATTR: &str = "view";
 pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
+
+use cairo_semantic::patcher::Patches;
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct PatchMapper {
+    patches: Patches,
+}
+impl GeneratedFileAuxData for PatchMapper {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool {
+        if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
+    }
+}
+impl AsDynGeneratedFileAuxData for PatchMapper {
+    fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
+        self
+    }
+}
+impl DiagnosticMapper for PatchMapper {
+    fn map_diag(
+        &self,
+        db: &(dyn SemanticGroup + 'static),
+        diag: &dyn std::any::Any,
+    ) -> Option<PluginMappedDiagnostic> {
+        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
+        let span = self
+            .patches
+            .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
+        // TODO(ilya): Fix Error messages.
+        Some(PluginMappedDiagnostic { span, message: format!("{:?}", diag.format(db)) })
+    }
+}
 
 #[cfg(test)]
 #[path = "plugin_test.rs"]
@@ -34,6 +78,7 @@ impl MacroPlugin for StarkNetPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
             ast::Item::Module(module_ast) => handle_mod(db, module_ast),
+            ast::Item::Trait(trait_ast) => handle_trait(db, trait_ast),
             // Nothing to do for other items.
             _ => PluginResult::default(),
         }
@@ -48,6 +93,85 @@ impl AsDynMacroPlugin for StarkNetPlugin {
     }
 }
 impl SemanticPlugin for StarkNetPlugin {}
+
+/// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
+fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
+    let attrs = trait_ast.attributes(db).elements(db);
+    if !attrs.iter().any(|attr| attr.attr(db).text(db) == ABI_ATTR) {
+        return PluginResult::default();
+    }
+    let body = match trait_ast.body(db) {
+        MaybeTraitBody::Some(body) => body,
+        MaybeTraitBody::None(empty_body) => {
+            return PluginResult {
+                code: None,
+                diagnostics: vec![PluginDiagnostic {
+                    message: "ABIs without body are not supported.".to_string(),
+                    stable_ptr: empty_body.stable_ptr().untyped(),
+                }],
+            };
+        }
+    };
+
+    let mut builder = PatchBuilder::new(db);
+    builder.add_str(&format!("mod {}Dispatcher {{", trait_ast.name(db).text(db)));
+    for item_ast in body.items(db).elements(db) {
+        match item_ast {
+            ast::TraitItem::Function(func) => {
+                // Todo(ilya): Handle attributes
+
+                let declaration = func.declaration(db);
+
+                let mut func_declaration = RewriteNode::from_ast(&declaration);
+
+                func_declaration
+                    .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+                    .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
+                    .modify(db)
+                    .children
+                    .splice(
+                        0..0,
+                        [
+                            RewriteNode::Text("contract_address: ContractAddress".to_string()),
+                            RewriteNode::Text(", ".to_string()),
+                        ],
+                    );
+
+                builder.add_modified(func_declaration);
+
+                builder.add_str(indoc! {"
+                    {
+                       let calldata = array_new::<felt>();
+                       // TODO: encode calldata.
+                       let ret_data = match starknet::call_contract_syscall(
+                                contract_address, calldata) {
+                            Result::Ok(ret_data) => ret_data,
+                            Result::Err((reason, ret_data)) => {
+                                let mut err_data = array_new::<felt>();
+                                array_append::<felt>(err_data, 'call_contract_syscall failed');
+                                array_append::<felt>(err_data, reason);
+                                panic(err_data)
+                            }
+                       };
+                       // TODO: decode ret_data.
+                    }
+                "});
+            }
+        }
+    }
+
+    builder.add_str(" }");
+    PluginResult {
+        code: Some(PluginGeneratedFile {
+            name: "virt2".into(),
+            content: builder.code,
+            aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(PatchMapper {
+                patches: builder.patches,
+            })),
+        }),
+        diagnostics: vec![],
+    }
+}
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
 fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {

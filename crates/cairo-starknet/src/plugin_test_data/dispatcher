@@ -1,0 +1,29 @@
+//! > Test expansion of a dispatcher.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[abi]
+trait IContract {
+    fn get_something(ref arg: felt, num: felt) -> felt;
+}
+
+//! > generated_cairo_code
+mod IContractDispatcher {
+    fn get_something(contract_address: ContractAddress, ref arg: felt, num: felt) -> felt {
+        let calldata = array_new::<felt>();
+        // TODO: encode calldata.
+        let ret_data = match starknet::call_contract_syscall(contract_address, calldata) {
+            Result::Ok(ret_data) => ret_data,
+            Result::Err((reason, ret_data)) => {
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, 'call_contract_syscall failed');
+                array_append::<felt>(err_data, reason);
+                panic(err_data)
+        } };
+    // TODO: decode ret_data.
+    }
+}
+
+//! > expected_diagnostics
