@@ -3,6 +3,7 @@ use diagnostics::{format_diagnostics, DiagnosticLocation};
 use parser::parser_test;
 use parser::test_utils::create_virtual_file;
 use parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
+use pretty_assertions::assert_eq;
 use syntax::node::TypedSyntaxNode;
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -53,3 +54,5 @@ parser_test!(
     ["src/plugin_test_data/hello_starknet",],
     test_expand_contract
 );
+
+parser_test!(test_dispatcher_expansion, ["src/plugin_test_data/dispatcher",], test_expand_contract);
