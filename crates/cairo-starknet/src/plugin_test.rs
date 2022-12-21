@@ -57,3 +57,5 @@ parser_test!(
     ["src/plugin_test_data/hello_starknet",],
     test_expand_contract
 );
+
+parser_test!(test_dispatcher_expansion, ["src/plugin_test_data/dispatcher",], test_expand_contract);
