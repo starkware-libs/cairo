@@ -160,6 +160,9 @@ use integer::u256_sub;
 use integer::u256_mul;
 use integer::u256_eq;
 use integer::u256_ne;
+use integer::u256_and;
+use integer::u256_or;
+use integer::u256_xor;
 use integer::u256_from_felt;
 
 // Gas.
