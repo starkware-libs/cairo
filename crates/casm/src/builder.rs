@@ -207,6 +207,11 @@ impl CasmBuilder {
         var
     }
 
+    /// Returns an additional variable pointing to the same value.
+    pub fn duplicate_var(&mut self, var: Var) -> Var {
+        self.add_var(self.get_value(var, false))
+    }
+
     /// Adds a hint, generated from `inputs` which are cell refs or immediates and `outputs` which
     /// must be cell refs.
     pub fn add_hint<
@@ -489,6 +494,10 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, let $dst:ident = $buffer:ident [ $offset:ident ] ; $($tok:tt)*) => {
         let $dst = $builder.double_deref($buffer, $offset);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, let $dst:ident = $src:ident; $($tok:tt)*) => {
+        let $dst = $builder.duplicate_var($src);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, jump $target:ident; $($tok:tt)*) => {

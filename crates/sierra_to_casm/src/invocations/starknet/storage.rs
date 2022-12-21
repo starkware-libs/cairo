@@ -18,7 +18,7 @@ pub fn build_storage_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "storage_read".as_bytes());
-    let (original_system, storage_address) = match builder.refs {
+    let (system, storage_address) = match builder.refs {
         [
             ReferenceValue { expression: expr_system, .. },
             ReferenceValue { expression: expr_address, .. },
@@ -35,11 +35,11 @@ pub fn build_storage_read(
     };
 
     let mut casm_builder = CasmBuilder::default();
-    let system = casm_builder.add_var(original_system.clone());
-    let original_system = casm_builder.add_var(original_system);
+    let system = casm_builder.add_var(system);
     let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
     casm_build_extend! {casm_builder,
+        let original_system = system;
         tempvar selector;
         assert selector = selector_imm;
         assert *(system++) = selector;
@@ -78,7 +78,7 @@ pub fn build_storage_write(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "storage_write".as_bytes());
 
-    let (gas_builtin, original_system, storage_address, value) = match builder.refs {
+    let (gas_builtin, system, storage_address, value) = match builder.refs {
         [
             ReferenceValue { expression: expr_gas_builtin, .. },
             ReferenceValue { expression: expr_system, .. },
@@ -98,13 +98,13 @@ pub fn build_storage_write(
         }
     };
     let mut casm_builder = CasmBuilder::default();
-    let system = casm_builder.add_var(original_system.clone());
-    let original_system = casm_builder.add_var(original_system);
+    let system = casm_builder.add_var(system);
     let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
     let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
     let value = casm_builder.add_var(ResOperand::Deref(value));
     casm_build_extend! {casm_builder,
+        let original_system = system;
         tempvar selector;
         assert selector = selector_imm;
         assert *(system++) = selector;
