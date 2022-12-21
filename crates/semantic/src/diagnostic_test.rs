@@ -3,17 +3,19 @@ use std::sync::Arc;
 use defs::db::DefsGroup;
 use defs::ids::ModuleId;
 use defs::plugin::{
-    DynDiagnosticMapper, MacroPlugin, PluginGeneratedFile, PluginResult, TrivialMapper,
+    DiagnosticMapper, DynDiagnosticMapper, MacroPlugin, PluginGeneratedFile,
+    PluginMappedDiagnostic, PluginResult,
 };
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use syntax::node::ast;
 use syntax::node::db::SyntaxGroup;
+use syntax::node::{ast, TypedSyntaxNode};
 use test_log::test;
 
 use crate::db::SemanticGroup;
-use crate::semantic_test;
+use crate::patcher::{interpolate_patched, Patches};
 use crate::test_utils::{setup_test_crate, test_expr_diagnostics, SemanticDatabaseForTesting};
+use crate::{semantic_test, SemanticDiagnostic};
 
 semantic_test!(
     diagnostics_tests,
@@ -62,27 +64,61 @@ struct AddInlineModuleDummyPlugin {}
 impl MacroPlugin for AddInlineModuleDummyPlugin {
     fn generate_code(
         &self,
-        _db: &dyn SyntaxGroup,
+        db: &dyn SyntaxGroup,
         item_ast: syntax::node::ast::Item,
     ) -> PluginResult {
         match item_ast {
-            ast::Item::FreeFunction(_) => PluginResult {
-                code: Some(PluginGeneratedFile {
-                    name: "virt2".into(),
-                    content: indoc! {"
+            ast::Item::FreeFunction(func) => {
+                let builder = interpolate_patched(
+                    db,
+                    indoc! {"
                         mod inner_mod {{
-                            func bad() -> u128 {
-                                return 6;
-                            }
+                            // Comment.
+                            // Comment.
+                            // Comment.
+                            $func$
                         }}
-                    "}
-                    .to_string(),
-                    diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
-                }),
-                diagnostics: vec![],
-            },
+                    "},
+                    [("func".to_string(), func.as_syntax_node())].into(),
+                );
+
+                PluginResult {
+                    code: Some(PluginGeneratedFile {
+                        name: "virt2".into(),
+                        content: builder.code,
+                        diagnostic_mapper: DynDiagnosticMapper::new(PatchMapper {
+                            patches: builder.patches,
+                        }),
+                    }),
+                    diagnostics: vec![],
+                }
+            }
             _ => PluginResult { code: None, diagnostics: vec![] },
         }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct PatchMapper {
+    patches: Patches,
+}
+impl DiagnosticMapper for PatchMapper {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn map_diag(
+        &self,
+        db: &dyn DefsGroup,
+        diag: &dyn std::any::Any,
+    ) -> Option<PluginMappedDiagnostic> {
+        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
+        let span = self.patches.translate(db, diag.stable_location.diagnostic_location(db).span)?;
+        Some(PluginMappedDiagnostic { span, message: "Mapped error.".into() })
+    }
+
+    fn eq(&self, other: &dyn DiagnosticMapper) -> bool {
+        if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
     }
 }
 
@@ -123,9 +159,9 @@ fn test_inline_module_diagnostics() {
     assert_eq!(
         db.module_semantic_diagnostics(*subsubmodule_id).unwrap().format(db),
         indoc! {r#"
-            error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt".
-             --> virt2:3:16
-                    return 6;
+            error: Plugin diagnostic: Mapped error.
+             --> lib.cairo:3:16
+                    return 5;
                            ^
 
             "#},
