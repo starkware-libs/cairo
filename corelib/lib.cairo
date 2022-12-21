@@ -218,6 +218,7 @@ use hash::Pedersen;
 // StarkNet
 mod starknet;
 use starknet::System;
+use starknet::ContractAddress;
 
 #[cfg(test)]
 mod test;
