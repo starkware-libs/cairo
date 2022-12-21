@@ -119,6 +119,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         CoreConcreteLibFunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
         CoreConcreteLibFunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibFunc::Null(_) => vec![ops.const_cost(0)],
+            NullableConcreteLibFunc::IntoNullable(_) => vec![ops.const_cost(0)],
         },
     }
 }
