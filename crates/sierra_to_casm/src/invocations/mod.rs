@@ -82,9 +82,15 @@ impl BranchChanges {
     fn new(
         ap_change: ApChange,
         gas_change: OrderedHashMap<CostTokenType, i64>,
-        expressions: impl Iterator<Item = ReferenceExpression>,
+        expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
     ) -> Self {
+        assert_eq!(
+            expressions.len(),
+            branch_signature.vars.len(),
+            "The number of expressions does not match the number of expected results in the \
+             branch."
+        );
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
                 .map(|(expression, var_info)| {
@@ -164,7 +170,9 @@ impl CompiledInvocationBuilder<'_> {
         self,
         instructions: Vec<Instruction>,
         relocations: Vec<RelocationEntry>,
-        output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
+        output_expressions: impl ExactSizeIterator<
+            Item = impl ExactSizeIterator<Item = ReferenceExpression>,
+        >,
     ) -> CompiledInvocation {
         let gas_changes = sierra_gas::core_libfunc_cost::core_libfunc_cost(
             &self.program_info.metadata.gas_info,
@@ -172,12 +180,30 @@ impl CompiledInvocationBuilder<'_> {
             self.libfunc,
         );
 
+        let branch_signatures = self.libfunc.branch_signatures();
+        assert_eq!(
+            branch_signatures.len(),
+            output_expressions.len(),
+            "The number of output expressions does not match signature."
+        );
+        let ap_changes = core_libfunc_ap_change(self.libfunc);
+        assert_eq!(
+            branch_signatures.len(),
+            ap_changes.len(),
+            "The number of ap changes does not match signature."
+        );
+        assert_eq!(
+            branch_signatures.len(),
+            gas_changes.len(),
+            "The number of gas changes does not match signature."
+        );
+
         CompiledInvocation {
             instructions,
             relocations,
             results: zip_eq(
-                zip_eq(self.libfunc.branch_signatures(), gas_changes),
-                zip_eq(output_expressions, core_libfunc_ap_change(self.libfunc)),
+                zip_eq(branch_signatures, gas_changes),
+                zip_eq(output_expressions, ap_changes),
             )
             .map(|((branch_signature, gas_change), (expressions, ap_change))| {
                 let ap_change = match ap_change {
@@ -232,7 +258,7 @@ impl CompiledInvocationBuilder<'_> {
     /// Creates a new invocation with only reference changes.
     fn build_only_reference_changes(
         self,
-        output_expressions: impl Iterator<Item = ReferenceExpression>,
+        output_expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
     ) -> CompiledInvocation {
         self.build(vec![], vec![], [output_expressions].into_iter())
     }
