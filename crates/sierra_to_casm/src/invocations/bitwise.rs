@@ -42,9 +42,9 @@ fn build_bitwise(
     let mut casm_builder = CasmBuilder::default();
     let x = casm_builder.add_var(ResOperand::Deref(x));
     let y = casm_builder.add_var(ResOperand::Deref(y));
-    let original_bitwise = casm_builder.add_var(bitwise.clone());
     let bitwise = casm_builder.add_var(bitwise);
     casm_build_extend! {casm_builder,
+        let original_bitwise = bitwise;
         assert *(bitwise++) = x;
         assert *(bitwise++) = y;
         hint Bitwise { ptr: original_bitwise };
