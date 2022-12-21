@@ -1,7 +1,6 @@
 use casm::{builder::{CasmBuilder, CasmBuildResult}, operand::ResOperand, casm_build_extend};
 
 use crate::references::{
-    try_unpack_deref,
     ReferenceValue,
 };
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -13,7 +12,7 @@ pub fn build_roll(
         [
             ReferenceValue { expression: expr_address, .. },
             ReferenceValue { expression: expr_caller_address, .. },
-        ] => (try_unpack_deref(expr_address)?, try_unpack_deref(expr_caller_address)?),
+        ] => (expr_address.try_unpack_single()?.to_deref()?, expr_caller_address.try_unpack_single()?.to_deref()?),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 2,
