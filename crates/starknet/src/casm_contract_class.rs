@@ -39,6 +39,9 @@ pub enum StarknetSierraCompilationError {
 /// Represents a contract in the StarkNet network.
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
+    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
+    pub prime: BigUint,
+    pub compiler_version: String,
     pub bytecode: Vec<BigIntAsHex>,
     pub hints: Vec<(usize, Vec<String>)>,
     pub entry_points_by_type: CasmContractEntryPoints,
@@ -146,6 +149,8 @@ impl CasmContractClass {
         };
 
         Ok(Self {
+            prime,
+            compiler_version: "1.0.0".to_string(),
             bytecode,
             hints,
             entry_points_by_type: CasmContractEntryPoints {
