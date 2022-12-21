@@ -1,3 +1,4 @@
+use super::boxing::BoxType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
@@ -46,6 +47,7 @@ impl ConcreteType for NullableConcreteType {
 define_libfunc_hierarchy! {
     pub enum NullableLibFunc {
         Null(NullLibFunc),
+        IntoNullable(IntoNullableLibFunc),
     }, NullableConcreteLibFunc
 }
 
@@ -66,6 +68,29 @@ impl SignatureOnlyGenericLibFunc for NullLibFunc {
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(NullableType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+/// LibFunc for converting Box<T> to Nullable<T>.
+#[derive(Default)]
+pub struct IntoNullableLibFunc {}
+impl SignatureOnlyGenericLibFunc for IntoNullableLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("into_nullable");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?],
+            vec![OutputVarInfo {
+                ty: context.get_wrapped_concrete_type(NullableType::id(), ty)?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
