@@ -9,7 +9,7 @@ mod syscalls;
 use syscalls::SystemType;
 
 pub mod interoperability;
-use interoperability::{CallContractLibFunc, ContractAddressType};
+use interoperability::{CallContractLibFunc, ContractAddressConstLibFunc, ContractAddressType};
 
 define_type_hierarchy! {
     pub enum StarkNetType {
@@ -22,6 +22,7 @@ define_type_hierarchy! {
 define_libfunc_hierarchy! {
     pub enum StarkNetLibFunc {
          CallContract(CallContractLibFunc),
+         ContractAddressConst(ContractAddressConstLibFunc),
          StorageRead(StorageReadLibFunc),
          StorageWrite(StorageWriteLibFunc),
          StorageAddressConst(StorageAddressConstLibFunc),

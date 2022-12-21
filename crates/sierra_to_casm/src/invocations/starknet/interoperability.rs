@@ -2,6 +2,7 @@ use casm::builder::{CasmBuildResult, CasmBuilder};
 use casm::casm_build_extend;
 use casm::operand::ResOperand;
 use num_bigint::BigInt;
+use sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
 use sierra::extensions::lib_func::SignatureOnlyConcreteLibFunc;
 use sierra::extensions::SignatureBasedConcreteLibFunc;
 use sierra_ap_change::core_libfunc_ap_change;
@@ -135,5 +136,20 @@ pub fn build_call_contract(
             .into_iter(),
         ]
         .into_iter(),
+    ))
+}
+
+/// Handles the storage_address_const libfunc.
+pub fn build_contract_address_const(
+    builder: CompiledInvocationBuilder<'_>,
+    libfunc: &SignatureAndConstConcreteLibFunc,
+) -> Result<CompiledInvocation, InvocationError> {
+    let addr_bound = BigInt::from(1) << 251;
+    if libfunc.c >= addr_bound {
+        return Err(InvocationError::InvalidGenericArg);
+    }
+
+    Ok(builder.build_only_reference_changes(
+        [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))].into_iter(),
     ))
 }
