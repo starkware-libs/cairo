@@ -2031,6 +2031,7 @@ dependencies = [
  "bimap",
  "const-fnv1a-hash",
  "convert_case",
+ "derivative",
  "env_logger",
  "indoc",
  "itertools",
