@@ -1,3 +1,8 @@
+#[abi]
+trait IAnotherContract {
+fn foo(); }
+
+
 #[contract]
 mod TestContract {
     struct Storage { my_storage_var: felt, }
