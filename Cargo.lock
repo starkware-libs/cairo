@@ -2493,7 +2493,10 @@ dependencies = [
  "compiler",
  "defs",
  "diagnostics",
+ "env_logger",
  "filesystem",
+ "itertools",
+ "log",
  "num-bigint",
  "parser",
  "plugins",
@@ -2507,6 +2510,7 @@ dependencies = [
  "sierra_to_casm",
  "syntax",
  "test-case",
+ "test-log",
  "test_utils",
  "utils",
 ]

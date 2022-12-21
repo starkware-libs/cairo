@@ -79,6 +79,7 @@ impl<T> WithStringDiagnostics<T> {
 
 /// Helper struct for the return value of [setup_test_module].
 pub struct TestModule {
+    pub crate_id: CrateId,
     pub module_id: ModuleId,
 }
 
@@ -105,7 +106,7 @@ pub fn setup_test_module(
     let semantic_diagnostics = db.module_semantic_diagnostics(module_id).unwrap().format(db);
 
     WithStringDiagnostics {
-        value: TestModule { module_id },
+        value: TestModule { crate_id, module_id },
         diagnostics: format!("{syntax_diagnostics}{semantic_diagnostics}"),
     }
 }
