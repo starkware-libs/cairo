@@ -98,6 +98,9 @@ impl SyntaxNodeFormat for SyntaxNode {
     }
 
     fn should_change_indent(&self, db: &dyn SyntaxGroup) -> bool {
+        if matches!(parent_kind(db, self), Some(SyntaxKind::SyntaxFile)) {
+            return false;
+        }
         matches!(
             self.kind(db),
             SyntaxKind::StatementList
@@ -107,6 +110,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ParamList
                 | SyntaxKind::GenericParamList
                 | SyntaxKind::GenericArgList
+                | SyntaxKind::ItemList
         )
     }
 
@@ -131,7 +135,15 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TerminalLBrace => {
-                matches!(parent_kind(db, self), Some(SyntaxKind::ExprBlock | SyntaxKind::ExprMatch))
+                matches!(
+                    parent_kind(db, self),
+                    Some(
+                        SyntaxKind::ExprBlock
+                            | SyntaxKind::ExprMatch
+                            | SyntaxKind::ModuleBody
+                            | SyntaxKind::TraitBody
+                    )
+                )
             }
             _ => false,
         }

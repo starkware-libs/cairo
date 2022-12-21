@@ -2,18 +2,17 @@
 
 //! > test_function_name
 test_expand_contract
-
 //! > cairo_code
 #[contract]
 mod TestContract {
-    func internal_func(ref system: System) -> felt {
-        1
-    }
+func internal_func(ref system: System) -> felt {
+    1
+}
 
-    #[external]
-    func test(ref system: System, ref arg: felt, num: felt) -> felt {
-        1
-    }
+#[external]
+func test(ref system: System, ref arg: felt, num: felt) -> felt {
+    1
+}
 }
 
 //! > generated_cairo_code
@@ -37,5 +36,4 @@ func test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
     arr
 }
 }
-
 //! > expected_diagnostics
