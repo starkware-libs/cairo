@@ -1,6 +1,5 @@
 use casm::casm;
 use sierra::program::{BranchInfo, BranchTarget};
-use utils::try_extract_matches;
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
@@ -51,8 +50,8 @@ pub fn build_drop(
 pub fn build_jump_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let dst_expr = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression,
+    let value = match builder.refs {
+        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 1,
@@ -60,13 +59,6 @@ pub fn build_jump_nz(
             });
         }
     };
-    let value = try_extract_matches!(
-        dst_expr
-            .try_unpack_single()
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        CellExpression::Deref
-    )
-    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
 
