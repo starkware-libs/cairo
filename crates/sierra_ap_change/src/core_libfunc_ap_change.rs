@@ -7,6 +7,7 @@ use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra::extensions::mem::MemConcreteLibFunc;
+use sierra::extensions::nullable::NullableConcreteLibFunc;
 use sierra::extensions::starknet::StarkNetConcreteLibFunc;
 use sierra::extensions::strct::StructConcreteLibFunc;
 use sierra::extensions::uint128::{IntOperator, Uint128Concrete};
@@ -111,6 +112,8 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             }
             StarkNetConcreteLibFunc::StorageAddressConst(_) => vec![ApChange::Known(0)],
         },
-        CoreConcreteLibFunc::Nullable(_) => unimplemented!("Nullable is not implemented yet."),
+        CoreConcreteLibFunc::Nullable(libfunc) => match libfunc {
+            NullableConcreteLibFunc::Null(_) => vec![ApChange::Known(0)],
+        },
     }
 }
