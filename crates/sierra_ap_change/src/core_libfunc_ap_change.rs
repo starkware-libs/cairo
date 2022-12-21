@@ -9,7 +9,7 @@ use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra::extensions::mem::MemConcreteLibFunc;
 use sierra::extensions::starknet::StarkNetConcreteLibFunc;
 use sierra::extensions::strct::StructConcreteLibFunc;
-use sierra::extensions::uint128::{IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc};
+use sierra::extensions::uint128::{IntOperator, Uint128Concrete};
 
 use crate::ApChange;
 
@@ -50,15 +50,12 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             GasConcreteLibFunc::RefundGas(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibFunc::Uint128(libfunc) => match libfunc {
-            Uint128Concrete::Operation(libfunc) => match libfunc {
-                Uint128OperationConcreteLibFunc::Binary(libfunc) => match libfunc.operator {
-                    IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
-                        vec![ApChange::Known(2), ApChange::Known(3)]
-                    }
-                    IntOperator::OverflowingMul => todo!(),
-                    IntOperator::DivMod => vec![ApChange::Known(7)],
-                },
-                Uint128OperationConcreteLibFunc::Const(_) => todo!(),
+            Uint128Concrete::Operation(libfunc) => match libfunc.operator {
+                IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
+                    vec![ApChange::Known(2), ApChange::Known(3)]
+                }
+                IntOperator::OverflowingMul => todo!(),
+                IntOperator::DivMod => vec![ApChange::Known(7)],
             },
             Uint128Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
             Uint128Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
