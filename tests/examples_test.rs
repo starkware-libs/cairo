@@ -118,71 +118,87 @@ fn lowering_test(name: &str) {
 
 #[test_case(
     "fib",
-    &[1, 1, 7].map(BigInt::from) =>
+    &[1, 1, 7].map(BigInt::from), None =>
     RunResultValue::Success(vec![BigInt::from(21)]);
     "fib"
 )]
 #[test_case(
     "fib_counter",
-    &[1, 1, 8].map(BigInt::from) =>
+    &[1, 1, 8].map(BigInt::from), None =>
     RunResultValue::Success([34, 8].map(BigInt::from).into_iter().collect());
     "fib_counter"
 )]
 #[test_case(
     "fib_struct",
-    &[1, 1, 9].map(BigInt::from) =>
+    &[1, 1, 9].map(BigInt::from), None =>
     RunResultValue::Success([55, 9].map(BigInt::from).into_iter().collect());
     "fib_struct"
 )]
 #[test_case(
     "fib_u128_checked",
-    &[1, 1, 10].map(BigInt::from) =>
+    &[1, 1, 10].map(BigInt::from), None =>
     RunResultValue::Success([/*ok*/0, /*fib*/89].map(BigInt::from).into_iter().collect());
     "fib_u128_checked"
 )]
 #[test_case(
     "fib_u128_checked",
-    &[1, 1, 200].map(BigInt::from) =>
+    &[1, 1, 200].map(BigInt::from), None =>
     RunResultValue::Success([/*err*/1, /*padding*/0].map(BigInt::from).into_iter().collect());
     "fib_u128_checked_overflow"
 )]
 #[test_case(
+    "fib_gas",
+    &[1, 1, 10].map(BigInt::from), Some(200000) =>
+    RunResultValue::Success([89].map(BigInt::from).into_iter().collect());
+    "fib_gas"
+)]
+#[test_case(
+    "fib_gas",
+    &[1, 1, 10].map(BigInt::from), Some(20000) =>
+    RunResultValue::Panic(vec![BigInt::from_bytes_be(num_bigint::Sign::Plus, b"OOG")]);
+    "fib_gas_out_of_gas"
+)]
+#[test_case(
     "fib_u128",
-    &[1, 1, 10].map(BigInt::from) =>
+    &[1, 1, 10].map(BigInt::from), None =>
     RunResultValue::Success(vec![BigInt::from(89)]);
     "fib_u128"
 )]
 #[test_case(
     "fib_u128",
-    &[1, 1, 200].map(BigInt::from) =>
+    &[1, 1, 200].map(BigInt::from), None =>
     RunResultValue::Panic(vec![BigInt::from_bytes_be(num_bigint::Sign::Plus, b"u128_add OF")]);
     "fib_u128_overflow"
 )]
 #[test_case(
     "fib_local",
-    &[6].map(BigInt::from) =>
+    &[6].map(BigInt::from), None =>
     RunResultValue::Success(vec![BigInt::from(13)]);
     "fib_local"
 )]
 #[test_case(
     "fib_unary",
-    &[7].map(BigInt::from) =>
+    &[7].map(BigInt::from), None =>
     RunResultValue::Success(vec![BigInt::from(21)]);
     "fib_unary"
 )]
 #[test_case(
     "hash_chain",
-    &[3].map(BigInt::from)
+    &[3].map(BigInt::from), None
     // RunResultValue::Success(vec![BigInt::parse_bytes(
     //     b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()])
     => ignore["reason"];
     "hash_chain")]
-#[test_case("testing", &[] => RunResultValue::Success(vec![]); "testing")]
-fn run_function_test(name: &str, params: &[BigInt]) -> RunResultValue {
-    let runner = SierraCasmRunner::new(checked_compile_to_sierra(name), false)
+#[test_case("testing", &[], None => RunResultValue::Success(vec![]); "testing")]
+fn run_function_test(
+    name: &str,
+    params: &[BigInt],
+    available_gas: Option<usize>,
+) -> RunResultValue {
+    let runner = SierraCasmRunner::new(checked_compile_to_sierra(name), available_gas.is_some())
         .expect("Failed setting up runner.");
     let result = runner
-        .run_function(/* find first */ "", params, &None)
+        .run_function(/* find first */ "", params, &available_gas)
         .expect("Failed running the function.");
     result.value
 }
@@ -199,7 +215,7 @@ fn run_function_test(name: &str, params: &[BigInt]) -> RunResultValue {
 fn run_fib_array_len(n: usize, last: usize) {
     assert_matches!(
         &extract_matches!(
-            run_function_test("fib_array", &[n].map(BigInt::from)),
+            run_function_test("fib_array", &[n].map(BigInt::from), None),
             RunResultValue::Success
         )[..],
         [_, _, actual_last, actual_len] if actual_last == &BigInt::from(last) && actual_len == &BigInt::from(n)
