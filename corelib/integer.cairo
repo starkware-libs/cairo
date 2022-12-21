@@ -259,6 +259,16 @@ func u256_ne(a: u256, b: u256) -> bool implicits() {
     !(a == b)
 }
 
+func u256_and(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
+    u256 { low: a.low & b.low, high: a.high & b.high }
+}
+func u256_or(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
+    u256 { low: a.low | b.low, high: a.high | b.high }
+}
+func u256_xor(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
+    u256 { low: a.low ^ b.low, high: a.high ^ b.high }
+}
+
 func u256_from_felt(a: felt) -> u256 implicits(RangeCheck) nopanic {
     match u128s_from_felt(a) {
         U128sFromFeltResult::Narrow(low) => u256 { low, high: 0_u128 },
