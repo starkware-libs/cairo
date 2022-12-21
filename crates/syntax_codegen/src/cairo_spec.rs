@@ -70,6 +70,7 @@ pub fn get_spec() -> Vec<Node> {
             // TODO(yuval): not yet implemented in parser.
             .node_with_explicit_kind("And", "TerminalAnd")
             .node_with_explicit_kind("Or", "TerminalOr")
+            .node_with_explicit_kind("Xor", "TerminalXor")
             .node_with_explicit_kind("LE", "TerminalLE")
             .node_with_explicit_kind("GE", "TerminalGE")
             .node_with_explicit_kind("LT", "TerminalLT")
@@ -461,6 +462,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_token_and_terminal("AndAnd")
     .add_token_and_terminal("Or")
     .add_token_and_terminal("OrOr")
+    .add_token_and_terminal("Xor")
     .add_token_and_terminal("EqEq")
     .add_token_and_terminal("Neq")
     .add_token_and_terminal("GE")

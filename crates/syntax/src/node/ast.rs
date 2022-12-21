@@ -1147,6 +1147,7 @@ pub enum BinaryOperator {
     Eq(TerminalEq),
     And(TerminalAnd),
     Or(TerminalOr),
+    Xor(TerminalXor),
     LE(TerminalLE),
     GE(TerminalGE),
     LT(TerminalLT),
@@ -1216,6 +1217,11 @@ impl From<TerminalAndPtr> for BinaryOperatorPtr {
 }
 impl From<TerminalOrPtr> for BinaryOperatorPtr {
     fn from(value: TerminalOrPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalXorPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalXorPtr) -> Self {
         Self(value.0)
     }
 }
@@ -1299,6 +1305,11 @@ impl From<TerminalOrGreen> for BinaryOperatorGreen {
         Self(value.0)
     }
 }
+impl From<TerminalXorGreen> for BinaryOperatorGreen {
+    fn from(value: TerminalXorGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalLEGreen> for BinaryOperatorGreen {
     fn from(value: TerminalLEGreen) -> Self {
         Self(value.0)
@@ -1349,6 +1360,7 @@ impl TypedSyntaxNode for BinaryOperator {
             SyntaxKind::TerminalEq => BinaryOperator::Eq(TerminalEq::from_syntax_node(db, node)),
             SyntaxKind::TerminalAnd => BinaryOperator::And(TerminalAnd::from_syntax_node(db, node)),
             SyntaxKind::TerminalOr => BinaryOperator::Or(TerminalOr::from_syntax_node(db, node)),
+            SyntaxKind::TerminalXor => BinaryOperator::Xor(TerminalXor::from_syntax_node(db, node)),
             SyntaxKind::TerminalLE => BinaryOperator::LE(TerminalLE::from_syntax_node(db, node)),
             SyntaxKind::TerminalGE => BinaryOperator::GE(TerminalGE::from_syntax_node(db, node)),
             SyntaxKind::TerminalLT => BinaryOperator::LT(TerminalLT::from_syntax_node(db, node)),
@@ -1372,6 +1384,7 @@ impl TypedSyntaxNode for BinaryOperator {
             BinaryOperator::Eq(x) => x.as_syntax_node(),
             BinaryOperator::And(x) => x.as_syntax_node(),
             BinaryOperator::Or(x) => x.as_syntax_node(),
+            BinaryOperator::Xor(x) => x.as_syntax_node(),
             BinaryOperator::LE(x) => x.as_syntax_node(),
             BinaryOperator::GE(x) => x.as_syntax_node(),
             BinaryOperator::LT(x) => x.as_syntax_node(),
@@ -12445,6 +12458,147 @@ impl TypedSyntaxNode for TerminalOrOr {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TerminalOrOrPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenXor {
+    node: SyntaxNode,
+}
+impl Token for TokenXor {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenXorGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenXor,
+            details: GreenNodeDetails::Token(text),
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.node.0.green).details, GreenNodeDetails::Token)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenXorPtr(pub SyntaxStablePtrId);
+impl TokenXorPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenXorGreen(pub GreenId);
+impl TokenXorGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.0).details, GreenNodeDetails::Token)
+    }
+}
+impl TypedSyntaxNode for TokenXor {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenXor);
+    type StablePtr = TokenXorPtr;
+    type Green = TokenXorGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenXorGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenMissing,
+            details: GreenNodeDetails::Token("".into()),
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenXor)
+            }
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenXorPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalXor {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Terminal for TerminalXor {
+    const KIND: SyntaxKind = SyntaxKind::TerminalXor;
+    type TokenType = TokenXor;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalXor as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TerminalXorGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalXor,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalXor {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenXor {
+        TokenXor::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalXorPtr(pub SyntaxStablePtrId);
+impl TerminalXorPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalXorGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalXor {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalXor);
+    type StablePtr = TerminalXorPtr;
+    type Green = TerminalXorGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalXorGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalXor,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    Trivia::missing(db).0,
+                    TokenXor::missing(db).0,
+                    Trivia::missing(db).0,
+                ],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalXor,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalXor
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalXorPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

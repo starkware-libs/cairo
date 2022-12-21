@@ -506,6 +506,7 @@ impl<'a> Parser<'a> {
                 SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
                 SyntaxKind::TerminalAnd => self.take::<TerminalAnd>().into(),
                 SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
+                SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
                 _ => unreachable!(),
             })
         }
