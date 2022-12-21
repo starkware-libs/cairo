@@ -47,6 +47,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
             || id == "Tuple<>".into()
             || id == "U128AndFelt".into()
             || id == "StorageAddress".into()
+            || id == "ContractAddress".into()
         {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
@@ -216,7 +217,8 @@ fn find_type_specialization(
 #[test_case("u128_const", vec![value_arg(8)] => Ok(()); "u128_const<8>")]
 #[test_case("u128_const", vec![] => Err(UnsupportedGenericArg); "u128_const")]
 #[test_case("storage_address_const", vec![value_arg(8)] => Ok(()); "storage_address_const<8>")]
-#[test_case("storage_address_const", vec![] => Err(UnsupportedGenericArg); "storage_address_const")]
+#[test_case("storage_address_const", vec![] => Err(UnsupportedGenericArg);
+"storage_address_const")]
 #[test_case("drop", vec![type_arg("u128")] => Ok(()); "drop<u128>")]
 #[test_case("drop", vec![] => Err(WrongNumberOfGenericArgs); "drop<>")]
 #[test_case("drop", vec![type_arg("GasBuiltin")] => Err(UnsupportedGenericArg);
@@ -280,6 +282,7 @@ Ok(());"enum_init<Option,1>")]
             "struct_deconstruct<4>")]
 #[test_case("storage_read_syscall", vec![] => Ok(()); "storage_read_syscall")]
 #[test_case("storage_write_syscall", vec![] => Ok(()); "storage_write_syscall")]
+#[test_case("call_contract_syscall", vec![] => Ok(()); "call_contract_syscall")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
