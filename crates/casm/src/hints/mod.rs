@@ -146,8 +146,20 @@ impl Display for Hint {
                 fmt_res_operand(f, system)?;
                 write!(f, ") ")?;
             }
-            // TODO(Dori): Implement bitwise_handler in python.
-            Hint::Bitwise { ptr } => write!(f, " bitwise_handler(bitwise_ptr={}) ", ptr)?,
+            Hint::Bitwise { ptr } => {
+                writeln!(f)?;
+                write!(f, "ptr = ")?;
+                fmt_res_operand(f, ptr)?;
+                writeln!(f)?;
+                writedoc!(
+                    f,
+                    "
+                memory[ptr + 2] = memory[ptr + 0] & memory[ptr + 1]
+                memory[ptr + 3] = memory[ptr + 0] | memory[ptr + 1]
+                memory[ptr + 4] = memory[ptr + 0] ^ memory[ptr + 1]
+            "
+                )?
+            }
         }
         write!(f, "%}}")
     }

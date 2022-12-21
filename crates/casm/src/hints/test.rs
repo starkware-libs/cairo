@@ -1,3 +1,5 @@
+use indoc::indoc;
+use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::hints::Hint;
@@ -92,5 +94,25 @@ fn test_syscall_hint_format() {
     assert_eq!(
         Hint::SystemCall { system }.to_string(),
         "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -3] + 3) %}"
+    );
+}
+
+#[test]
+fn test_bitwise_hint_format() {
+    let ptr = ResOperand::BinOp(BinOpOperand {
+        op: Operation::Add,
+        a: CellRef { register: Register::AP, offset: -6 },
+        b: DerefOrImmediate::from(6),
+    });
+
+    assert_eq!(
+        Hint::Bitwise { ptr }.to_string(),
+        indoc! {"
+        %{
+        ptr = memory[ap + -6] + 6
+        memory[ptr + 2] = memory[ptr + 0] & memory[ptr + 1]
+        memory[ptr + 3] = memory[ptr + 0] | memory[ptr + 1]
+        memory[ptr + 4] = memory[ptr + 0] ^ memory[ptr + 1]
+        %}"}
     );
 }
