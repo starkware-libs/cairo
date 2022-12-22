@@ -171,6 +171,7 @@ fn test_u256_from_felt() {
 // TODO(orizi): Use u256 literals when supported.
 #[test]
 fn test_u256_operators() {
+    let max_u128 = 0xffffffffffffffffffffffffffffffff_u128;
     assert(as_u256(1_u128, 1_u128) + as_u256(3_u128, 2_u128) == as_u256(4_u128, 3_u128), 'no OF');
     assert(
         as_u256(1_u128, pow_2_127()) + as_u256(3_u128, pow_2_127()) == as_u256(5_u128, 0_u128),
@@ -186,6 +187,25 @@ fn test_u256_operators() {
     );
     assert(
         as_u256(4_u128, 3_u128) * as_u256(0_u128, 2_u128) == as_u256(8_u128, 6_u128), 'mul by 2'
+    );
+    assert(
+        as_u256(0_u128, pow_2_127()) * as_u256(0_u128, 2_u128) == as_u256(1_u128, 0_u128),
+        'basic mul OF'
+    );
+    assert(
+        as_u256(0_u128, max_u128)
+            * as_u256(
+                0_u128, max_u128
+            ) == as_u256(0xfffffffffffffffffffffffffffffffe_u128, 1_u128),
+        'max_u128 * max_u128'
+    );
+    assert(
+        as_u256(0_u128, max_u128) * as_u256(0_u128, 1_u128) == as_u256(0_u128, max_u128),
+        'max_u128 * 1'
+    );
+    assert(
+        as_u256(0_u128, 1_u128) * as_u256(0_u128, max_u128) == as_u256(0_u128, max_u128),
+        '1 * max_u128'
     );
     assert(
         (as_u256(1_u128, 2_u128) | as_u256(2_u128, 2_u128)) == as_u256(3_u128, 2_u128),
