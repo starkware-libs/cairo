@@ -91,8 +91,9 @@ impl SierraCasmRunner {
         let instructions = self.casm_program.instructions;
         self.casm_program.instructions = vec![];
         let func = self.find_function(name_suffix)?;
-        let entry_code = self.create_entry_code(func, args, available_gas)?;
-        let (cells, ap) = casm::run::run_function(chain!(entry_code, instructions).collect())?;
+        let (entry_code, builtins) = self.create_entry_code(func, args, available_gas)?;
+        let (cells, ap) =
+            casm::run::run_function(chain!(entry_code, instructions).collect(), builtins)?;
         let mut results_data = self.get_results_data(func, &cells, ap)?;
         // Handling implicits.
         let mut gas_counter = None;
@@ -194,16 +195,24 @@ impl SierraCasmRunner {
         func: &Function,
         args: &[BigInt],
         available_gas: &Option<usize>,
-    ) -> Result<Vec<Instruction>, RunnerError> {
+    ) -> Result<(Vec<Instruction>, Vec<String>), RunnerError> {
         let mut arg_iter = args.iter();
         let mut expected_arguments_size = 0;
         let mut ctx = casm! {};
+        let builtins: Vec<_> = ["pedersen", "range_check", "bitwise", "ec_op"]
+            .map(&str::to_string)
+            .into_iter()
+            .collect();
+        let builtin_name_and_offset: HashMap<sierra::ids::ConcreteTypeId, i16> = HashMap::from([
+            (sierra::ids::ConcreteTypeId::new_inline("Pedersen"), 6),
+            (sierra::ids::ConcreteTypeId::new_inline("RangeCheck"), 5),
+            (sierra::ids::ConcreteTypeId::new_inline("Bitwise"), 4),
+            (sierra::ids::ConcreteTypeId::new_inline("EcOp"), 3),
+        ]);
         for ty in func.signature.param_types.iter() {
-            if ty == &"RangeCheck".into() || ty == &"Bitwise".into() || ty == &"Pedersen".into() {
-                // TODO(orizi): Use the vm's range check segment.
+            if let Some(offset) = builtin_name_and_offset.get(ty) {
                 casm_extend! {ctx,
-                    %{ memory[ap + 0] = segments.add() %}
-                    ap += 1;
+                    [ap + 0] = [fp - offset], ap++;
                 }
             } else if ty == &"GasBuiltin".into() {
                 if let Some(available_gas) = available_gas {
@@ -249,7 +258,7 @@ impl SierraCasmRunner {
             ret;
         }
         assert_eq!(before_final_call + final_call_size, ctx.current_code_offset);
-        Ok(ctx.instructions)
+        Ok((ctx.instructions, builtins))
     }
 }
 

@@ -48,10 +48,8 @@ fn build_pedersen_hash(
     let x = casm_builder.add_var(ResOperand::Deref(x));
     let y = casm_builder.add_var(ResOperand::Deref(y));
     casm_build_extend! {casm_builder,
-        let _original_pedersen = pedersen;
         assert *(pedersen++) = x;
         assert *(pedersen++) = y;
-        // TODO(orizi): Add pederesen hash hint: `hint Pedersen { ptr: original_pedersen };`.
         let result = *(pedersen++);
     };
     let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();

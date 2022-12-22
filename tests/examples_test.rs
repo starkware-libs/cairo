@@ -184,10 +184,9 @@ fn lowering_test(name: &str) {
 )]
 #[test_case(
     "hash_chain",
-    &[3].map(BigInt::from), None
-    // RunResultValue::Success(vec![BigInt::parse_bytes(
-    //     b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()])
-    => ignore["reason"];
+    &[3].map(BigInt::from), None =>
+    RunResultValue::Success(vec![BigInt::parse_bytes(
+        b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()]);
     "hash_chain")]
 #[test_case("testing", &[], None => RunResultValue::Success(vec![]); "testing")]
 fn run_function_test(

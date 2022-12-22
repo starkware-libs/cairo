@@ -89,7 +89,8 @@ use crate::{casm, deref};
 )]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
     assert_eq!(
-        run_function_return_values(function.instructions, n_returns).expect("Running code failed."),
+        run_function_return_values(function.instructions, vec![], n_returns)
+            .expect("Running code failed."),
         expected.iter().copied().map(BigInt::from).collect_vec()
     );
 }
@@ -104,6 +105,7 @@ fn test_allocate_segment() {
             ret;
         }
         .instructions,
+        vec![],
     )
     .expect("Running code failed.");
     let ptr = memory[ap].as_ref().expect("Uninitialized value.");
