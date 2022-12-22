@@ -6,7 +6,6 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -17,20 +16,11 @@ use crate::ids::{GenericLibFuncId, GenericTypeId};
 #[derive(Default)]
 pub struct StorageAddressType {}
 impl NoGenericArgsGenericType for StorageAddressType {
-    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("StorageAddress");
-
-    fn specialize(&self) -> Self::Concrete {
-        InfoOnlyConcreteType {
-            info: TypeInfo {
-                long_id: Self::concrete_type_long_id(&[]),
-                storable: true,
-                droppable: true,
-                duplicatable: true,
-                size: 1,
-            },
-        }
-    }
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const SIZE: i16 = 1;
 }
 
 /// LibFunc for creating a constant storage address.

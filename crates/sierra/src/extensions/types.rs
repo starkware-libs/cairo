@@ -80,14 +80,16 @@ impl<TNamedType: NamedType> GenericType for TNamedType {
     }
 }
 
-/// Trait for implementing a specialization generator with no generic arguments.
+/// Trait for describing a generic type with no generic arguments.
 pub trait NoGenericArgsGenericType: Default {
-    type Concrete: ConcreteType;
     const ID: GenericTypeId;
-    fn specialize(&self) -> Self::Concrete;
+    const STORABLE: bool;
+    const DUPLICATABLE: bool;
+    const DROPPABLE: bool;
+    const SIZE: i16;
 }
 impl<T: NoGenericArgsGenericType> NamedType for T {
-    type Concrete = <Self as NoGenericArgsGenericType>::Concrete;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = <Self as NoGenericArgsGenericType>::ID;
 
     fn specialize(
@@ -96,14 +98,22 @@ impl<T: NoGenericArgsGenericType> NamedType for T {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         if args.is_empty() {
-            Ok(self.specialize())
+            Ok(Self::Concrete {
+                info: TypeInfo {
+                    long_id: Self::concrete_type_long_id(args),
+                    storable: T::STORABLE,
+                    droppable: T::DROPPABLE,
+                    duplicatable: T::DUPLICATABLE,
+                    size: T::SIZE,
+                },
+            })
         } else {
             Err(SpecializationError::WrongNumberOfGenericArgs)
         }
     }
 }
 
-/// Trait for implementing a specialization generator with a single type arg.
+/// Trait for describing a generic type with a single type arg.
 pub trait GenericTypeArgGenericType: Default {
     const ID: GenericTypeId;
 

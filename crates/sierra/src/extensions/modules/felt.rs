@@ -7,7 +7,6 @@ use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext, SpecializationContext,
 };
-use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
     GenericLibFunc, NamedLibFunc, NamedType, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SignatureBasedConcreteLibFunc, SpecializationError,
@@ -21,20 +20,11 @@ use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
 #[derive(Default)]
 pub struct FeltType {}
 impl NoGenericArgsGenericType for FeltType {
-    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("felt");
-
-    fn specialize(&self) -> Self::Concrete {
-        InfoOnlyConcreteType {
-            info: TypeInfo {
-                long_id: Self::concrete_type_long_id(&[]),
-                storable: true,
-                droppable: true,
-                duplicatable: true,
-                size: 1,
-            },
-        }
-    }
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const SIZE: i16 = 1;
 }
 
 define_libfunc_hierarchy! {

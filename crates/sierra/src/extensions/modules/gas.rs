@@ -5,7 +5,6 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -16,20 +15,11 @@ use crate::ids::{GenericLibFuncId, GenericTypeId};
 #[derive(Default)]
 pub struct GasBuiltinType {}
 impl NoGenericArgsGenericType for GasBuiltinType {
-    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("GasBuiltin");
-
-    fn specialize(&self) -> Self::Concrete {
-        InfoOnlyConcreteType {
-            info: TypeInfo {
-                long_id: Self::concrete_type_long_id(&[]),
-                storable: true,
-                droppable: false,
-                duplicatable: false,
-                size: 1,
-            },
-        }
-    }
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = false;
+    const DROPPABLE: bool = false;
+    const SIZE: i16 = 1;
 }
 
 define_libfunc_hierarchy! {

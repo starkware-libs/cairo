@@ -7,7 +7,6 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
-use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
     GenericLibFunc, NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibFunc, SpecializationError,
@@ -19,20 +18,11 @@ use crate::program::GenericArg;
 #[derive(Default)]
 pub struct Uint128Type {}
 impl NoGenericArgsGenericType for Uint128Type {
-    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("u128");
-
-    fn specialize(&self) -> Self::Concrete {
-        InfoOnlyConcreteType {
-            info: TypeInfo {
-                long_id: Self::concrete_type_long_id(&[]),
-                storable: true,
-                droppable: true,
-                duplicatable: true,
-                size: 1,
-            },
-        }
-    }
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const SIZE: i16 = 1;
 }
 
 define_libfunc_hierarchy! {
