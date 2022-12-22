@@ -1,39 +1,25 @@
-use crate::extensions::type_specialization_context::TypeSpecializationContext;
-use crate::extensions::types::TypeInfo;
-use crate::extensions::{args_as_single_type, ConcreteType, NamedType, SpecializationError};
-use crate::ids::{ConcreteTypeId, GenericTypeId};
-use crate::program::GenericArg;
+use crate::extensions::types::{
+    GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
+};
+use crate::extensions::SpecializationError;
+use crate::ids::GenericTypeId;
 
 /// Uninitialized value of type T.
 #[derive(Default)]
-pub struct UninitializedType {}
-impl NamedType for UninitializedType {
-    type Concrete = UninitializedConcreteType;
+pub struct UninitializedTypeWrapped {}
+impl GenericTypeArgGenericType for UninitializedTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Uninitialized");
 
-    fn specialize(
+    fn calc_info(
         &self,
-        _context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(UninitializedConcreteType {
-            info: TypeInfo {
-                long_id: Self::concrete_type_long_id(args),
-                storable: false,
-                droppable: true,
-                duplicatable: false,
-                size: 0,
-            },
-            ty: args_as_single_type(args)?,
-        })
+        long_id: crate::program::ConcreteTypeLongId,
+        wrapped_info: TypeInfo,
+    ) -> Result<TypeInfo, SpecializationError> {
+        if !wrapped_info.storable {
+            Err(SpecializationError::UnsupportedGenericArg)
+        } else {
+            Ok(TypeInfo { long_id, storable: false, droppable: true, duplicatable: false, size: 0 })
+        }
     }
 }
-pub struct UninitializedConcreteType {
-    pub info: TypeInfo,
-    pub ty: ConcreteTypeId,
-}
-impl ConcreteType for UninitializedConcreteType {
-    fn info(&self) -> &TypeInfo {
-        &self.info
-    }
-}
+pub type UninitializedType = GenericTypeArgGenericTypeWrapper<UninitializedTypeWrapped>;

@@ -1,49 +1,33 @@
-use crate::extensions::type_specialization_context::TypeSpecializationContext;
-use crate::extensions::types::TypeInfo;
-use crate::extensions::{args_as_single_type, ConcreteType, NamedType, SpecializationError};
-use crate::ids::{ConcreteTypeId, GenericTypeId};
-use crate::program::GenericArg;
+use crate::extensions::types::{
+    GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
+};
+use crate::extensions::SpecializationError;
+use crate::ids::GenericTypeId;
 
 /// Type representing a static squashed dictionary from a felt to any type of size one.
 #[derive(Default)]
-pub struct SquashedDictFeltToType {}
-impl NamedType for SquashedDictFeltToType {
-    type Concrete = SquashedDictFeltToConcreteType;
+pub struct SquashedDictFeltToTypeWrapped {}
+impl GenericTypeArgGenericType for SquashedDictFeltToTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("SquashedDictFeltTo");
 
-    fn specialize(
+    fn calc_info(
         &self,
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = args_as_single_type(args)?;
-        let info = context.get_type_info(ty.clone())?;
+        long_id: crate::program::ConcreteTypeLongId,
+        wrapped_info: TypeInfo,
+    ) -> Result<TypeInfo, SpecializationError> {
         // TODO(Gil): the implementation support values of size 1. Remove when other sizes are
         // supported.
-        if info.storable && info.size == 1 {
-            Ok(SquashedDictFeltToConcreteType {
-                info: TypeInfo {
-                    long_id: Self::concrete_type_long_id(args),
-                    duplicatable: false,
-                    droppable: info.droppable,
-                    storable: true,
-                    size: 2,
-                },
-                ty,
-            })
-        } else {
+        if !wrapped_info.storable || wrapped_info.size != 1 {
             Err(SpecializationError::UnsupportedGenericArg)
+        } else {
+            Ok(TypeInfo {
+                long_id,
+                duplicatable: false,
+                droppable: wrapped_info.droppable,
+                storable: true,
+                size: 2,
+            })
         }
     }
 }
-
-pub struct SquashedDictFeltToConcreteType {
-    pub info: TypeInfo,
-    pub ty: ConcreteTypeId,
-}
-
-impl ConcreteType for SquashedDictFeltToConcreteType {
-    fn info(&self) -> &TypeInfo {
-        &self.info
-    }
-}
+pub type SquashedDictFeltToType = GenericTypeArgGenericTypeWrapper<SquashedDictFeltToTypeWrapped>;
