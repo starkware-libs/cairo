@@ -63,6 +63,7 @@ pub enum IntOperator {
     OverflowingSub,
     OverflowingMul,
     DivMod,
+    WideMul,
 }
 
 /// Libfunc for u128 operations.
@@ -82,11 +83,13 @@ impl GenericLibFunc for Uint128OperationLibFunc {
         const OVERFLOWING_SUB: GenericLibFuncId = GenericLibFuncId::new_inline("u128_overflow_sub");
         const OVERFLOWING_MUL: GenericLibFuncId = GenericLibFuncId::new_inline("u128_overflow_mul");
         const DIVMOD: GenericLibFuncId = GenericLibFuncId::new_inline("u128_safe_divmod");
+        const WIDE_MUL: GenericLibFuncId = GenericLibFuncId::new_inline("u128_wide_mul");
         match id {
             id if id == &OVERFLOWING_ADD => Some(Self::new(IntOperator::OverflowingAdd)),
             id if id == &OVERFLOWING_SUB => Some(Self::new(IntOperator::OverflowingSub)),
             id if id == &OVERFLOWING_MUL => Some(Self::new(IntOperator::OverflowingMul)),
             id if id == &DIVMOD => Some(Self::new(IntOperator::DivMod)),
+            id if id == &WIDE_MUL => Some(Self::new(IntOperator::WideMul)),
             _ => None,
         }
     }
@@ -129,6 +132,35 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                     OutputVarInfo {
                         ty,
                         ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
+                    },
+                ],
+                SierraApChange::Known { new_vars_only: false },
+            )),
+            IntOperator::WideMul => Ok(LibFuncSignature::new_non_branch_ex(
+                vec![
+                    ParamSignature {
+                        ty: range_check_type.clone(),
+                        allow_deferred: false,
+                        allow_add_const: true,
+                        allow_const: false,
+                    },
+                    ParamSignature::new(ty.clone()),
+                    ParamSignature::new(ty.clone()),
+                ],
+                vec![
+                    OutputVarInfo {
+                        ty: range_check_type,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 0,
+                        }),
+                    },
+                    OutputVarInfo {
+                        ty: ty.clone(),
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
+                    },
+                    OutputVarInfo {
+                        ty,
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                     },
                 ],
                 SierraApChange::Known { new_vars_only: false },
