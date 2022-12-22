@@ -300,59 +300,46 @@ macro_rules! enum_serialize {
     };
 }
 
-impl FeltSerde for Statement {
-    enum_serialize! {Invocation = 0, Return = 1}
+macro_rules! enum_deserialize {
+    ($($variant_name:ident ( $variant_type:ty ) = $variant_id:literal),*) => {
+        fn deserialize(
+            input: &[BigIntAsHex],
+        ) -> Result<(Self, &[BigIntAsHex]), FeltSerdeError> {
+            let (id, input) = u64::deserialize(input)?;
+            match id {
+                $($variant_id => {
+                    let (value, input) = <$variant_type>::deserialize(input)?;
+                    Ok((Self::$variant_name(value), input))
+                },)*
+                _ => Err(FeltSerdeError::InvalidInputForDeserialization),
+            }
+        }
+    };
+}
 
-    fn deserialize(input: &[BigIntAsHex]) -> Result<(Self, &[BigIntAsHex]), FeltSerdeError> {
-        let (id, input) = u64::deserialize(input)?;
-        match id {
-            0 => {
-                let (invocation, input) = Invocation::deserialize(input)?;
-                Ok((Self::Invocation(invocation), input))
-            }
-            1 => {
-                let (vars, input) = Vec::<VarId>::deserialize(input)?;
-                Ok((Self::Return(vars), input))
-            }
-            _ => Err(FeltSerdeError::InvalidInputForDeserialization),
+macro_rules! enum_serde {
+    ($Obj:ident { $($variant_name:ident ( $variant_type:ty ) = $variant_id:literal),* $(,)? }) => {
+        impl FeltSerde for $Obj {
+            enum_serialize! { $($variant_name = $variant_id),* }
+            enum_deserialize! { $($variant_name($variant_type) = $variant_id),* }
         }
     }
 }
 
-impl FeltSerde for GenericArg {
-    enum_serialize! {
-        UserType = 0,
-        Type = 1,
-        Value = 2,
-        UserFunc = 3,
-        LibFunc = 4
+enum_serde! {
+    Statement {
+        Invocation(Invocation) = 0,
+        Return(Vec::<VarId>) = 1,
     }
+}
 
-    fn deserialize(input: &[BigIntAsHex]) -> Result<(Self, &[BigIntAsHex]), FeltSerdeError> {
-        let (id, input) = u64::deserialize(input)?;
-        match id {
-            0 => {
-                let (id, input) = UserTypeId::deserialize(input)?;
-                Ok((Self::UserType(id), input))
-            }
-            1 => {
-                let (id, input) = ConcreteTypeId::deserialize(input)?;
-                Ok((Self::Type(id), input))
-            }
-            2 => {
-                let (value, input) = BigInt::deserialize(input)?;
-                Ok((Self::Value(value), input))
-            }
-            3 => {
-                let (id, input) = FunctionId::deserialize(input)?;
-                Ok((Self::UserFunc(id), input))
-            }
-            4 => {
-                let (id, input) = ConcreteLibFuncId::deserialize(input)?;
-                Ok((Self::LibFunc(id), input))
-            }
-            _ => Err(FeltSerdeError::InvalidInputForDeserialization),
-        }
+enum_serde! {
+    GenericArg {
+        UserType(UserTypeId) = 0,
+        Type(ConcreteTypeId) = 1,
+        Value(BigInt) = 2,
+        UserFunc(FunctionId) = 3,
+        LibFunc(ConcreteLibFuncId) = 4,
     }
 }
 
