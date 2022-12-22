@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use num_bigint::ToBigInt;
+use num_bigint::{BigInt, ToBigInt};
 use num_traits::Zero;
 use utils::extract_matches;
 
@@ -336,6 +336,23 @@ fn simulate_integer_libfunc(
                     } else {
                         Err(LibFuncSimulationError::MemoryLayoutMismatch)
                     }
+                }
+                (
+                    [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
+                    IntOperator::WideMul,
+                ) => {
+                    let result = lhs.to_bigint().unwrap() * rhs.to_bigint().unwrap();
+                    let u128_limit = BigInt::from(u128::MAX) + BigInt::from(1);
+                    Ok((
+                        vec![
+                            CoreValue::RangeCheck,
+                            CoreValue::Uint128(
+                                (result.clone() / u128_limit.clone()).try_into().unwrap(),
+                            ),
+                            CoreValue::Uint128((result % u128_limit).try_into().unwrap()),
+                        ],
+                        0,
+                    ))
                 }
                 (
                     [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],

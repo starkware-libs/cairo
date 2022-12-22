@@ -80,6 +80,10 @@ func test_u128_operators() {
     assert((3_u128 ^ 6_u128) == 5_u128, '3 ^ 6 == 5');
 }
 
+func max_u128() -> u128 {
+    0xffffffffffffffffffffffffffffffff_u128
+}
+
 func pow_2_127() -> u128 {
     0x80000000000000000000000000000000_u128
 }
@@ -186,6 +190,25 @@ func test_u256_operators() {
     );
     assert(
         as_u256(4_u128, 3_u128) * as_u256(0_u128, 2_u128) == as_u256(8_u128, 6_u128), 'mul by 2'
+    );
+    assert(
+        as_u256(0_u128, pow_2_127()) * as_u256(0_u128, 2_u128) == as_u256(1_u128, 0_u128),
+        'basic mul OF'
+    );
+    assert(
+        as_u256(0_u128, max_u128())
+            * as_u256(
+                0_u128, max_u128()
+            ) == as_u256(0xfffffffffffffffffffffffffffffffe_u128, 1_u128),
+        'max_u128 * max_u128'
+    );
+    assert(
+        as_u256(0_u128, max_u128()) * as_u256(0_u128, 1_u128) == as_u256(0_u128, max_u128()),
+        'max_u128 * 1'
+    );
+    assert(
+        as_u256(0_u128, 1_u128) * as_u256(0_u128, max_u128()) == as_u256(0_u128, max_u128()),
+        '1 * max_u128'
     );
     assert(
         (as_u256(1_u128, 2_u128) | as_u256(2_u128, 2_u128)) == as_u256(3_u128, 2_u128),
