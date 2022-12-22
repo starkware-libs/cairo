@@ -10,7 +10,7 @@ use defs::ids::{
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
-use filesystem::ids::{FileId, FileLongId};
+use filesystem::ids::{CrateId, FileId, FileLongId};
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use syntax::node::ast;
@@ -688,4 +688,17 @@ fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<R
     .into_iter()
     .flatten()
     .collect()
+}
+
+/// Gets the diagnostics for all the modules (including nested) in the given crate.
+pub fn get_crate_semantic_diagnostics(
+    db: &dyn SemanticGroup,
+    crate_id: CrateId,
+) -> Diagnostics<SemanticDiagnostic> {
+    let submodules = db.crate_modules(crate_id);
+    let mut diagnostics = DiagnosticsBuilder::default();
+    for submodule_id in submodules.iter() {
+        diagnostics.extend(db.module_semantic_diagnostics(*submodule_id).unwrap());
+    }
+    diagnostics.build()
 }
