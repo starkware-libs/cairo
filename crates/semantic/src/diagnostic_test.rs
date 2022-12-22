@@ -13,7 +13,7 @@ use syntax::node::{ast, TypedSyntaxNode};
 use test_log::test;
 
 use crate::db::SemanticGroup;
-use crate::patcher::{interpolate_patched, Patches};
+use crate::patcher::{PatchBuilder, Patches};
 use crate::test_utils::{setup_test_crate, test_expr_diagnostics, SemanticDatabaseForTesting};
 use crate::{semantic_test, SemanticDiagnostic};
 
@@ -69,7 +69,8 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
     ) -> PluginResult {
         match item_ast {
             ast::Item::FreeFunction(func) => {
-                let builder = interpolate_patched(
+                let mut builder = PatchBuilder::default();
+                builder.interpolate_patched(
                     db,
                     indoc! {"
                         mod inner_mod {{
