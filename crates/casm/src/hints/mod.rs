@@ -33,18 +33,18 @@ pub enum Hint {
         prev_value_dst: CellRef,
     },
     TestLessThan {
-        lhs: DerefOrImmediate,
-        rhs: DerefOrImmediate,
+        lhs: ResOperand,
+        rhs: ResOperand,
         dst: CellRef,
     },
     TestLessThanOrEqual {
-        lhs: DerefOrImmediate,
-        rhs: DerefOrImmediate,
+        lhs: ResOperand,
+        rhs: ResOperand,
         dst: CellRef,
     },
     DivMod {
-        lhs: DerefOrImmediate,
-        rhs: DerefOrImmediate,
+        lhs: ResOperand,
+        rhs: ResOperand,
         quotient: CellRef,
         remainder: CellRef,
     },
@@ -124,23 +124,23 @@ impl Display for Hint {
             }
             Hint::TestLessThan { lhs, rhs, dst } => {
                 write!(f, " memory{dst} = ")?;
-                fmt_access_or_const(f, lhs)?;
+                fmt_res_operand(f, lhs)?;
                 write!(f, " < ")?;
-                fmt_access_or_const(f, rhs)?;
+                fmt_res_operand(f, rhs)?;
                 write!(f, " ")?;
             }
             Hint::TestLessThanOrEqual { lhs, rhs, dst } => {
                 write!(f, " memory{dst} = ")?;
-                fmt_access_or_const(f, lhs)?;
+                fmt_res_operand(f, lhs)?;
                 write!(f, " <= ")?;
-                fmt_access_or_const(f, rhs)?;
+                fmt_res_operand(f, rhs)?;
                 write!(f, " ")?;
             }
             Hint::DivMod { lhs, rhs, quotient, remainder } => {
                 write!(f, " (memory{quotient}, memory{remainder}) = divmod(")?;
-                fmt_access_or_const(f, lhs)?;
+                fmt_res_operand(f, lhs)?;
                 write!(f, ", ")?;
-                fmt_access_or_const(f, rhs)?;
+                fmt_res_operand(f, rhs)?;
                 write!(f, ") ")?;
             }
             Hint::EnterScope => write!(f, " vm_enter_scope() ")?,

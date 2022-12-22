@@ -109,48 +109,48 @@ macro_rules! casm_extend {
     };
     ($ctx:ident, %{ memory $dst:tt = memory $lhs:tt < memory $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
-            lhs: $crate::deref!($lhs).into(),
-            rhs: $crate::deref!($rhs).into(),
+            lhs: $crate::res!($lhs),
+            rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = memory $lhs:tt < $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
-            lhs: $crate::deref!($lhs).into(),
-            rhs: $crate::deref_or_immediate!($rhs),
+            lhs: $crate::res!($lhs),
+            rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = $lhs:tt < memory $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
-            lhs: $crate::deref_or_immediate!($lhs),
-            rhs: $crate::deref!($rhs).into(),
+            lhs: $crate::res!($lhs),
+            rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = memory $lhs:tt <= memory $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThanOrEqual{
-            lhs: $crate::deref!($lhs).into(),
-            rhs: $crate::deref!($rhs).into(),
+            lhs: $crate::res!($lhs),
+            rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = memory $lhs:tt <= $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThanOrEqual{
-            lhs: $crate::deref!($lhs).into(),
-            rhs: $crate::deref_or_immediate!($rhs),
+            lhs: $crate::res!($lhs),
+            rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = $lhs:tt <= memory $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThanOrEqual{
-            lhs: $crate::deref_or_immediate!($lhs),
-            rhs: $crate::deref!($rhs).into(),
+            lhs: $crate::res!($lhs),
+            rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
         });
         $crate::casm_extend!($ctx, $($tok)*)
@@ -158,8 +158,8 @@ macro_rules! casm_extend {
     ($ctx:ident, %{ ( memory $quotient:tt, memory $remainder:tt )
          = divmod ( memory $lhs:tt , memory $rhs:tt ) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::DivMod{
-            lhs: $crate::deref!($lhs).into(),
-            rhs: $crate::deref!($rhs).into(),
+            lhs: $crate::res!($lhs),
+            rhs: $crate::res!($rhs),
             quotient: $crate::deref!($quotient),
             remainder: $crate::deref!($remainder),
         });
@@ -168,8 +168,8 @@ macro_rules! casm_extend {
     ($ctx:ident, %{ ( memory $quotient:tt, memory $remainder:tt )
          = divmod ( memory $lhs:tt , $rhs:tt ) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::DivMod{
-            lhs: $crate::deref!($lhs).into(),
-            rhs: $crate::deref_or_immediate!($rhs).into(),
+            lhs: $crate::res!($lhs),
+            rhs: $crate::res!($rhs),
             quotient: $crate::deref!($quotient),
             remainder: $crate::deref!($remainder),
         });
@@ -178,8 +178,8 @@ macro_rules! casm_extend {
     ($ctx:ident, %{ ( memory $quotient:tt, memory $remainder:tt )
          = divmod ( $lhs:tt , memory $rhs:tt ) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::DivMod{
-            lhs: $crate::deref_or_immediate!($lhs).into(),
-            rhs: $crate::deref!($rhs).into(),
+            lhs: $crate::res!($lhs),
+            rhs: $crate::res!($rhs),
             quotient: $crate::deref!($quotient),
             remainder: $crate::deref!($remainder),
         });
@@ -188,8 +188,8 @@ macro_rules! casm_extend {
     ($ctx:ident, %{ ( memory $quotient:tt, memory $remainder:tt )
          = divmod ( $lhs:tt , $rhs:tt ) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::DivMod{
-            lhs: $crate::deref_or_immediate!($lhs).into(),
-            rhs: $crate::deref_or_immediate!($rhs).into(),
+            lhs: $crate::res!($lhs),
+            rhs: $crate::res!($rhs),
             quotient: $crate::deref!($quotient),
             remainder: $crate::deref!($remainder),
         });
