@@ -70,8 +70,7 @@ fn build_get_gas(
         assert gas_diff = *(range_check++);
         jump Failure;
         HasEnoughGas:
-        tempvar updated_gas;
-        assert gas_counter = updated_gas + requested_count_imm;
+        tempvar updated_gas = gas_counter - requested_count_imm;
         assert updated_gas = *(range_check++);
     };
 

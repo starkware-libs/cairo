@@ -78,16 +78,14 @@ fn build_u128_op(
                         jump NoOverflow if no_overflow != 0;
                         // Overflow:
                         // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
-                        tempvar wrapping_a_plus_b;
-                        assert a_plus_b = wrapping_a_plus_b + u128_limit;
+                        tempvar wrapping_a_plus_b = a_plus_b - u128_limit;
                     };
                     (a_plus_b, wrapping_a_plus_b)
                 }
                 IntOperator::OverflowingSub => {
                     casm_build_extend! {casm_builder,
                         tempvar no_overflow;
-                        tempvar a_minus_b;
-                        assert a = a_minus_b + b;
+                        tempvar a_minus_b = a - b;
                         const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
                         hint TestLessThan {lhs: a_minus_b, rhs: u128_limit} into {dst: no_overflow};
                         jump NoOverflow if no_overflow != 0;
@@ -368,8 +366,7 @@ fn build_u128_lt(
     let b = casm_builder.add_var(ResOperand::Deref(b));
     casm_build_extend! {casm_builder,
             tempvar a_ge_b;
-            tempvar a_minus_b;
-            assert a = a_minus_b + b;
+            tempvar a_minus_b = a - b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
             hint TestLessThan {lhs: a_minus_b, rhs: u128_limit} into {dst: a_ge_b};
             jump False if a_ge_b != 0;
@@ -419,8 +416,7 @@ fn build_u128_le(
     let b = casm_builder.add_var(ResOperand::Deref(b));
     casm_build_extend! {casm_builder,
             tempvar a_gt_b;
-            tempvar b_minus_a;
-            assert b = b_minus_a + a;
+            tempvar b_minus_a = b - a;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
             hint TestLessThanOrEqual {lhs: u128_limit, rhs: b_minus_a} into {dst: a_gt_b};
             jump False if a_gt_b != 0;
@@ -483,8 +479,7 @@ fn build_u128_eq(
     let b = casm_builder.add_var(ResOperand::Deref(b));
     casm_build_extend! {casm_builder,
             // diff = a - b => (diff == 0) <==> (a == b)
-            tempvar diff;
-            assert a = diff + b;
+            tempvar diff = a - b;
 
             jump NotEqual if diff != 0;
             jump Equal;
