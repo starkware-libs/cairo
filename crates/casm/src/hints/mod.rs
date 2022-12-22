@@ -59,10 +59,6 @@ pub enum Hint {
     SystemCall {
         system: ResOperand,
     },
-    /// Represents a hint that calls the bitwise builtin.
-    Bitwise {
-        ptr: ResOperand,
-    },
 }
 
 impl Display for Hint {
@@ -155,8 +151,6 @@ impl Display for Hint {
                 fmt_res_operand(f, system)?;
                 write!(f, ") ")?;
             }
-            // TODO(Dori): Implement bitwise_handler in python.
-            Hint::Bitwise { ptr } => write!(f, " bitwise_handler(bitwise_ptr={}) ", ptr)?,
         }
         write!(f, "%}}")
     }

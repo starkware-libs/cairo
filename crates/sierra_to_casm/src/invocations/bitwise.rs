@@ -44,14 +44,11 @@ fn build_bitwise(
     let y = casm_builder.add_var(ResOperand::Deref(y));
     let bitwise = casm_builder.add_var(bitwise);
     casm_build_extend! {casm_builder,
-        let original_bitwise = bitwise;
         assert *(bitwise++) = x;
         assert *(bitwise++) = y;
-        hint Bitwise { ptr: original_bitwise };
         let and = *(bitwise++);
-        let or = *(bitwise++);
         let xor = *(bitwise++);
-        ap += 0; // Needed because we currently do not support hints as last thing in CASM build.
+        let or = *(bitwise++);
     };
 
     let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
@@ -70,10 +67,10 @@ fn build_bitwise(
             fallthrough_state.get_adjusted(and),
         )),
         ReferenceExpression::from_cell(CellExpression::from_res_operand(
-            fallthrough_state.get_adjusted(or),
+            fallthrough_state.get_adjusted(xor),
         )),
         ReferenceExpression::from_cell(CellExpression::from_res_operand(
-            fallthrough_state.get_adjusted(xor),
+            fallthrough_state.get_adjusted(or),
         )),
     ]
     .into_iter()]

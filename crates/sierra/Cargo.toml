@@ -11,6 +11,7 @@ regex = "1"
 [dependencies]
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
+derivative.workspace = true
 itertools.workspace = true
 lalrpop-util.workspace = true
 thiserror.workspace = true

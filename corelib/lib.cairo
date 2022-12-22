@@ -164,6 +164,7 @@ use integer::u256_and;
 use integer::u256_or;
 use integer::u256_xor;
 use integer::u256_from_felt;
+use integer::Bitwise;
 
 // Gas.
 mod gas;

@@ -15,7 +15,7 @@ use num_bigint::BigInt;
 
 use crate::hints::Hint;
 use crate::instructions::Instruction;
-use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
+use crate::operand::{CellRef, DerefOrImmediate, Register};
 
 #[cfg(test)]
 #[path = "run_test.rs"]
@@ -89,11 +89,6 @@ impl HintProcessor for CairoHintProcessor {
         _constants: &HashMap<String, BigInt>,
     ) -> Result<(), VirtualMachineError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
-        // Retrieve a value located at memory[x].
-        let get_relocatable_from_cellref =
-            |c: CellRef| -> Result<Relocatable, VirtualMachineError> {
-                Ok(vm.get_relocatable(&cell_ref_to_relocatable(c, vm))?.as_ref().clone())
-            };
         let get_val = |x: DerefOrImmediate| -> Result<BigInt, VirtualMachineError> {
             match x {
                 DerefOrImmediate::Deref(d) => {
@@ -139,31 +134,6 @@ impl HintProcessor for CairoHintProcessor {
             Hint::ExitScope => todo!(),
             Hint::DictSquashHints { .. } => todo!(),
             Hint::SystemCall { .. } => todo!(),
-            Hint::Bitwise { ptr } => {
-                let prime = get_prime();
-                let bitwise_ptr = match ptr {
-                    ResOperand::Deref(val) => get_relocatable_from_cellref(*val)?,
-                    ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
-                        get_relocatable_from_cellref(*a)?
-                            .add_int_mod(&get_val(b.clone())?, &prime)?
-                    }
-                    _ => panic!("Unexpected param type for Bitwise hint {ptr}."),
-                };
-                let x = vm.get_integer(bitwise_ptr.clone())?.as_ref().clone();
-                let y = vm
-                    .get_integer(bitwise_ptr.add_int_mod(&BigInt::from(1), &prime)?)?
-                    .as_ref()
-                    .clone();
-                vm.insert_value(
-                    bitwise_ptr.add_int_mod(&BigInt::from(2), &prime)?,
-                    x.clone() & y.clone(),
-                )?;
-                vm.insert_value(
-                    bitwise_ptr.add_int_mod(&BigInt::from(3), &prime)?,
-                    x.clone() | y.clone(),
-                )?;
-                vm.insert_value(bitwise_ptr.add_int_mod(&BigInt::from(4), &prime)?, x ^ y)?;
-            }
         };
         Ok(())
     }
@@ -183,6 +153,7 @@ impl HintProcessor for CairoHintProcessor {
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 pub fn run_function(
     function: Vec<Instruction>,
+    builtins: Vec<String>,
 ) -> Result<(Vec<Option<BigInt>>, usize), Box<VirtualMachineError>> {
     let data: Vec<MaybeRelocatable> = function
         .iter()
@@ -193,7 +164,7 @@ pub fn run_function(
     let hint_processor = CairoHintProcessor::new(function);
 
     let program = Program {
-        builtins: Vec::new(),
+        builtins,
         prime: get_prime(),
         data,
         constants: HashMap::new(),
@@ -203,17 +174,19 @@ pub fn run_function(
         hints: hint_processor.hints_dict.clone(),
         reference_manager: ReferenceManager { references: Vec::new() },
         identifiers: HashMap::new(),
+        error_message_attributes: vec![],
+        instruction_locations: None,
     };
-    let mut runner = CairoRunner::new(&program, "plain", false)
+    let mut runner = CairoRunner::new(&program, "all", false)
         .map_err(VirtualMachineError::from)
         .map_err(Box::new)?;
-    let mut vm = VirtualMachine::new(get_prime(), true);
+    let mut vm = VirtualMachine::new(get_prime(), true, vec![]);
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 
     runner.run_until_pc(end, &mut vm, &hint_processor)?;
     // TODO(alont) Remove this hack once the VM no longer squashes Nones at the end of segments.
-    vm.insert_value(vm.get_ap() + 1, MaybeRelocatable::Int(BigInt::from(0)))?;
+    vm.insert_value(&vm.get_ap().add_int_mod(&1.into(), &get_prime())?, BigInt::from(0))?;
     runner.end_run(true, false, &mut vm, &hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
     Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
@@ -222,9 +195,10 @@ pub fn run_function(
 /// Runs `function` and returns `n_returns` return values.
 pub fn run_function_return_values(
     instructions: Vec<Instruction>,
+    builtins: Vec<String>,
     n_returns: usize,
 ) -> Result<Vec<BigInt>, Box<VirtualMachineError>> {
-    let (cells, ap) = run_function(instructions)?;
+    let (cells, ap) = run_function(instructions, builtins)?;
     // TODO(orizi): Return an error instead of unwrapping.
     let cells = cells.into_iter().skip(ap - n_returns);
     Ok(cells.take(n_returns).map(|cell| cell.unwrap()).collect())
