@@ -67,18 +67,34 @@ pub fn get_external_functions(
 ) -> anyhow::Result<Vec<FreeFunctionId>> {
     // The wrappers are currently in the parent module.
     let parent_module_id = contract.submodule_id.module(db.upcast());
+    let contract_name = contract.submodule_id.name(db.upcast());
+    let generated_module_name = format!("__generated__{contract_name}");
 
     match db
         .module_items(parent_module_id)
         .to_option()
-        .with_context(|| "Failed to get module items.")?
+        .with_context(|| "Failed to get root module items.")?
         .items
-        .get(EXTERNAL_MODULE)
+        .get(generated_module_name.as_str())
     {
-        Some(ModuleItemId::Submodule(external_module_id)) => Ok(db
-            .module_free_functions(ModuleId::Submodule(*external_module_id))
-            .to_option()
-            .with_context(|| "Failed to get module items.")?),
-        _ => anyhow::bail!("Failed to get the entry points module."),
+        Some(ModuleItemId::Submodule(generated_module_id)) => {
+            match db
+                .module_items(ModuleId::Submodule(*generated_module_id))
+                .to_option()
+                .with_context(|| "Failed to get generated module items.")?
+                .items
+                .get(EXTERNAL_MODULE)
+            {
+                Some(ModuleItemId::Submodule(external_module_id)) => Ok(db
+                    .module_free_functions(ModuleId::Submodule(*external_module_id))
+                    .to_option()
+                    .with_context(|| "Failed to get module items.")?),
+                _ => anyhow::bail!("Failed to get the entry points module."),
+            }
+        }
+        _ => anyhow::bail!(format!(
+            "Failed to get generated module {}.",
+            generated_module_name.clone()
+        )),
     }
 }

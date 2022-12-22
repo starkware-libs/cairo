@@ -20,11 +20,19 @@ fn test_contract_resolving() {
                 func internal_func(ref system: System) -> felt {
                     1
                 }
-            }
-
-            mod __external {
+                #[external]
                 func ep1() {}
+                #[external]
                 func ep2() {}
+            }
+            mod __generated__ERC20 {
+                func internal_func(ref system: System) -> felt {
+                    1
+                }
+                mod __external {
+                    func ep1() {}
+                    func ep2() {}
+                }
             }
         "},
     );

@@ -56,39 +56,43 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     };
 
     let contract_name = module_ast.name(db).text(db).to_string();
-    let mut functions_tokens = rust::Tokens::new();
+    let mut generated_external_functions = rust::Tokens::new();
 
     let mut storage_code = "".to_string();
+    let mut original_items = rust::Tokens::new();
     for item in body.items(db).elements(db) {
-        match item {
-            ast::Item::FreeFunction(item_function) => {
+        match &item {
+            ast::Item::FreeFunction(item_function)
                 if item_function
                     .attributes(db)
                     .elements(db)
                     .iter()
-                    .any(|attr| attr.attr(db).text(db) == EXTERNAL_ATTR)
+                    .any(|attr| attr.attr(db).text(db) == EXTERNAL_ATTR) =>
+            {
                 {
                     // TODO(ilya): propagate the diagnostics in case of failure.
                     if let Some(generated_function) =
-                        generate_entry_point_wrapper(db, &contract_name, &item_function)
+                        generate_entry_point_wrapper(db, item_function)
                     {
-                        functions_tokens.append(generated_function);
+                        generated_external_functions.append(generated_function);
                     }
                 }
             }
-
             ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == "Storage" => {
-                storage_code = handle_storage_struct(db, item_struct);
+                storage_code = handle_storage_struct(db, item_struct.clone());
             }
-            // Nothing to do for other items.
-            _ => continue,
+            _ => {}
         };
+        let orig_text = item.as_syntax_node().get_text(db);
+        original_items.append(quote! {$orig_text})
     }
 
     let external_entry_points: rust::Tokens = quote! {
-        mod $EXTERNAL_MODULE {
-            use super::$(contract_name);
-            $functions_tokens
+        mod __generated__$contract_name {
+            $original_items
+            mod $EXTERNAL_MODULE {
+                $generated_external_functions
+            }
         }
     };
 
@@ -133,7 +137,6 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> S
 /// Generates Cairo code for an entry point wrapper.
 fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
-    contract_name: &str,
     function: &ItemFreeFunction,
 ) -> Option<rust::Tokens> {
     let mut successful_expansion = true;
@@ -192,7 +195,7 @@ fn generate_entry_point_wrapper(
     let param_names_tokens = join(arg_names.into_iter(), ", ");
 
     let function_name = function.name(db).text(db).to_string();
-    let wrapped_name = format!("{contract_name}::{function_name}");
+    let wrapped_name = format!("super::{function_name}");
 
     Some(quote! {
         func $function_name(ref system: System, mut data: Array::<felt>) -> Array::<felt> {

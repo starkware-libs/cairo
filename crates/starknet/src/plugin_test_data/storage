@@ -28,8 +28,10 @@ mod storage_var {
         )
     }
 }
-mod __external {
-    use super::TestContract;
+mod __generated__TestContract {
+    struct Storage { storage_var: felt, }
+    mod __external {
+    }
 }
 
 //! > expected_diagnostics
