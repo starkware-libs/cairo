@@ -225,5 +225,6 @@ use cheatcodes::roll;
 // Cheatcodes
 mod cheatcodes;
 use cheatcodes::roll;
+use cheatcodes::cheat_roll;
 
 mod test;
