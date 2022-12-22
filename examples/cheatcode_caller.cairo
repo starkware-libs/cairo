@@ -1,4 +1,5 @@
-func cheatcode_caller() {
-   roll(1,2);
+
+func cheatcode_caller() -> () {
+   roll(1, 2)
 }
 

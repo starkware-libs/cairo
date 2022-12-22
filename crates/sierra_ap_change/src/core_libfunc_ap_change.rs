@@ -109,7 +109,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             StarkNetConcreteLibFunc::StorageAddressConst(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibFunc::Cheatcodes(libfunc) => match libfunc {
-            CheatcodesConcreteLibFunc::Roll(_) => vec![ApChange::Known(2)],
-        }   
+            CheatcodesConcreteLibFunc::Roll(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+        }
      }
 }
