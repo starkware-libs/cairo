@@ -3,6 +3,7 @@ use std::sync::Arc;
 use db_utils::Upcast;
 use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
 use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
+use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateId, CrateLongId, Directory};
 use parser::db::ParserDatabase;
@@ -13,7 +14,7 @@ use utils::ordered_hash_map::OrderedHashMap;
 use utils::{extract_matches, OptionFrom};
 
 use crate::db::{SemanticDatabase, SemanticGroup};
-use crate::semantic;
+use crate::{semantic, SemanticDiagnostic};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SemanticDatabaseForTesting {
@@ -249,4 +250,17 @@ macro_rules! semantic_test {
     ($test_name:ident, $filenames:expr, $func:ident) => {
         test_utils::test_file_test!($test_name, $filenames, SemanticDatabaseForTesting, $func);
     };
+}
+
+/// Gets the diagnostics for all the modules (including nested) in the given crate.
+pub fn get_crate_semantic_diagnostics(
+    db: &dyn SemanticGroup,
+    crate_id: CrateId,
+) -> Diagnostics<SemanticDiagnostic> {
+    let submodules = db.crate_modules(crate_id);
+    let mut diagnostics = DiagnosticsBuilder::default();
+    for submodule_id in submodules.iter() {
+        diagnostics.extend(db.module_semantic_diagnostics(*submodule_id).unwrap());
+    }
+    diagnostics.build()
 }

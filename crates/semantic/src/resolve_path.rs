@@ -352,7 +352,7 @@ impl<'db> Resolver<'db> {
                 ModuleId::VirtualSubmodule(submodule_id) => {
                     self.db.lookup_intern_virtual_submodule(submodule_id).parent
                 }
-            }
+            };
         }
         if module_id == self.module_file_id.0 { None } else { Some(Ok(module_id)) }
     }
