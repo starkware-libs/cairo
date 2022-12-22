@@ -41,6 +41,12 @@ macro_rules! cell_expr_operator {
 #[macro_export]
 macro_rules! ref_expr_extend {
     ($cells:ident) => {};
+    ($cells:ident, [$a:ident $($op:tt $offset:expr)?] $(, $tok:tt)*) => {
+        $cells.push(
+            $crate::references::CellExpression::Deref(casm::deref!([$a $($op $offset)?]))
+        );
+        $crate::ref_expr_extend!($cells $(, $tok)*)
+    };
     ($cells:ident, [$a:ident $($op:tt $offset:expr)?] $operator:tt $b:tt $(, $tok:tt)*) => {
         $cells.push(
             $crate::references::CellExpression::BinOp($crate::references::BinOpExpression {
@@ -48,12 +54,6 @@ macro_rules! ref_expr_extend {
                 a: casm::deref!([$a $($op $offset)?]),
                 b: casm::deref_or_immediate!($b),
         }));
-        $crate::ref_expr_extend!($cells $(, $tok)*)
-    };
-    ($cells:ident, [$a:ident $($op:tt $offset:expr)?] $(, $tok:tt)*) => {
-        $cells.push(
-            $crate::references::CellExpression::Deref(casm::deref!([$a $($op $offset)?]))
-        );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, [[$a:ident $($op:tt $offset:expr)?]] $(, $tok:tt)*) => {

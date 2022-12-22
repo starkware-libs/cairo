@@ -2,29 +2,42 @@ use casm::builder::{CasmBuildResult, CasmBuilder};
 use casm::casm_build_extend;
 use casm::operand::ResOperand;
 use num_bigint::BigInt;
+use sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
+use sierra::extensions::lib_func::SignatureOnlyConcreteLibFunc;
+use sierra::extensions::SignatureBasedConcreteLibFunc;
 use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::get_non_fallthrough_statement_id;
+use crate::invocations::array::ArrayView;
+use crate::invocations::{get_non_fallthrough_statement_id, ReferenceExpressionView};
 use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
 #[cfg(test)]
-#[path = "storage_test.rs"]
+#[path = "interoperability_test.rs"]
 mod test;
 
-/// Builds instructions for StarkNet read system call.
-pub fn build_storage_read(
+/// Builds instructions for StarkNet call contract system call.
+pub fn build_call_contract(
     builder: CompiledInvocationBuilder<'_>,
+    libfunc: &SignatureOnlyConcreteLibFunc,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "storage_read".as_bytes());
-    let (system, storage_address) = match builder.refs {
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
+    let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "call_contract".as_bytes());
+
+    let concrete_array_type = &libfunc.signature().param_signatures[2].ty;
+    let (gas_builtin, system, contract_address, call_data) = match builder.refs {
         [
+            ReferenceValue { expression: expr_gas_builtin, .. },
             ReferenceValue { expression: expr_system, .. },
             ReferenceValue { expression: expr_address, .. },
+            ReferenceValue { expression: expr_arr, .. },
         ] => (
-            expr_system.try_unpack_single()?.to_buffer(3)?,
+            expr_gas_builtin.try_unpack_single()?.to_deref()?,
+            expr_system.try_unpack_single()?.to_buffer(8)?,
             expr_address.try_unpack_single()?.to_deref()?,
+            ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
         ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -34,89 +47,34 @@ pub fn build_storage_read(
         }
     };
 
-    let mut casm_builder = CasmBuilder::default();
-    let system = casm_builder.add_var(system);
-    let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
-    let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
-    casm_build_extend! {casm_builder,
-        let original_system = system;
-        tempvar selector;
-        assert selector = selector_imm;
-        assert *(system++) = selector;
-        assert *(system++) = storage_address;
-        hint SystemCall { system: original_system };
-        tempvar read_value;
-        assert *(system++) = read_value;
-    };
+    if call_data.end_offset != 0 {
+        return Err(InvocationError::InvalidReferenceExpressionForArgument);
+    }
 
-    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
-    // TODO(orizi): Extract the assertion out of the libfunc implementation.
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [sierra_ap_change::ApChange::Known(fallthrough_state.ap_change)]
-    );
-    Ok(builder.build(
-        instructions,
-        vec![],
-        [vec![
-            ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                fallthrough_state.get_adjusted(system),
-            )),
-            ReferenceExpression::from_cell(CellExpression::Deref(
-                fallthrough_state.get_adjusted_as_cell_ref(read_value),
-            )),
-        ]
-        .into_iter()]
-        .into_iter(),
-    ))
-}
-
-/// Builds instructions for StarkNet write system call.
-pub fn build_storage_write(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "storage_write".as_bytes());
-
-    let (gas_builtin, system, storage_address, value) = match builder.refs {
-        [
-            ReferenceValue { expression: expr_gas_builtin, .. },
-            ReferenceValue { expression: expr_system, .. },
-            ReferenceValue { expression: expr_address, .. },
-            ReferenceValue { expression: expr_value, .. },
-        ] => (
-            expr_gas_builtin.try_unpack_single()?.to_deref()?,
-            expr_system.try_unpack_single()?.to_buffer(6)?,
-            expr_address.try_unpack_single()?.to_deref()?,
-            expr_value.try_unpack_single()?.to_deref()?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 4,
-                actual: refs.len(),
-            });
-        }
-    };
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
     let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
-    let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
-    let value = casm_builder.add_var(ResOperand::Deref(value));
+    let contract_address = casm_builder.add_var(ResOperand::Deref(contract_address));
+    let call_data_start = casm_builder.add_var(ResOperand::Deref(call_data.start));
+    let call_data_end = casm_builder.add_var(ResOperand::Deref(call_data.end));
     casm_build_extend! {casm_builder,
-        let original_system = system;
         tempvar selector;
         assert selector = selector_imm;
+        let original_system = system;
         assert *(system++) = selector;
-        assert *(system++) = gas_builtin;
-        assert *(system++) = storage_address;
-        assert *(system++) = value;
+         assert *(system++) = gas_builtin;
+        assert *(system++) = contract_address;
+        assert *(system++) = call_data_start;
+        assert *(system++) = call_data_end;
         hint SystemCall { system: original_system };
+
         let updated_gas_builtin = *(system++);
         // `revert_reason` is 0 on success, nonzero on failure/revert.
         tempvar revert_reason;
         assert *(system++) = revert_reason;
-        let _ignore = *(system++);
+        let res_start = *(system++);
+        let res_end = *(system++);
         jump Failure if revert_reason != 0;
     };
 
@@ -128,6 +86,7 @@ pub fn build_storage_write(
         [fallthrough_state.ap_change, label_state["Failure"].ap_change]
             .map(sierra_ap_change::ApChange::Known)
     );
+
     let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
     Ok(builder.build(
         instructions,
@@ -136,7 +95,7 @@ pub fn build_storage_write(
             relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
         }],
         [
-            // Success branch - return (gas builtin, system)
+            // Success branch - return (gas builtin, system, result_array)
             vec![
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
                     fallthrough_state.get_adjusted(updated_gas_builtin),
@@ -144,9 +103,15 @@ pub fn build_storage_write(
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
                     fallthrough_state.get_adjusted(system),
                 )),
+                ReferenceExpression {
+                    cells: vec![
+                        CellExpression::from_res_operand(fallthrough_state.get_adjusted(res_start)),
+                        CellExpression::from_res_operand(fallthrough_state.get_adjusted(res_end)),
+                    ],
+                },
             ]
             .into_iter(),
-            // Failure branch - return (gas builtin, system, revert_reason)
+            // Failure branch - return (gas builtin, system, revert_reason, result_array)
             vec![
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
                     label_state["Failure"].get_adjusted(updated_gas_builtin),
@@ -157,9 +122,34 @@ pub fn build_storage_write(
                 ReferenceExpression::from_cell(CellExpression::Deref(
                     label_state["Failure"].get_adjusted_as_cell_ref(revert_reason),
                 )),
+                ReferenceExpression {
+                    cells: vec![
+                        CellExpression::from_res_operand(
+                            label_state["Failure"].get_adjusted(res_start),
+                        ),
+                        CellExpression::from_res_operand(
+                            label_state["Failure"].get_adjusted(res_end),
+                        ),
+                    ],
+                },
             ]
             .into_iter(),
         ]
         .into_iter(),
+    ))
+}
+
+/// Handles the storage_address_const libfunc.
+pub fn build_contract_address_const(
+    builder: CompiledInvocationBuilder<'_>,
+    libfunc: &SignatureAndConstConcreteLibFunc,
+) -> Result<CompiledInvocation, InvocationError> {
+    let addr_bound = BigInt::from(1) << 251;
+    if libfunc.c >= addr_bound {
+        return Err(InvocationError::InvalidGenericArg);
+    }
+
+    Ok(builder.build_only_reference_changes(
+        [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))].into_iter(),
     ))
 }

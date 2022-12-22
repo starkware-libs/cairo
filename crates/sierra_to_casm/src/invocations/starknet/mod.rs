@@ -2,6 +2,7 @@ use num_bigint::BigInt;
 use sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
 use sierra::extensions::starknet::StarkNetConcreteLibFunc;
 
+use self::interoperability::{build_call_contract, build_contract_address_const};
 use super::{CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::InvocationError;
 use crate::references::{CellExpression, ReferenceExpression};
@@ -9,12 +10,18 @@ use crate::references::{CellExpression, ReferenceExpression};
 mod storage;
 use storage::{build_storage_read, build_storage_write};
 
+mod interoperability;
+
 /// Builds instructions for Sierra array operations.
 pub fn build(
     libfunc: &StarkNetConcreteLibFunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
+        StarkNetConcreteLibFunc::CallContract(libfunc) => build_call_contract(builder, libfunc),
+        StarkNetConcreteLibFunc::ContractAddressConst(libfunc) => {
+            build_contract_address_const(builder, libfunc)
+        }
         StarkNetConcreteLibFunc::StorageRead(_) => build_storage_read(builder),
         StarkNetConcreteLibFunc::StorageWrite(_) => build_storage_write(builder),
         StarkNetConcreteLibFunc::StorageAddressConst(libfunc) => {

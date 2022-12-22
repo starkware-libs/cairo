@@ -157,11 +157,11 @@ func u128_and(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
     let (v, _, _) = bitwise(a, b);
     v
 }
-func u128_or(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
+func u128_xor(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
     let (_, v, _) = bitwise(a, b);
     v
 }
-func u128_xor(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
+func u128_or(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
     let (_, _, v) = bitwise(a, b);
     v
 }
@@ -257,6 +257,16 @@ func u256_eq(a: u256, b: u256) -> bool implicits() {
 
 func u256_ne(a: u256, b: u256) -> bool implicits() {
     !(a == b)
+}
+
+func u256_and(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
+    u256 { low: a.low & b.low, high: a.high & b.high }
+}
+func u256_or(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
+    u256 { low: a.low | b.low, high: a.high | b.high }
+}
+func u256_xor(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
+    u256 { low: a.low ^ b.low, high: a.high ^ b.high }
 }
 
 func u256_from_felt(a: felt) -> u256 implicits(RangeCheck) nopanic {

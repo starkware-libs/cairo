@@ -202,7 +202,9 @@ fn build_enum_match_short(
     builder: CompiledInvocationBuilder<'_>,
     variant_selector: CellRef,
     mut target_statement_ids: impl ExactSizeIterator<Item = StatementIdx>,
-    output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
+    output_expressions: impl ExactSizeIterator<
+        Item = impl ExactSizeIterator<Item = ReferenceExpression>,
+    >,
 ) -> Result<CompiledInvocation, InvocationError> {
     let mut instructions = Vec::new();
     let mut relocations = Vec::new();
@@ -259,7 +261,9 @@ fn build_enum_match_long(
     builder: CompiledInvocationBuilder<'_>,
     variant_selector: CellRef,
     target_statement_ids: impl ExactSizeIterator<Item = StatementIdx>,
-    output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
+    output_expressions: impl ExactSizeIterator<
+        Item = impl ExactSizeIterator<Item = ReferenceExpression>,
+    >,
 ) -> Result<CompiledInvocation, InvocationError> {
     // The first instruction is the jmp to the relevant index in the jmp table.
     let mut ctx = casm! { jmp rel variant_selector; };
