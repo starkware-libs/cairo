@@ -149,20 +149,20 @@ impl HintProcessor for CairoHintProcessor {
                     }
                     _ => panic!("Unexpected param type for Bitwise hint {ptr}."),
                 };
-                let x = vm.get_integer(bitwise_ptr.clone())?.as_ref().clone();
+                let x = vm.get_integer(&bitwise_ptr)?.as_ref().clone();
                 let y = vm
-                    .get_integer(bitwise_ptr.add_int_mod(&BigInt::from(1), &prime)?)?
+                    .get_integer(&bitwise_ptr.add_int_mod(&BigInt::from(1), &prime)?)?
                     .as_ref()
                     .clone();
                 vm.insert_value(
-                    bitwise_ptr.add_int_mod(&BigInt::from(2), &prime)?,
+                    &bitwise_ptr.add_int_mod(&BigInt::from(2), &prime)?,
                     x.clone() & y.clone(),
                 )?;
                 vm.insert_value(
-                    bitwise_ptr.add_int_mod(&BigInt::from(3), &prime)?,
+                    &bitwise_ptr.add_int_mod(&BigInt::from(3), &prime)?,
                     x.clone() | y.clone(),
                 )?;
-                vm.insert_value(bitwise_ptr.add_int_mod(&BigInt::from(4), &prime)?, x ^ y)?;
+                vm.insert_value(&bitwise_ptr.add_int_mod(&BigInt::from(4), &prime)?, x ^ y)?;
             }
         };
         Ok(())
@@ -203,17 +203,19 @@ pub fn run_function(
         hints: hint_processor.hints_dict.clone(),
         reference_manager: ReferenceManager { references: Vec::new() },
         identifiers: HashMap::new(),
+        error_message_attributes: vec![],
+        instruction_locations: None,
     };
     let mut runner = CairoRunner::new(&program, "plain", false)
         .map_err(VirtualMachineError::from)
         .map_err(Box::new)?;
-    let mut vm = VirtualMachine::new(get_prime(), true);
+    let mut vm = VirtualMachine::new(get_prime(), true, vec![]);
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 
     runner.run_until_pc(end, &mut vm, &hint_processor)?;
     // TODO(alont) Remove this hack once the VM no longer squashes Nones at the end of segments.
-    vm.insert_value(vm.get_ap() + 1, MaybeRelocatable::Int(BigInt::from(0)))?;
+    vm.insert_value(&vm.get_ap().add_int_mod(&1.into(), &get_prime())?, BigInt::from(0))?;
     runner.end_run(true, false, &mut vm, &hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
     Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
