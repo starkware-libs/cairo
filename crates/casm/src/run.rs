@@ -15,7 +15,7 @@ use num_bigint::BigInt;
 
 use crate::hints::Hint;
 use crate::instructions::Instruction;
-use crate::operand::{CellRef, DerefOrImmediate, Register};
+use crate::operand::{CellRef, Register, ResOperand};
 
 #[cfg(test)]
 #[path = "run_test.rs"]
@@ -89,12 +89,30 @@ impl HintProcessor for CairoHintProcessor {
         _constants: &HashMap<String, BigInt>,
     ) -> Result<(), VirtualMachineError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
-        let get_val = |x: DerefOrImmediate| -> Result<BigInt, VirtualMachineError> {
+        let get_cell_val = |x: CellRef| -> Result<BigInt, VirtualMachineError> {
+            Ok(vm.get_integer(&cell_ref_to_relocatable(x, vm))?.as_ref().clone())
+        };
+        let get_val = |x: ResOperand| -> Result<BigInt, VirtualMachineError> {
             match x {
-                DerefOrImmediate::Deref(d) => {
-                    Ok(vm.get_integer(&cell_ref_to_relocatable(d, vm))?.as_ref().clone())
+                ResOperand::Deref(cell) => get_cell_val(cell),
+                ResOperand::DoubleDeref(cell, offset) => {
+                    let base_ptr = vm.get_relocatable(&cell_ref_to_relocatable(cell, vm))?;
+                    let ptr = base_ptr.add_int_mod(&offset.into(), &get_prime())?;
+                    let value = vm.get_integer(&ptr)?;
+                    Ok(value.as_ref().clone())
                 }
-                DerefOrImmediate::Immediate(i) => Ok(i),
+                ResOperand::Immediate(x) => Ok(x),
+                ResOperand::BinOp(op) => {
+                    let a = get_cell_val(op.a)?;
+                    let b = match op.b {
+                        crate::operand::DerefOrImmediate::Deref(cell) => get_cell_val(cell)?,
+                        crate::operand::DerefOrImmediate::Immediate(x) => x,
+                    };
+                    match op.op {
+                        crate::operand::Operation::Add => Ok(a + b),
+                        crate::operand::Operation::Mul => Ok(a * b),
+                    }
+                }
             }
         };
         match hint {

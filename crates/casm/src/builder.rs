@@ -217,7 +217,7 @@ impl CasmBuilder {
     pub fn add_hint<
         const INPUTS_COUNT: usize,
         const OUTPUTS_COUNT: usize,
-        F: FnOnce([DerefOrImmediate; INPUTS_COUNT], [CellRef; OUTPUTS_COUNT]) -> Hint,
+        F: FnOnce([ResOperand; INPUTS_COUNT], [CellRef; OUTPUTS_COUNT]) -> Hint,
     >(
         &mut self,
         f: F,
@@ -225,15 +225,9 @@ impl CasmBuilder {
         outputs: [Var; OUTPUTS_COUNT],
     ) {
         self.current_hints.push(f(
-            inputs.map(|v| self.as_deref_or_imm(v, true)),
+            inputs.map(|v| self.get_value(v, true)),
             outputs.map(|v| self.as_cell_ref(v, true)),
         ));
-    }
-
-    /// Adds a hint, generated from `inputs` which are cell refs or immediates and `outputs` which
-    /// must be cell refs.
-    pub fn add_buffer_hint<F: FnOnce(ResOperand) -> Hint>(&mut self, f: F, buffer: Var) {
-        self.current_hints.push(f(self.get_value(buffer, true)));
     }
 
     /// Adds an assertion that `dst = res`.
@@ -533,9 +527,9 @@ macro_rules! casm_build_extend {
     ($builder:ident, hint $hint_name:ident {
         $buffer_name:ident : $buffer_value:ident
     }; $($tok:tt)*) => {
-        $builder.add_buffer_hint(
-            |$buffer_name| $crate::hints::Hint::$hint_name { $buffer_name },
-            $buffer_value,
+        $builder.add_hint(
+            |[$buffer_name], []| $crate::hints::Hint::$hint_name { $buffer_name },
+            [$buffer_value], []
         );
         $crate::casm_build_extend!($builder, $($tok)*)
     };
