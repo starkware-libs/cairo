@@ -53,6 +53,8 @@ pub enum InvocationError {
     WrongNumberOfArguments { expected: usize, actual: usize },
     #[error("The requested functionality is not implemented yet.")]
     NotImplemented(Invocation),
+    #[error("The requested functionality is not implemented yet: {message}")]
+    NotImplementedStr { invocation: Invocation, message: String },
     #[error("The functionality is supported only for sized types.")]
     NotSized(Invocation),
     #[error("Expected type data not found.")]
