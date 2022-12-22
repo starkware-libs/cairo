@@ -38,37 +38,10 @@ fn u128_wrapping_add(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
     }
 }
 
-// TODO(orizi): Change to extern when added.
-fn u128_wide_mul(a: u128, b: u128) -> (u128, u128) implicits(RangeCheck) nopanic {
-    let u2_64 = 0x10000000000000000_u128;
-    let nz_u2_64 = match u128_checked_as_non_zero(u2_64) {
-        Option::Some(x) => x,
-        Option::None(x) => {
-            // Can't really happen - this simply avoids the need to panic.
-            return (a, b);
-        },
-    };
-    let (a1, a0) = u128_safe_divmod(a, nz_u2_64);
-    let (b1, b0) = u128_safe_divmod(b, nz_u2_64);
-    let top_word = u128_known_u64_mul(a1, b1);
-    let bottom_word = u128_known_u64_mul(a0, b0);
-    let (a0b1_h, a0b1_l) = u128_safe_divmod(u128_known_u64_mul(a0, b1), nz_u2_64);
-    let top_word = u128_wrapping_add(top_word, a0b1_h);
-    let (a1b0_h, a1b0_l) = u128_safe_divmod(u128_known_u64_mul(a1, b0), nz_u2_64);
-    let top_word = u128_wrapping_add(top_word, a1b0_h);
-    let (bottom_word,
-    top_word) = match u128_overflow_add(bottom_word, u128_known_u64_mul(a0b1_l, u2_64)) {
-        Result::Ok(bottom_word) => (bottom_word, top_word),
-        Result::Err(bottom_word) => (bottom_word, u128_wrapping_add(top_word, 1_u128)),
-    };
-    match u128_overflow_add(bottom_word, u128_known_u64_mul(a1b0_l, u2_64)) {
-        Result::Ok(bottom_word) => (bottom_word, top_word),
-        Result::Err(bottom_word) => (bottom_word, u128_wrapping_add(top_word, 1_u128)),
-    }
-}
+extern fn u128_wide_mul(a: u128, b: u128) -> (u128, u128) implicits(RangeCheck) nopanic;
 
 fn u128_overflow_mul(a: u128, b: u128) -> (u128, bool) implicits(RangeCheck) nopanic {
-    let (bottom_word, top_word) = u128_wide_mul(a, b);
+    let (top_word, bottom_word) = u128_wide_mul(a, b);
     match u128_to_felt(top_word) {
         0 => (bottom_word, false),
         _ => (bottom_word, true),
@@ -93,7 +66,7 @@ fn u128_checked_sub(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) no
 
 #[panic_with('u128_mul OF', u128_mul)]
 fn u128_checked_mul(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) nopanic {
-    let (bottom_word, top_word) = u128_wide_mul(a, b);
+    let (top_word, bottom_word) = u128_wide_mul(a, b);
     match u128_to_felt(top_word) {
         0 => Option::<u128>::Some(bottom_word),
         _ => Option::<u128>::None(()),
@@ -204,9 +177,9 @@ fn u256_overflow_sub(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nop
 }
 
 fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) nopanic {
-    let (low, high1) = u128_wide_mul(a.low, b.low);
-    let (high2, overflow_value1) = u128_wide_mul(a.low, b.high);
-    let (high3, overflow_value2) = u128_wide_mul(a.high, b.low);
+    let (high1, low) = u128_wide_mul(a.low, b.low);
+    let (overflow_value1, high2) = u128_wide_mul(a.low, b.high);
+    let (overflow_value2, high3) = u128_wide_mul(a.high, b.low);
     let (high, overflow) = match u128_overflow_add(high1, high2) {
         Result::Ok(high) => (
             high,

@@ -163,6 +163,122 @@ fn build_u128_op(
                 [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
             ))
         }
+        IntOperator::WideMul => {
+            let mut casm_builder = CasmBuilder::default();
+            let range_check = casm_builder.add_var(range_check);
+            let a = casm_builder.add_var(ResOperand::Deref(a));
+            let b = casm_builder.add_var(ResOperand::Deref(b));
+
+            casm_build_extend! {casm_builder,
+                tempvar a0;
+                tempvar a1;
+                tempvar b0;
+                tempvar b1;
+                const u64_limit = u64::MAX as u128 + 1;
+
+                // Breaks a and b to 64bit halves:
+                hint DivMod { lhs: a, rhs: u64_limit } into { quotient: a1, remainder: a0 }; // a = a1 * 2**64 + a0.
+                hint DivMod { lhs: b, rhs: u64_limit } into { quotient: b1, remainder: b0 }; // b = b1 * 2**64 + b0.
+
+                // Verify that a0, a1, b0, b1 in [0, 2**128).
+                assert a0 = *(range_check++);
+                assert a1 = *(range_check++);
+                assert b0 = *(range_check++);
+                assert b1 = *(range_check++);
+
+                // Verify that a0, b0 < 2**64 by constraining {var} + (2**128-1) - (2**64-1) < 2**128.
+                const u64_upper_fixer = u128::MAX - u64::MAX as u128;
+                tempvar fixed_a0 = a0 + u64_upper_fixer;
+                tempvar fixed_b0 = b0 + u64_upper_fixer;
+                assert fixed_a0 = *(range_check++);
+                assert fixed_b0 = *(range_check++);
+
+                // Check the a,b break:
+                // a = a1 * 2**64 + a0.
+                // Note: `a` is uint128, the assertion will fail if a1 >= 2**64.
+                tempvar a1_times_2_64 = a1 * u64_limit;
+                assert a = a1_times_2_64 + a0;
+                // b = b1 * 2**64 + b0.
+                // Note: `b` is uint128, the assertion will fail if b1 >= 2**64.
+                tempvar b1_times_2_64 = b1 * u64_limit;
+                assert b = b1_times_2_64 + b0;
+
+                // These four ai_bi are each comprised verified u64 * u64 => within u128.
+                tempvar a0_b0 = a0 * b0;
+                tempvar a0_b1 = a0 * b1;
+                tempvar a1_b0 = a1 * b0;
+                tempvar a1_b1 = a1 * b1;
+
+                // Breaks a0_b1 and a1_b0 to 64bit halves:
+                tempvar a0_b1_top;
+                tempvar a0_b1_bottom;
+                tempvar a1_b0_top;
+                tempvar a1_b0_bottom;
+                hint DivMod { lhs: a0_b1, rhs: u64_limit } into { quotient: a0_b1_top, remainder: a0_b1_bottom };
+                hint DivMod { lhs: a1_b0, rhs: u64_limit } into { quotient: a1_b0_top, remainder: a1_b0_bottom };
+                // Verify that the broken a0_b1, a1_b0 halves are in [0, 2**128).
+                assert a0_b1_top = *(range_check++);
+                assert a0_b1_bottom = *(range_check++);
+                assert a1_b0_top = *(range_check++);
+                assert a1_b0_bottom = *(range_check++);
+                // Verify that a0_b1_bottom, a1_b0_bottom < 2**64.
+                tempvar fixed_a0_b1_bottom = a0_b1_bottom + u64_upper_fixer;
+                tempvar fixed_a1_b0_bottom = a1_b0_bottom + u64_upper_fixer;
+                assert fixed_a0_b1_bottom = *(range_check++);
+                assert fixed_a1_b0_bottom = *(range_check++);
+
+                // Verify the break:
+                tempvar shifted_a0_b1_top = a0_b1_top * u64_limit;
+                tempvar shifted_a1_b0_top = a1_b0_top * u64_limit;
+                assert a0_b1 = shifted_a0_b1_top + a0_b1_bottom;
+                assert a1_b0 = shifted_a1_b0_top + a1_b0_bottom;
+                // Note that a0_b1_top, a1_b0_top are range checked for 128 bits and then shifted
+                // 64 bits, so those are within 192 bits range. Adding the 64 bits range-checked
+                // a0_b1_bottom and a1_b0_bottom is guaranteed to leave the result within a felt's
+                // range with no wrap-around. Asserting the result equals the 128 bits a0_b1, a1_b0
+                // allows us to avoid two additional 64-bits verifications for a0_b1_top, a1_b0_top.
+
+                // Build the resulting two uint128 words from the calculated parts:
+
+                tempvar bottoms_to_shift;
+                tempvar shifted_bottoms;
+                tempvar lower_uint128_with_overflow;
+
+                tempvar overflow;
+                tempvar fixed_overflow;
+                tempvar shifted_overflow;
+                tempvar upper_temp1;
+                tempvar upper_temp2;
+
+                tempvar upper_uint128;
+                tempvar lower_uint128;
+
+                // Lower uint128 word:
+                assert bottoms_to_shift = a0_b1_bottom + a1_b0_bottom;
+                assert shifted_bottoms = bottoms_to_shift * u64_limit;
+                assert lower_uint128_with_overflow = shifted_bottoms + a0_b0;
+                const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
+                hint DivMod { lhs: lower_uint128_with_overflow, rhs: u128_limit } into { quotient: overflow, remainder: lower_uint128 };
+                assert lower_uint128 = *(range_check++);
+                assert overflow = *(range_check++);
+                assert fixed_overflow = overflow + u64_upper_fixer;
+                assert fixed_overflow = *(range_check++);
+                // Note that reconstruction of the felt `lower_uint128_with_overflow` is performed
+                // with no wrap-around: `overflow` was capped at 64 bits and then shifted 128 bits.
+                // `lower_uint128` is range-checked for 128 bits. Overall, within 192 bits range.
+                assert shifted_overflow = overflow * u128_limit;
+                assert lower_uint128_with_overflow = shifted_overflow + lower_uint128;
+
+                // Upper uint128 word:
+                assert upper_temp1 = a0_b1_top + a1_b0_top;
+                assert upper_temp2 = a1_b1 + overflow;
+                assert upper_uint128 = upper_temp1 + upper_temp2;
+            };
+            Ok(builder.build_from_casm_builder(
+                casm_builder,
+                [("Fallthrough", &[&[range_check], &[upper_uint128], &[lower_uint128]], None)],
+            ))
+        }
         IntOperator::OverflowingMul => {
             Err(InvocationError::NotImplemented(builder.invocation.clone()))
         }
