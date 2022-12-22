@@ -44,8 +44,8 @@ fn build_bitwise(
     let y = casm_builder.add_var(ResOperand::Deref(y));
     let bitwise = casm_builder.add_var(bitwise);
     casm_build_extend! {casm_builder,
-        assert *(bitwise++) = x;
-        assert *(bitwise++) = y;
+        assert x = *(bitwise++);
+        assert y = *(bitwise++);
         let and = *(bitwise++);
         let xor = *(bitwise++);
         let or = *(bitwise++);

@@ -102,10 +102,10 @@ fn build_u128_op(
                 _ => unreachable!("Only supported options in arm."),
             };
             casm_build_extend! {casm_builder,
-                    assert *(range_check++) = overflow_fixed;
+                    assert overflow_fixed = *(range_check++);
                     jump Target;
                 NoOverflow:
-                    assert *(range_check++) = possible_overflow;
+                    assert possible_overflow = *(range_check++);
             };
             let CasmBuildResult {
                 instructions,
@@ -171,13 +171,13 @@ fn build_u128_op(
                 // `b * q + r = a`, and if `b = 2`, `a = 1` and `r = 0`, we can take `q` to be the
                 // inverse of 2 (`(PRIME + 1) / 2`, much larger than 2^128) and pass this
                 // constraint.
-                assert *(range_check++) = q;
-                assert *(range_check++) = r;
+                assert q = *(range_check++);
+                assert r = *(range_check++);
                 // Verify `r < b` by constraining `0 <= b - (r + 1)`.
                 const one = 1;
                 assert r_plus_1 = r + one;
                 assert b = b_minus_r_minus_1 + r_plus_1;
-                assert *(range_check++) = b_minus_r_minus_1;
+                assert b_minus_r_minus_1 = *(range_check++);
                 // Verify `b * q + r = a`.
                 // Since both `b` and `q` can be 2^128-1, we may overflow on `b * q`. To verify this
                 // is not the case, use the fact that `b * q` must be less than 2^128. We know
@@ -196,7 +196,7 @@ fn build_u128_op(
                 VerifyBQ:
                 // Now, b_or_q_bound_rc_value contains either `2^128 - 2^64 + q` or
                 // `2^128 - 2^64 + b`. Verify this value is in [0, 2^128).
-                assert *(range_check++) = b_or_q_bound_rc_value;
+                assert b_or_q_bound_rc_value = *(range_check++);
                 // Range validations done; verify `b * q + r = a` and that's it.
                 assert bq = b * q;
                 assert a = bq + r;
@@ -287,9 +287,9 @@ fn build_u128_from_felt(
             // Write value as 2**128 * x + y.
             hint DivMod { lhs: value, rhs: u128_limit } into { quotient: x, remainder: y };
             // Check x in [0, 2**128).
-            assert *(range_check++) = x;
+            assert x = *(range_check++);
             // Check y in [0, 2**128).
-            assert *(range_check++) = y;
+            assert y = *(range_check++);
             // Check that value = 2**128 * x + y (mod PRIME).
             assert x_2_128 = x * u128_limit;
             assert value = x_2_128 + y;
@@ -308,14 +308,14 @@ fn build_u128_from_felt(
             assert rced_value = x + lt_max_x_fix;
         WriteRcedValue:
             // In both cases, range-check the calculated value.
-            assert *(range_check++) = rced_value;
+            assert rced_value = *(range_check++);
             // If x != 0, jump to the end.
             jump FailureHandle if x != 0;
         InfiniteLoop:
             // Otherwise, start an infinite loop.
             jump InfiniteLoop;
         NoOverflow:
-            assert *(range_check++) = value;
+            assert value = *(range_check++);
     };
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
         casm_builder.build();
@@ -377,10 +377,10 @@ fn build_u128_lt(
             jump False if a_ge_b != 0;
             tempvar wrapping_a_minus_b;
             assert wrapping_a_minus_b = a_minus_b + u128_limit;
-            assert *(range_check++) = wrapping_a_minus_b;
+            assert wrapping_a_minus_b = *(range_check++);
             jump True;
         False:
-            assert *(range_check++) = a_minus_b;
+            assert a_minus_b = *(range_check++);
     };
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
         casm_builder.build();
@@ -427,12 +427,12 @@ fn build_u128_le(
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
             hint TestLessThanOrEqual {lhs: u128_limit, rhs: b_minus_a} into {dst: a_gt_b};
             jump False if a_gt_b != 0;
-            assert *(range_check++) = b_minus_a;
+            assert b_minus_a = *(range_check++);
             jump True;
         False:
             tempvar wrapping_a_minus_b;
             assert wrapping_a_minus_b = b_minus_a + u128_limit;
-            assert *(range_check++) = wrapping_a_minus_b;
+            assert wrapping_a_minus_b = *(range_check++);
     };
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
         casm_builder.build();

@@ -68,12 +68,12 @@ fn build_get_gas(
         tempvar gas_diff;
         const gas_counter_fix = (BigInt::from(u128::MAX) + 1 - requested_count) as BigInt;
         assert gas_diff = gas_counter + gas_counter_fix;
-        assert *(range_check++) = gas_diff;
+        assert gas_diff = *(range_check++);
         jump Failure;
         HasEnoughGas:
         tempvar updated_gas;
         assert gas_counter = updated_gas + requested_count_imm;
-        assert *(range_check++) = updated_gas;
+        assert updated_gas = *(range_check++);
     };
 
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =

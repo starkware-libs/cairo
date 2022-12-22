@@ -42,11 +42,11 @@ pub fn build_storage_read(
         tempvar selector;
         const selector_imm = selector_imm;
         assert selector = selector_imm;
-        assert *(system++) = selector;
-        assert *(system++) = storage_address;
+        assert selector = *(system++);
+        assert storage_address = *(system++);
         hint SystemCall { system: original_system };
         tempvar read_value;
-        assert *(system++) = read_value;
+        assert read_value = *(system++);
     };
 
     let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
@@ -107,15 +107,15 @@ pub fn build_storage_write(
         tempvar selector;
         const selector_imm = selector_imm;
         assert selector = selector_imm;
-        assert *(system++) = selector;
-        assert *(system++) = gas_builtin;
-        assert *(system++) = storage_address;
-        assert *(system++) = value;
+        assert selector = *(system++);
+        assert gas_builtin = *(system++);
+        assert storage_address = *(system++);
+        assert value = *(system++);
         hint SystemCall { system: original_system };
         let updated_gas_builtin = *(system++);
         // `revert_reason` is 0 on success, nonzero on failure/revert.
         tempvar revert_reason;
-        assert *(system++) = revert_reason;
+        assert revert_reason = *(system++);
         let _ignore = *(system++);
         jump Failure if revert_reason != 0;
     };
