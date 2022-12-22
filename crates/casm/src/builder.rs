@@ -480,9 +480,41 @@ macro_rules! casm_build_extend {
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
+    ($builder:ident, assert $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
+        {
+            let __deref = $builder.double_deref($buffer, $offset);
+            $builder.assert_vars_eq($dst, __deref);
+        }
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, assert $dst:ident = * $buffer:ident; $($tok:tt)*) => {
+        {
+            let __deref = $builder.double_deref($buffer, 0);
+            $builder.assert_vars_eq($dst, __deref);
+        }
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
     ($builder:ident, assert $value:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         $builder.buffer_write_and_inc($buffer, $value);
         $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, tempvar $var:ident = $value:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, tempvar $var; assert $var = $value; $($tok)*);
+    };
+    ($builder:ident, tempvar $var:ident = $lhs:ident + $rhs:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, tempvar $var; assert $var = $lhs + $rhs; $($tok)*);
+    };
+    ($builder:ident, tempvar $var:ident = $lhs:ident * $rhs:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, tempvar $var; assert $var = $lhs * $rhs; $($tok)*);
+    };
+    ($builder:ident, tempvar $var:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, tempvar $var; assert $var = *($buffer++); $($tok)*);
+    };
+    ($builder:ident, tempvar $var:ident = $buffer:ident [ $offset:expr ]; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, tempvar $var; assert $var = $buffer[$offset]; $($tok)*);
+    };
+    ($builder:ident, tempvar $var:ident = * $buffer:ident ; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, tempvar $var; assert $var = *$buffer; $($tok)*);
     };
     ($builder:ident, let $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::operand::Operation::Add, $a, $b);

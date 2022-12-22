@@ -58,9 +58,8 @@ pub fn build_call_contract(
     let call_data_start = casm_builder.add_var(ResOperand::Deref(call_data.start));
     let call_data_end = casm_builder.add_var(ResOperand::Deref(call_data.end));
     casm_build_extend! {casm_builder,
-        tempvar selector;
         const selector_imm = selector_imm;
-        assert selector = selector_imm;
+        tempvar selector = selector_imm;
         let original_system = system;
         assert selector = *(system++);
         assert gas_builtin = *(system++);
@@ -71,8 +70,7 @@ pub fn build_call_contract(
 
         let updated_gas_builtin = *(system++);
         // `revert_reason` is 0 on success, nonzero on failure/revert.
-        tempvar revert_reason;
-        assert revert_reason = *(system++);
+        tempvar revert_reason = *(system++);
         let res_start = *(system++);
         let res_end = *(system++);
         jump Failure if revert_reason != 0;

@@ -143,10 +143,9 @@ fn build_array_at(
         index
     } else {
         casm_build_extend! {casm_builder,
-            tempvar element_offset;
             const element_size = element_size;
             // Compute the length of the array (in felts).
-            assert element_offset = index * element_size;
+            tempvar element_offset = index * element_size;
         };
         element_offset
     };
@@ -180,17 +179,15 @@ fn build_array_at(
         InRange:
         // Assert offset < length, or that length-(offset+1) is in [0, 2^128).
         // Compute offset+1.
-        tempvar element_offset_plus_1;
         const one = 1;
-        assert element_offset_plus_1 = element_offset + one;
+        tempvar element_offset_plus_1 = element_offset + one;
         // Compute length-(offset+1).
         tempvar offset_length_diff;
         assert element_offset_plus_1 = offset_length_diff + array_cell_size;
         // Assert length-(offset+1) is in [0, 2^128).
         assert element_offset_plus_1 = *(range_check++);
         // Compute address of target cell.
-        tempvar target_cell;
-        assert target_cell = array_start + element_offset;
+        tempvar target_cell = array_start + element_offset;
     };
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
         casm_builder.build();
