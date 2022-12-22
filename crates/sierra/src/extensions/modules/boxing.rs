@@ -3,40 +3,34 @@ use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
     SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
 };
-use crate::extensions::type_specialization_context::TypeSpecializationContext;
-use crate::extensions::types::TypeInfo;
-use crate::extensions::{
-    args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
+use crate::extensions::types::{
+    GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
-use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
+use crate::extensions::{
+    args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
+};
+use crate::ids::{GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type wrapping a value.
 #[derive(Default)]
-pub struct BoxType {}
-impl NamedType for BoxType {
-    type Concrete = BoxConcreteType;
+pub struct BoxTypeWrapped {}
+impl GenericTypeArgGenericType for BoxTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Box");
 
-    fn specialize(
+    fn calc_info(
         &self,
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = args_as_single_type(args)?;
-        Ok(BoxConcreteType { info: context.get_type_info(ty.clone())?, ty })
+        long_id: crate::program::ConcreteTypeLongId,
+        wrapped_info: TypeInfo,
+    ) -> Result<TypeInfo, SpecializationError> {
+        if !wrapped_info.storable {
+            Err(SpecializationError::UnsupportedGenericArg)
+        } else {
+            Ok(TypeInfo { long_id, size: 1, ..wrapped_info })
+        }
     }
 }
-
-pub struct BoxConcreteType {
-    pub info: TypeInfo,
-    pub ty: ConcreteTypeId,
-}
-impl ConcreteType for BoxConcreteType {
-    fn info(&self) -> &TypeInfo {
-        &self.info
-    }
-}
+pub type BoxType = GenericTypeArgGenericTypeWrapper<BoxTypeWrapped>;
 
 define_libfunc_hierarchy! {
     pub enum BoxLibFunc {

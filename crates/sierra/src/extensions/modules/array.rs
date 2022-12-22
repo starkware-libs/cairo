@@ -6,54 +6,40 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureAndTypeGenericLibFunc, SignatureOnlyGenericLibFunc,
     SignatureSpecializationContext, WrapSignatureAndTypeGenericLibFunc,
 };
-use crate::extensions::type_specialization_context::TypeSpecializationContext;
-use crate::extensions::types::TypeInfo;
+use crate::extensions::types::{
+    GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
+};
 use crate::extensions::{
-    args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
+    args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type representing an array.
 #[derive(Default)]
-pub struct ArrayType {}
-impl NamedType for ArrayType {
-    type Concrete = ArrayConcreteType;
+pub struct ArrayTypeWrapped {}
+impl GenericTypeArgGenericType for ArrayTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("Array");
 
-    fn specialize(
+    fn calc_info(
         &self,
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = args_as_single_type(args)?;
-        let info = context.get_type_info(ty.clone())?;
-        if info.storable {
-            Ok(ArrayConcreteType {
-                info: TypeInfo {
-                    long_id: Self::concrete_type_long_id(args),
-                    duplicatable: false,
-                    droppable: info.droppable,
-                    storable: true,
-                    size: 2,
-                },
-                ty,
-            })
-        } else {
+        long_id: crate::program::ConcreteTypeLongId,
+        wrapped_info: TypeInfo,
+    ) -> Result<TypeInfo, SpecializationError> {
+        if !wrapped_info.storable {
             Err(SpecializationError::UnsupportedGenericArg)
+        } else {
+            Ok(TypeInfo {
+                long_id,
+                duplicatable: false,
+                droppable: wrapped_info.droppable,
+                storable: true,
+                size: 2,
+            })
         }
     }
 }
-
-pub struct ArrayConcreteType {
-    pub info: TypeInfo,
-    pub ty: ConcreteTypeId,
-}
-impl ConcreteType for ArrayConcreteType {
-    fn info(&self) -> &TypeInfo {
-        &self.info
-    }
-}
+pub type ArrayType = GenericTypeArgGenericTypeWrapper<ArrayTypeWrapped>;
 
 define_libfunc_hierarchy! {
     pub enum ArrayLibFunc {
