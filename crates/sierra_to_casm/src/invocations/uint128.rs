@@ -65,8 +65,6 @@ fn build_u128_op(
         IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
             let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
             let mut casm_builder = CasmBuilder::default();
-            let u128_limit =
-                casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
             let range_check = casm_builder.add_var(range_check);
             let a = casm_builder.add_var(ResOperand::Deref(a));
             let b = casm_builder.add_var(ResOperand::Deref(b));
@@ -76,6 +74,7 @@ fn build_u128_op(
                         tempvar no_overflow;
                         tempvar a_plus_b;
                         assert a_plus_b = a + b;
+                        const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
                         hint TestLessThan {lhs: a_plus_b, rhs: u128_limit} into {dst: no_overflow};
                         jump NoOverflow if no_overflow != 0;
                         // Overflow:
@@ -90,6 +89,7 @@ fn build_u128_op(
                         tempvar no_overflow;
                         tempvar a_minus_b;
                         assert a = a_minus_b + b;
+                        const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
                         hint TestLessThan {lhs: a_minus_b, rhs: u128_limit} into {dst: no_overflow};
                         jump NoOverflow if no_overflow != 0;
                         // Underflow:
@@ -151,10 +151,6 @@ fn build_u128_op(
         }
         IntOperator::DivMod => {
             let mut casm_builder = CasmBuilder::default();
-            let u128_bound_minus_u64_bound = casm_builder
-                .add_var(ResOperand::Immediate(BigInt::from(u128::MAX) - BigInt::from(u64::MAX)));
-            let u64_bound = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u64::MAX) + 1));
-            let one = casm_builder.add_var(ResOperand::Immediate(BigInt::from(1)));
             let range_check = casm_builder.add_var(range_check);
             let a = casm_builder.add_var(ResOperand::Deref(a));
             let b = casm_builder.add_var(ResOperand::Deref(b));
@@ -178,6 +174,7 @@ fn build_u128_op(
                 assert *(range_check++) = q;
                 assert *(range_check++) = r;
                 // Verify `r < b` by constraining `0 <= b - (r + 1)`.
+                const one = 1;
                 assert r_plus_1 = r + one;
                 assert b = b_minus_r_minus_1 + r_plus_1;
                 assert *(range_check++) = b_minus_r_minus_1;
@@ -185,7 +182,9 @@ fn build_u128_op(
                 // Since both `b` and `q` can be 2^128-1, we may overflow on `b * q`. To verify this
                 // is not the case, use the fact that `b * q` must be less than 2^128. We know
                 // `min(b, q)` must be less than 2^64. We guess which is less and verify.
+                const u64_bound = u64::MAX as u128 + 1;
                 hint TestLessThan {lhs: q, rhs: u64_bound} into {dst: q_is_small};
+                const u128_bound_minus_u64_bound = u128::MAX - u64::MAX as u128;
                 jump QIsSmall if q_is_small != 0;
                 // `q >= 2^64`, so to verify `b < 2^64` we assert `2^128 - 2^64 + b` is in the range
                 // check bound.
@@ -274,12 +273,9 @@ fn build_u128_from_felt(
     // Defining params and constants.
     let range_check = casm_builder.add_var(range_check);
     let value = casm_builder.add_var(ResOperand::Deref(value));
-    let u128_limit = casm_builder.add_var(ResOperand::Immediate(u128_bound.clone()));
-    let le_max_y_fix = casm_builder.add_var(ResOperand::Immediate(u128_bound.clone() - max_y - 1));
-    let lt_max_x_fix = casm_builder.add_var(ResOperand::Immediate(u128_bound - max_x));
-    let minus_max_x = casm_builder.add_var(ResOperand::Immediate(BigInt::from(-max_x)));
     casm_build_extend! {casm_builder,
             tempvar is_u128;
+            const u128_limit = u128_bound.clone();
             hint TestLessThan { lhs: value, rhs: u128_limit } into { dst: is_u128 };
             jump NoOverflow if is_u128 != 0;
             // Allocating all values required so that `x` and `y` would be last.
@@ -299,13 +295,16 @@ fn build_u128_from_felt(
             assert value = x_2_128 + y;
             // Check that there is no overflow in the computation of 2**128 * x + y.
             // Start by checking if x==max_x.
+            const minus_max_x = -max_x;
             assert x_minus_max_x = x + minus_max_x;
             jump XNotMaxX if x_minus_max_x != 0;
             // If x == max_x, check that y <= max_y.
+            const le_max_y_fix = (u128_bound.clone() - max_y - 1) as BigInt;
             assert rced_value = y + le_max_y_fix;
             jump WriteRcedValue;
         XNotMaxX:
             // If x != max_x, check that x < max_x.
+            const lt_max_x_fix = (u128_bound - max_x) as BigInt;
             assert rced_value = x + lt_max_x_fix;
         WriteRcedValue:
             // In both cases, range-check the calculated value.
@@ -366,7 +365,6 @@ fn build_u128_lt(
     let (range_check, a, b) = unwrap_range_check_based_binary_op_refs(&builder)?;
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
-    let u128_limit = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
     let range_check = casm_builder.add_var(range_check);
     let a = casm_builder.add_var(ResOperand::Deref(a));
     let b = casm_builder.add_var(ResOperand::Deref(b));
@@ -374,6 +372,7 @@ fn build_u128_lt(
             tempvar a_ge_b;
             tempvar a_minus_b;
             assert a = a_minus_b + b;
+            const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
             hint TestLessThan {lhs: a_minus_b, rhs: u128_limit} into {dst: a_ge_b};
             jump False if a_ge_b != 0;
             tempvar wrapping_a_minus_b;
@@ -418,7 +417,6 @@ fn build_u128_le(
     let (range_check, a, b) = unwrap_range_check_based_binary_op_refs(&builder)?;
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
-    let u128_limit = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
     let range_check = casm_builder.add_var(range_check);
     let a = casm_builder.add_var(ResOperand::Deref(a));
     let b = casm_builder.add_var(ResOperand::Deref(b));
@@ -426,6 +424,7 @@ fn build_u128_le(
             tempvar a_gt_b;
             tempvar b_minus_a;
             assert b = b_minus_a + a;
+            const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
             hint TestLessThanOrEqual {lhs: u128_limit, rhs: b_minus_a} into {dst: a_gt_b};
             jump False if a_gt_b != 0;
             assert *(range_check++) = b_minus_a;
