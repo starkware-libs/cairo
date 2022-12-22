@@ -5,6 +5,7 @@ use super::boolean::BoolLibFunc;
 use super::branch_align::BranchAlignLibFunc;
 use super::builtin_cost::{BuiltinCostLibFunc, BuiltinCostsType};
 use super::dict_felt_to::{DictFeltToLibFunc, DictFeltToType};
+use super::dict_manager::DictManagerType;
 use super::drop::DropLibFunc;
 use super::duplicate::DupLibFunc;
 use super::enm::{EnumLibFunc, EnumType};
@@ -42,6 +43,7 @@ define_type_hierarchy! {
         SquashedDictFeltTo(SquashedDictFeltToType),
         Pedersen(PedersenType),
         StarkNet(StarkNetType),
+        DictManager(DictManagerType),
     }, CoreTypeConcrete
 }
 
