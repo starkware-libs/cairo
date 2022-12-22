@@ -1,4 +1,3 @@
-use crate::extensions::types::{InfoOnlyConcreteType, NamedType, TypeInfo};
 use crate::extensions::NoGenericArgsGenericType;
 use crate::ids::GenericTypeId;
 
@@ -17,18 +16,9 @@ use crate::ids::GenericTypeId;
 #[derive(Default)]
 pub struct DictManagerType {}
 impl NoGenericArgsGenericType for DictManagerType {
-    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("DictManager");
-
-    fn specialize(&self) -> Self::Concrete {
-        InfoOnlyConcreteType {
-            info: TypeInfo {
-                long_id: Self::concrete_type_long_id(&[]),
-                storable: true,
-                droppable: false,
-                duplicatable: false,
-                size: 1,
-            },
-        }
-    }
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = false;
+    const DROPPABLE: bool = false;
+    const SIZE: i16 = 1;
 }
