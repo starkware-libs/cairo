@@ -1,6 +1,7 @@
+use super::args_as_single_type;
 use super::error::{ExtensionError, SpecializationError};
 use super::type_specialization_context::TypeSpecializationContext;
-use crate::ids::GenericTypeId;
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Trait for implementing a specialization generator for types.
@@ -102,6 +103,37 @@ impl<T: NoGenericArgsGenericType> NamedType for T {
     }
 }
 
+/// Trait for implementing a specialization generator with a single type arg.
+pub trait GenericTypeArgGenericType: Default {
+    const ID: GenericTypeId;
+
+    /// Returns the type info of the wrapping type.
+    fn calc_info(
+        &self,
+        long_id: ConcreteTypeLongId,
+        wrapped_info: TypeInfo,
+    ) -> Result<TypeInfo, SpecializationError>;
+}
+
+/// Wrapper for a specialization generator with a single type arg.
+#[derive(Default)]
+pub struct GenericTypeArgGenericTypeWrapper<T: GenericTypeArgGenericType>(T);
+impl<T: GenericTypeArgGenericType> NamedType for GenericTypeArgGenericTypeWrapper<T> {
+    type Concrete = InfoAndTypeConcreteType;
+    const ID: GenericTypeId = T::ID;
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let long_id = Self::concrete_type_long_id(args);
+        let wrapped_info = context.get_type_info(ty.clone())?;
+        Ok(Self::Concrete { info: self.0.calc_info(long_id, wrapped_info)?, ty })
+    }
+}
+
 /// Information on Sierra types required for generic libfunc calls.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TypeInfo {
@@ -129,6 +161,18 @@ pub struct InfoOnlyConcreteType {
 }
 
 impl ConcreteType for InfoOnlyConcreteType {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
+
+/// Struct providing a ConcreteType with the type info and a wrapped type.
+pub struct InfoAndTypeConcreteType {
+    pub info: TypeInfo,
+    pub ty: ConcreteTypeId,
+}
+
+impl ConcreteType for InfoAndTypeConcreteType {
     fn info(&self) -> &TypeInfo {
         &self.info
     }

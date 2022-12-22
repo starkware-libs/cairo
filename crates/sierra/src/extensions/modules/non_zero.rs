@@ -2,39 +2,34 @@ use crate::extensions::lib_func::{
     LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibFunc,
     SignatureSpecializationContext,
 };
-use crate::extensions::type_specialization_context::TypeSpecializationContext;
-use crate::extensions::types::TypeInfo;
-use crate::extensions::{
-    args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
+use crate::extensions::types::{
+    GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
-use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
+use crate::extensions::{
+    args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
+};
+use crate::ids::{GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type wrapping a value as non zero.
 #[derive(Default)]
-pub struct NonZeroType {}
-impl NamedType for NonZeroType {
-    type Concrete = NonZeroConcreteType;
+pub struct NonZeroTypeWrapped {}
+impl GenericTypeArgGenericType for NonZeroTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("NonZero");
 
-    fn specialize(
+    fn calc_info(
         &self,
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = args_as_single_type(args)?;
-        Ok(NonZeroConcreteType { info: context.get_type_info(ty.clone())?, ty })
+        long_id: crate::program::ConcreteTypeLongId,
+        wrapped_info: TypeInfo,
+    ) -> Result<TypeInfo, SpecializationError> {
+        if !wrapped_info.storable {
+            Err(SpecializationError::UnsupportedGenericArg)
+        } else {
+            Ok(TypeInfo { long_id, ..wrapped_info })
+        }
     }
 }
-pub struct NonZeroConcreteType {
-    pub info: TypeInfo,
-    pub ty: ConcreteTypeId,
-}
-impl ConcreteType for NonZeroConcreteType {
-    fn info(&self) -> &TypeInfo {
-        &self.info
-    }
-}
+pub type NonZeroType = GenericTypeArgGenericTypeWrapper<NonZeroTypeWrapped>;
 
 /// LibFunc for unwrapping a `NonZero<T>` back into a T.
 #[derive(Default)]
