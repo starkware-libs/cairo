@@ -157,11 +157,11 @@ func u128_and(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
     let (v, _, _) = bitwise(a, b);
     v
 }
-func u128_or(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
+func u128_xor(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
     let (_, v, _) = bitwise(a, b);
     v
 }
-func u128_xor(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
+func u128_or(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
     let (_, _, v) = bitwise(a, b);
     v
 }
