@@ -1,6 +1,5 @@
 use casm::casm;
 use sierra::program::{BranchInfo, BranchTarget};
-use utils::try_extract_matches;
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
@@ -60,13 +59,7 @@ pub fn build_jump_nz(
             });
         }
     };
-    let value = try_extract_matches!(
-        dst_expr
-            .try_unpack_single()
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        CellExpression::Deref
-    )
-    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let value = dst_expr.try_unpack_single()?.to_deref()?;
 
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
 
