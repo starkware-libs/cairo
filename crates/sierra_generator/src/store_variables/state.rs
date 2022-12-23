@@ -17,7 +17,7 @@ pub struct DeferredVariableInfo {
 }
 
 /// The type of a deferred variable.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DeferredVariableKind {
     /// See [DeferredOutputKind::Const].
     Const,
@@ -46,6 +46,7 @@ impl State {
         &mut self,
         results: &[sierra::ids::VarId],
         branch_signature: &BranchSignature,
+        args: &[sierra::ids::VarId],
     ) {
         // Clear the stack if needed.
         match branch_signature.ap_change {
@@ -60,7 +61,7 @@ impl State {
         }
 
         for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {
-            self.register_output(var.clone(), var_info);
+            self.register_output(var.clone(), var_info, args);
         }
 
         // Update `known_stack_size`. It is one more than the maximum of the indices in
@@ -72,32 +73,57 @@ impl State {
     ///
     /// If the variable is marked as Deferred output by the libfunc, it is added to
     /// [Self::deferred_variables]. Similarly for [Self::temporary_variables].
-    fn register_output(&mut self, res: sierra::ids::VarId, output_info: &OutputVarInfo) {
+    fn register_output(
+        &mut self,
+        res: sierra::ids::VarId,
+        output_info: &OutputVarInfo,
+        args: &[sierra::ids::VarId],
+    ) {
+        let mut is_deferred: Option<DeferredVariableKind> = None;
+        let mut is_temp_var: bool = false;
+        let mut add_to_stack: Option<usize> = None;
+
+        if let OutputVarReferenceInfo::SameAsParam { param_idx } = &output_info.ref_info {
+            if let Some(deferred_info) = self.deferred_variables.get(&args[*param_idx]) {
+                is_deferred = Some(deferred_info.kind);
+            }
+        }
+
         self.deferred_variables.swap_remove(&res);
         self.temporary_variables.swap_remove(&res);
         self.known_stack.remove_variable(&res);
+
         match &output_info.ref_info {
             OutputVarReferenceInfo::Deferred(kind) => {
-                let deferred_variable_info_kind = match kind {
+                is_deferred = Some(match kind {
                     DeferredOutputKind::Const => DeferredVariableKind::Const,
                     DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
                     DeferredOutputKind::Generic => DeferredVariableKind::Generic,
-                };
-                self.deferred_variables.insert(
-                    res,
-                    DeferredVariableInfo {
-                        ty: output_info.ty.clone(),
-                        kind: deferred_variable_info_kind,
-                    },
-                );
+                });
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
-                if let Some(idx) = idx {
-                    self.known_stack.insert(res.clone(), *idx);
-                }
-                self.temporary_variables.insert(res, output_info.ty.clone());
+                add_to_stack = *idx;
+                is_temp_var = true;
             }
             OutputVarReferenceInfo::SameAsParam { .. } | OutputVarReferenceInfo::NewLocalVar => {}
+        }
+
+        if let Some(deferred_variable_info_kind) = is_deferred {
+            self.deferred_variables.insert(
+                res.clone(),
+                DeferredVariableInfo {
+                    ty: output_info.ty.clone(),
+                    kind: deferred_variable_info_kind,
+                },
+            );
+        }
+
+        if let Some(idx) = add_to_stack {
+            self.known_stack.insert(res.clone(), idx);
+        }
+
+        if is_temp_var {
+            self.temporary_variables.insert(res, output_info.ty.clone());
         }
     }
 
