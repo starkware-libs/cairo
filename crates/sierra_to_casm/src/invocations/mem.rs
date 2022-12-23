@@ -7,7 +7,6 @@ use sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
 use sierra::extensions::mem::MemConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use utils::casts::usize_as_i16;
-use utils::try_extract_matches;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::environment::frame_state;
@@ -149,13 +148,7 @@ fn build_store_local(
         ] => Ok((dst_expr, src_expr)),
         refs => Err(InvocationError::WrongNumberOfArguments { expected: 2, actual: refs.len() }),
     }?;
-    let dst = try_extract_matches!(
-        dst_expr
-            .try_unpack_single()
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        CellExpression::Deref
-    )
-    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let dst = dst_expr.try_unpack_single()?.to_deref()?;
     let instructions = get_store_instructions(&builder, ty, dst, src_expr)?;
     let type_size = builder.program_info.type_sizes[ty];
     Ok(builder.build(

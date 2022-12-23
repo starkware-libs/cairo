@@ -25,8 +25,8 @@ fn build_into_box(
             message: "Box<T> is only supported for types of size 1.".into(),
         });
     }
-    let expression = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression,
+    let operand = match builder.refs {
+        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 1,
@@ -34,25 +34,17 @@ fn build_into_box(
             });
         }
     };
-    if let CellExpression::Deref(operand) = expression
-        .try_unpack_single()
-        .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
-    {
-        Ok(builder.build_only_reference_changes(
-            [ReferenceExpression::from_cell(CellExpression::IntoSingleCellRef(operand))]
-                .into_iter(),
-        ))
-    } else {
-        Err(InvocationError::InvalidReferenceExpressionForArgument)
-    }
+    Ok(builder.build_only_reference_changes(
+        [ReferenceExpression::from_cell(CellExpression::IntoSingleCellRef(operand))].into_iter(),
+    ))
 }
 
 /// Handles instruction for unboxing a box.
 fn build_unbox(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let expression = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression,
+    let operand = match builder.refs {
+        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 1,
@@ -60,14 +52,7 @@ fn build_unbox(
             });
         }
     };
-    if let CellExpression::Deref(operand) = expression
-        .try_unpack_single()
-        .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
-    {
-        Ok(builder.build_only_reference_changes(
-            [ReferenceExpression::from_cell(CellExpression::DoubleDeref(operand, 0))].into_iter(),
-        ))
-    } else {
-        Err(InvocationError::InvalidReferenceExpressionForArgument)
-    }
+    Ok(builder.build_only_reference_changes(
+        [ReferenceExpression::from_cell(CellExpression::DoubleDeref(operand, 0))].into_iter(),
+    ))
 }

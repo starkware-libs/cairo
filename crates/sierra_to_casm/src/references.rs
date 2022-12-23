@@ -106,6 +106,15 @@ impl CellExpression {
             .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
     }
 
+    /// Extract a deref or immediate from the cell expression.
+    pub fn to_deref_of_immediate(&self) -> Result<DerefOrImmediate, InvocationError> {
+        match self {
+            CellExpression::Deref(cell) => Ok(DerefOrImmediate::Deref(*cell)),
+            CellExpression::Immediate(imm) => Ok(DerefOrImmediate::Immediate(imm.clone())),
+            _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
+        }
+    }
+
     /// Given `[ref] + offset` returns `([ref], offset)`.
     pub fn to_deref_with_offset(&self) -> Result<(CellRef, i16), InvocationError> {
         match self {
@@ -152,13 +161,18 @@ impl ReferenceExpression {
     pub fn from_cell(cell_expr: CellExpression) -> Self {
         Self { cells: vec![cell_expr] }
     }
+
+    /// If returns the cells as an array of the requested size if the size is correct.
+    pub fn try_unpack<const SIZE: usize>(
+        &self,
+    ) -> Result<&[CellExpression; SIZE], InvocationError> {
+        <&[CellExpression; SIZE]>::try_from(&self.cells[..])
+            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)
+    }
+
     /// If there is only one cell in the ReferenceExpression returns the contained CellExpression.
-    pub fn try_unpack_single(&self) -> Result<CellExpression, InvocationError> {
-        if let [cell_expr] = &self.cells[..] {
-            Ok(cell_expr.clone())
-        } else {
-            Err(InvocationError::InvalidReferenceExpressionForArgument)
-        }
+    pub fn try_unpack_single(&self) -> Result<&CellExpression, InvocationError> {
+        Ok(&self.try_unpack::<1>()?[0])
     }
 }
 

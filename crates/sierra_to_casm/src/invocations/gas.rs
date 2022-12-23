@@ -6,7 +6,6 @@ use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra_ap_change::core_libfunc_ap_change;
-use utils::try_extract_matches;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
@@ -124,8 +123,8 @@ fn build_refund_gas(
         .variable_values
         .get(&(builder.idx, CostTokenType::Step))
         .ok_or(InvocationError::UnknownVariableData)?;
-    let expression = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression,
+    let gas_counter_value = match builder.refs {
+        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 1,
@@ -133,13 +132,6 @@ fn build_refund_gas(
             });
         }
     };
-    let gas_counter_value = try_extract_matches!(
-        expression
-            .try_unpack_single()
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        CellExpression::Deref
-    )
-    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     Ok(builder.build_only_reference_changes(
         [if *requested_count == 0 {
