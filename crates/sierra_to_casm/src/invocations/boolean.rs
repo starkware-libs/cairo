@@ -4,7 +4,7 @@ use sierra::extensions::boolean::BoolConcreteLibFunc;
 use sierra::extensions::felt::FeltBinaryOperator;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra bool operations.
 pub fn build(
@@ -21,17 +21,9 @@ pub fn build(
 fn build_bool_and(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (a, b) = match builder.refs {
-        [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
-            (expr_a.try_unpack_single()?.to_deref()?, expr_b.try_unpack_single()?.to_deref()?)
-        }
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 2,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expr_a, expr_b] = builder.try_get_refs()?;
+    let a = expr_a.try_unpack_single()?.to_deref()?;
+    let b = expr_b.try_unpack_single()?.to_deref()?;
     Ok(builder.build(
         vec![],
         vec![],
@@ -49,15 +41,7 @@ fn build_bool_and(
 fn build_bool_not(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let a = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+    let a = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
 
     // We want to output `1 - a`, but a SUB expression cannot have an immediate value on the LHS.
     // Store 1 in AP first, advance AP and return `[ap - 1] - a`.

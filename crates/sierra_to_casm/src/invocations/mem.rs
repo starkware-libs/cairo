@@ -10,9 +10,7 @@ use utils::casts::usize_as_i16;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::environment::frame_state;
-use crate::references::{
-    BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue, UnaryOpExpression,
-};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, UnaryOpExpression};
 
 /// Builds instructions for Sierra memory operations.
 pub fn build(
@@ -106,15 +104,7 @@ fn build_store_temp(
     builder: CompiledInvocationBuilder<'_>,
     ty: &ConcreteTypeId,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let expression = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression,
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+    let expression = builder.try_get_refs::<1>()?[0];
 
     let instructions = get_store_instructions(
         &builder,
@@ -141,13 +131,7 @@ fn build_store_local(
     builder: CompiledInvocationBuilder<'_>,
     ty: &ConcreteTypeId,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (dst_expr, src_expr) = match builder.refs {
-        [
-            ReferenceValue { expression: dst_expr, .. },
-            ReferenceValue { expression: src_expr, .. },
-        ] => Ok((dst_expr, src_expr)),
-        refs => Err(InvocationError::WrongNumberOfArguments { expected: 2, actual: refs.len() }),
-    }?;
+    let [dst_expr, src_expr] = builder.try_get_refs()?;
     let dst = dst_expr.try_unpack_single()?.to_deref()?;
     let instructions = get_store_instructions(&builder, ty, dst, src_expr)?;
     let type_size = builder.program_info.type_sizes[ty];

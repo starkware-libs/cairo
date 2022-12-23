@@ -10,7 +10,7 @@ use sierra_ap_change::core_libfunc_ap_change;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::gas::STEP_COST;
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{CellExpression, ReferenceExpression};
 use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra gas operations.
@@ -28,23 +28,10 @@ fn build_builtin_get_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     // TODO(lior): Share code with get_gas().
-    let (range_check, gas_counter, builtin_cost) = match builder.refs {
-        [
-            ReferenceValue { expression: range_check_expression, .. },
-            ReferenceValue { expression: gas_counter_expression, .. },
-            ReferenceValue { expression: builtin_cost_expression, .. },
-        ] => (
-            range_check_expression.try_unpack_single()?.to_buffer(1)?,
-            gas_counter_expression.try_unpack_single()?.to_deref()?,
-            builtin_cost_expression.try_unpack_single()?.to_deref()?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 3,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [range_check_expr, gas_counter_expr, builtin_cost_expr] = builder.try_get_refs()?;
+    let range_check = range_check_expr.try_unpack_single()?.to_buffer(1)?;
+    let gas_counter = gas_counter_expr.try_unpack_single()?.to_deref()?;
+    let builtin_cost = builtin_cost_expr.try_unpack_single()?.to_deref()?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
 

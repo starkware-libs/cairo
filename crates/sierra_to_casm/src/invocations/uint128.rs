@@ -7,7 +7,7 @@ use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{CellExpression, ReferenceExpression};
 use crate::relocations::{Relocation, RelocationEntry};
 
 #[cfg(test)]
@@ -40,19 +40,12 @@ pub fn build(
 pub fn unwrap_range_check_based_binary_op_refs(
     builder: &CompiledInvocationBuilder<'_>,
 ) -> Result<(ResOperand, CellRef, CellRef), InvocationError> {
-    match builder.refs {
-        [
-            ReferenceValue { expression: range_check_expression, .. },
-            ReferenceValue { expression: expr_a, .. },
-            ReferenceValue { expression: expr_b, .. },
-        ] => Ok((
-            range_check_expression.try_unpack_single()?.to_buffer(0)?,
-            expr_a.try_unpack_single()?.to_deref()?,
-            expr_b.try_unpack_single()?.to_deref()?,
-        )),
-
-        refs => Err(InvocationError::WrongNumberOfArguments { expected: 3, actual: refs.len() }),
-    }
+    let [range_check_expression, expr_a, expr_b] = builder.try_get_refs()?;
+    Ok((
+        range_check_expression.try_unpack_single()?.to_buffer(0)?,
+        expr_a.try_unpack_single()?.to_deref()?,
+        expr_b.try_unpack_single()?.to_deref()?,
+    ))
 }
 
 /// Handles a u128 operation with the given op.
@@ -245,21 +238,10 @@ fn build_u128_op(
 fn build_u128_from_felt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (range_check, value) = match builder.refs {
-        [
-            ReferenceValue { expression: range_check_expression, .. },
-            ReferenceValue { expression: expr_value, .. },
-        ] => (
-            range_check_expression.try_unpack_single()?.to_buffer(3)?,
-            expr_value.try_unpack_single()?.to_deref()?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 2,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [range_check_expression, expr_value] = builder.try_get_refs()?;
+    let range_check = range_check_expression.try_unpack_single()?.to_buffer(3)?;
+    let value = expr_value.try_unpack_single()?.to_deref()?;
+
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let u128_bound: BigInt = BigInt::from(u128::MAX) + 1; // = 2**128.
     // Represent the maximal possible value (PRIME - 1) as 2**128 * max_x + max_y.
@@ -459,17 +441,9 @@ fn build_u128_le(
 fn build_u128_eq(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (a, b) = match builder.refs {
-        [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
-            (expr_a.try_unpack_single()?.to_deref()?, expr_b.try_unpack_single()?.to_deref()?)
-        }
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 2,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expr_a, expr_b] = builder.try_get_refs()?;
+    let a = expr_a.try_unpack_single()?.to_deref()?;
+    let b = expr_b.try_unpack_single()?.to_deref()?;
 
     // The target line to jump to if a != b.
     let target_statement_id = get_non_fallthrough_statement_id(&builder);

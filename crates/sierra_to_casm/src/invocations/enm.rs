@@ -12,7 +12,7 @@ use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
 };
 use crate::invocations::ProgramInfo;
-use crate::references::{CellExpression, ReferenceExpression, ReferenceValue, ReferencesError};
+use crate::references::{CellExpression, ReferenceExpression, ReferencesError};
 use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra enum operations.
@@ -51,15 +51,7 @@ fn build_enum_init(
     index: usize,
     num_variants: usize,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let expression = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression,
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expression] = builder.try_get_refs()?;
     let init_arg_cells = &expression.cells;
     let variant_selector = if num_variants <= 2 {
         // For num_branches <= 2, we use the index as the variant_selector as the `match`
@@ -115,18 +107,9 @@ fn build_enum_match(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let concrete_enum_type = &builder.libfunc.param_signatures()[0].ty;
-    let matched_var = match builder.refs {
-        [ReferenceValue { expression, .. }] => {
-            EnumView::try_get_view(expression, &builder.program_info, concrete_enum_type)
-                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
-        }
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expression] = builder.try_get_refs()?;
+    let matched_var = EnumView::try_get_view(expression, &builder.program_info, concrete_enum_type)
+        .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
     // Verify variant_selector is of type deref. This is the case with an enum_value
     // that was validly created and then stored.
     let variant_selector =
