@@ -19,13 +19,7 @@ pub fn build(
 fn build_nullable_null(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    if !builder.refs.is_empty() {
-        return Err(InvocationError::WrongNumberOfArguments {
-            expected: 0,
-            actual: builder.refs.len(),
-        });
-    }
-
+    builder.try_get_refs::<0>()?;
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression { cells: vec![CellExpression::Immediate(0.into())] }].into_iter(),
     ))

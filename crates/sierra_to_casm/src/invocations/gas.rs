@@ -9,7 +9,7 @@ use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 use crate::relocations::{Relocation, RelocationEntry};
 
 pub const STEP_COST: i64 = 100;
@@ -37,27 +37,15 @@ fn build_get_gas(
         .get(&(builder.idx, CostTokenType::Step))
         .ok_or(InvocationError::UnknownVariableData)?
         * STEP_COST;
-    let (range_check, gas_counter_value) = match builder.refs {
-        [
-            ReferenceValue { expression: range_check_expression, .. },
-            ReferenceValue { expression: gas_counter_expression, .. },
-        ] => (
-            range_check_expression.try_unpack_single()?.to_buffer(1)?,
-            gas_counter_expression.try_unpack_single()?.to_deref()?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 2,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [range_check_expr, gas_counter_expr] = builder.try_get_refs()?;
+    let range_check = range_check_expr.try_unpack_single()?.to_buffer(1)?;
+    let gas_counter = gas_counter_expr.try_unpack_single()?.to_deref()?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
 
     let mut casm_builder = CasmBuilder::default();
     let range_check = casm_builder.add_var(range_check);
-    let gas_counter = casm_builder.add_var(ResOperand::Deref(gas_counter_value));
+    let gas_counter = casm_builder.add_var(ResOperand::Deref(gas_counter));
 
     casm_build_extend! {casm_builder,
         tempvar has_enough_gas;
@@ -123,15 +111,7 @@ fn build_refund_gas(
         .variable_values
         .get(&(builder.idx, CostTokenType::Step))
         .ok_or(InvocationError::UnknownVariableData)?;
-    let gas_counter_value = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+    let gas_counter_value = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
 
     Ok(builder.build_only_reference_changes(
         [if *requested_count == 0 {

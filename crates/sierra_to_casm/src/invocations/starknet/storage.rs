@@ -6,7 +6,7 @@ use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{CellExpression, ReferenceExpression};
 use crate::relocations::{Relocation, RelocationEntry};
 
 #[cfg(test)]
@@ -18,21 +18,10 @@ pub fn build_storage_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "storage_read".as_bytes());
-    let (system, storage_address) = match builder.refs {
-        [
-            ReferenceValue { expression: expr_system, .. },
-            ReferenceValue { expression: expr_address, .. },
-        ] => (
-            expr_system.try_unpack_single()?.to_buffer(3)?,
-            expr_address.try_unpack_single()?.to_deref()?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 2,
-                actual: refs.len(),
-            });
-        }
-    };
+
+    let [expr_system, expr_address] = builder.try_get_refs()?;
+    let system = expr_system.try_unpack_single()?.to_buffer(3)?;
+    let storage_address = expr_address.try_unpack_single()?.to_deref()?;
 
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
@@ -76,25 +65,12 @@ pub fn build_storage_write(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "storage_write".as_bytes());
 
-    let (gas_builtin, system, storage_address, value) = match builder.refs {
-        [
-            ReferenceValue { expression: expr_gas_builtin, .. },
-            ReferenceValue { expression: expr_system, .. },
-            ReferenceValue { expression: expr_address, .. },
-            ReferenceValue { expression: expr_value, .. },
-        ] => (
-            expr_gas_builtin.try_unpack_single()?.to_deref()?,
-            expr_system.try_unpack_single()?.to_buffer(6)?,
-            expr_address.try_unpack_single()?.to_deref()?,
-            expr_value.try_unpack_single()?.to_deref()?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 4,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expr_gas_builtin, expr_system, expr_address, expr_value] = builder.try_get_refs()?;
+    let gas_builtin = expr_gas_builtin.try_unpack_single()?.to_deref()?;
+    let system = expr_system.try_unpack_single()?.to_buffer(6)?;
+    let storage_address = expr_address.try_unpack_single()?.to_deref()?;
+    let value = expr_value.try_unpack_single()?.to_deref()?;
+
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
     let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
