@@ -8,9 +8,7 @@ use sierra::extensions::felt::{
 
 use super::misc::build_jump_nz;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{
-    BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue, UnaryOpExpression,
-};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, UnaryOpExpression};
 
 #[cfg(test)]
 #[path = "felt_test.rs"]
@@ -44,17 +42,7 @@ fn build_felt_unary_op(
     builder: CompiledInvocationBuilder<'_>,
     op: FeltUnaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let a = match builder.refs {
-        [ReferenceValue { expression: expr, .. }] => {
-            expr.try_unpack_single()?.to_deref_of_immediate()?
-        }
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+    let a = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref_of_immediate()?;
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::UnaryOp(UnaryOpExpression { op, a }))]
             .into_iter(),
@@ -66,18 +54,9 @@ fn build_felt_op(
     builder: CompiledInvocationBuilder<'_>,
     op: FeltBinaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (a, b) = match builder.refs {
-        [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => (
-            expr_a.try_unpack_single()?.to_deref()?,
-            expr_b.try_unpack_single()?.to_deref_of_immediate()?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 2,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expr_a, expr_b] = builder.try_get_refs()?;
+    let a = expr_a.try_unpack_single()?.to_deref()?;
+    let b = expr_b.try_unpack_single()?.to_deref_of_immediate()?;
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression { op, a, b }))]
             .into_iter(),
@@ -90,15 +69,7 @@ fn build_felt_op_with_const(
     op: FeltBinaryOperator,
     c: BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let a = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+    let a = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
             op,

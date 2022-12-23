@@ -265,6 +265,20 @@ impl CompiledInvocationBuilder<'_> {
     ) -> CompiledInvocation {
         self.build(vec![], vec![], [output_expressions].into_iter())
     }
+
+    /// If returns the reference expressions if the size is correct.
+    pub fn try_get_refs<const COUNT: usize>(
+        &self,
+    ) -> Result<[&ReferenceExpression; COUNT], InvocationError> {
+        if self.refs.len() == COUNT {
+            Ok(core::array::from_fn(|i| &self.refs[i].expression))
+        } else {
+            Err(InvocationError::WrongNumberOfArguments {
+                expected: COUNT,
+                actual: self.refs.len(),
+            })
+        }
+    }
 }
 
 /// Information in the program level required for compiling an invocation.
