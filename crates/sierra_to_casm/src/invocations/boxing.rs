@@ -19,8 +19,11 @@ pub fn build(
 fn build_into_box(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    if builder.program_info.type_sizes.get(&builder.libfunc.output_types()[0][0]) != Some(&1) {
-        todo!("Add support for taking non-single cell references.");
+    if builder.program_info.type_sizes[&builder.libfunc.param_signatures()[0].ty] != 1 {
+        return Err(InvocationError::NotImplementedStr {
+            invocation: builder.invocation.clone(),
+            message: "Box<T> is only supported for types of size 1.".into(),
+        });
     }
     let expression = match builder.refs {
         [ReferenceValue { expression, .. }] => expression,
