@@ -1,17 +1,13 @@
 use casm::builder::{CasmBuildResult, CasmBuilder};
-use casm::operand::{ap_cell_ref, BinOpOperand, CellRef, DerefOrImmediate, ResOperand};
-use casm::{casm, casm_build_extend, casm_extend};
+use casm::casm_build_extend;
+use casm::operand::{DerefOrImmediate, ResOperand};
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::felt::FeltBinaryOperator;
-use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use sierra_ap_change::core_libfunc_ap_change;
-use utils::try_extract_matches;
 
-use super::{
-    CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
-};
-use crate::invocations::{get_non_fallthrough_statement_id, ProgramInfo};
+use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::get_non_fallthrough_statement_id;
 use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -38,22 +34,24 @@ fn build_array_new(
             actual: builder.refs.len(),
         });
     }
-
+    let mut casm_builder = CasmBuilder::default();
+    casm_build_extend! {casm_builder,
+        tempvar arr_start;
+        hint AllocSegment {} into {dst: arr_start};
+        ap += 1;
+    };
+    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+    // TODO(orizi): Extract the assertion out of the libfunc implementation.
+    assert_eq!(
+        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+        [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
+    );
+    let arr_start = CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(arr_start));
     Ok(builder.build(
-        casm! {
-            %{ memory[ap + 0] = segments.add() %}
-            ap += 1;
-        }
-        .instructions,
+        instructions,
         vec![],
-        [[ReferenceExpression {
-            cells: vec![
-                CellExpression::Deref(ap_cell_ref(-1)),
-                CellExpression::Deref(ap_cell_ref(-1)),
-            ],
-        }]
-        .into_iter()]
-        .into_iter(),
+        [[ReferenceExpression { cells: vec![arr_start.clone(), arr_start] }].into_iter()]
+            .into_iter(),
     ))
 }
 
@@ -61,16 +59,15 @@ fn build_array_new(
 fn build_array_append(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (mut array_view, elem) = match builder.refs {
+    let ((arr_start, arr_end), elem) = match builder.refs {
         [
             ReferenceValue { expression: expr_arr, .. },
             ReferenceValue { expression: expr_elem, .. },
         ] => {
-            let concrete_array_type = &builder.libfunc.param_signatures()[0].ty;
-            let array_view =
-                ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
-                    .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-            (array_view, expr_elem)
+            let [start, end] = &expr_arr.cells[..] else {
+                return Err(InvocationError::InvalidReferenceExpressionForArgument);
+            };
+            ((start.to_buffer(0)?, end.to_buffer(expr_elem.cells.len() as i16)?), expr_elem)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -79,15 +76,31 @@ fn build_array_append(
             });
         }
     };
-    let mut ctx = casm! {};
-    for expr in &elem.cells {
-        let cell = try_extract_matches!(expr, CellExpression::Deref)
-            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-        casm_extend!(ctx, (*cell) = [[&array_view.end] + array_view.end_offset];);
-        array_view.end_offset += 1;
+    let mut casm_builder = CasmBuilder::default();
+    let arr_start = casm_builder.add_var(arr_start);
+    let arr_end = casm_builder.add_var(arr_end);
+    for cell in &elem.cells {
+        let cell = casm_builder.add_var(ResOperand::Deref(cell.to_deref()?));
+        casm_build_extend!(casm_builder, assert cell = *(arr_end++););
     }
-    let output_expressions = [vec![array_view.to_reference_expression()].into_iter()].into_iter();
-    Ok(builder.build(ctx.instructions, vec![], output_expressions))
+    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+    // TODO(orizi): Extract the assertion out of the libfunc implementation.
+    assert_eq!(
+        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
+        [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
+    );
+    Ok(builder.build(
+        instructions,
+        vec![],
+        [[ReferenceExpression {
+            cells: vec![
+                CellExpression::from_res_operand(fallthrough_state.get_adjusted(arr_start)),
+                CellExpression::from_res_operand(fallthrough_state.get_adjusted(arr_end)),
+            ],
+        }]
+        .into_iter()]
+        .into_iter(),
+    ))
 }
 
 /// Handles a Sierra statement for fetching an array element at a specific index.
@@ -95,22 +108,25 @@ fn build_array_at(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (range_check, array_view, index_deref_or_imm) = match builder.refs {
+    let (range_check, (arr_start, arr_end), index_deref_or_imm) = match builder.refs {
         [
             ReferenceValue { expression: expr_range_check, .. },
             ReferenceValue { expression: expr_arr, .. },
             ReferenceValue { expression: expr_index, .. },
         ] => {
-            let concrete_array_type = &builder.libfunc.param_signatures()[1].ty;
-            let array_view =
-                ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
-                    .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
+            let [start, end] = &expr_arr.cells[..] else {
+                return Err(InvocationError::InvalidReferenceExpressionForArgument);
+            };
             let index_deref_or_imm = match expr_index.try_unpack_single()? {
                 CellExpression::Deref(op) => DerefOrImmediate::Deref(op),
                 CellExpression::Immediate(op) => DerefOrImmediate::from(op),
                 _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             };
-            (expr_range_check.try_unpack_single()?.to_deref()?, array_view, index_deref_or_imm)
+            (
+                expr_range_check.try_unpack_single()?.to_deref()?,
+                (start.to_deref()?, end.to_deref()?),
+                index_deref_or_imm,
+            )
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -121,22 +137,17 @@ fn build_array_at(
     };
     let element_size = builder.program_info.type_sizes[elem_ty];
 
-    if array_view.end_offset != 0 {
-        // TODO(Gil): handle when DoubleDeref will support a BinOp variant, e.g. [[ap+1]+1]
-        return Err(InvocationError::NotImplemented(builder.invocation.clone()));
-    }
-
     let mut casm_builder = CasmBuilder::default();
     let index = casm_builder.add_var(match index_deref_or_imm {
         DerefOrImmediate::Immediate(imm) => ResOperand::Immediate(imm),
         DerefOrImmediate::Deref(cell) => ResOperand::Deref(cell),
     });
-    let array_start = casm_builder.add_var(ResOperand::Deref(array_view.start));
-    let array_end = casm_builder.add_var(ResOperand::Deref(array_view.end));
+    let arr_start = casm_builder.add_var(ResOperand::Deref(arr_start));
+    let arr_end = casm_builder.add_var(ResOperand::Deref(arr_end));
     let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
     casm_build_extend! {casm_builder,
         // Compute the length of the array (in felts).
-        tempvar array_cell_size = array_end - array_start;
+        tempvar array_cell_size = arr_end - arr_start;
     };
     let element_offset = if element_size == 1 {
         index
@@ -183,7 +194,7 @@ fn build_array_at(
         // Assert length-(offset+1) is in [0, 2^128).
         assert element_offset_plus_1 = *(range_check++);
         // Compute address of target cell.
-        tempvar target_cell = array_start + element_offset;
+        tempvar target_cell = arr_start + element_offset;
     };
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
         casm_builder.build();
@@ -205,8 +216,8 @@ fn build_array_at(
             )),
             ReferenceExpression {
                 cells: vec![
-                    CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(array_start)),
-                    CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(array_end)),
+                    CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(arr_start)),
+                    CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(arr_end)),
                 ],
             },
             ReferenceExpression {
@@ -228,10 +239,10 @@ fn build_array_at(
             ReferenceExpression {
                 cells: vec![
                     CellExpression::Deref(
-                        label_state["FailureHandle"].get_adjusted_as_cell_ref(array_start),
+                        label_state["FailureHandle"].get_adjusted_as_cell_ref(arr_start),
                     ),
                     CellExpression::Deref(
-                        label_state["FailureHandle"].get_adjusted_as_cell_ref(array_end),
+                        label_state["FailureHandle"].get_adjusted_as_cell_ref(arr_end),
                     ),
                 ],
             },
@@ -247,11 +258,12 @@ fn build_array_len(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let array_view = match builder.refs {
+    let (arr_start, arr_end) = match builder.refs {
         [ReferenceValue { expression: expr_arr, .. }] => {
-            let concrete_array_type = &builder.libfunc.param_signatures()[0].ty;
-            ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
-                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
+            let [start, end] = &expr_arr.cells[..] else {
+                return Err(InvocationError::InvalidReferenceExpressionForArgument);
+            };
+            (start.to_deref()?, end.to_deref()?)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -260,24 +272,26 @@ fn build_array_len(
             });
         }
     };
-    if array_view.end_offset != 0 {
-        // The array must be stored before calling to array_len, as it is not possible to return
-        // [end]-[start]+offset as a CellRef.
-        return Err(InvocationError::InvalidReferenceExpressionForArgument);
-    }
+
     let element_size = builder.program_info.type_sizes[elem_ty];
     if element_size == 1 {
         let len_ref_expr = ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
             op: FeltBinaryOperator::Sub,
-            a: array_view.end,
-            b: DerefOrImmediate::Deref(array_view.start),
+            a: arr_end,
+            b: DerefOrImmediate::Deref(arr_start),
         }));
-        let output_expressions = [array_view.to_reference_expression(), len_ref_expr].into_iter();
+        let output_expressions = [
+            ReferenceExpression {
+                cells: vec![CellExpression::Deref(arr_start), CellExpression::Deref(arr_end)],
+            },
+            len_ref_expr,
+        ]
+        .into_iter();
         return Ok(builder.build_only_reference_changes(output_expressions));
     }
     let mut casm_builder = CasmBuilder::default();
-    let start = casm_builder.add_var(ResOperand::Deref(array_view.start));
-    let end = casm_builder.add_var(ResOperand::Deref(array_view.end));
+    let start = casm_builder.add_var(ResOperand::Deref(arr_start));
+    let end = casm_builder.add_var(ResOperand::Deref(arr_end));
     casm_build_extend! {casm_builder,
         tempvar end_total_offset = end - start;
         const element_size = element_size;
@@ -303,59 +317,4 @@ fn build_array_len(
     .into_iter()]
     .into_iter();
     Ok(builder.build(instructions, vec![], output_expressions))
-}
-
-/// A struct representing an actual array value in the Sierra program.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ArrayView {
-    /// A ref to the cell in which the start of the array address is stored.
-    pub start: CellRef,
-    /// A ref to the cell in which the last stored end_of_the_array_address is stored.
-    /// The end of the array is the next cell to write to (i.e. \[\[end\] + end_offset\] is not
-    /// initialized).
-    pub end: CellRef,
-    /// The number of elements appended to the array since the last store. The real end of the
-    /// array is in the address \[end\] + end_offset.
-    /// Never negative.
-    pub end_offset: i16,
-}
-impl ArrayView {
-    /// Returns the end as a `ResOperand`.
-    fn end_operand(&self) -> ResOperand {
-        if self.end_offset == 0 {
-            ResOperand::Deref(self.end)
-        } else {
-            ResOperand::BinOp(BinOpOperand {
-                op: casm::operand::Operation::Add,
-                a: self.end,
-                b: DerefOrImmediate::Immediate(self.end_offset.into()),
-            })
-        }
-    }
-}
-
-impl ReferenceExpressionView for ArrayView {
-    type Error = InvocationError;
-
-    fn try_get_view(
-        expr: &ReferenceExpression,
-        _program_info: &ProgramInfo<'_>,
-        _concrete_type_id: &ConcreteTypeId,
-    ) -> Result<Self, Self::Error> {
-        let [start, end] = &expr.cells[..] else {
-            return Err(InvocationError::InvalidReferenceExpressionForArgument);
-        };
-        let start = start.to_deref()?;
-        let (end, end_offset) = end.to_deref_with_offset()?;
-        Ok(ArrayView { start, end, end_offset })
-    }
-
-    fn to_reference_expression(self) -> ReferenceExpression {
-        ReferenceExpression {
-            cells: vec![
-                CellExpression::Deref(self.start),
-                CellExpression::from_res_operand(self.end_operand()),
-            ],
-        }
-    }
 }

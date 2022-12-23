@@ -18,7 +18,7 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        StarkNetConcreteLibFunc::CallContract(libfunc) => build_call_contract(builder, libfunc),
+        StarkNetConcreteLibFunc::CallContract(_) => build_call_contract(builder),
         StarkNetConcreteLibFunc::ContractAddressConst(libfunc) => {
             build_contract_address_const(builder, libfunc)
         }

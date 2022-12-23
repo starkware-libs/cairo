@@ -3,13 +3,10 @@ use casm::casm_build_extend;
 use casm::operand::ResOperand;
 use num_bigint::BigInt;
 use sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
-use sierra::extensions::lib_func::SignatureOnlyConcreteLibFunc;
-use sierra::extensions::SignatureBasedConcreteLibFunc;
 use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::array::ArrayView;
-use crate::invocations::{get_non_fallthrough_statement_id, ReferenceExpressionView};
+use crate::invocations::get_non_fallthrough_statement_id;
 use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -20,43 +17,42 @@ mod test;
 /// Builds instructions for StarkNet call contract system call.
 pub fn build_call_contract(
     builder: CompiledInvocationBuilder<'_>,
-    libfunc: &SignatureOnlyConcreteLibFunc,
 ) -> Result<CompiledInvocation, InvocationError> {
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "call_contract".as_bytes());
 
-    let concrete_array_type = &libfunc.signature().param_signatures[2].ty;
-    let (gas_builtin, system, contract_address, call_data) = match builder.refs {
-        [
-            ReferenceValue { expression: expr_gas_builtin, .. },
-            ReferenceValue { expression: expr_system, .. },
-            ReferenceValue { expression: expr_address, .. },
-            ReferenceValue { expression: expr_arr, .. },
-        ] => (
-            expr_gas_builtin.try_unpack_single()?.to_deref()?,
-            expr_system.try_unpack_single()?.to_buffer(8)?,
-            expr_address.try_unpack_single()?.to_deref()?,
-            ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
-                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 2,
-                actual: refs.len(),
-            });
-        }
-    };
-
-    if call_data.end_offset != 0 {
-        return Err(InvocationError::InvalidReferenceExpressionForArgument);
-    }
+    let (gas_builtin, system, contract_address, (call_data_start, call_data_end)) =
+        match builder.refs {
+            [
+                ReferenceValue { expression: expr_gas_builtin, .. },
+                ReferenceValue { expression: expr_system, .. },
+                ReferenceValue { expression: expr_address, .. },
+                ReferenceValue { expression: expr_arr, .. },
+            ] => {
+                let [arr_start, arr_end] = &expr_arr.cells[..] else {
+                    return Err(InvocationError::InvalidReferenceExpressionForArgument);
+                };
+                (
+                    expr_gas_builtin.try_unpack_single()?.to_deref()?,
+                    expr_system.try_unpack_single()?.to_buffer(8)?,
+                    expr_address.try_unpack_single()?.to_deref()?,
+                    (arr_start.to_deref()?, arr_end.to_deref()?),
+                )
+            }
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 2,
+                    actual: refs.len(),
+                });
+            }
+        };
 
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
     let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
     let contract_address = casm_builder.add_var(ResOperand::Deref(contract_address));
-    let call_data_start = casm_builder.add_var(ResOperand::Deref(call_data.start));
-    let call_data_end = casm_builder.add_var(ResOperand::Deref(call_data.end));
+    let call_data_start = casm_builder.add_var(ResOperand::Deref(call_data_start));
+    let call_data_end = casm_builder.add_var(ResOperand::Deref(call_data_end));
     casm_build_extend! {casm_builder,
         const selector_imm = selector_imm;
         tempvar selector = selector_imm;
