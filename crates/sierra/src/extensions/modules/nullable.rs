@@ -1,7 +1,9 @@
+use super::boxing::BoxType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
-    SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
+    DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureAndTypeGenericLibFunc, SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
+    WrapSignatureAndTypeGenericLibFunc,
 };
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
@@ -49,6 +51,7 @@ impl ConcreteType for NullableConcreteType {
 define_libfunc_hierarchy! {
     pub enum NullableLibFunc {
         Null(NullLibFunc),
+        IntoNullable(IntoNullableLibFunc),
     }, NullableConcreteLibFunc
 }
 
@@ -74,3 +77,31 @@ impl SignatureOnlyGenericLibFunc for NullLibFunc {
         ))
     }
 }
+
+/// LibFunc for converting `Box<T>` to `Nullable<T>`.
+#[derive(Default)]
+pub struct IntoNullableLibFuncWrapped {}
+impl SignatureAndTypeGenericLibFunc for IntoNullableLibFuncWrapped {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("into_nullable");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        Ok(LibFuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?,
+                allow_deferred: true,
+                allow_add_const: true,
+                allow_const: true,
+            }],
+            vec![OutputVarInfo {
+                ty: context.get_wrapped_concrete_type(NullableType::id(), ty)?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+pub type IntoNullableLibFunc = WrapSignatureAndTypeGenericLibFunc<IntoNullableLibFuncWrapped>;
