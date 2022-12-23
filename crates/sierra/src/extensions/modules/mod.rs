@@ -24,6 +24,7 @@ pub mod gas;
 pub mod jump_not_zero;
 pub mod mem;
 pub mod non_zero;
+pub mod nullable;
 pub mod pedersen;
 pub mod range_check;
 pub mod squashed_dict_felt_to;
