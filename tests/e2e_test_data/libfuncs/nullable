@@ -114,3 +114,78 @@ rename<Box<felt>>([3]) -> ([4]);
 return([4]);
 
 test::foo@0([0]: Nullable<felt>, [1]: Box<felt>) -> (Box<felt>);
+
+//! > ==========================================================================
+
+//! > nullable libfuncs
+
+//! > test_comments
+// TODO(lior): Box shouldn't be created twice.
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo() -> felt {
+    match from_nullable::<felt>(into_nullable::<felt>(into_box::<felt>(1234))) {
+        FromNullableResult::Null(_) => 555,
+        FromNullableResult::NotNull(x) => unbox::<felt>(x),
+    }
+}
+
+//! > casm
+[ap + 0] = 1234, ap++;
+%{ memory[ap + 0] = segments.add() %}
+[ap + -1] = [[ap + 0] + 0], ap++;
+%{ memory[ap + 0] = segments.add() %}
+[ap + -2] = [[ap + 0] + 0], ap++;
+jmp rel 6 if [ap + -2] != 0;
+[ap + 0] = 555, ap++;
+jmp rel 3;
+[ap + 0] = [[ap + -2] + 0], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 7})
+
+//! > sierra_code
+type felt = felt;
+type Box<felt> = Box<felt>;
+type Nullable<felt> = Nullable<felt>;
+
+libfunc felt_const<1234> = felt_const<1234>;
+libfunc store_temp<felt> = store_temp<felt>;
+libfunc into_box<felt> = into_box<felt>;
+libfunc dup<Box<felt>> = dup<Box<felt>>;
+libfunc into_nullable<felt> = into_nullable<felt>;
+libfunc store_temp<Nullable<felt>> = store_temp<Nullable<felt>>;
+libfunc store_temp<Box<felt>> = store_temp<Box<felt>>;
+libfunc drop<Box<felt>> = drop<Box<felt>>;
+libfunc from_nullable<felt> = from_nullable<felt>;
+libfunc branch_align = branch_align;
+libfunc felt_const<555> = felt_const<555>;
+libfunc jump = jump;
+libfunc unbox<felt> = unbox<felt>;
+libfunc rename<felt> = rename<felt>;
+
+felt_const<1234>() -> ([0]);
+store_temp<felt>([0]) -> ([0]);
+into_box<felt>([0]) -> ([1]);
+dup<Box<felt>>([1]) -> ([1], [8]);
+into_nullable<felt>([8]) -> ([2]);
+store_temp<Nullable<felt>>([2]) -> ([2]);
+store_temp<Box<felt>>([1]) -> ([1]);
+drop<Box<felt>>([1]) -> ();
+from_nullable<felt>([2]) { fallthrough() 13([3]) };
+branch_align() -> ();
+felt_const<555>() -> ([4]);
+store_temp<felt>([4]) -> ([5]);
+jump() { 17() };
+branch_align() -> ();
+unbox<felt>([3]) -> ([6]);
+store_temp<felt>([6]) -> ([6]);
+rename<felt>([6]) -> ([5]);
+rename<felt>([5]) -> ([7]);
+return([7]);
+
+test::foo@0() -> (felt);
