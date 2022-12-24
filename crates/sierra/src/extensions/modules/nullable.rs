@@ -131,7 +131,7 @@ impl SignatureAndTypeGenericLibFunc for FromNullableLibFuncWrapped {
                 // `Box<T>`.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?,
+                        ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: true },
