@@ -36,21 +36,22 @@ pub fn build_storage_read(
         tempvar read_value = *(system++);
     };
 
-    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+    let CasmBuildResult { instructions, branches: [(state, _)] } =
+        casm_builder.build(["Fallthrough"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [sierra_ap_change::ApChange::Known(fallthrough_state.ap_change)]
+        [sierra_ap_change::ApChange::Known(state.ap_change)]
     );
     Ok(builder.build(
         instructions,
         vec![],
         [vec![
             ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                fallthrough_state.get_adjusted(system),
+                state.get_adjusted(system),
             )),
             ReferenceExpression::from_cell(CellExpression::Deref(
-                fallthrough_state.get_adjusted_as_cell_ref(read_value),
+                state.get_adjusted_as_cell_ref(read_value),
             )),
         ]
         .into_iter()]
@@ -92,12 +93,14 @@ pub fn build_storage_write(
         jump Failure if revert_reason != 0;
     };
 
-    let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
-        casm_builder.build();
+    let CasmBuildResult {
+        instructions,
+        branches: [(fallthrough_state, _), (failure_state, awaiting_relocations)],
+    } = casm_builder.build(["Fallthrough", "Failure"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, label_state["Failure"].ap_change]
+        [fallthrough_state.ap_change, failure_state.ap_change]
             .map(sierra_ap_change::ApChange::Known)
     );
     let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
@@ -121,13 +124,13 @@ pub fn build_storage_write(
             // Failure branch - return (gas builtin, system, revert_reason)
             vec![
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    label_state["Failure"].get_adjusted(updated_gas_builtin),
+                    failure_state.get_adjusted(updated_gas_builtin),
                 )),
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    label_state["Failure"].get_adjusted(system),
+                    failure_state.get_adjusted(system),
                 )),
                 ReferenceExpression::from_cell(CellExpression::Deref(
-                    label_state["Failure"].get_adjusted_as_cell_ref(revert_reason),
+                    failure_state.get_adjusted_as_cell_ref(revert_reason),
                 )),
             ]
             .into_iter(),

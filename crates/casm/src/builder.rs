@@ -84,15 +84,11 @@ enum Statement {
 }
 
 /// The builder result.
-pub struct CasmBuildResult {
+pub struct CasmBuildResult<const BRANCH_COUNT: usize> {
     /// The actual casm code.
     pub instructions: Vec<Instruction>,
-    /// The set of instructions still requiring relocations.
-    pub awaiting_relocations: Vec<usize>,
-    /// The state at a point of jumping into a label, per label.
-    pub label_state: HashMap<String, State>,
-    /// The state at the last added statement.
-    pub fallthrough_state: State,
+    /// The state and relocations per branch.
+    pub branches: [(State, Vec<usize>); BRANCH_COUNT],
 }
 
 /// Builder to more easily write casm code without specifically thinking about ap changes and the
@@ -114,16 +110,22 @@ pub struct CasmBuilder {
     reachable: bool,
 }
 impl CasmBuilder {
-    /// Finalizes the builder.
-    pub fn build(mut self) -> CasmBuildResult {
+    /// Finalizes the builder, with the requested labels as the returning branches.
+    /// "Fallthrough" is a special case for the fallthrough case.
+    pub fn build<const BRANCH_COUNT: usize>(
+        mut self,
+        branch_names: [&str; BRANCH_COUNT],
+    ) -> CasmBuildResult<BRANCH_COUNT> {
         assert!(
             self.current_hints.is_empty(),
             "Build cannot be called with hints as the last addition."
         );
-        self.main_state.validate_finality();
         let label_offsets = self.compute_label_offsets();
+        if self.reachable {
+            self.label_state.insert("Fallthrough".to_owned(), self.main_state);
+        }
         let mut instructions = vec![];
-        let mut awaiting_relocations = vec![];
+        let mut branch_relocations = HashMap::<String, Vec<usize>>::default();
         let mut offset = 0;
         for statement in self.statements {
             match statement {
@@ -149,9 +151,12 @@ impl CasmBuilder {
                             }
                             _ => unreachable!("Only jump statements should be here."),
                         },
-                        None => {
-                            awaiting_relocations.push(instructions.len());
-                        }
+                        None => match branch_relocations.entry(label) {
+                            Entry::Occupied(mut e) => e.get_mut().push(instructions.len()),
+                            Entry::Vacant(e) => {
+                                e.insert(vec![instructions.len()]);
+                            }
+                        },
                     }
                     offset += inst.body.op_size();
                     instructions.push(inst);
@@ -161,15 +166,15 @@ impl CasmBuilder {
                 }
             }
         }
-        for state in self.label_state.values() {
+        let branches = branch_names.map(|label| {
+            let state =
+                self.label_state.remove(label).expect("Requested a non existing final label.");
             state.validate_finality();
-        }
-        CasmBuildResult {
-            instructions,
-            awaiting_relocations,
-            label_state: self.label_state,
-            fallthrough_state: self.main_state,
-        }
+            (state, branch_relocations.remove(label).unwrap_or_default())
+        });
+        assert!(self.label_state.is_empty(), "Did not use all branches.");
+        assert!(branch_relocations.is_empty(), "Did not use all branch relocations.");
+        CasmBuildResult { instructions, branches }
     }
 
     /// Computes the code offsets of all the labels.

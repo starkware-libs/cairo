@@ -35,13 +35,14 @@ fn build_array_new(
         hint AllocSegment {} into {dst: arr_start};
         ap += 1;
     };
-    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+    let CasmBuildResult { instructions, branches: [(state, _)] } =
+        casm_builder.build(["Fallthrough"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
+        [state.ap_change].map(sierra_ap_change::ApChange::Known)
     );
-    let arr_start = CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(arr_start));
+    let arr_start = CellExpression::Deref(state.get_adjusted_as_cell_ref(arr_start));
     Ok(builder.build(
         instructions,
         vec![],
@@ -66,19 +67,20 @@ fn build_array_append(
         let cell = casm_builder.add_var(ResOperand::Deref(cell.to_deref()?));
         casm_build_extend!(casm_builder, assert cell = *(arr_end++););
     }
-    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+    let CasmBuildResult { instructions, branches: [(state, _)] } =
+        casm_builder.build(["Fallthrough"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
+        [state.ap_change].map(sierra_ap_change::ApChange::Known)
     );
     Ok(builder.build(
         instructions,
         vec![],
         [[ReferenceExpression {
             cells: vec![
-                CellExpression::from_res_operand(fallthrough_state.get_adjusted(arr_start)),
-                CellExpression::from_res_operand(fallthrough_state.get_adjusted(arr_end)),
+                CellExpression::from_res_operand(state.get_adjusted(arr_start)),
+                CellExpression::from_res_operand(state.get_adjusted(arr_end)),
             ],
         }]
         .into_iter()]
@@ -159,12 +161,14 @@ fn build_array_at(
         // Compute address of target cell.
         tempvar target_cell = arr_start + element_offset;
     };
-    let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
-        casm_builder.build();
+    let CasmBuildResult {
+        instructions,
+        branches: [(fallthrough_state, _), (failure_state, awaiting_relocations)],
+    } = casm_builder.build(["Fallthrough", "FailureHandle"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, label_state["FailureHandle"].ap_change]
+        [fallthrough_state.ap_change, failure_state.ap_change]
             .map(sierra_ap_change::ApChange::Known)
     );
     let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
@@ -197,16 +201,12 @@ fn build_array_at(
         .into_iter(),
         vec![
             ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                label_state["FailureHandle"].get_adjusted(range_check),
+                failure_state.get_adjusted(range_check),
             )),
             ReferenceExpression {
                 cells: vec![
-                    CellExpression::Deref(
-                        label_state["FailureHandle"].get_adjusted_as_cell_ref(arr_start),
-                    ),
-                    CellExpression::Deref(
-                        label_state["FailureHandle"].get_adjusted_as_cell_ref(arr_end),
-                    ),
+                    CellExpression::Deref(failure_state.get_adjusted_as_cell_ref(arr_start)),
+                    CellExpression::Deref(failure_state.get_adjusted_as_cell_ref(arr_end)),
                 ],
             },
         ]
@@ -250,21 +250,23 @@ fn build_array_len(
         const element_size = element_size;
         tempvar length = end_total_offset / element_size;
     };
-    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+
+    let CasmBuildResult { instructions, branches: [(state, _)] } =
+        casm_builder.build(["Fallthrough"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
+        [state.ap_change].map(sierra_ap_change::ApChange::Known)
     );
     let output_expressions = [vec![
         ReferenceExpression {
             cells: vec![
-                CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(start)),
-                CellExpression::Deref(fallthrough_state.get_adjusted_as_cell_ref(end)),
+                CellExpression::Deref(state.get_adjusted_as_cell_ref(start)),
+                CellExpression::Deref(state.get_adjusted_as_cell_ref(end)),
             ],
         },
         ReferenceExpression::from_cell(CellExpression::Deref(
-            fallthrough_state.get_adjusted_as_cell_ref(length),
+            state.get_adjusted_as_cell_ref(length),
         )),
     ]
     .into_iter()]

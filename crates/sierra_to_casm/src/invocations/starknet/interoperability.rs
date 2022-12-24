@@ -54,15 +54,16 @@ pub fn build_call_contract(
         jump Failure if revert_reason != 0;
     };
 
-    let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
-        casm_builder.build();
+    let CasmBuildResult {
+        instructions,
+        branches: [(fallthrough_state, _), (failure_state, awaiting_relocations)],
+    } = casm_builder.build(["Fallthrough", "Failure"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, label_state["Failure"].ap_change]
+        [fallthrough_state.ap_change, failure_state.ap_change]
             .map(sierra_ap_change::ApChange::Known)
     );
-
     let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
     Ok(builder.build(
         instructions,
@@ -90,22 +91,18 @@ pub fn build_call_contract(
             // Failure branch - return (gas builtin, system, revert_reason, result_array)
             vec![
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    label_state["Failure"].get_adjusted(updated_gas_builtin),
+                    failure_state.get_adjusted(updated_gas_builtin),
                 )),
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    label_state["Failure"].get_adjusted(system),
+                    failure_state.get_adjusted(system),
                 )),
                 ReferenceExpression::from_cell(CellExpression::Deref(
-                    label_state["Failure"].get_adjusted_as_cell_ref(revert_reason),
+                    failure_state.get_adjusted_as_cell_ref(revert_reason),
                 )),
                 ReferenceExpression {
                     cells: vec![
-                        CellExpression::from_res_operand(
-                            label_state["Failure"].get_adjusted(res_start),
-                        ),
-                        CellExpression::from_res_operand(
-                            label_state["Failure"].get_adjusted(res_end),
-                        ),
+                        CellExpression::from_res_operand(failure_state.get_adjusted(res_start)),
+                        CellExpression::from_res_operand(failure_state.get_adjusted(res_end)),
                     ],
                 },
             ]

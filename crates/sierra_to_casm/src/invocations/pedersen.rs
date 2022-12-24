@@ -39,21 +39,22 @@ fn build_pedersen_hash(
         assert y = *(pedersen++);
         let result = *(pedersen++);
     };
-    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+    let CasmBuildResult { instructions, branches: [(state, _)] } =
+        casm_builder.build(["Fallthrough"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
+        [state.ap_change].map(sierra_ap_change::ApChange::Known)
     );
     Ok(builder.build(
         instructions,
         vec![],
         [vec![
             ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                fallthrough_state.get_adjusted(pedersen),
+                state.get_adjusted(pedersen),
             )),
             ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                fallthrough_state.get_adjusted(result),
+                state.get_adjusted(result),
             )),
         ]
         .into_iter()]

@@ -98,14 +98,12 @@ fn build_u128_op(
             };
             let CasmBuildResult {
                 instructions,
-                awaiting_relocations,
-                label_state,
-                fallthrough_state,
-            } = casm_builder.build();
+                branches: [(fallthrough_state, ..), (target_state, awaiting_relocations)],
+            } = casm_builder.build(["Fallthrough", "Target"]);
             // TODO(orizi): Extract the assertion out of the libfunc implementation.
             assert_eq!(
                 core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-                [fallthrough_state.ap_change, label_state["Target"].ap_change]
+                [fallthrough_state.ap_change, target_state.ap_change]
                     .map(sierra_ap_change::ApChange::Known)
             );
             let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
@@ -127,10 +125,10 @@ fn build_u128_op(
                     .into_iter(),
                     vec![
                         ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                            label_state["Target"].get_adjusted(range_check),
+                            target_state.get_adjusted(range_check),
                         )),
                         ReferenceExpression::from_cell(CellExpression::Deref(
-                            label_state["Target"].get_adjusted_as_cell_ref(overflow_fixed),
+                            target_state.get_adjusted_as_cell_ref(overflow_fixed),
                         )),
                     ]
                     .into_iter(),
@@ -191,21 +189,12 @@ fn build_u128_op(
                 assert a = bq + r;
             };
 
-            let CasmBuildResult {
-                instructions,
-                awaiting_relocations,
-                label_state: _,
-                fallthrough_state,
-            } = casm_builder.build();
+            let CasmBuildResult { instructions, branches: [(fallthrough_state, ..)] } =
+                casm_builder.build(["Fallthrough"]);
             // TODO(orizi): Extract the assertion out of the libfunc implementation.
             assert_eq!(
                 core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
                 [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
-            );
-
-            assert!(
-                awaiting_relocations.is_empty(),
-                "Malformed casm builder usage (no non-fallthrough branch in divmod)."
             );
 
             Ok(builder.build(
@@ -295,12 +284,14 @@ fn build_u128_from_felt(
         NoOverflow:
             assert value = *(range_check++);
     };
-    let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
-        casm_builder.build();
+    let CasmBuildResult {
+        instructions,
+        branches: [(fallthrough_state, ..), (failure_state, awaiting_relocations)],
+    } = casm_builder.build(["Fallthrough", "FailureHandle"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, label_state["FailureHandle"].ap_change]
+        [fallthrough_state.ap_change, failure_state.ap_change]
             .map(sierra_ap_change::ApChange::Known)
     );
     let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
@@ -322,13 +313,13 @@ fn build_u128_from_felt(
             .into_iter(),
             vec![
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    label_state["FailureHandle"].get_adjusted(range_check),
+                    failure_state.get_adjusted(range_check),
                 )),
                 ReferenceExpression::from_cell(CellExpression::Deref(
-                    label_state["FailureHandle"].get_adjusted_as_cell_ref(x),
+                    failure_state.get_adjusted_as_cell_ref(x),
                 )),
                 ReferenceExpression::from_cell(CellExpression::Deref(
-                    label_state["FailureHandle"].get_adjusted_as_cell_ref(y),
+                    failure_state.get_adjusted_as_cell_ref(y),
                 )),
             ]
             .into_iter(),
@@ -358,13 +349,14 @@ fn build_u128_lt(
         False:
             assert a_minus_b = *(range_check++);
     };
-    let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
-        casm_builder.build();
+    let CasmBuildResult {
+        instructions,
+        branches: [(false_state, ..), (true_state, awaiting_relocations)],
+    } = casm_builder.build(["Fallthrough", "True"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, label_state["True"].ap_change]
-            .map(sierra_ap_change::ApChange::Known)
+        [false_state.ap_change, true_state.ap_change].map(sierra_ap_change::ApChange::Known)
     );
     let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
     Ok(builder.build(
@@ -375,11 +367,11 @@ fn build_u128_lt(
         }],
         [
             vec![ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                fallthrough_state.get_adjusted(range_check),
+                false_state.get_adjusted(range_check),
             ))]
             .into_iter(),
             vec![ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                label_state["True"].get_adjusted(range_check),
+                true_state.get_adjusted(range_check),
             ))]
             .into_iter(),
         ]
@@ -408,13 +400,14 @@ fn build_u128_le(
             tempvar wrapping_a_minus_b = b_minus_a + u128_limit;
             assert wrapping_a_minus_b = *(range_check++);
     };
-    let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
-        casm_builder.build();
+    let CasmBuildResult {
+        instructions,
+        branches: [(false_state, ..), (true_state, awaiting_relocations)],
+    } = casm_builder.build(["Fallthrough", "True"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, label_state["True"].ap_change]
-            .map(sierra_ap_change::ApChange::Known)
+        [false_state.ap_change, true_state.ap_change].map(sierra_ap_change::ApChange::Known)
     );
     let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
     Ok(builder.build(
@@ -425,11 +418,11 @@ fn build_u128_le(
         }],
         [
             vec![ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                fallthrough_state.get_adjusted(range_check),
+                false_state.get_adjusted(range_check),
             ))]
             .into_iter(),
             vec![ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                label_state["True"].get_adjusted(range_check),
+                true_state.get_adjusted(range_check),
             ))]
             .into_iter(),
         ]
@@ -459,14 +452,16 @@ fn build_u128_eq(
             jump Equal;
         NotEqual:
     };
-    let CasmBuildResult { instructions, awaiting_relocations, fallthrough_state, label_state } =
-        casm_builder.build();
+
+    let CasmBuildResult {
+        instructions,
+        branches: [(fallthrough_state, _), (equal_state, awaiting_relocations)],
+    } = casm_builder.build(["Fallthrough", "Equal"]);
 
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, label_state["Equal"].ap_change]
-            .map(sierra_ap_change::ApChange::Known)
+        [fallthrough_state.ap_change, equal_state.ap_change].map(sierra_ap_change::ApChange::Known)
     );
     let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
     Ok(builder.build(
