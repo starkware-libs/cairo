@@ -1,17 +1,14 @@
-use casm::builder::{CasmBuildResult, CasmBuilder};
+use casm::builder::CasmBuilder;
 use casm::casm_build_extend;
 use casm::operand::ResOperand;
 use num_bigint::BigInt;
 use sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
 };
-use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::gas::STEP_COST;
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{CellExpression, ReferenceExpression};
-use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra gas operations.
 pub fn build(
@@ -122,44 +119,11 @@ fn build_builtin_get_gas(
         tempvar updated_gas = gas_counter - total_requested_count;
         assert updated_gas = *(range_check++);
     };
-
-    let CasmBuildResult {
-        instructions,
-        branches: [(fallthrough_state, _), (failure_state, awaiting_relocations)],
-    } = casm_builder.build(["Fallthrough", "Failure"]);
-    // TODO(orizi): Extract the assertion out of the libfunc implementation.
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, failure_state.ap_change]
-            .map(sierra_ap_change::ApChange::Known)
-    );
-    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
-    Ok(builder.build(
-        instructions,
-        vec![RelocationEntry {
-            instruction_idx: *relocation_index,
-            relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
-        }],
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
         [
-            vec![
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    fallthrough_state.get_adjusted(range_check),
-                )),
-                ReferenceExpression::from_cell(CellExpression::Deref(
-                    fallthrough_state.get_adjusted_as_cell_ref(updated_gas),
-                )),
-            ]
-            .into_iter(),
-            vec![
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    failure_state.get_adjusted(range_check),
-                )),
-                ReferenceExpression::from_cell(CellExpression::Deref(
-                    failure_state.get_adjusted_as_cell_ref(gas_counter),
-                )),
-            ]
-            .into_iter(),
-        ]
-        .into_iter(),
+            ("Fallthrough", &[&[range_check], &[updated_gas]], None),
+            ("Failure", &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
+        ],
     ))
 }

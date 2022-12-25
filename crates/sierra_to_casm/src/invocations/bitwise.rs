@@ -1,10 +1,8 @@
-use casm::builder::{CasmBuildResult, CasmBuilder};
+use casm::builder::CasmBuilder;
 use casm::casm_build_extend;
 use casm::operand::ResOperand;
-use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{CellExpression, ReferenceExpression};
 
 #[cfg(test)]
 #[path = "bitwise_test.rs"]
@@ -37,25 +35,8 @@ fn build_bitwise(
         let xor = *(bitwise++);
         let or = *(bitwise++);
     };
-
-    let CasmBuildResult { instructions, branches: [(state, _)] } =
-        casm_builder.build(["Fallthrough"]);
-
-    // TODO(orizi): Extract the assertion out of the libfunc implementation.
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [state.ap_change].map(sierra_ap_change::ApChange::Known)
-    );
-
-    let output_expressions = [vec![
-        ReferenceExpression::from_cell(CellExpression::from_res_operand(
-            state.get_adjusted(bitwise),
-        )),
-        ReferenceExpression::from_cell(CellExpression::from_res_operand(state.get_adjusted(and))),
-        ReferenceExpression::from_cell(CellExpression::from_res_operand(state.get_adjusted(xor))),
-        ReferenceExpression::from_cell(CellExpression::from_res_operand(state.get_adjusted(or))),
-    ]
-    .into_iter()]
-    .into_iter();
-    Ok(builder.build(instructions, vec![], output_expressions))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[bitwise], &[and], &[xor], &[or]], None)],
+    ))
 }
