@@ -1,7 +1,9 @@
+use sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
 use sierra::extensions::nullable::NullableConcreteLibFunc;
 
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::misc::build_jump_nz;
 use crate::references::{CellExpression, ReferenceExpression};
 
 /// Builds Casm instructions for Nullable operations.
@@ -12,6 +14,9 @@ pub fn build(
     match libfunc {
         NullableConcreteLibFunc::Null(_) => build_nullable_null(builder),
         NullableConcreteLibFunc::IntoNullable(_) => build_identity(builder),
+        NullableConcreteLibFunc::FromNullable(libfunc) => {
+            build_nullable_from_nullable(builder, libfunc)
+        }
     }
 }
 
@@ -23,4 +28,29 @@ fn build_nullable_null(
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression { cells: vec![CellExpression::Immediate(0.into())] }].into_iter(),
     ))
+}
+
+/// Builds Casm instructions for the `null()` libfunc.
+fn build_nullable_from_nullable(
+    builder: CompiledInvocationBuilder<'_>,
+    libfunc: &SignatureAndTypeConcreteLibFunc,
+) -> Result<CompiledInvocation, InvocationError> {
+    // Check that the size of the inner type is nonzero and the argument is a simple deref
+    // expression.
+    //
+    // This guarantees that values are written to the memory address pointed by the `Nullable<>`
+    // instance in the case it is not `null`.
+    // It follows that this address cannot be zero, since the Cairo-AIR guarantees that all
+    // memory accesses have address >= 1.
+    //
+    // Therefore, we can be sure that the address is nonzero if and only if the instance is not
+    // `null`.
+    assert!(
+        builder.program_info.type_sizes[&libfunc.ty] > 0,
+        "Nullable<> cannot be used for types of size 0."
+    );
+
+    builder.refs[0].expression.try_unpack_single()?.to_deref()?;
+
+    build_jump_nz(builder)
 }

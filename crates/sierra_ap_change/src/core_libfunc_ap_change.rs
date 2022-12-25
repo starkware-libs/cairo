@@ -115,6 +115,9 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
         CoreConcreteLibFunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibFunc::Null(_) => vec![ApChange::Known(0)],
             NullableConcreteLibFunc::IntoNullable(_) => vec![ApChange::Known(0)],
+            NullableConcreteLibFunc::FromNullable(_) => {
+                vec![ApChange::Known(0), ApChange::Known(0)]
+            }
         },
     }
 }

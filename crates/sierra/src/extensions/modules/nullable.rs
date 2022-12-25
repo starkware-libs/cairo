@@ -1,9 +1,9 @@
 use super::boxing::BoxType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureAndTypeGenericLibFunc, SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
-    WrapSignatureAndTypeGenericLibFunc,
+    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureAndTypeGenericLibFunc, SignatureOnlyGenericLibFunc,
+    SignatureSpecializationContext, WrapSignatureAndTypeGenericLibFunc,
 };
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
@@ -52,6 +52,7 @@ define_libfunc_hierarchy! {
     pub enum NullableLibFunc {
         Null(NullLibFunc),
         IntoNullable(IntoNullableLibFunc),
+        FromNullable(FromNullableLibFunc),
     }, NullableConcreteLibFunc
 }
 
@@ -105,3 +106,39 @@ impl SignatureAndTypeGenericLibFunc for IntoNullableLibFuncWrapped {
     }
 }
 pub type IntoNullableLibFunc = WrapSignatureAndTypeGenericLibFunc<IntoNullableLibFuncWrapped>;
+
+/// LibFunc for converting `Nullable<T>` to either `Box<T>` or nothing (in the case of `null`).
+#[derive(Default)]
+pub struct FromNullableLibFuncWrapped {}
+impl SignatureAndTypeGenericLibFunc for FromNullableLibFuncWrapped {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("from_nullable");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        Ok(LibFuncSignature {
+            param_signatures: vec![ParamSignature::new(
+                context.get_wrapped_concrete_type(NullableType::id(), ty.clone())?,
+            )],
+            branch_signatures: vec![
+                // `null`.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+                // `Box<T>`.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+pub type FromNullableLibFunc = WrapSignatureAndTypeGenericLibFunc<FromNullableLibFuncWrapped>;
