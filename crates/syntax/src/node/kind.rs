@@ -182,6 +182,8 @@ pub enum SyntaxKind {
     TerminalQuestionMark,
     TokenUnderscore,
     TerminalUnderscore,
+    TokenHash,
+    TerminalHash,
     TokenLBrace,
     TerminalLBrace,
     TokenRBrace,
@@ -202,8 +204,6 @@ pub enum SyntaxKind {
     TerminalEndOfFile,
     TokenBadCharacters,
     TerminalBadCharacters,
-    TokenHash,
-    TerminalHash,
     SyntaxFile,
     TokenSingleLineComment,
     TokenWhitespace,
@@ -265,6 +265,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenSemicolon
                 | SyntaxKind::TokenQuestionMark
                 | SyntaxKind::TokenUnderscore
+                | SyntaxKind::TokenHash
                 | SyntaxKind::TokenLBrace
                 | SyntaxKind::TokenRBrace
                 | SyntaxKind::TokenLBrack
@@ -275,7 +276,6 @@ impl SyntaxKind {
                 | SyntaxKind::TokenMatchArrow
                 | SyntaxKind::TokenEndOfFile
                 | SyntaxKind::TokenBadCharacters
-                | SyntaxKind::TokenHash
                 | SyntaxKind::TokenSingleLineComment
                 | SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
@@ -336,6 +336,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalSemicolon
                 | SyntaxKind::TerminalQuestionMark
                 | SyntaxKind::TerminalUnderscore
+                | SyntaxKind::TerminalHash
                 | SyntaxKind::TerminalLBrace
                 | SyntaxKind::TerminalRBrace
                 | SyntaxKind::TerminalLBrack
@@ -346,7 +347,6 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalMatchArrow
                 | SyntaxKind::TerminalEndOfFile
                 | SyntaxKind::TerminalBadCharacters
-                | SyntaxKind::TerminalHash
         )
     }
     pub fn is_keyword_token(&self) -> bool {

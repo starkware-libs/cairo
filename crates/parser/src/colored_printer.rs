@@ -64,30 +64,44 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenDiv
         | SyntaxKind::TokenMod
         | SyntaxKind::TokenDot => text.bright_magenta(),
-        SyntaxKind::TokenLiteralNumber | SyntaxKind::TokenFalse | SyntaxKind::TokenTrue => {
-            text.bright_cyan()
-        }
+        SyntaxKind::TokenLiteralNumber
+        | SyntaxKind::TokenFalse
+        | SyntaxKind::TokenTrue
+        | SyntaxKind::TokenShortString => text.bright_cyan(),
         SyntaxKind::TokenExtern
         | SyntaxKind::TokenType
         | SyntaxKind::TokenFunction
         | SyntaxKind::TokenModule
+        | SyntaxKind::TokenEnum
         | SyntaxKind::TokenStruct
-        | SyntaxKind::TokenUse => text.bright_blue(),
-        SyntaxKind::TokenLet
+        | SyntaxKind::TokenTrait
+        | SyntaxKind::TokenImpl => text.bright_blue(),
+        SyntaxKind::TokenOf
+        | SyntaxKind::TokenLet
         | SyntaxKind::TokenReturn
         | SyntaxKind::TokenMatch
         | SyntaxKind::TokenIf
-        | SyntaxKind::TokenElse => text.bright_blue(),
+        | SyntaxKind::TokenElse
+        | SyntaxKind::TokenUse
+        | SyntaxKind::TokenImplicits
+        | SyntaxKind::TokenRef
+        | SyntaxKind::TokenMut
+        | SyntaxKind::TokenNoPanic => text.bright_blue(),
         SyntaxKind::TokenArrow
         | SyntaxKind::TokenMatchArrow
         | SyntaxKind::TokenColon
         | SyntaxKind::TokenColonColon
         | SyntaxKind::TokenDotDot
         | SyntaxKind::TokenSemicolon
-        | SyntaxKind::TokenUnderscore
         | SyntaxKind::TokenAnd
+        | SyntaxKind::TokenAndAnd
         | SyntaxKind::TokenOr
-        | SyntaxKind::TokenNot => text.truecolor(255, 180, 255), // Pink
+        | SyntaxKind::TokenOrOr
+        | SyntaxKind::TokenXor
+        | SyntaxKind::TokenNot
+        | SyntaxKind::TokenQuestionMark
+        | SyntaxKind::TokenUnderscore
+        | SyntaxKind::TokenHash => text.truecolor(255, 180, 255), // Pink
         SyntaxKind::TokenEq
         | SyntaxKind::TokenEqEq
         | SyntaxKind::TokenGE
@@ -97,7 +111,6 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenNeq => {
             text.truecolor(255, 165, 0) // Orange
         }
-        SyntaxKind::TokenAndAnd | SyntaxKind::TokenOrOr => text.truecolor(255, 165, 0), // Orange
         SyntaxKind::TokenLBrace
         | SyntaxKind::TokenRBrace
         | SyntaxKind::TokenLBrack

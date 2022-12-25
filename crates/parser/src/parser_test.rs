@@ -145,6 +145,7 @@ fn parse_and_compare_colored_maybe_fix(test_params: &ParserColoredTestParams, fi
     let (syntax_root, _diagnostics) =
         get_syntax_root_and_diagnostics_from_file(db, test_params.cairo_filename);
     let printed = print_colored(db, &syntax_root, test_params.verbose);
+    println!("yg colored code:\n{}", printed);
     let expected = read_file(test_params.expected_colored_filename);
     compare_printed_and_expected_maybe_fix(
         printed,

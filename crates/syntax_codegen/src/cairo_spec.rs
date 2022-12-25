@@ -484,6 +484,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_token_and_terminal("Semicolon")
     .add_token_and_terminal("QuestionMark")
     .add_token_and_terminal("Underscore")
+    .add_token_and_terminal("Hash")
     .add_token_and_terminal("LBrace")
     .add_token_and_terminal("RBrace")
     .add_token_and_terminal("LBrack")
@@ -494,7 +495,6 @@ pub fn get_spec() -> Vec<Node> {
     .add_token_and_terminal("MatchArrow")
     .add_token_and_terminal("EndOfFile")
     .add_token_and_terminal("BadCharacters")
-    .add_token_and_terminal("Hash")
     // --- Meta ---
     .add_struct(StructBuilder::new("SyntaxFile")
         .node("items", "ItemList")
