@@ -1,8 +1,9 @@
 use assert_matches::assert_matches;
 use casm::ap_change::ApChange;
+use casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use casm::instructions::Instruction;
 use casm::operand::{CellRef, Register};
-use itertools::zip_eq;
+use itertools::{zip_eq, Itertools};
 use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::lib_func::BranchSignature;
@@ -18,7 +19,7 @@ use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
 use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
-use crate::relocations::RelocationEntry;
+use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
 mod array;
@@ -158,6 +159,11 @@ pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), Invocati
     Ok(())
 }
 
+/// The cells per returned Sierra variables, in casm-builder vars.
+type VarCells = [Var];
+/// The configuration for all Sierra variables returned from a libfunc.
+type AllVars<'a> = [&'a VarCells];
+
 /// Helper for building compiled invocations.
 pub struct CompiledInvocationBuilder<'a> {
     pub program_info: ProgramInfo<'a>,
@@ -256,6 +262,47 @@ impl CompiledInvocationBuilder<'_> {
             .collect(),
             environment: self.environment,
         }
+    }
+
+    /// Builds a `CompiledInvocation` from a casm builder and branch extractions.
+    /// Per branch requires `(name, result_variables, target_statement_id)`.
+    fn build_from_casm_builder<const BRANCH_COUNT: usize>(
+        self,
+        casm_builder: CasmBuilder,
+        branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
+    ) -> CompiledInvocation {
+        let CasmBuildResult { instructions, branches } =
+            casm_builder.build(branch_extractions.map(|(name, _, _)| name));
+        assert!(itertools::equal(
+            core_libfunc_ap_change(self.libfunc),
+            branches.iter().map(|(state, _)| sierra_ap_change::ApChange::Known(state.ap_change))
+        ));
+        let relocations = branches
+            .iter()
+            .zip_eq(branch_extractions.iter())
+            .flat_map(|((_, relocations), (_, _, target))| {
+                assert_eq!(
+                    relocations.is_empty(),
+                    target.is_none(),
+                    "No relocations if nowhere to relocate to."
+                );
+                relocations.iter().map(|idx| RelocationEntry {
+                    instruction_idx: *idx,
+                    relocation: Relocation::RelativeStatementId(target.unwrap()),
+                })
+            })
+            .collect();
+        let output_expressions = branches.into_iter().zip_eq(branch_extractions.into_iter()).map(
+            |((state, _), (_, vars, _))| {
+                vars.iter().map(move |var_cells| ReferenceExpression {
+                    cells: var_cells
+                        .iter()
+                        .map(|cell| CellExpression::from_res_operand(state.get_adjusted(*cell)))
+                        .collect(),
+                })
+            },
+        );
+        self.build(instructions, relocations, output_expressions)
     }
 
     /// Creates a new invocation with only reference changes.
