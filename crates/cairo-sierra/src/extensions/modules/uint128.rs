@@ -359,7 +359,7 @@ impl NoGenericArgsGenericLibFunc for Uint128EqualLibFunc {
             })
             .collect();
         let param_signature = ParamSignature {
-            ty: u128_ty.clone(),
+            ty: u128_ty,
             allow_deferred: false,
             allow_add_const: false,
             allow_const: true,
