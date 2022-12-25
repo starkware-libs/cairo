@@ -7,16 +7,16 @@ test_expr_diagnostics
 {}
 
 //! > module_code
-func foo1() -> UnknownType {
+fn foo1() -> UnknownType {
     0
 }
-func foo2() -> UnknownType {
+fn foo2() -> UnknownType {
     return 0;
 }
-func foo3() -> felt {
+fn foo3() -> felt {
     UnknownType{}
 }
-func foo4() -> felt {
+fn foo4() -> felt {
     return UnknownType{};
 }
 
@@ -24,14 +24,14 @@ func foo4() -> felt {
 
 //! > expected_diagnostics
 error: Type not found.
- --> lib.cairo:1:16
-func foo1() -> UnknownType {
-               ^*********^
+ --> lib.cairo:1:14
+fn foo1() -> UnknownType {
+             ^*********^
 
 error: Type not found.
- --> lib.cairo:4:16
-func foo2() -> UnknownType {
-               ^*********^
+ --> lib.cairo:4:14
+fn foo2() -> UnknownType {
+             ^*********^
 
 error: Type not found.
  --> lib.cairo:8:5

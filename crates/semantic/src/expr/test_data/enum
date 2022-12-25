@@ -9,7 +9,7 @@ enum A {
     b: felt,
 }
 
-func foo() {
+fn foo() {
     let a : A = A::a(());
     let a : A = A::b(5);
     let b : bool = bool::True(());

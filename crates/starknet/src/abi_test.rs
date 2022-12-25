@@ -14,7 +14,7 @@ fn test_abi() {
         &mut db_val,
         indoc! {"
             trait MyAbi {
-                func foo(a: felt, b: u128) -> Option::<()>;
+                fn foo(a: felt, b: u128) -> Option::<()>;
             }
         "},
     )

@@ -7,7 +7,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-func foo() -> bool {
+fn foo() -> bool {
     let x = true;
     revoke_ap();
     x
@@ -15,7 +15,7 @@ func foo() -> bool {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-func revoke_ap() -> felt {
+fn revoke_ap() -> felt {
     revoke_ap()
 }
 

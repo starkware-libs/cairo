@@ -16,7 +16,7 @@ The suggestion introduces these elements:
 ```
 trait MyTrait<A, B> {
   type T;
-  func f(a: A, t: T) -> (T, B);
+  fn f(a: A, t: T) -> (T, B);
 }
 ```
 This item introduces an "interface", with function signatures and associated types that need to be
@@ -27,7 +27,7 @@ Not that there is no `Self` or a type this trait is `for`. It is stand alone.
 ```
 impl MyImpl<A> for MyTrait<A, felt> {
   type T = A;
-  func f(a: A, b: felt) -> T { ... }
+  fn f(a: A, b: felt) -> T { ... }
 }
 ```
 This item introduces an implementation for this trait.
@@ -69,4 +69,4 @@ impl<T: Copy> Clone for T {}
 
 ## Consequences
 - Traits and impls have no inherent Self type or instance. Their functions are not methods.
-- It is not clear if obj.func() syntax will be present and how it will work if it is.
+- It is not clear if obj.fn() syntax will be present and how it will work if it is.

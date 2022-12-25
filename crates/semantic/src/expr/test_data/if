@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-func foo() {
+fn foo() {
     let x = 7;
     if x {
         true
@@ -25,9 +25,9 @@ error: If blocks have incompatible types: "core::bool" and "core::felt"
     ^****^
 
 error: Unexpected return type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:12
-func foo() {
-           ^
+ --> lib.cairo:1:10
+fn foo() {
+         ^
 
 //! > ==========================================================================
 
@@ -37,7 +37,7 @@ func foo() {
 test_function_diagnostics
 
 //! > function
-func foo() -> bool {
+fn foo() -> bool {
     let x = 7;
     if x {
         return true;

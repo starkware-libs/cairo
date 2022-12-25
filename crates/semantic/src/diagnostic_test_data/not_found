@@ -8,7 +8,7 @@ test_expr_diagnostics
 }
 
 //! > module_code
-func foo() -> UnknownType {
+fn foo() -> UnknownType {
   bar();
 }
 
@@ -16,9 +16,9 @@ func foo() -> UnknownType {
 
 //! > expected_diagnostics
 error: Type not found.
- --> lib.cairo:1:15
-func foo() -> UnknownType {
-              ^*********^
+ --> lib.cairo:1:13
+fn foo() -> UnknownType {
+            ^*********^
 
 error: Function not found.
  --> lib.cairo:2:3

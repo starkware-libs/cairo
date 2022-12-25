@@ -15,7 +15,7 @@ fn test_extern_function() {
     let test_module = setup_test_module(
         db,
         indoc::indoc! {"
-            extern func foo<A, B>() nopanic;
+            extern fn foo<A, B>() nopanic;
         "},
     )
     .unwrap();

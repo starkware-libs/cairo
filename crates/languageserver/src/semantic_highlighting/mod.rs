@@ -17,7 +17,7 @@ pub struct SemanticTokensTraverser {
     encoder: TokenEncoder,
     /// A map from an offset in the file to semantic token kind.
     /// This map is used to override future tokens based on the context.
-    /// For example: when we see the "func" keyword, the name token is added
+    /// For example: when we see the "fn" keyword, the name token is added
     /// to the map, so that instead of marking it as an identifier, we will mark it
     /// as a function name.
     offset_to_kind_lookahead: UnorderedHashMap<u32, SemanticTokenKind>,

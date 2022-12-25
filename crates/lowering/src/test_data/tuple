@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo() {
+fn foo() {
     let a = (1,2);
     let (x,y) = a;
     let (x,y) = (1,2);

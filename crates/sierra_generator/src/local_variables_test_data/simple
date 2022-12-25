@@ -7,7 +7,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-func foo(x: felt) -> felt {
+fn foo(x: felt) -> felt {
     let y0 = x + x;
     let y1 = y0 + y0;
     let y2 = y1 + y1;  // Note: y2 is not used below.
@@ -20,7 +20,7 @@ func foo(x: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-func revoke_ap() -> felt {
+fn revoke_ap() -> felt {
     revoke_ap()
 }
 
@@ -54,7 +54,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-func foo(x: felt) -> felt {
+fn foo(x: felt) -> felt {
     let y0 = x + x;
     revoke_ap();
     return y0;
@@ -62,7 +62,7 @@ func foo(x: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-func revoke_ap() -> felt {
+fn revoke_ap() -> felt {
     revoke_ap()
 }
 
@@ -90,7 +90,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-func foo(x: felt) -> felt {
+fn foo(x: felt) -> felt {
     let y = x + x;
     let z = y + y;
     let (z0, z1) = dup::<felt>(z);
@@ -102,7 +102,7 @@ func foo(x: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-func revoke_ap() -> felt {
+fn revoke_ap() -> felt {
     revoke_ap()
 }
 

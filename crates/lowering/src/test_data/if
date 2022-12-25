@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(a: bool, x: felt) -> felt {
+fn foo(a: bool, x: felt) -> felt {
     if a {
         1
     } else {
@@ -56,7 +56,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(x: felt) -> felt {
+fn foo(x: felt) -> felt {
     if x == 0 {
         1
     } else {
@@ -108,7 +108,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(x: felt) -> felt {
+fn foo(x: felt) -> felt {
     if 0 == x {
         return 10;
     }
@@ -160,7 +160,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(x: felt, y: felt, z: felt, w: felt) -> felt {
+fn foo(x: felt, y: felt, z: felt, w: felt) -> felt {
     if x + y == z - w {
         0
     } else {
