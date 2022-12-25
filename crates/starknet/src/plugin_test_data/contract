@@ -11,7 +11,12 @@ fn internal_func(ref system: System) -> felt {
 }
 
 #[external]
-fn test(ref system: System, ref arg: felt, num: felt) -> felt {
+fn ext_test(ref system: System, ref arg: felt, num: felt) -> felt {
+    1
+}
+
+#[view]
+fn view_test(ref system: System, ref arg: felt, num: felt) -> felt {
     1
 }
 }
@@ -23,11 +28,16 @@ mod __generated__TestContract {
     }
 
     #[external]
-    fn test(ref system: System, ref arg: felt, num: felt) -> felt {
+    fn ext_test(ref system: System, ref arg: felt, num: felt) -> felt {
+        1
+    }
+
+    #[view]
+    fn view_test(ref system: System, ref arg: felt, num: felt) -> felt {
         1
     }
     mod __external {
-        fn test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+        fn ext_test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -48,7 +58,34 @@ mod __generated__TestContract {
                 Option::Some(x) => x,
                 Option::None(()) => panic(array::array_new::<felt>()),
             };
-            let res = super::test(system, __arg_arg, __arg_num);
+            let res = super::ext_test(system, __arg_arg, __arg_num);
+            let mut arr = array::array_new::<felt>();
+            array::array_append::<felt>(arr, __arg_arg);
+            array::array_append::<felt>(arr, res);
+            arr
+        }
+        fn view_test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut data = array_new::<felt>();
+                    array_append::<felt>(data, 'OOG');
+                    panic(data);
+                },
+            }
+            if array::array_len::<felt>(data) != 3_u128 {
+                panic(array::array_new::<felt>());
+            }
+            let mut __arg_arg: felt = match array::array_at::<felt>(data, 0_u128) {
+                Option::Some(x) => x,
+                Option::None(()) => panic(array::array_new::<felt>()),
+            };
+            let __arg_num: felt = match array::array_at::<felt>(data, 1_u128) {
+                Option::Some(x) => x,
+                Option::None(()) => panic(array::array_new::<felt>()),
+            };
+            let res = super::view_test(system, __arg_arg, __arg_num);
             let mut arr = array::array_new::<felt>();
             array::array_append::<felt>(arr, __arg_arg);
             array::array_append::<felt>(arr, res);
