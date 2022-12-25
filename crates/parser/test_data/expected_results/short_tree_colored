@@ -12,28 +12,29 @@
     │   │   └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
     │   └── [36mchild #1[0m (kind: ItemFreeFunction)
     │       ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
-    │       ├── [34mfunction_kw[0m (kind: TokenFunction): '[1;32mfn[0m'
-    │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32mfoo[0m'
-    │       ├── [36mgeneric_params[0m (kind: OptionWrappedGenericParamListEmpty)[95m [][0m
-    │       ├── [36msignature[0m (kind: FunctionSignature)
-    │       │   ├── [34mlparen[0m (kind: TokenLParen): '[1;32m([0m'
-    │       │   ├── [36mparameters[0m (kind: ParamList)
-    │       │   │   └── [36mitem #0[0m (kind: Param)
-    │       │   │       ├── [36mmodifiers[0m (kind: ModifierList)[95m [][0m
-    │       │   │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32ma[0m'
-    │       │   │       └── [36mtype_clause[0m (kind: TypeClause)
-    │       │   │           ├── [34mcolon[0m (kind: TokenColon): '[1;32m:[0m'
-    │       │   │           └── [36mty[0m (kind: ExprPath)
-    │       │   │               └── [36mitem #0[0m (kind: PathSegmentSimple)
-    │       │   │                   └── [34mident[0m (kind: TokenIdentifier): '[1;32mint[0m'
-    │       │   ├── [34mrparen[0m (kind: TokenRParen): '[1;32m)[0m'
-    │       │   ├── [36mret_ty[0m (kind: ReturnTypeClause)
-    │       │   │   ├── [34marrow[0m (kind: TokenArrow): '[1;32m->[0m'
-    │       │   │   └── [36mty[0m (kind: ExprPath)
-    │       │   │       └── [36mitem #0[0m (kind: PathSegmentSimple)
-    │       │   │           └── [34mident[0m (kind: TokenIdentifier): '[1;32mfelt[0m'
-    │       │   ├── [36mimplicits_clause[0m (kind: OptionImplicitsClauseEmpty)[95m [][0m
-    │       │   └── [36moptional_no_panic[0m (kind: OptionTerminalNoPanicEmpty)[95m [][0m
+    │       ├── [36mdeclaration[0m (kind: FunctionDeclaration)
+    │       │   ├── [34mfunction_kw[0m (kind: TokenFunction): '[1;32mfn[0m'
+    │       │   ├── [34mname[0m (kind: TokenIdentifier): '[1;32mfoo[0m'
+    │       │   ├── [36mgeneric_params[0m (kind: OptionWrappedGenericParamListEmpty)[95m [][0m
+    │       │   └── [36msignature[0m (kind: FunctionSignature)
+    │       │       ├── [34mlparen[0m (kind: TokenLParen): '[1;32m([0m'
+    │       │       ├── [36mparameters[0m (kind: ParamList)
+    │       │       │   └── [36mitem #0[0m (kind: Param)
+    │       │       │       ├── [36mmodifiers[0m (kind: ModifierList)[95m [][0m
+    │       │       │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32ma[0m'
+    │       │       │       └── [36mtype_clause[0m (kind: TypeClause)
+    │       │       │           ├── [34mcolon[0m (kind: TokenColon): '[1;32m:[0m'
+    │       │       │           └── [36mty[0m (kind: ExprPath)
+    │       │       │               └── [36mitem #0[0m (kind: PathSegmentSimple)
+    │       │       │                   └── [34mident[0m (kind: TokenIdentifier): '[1;32mint[0m'
+    │       │       ├── [34mrparen[0m (kind: TokenRParen): '[1;32m)[0m'
+    │       │       ├── [36mret_ty[0m (kind: ReturnTypeClause)
+    │       │       │   ├── [34marrow[0m (kind: TokenArrow): '[1;32m->[0m'
+    │       │       │   └── [36mty[0m (kind: ExprPath)
+    │       │       │       └── [36mitem #0[0m (kind: PathSegmentSimple)
+    │       │       │           └── [34mident[0m (kind: TokenIdentifier): '[1;32mfelt[0m'
+    │       │       ├── [36mimplicits_clause[0m (kind: OptionImplicitsClauseEmpty)[95m [][0m
+    │       │       └── [36moptional_no_panic[0m (kind: OptionTerminalNoPanicEmpty)[95m [][0m
     │       └── [36mbody[0m (kind: ExprBlock)
     │           ├── [34mlbrace[0m (kind: TokenLBrace): '[1;32m{[0m'
     │           ├── [36mstatements[0m (kind: StatementList)
