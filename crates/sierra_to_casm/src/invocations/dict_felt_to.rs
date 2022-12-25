@@ -53,20 +53,22 @@ fn build_dict_felt_to_new(
         tempvar new_dict_end_ptr = dict_infos_start + offset;
         let new_dict_end = *new_dict_end_ptr;
     };
-    let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
+
+    let CasmBuildResult { instructions, branches: [(state, _)] } =
+        casm_builder.build(["Fallthrough"]);
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [sierra_ap_change::ApChange::Known(fallthrough_state.ap_change)]
+        [sierra_ap_change::ApChange::Known(state.ap_change)]
     );
     Ok(builder.build(
         instructions,
         vec![],
         [[
             ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                fallthrough_state.get_adjusted(new_dict_manager_ptr),
+                state.get_adjusted(new_dict_manager_ptr),
             )),
             ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                fallthrough_state.get_adjusted(new_dict_end),
+                state.get_adjusted(new_dict_end),
             )),
         ]
         .into_iter()]

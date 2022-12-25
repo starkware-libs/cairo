@@ -123,12 +123,14 @@ fn build_builtin_get_gas(
         assert updated_gas = *(range_check++);
     };
 
-    let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
-        casm_builder.build();
+    let CasmBuildResult {
+        instructions,
+        branches: [(fallthrough_state, _), (failure_state, awaiting_relocations)],
+    } = casm_builder.build(["Fallthrough", "Failure"]);
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
     assert_eq!(
         core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, label_state["Failure"].ap_change]
+        [fallthrough_state.ap_change, failure_state.ap_change]
             .map(sierra_ap_change::ApChange::Known)
     );
     let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
@@ -150,10 +152,10 @@ fn build_builtin_get_gas(
             .into_iter(),
             vec![
                 ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    label_state["Failure"].get_adjusted(range_check),
+                    failure_state.get_adjusted(range_check),
                 )),
                 ReferenceExpression::from_cell(CellExpression::Deref(
-                    label_state["Failure"].get_adjusted_as_cell_ref(gas_counter),
+                    failure_state.get_adjusted_as_cell_ref(gas_counter),
                 )),
             ]
             .into_iter(),
