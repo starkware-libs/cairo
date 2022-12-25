@@ -45,8 +45,6 @@ fn build_dict_felt_to_new(
     };
     let mut casm_builder = CasmBuilder::default();
     let dict_manager_ptr = casm_builder.add_var(dict_manager_ptr_ref);
-    let imm_1 = casm_builder.add_var(ResOperand::Immediate(1.into()));
-    let imm_3 = casm_builder.add_var(ResOperand::Immediate(3.into()));
     casm_build_extend! {casm_builder,
         hint AllocDictFeltTo {dict_manager_ptr: dict_manager_ptr};
         // Previous dict info
@@ -60,10 +58,12 @@ fn build_dict_felt_to_new(
         // New dict info
         assert *(dict_manager_ptr++) = dict_infos_start;
         tempvar new_n_dicts;
+        const imm_1 = 1;
         assert new_n_dicts = n_dicts + imm_1;
         assert *(dict_manager_ptr++) = new_n_dicts;
         assert *(dict_manager_ptr++) = n_destructed;
         tempvar offset;
+        const imm_3 = 3;
         assert offset = n_dicts * imm_3;
         tempvar new_dict_end_ptr;
         assert new_dict_end_ptr = dict_infos_start + offset;

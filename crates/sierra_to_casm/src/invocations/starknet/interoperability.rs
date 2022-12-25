@@ -53,13 +53,13 @@ pub fn build_call_contract(
 
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
-    let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
     let contract_address = casm_builder.add_var(ResOperand::Deref(contract_address));
     let call_data_start = casm_builder.add_var(ResOperand::Deref(call_data.start));
     let call_data_end = casm_builder.add_var(ResOperand::Deref(call_data.end));
     casm_build_extend! {casm_builder,
         tempvar selector;
+        const selector_imm = selector_imm;
         assert selector = selector_imm;
         let original_system = system;
         assert *(system++) = selector;

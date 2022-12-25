@@ -109,10 +109,9 @@ fn build_builtin_get_gas(
 
         // If necessary, multiply by the number of instances.
         let multi_cost = if requested_count != 1 {
-            let requested_count =
-                casm_builder.add_var(ResOperand::Immediate(requested_count.into()));
             casm_build_extend! {casm_builder,
                 tempvar multi_cost;
+                const requested_count = requested_count;
                 assert multi_cost = single_cost * requested_count;
             };
             multi_cost
@@ -126,7 +125,6 @@ fn build_builtin_get_gas(
         };
         total_requested_count = updated_total_requested_count;
     }
-    let uint128_limit = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
 
     casm_build_extend! {casm_builder,
         tempvar has_enough_gas;
@@ -136,6 +134,7 @@ fn build_builtin_get_gas(
         tempvar gas_diff;
         assert gas_counter = gas_diff + total_requested_count;
         tempvar fixed_gas_diff;
+        const uint128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
         assert fixed_gas_diff = gas_diff + uint128_limit;
         assert *(range_check++) = fixed_gas_diff;
         jump Failure;

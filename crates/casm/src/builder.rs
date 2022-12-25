@@ -458,6 +458,10 @@ macro_rules! casm_build_extend {
         $builder.add_ap($value);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
+    ($builder:ident, const $imm:ident = $value:expr; $($tok:tt)*) => {
+        let $imm = $builder.add_var($crate::operand::ResOperand::Immediate(($value).into()));
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
     ($builder:ident, assert $dst:ident = $res:ident; $($tok:tt)*) => {
         $builder.assert_vars_eq($dst, $res);
         $crate::casm_build_extend!($builder, $($tok)*)

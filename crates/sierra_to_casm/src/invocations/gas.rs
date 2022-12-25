@@ -59,21 +59,20 @@ fn build_get_gas(
     let mut casm_builder = CasmBuilder::default();
     let range_check = casm_builder.add_var(range_check);
     let gas_counter = casm_builder.add_var(ResOperand::Deref(gas_counter_value));
-    let gas_counter_fix =
-        casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1 - requested_count));
-    let requested_count = casm_builder.add_var(ResOperand::Immediate(requested_count.into()));
 
     casm_build_extend! {casm_builder,
         tempvar has_enough_gas;
-        hint TestLessThanOrEqual {lhs: requested_count, rhs: gas_counter} into {dst: has_enough_gas};
+        const requested_count_imm = requested_count;
+        hint TestLessThanOrEqual {lhs: requested_count_imm, rhs: gas_counter} into {dst: has_enough_gas};
         jump HasEnoughGas if has_enough_gas != 0;
         tempvar gas_diff;
+        const gas_counter_fix = (BigInt::from(u128::MAX) + 1 - requested_count) as BigInt;
         assert gas_diff = gas_counter + gas_counter_fix;
         assert *(range_check++) = gas_diff;
         jump Failure;
         HasEnoughGas:
         tempvar updated_gas;
-        assert gas_counter = updated_gas + requested_count;
+        assert gas_counter = updated_gas + requested_count_imm;
         assert *(range_check++) = updated_gas;
     };
 
