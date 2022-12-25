@@ -69,9 +69,8 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
     ) -> PluginResult {
         match item_ast {
             ast::Item::FreeFunction(func) => {
-                let mut builder = PatchBuilder::default();
+                let mut builder = PatchBuilder::new(db);
                 builder.interpolate_patched(
-                    db,
                     indoc! {"
                         mod inner_mod {{
                             // Comment.

@@ -27,12 +27,16 @@ impl Patches {
     }
 }
 
-#[derive(Default)]
-pub struct PatchBuilder {
+pub struct PatchBuilder<'a> {
+    pub db: &'a dyn SyntaxGroup,
     pub code: String,
     pub patches: Patches,
 }
-impl PatchBuilder {
+impl<'a> PatchBuilder<'a> {
+    pub fn new(db: &'a dyn SyntaxGroup) -> Self {
+        Self { db, code: String::default(), patches: Patches::default() }
+    }
+
     pub fn add_char(&mut self, c: char) {
         self.code.push(c);
     }
@@ -41,25 +45,20 @@ impl PatchBuilder {
         self.code += s;
     }
 
-    pub fn add_node(&mut self, db: &dyn SyntaxGroup, node: SyntaxNode) {
-        let orig_span = node.span(db);
+    pub fn add_node(&mut self, node: SyntaxNode) {
+        let orig_span = node.span(self.db);
         let start = TextOffset(self.code.len());
         self.patches.patches.push(Patch {
             span: TextSpan { start, end: start.add(orig_span.end - orig_span.start) },
-            origin_span: node.span(db),
+            origin_span: node.span(self.db),
         });
-        self.code += node.get_text(db).as_str();
+        self.code += node.get_text(self.db).as_str();
     }
 
     /// Interpolates a string with patches.
     /// Each substring of the form `$<name>$` is replaced with syntax nodes from `replaces`.
     /// The `$$` substring is replaced with `$`.
-    pub fn interpolate_patched(
-        &mut self,
-        db: &dyn SyntaxGroup,
-        code: &str,
-        replaces: HashMap<String, SyntaxNode>,
-    ) {
+    pub fn interpolate_patched(&mut self, code: &str, replaces: HashMap<String, SyntaxNode>) {
         let mut chars = code.chars().peekable();
         while let Some(c) = chars.next() {
             if c != '$' {
@@ -84,7 +83,7 @@ impl PatchBuilder {
             }
 
             // Replace the substring with a syntax node.
-            self.add_node(db, replaces[&name].clone());
+            self.add_node(replaces[&name].clone());
         }
     }
 }
