@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use defs::ids::{FreeFunctionId, GenericFunctionId};
+use diagnostics::Maybe;
 use itertools::Itertools;
 use semantic::TypeId;
 use utils::strongly_connected_components::{compute_scc, GraphNode};
@@ -19,7 +20,7 @@ pub fn function_scc_representative(
 pub fn function_scc_explicit_implicits(
     db: &dyn LoweringGroup,
     function: SCCRepresentative,
-) -> Option<HashSet<TypeId>> {
+) -> Maybe<HashSet<TypeId>> {
     let scc = function_scc(db, function.0);
     let mut explicit_implicits = HashSet::new();
     for func in scc {
@@ -27,14 +28,14 @@ pub fn function_scc_explicit_implicits(
             db.free_function_declaration_implicits(func)?.into_iter().collect();
         explicit_implicits.extend(current_implicits);
     }
-    Some(explicit_implicits)
+    Ok(explicit_implicits)
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_all_implicits].
 pub fn function_all_implicits(
     db: &dyn LoweringGroup,
     function: semantic::FunctionId,
-) -> Option<Vec<TypeId>> {
+) -> Maybe<Vec<TypeId>> {
     match db.lookup_intern_function(function).function.generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_all_implicits_vec(free_function),
         GenericFunctionId::Extern(extern_function) => {
@@ -48,7 +49,7 @@ pub fn function_all_implicits(
 pub fn free_function_all_implicits(
     db: &dyn LoweringGroup,
     function: FreeFunctionId,
-) -> Option<HashSet<TypeId>> {
+) -> Maybe<HashSet<TypeId>> {
     // Find the SCC representative.
     let scc_representative = db.function_scc_representative(function);
 
@@ -78,18 +79,28 @@ pub fn free_function_all_implicits(
             };
         all_implicits.extend(&current_implicits);
     }
-    Some(all_implicits)
+    Ok(all_implicits)
 }
 
 /// Query implementation of [crate::db::LoweringGroup::free_function_all_implicits_vec].
 pub fn free_function_all_implicits_vec(
     db: &dyn LoweringGroup,
     function: FreeFunctionId,
-) -> Option<Vec<TypeId>> {
+) -> Maybe<Vec<TypeId>> {
     let implicits_set = db.free_function_all_implicits(function)?;
     let mut implicits_vec = implicits_set.into_iter().collect_vec();
-    implicits_vec.sort();
-    Some(implicits_vec)
+
+    let semantic_db = db.upcast();
+    let precedence = db.implicit_precedence();
+    implicits_vec.sort_by_cached_key(|type_id| {
+        if let Some(idx) = precedence.iter().position(|item| item == type_id) {
+            return (idx, "".to_string());
+        }
+
+        (precedence.len(), type_id.format(semantic_db))
+    });
+
+    Ok(implicits_vec)
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_scc].
@@ -124,11 +135,11 @@ impl<'a> GraphNode for FreeFunctionNode<'a> {
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
-pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId) -> Option<bool> {
+pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId) -> Maybe<bool> {
     match db.lookup_intern_function(function).function.generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_may_panic(free_function),
         GenericFunctionId::Extern(extern_function) => {
-            Some(db.extern_function_declaration_signature(extern_function)?.panicable)
+            Ok(db.extern_function_declaration_signature(extern_function)?.panicable)
         }
         GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
     }
@@ -138,7 +149,7 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
 pub fn free_function_may_panic(
     db: &dyn LoweringGroup,
     free_function: FreeFunctionId,
-) -> Option<bool> {
+) -> Maybe<bool> {
     // Find the SCC representative.
     let scc_representative = db.function_scc_representative(free_function);
 
@@ -155,16 +166,16 @@ pub fn free_function_may_panic(
                     continue;
                 }
                 if db.free_function_may_panic(direct_callee_representative.0)? {
-                    return Some(true);
+                    return Ok(true);
                 }
             }
             GenericFunctionId::Extern(extern_function) => {
                 if db.extern_function_declaration_signature(extern_function)?.panicable {
-                    return Some(true);
+                    return Ok(true);
                 }
             }
             GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
         };
     }
-    Some(false)
+    Ok(false)
 }

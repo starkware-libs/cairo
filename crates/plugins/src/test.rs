@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use db_utils::Upcast;
-use defs::db::{init_defs_group, DefsDatabase, DefsGroup, MacroPlugin};
+use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
 use defs::ids::ModuleId;
+use defs::plugin::MacroPlugin;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;
@@ -78,56 +79,56 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
 #[test_case(
     vec![Arc::new(PanicablePlugin{})],
     indoc! {"
-        #[panic_with(1)]
-        extern func foo(a: felt, b: other) -> Option::<()> implicits (rc: RangeCheck, gb: GasBuiltin) nopanic;
+        #[panic_with('1', foo_improved)]
+        extern fn foo(a: felt, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
-        #[panic_with(2)]
-        extern func bar() -> Option::<felt> nopanic;
+        #[panic_with('2', bar_changed)]
+        extern fn bar() -> Result::<felt, Err> nopanic;
 
-        #[panic_with(3)]
-        func non_extern(_: some_type) -> Option::<(felt, other)> nopanic {
+        #[panic_with('3', non_extern_stuff)]
+        fn non_extern(_: some_type) -> Option::<(felt, other)> nopanic {
             (4, 56)
         }
     "},
     &[
         indoc! {"
-            func foo_panicable(a: felt, b: other) -> () {
+            fn foo_improved(a: felt, b: other) -> () {
                 match foo(a, b) {
                     Option::Some (v) => {
                         v
                     },
                     Option::None (v) => {
-                        let data = array_new::<felt>();
-                        array_append::<felt>(data, 1);
-                        panic(data);
+                        let mut data = array_new::<felt>();
+                        array_append::<felt>(data, '1');
+                        panic(data)
                     },
                 }
             }
         "},
         indoc! {"
-            func bar_panicable() -> felt {
+            fn bar_changed() -> felt {
                 match bar() {
-                    Option::Some (v) => {
+                    Result::Ok (v) => {
                         v
                     },
-                    Option::None (v) => {
-                        let data = array_new::<felt>();
-                        array_append::<felt>(data, 2);
-                        panic(data);
+                    Result::Err (v) => {
+                        let mut data = array_new::<felt>();
+                        array_append::<felt>(data, '2');
+                        panic(data)
                     },
                 }
             }
         "},
         indoc! {"
-            func non_extern_panicable(_: some_type) -> (felt, other) {
+            fn non_extern_stuff(_: some_type) -> (felt, other) {
                 match non_extern(_) {
                     Option::Some (v) => {
                         v
                     },
                     Option::None (v) => {
-                        let data = array_new::<felt>();
-                        array_append::<felt>(data, 3);
-                        panic(data);
+                        let mut data = array_new::<felt>();
+                        array_append::<felt>(data, '3');
+                        panic(data)
                     },
                 }
             }
@@ -139,7 +140,7 @@ fn plugin_test(plugins: Vec<Arc<dyn MacroPlugin>>, content: &str, expected_codes
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
     let root = Directory("src".into());
     db.set_crate_root(crate_id, Some(root));
     db.set_macro_plugins(plugins);

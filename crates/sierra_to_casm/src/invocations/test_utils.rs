@@ -10,6 +10,7 @@ use sierra::extensions::types::TypeInfo;
 use sierra::extensions::{ConcreteLibFunc, ConcreteType, GenericLibFuncEx, GenericTypeEx};
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
+use sierra_ap_change::ap_change_info::ApChangeInfo;
 use sierra_gas::gas_info::GasInfo;
 
 use super::{compile_invocation, CompiledInvocation, ProgramInfo};
@@ -19,20 +20,20 @@ use crate::metadata::Metadata;
 use crate::references::{ReferenceExpression, ReferenceValue};
 use crate::relocations::RelocationEntry;
 
-/// Creates a FeltOperator from a token operator.
+/// Creates a FeltBinaryOperator from a token operator.
 #[macro_export]
 macro_rules! cell_expr_operator {
     (+) => {
-        sierra::extensions::felt::FeltOperator::Add
+        sierra::extensions::felt::FeltBinaryOperator::Add
     };
     (-) => {
-        sierra::extensions::felt::FeltOperator::Sub
+        sierra::extensions::felt::FeltBinaryOperator::Sub
     };
     (*) => {
-        sierra::extensions::felt::FeltOperator::Mul
+        sierra::extensions::felt::FeltBinaryOperator::Mul
     };
     (/) => {
-        sierra::extensions::felt::FeltOperator::Div
+        sierra::extensions::felt::FeltBinaryOperator::Div
     };
 }
 
@@ -40,6 +41,12 @@ macro_rules! cell_expr_operator {
 #[macro_export]
 macro_rules! ref_expr_extend {
     ($cells:ident) => {};
+    ($cells:ident, [$a:ident $($op:tt $offset:expr)?] $(, $tok:tt)*) => {
+        $cells.push(
+            $crate::references::CellExpression::Deref(casm::deref!([$a $($op $offset)?]))
+        );
+        $crate::ref_expr_extend!($cells $(, $tok)*)
+    };
     ($cells:ident, [$a:ident $($op:tt $offset:expr)?] $operator:tt $b:tt $(, $tok:tt)*) => {
         $cells.push(
             $crate::references::CellExpression::BinOp($crate::references::BinOpExpression {
@@ -49,15 +56,15 @@ macro_rules! ref_expr_extend {
         }));
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
-    ($cells:ident, [$a:ident $($op:tt $offset:expr)?] $(, $tok:tt)*) => {
-        $cells.push(
-            $crate::references::CellExpression::Deref(casm::deref!([$a $($op $offset)?]))
-        );
-        $crate::ref_expr_extend!($cells $(, $tok)*)
-    };
     ($cells:ident, [[$a:ident $($op:tt $offset:expr)?]] $(, $tok:tt)*) => {
         $cells.push(
             $crate::references::CellExpression::DoubleDeref(casm::deref!([$a $($op $offset)?]), 0)
+        );
+        $crate::ref_expr_extend!($cells $(, $tok)*)
+    };
+    ($cells:ident, [[$a:ident $($op:tt $offset:expr)?] + $offset2:expr] $(, $tok:tt)*) => {
+        $cells.push(
+            $crate::references::CellExpression::DoubleDeref(casm::deref!([$a $($op $offset)?]), $offset2)
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
@@ -170,7 +177,7 @@ pub struct ReducedBranchChanges {
 
 /// Information from [CompiledInvocation] we should test when only testing a libfunc lowering by
 /// itself.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub struct ReducedCompiledInvocation {
     /// A vector of instructions that implement the invocation.
     pub instructions: Vec<Instruction>,
@@ -194,6 +201,18 @@ impl ReducedCompiledInvocation {
                 })
                 .collect(),
         }
+    }
+}
+impl std::fmt::Debug for ReducedCompiledInvocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ReducedCompiledInvocation")
+            .field(
+                "instructions",
+                &self.instructions.iter().map(|inst| format!("{inst};")).collect_vec(),
+            )
+            .field("relocations", &self.relocations)
+            .field("results", &self.results)
+            .finish()
     }
 }
 
@@ -229,7 +248,10 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
     }
     let program_info = ProgramInfo {
         metadata: &Metadata {
-            function_ap_change: HashMap::new(),
+            ap_change_info: ApChangeInfo {
+                variable_values: HashMap::default(),
+                function_ap_change: HashMap::default(),
+            },
             gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
         },
         type_sizes: &type_sizes,

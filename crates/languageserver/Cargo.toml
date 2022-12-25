@@ -4,7 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "languageserver"
+name = "cairo-language-server"
+path = "src/bin/languageserver.rs"
 
 [dependencies]
 db_utils = { path = "../db_utils" }

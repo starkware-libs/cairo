@@ -13,14 +13,14 @@ We currently only run the a `main` function with no arguments beside implicits.
 
 # Examples
 
-## Without gas:
+## With gas:
 ```
-func main() -> Option::<felt> implicits (rc: RangeCheck, gb: GasBuiltin) {
+fn main() -> Option::<felt> implicits(RangeCheck, GasBuiltin) {
     fib(1, 1, 13)
 }
 
 /// Calculates fib...
-func fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits (rc: RangeCheck, gb: GasBuiltin) {
+fn fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits(RangeCheck, GasBuiltin) {
     get_gas()?;
     match n {
         0 => Option::<felt>::Some(a),
@@ -29,19 +29,19 @@ func fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits (rc: RangeCheck,
 }
 ```
 
-## With gas:
+## Without gas:
 ```
 // Calculates fib...
-func main() -> Option::<uint128> implicits (rc: RangeCheck) {
-    fib(uint128_from_felt(1)?, uint128_from_felt(1)?, uint128_from_felt(100)?)
+fn main() -> Option::<u128> implicits(RangeCheck) {
+    fib(u128_from_felt(1)?, u128_from_felt(1)?, u128_from_felt(100)?)
 }
 
-func fib(a: uint128, b: uint128, n: uint128) -> Option::<uint128> implicits (rc: RangeCheck) {
-    match uint128_to_felt(n) {
-        0 => Option::<uint128>::Some(a),
+fn fib(a: u128, b: u128, n: u128) -> Option::<u128> implicits(RangeCheck) {
+    match u128_to_felt(n) {
+        0 => Option::<u128>::Some(a),
         _ => {
-            let r = fib(b, (a + b)?, (n - uint128_from_felt(1)?)?)?;
-            Option::<uint128>::Some(r)
+            let r = fib(b, (a + b)?, (n - u128_from_felt(1)?)?)?;
+            Option::<u128>::Some(r)
         },
     }
 }

@@ -1,0 +1,33 @@
+[package]
+name = "test_runner"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+cairo-rs.workspace = true
+casm = { path = "../casm" }
+clap.workspace = true
+colored.workspace = true
+compiler = { path = "../compiler" }
+debug = { path = "../debug" }
+defs = { path = "../defs" }
+diagnostics = { path = "../diagnostics" }
+filesystem = { path = "../filesystem" }
+itertools.workspace = true
+num-bigint.workspace = true
+project = { path = "../project" }
+rayon.workspace = true
+runner = { path = "../runner" }
+salsa.workspace = true
+semantic = { path = "../semantic" }
+sierra = { path = "../sierra" }
+sierra_generator = { path = "../sierra_generator" }
+sierra_to_casm = { path = "../sierra_to_casm" }
+syntax = { path = "../syntax" }
+thiserror.workspace = true
+utils = { path = "../utils" }
+
+[[bin]]
+name = "cairo-test"
+path = "src/cli.rs"

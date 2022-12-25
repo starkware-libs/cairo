@@ -1,0 +1,47 @@
+//! > Test PathNotFound.
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+}
+
+//! > module_code
+fn foo() -> UnknownType {
+  bar();
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Type not found.
+ --> lib.cairo:1:13
+fn foo() -> UnknownType {
+            ^*********^
+
+error: Function not found.
+ --> lib.cairo:2:3
+  bar();
+  ^*^
+
+//! > ==========================================================================
+
+//! > Test trying to access a function from a module whose file is missing.
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+module_does_not_exist::bar()
+
+//! > module_code
+mod module_does_not_exist;
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Module file not found. Expected path: src/module_does_not_exist.cairo
+ --> lib.cairo:1:1
+mod module_does_not_exist;
+^************************^

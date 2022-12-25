@@ -142,6 +142,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
+name = "bigdecimal"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6aaf33151a6429fe9211d1b276eafdf70cdff28b071e76c0b0e1503221ea3744"
+dependencies = [
+ "num-bigint",
+ "num-integer",
+ "num-traits 0.2.15",
+]
+
+[[package]]
 name = "bimap"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -210,7 +221,7 @@ checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
 [[package]]
 name = "cairo-rs"
 version = "0.1.0"
-source = "git+https://github.com/lambdaclass/cairo-rs?rev=3a2dead#3a2deadd580eef6c370a3d261379bece9731bfcf"
+source = "git+https://github.com/lambdaclass/cairo-rs?rev=42dadd1#42dadd1631c9196e39d91b77f130a78f73d83f5f"
 dependencies = [
  "bincode",
  "clap 3.2.23",
@@ -224,6 +235,7 @@ dependencies = [
  "num-integer",
  "num-traits 0.2.15",
  "parse-hyperlinks",
+ "rand_core",
  "serde",
  "serde_bytes",
  "serde_json",
@@ -381,6 +393,7 @@ dependencies = [
  "clap 4.0.26",
  "db_utils",
  "defs",
+ "diagnostics",
  "filesystem",
  "log",
  "lowering",
@@ -404,6 +417,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32b13ea120a812beba79e34316b3942a857c86ec1593cb34f27bb28272ce2cca"
 
 [[package]]
+name = "convert_case"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -416,6 +438,40 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28d997bd5e24a5928dd43e46dc529867e207907fe0b239c3477d924f7f2ca320"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "crossbeam-channel"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c2dd04ddaf88237dc3b8d8f9a3c1004b506b54b3313403944054d23c0870c521"
+dependencies = [
+ "cfg-if",
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "crossbeam-deque"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "715e8152b692bba2d374b53d4875445368fdf21a94751410af607a5ac677d1fc"
+dependencies = [
+ "cfg-if",
+ "crossbeam-epoch",
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "crossbeam-epoch"
+version = "0.9.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01a9af1f4c2ef74bb8aa1f7e19706bc72d03598c8a570bb5de72243c7a9d9d5a"
+dependencies = [
+ "autocfg",
+ "cfg-if",
+ "crossbeam-utils",
+ "memoffset",
+ "scopeguard",
 ]
 
 [[package]]
@@ -731,6 +787,8 @@ dependencies = [
  "anyhow",
  "clap 4.0.26",
  "colored",
+ "db_utils",
+ "diagnostics",
  "diffy",
  "filesystem",
  "itertools",
@@ -1158,12 +1216,14 @@ dependencies = [
  "num-bigint",
  "num-traits 0.2.15",
  "parser",
+ "plugins",
  "pretty_assertions",
  "salsa",
  "semantic",
  "smol_str",
  "syntax",
  "test-log",
+ "test_utils",
  "utils",
 ]
 
@@ -1194,6 +1254,15 @@ name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
+
+[[package]]
+name = "memoffset"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5de893c32cde5f383baa4c04c5d6dbdd735cfd4a794b0debdb2bb1b421da5ff4"
+dependencies = [
+ "autocfg",
+]
 
 [[package]]
 name = "mimalloc"
@@ -1421,7 +1490,7 @@ dependencies = [
 [[package]]
 name = "parse-hyperlinks"
 version = "0.23.4"
-source = "git+https://github.com/lambdaclass/cairo-rs?rev=3a2dead#3a2deadd580eef6c370a3d261379bece9731bfcf"
+source = "git+https://github.com/lambdaclass/cairo-rs?rev=42dadd1#42dadd1631c9196e39d91b77f130a78f73d83f5f"
 dependencies = [
  "nom",
 ]
@@ -1444,6 +1513,7 @@ dependencies = [
  "syntax_codegen",
  "test-case",
  "test-log",
+ "test_utils",
  "utils",
 ]
 
@@ -1666,6 +1736,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60a357793950651c4ed0f3f52338f53b2f809f32d83a07f72909fa13e4c6c1e3"
 
 [[package]]
+name = "rayon"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed02d09394c94ffbdfdc755ad62a132e94c3224a8354e78a1200ced34df12edf"
+dependencies = [
+ "either",
+ "rayon-core",
+]
+
+[[package]]
+name = "rayon-core"
+version = "1.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cac410af5d00ab6884528b4ab69d1e8e146e8d471201800fa1b4524126de6ad3"
+dependencies = [
+ "crossbeam-channel",
+ "crossbeam-deque",
+ "crossbeam-utils",
+ "num_cpus",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1724,16 +1816,21 @@ name = "runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cairo-rs",
  "casm",
  "clap 4.0.26",
  "compiler",
+ "diagnostics",
  "itertools",
+ "num-bigint",
  "salsa",
  "sierra",
+ "sierra_ap_change",
  "sierra_gas",
  "sierra_generator",
  "sierra_to_casm",
  "thiserror",
+ "utils",
 ]
 
 [[package]]
@@ -1823,12 +1920,15 @@ dependencies = [
  "num-bigint",
  "num-traits 0.2.15",
  "parser",
+ "plugins",
  "pretty_assertions",
  "salsa",
  "smol_str",
  "syntax",
  "test-case",
  "test-log",
+ "test_utils",
+ "unescaper",
  "utils",
 ]
 
@@ -1942,6 +2042,8 @@ dependencies = [
  "assert_matches",
  "bimap",
  "const-fnv1a-hash",
+ "convert_case",
+ "derivative",
  "env_logger",
  "indoc",
  "itertools",
@@ -1960,14 +2062,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "sierra_ap_change"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "indoc",
+ "itertools",
+ "sierra",
+ "solver",
+ "test-case",
+ "test-log",
+ "thiserror",
+ "utils",
+]
+
+[[package]]
 name = "sierra_gas"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "good_lp",
  "indoc",
  "itertools",
  "sierra",
+ "solver",
  "test-case",
  "test-log",
  "thiserror",
@@ -1992,6 +2109,7 @@ dependencies = [
  "lowering",
  "num-bigint",
  "parser",
+ "plugins",
  "pretty_assertions",
  "salsa",
  "semantic",
@@ -2000,6 +2118,7 @@ dependencies = [
  "syntax",
  "test-case",
  "test-log",
+ "test_utils",
  "utils",
 ]
 
@@ -2015,8 +2134,10 @@ dependencies = [
  "itertools",
  "log",
  "num-bigint",
+ "num-traits 0.2.15",
  "pretty_assertions",
  "sierra",
+ "sierra_ap_change",
  "sierra_gas",
  "test-case",
  "test-log",
@@ -2074,6 +2195,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "solver"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "good_lp",
+ "indoc",
+ "itertools",
+ "test-case",
+ "test-log",
+ "utils",
+]
+
+[[package]]
 name = "sprs"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2091,31 +2225,45 @@ dependencies = [
  "anyhow",
  "clap 4.0.26",
  "compiler",
+ "convert_case",
  "defs",
+ "diagnostics",
+ "env_logger",
+ "filesystem",
+ "formatter",
+ "genco",
  "indoc",
  "itertools",
+ "log",
+ "lowering",
  "num-bigint",
+ "num-integer",
  "num-traits 0.2.15",
+ "parser",
  "plugins",
  "pretty_assertions",
  "semantic",
  "serde",
  "serde_json",
+ "sha3",
  "sierra",
+ "sierra_ap_change",
  "sierra_gas",
  "sierra_generator",
  "sierra_to_casm",
  "smol_str",
  "syntax",
+ "test-log",
+ "test_utils",
  "thiserror",
  "utils",
 ]
 
 [[package]]
 name = "starknet-crypto"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92d5ba05430fcd7c107ad9e4433bb3958722b13d97a44fd07a18dcf0eb6da667"
+checksum = "be7d6b2c959fde2a10dbc31d54bdd0307eecb7ef6c05c23a0263e65b57b3e18a"
 dependencies = [
  "crypto-bigint",
  "hex",
@@ -2125,21 +2273,45 @@ dependencies = [
  "num-traits 0.2.15",
  "rfc6979",
  "sha2 0.9.9",
+ "starknet-crypto-codegen",
+ "starknet-curve",
  "starknet-ff",
  "thiserror",
  "zeroize",
 ]
 
 [[package]]
-name = "starknet-ff"
+name = "starknet-crypto-codegen"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a80865f37a0dcd198f427356d939f1495144c26ed5123b1418ef33a63f82655"
+checksum = "6569d70430f0f6edc41f6820d00acf63356e6308046ca01e57eeac22ad258c47"
+dependencies = [
+ "starknet-curve",
+ "starknet-ff",
+ "syn",
+]
+
+[[package]]
+name = "starknet-curve"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84be6079d3060fdbd8b5335574fef3d3783fa2f7ee6474d08ae0c1e4b0a29ba4"
+dependencies = [
+ "starknet-ff",
+]
+
+[[package]]
+name = "starknet-ff"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5874510620214ebeac50915b01d67437d8ca10a6682b1de85b93cd01157b58eb"
 dependencies = [
  "ark-ff",
+ "bigdecimal",
  "crypto-bigint",
  "getrandom",
  "hex",
+ "num-bigint",
  "serde",
  "thiserror",
 ]
@@ -2273,19 +2445,64 @@ dependencies = [
 ]
 
 [[package]]
+name = "test_runner"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cairo-rs",
+ "casm",
+ "clap 4.0.26",
+ "colored",
+ "compiler",
+ "debug",
+ "defs",
+ "diagnostics",
+ "filesystem",
+ "itertools",
+ "num-bigint",
+ "project",
+ "rayon",
+ "runner",
+ "salsa",
+ "semantic",
+ "sierra",
+ "sierra_generator",
+ "sierra_to_casm",
+ "syntax",
+ "thiserror",
+ "utils",
+]
+
+[[package]]
+name = "test_utils"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "log",
+ "pretty_assertions",
+ "test-log",
+ "utils",
+]
+
+[[package]]
 name = "tests"
 version = "0.1.0"
 dependencies = [
+ "assert_matches",
  "cairo-rs",
  "casm",
  "compiler",
  "defs",
  "diagnostics",
+ "env_logger",
  "filesystem",
+ "itertools",
+ "log",
  "num-bigint",
  "parser",
  "plugins",
  "pretty_assertions",
+ "runner",
  "salsa",
  "semantic",
  "sierra",
@@ -2294,6 +2511,9 @@ dependencies = [
  "sierra_to_casm",
  "syntax",
  "test-case",
+ "test-log",
+ "test_utils",
+ "utils",
 ]
 
 [[package]]
@@ -2502,6 +2722,15 @@ name = "ucd-trie"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e79c4d996edb816c91e4308506774452e55e95c3c9de07b6729e17e15a5ef81"
+
+[[package]]
+name = "unescaper"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "995483205de764db1185c9461a000fff73fa4b9ee2bbe4c8b4027a94692700fe"
+dependencies = [
+ "thiserror",
+]
 
 [[package]]
 name = "unicode-bidi"

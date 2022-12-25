@@ -1,5 +1,5 @@
 use std::format;
 
-func foo(a: int) -> felt {
+fn foo(a: int) -> felt {
     return a;
 }

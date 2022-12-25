@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(ref a: felt) -> felt {
+fn foo(ref a: felt) -> felt {
     let b = true;
     if true {
       bar(a, b);
@@ -21,7 +21,7 @@ func foo(ref a: felt) -> felt {
 foo
 
 //! > module_code
-func bar(ref a: felt, b: bool) {
+fn bar(ref a: felt, b: bool) {
 }
 
 //! > semantic_diagnostics
@@ -32,7 +32,7 @@ func bar(ref a: felt, b: bool) {
 blk0:
 Inputs: v5: ()
 Statements:
-  (v7: core::felt, v6: ()) <- test_crate::bar(v0, v2)
+  (v7: core::felt, v6: ()) <- test::bar(v0, v2)
 Drops: v5, v6, v0
 End:
   Callsite(v7)

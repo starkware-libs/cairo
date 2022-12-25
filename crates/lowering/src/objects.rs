@@ -106,6 +106,8 @@ impl Statement {
 /// A statement that binds a literal value to a variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementLiteral {
+    /// The type of the literal.
+    pub ty: semantic::TypeId,
     /// The value of the literal.
     pub value: BigInt,
     /// The variable to bind the value to.

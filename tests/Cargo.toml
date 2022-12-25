@@ -4,29 +4,37 @@ version.workspace = true
 edition.workspace = true
 
 [dev-dependencies]
+assert_matches.workspace = true
 cairo-rs.workspace = true
 casm = { path = "../crates/casm" }
 compiler = { path = "../crates/compiler" }
 defs = { path = "../crates/defs" }
 diagnostics = { path = "../crates/diagnostics" }
+env_logger.workspace = true
 filesystem = { path = "../crates/filesystem" }
+itertools.workspace = true
+log.workspace = true
 num-bigint.workspace = true
 parser = { path = "../crates/parser" }
 plugins = { path = "../crates/plugins" }
-pretty_assertions = "1.2.1"
+pretty_assertions.workspace = true
+runner = { path = "../crates/runner" }
 sierra = { path = "../crates/sierra" }
 sierra_gas = { path = "../crates/sierra_gas" }
 semantic = { path = "../crates/semantic", features = ["testing"] }
 sierra_generator = { path = "../crates/sierra_generator", features = ["testing"] }
 sierra_to_casm = { path = "../crates/sierra_to_casm", features = ["testing"] }
 syntax = { path = "../crates/syntax" }
+test_utils = { path = "../crates/test_utils" }
+utils = { path = "../crates/utils" }
 salsa.workspace = true
 test-case.workspace = true
+test-log.workspace = true
 
 [[test]]
 name = "examples_test"
 path = "examples_test.rs"
 
 [[test]]
-name = "snippets_test"
-path = "snippets_test.rs"
+name = "e2e_test"
+path = "e2e_test.rs"

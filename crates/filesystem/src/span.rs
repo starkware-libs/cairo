@@ -36,6 +36,9 @@ impl TextSpan {
     pub fn width(&self) -> u32 {
         (self.end - self.start) as u32
     }
+    pub fn contains(&self, other: Self) -> bool {
+        self.start <= other.start && self.end >= other.end
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -69,5 +72,12 @@ impl TextOffset {
         let line_number = self.get_line_number(db, file)?;
         let line_offset = summary.line_offsets[line_number];
         Some(TextPosition { line: line_number, col: *self - line_offset })
+    }
+}
+
+impl FileSummary {
+    /// Gets the number of lines
+    pub fn line_count(&self) -> usize {
+        self.line_offsets.len()
     }
 }

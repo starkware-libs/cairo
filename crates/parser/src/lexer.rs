@@ -108,20 +108,51 @@ impl<'a> Lexer<'a> {
     /// Token matchers.
     /// =================================================================================
 
-    /// Takes an hex or decimal number.
+    /// Takes a hex or decimal number.
     fn take_token_literal_number(&mut self) -> TokenKind {
         if self.peek() == Some('0') {
             self.take();
             if self.peek() == Some('x') {
                 self.take();
                 self.take_while(|c| c.is_ascii_hexdigit());
-                return TokenKind::LiteralNumber;
             }
         }
 
-        // The token does not start with '0x'. Parse the token as a decimal number.
+        // If the token does not start with "0x", parse the token as a decimal number.
+        // Does nothing if the token starts with "0x" as it is already fully taken.
         self.take_while(|c| c.is_ascii_digit());
+
+        // Parse _type suffix.
+        if self.peek() == Some('_') {
+            self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
+        }
         TokenKind::LiteralNumber
+    }
+
+    /// Takes a short string.
+    fn take_token_short_string(&mut self) -> TokenKind {
+        self.take();
+        let mut escaped = false;
+        loop {
+            if escaped {
+                escaped = false;
+                self.take();
+            } else if self.peek() == Some('\\') {
+                escaped = true;
+                self.take();
+            } else if self.peek() == Some('\'') {
+                break;
+            } else {
+                self.take();
+            }
+        }
+        self.take();
+
+        // Parse _type suffix.
+        if self.peek() == Some('_') {
+            self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
+        }
+        TokenKind::ShortString
     }
 
     /// Assumes the next character is [a-zA-Z_].
@@ -134,7 +165,7 @@ impl<'a> Lexer<'a> {
             "true" => TokenKind::True,
             "extern" => TokenKind::Extern,
             "type" => TokenKind::Type,
-            "func" => TokenKind::Function,
+            "fn" => TokenKind::Function,
             "trait" => TokenKind::Trait,
             "impl" => TokenKind::Impl,
             "of" => TokenKind::Of,
@@ -184,6 +215,7 @@ impl<'a> Lexer<'a> {
         let kind = if let Some(current) = self.peek() {
             match current {
                 '0'..='9' => self.take_token_literal_number(),
+                '\'' => self.take_token_short_string(),
                 ',' => self.take_token_of_kind(TokenKind::Comma),
                 ';' => self.take_token_of_kind(TokenKind::Semicolon),
                 '?' => self.take_token_of_kind(TokenKind::QuestionMark),
@@ -196,6 +228,7 @@ impl<'a> Lexer<'a> {
                 '.' => self.pick_kind('.', TokenKind::DotDot, TokenKind::Dot),
                 '*' => self.take_token_of_kind(TokenKind::Mul),
                 '/' => self.take_token_of_kind(TokenKind::Div),
+                '%' => self.take_token_of_kind(TokenKind::Mod),
                 '+' => self.take_token_of_kind(TokenKind::Plus),
                 '#' => self.take_token_of_kind(TokenKind::Hash),
                 '-' => self.pick_kind('>', TokenKind::Arrow, TokenKind::Minus),
@@ -214,6 +247,7 @@ impl<'a> Lexer<'a> {
                 }
                 '&' => self.pick_kind('&', TokenKind::AndAnd, TokenKind::And),
                 '|' => self.pick_kind('|', TokenKind::OrOr, TokenKind::Or),
+                '^' => self.take_token_of_kind(TokenKind::Xor),
                 _ => self.take_token_of_kind(TokenKind::BadCharacters),
             }
         } else {
@@ -269,6 +303,7 @@ enum TokenKind {
 
     // Literals.
     LiteralNumber,
+    ShortString,
 
     // Keywords.
     False,
@@ -300,6 +335,7 @@ enum TokenKind {
     AndAnd,
     Or,
     OrOr,
+    Xor,
     EqEq,
     Neq,
     GE,
@@ -311,6 +347,7 @@ enum TokenKind {
     Minus,
     Mul,
     Div,
+    Mod,
 
     Colon,
     ColonColon,
@@ -340,6 +377,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
     match kind {
         TokenKind::Identifier => SyntaxKind::TerminalIdentifier,
         TokenKind::LiteralNumber => SyntaxKind::TerminalLiteralNumber,
+        TokenKind::ShortString => SyntaxKind::TerminalShortString,
         TokenKind::False => SyntaxKind::TerminalFalse,
         TokenKind::True => SyntaxKind::TerminalTrue,
         TokenKind::Extern => SyntaxKind::TerminalExtern,
@@ -363,6 +401,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
         TokenKind::Or => SyntaxKind::TerminalOr,
         TokenKind::OrOr => SyntaxKind::TerminalOrOr,
+        TokenKind::Xor => SyntaxKind::TerminalXor,
         TokenKind::EqEq => SyntaxKind::TerminalEqEq,
         TokenKind::Neq => SyntaxKind::TerminalNeq,
         TokenKind::GE => SyntaxKind::TerminalGE,
@@ -374,6 +413,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Minus => SyntaxKind::TerminalMinus,
         TokenKind::Mul => SyntaxKind::TerminalMul,
         TokenKind::Div => SyntaxKind::TerminalDiv,
+        TokenKind::Mod => SyntaxKind::TerminalMod,
         TokenKind::Colon => SyntaxKind::TerminalColon,
         TokenKind::ColonColon => SyntaxKind::TerminalColonColon,
         TokenKind::Comma => SyntaxKind::TerminalComma,

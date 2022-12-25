@@ -91,14 +91,10 @@ impl<'a> AddStoreVariableStatements<'a> {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
                 let signature = get_lib_func_signature(invocation.libfunc_id.clone());
+                self.prepare_libfunc_arguments(&invocation.args, &signature.param_signatures);
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
-                        self.prepare_libfunc_arguments(
-                            &invocation.args,
-                            &signature.param_signatures,
-                        );
-
                         let branch_signature = &signature.branch_signatures[0];
                         match branch_signature.ap_change {
                             SierraApChange::Unknown | SierraApChange::NotImplemented => {
@@ -106,10 +102,10 @@ impl<'a> AddStoreVariableStatements<'a> {
                                 // otherwise should be stored as locals.
                                 self.store_variables_as_locals();
                             }
-                            SierraApChange::Known(_) | SierraApChange::FinalizeLocals => {}
+                            SierraApChange::Known { .. } => {}
                         }
 
-                        self.state().register_outputs(results, branch_signature);
+                        self.state().register_outputs(results, branch_signature, &invocation.args);
                     }
                     _ => {
                         // This starts a branch. Store all deferred variables.
@@ -125,7 +121,11 @@ impl<'a> AddStoreVariableStatements<'a> {
                             zip_eq(&invocation.branches, signature.branch_signatures)
                         {
                             let mut state_at_branch = self.state().clone();
-                            state_at_branch.register_outputs(&branch.results, &branch_signature);
+                            state_at_branch.register_outputs(
+                                &branch.results,
+                                &branch_signature,
+                                &invocation.args,
+                            );
 
                             self.add_future_state(
                                 &branch.target,
@@ -189,7 +189,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         allow_add_const: bool,
         allow_const: bool,
     ) -> bool {
-        if let Some(deferred_info) = self.state().deferred_variables.get(arg) {
+        if let Some(deferred_info) = self.state().deferred_variables.get(arg).cloned() {
             match deferred_info.kind {
                 state::DeferredVariableKind::Const => {
                     if !allow_const {
@@ -207,6 +207,21 @@ impl<'a> AddStoreVariableStatements<'a> {
                     }
                 }
             };
+            // In this case, the deferred value can be used directly by the libfunc and does not
+            // require a store statement. If its type is not duplicatable, we remove it
+            // from the deferred_variables map to ensure it won't be stored later.
+            if !self
+                .db
+                .get_type_info(deferred_info.ty)
+                .expect("All types should be valid at this point.")
+                .duplicatable
+            {
+                self.state().deferred_variables.swap_remove(arg);
+            }
+        }
+
+        if self.state().temporary_variables.get(arg).is_some() {
+            self.store_temp_as_local(arg);
         }
 
         false

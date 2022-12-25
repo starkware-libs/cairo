@@ -2,10 +2,11 @@ use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
 use defs::ids::{FreeFunctionId, ModuleId};
-use diagnostics::{Diagnostics, DiagnosticsBuilder};
+use diagnostics::{skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use filesystem::ids::CrateId;
 use itertools::chain;
 use sierra::extensions::core::CoreLibFunc;
+use sierra::extensions::lib_func::SierraApChange;
 use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
 use sierra::program;
@@ -17,6 +18,7 @@ use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
+use crate::utils::{revoke_ap_tracking_libfunc_id, simple_statement};
 use crate::SierraGeneratorDiagnostic;
 
 #[cfg(test)]
@@ -134,7 +136,7 @@ fn collect_used_types(
 pub fn get_sierra_program_for_functions(
     db: &dyn SierraGenGroup,
     requested_function_ids: Vec<FreeFunctionId>,
-) -> Option<Arc<sierra::program::Program>> {
+) -> Maybe<Arc<sierra::program::Program>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     let mut processed_function_ids = UnorderedHashSet::<FreeFunctionId>::default();
@@ -146,9 +148,15 @@ pub fn get_sierra_program_for_functions(
         }
         let function: Arc<pre_sierra::Function> = db.free_function_sierra(function_id)?;
         functions.push(function.clone());
-        statements.extend_from_slice(function.body.as_slice());
+        statements.extend_from_slice(&function.body[0..function.prolog_size]);
+        if !matches!(db.get_ap_change(function_id), Ok(SierraApChange::Known { .. })) {
+            // If AP change is unknown for the function, adding a revoke so that AP balancing would
+            // not occur.
+            statements.push(simple_statement(revoke_ap_tracking_libfunc_id(db), &[], &[]));
+        }
+        statements.extend_from_slice(&function.body[function.prolog_size..]);
         for statement in &function.body {
-            if let Some(related_function_id) = try_get_free_function_id(db, statement) {
+            if let Ok(related_function_id) = try_get_free_function_id(db, statement) {
                 function_id_queue.push_back(related_function_id);
             }
         }
@@ -162,7 +170,7 @@ pub fn get_sierra_program_for_functions(
     let label_replacer = LabelReplacer::from_statements(&statements);
     let resolved_statements = resolve_labels(statements, &label_replacer);
 
-    Some(Arc::new(program::Program {
+    Ok(Arc::new(program::Program {
         type_declarations,
         libfunc_declarations,
         statements: resolved_statements,
@@ -185,34 +193,36 @@ pub fn get_sierra_program_for_functions(
 fn try_get_free_function_id(
     db: &dyn SierraGenGroup,
     statement: &pre_sierra::Statement,
-) -> Option<FreeFunctionId> {
+) -> Maybe<FreeFunctionId> {
     let invc = try_extract_matches!(
-        try_extract_matches!(statement, pre_sierra::Statement::Sierra)?,
+        try_extract_matches!(statement, pre_sierra::Statement::Sierra).to_maybe()?,
         program::GenStatement::Invocation
-    )?;
+    )
+    .to_maybe()?;
     let libfunc = db.lookup_intern_concrete_lib_func(invc.libfunc_id.clone());
     if libfunc.generic_id != "function_call".into() {
-        return None;
+        return Err(skip_diagnostic());
     }
     let function = db
         .lookup_intern_function(
             db.lookup_intern_sierra_function(
                 try_extract_matches!(
-                    libfunc.generic_args.get(0)?,
+                    libfunc.generic_args.get(0).to_maybe()?,
                     sierra::program::GenericArg::UserFunc
-                )?
+                )
+                .to_maybe()?
                 .clone(),
             ),
         )
         .function;
     assert!(function.generic_args.is_empty(), "Generic args are not yet supported");
-    try_extract_matches!(function.generic_function, defs::ids::GenericFunctionId::Free)
+    try_extract_matches!(function.generic_function, defs::ids::GenericFunctionId::Free).to_maybe()
 }
 
 pub fn get_sierra_program(
     db: &dyn SierraGenGroup,
     requested_crate_ids: Vec<CrateId>,
-) -> Option<Arc<sierra::program::Program>> {
+) -> Maybe<Arc<sierra::program::Program>> {
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {

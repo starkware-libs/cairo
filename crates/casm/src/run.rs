@@ -15,7 +15,7 @@ use num_bigint::BigInt;
 
 use crate::hints::Hint;
 use crate::instructions::Instruction;
-use crate::operand::{CellRef, DerefOrImmediate, Register};
+use crate::operand::{CellRef, Register, ResOperand};
 
 #[cfg(test)]
 #[path = "run_test.rs"]
@@ -89,13 +89,30 @@ impl HintProcessor for CairoHintProcessor {
         _constants: &HashMap<String, BigInt>,
     ) -> Result<(), VirtualMachineError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
-        // Retrieve a value located at memory[x].
-        let get_val = |x: DerefOrImmediate| -> Result<BigInt, VirtualMachineError> {
+        let get_cell_val = |x: CellRef| -> Result<BigInt, VirtualMachineError> {
+            Ok(vm.get_integer(&cell_ref_to_relocatable(x, vm))?.as_ref().clone())
+        };
+        let get_val = |x: ResOperand| -> Result<BigInt, VirtualMachineError> {
             match x {
-                DerefOrImmediate::Deref(d) => {
-                    Ok(vm.get_integer(&cell_ref_to_relocatable(d, vm))?.as_ref().clone())
+                ResOperand::Deref(cell) => get_cell_val(cell),
+                ResOperand::DoubleDeref(cell, offset) => {
+                    let base_ptr = vm.get_relocatable(&cell_ref_to_relocatable(cell, vm))?;
+                    let ptr = base_ptr.add_int_mod(&offset.into(), &get_prime())?;
+                    let value = vm.get_integer(&ptr)?;
+                    Ok(value.as_ref().clone())
                 }
-                DerefOrImmediate::Immediate(i) => Ok(i),
+                ResOperand::Immediate(x) => Ok(x),
+                ResOperand::BinOp(op) => {
+                    let a = get_cell_val(op.a)?;
+                    let b = match op.b {
+                        crate::operand::DerefOrImmediate::Deref(cell) => get_cell_val(cell)?,
+                        crate::operand::DerefOrImmediate::Immediate(x) => x,
+                    };
+                    match op.op {
+                        crate::operand::Operation::Add => Ok(a + b),
+                        crate::operand::Operation::Mul => Ok(a * b),
+                    }
+                }
             }
         };
         match hint {
@@ -131,6 +148,10 @@ impl HintProcessor for CairoHintProcessor {
             Hint::AllocDictFeltTo { .. } => todo!(),
             Hint::DictFeltToRead { .. } => todo!(),
             Hint::DictFeltToWrite { .. } => todo!(),
+            Hint::EnterScope => todo!(),
+            Hint::ExitScope => todo!(),
+            Hint::DictSquashHints { .. } => todo!(),
+            Hint::SystemCall { .. } => todo!(),
         };
         Ok(())
     }
@@ -150,6 +171,7 @@ impl HintProcessor for CairoHintProcessor {
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 pub fn run_function(
     function: Vec<Instruction>,
+    builtins: Vec<String>,
 ) -> Result<(Vec<Option<BigInt>>, usize), Box<VirtualMachineError>> {
     let data: Vec<MaybeRelocatable> = function
         .iter()
@@ -160,7 +182,7 @@ pub fn run_function(
     let hint_processor = CairoHintProcessor::new(function);
 
     let program = Program {
-        builtins: Vec::new(),
+        builtins,
         prime: get_prime(),
         data,
         constants: HashMap::new(),
@@ -170,17 +192,19 @@ pub fn run_function(
         hints: hint_processor.hints_dict.clone(),
         reference_manager: ReferenceManager { references: Vec::new() },
         identifiers: HashMap::new(),
+        error_message_attributes: vec![],
+        instruction_locations: None,
     };
-    let mut runner = CairoRunner::new(&program, "plain", false)
+    let mut runner = CairoRunner::new(&program, "all", false)
         .map_err(VirtualMachineError::from)
         .map_err(Box::new)?;
-    let mut vm = VirtualMachine::new(get_prime(), true);
+    let mut vm = VirtualMachine::new(get_prime(), true, vec![]);
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 
     runner.run_until_pc(end, &mut vm, &hint_processor)?;
     // TODO(alont) Remove this hack once the VM no longer squashes Nones at the end of segments.
-    vm.insert_value(vm.get_ap() + 1, MaybeRelocatable::Int(BigInt::from(0)))?;
+    vm.insert_value(&vm.get_ap().add_int_mod(&1.into(), &get_prime())?, BigInt::from(0))?;
     runner.end_run(true, false, &mut vm, &hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
     Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
@@ -189,9 +213,10 @@ pub fn run_function(
 /// Runs `function` and returns `n_returns` return values.
 pub fn run_function_return_values(
     instructions: Vec<Instruction>,
+    builtins: Vec<String>,
     n_returns: usize,
 ) -> Result<Vec<BigInt>, Box<VirtualMachineError>> {
-    let (cells, ap) = run_function(instructions)?;
+    let (cells, ap) = run_function(instructions, builtins)?;
     // TODO(orizi): Return an error instead of unwrapping.
     let cells = cells.into_iter().skip(ap - n_returns);
     Ok(cells.take(n_returns).map(|cell| cell.unwrap()).collect())

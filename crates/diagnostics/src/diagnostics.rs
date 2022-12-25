@@ -2,7 +2,6 @@
 #[path = "diagnostics_test.rs"]
 mod test;
 
-use std::fmt::Write;
 use std::sync::Arc;
 
 use db_utils::Upcast;
@@ -26,6 +25,49 @@ pub struct DiagnosticLocation {
     pub span: TextSpan,
 }
 
+/// This struct is used to ensure that when an error occurs, a diagnostic is properly reported.
+///
+/// It must not be constructed directly. Instead it is returned by [DiagnosticsBuilder::add]
+/// when a diagnostic is reported.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub struct DiagnosticAdded;
+
+pub fn skip_diagnostic() -> DiagnosticAdded {
+    // TODO(lior): Consider adding a log here.
+    DiagnosticAdded::default()
+}
+
+/// Represents an arbitrary type T or a missing output due to an error whose diagnostic was properly
+/// reported.
+pub type Maybe<T> = Result<T, DiagnosticAdded>;
+
+/// Temporary trait to allow conversions from the old `Option<T>` mechanism to `Maybe<T>`.
+// TODO(lior): Remove this trait after converting all the functions.
+pub trait ToMaybe<T> {
+    fn to_maybe(self) -> Maybe<T>;
+}
+impl<T> ToMaybe<T> for Option<T> {
+    fn to_maybe(self) -> Maybe<T> {
+        match self {
+            Some(val) => Ok(val),
+            None => Err(skip_diagnostic()),
+        }
+    }
+}
+
+/// Temporary trait to allow conversions from `Maybe<T>` to `Option<T>`.
+/// The behavior is identical to [Result::ok]. It is used to mark all the location where there
+/// is a conversion between the two mechanisms.
+// TODO(lior): Remove this trait after converting all the functions.
+pub trait ToOption<T> {
+    fn to_option(self) -> Option<T>;
+}
+impl<T> ToOption<T> for Maybe<T> {
+    fn to_option(self) -> Option<T> {
+        self.ok()
+    }
+}
+
 /// A builder for Diagnostics, accumulating multiple diagnostic entries.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticsBuilder<TEntry: DiagnosticEntry> {
@@ -36,8 +78,9 @@ impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
     pub fn new() -> Self {
         Self { leaves: Default::default(), subtrees: Default::default() }
     }
-    pub fn add(&mut self, diagnostic: TEntry) {
+    pub fn add(&mut self, diagnostic: TEntry) -> DiagnosticAdded {
         self.leaves.push(diagnostic);
+        DiagnosticAdded::default()
     }
     pub fn extend(&mut self, diagnostics: Diagnostics<TEntry>) {
         self.subtrees.push(diagnostics);
@@ -53,6 +96,20 @@ impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
     }
 }
 
+pub fn format_diagnostics(
+    db: &dyn FilesGroup,
+    message: &str,
+    location: DiagnosticLocation,
+) -> String {
+    let file_name = location.file_id.file_name(db);
+    let marks = get_location_marks(db, &location);
+    let pos = match location.span.start.position_in_file(db, location.file_id) {
+        Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+        None => "?".into(),
+    };
+    format!("error: {message}\n --> {file_name}:{pos}\n{marks}\n")
+}
+
 /// A set of diagnostic entries that arose during a computation.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Diagnostics<TEntry: DiagnosticEntry>(pub Arc<DiagnosticsBuilder<TEntry>>);
@@ -65,15 +122,9 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         let mut res = String::new();
         // Format leaves.
         for entry in &self.0.leaves {
-            let location = entry.location(db);
-            let filename = location.file_id.file_name(db.upcast());
-            let marks = get_location_marks(db.upcast(), &location);
-            let pos = match location.span.start.position_in_file(db.upcast(), location.file_id) {
-                Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
-                None => "?".into(),
-            };
             let message = entry.format(db);
-            writeln!(res, "error: {message}\n --> {filename}:{pos}\n{marks}\n").unwrap();
+            res += &format_diagnostics(db.upcast(), &message, entry.location(db));
+            res += "\n";
         }
         // Format subtrees.
         res += &self.0.subtrees.iter().map(|subtree| subtree.format(db)).join("");

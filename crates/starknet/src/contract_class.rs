@@ -3,22 +3,28 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use compiler::db::RootDatabase;
-use compiler::diagnostics::check_diagnostics;
+use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use defs::db::DefsGroup;
-use itertools::join;
+use defs::ids::{FreeFunctionId, GenericFunctionId};
+use diagnostics::ToOption;
+use itertools::Itertools;
+use lowering::db::LoweringGroup;
 use num_bigint::BigUint;
 use plugins::get_default_plugins;
+use semantic::corelib::get_core_ty_by_name;
 use semantic::db::SemanticGroup;
+use semantic::{ConcreteFunction, FunctionLongId};
 use serde::{Deserialize, Serialize};
 use sierra::{self};
+use sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use sierra_generator::db::SierraGenGroup;
-use sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
 use thiserror::Error;
 
 use crate::abi;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint};
-use crate::contract::{find_contract_structs, resolve_contract_impls};
+use crate::contract::{find_contracts, get_external_functions, starknet_keccak};
 use crate::plugin::StarkNetPlugin;
 
 #[cfg(test)]
@@ -54,8 +60,8 @@ pub struct ContractEntryPoint {
     /// A field element that encodes the signature of the called function.
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub selector: BigUint,
-    // The function in the sierra program.
-    pub function_id: usize,
+    // The idx of the user function declaration in the sierra program.
+    pub function_idx: usize,
 }
 
 // Compile the contract given by path.
@@ -66,52 +72,72 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
 
     let main_crate_ids = setup_project(db, Path::new(&path))?;
 
+    // Override implicit precedence for compatibility with the StarkNet OS.
+    db.set_implicit_precedence(Arc::new(
+        ["Pedersen", "RangeCheck", "Bitwise", "GasBuiltin"]
+            .iter()
+            .map(|name| get_core_ty_by_name(db, name.into(), vec![]))
+            .collect_vec(),
+    ));
+
     let mut plugins = get_default_plugins();
     plugins.push(Arc::new(StarkNetPlugin {}));
     db.set_macro_plugins(plugins);
 
-    if check_diagnostics(db) {
+    if check_and_eprint_diagnostics(db) {
         anyhow::bail!("Failed to compile: {}", path.display());
     }
 
-    let contracts = find_contract_structs(db);
+    let contracts = find_contracts(db, &main_crate_ids);
     let contract = match &contracts[..] {
         [contract] => contract,
         [] => anyhow::bail!("Contract not found."),
         _ => {
-            anyhow::bail!(
-                "Compilation unit must include only one contract. found: {}.",
-                join(contracts.iter().map(|contract| contract.struct_id.name(db)), ", ")
-            )
+            // TODO(ilya): Add contract names.
+            anyhow::bail!("Compilation unit must include only one contract.",)
         }
     };
 
-    let concrete_impl_id = match resolve_contract_impls(db, contract)?[..] {
-        [concrete_impl_id] => concrete_impl_id,
-        [] => anyhow::bail!("A contract must have at least one impl."),
-        _ => {
-            anyhow::bail!("Only contracts with a single impl are currently supported.")
-        }
-    };
-
-    let concrete_trait_id = db
-        .impl_trait(db.lookup_intern_concrete_impl(concrete_impl_id).impl_id)
-        .with_context(|| "Failed to get contract trait.")?;
-    let trait_id = db.lookup_intern_concrete_trait(concrete_trait_id).trait_id;
-
-    let mut sierra_program = db
-        .get_sierra_program(main_crate_ids)
+    let external_functions = get_external_functions(db, contract)?;
+    let sierra_program = db
+        .get_sierra_program_for_functions(external_functions.clone())
+        .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
 
-    if replace_ids {
-        sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
-    }
+    let replacer = CanonicalReplacer::from_program(&sierra_program);
+    let sierra_program = if replace_ids {
+        replace_sierra_ids_in_program(db, &sierra_program)
+    } else {
+        replacer.apply(&sierra_program)
+    };
 
-    // TODO(ilya): Get abi and entry points from the code.
-    Ok(ContractClass {
-        sierra_program: (*sierra_program).clone(),
-        entry_points_by_type: ContractEntryPoints::default(),
-        abi: abi::Contract::from_trait(db, trait_id)
-            .with_context(|| "Failed to extract contract ABI.")?,
-    })
+    let entry_points_by_type = get_entry_points(db, &external_functions, &replacer)?;
+    // TODO(ilya): fix abi.
+    let abi = abi::Contract::default();
+    Ok(ContractClass { sierra_program, entry_points_by_type, abi })
+}
+
+/// Return the entry points given a trait and a module_id where they are implemented.
+fn get_entry_points(
+    db: &mut RootDatabase,
+    external_functions: &[FreeFunctionId],
+    replacer: &CanonicalReplacer,
+) -> Result<ContractEntryPoints, anyhow::Error> {
+    let mut entry_points_by_type = ContractEntryPoints::default();
+    for free_func_id in external_functions {
+        let func_id = db.intern_function(FunctionLongId {
+            function: ConcreteFunction {
+                generic_function: GenericFunctionId::Free(*free_func_id),
+                generic_args: vec![],
+            },
+        });
+
+        let sierra_id = db.intern_sierra_function(func_id);
+
+        entry_points_by_type.external.push(ContractEntryPoint {
+            selector: starknet_keccak(free_func_id.name(db).as_bytes()),
+            function_idx: replacer.replace_function_id(&sierra_id).id as usize,
+        });
+    }
+    Ok(entry_points_by_type)
 }

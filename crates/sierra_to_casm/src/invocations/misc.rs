@@ -1,9 +1,11 @@
 use casm::casm;
 use sierra::program::{BranchInfo, BranchTarget};
-use utils::try_extract_matches;
 
-use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
+use super::{
+    get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
+    InvocationError,
+};
+use crate::references::{CellExpression, ReferenceExpression};
 use crate::relocations::{Relocation, RelocationEntry};
 
 /// Handles a revoke ap tracking instruction.
@@ -17,16 +19,8 @@ pub fn build_revoke_ap_tracking(
 pub fn build_dup(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let expression = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression,
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
-    Ok(builder.build_only_reference_changes([expression.clone(), expression.clone()].into_iter()))
+    let expression = builder.try_get_refs::<1>()?[0].clone();
+    Ok(builder.build_only_reference_changes([expression.clone(), expression].into_iter()))
 }
 
 /// Handles a drop instruction.
@@ -48,36 +42,15 @@ pub fn build_drop(
 pub fn build_jump_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let dst_expr = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression,
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
-    let value = try_extract_matches!(
-        dst_expr
-            .try_unpack_single()
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        CellExpression::Deref
-    )
-    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let value = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
 
-    let target_statement_id = match builder.invocation.branches.as_slice() {
-        [
-            BranchInfo { target: BranchTarget::Fallthrough, .. },
-            BranchInfo { target: BranchTarget::Statement(statement_id), .. },
-        ] => statement_id,
-        _ => panic!("malformed invocation"),
-    };
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
 
     Ok(builder.build(
         casm! { jmp rel 0 if value != 0; }.instructions,
         vec![RelocationEntry {
             instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(*target_statement_id),
+            relocation: Relocation::RelativeStatementId(target_statement_id),
         }],
         [
             vec![].into_iter(),
@@ -112,4 +85,22 @@ pub fn build_identity(
 ) -> Result<CompiledInvocation, InvocationError> {
     let outputs = builder.refs.iter().map(|r| r.expression.clone());
     Ok(builder.build_only_reference_changes(outputs))
+}
+
+pub fn build_branch_align(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let ap_fix = builder
+        .program_info
+        .metadata
+        .ap_change_info
+        .variable_values
+        .get(&builder.idx)
+        .copied()
+        .unwrap_or(0);
+    Ok(builder.build(
+        if ap_fix > 0 { casm! {ap += ap_fix;}.instructions } else { vec![] },
+        vec![],
+        [vec![].into_iter()].into_iter(),
+    ))
 }

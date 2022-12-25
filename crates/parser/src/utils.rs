@@ -4,6 +4,7 @@ use db_utils::Upcast;
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
 use filesystem::ids::FileId;
+use syntax::node::ast::SyntaxFile;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use syntax::node::{SyntaxNode, TypedSyntaxNode};
 
@@ -30,6 +31,11 @@ impl Upcast<dyn SyntaxGroup> for SimpleParserDatabase {
         self
     }
 }
+impl Upcast<dyn FilesGroup> for SimpleParserDatabase {
+    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
 
 /// Reads a cairo file to the db and return the syntax_root and diagnostic of its parsing.
 pub fn get_syntax_root_and_diagnostics_from_file(
@@ -47,7 +53,17 @@ pub fn get_syntax_root_and_diagnostics(
     file_id: FileId,
     contents: &str,
 ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+    let (syntax_file, diagnostics) = get_syntax_file_and_diagnostics(db, file_id, contents);
+    (syntax_file.as_syntax_node(), diagnostics)
+}
+
+/// Returns the syntax_file and diagnostic of a file in the db.
+pub fn get_syntax_file_and_diagnostics(
+    db: &SimpleParserDatabase,
+    file_id: FileId,
+    contents: &str,
+) -> (SyntaxFile, Diagnostics<ParserDiagnostic>) {
     let mut diagnostics = DiagnosticsBuilder::new();
-    let syntax_root = Parser::parse_file(db, &mut diagnostics, file_id, contents);
-    (syntax_root.as_syntax_node(), diagnostics.build())
+    let syntax_file = Parser::parse_file(db, &mut diagnostics, file_id, contents);
+    (syntax_file, diagnostics.build())
 }

@@ -18,12 +18,15 @@ members = [
     "crates/runner",
     "crates/semantic",
     "crates/sierra",
+    "crates/sierra_ap_change",
     "crates/sierra_gas",
     "crates/sierra_generator",
     "crates/sierra_to_casm",
+    "crates/solver",
     "crates/starknet",
     "crates/syntax",
     "crates/syntax_codegen",
+    "crates/test_runner",
     "tests",
 ]
 
@@ -35,11 +38,13 @@ edition = "2021"
 anyhow = "1.0.66"
 assert_matches = "1.5"
 bimap = "0.6.2"
-cairo-rs = { git = "https://github.com/lambdaclass/cairo-rs", rev="3a2dead" }
+cairo-rs = { git = "https://github.com/lambdaclass/cairo-rs", rev="42dadd1" }
 chrono = "0.4.23"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"
 const-fnv1a-hash = "1.1.0"
+convert_case = "0.6.0"
+derivative = "2.2.0"
 diffy = "0.3.0"
 env_logger = "0.9.3"
 genco = "0.17.0"
@@ -53,13 +58,16 @@ log = "0.4"
 lsp = { version = "0.93", package = "lsp-types" }
 num-bigint = "0.4"
 num-traits = "0.2"
+num-integer = "0.1"
 path-clean = "0.1.0"
 pretty_assertions = "1.2.1"
 proc-macro2 = "1.0"
 quote = "1.0.21"
+rayon = "0.9.0"
 salsa = "0.16.1"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0"
+sha3 = "0.10.6"
 smol_str = "0.1.23"
 syn = { version = "1.0.99", features = ["full", "extra-traits"] }
 test-case = "2.2.2"
@@ -69,4 +77,5 @@ thiserror = "1.0.32"
 tokio = { version = "1.18.2", features = ["full", "sync"] }
 toml = "0.4.2"
 tower-lsp = "0.17.0"
+unescaper = "0.1.1"
 xshell = "0.2.2"

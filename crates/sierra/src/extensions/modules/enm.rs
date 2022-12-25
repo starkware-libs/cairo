@@ -21,7 +21,6 @@ use num_bigint::ToBigInt;
 use num_traits::Signed;
 use utils::try_extract_matches;
 
-use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
@@ -31,8 +30,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibFunc,
-    SpecializationError,
+    args_as_single_type, ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo,
+    SignatureBasedConcreteLibFunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -168,7 +167,7 @@ impl EnumInitLibFunc {
                     ty: enum_type,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 }],
-                SierraApChange::Known(0),
+                SierraApChange::Known { new_vars_only: true },
             ),
             num_variants,
             index,
@@ -207,7 +206,7 @@ impl SignatureOnlyGenericLibFunc for EnumMatchLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let enum_type = as_single_type(args)?;
+        let enum_type = args_as_single_type(args)?;
         let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
         let variant_types =
             EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
@@ -219,7 +218,7 @@ impl SignatureOnlyGenericLibFunc for EnumMatchLibFunc {
                     ty,
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 }],
-                ap_change: SierraApChange::Known(0),
+                ap_change: SierraApChange::Known { new_vars_only: true },
             })
             .collect();
 

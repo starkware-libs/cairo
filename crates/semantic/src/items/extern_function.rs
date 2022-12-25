@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, Maybe, ToMaybe};
 use diagnostics_proc_macros::DebugWithDb;
 use utils::extract_matches;
 
@@ -43,44 +43,36 @@ pub fn extern_function_declaration_diagnostics(
 pub fn extern_function_declaration_signature(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Option<semantic::Signature> {
-    Some(db.priv_extern_function_declaration_data(extern_function_id)?.signature)
+) -> Maybe<semantic::Signature> {
+    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.signature)
 }
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_generic_params].
 pub fn extern_function_declaration_generic_params(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Option<Vec<GenericParamId>> {
-    Some(db.priv_extern_function_declaration_data(extern_function_id)?.generic_params)
+) -> Maybe<Vec<GenericParamId>> {
+    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.generic_params)
 }
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_implicits].
 pub fn extern_function_declaration_implicits(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Option<Vec<TypeId>> {
-    Some(
-        db.priv_extern_function_declaration_data(extern_function_id)?
-            .signature
-            .implicits
-            .into_iter()
-            .map(|param| param.ty)
-            .collect(),
-    )
+) -> Maybe<Vec<TypeId>> {
+    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.signature.implicits)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_refs].
 pub fn extern_function_declaration_refs(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Option<Vec<Parameter>> {
-    Some(
-        db.priv_extern_function_declaration_data(extern_function_id)?
-            .signature
-            .params
-            .into_iter()
-            .filter(|param| param.mutability == Mutability::Reference)
-            .collect(),
-    )
+) -> Maybe<Vec<Parameter>> {
+    Ok(db
+        .priv_extern_function_declaration_data(extern_function_id)?
+        .signature
+        .params
+        .into_iter()
+        .filter(|param| param.mutability == Mutability::Reference)
+        .collect())
 }
 
 /// Query implementation of
@@ -88,8 +80,8 @@ pub fn extern_function_declaration_refs(
 pub fn extern_function_declaration_resolved_lookback(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Option<Arc<ResolvedLookback>> {
-    Some(db.priv_extern_function_declaration_data(extern_function_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.resolved_lookback)
 }
 
 // Computation.
@@ -97,11 +89,11 @@ pub fn extern_function_declaration_resolved_lookback(
 pub fn priv_extern_function_declaration_data(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Option<ExternFunctionDeclarationData> {
+) -> Maybe<ExternFunctionDeclarationData> {
     let module_file_id = extern_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_data = db.module_data(module_file_id.0)?;
-    let function_syntax = module_data.extern_functions.get(&extern_function_id)?;
+    let function_syntax = module_data.extern_functions.get(&extern_function_id).to_maybe()?;
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -131,7 +123,7 @@ pub fn priv_extern_function_declaration_data(
     }
 
     let resolved_lookback = Arc::new(resolver.lookback);
-    Some(ExternFunctionDeclarationData {
+    Ok(ExternFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         generic_params,

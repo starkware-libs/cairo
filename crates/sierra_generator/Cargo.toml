@@ -18,6 +18,7 @@ itertools.workspace = true
 lowering = { path = "../lowering" }
 num-bigint.workspace = true
 parser = { path = "../parser" }
+plugins = { path = "../plugins" }
 salsa.workspace = true
 semantic = { path = "../semantic" }
 sierra = { path = "../sierra" }
@@ -32,5 +33,5 @@ log.workspace = true
 pretty_assertions.workspace = true
 semantic = { path = "../semantic", features = ["testing"] }
 test-case.workspace = true
-utils = { path = "../utils", features = ["testing"] }
+test_utils = { path = "../test_utils"}
 test-log.workspace = true

@@ -5,16 +5,16 @@
 // Examples:
 // * let x = 5.
 // Has a definition for the variable "x".
-// * func foo<T>(a: T){ return (); }.
+// * fn foo<T>(a: T){ return (); }.
 // Has 3 definitions:
 //   * Function "foo".
 //   * Generic parameter "T" (only the first occurrence of "T").
 //   * Function parameter "a".
-// * trait MyTrait{ func foo() -> (); }
+// * trait MyTrait{ fn foo() -> (); }
 // Has 2 definitions:
 //   * Trait "MyTrait"
 //   * TraitFunction "foo".
-// * impl A for MyTrait{ func foo() -> (){...} }
+// * impl A for MyTrait{ fn foo() -> (){...} }
 // Has 2 definitions:
 //   * Impl "A"
 //   * ImplFunction "foo".
@@ -249,7 +249,7 @@ impl DebugWithDb<dyn DefsGroup> for ModuleId {
     }
 }
 /// Index of file in module.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, Hash, PartialEq, Eq)]
 pub struct FileIndex(pub usize);
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ModuleFileId(pub ModuleId, pub FileIndex);
@@ -285,6 +285,7 @@ define_language_element_id!(
     lookup_intern_submodule,
     name
 );
+
 define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use, name);
 define_language_element_id!(
     FreeFunctionId,
@@ -409,8 +410,8 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
         let syntax_db = db.upcast();
         let LocalVarLongId(module_file_id, ptr) = self;
-        let file_id = db.module_file(*module_file_id).ok_or(std::fmt::Error)?;
-        let root = db.file_syntax(file_id).ok_or(std::fmt::Error)?;
+        let file_id = db.module_file(*module_file_id).map_err(|_| std::fmt::Error)?;
+        let root = db.file_syntax(file_id).map_err(|_| std::fmt::Error)?;
         let text = ast::TerminalIdentifier::from_ptr(syntax_db, &root, *ptr).text(syntax_db);
         write!(f, "LocalVarId({}::{})", module_file_id.0.full_path(db), text)
     }

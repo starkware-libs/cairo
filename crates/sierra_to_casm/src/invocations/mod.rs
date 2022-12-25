@@ -1,28 +1,32 @@
 use assert_matches::assert_matches;
 use casm::ap_change::ApChange;
-use casm::inline::CasmContext;
-use casm::instructions::{Instruction, InstructionBody};
-use casm::operand::{CellRef, DerefOrImmediate, Register};
-use itertools::zip_eq;
-use num_bigint::BigInt;
+use casm::builder::{CasmBuildResult, CasmBuilder, Var};
+use casm::instructions::Instruction;
+use casm::operand::{CellRef, Register};
+use itertools::{zip_eq, Itertools};
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::CoreConcreteLibFunc;
-use sierra::extensions::lib_func::{BranchSignature, SierraApChange};
+use sierra::extensions::lib_func::BranchSignature;
 use sierra::extensions::{ConcreteLibFunc, OutputVarReferenceInfo};
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
+use sierra_ap_change::core_libfunc_ap_change::core_libfunc_ap_change;
 use thiserror::Error;
-use utils::extract_matches;
+use utils::ordered_hash_map::OrderedHashMap;
 use {casm, sierra};
 
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
-use crate::references::{try_unpack_deref, CellExpression, ReferenceExpression, ReferenceValue};
-use crate::relocations::RelocationEntry;
+use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
+use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
 mod array;
+mod bitwise;
+mod boolean;
 mod boxing;
+mod builtin_cost;
 mod dict_felt_to;
 mod enm;
 mod felt;
@@ -30,7 +34,10 @@ mod function_call;
 mod gas;
 mod mem;
 mod misc;
+mod nullable;
 mod pedersen;
+mod starknet;
+
 mod strct;
 mod uint128;
 
@@ -47,6 +54,8 @@ pub enum InvocationError {
     WrongNumberOfArguments { expected: usize, actual: usize },
     #[error("The requested functionality is not implemented yet.")]
     NotImplemented(Invocation),
+    #[error("The requested functionality is not implemented yet: {message}")]
+    NotImplementedStr { invocation: Invocation, message: String },
     #[error("The functionality is supported only for sized types.")]
     NotSized(Invocation),
     #[error("Expected type data not found.")]
@@ -54,6 +63,8 @@ pub enum InvocationError {
     #[error("Expected variable data for statement not found.")]
     UnknownVariableData,
     #[error("An integer overflow occurred.")]
+    InvalidGenericArg,
+    #[error("Invalid generic argument for libfunc.")]
     IntegerOverflow,
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
@@ -69,15 +80,21 @@ pub struct BranchChanges {
     /// The change to AP caused by the libfunc in the branch.
     pub ap_change: ApChange,
     /// The change to the remaing gas value in the wallet.
-    pub gas_change: i64,
+    pub gas_change: OrderedHashMap<CostTokenType, i64>,
 }
 impl BranchChanges {
     fn new(
         ap_change: ApChange,
-        gas_change: i64,
-        expressions: impl Iterator<Item = ReferenceExpression>,
+        gas_change: OrderedHashMap<CostTokenType, i64>,
+        expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
     ) -> Self {
+        assert_eq!(
+            expressions.len(),
+            branch_signature.vars.len(),
+            "The number of expressions does not match the number of expected results in the \
+             branch."
+        );
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
                 .map(|(expression, var_info)| {
@@ -142,6 +159,11 @@ pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), Invocati
     Ok(())
 }
 
+/// The cells per returned Sierra variables, in casm-builder vars.
+type VarCells = [Var];
+/// The configuration for all Sierra variables returned from a libfunc.
+type AllVars<'a> = [&'a VarCells];
+
 /// Helper for building compiled invocations.
 pub struct CompiledInvocationBuilder<'a> {
     pub program_info: ProgramInfo<'a>,
@@ -157,7 +179,9 @@ impl CompiledInvocationBuilder<'_> {
         self,
         instructions: Vec<Instruction>,
         relocations: Vec<RelocationEntry>,
-        output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
+        output_expressions: impl ExactSizeIterator<
+            Item = impl ExactSizeIterator<Item = ReferenceExpression>,
+        >,
     ) -> CompiledInvocation {
         let gas_changes = sierra_gas::core_libfunc_cost::core_libfunc_cost(
             &self.program_info.metadata.gas_info,
@@ -165,27 +189,72 @@ impl CompiledInvocationBuilder<'_> {
             self.libfunc,
         );
 
+        let branch_signatures = self.libfunc.branch_signatures();
+        assert_eq!(
+            branch_signatures.len(),
+            output_expressions.len(),
+            "The number of output expressions does not match signature."
+        );
+        let ap_changes = core_libfunc_ap_change(self.libfunc);
+        assert_eq!(
+            branch_signatures.len(),
+            ap_changes.len(),
+            "The number of ap changes does not match signature."
+        );
+        assert_eq!(
+            branch_signatures.len(),
+            gas_changes.len(),
+            "The number of gas changes does not match signature."
+        );
+
         CompiledInvocation {
             instructions,
             relocations,
             results: zip_eq(
-                zip_eq(self.libfunc.branch_signatures(), gas_changes),
-                output_expressions,
+                zip_eq(branch_signatures, gas_changes),
+                zip_eq(output_expressions, ap_changes),
             )
-            .map(|((branch_signature, gas_change), expressions)| {
-                let ap_change = match branch_signature.ap_change {
-                    SierraApChange::Known(x) => ApChange::Known(x),
-                    SierraApChange::NotImplemented => panic!("AP change not implemented."),
-                    SierraApChange::FinalizeLocals => match self.environment.frame_state {
-                        FrameState::Finalized { allocated } => ApChange::Known(allocated),
-                        _ => panic!("Unexpected frame state."),
-                    },
-                    SierraApChange::Unknown => ApChange::Unknown,
+            .map(|((branch_signature, gas_change), (expressions, ap_change))| {
+                let ap_change = match ap_change {
+                    sierra_ap_change::ApChange::Known(x) => ApChange::Known(x),
+                    sierra_ap_change::ApChange::AtLocalsFinalizationByTypeSize(_) => {
+                        ApChange::Known(0)
+                    }
+                    sierra_ap_change::ApChange::FinalizeLocals => {
+                        match self.environment.frame_state {
+                            FrameState::Finalized { allocated } => ApChange::Known(allocated),
+                            _ => panic!("Unexpected frame state."),
+                        }
+                    }
+                    sierra_ap_change::ApChange::KnownByTypeSize(ty) => {
+                        ApChange::Known(self.program_info.type_sizes[&ty] as usize)
+                    }
+                    sierra_ap_change::ApChange::FunctionCall(id) => self
+                        .program_info
+                        .metadata
+                        .ap_change_info
+                        .function_ap_change
+                        .get(&id)
+                        .map_or(ApChange::Unknown, |x| ApChange::Known(x + 2)),
+                    sierra_ap_change::ApChange::FromMetadata => ApChange::Known(
+                        *self
+                            .program_info
+                            .metadata
+                            .ap_change_info
+                            .variable_values
+                            .get(&self.idx)
+                            .unwrap_or(&0),
+                    ),
+                    sierra_ap_change::ApChange::Unknown => ApChange::Unknown,
                 };
 
                 BranchChanges::new(
                     ap_change,
-                    -gas_change.unwrap_or(0),
+                    gas_change
+                        .unwrap_or_default()
+                        .iter()
+                        .map(|(token_type, val)| (*token_type, -val))
+                        .collect(),
                     expressions,
                     branch_signature,
                 )
@@ -195,12 +264,67 @@ impl CompiledInvocationBuilder<'_> {
         }
     }
 
+    /// Builds a `CompiledInvocation` from a casm builder and branch extractions.
+    /// Per branch requires `(name, result_variables, target_statement_id)`.
+    fn build_from_casm_builder<const BRANCH_COUNT: usize>(
+        self,
+        casm_builder: CasmBuilder,
+        branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
+    ) -> CompiledInvocation {
+        let CasmBuildResult { instructions, branches } =
+            casm_builder.build(branch_extractions.map(|(name, _, _)| name));
+        assert!(itertools::equal(
+            core_libfunc_ap_change(self.libfunc),
+            branches.iter().map(|(state, _)| sierra_ap_change::ApChange::Known(state.ap_change))
+        ));
+        let relocations = branches
+            .iter()
+            .zip_eq(branch_extractions.iter())
+            .flat_map(|((_, relocations), (_, _, target))| {
+                assert_eq!(
+                    relocations.is_empty(),
+                    target.is_none(),
+                    "No relocations if nowhere to relocate to."
+                );
+                relocations.iter().map(|idx| RelocationEntry {
+                    instruction_idx: *idx,
+                    relocation: Relocation::RelativeStatementId(target.unwrap()),
+                })
+            })
+            .collect();
+        let output_expressions = branches.into_iter().zip_eq(branch_extractions.into_iter()).map(
+            |((state, _), (_, vars, _))| {
+                vars.iter().map(move |var_cells| ReferenceExpression {
+                    cells: var_cells
+                        .iter()
+                        .map(|cell| CellExpression::from_res_operand(state.get_adjusted(*cell)))
+                        .collect(),
+                })
+            },
+        );
+        self.build(instructions, relocations, output_expressions)
+    }
+
     /// Creates a new invocation with only reference changes.
     fn build_only_reference_changes(
         self,
-        output_expressions: impl Iterator<Item = ReferenceExpression>,
+        output_expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
     ) -> CompiledInvocation {
         self.build(vec![], vec![], [output_expressions].into_iter())
+    }
+
+    /// If returns the reference expressions if the size is correct.
+    pub fn try_get_refs<const COUNT: usize>(
+        &self,
+    ) -> Result<[&ReferenceExpression; COUNT], InvocationError> {
+        if self.refs.len() == COUNT {
+            Ok(core::array::from_fn(|i| &self.refs[i].expression))
+        } else {
+            Err(InvocationError::WrongNumberOfArguments {
+                expected: COUNT,
+                actual: self.refs.len(),
+            })
+        }
     }
 }
 
@@ -225,8 +349,11 @@ pub fn compile_invocation(
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(libfunc) => felt::build(libfunc, builder),
+        CoreConcreteLibFunc::Bitwise(_) => bitwise::build(builder),
+        CoreConcreteLibFunc::Bool(libfunc) => boolean::build(libfunc, builder),
         CoreConcreteLibFunc::Uint128(libfunc) => uint128::build(libfunc, builder),
         CoreConcreteLibFunc::Gas(libfunc) => gas::build(libfunc, builder),
+        CoreConcreteLibFunc::BranchAlign(_) => misc::build_branch_align(builder),
         CoreConcreteLibFunc::Array(libfunc) => array::build(libfunc, builder),
         CoreConcreteLibFunc::Drop(_) => misc::build_drop(builder),
         CoreConcreteLibFunc::Dup(_) => misc::build_dup(builder),
@@ -240,6 +367,9 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
         CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
         CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
+        CoreConcreteLibFunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
+        CoreConcreteLibFunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
+        CoreConcreteLibFunc::Nullable(libfunc) => nullable::build(libfunc, builder),
     }
 }
 
@@ -259,30 +389,9 @@ trait ReferenceExpressionView: Sized {
     fn to_reference_expression(self) -> ReferenceExpression;
 }
 
-// Utility for boolean functions.
-pub fn unwrap_range_check_based_binary_op_refs(
-    builder: &CompiledInvocationBuilder<'_>,
-) -> Result<(CellRef, CellRef, CellRef), InvocationError> {
-    // Fetches, verifies and returns the range check, a and b references.
-    match builder.refs {
-        [
-            ReferenceValue { expression: range_check_expression, .. },
-            ReferenceValue { expression: expr_a, .. },
-            ReferenceValue { expression: expr_b, .. },
-        ] => Ok((
-            try_unpack_deref(range_check_expression)?,
-            try_unpack_deref(expr_a)?,
-            try_unpack_deref(expr_b)?,
-        )),
-        refs => Err(InvocationError::WrongNumberOfArguments { expected: 3, actual: refs.len() }),
-    }
-}
-
-// Utility for boolean functions.
-pub fn get_bool_comparison_target_statement_id(
-    builder: &CompiledInvocationBuilder<'_>,
-) -> StatementIdx {
-    // Fetch the jump target.
+/// Fetches the non-fallthrough jump target of the invocation, assuming this invocation is a
+/// conditional jump.
+pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>) -> StatementIdx {
     match builder.invocation.branches.as_slice() {
         [
             BranchInfo { target: BranchTarget::Fallthrough, .. },
@@ -290,22 +399,4 @@ pub fn get_bool_comparison_target_statement_id(
         ] => *target_statement_id,
         _ => panic!("malformed invocation"),
     }
-}
-
-/// Patches the jnz statement target to the end of the CASM context.
-fn patch_jnz_to_end(context: &mut CasmContext, instruction_idx: usize) {
-    // Compute the offset.
-    let mut offset = context.current_code_offset;
-    for i in 0..instruction_idx {
-        offset -= context.instructions[i].body.op_size();
-    }
-    // Replace the jmp target.
-    *extract_matches!(
-        &mut extract_matches!(
-            &mut context.instructions[instruction_idx].body,
-            InstructionBody::Jnz
-        )
-        .jump_offset,
-        DerefOrImmediate::Immediate
-    ) = BigInt::from(offset);
 }

@@ -41,6 +41,6 @@ pub fn create_virtual_file(
 #[macro_export]
 macro_rules! parser_test {
     ($test_name:ident, $filenames:expr, $func:ident) => {
-        utils::test_file_test!($test_name, $filenames, SimpleParserDatabase, $func);
+        test_utils::test_file_test!($test_name, $filenames, SimpleParserDatabase, $func);
     };
 }

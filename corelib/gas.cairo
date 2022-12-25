@@ -1,3 +1,10 @@
+extern type BuiltinCosts;
 extern type GasBuiltin;
 
-extern func get_gas() -> Option::<()> implicits (rc: RangeCheck, gb: GasBuiltin) nopanic;
+impl BuiltinCostsCopy of Copy::<BuiltinCosts>;
+impl BuiltinCostsDrop of Drop::<BuiltinCosts>;
+
+extern fn get_gas() -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
+extern fn get_gas_all(
+    costs: BuiltinCosts
+) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;

@@ -40,15 +40,10 @@ error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternTy
 3 + 4 +;
        ^
 
-error: Path not found.
+error: Function not found.
  --> lib.cairo:3:5
 1 + foo()
     ^*^
-
-error: Binary operator '+' is not supported for types 'core::felt' and '<missing>'.
- --> lib.cairo:3:3
-1 + foo()
-  ^
 
 //! > ==========================================================================
 
@@ -61,37 +56,37 @@ test_expr_diagnostics
 {
   foo();
   core::felt_add(1,1);
-  test_crate::foo();
+  test::foo();
   bad_module::foo();
   super::foo();
-  test_crate::super::foo();
+  test::super::foo();
 }
 
 //! > module_code
-func foo() {
+fn foo() {
 }
 
 //! > function_body
 
 //! > expected_diagnostics
-error: Path not found.
+error: Identifier not found.
  --> lib.cairo:8:3
   bad_module::foo();
   ^********^
 
-error: Path not found.
+error: 'super' cannot be used for the crate's root module.
  --> lib.cairo:9:3
   super::foo();
   ^***^
 
 error: Invalid path.
- --> lib.cairo:10:15
-  test_crate::super::foo();
-              ^***^
+ --> lib.cairo:10:9
+  test::super::foo();
+        ^***^
 
 //! > ==========================================================================
 
-//! > Test duplicate 'ref' and bad argument for ref param and .
+//! > Test duplicate 'ref'.
 
 //! > test_function_name
 test_expr_diagnostics
@@ -101,19 +96,96 @@ test_expr_diagnostics
 }
 
 //! > module_code
-func foo(ref ref v: felt) {
+fn foo(ref ref v: felt) {
+  let mut a = 1;
+  foo(a);
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: `ref` modifier was specified after another modifier (`ref`). Only a single modifier is allowed.
+ --> lib.cairo:1:12
+fn foo(ref ref v: felt) {
+           ^*^
+
+//! > ==========================================================================
+
+//! > Test bad argument for ref param (not a variable).
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+}
+
+//! > module_code
+fn foo(ref v: felt) {
   foo(1);
 }
 
 //! > function_body
 
 //! > expected_diagnostics
-error: `ref` modifier was specified after another modifier (`ref`). Only a single modifier is allowed. 
- --> lib.cairo:1:14
-func foo(ref ref v: felt) {
-             ^*^
-
 error: ref argument must be a variable.
  --> lib.cairo:2:7
   foo(1);
       ^
+
+//! > ==========================================================================
+
+//! > Test bad argument for ref param (variable not mutable).
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+}
+
+//! > module_code
+fn foo(ref v: felt) {
+  let a = 3;
+  foo(a);
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: ref argument must be a mutable variable.
+ --> lib.cairo:3:7
+  foo(a);
+      ^
+
+//! > ==========================================================================
+
+//! > Test numerical literal of unsupported type.
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+    let a = 123_felt;
+    let a = 123_u128;
+    let b = 123_NonZero;
+    let b = 123_u129;
+}
+
+//! > module_code
+fn foo() {
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: A literal with this type cannot be created.
+ --> lib.cairo:7:13
+    let b = 123_NonZero;
+            ^*********^
+
+error: Unknown type.
+ --> lib.cairo:8:13
+    let b = 123_u129;
+            ^******^

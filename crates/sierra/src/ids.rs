@@ -1,18 +1,22 @@
+use derivative::Derivative;
 use salsa;
 use smol_str::SmolStr;
 
 const fn id_from_string(s: &str) -> u64 {
-    // TODO(ilya, 10/10/2022): Fix https://github.com/starkware-libs/cairo2/issues/45.
+    // TODO(ilya, 10/10/2022): Fix https://github.com/starkware-libs/cairo/issues/45.
     const_fnv1a_hash::fnv1a_hash_str_64(s)
 }
 
 macro_rules! define_identity {
     ($doc:literal, $type_name:ident) => {
         #[doc=$doc]
-        #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+        #[derive(Clone, Debug, Derivative)]
+        #[derivative(Eq, Hash, PartialEq)]
         pub struct $type_name {
             pub id: u64,
             /// Optional name for testing and debugging.
+            #[derivative(Hash = "ignore")]
+            #[derivative(PartialEq = "ignore")]
             pub debug_name: Option<SmolStr>,
         }
         impl $type_name {

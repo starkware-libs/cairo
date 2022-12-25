@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-func foo(a: MyType) {
+fn foo(a: MyType) {
     a + a * a;
 }
 
@@ -15,15 +15,10 @@ foo
 extern type MyType;
 
 //! > expected_diagnostics
-error: Binary operator '*' is not supported for types 'test_crate::MyType' and 'test_crate::MyType'.
+error: Binary operator '*' is not supported for types 'test::MyType' and 'test::MyType'.
  --> lib.cairo:3:11
     a + a * a;
           ^
-
-error: Binary operator '+' is not supported for types 'test_crate::MyType' and '<missing>'.
- --> lib.cairo:3:7
-    a + a * a;
-      ^
 
 //! > ==========================================================================
 
@@ -33,7 +28,7 @@ error: Binary operator '+' is not supported for types 'test_crate::MyType' and '
 test_function_diagnostics
 
 //! > function
-func foo(a: felt, b: bool) implicits (rc:RangeCheck) {
+fn foo(a: felt, b: bool) implicits(RangeCheck) {
     // Valid.
     a + a * a - a;
     b & b | b & (a == a | a > a)
@@ -67,7 +62,7 @@ error: Binary operator '-' is not supported for types 'core::felt' and 'core::bo
 test_function_diagnostics
 
 //! > function
-func foo() {
+fn foo() {
     -(1 == 2);
     !17;
 }

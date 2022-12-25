@@ -142,12 +142,26 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Module.
-    /// Expected pattern: `mod<Identifier>\{<ItemList>\}`
+    /// Expected pattern: `mod <Identifier> \{<ItemList>\}` or `mod <Identifier>;`.
     fn expect_module(&mut self, attributes: AttributeListGreen) -> ItemModuleGreen {
         let module_kw = self.take::<TerminalModule>();
         let name = self.parse_identifier();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
-        ItemModule::new_green(self.db, attributes, module_kw, name, semicolon)
+
+        let body = match self.peek().kind {
+            SyntaxKind::TerminalLBrace => {
+                let lbrace = self.take::<TerminalLBrace>();
+                let items = ItemList::new_green(
+                    self.db,
+                    self.parse_list(Self::try_parse_top_level_item, is_of_kind!(rbrace), "item"),
+                );
+                let rbrace = self.parse_token::<TerminalRBrace>();
+                ModuleBody::new_green(self.db, lbrace, items, rbrace).into()
+            }
+            // TODO: Improve diagnostic to indicate semicolon or a body were expected.
+            _ => self.parse_token::<TerminalSemicolon>().into(),
+        };
+
+        ItemModule::new_green(self.db, attributes, module_kw, name, body)
     }
 
     /// Assumes the current token is Struct.
@@ -272,7 +286,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an identifier kind or None if an identifier can't be
     /// parsed.
-    /// Note that if the terminal is a keyword or an underscore, it is skipped it and
+    /// Note that if the terminal is a keyword or an underscore, it is skipped, and
     /// Some(missing-identifier) is returned.
     fn try_parse_identifier(&mut self) -> Option<TerminalIdentifierGreen> {
         if self.peek().kind.is_keyword_terminal() {
@@ -286,6 +300,16 @@ impl<'a> Parser<'a> {
         } else {
             self.try_parse_token::<TerminalIdentifier>()
         }
+    }
+    /// Returns whether the current token is an identifier, a keyword or an underscore ('_'),
+    /// without consuming it. This should be used mostly, instead of checking whether the current
+    /// token is an identifier, because in many cases we'd want to consume the keyword/underscore as
+    /// the identifier and raise a relevant diagnostic
+    /// (ReservedIdentifier/UnderscoreNotAllowedAsIdentifier).
+    fn is_peek_identifier_like(&self) -> bool {
+        let kind = self.peek().kind;
+        kind.is_keyword_terminal()
+            || matches!(kind, SyntaxKind::TerminalUnderscore | SyntaxKind::TerminalIdentifier)
     }
 
     /// Returns a GreenId of a node with an identifier kind.
@@ -470,16 +494,19 @@ impl<'a> Parser<'a> {
                 SyntaxKind::TerminalDot => self.take::<TerminalDot>().into(),
                 SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
                 SyntaxKind::TerminalDiv => self.take::<TerminalDiv>().into(),
+                SyntaxKind::TerminalMod => self.take::<TerminalMod>().into(),
                 SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
                 SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
                 SyntaxKind::TerminalEq => self.take::<TerminalEq>().into(),
                 SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),
+                SyntaxKind::TerminalNeq => self.take::<TerminalNeq>().into(),
                 SyntaxKind::TerminalLT => self.take::<TerminalLT>().into(),
                 SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
                 SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
                 SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
                 SyntaxKind::TerminalAnd => self.take::<TerminalAnd>().into(),
                 SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
+                SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
                 _ => unreachable!(),
             })
         }
@@ -571,6 +598,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFalse => Some(self.take::<TerminalFalse>().into()),
             SyntaxKind::TerminalTrue => Some(self.take::<TerminalTrue>().into()),
             SyntaxKind::TerminalLiteralNumber => Some(self.take::<TerminalLiteralNumber>().into()),
+            SyntaxKind::TerminalShortString => Some(self.take::<TerminalShortString>().into()),
             SyntaxKind::TerminalLParen => {
                 // Note that LBrace is allowed inside parenthesis, even if `lbrace_allowed` is
                 // [LbraceAllowed::Forbid].
@@ -788,6 +816,7 @@ impl<'a> Parser<'a> {
         // TODO(yuval): Support "Or" patterns.
         Some(match self.peek().kind {
             SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
+            SyntaxKind::TerminalShortString => self.take::<TerminalShortString>().into(),
             SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
             SyntaxKind::TerminalIdentifier => {
                 // TODO(ilya): Consider parsing a single identifier as PatternIdentifier rather
@@ -958,12 +987,13 @@ impl<'a> Parser<'a> {
         if self.peek().kind == SyntaxKind::TerminalImplicits {
             let implicits_kw = self.take::<TerminalImplicits>();
             let lparen = self.parse_token::<TerminalLParen>();
-            let implicits = ParamList::new_green(
+            let implicits = ImplicitsList::new_green(
                 self.db,
-                self.parse_separated_list::<Param, TerminalComma, ParamListElementOrSeparatorGreen>(
-                    Self::try_parse_param,
-                    is_of_kind!(rparen, block, lbrace, rbrace, top_level),
-                    "implicit param",
+                self.parse_separated_list::<ExprPath, TerminalComma, ImplicitsListElementOrSeparatorGreen>(
+                    Self::try_parse_path,
+                    // Don't stop at keywords as try_parse_path handles keywords inside it. Otherwise the diagnostic is less accurate.
+                    is_of_kind!(rparen, lbrace, rbrace),
+                    "implicit type",
                 ),
             );
             let rparen = self.parse_token::<TerminalRParen>();
@@ -985,7 +1015,7 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Returns a GreenId of a node with kind Modifier or None if a parameter can't be parsed.
+    /// Returns a GreenId of a node with kind Modifier or None if a modifier can't be parsed.
     fn try_parse_modifier(&mut self) -> Option<ModifierGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalRef => Some(self.take::<TerminalRef>().into()),
@@ -1069,8 +1099,12 @@ impl<'a> Parser<'a> {
 
         ExprPath::new_green(self.db, children)
     }
+    /// Returns a GreenId of a node with kind ExprPath or None if a path can't be parsed.
+    fn try_parse_path(&mut self) -> Option<ExprPathGreen> {
+        if self.is_peek_identifier_like() { Some(self.parse_path()) } else { None }
+    }
 
-    /// Returns a PathSegment and and optional separator.
+    /// Returns a PathSegment and an optional separator.
     fn parse_path_segment(&mut self) -> (PathSegmentGreen, Option<TerminalColonColonGreen>) {
         let identifier = match self.try_parse_identifier() {
             Some(identifier) => identifier,
@@ -1102,6 +1136,18 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Returns a GreenId of a node with an ExprLiteral|ExprPath|ExprParenthesized|ExprTuple kind,
+    /// or None if such an expression can't be parsed.
+    fn try_parse_generic_arg(&mut self) -> Option<ExprGreen> {
+        if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
+            Some(self.take::<TerminalLiteralNumber>().into())
+        } else if self.peek().kind == SyntaxKind::TerminalShortString {
+            Some(self.take::<TerminalShortString>().into())
+        } else {
+            self.try_parse_type_expr()
+        }
+    }
+
     /// Assumes the current token is LT.
     /// Expected pattern: `\< <GenericArgList> \>`
     fn expect_generic_args(&mut self) -> GenericArgsGreen {
@@ -1109,7 +1155,7 @@ impl<'a> Parser<'a> {
         let generic_args = GenericArgList::new_green(
             self.db,
             self.parse_separated_list::<Expr, TerminalComma, GenericArgListElementOrSeparatorGreen>(
-                Self::try_parse_type_expr,
+                Self::try_parse_generic_arg,
                 is_of_kind!(rangle, rparen, block, lbrace, rbrace, top_level),
                 "generic arg",
             ),

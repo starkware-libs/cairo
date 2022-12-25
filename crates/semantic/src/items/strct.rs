@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use db_utils::Upcast;
 use defs::ids::{GenericParamId, LanguageElementId, MemberId, MemberLongId, StructId};
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, Maybe, ToMaybe};
 use diagnostics_proc_macros::DebugWithDb;
 use smol_str::SmolStr;
 use syntax::node::{Terminal, TypedSyntaxNode};
@@ -49,43 +49,40 @@ pub fn struct_semantic_diagnostics(
 pub fn struct_generic_params(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Option<Vec<GenericParamId>> {
-    Some(db.priv_struct_semantic_data(struct_id)?.generic_params)
+) -> Maybe<Vec<GenericParamId>> {
+    Ok(db.priv_struct_semantic_data(struct_id)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_members].
 pub fn struct_members(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Option<OrderedHashMap<SmolStr, Member>> {
-    Some(db.priv_struct_semantic_data(struct_id)?.members)
+) -> Maybe<OrderedHashMap<SmolStr, Member>> {
+    Ok(db.priv_struct_semantic_data(struct_id)?.members)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_attributes].
-pub fn struct_attributes(db: &dyn SemanticGroup, struct_id: StructId) -> Option<Vec<Attribute>> {
-    Some(db.priv_struct_semantic_data(struct_id)?.attributes)
+pub fn struct_attributes(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_struct_semantic_data(struct_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_resolved_lookback].
 pub fn struct_resolved_lookback(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Option<Arc<ResolvedLookback>> {
-    Some(db.priv_struct_semantic_data(struct_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_struct_semantic_data(struct_id)?.resolved_lookback)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_semantic_data].
-pub fn priv_struct_semantic_data(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Option<StructData> {
+pub fn priv_struct_semantic_data(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<StructData> {
     // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
     // selector.
     let module_file_id = struct_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): Add generic args when they are supported on structs.
     let module_data = db.module_data(module_file_id.0)?;
-    let struct_ast = module_data.structs.get(&struct_id)?;
+    let struct_ast = module_data.structs.get(&struct_id).to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.
@@ -109,14 +106,14 @@ pub fn priv_struct_semantic_data(
         );
         let member_name = member.name(syntax_db).text(syntax_db);
         if let Some(_other_member) = members.insert(member_name.clone(), Member { id, ty }) {
-            diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name })
+            diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name });
         }
     }
 
     let attributes = ast_attributes_to_semantic(syntax_db, struct_ast.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
 
-    Some(StructData {
+    Ok(StructData {
         diagnostics: diagnostics.build(),
         generic_params,
         members,
@@ -129,7 +126,7 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
     fn concrete_struct_members(
         &self,
         concrete_struct_id: ConcreteStructId,
-    ) -> Option<OrderedHashMap<SmolStr, semantic::Member>> {
+    ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>> {
         // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
         //   always have the correct number of generic arguemnts.
         let db = self.upcast();
@@ -139,16 +136,14 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
 
         let generic_members =
             self.upcast().struct_members(concrete_struct_id.struct_id(self.upcast()))?;
-        Some(
-            generic_members
-                .into_iter()
-                .map(|(name, member)| {
-                    let ty = substitute_generics(db, substitution, member.ty);
-                    let member = semantic::Member { ty, ..member };
-                    (name, member)
-                })
-                .collect(),
-        )
+        Ok(generic_members
+            .into_iter()
+            .map(|(name, member)| {
+                let ty = substitute_generics(db, substitution, member.ty);
+                let member = semantic::Member { ty, ..member };
+                (name, member)
+            })
+            .collect())
     }
 }
 

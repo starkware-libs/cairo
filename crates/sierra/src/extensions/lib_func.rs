@@ -1,3 +1,4 @@
+use super::args_as_single_type;
 use super::error::{ExtensionError, SpecializationError};
 use super::type_specialization_context::TypeSpecializationContext;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
@@ -200,6 +201,7 @@ pub trait SignatureOnlyGenericLibFunc: Default {
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError>;
 }
+
 impl<T: SignatureOnlyGenericLibFunc> NamedLibFunc for T {
     type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = <Self as SignatureOnlyGenericLibFunc>::ID;
@@ -219,6 +221,47 @@ impl<T: SignatureOnlyGenericLibFunc> NamedLibFunc for T {
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
             signature: self.specialize_signature(context.upcast(), args)?,
+        })
+    }
+}
+
+/// Trait for implementing a specialization generator expecting a single generic param type, and
+/// creating a concrete libfunc containing that type as well.
+pub trait SignatureAndTypeGenericLibFunc: Default {
+    const ID: GenericLibFuncId;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibFuncSignature, SpecializationError>;
+}
+
+/// Wrapper to prevent implementation collisions for `NamedLibFunc`.
+#[derive(Default)]
+pub struct WrapSignatureAndTypeGenericLibFunc<T: SignatureAndTypeGenericLibFunc>(T);
+
+impl<T: SignatureAndTypeGenericLibFunc> NamedLibFunc for WrapSignatureAndTypeGenericLibFunc<T> {
+    type Concrete = SignatureAndTypeConcreteLibFunc;
+    const ID: GenericLibFuncId = <T as SignatureAndTypeGenericLibFunc>::ID;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        self.0.specialize_signature(context, args_as_single_type(args)?)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        Ok(SignatureAndTypeConcreteLibFunc {
+            ty: ty.clone(),
+            signature: self.0.specialize_signature(context.upcast(), ty)?,
         })
     }
 }
@@ -279,9 +322,10 @@ impl From<ConcreteTypeId> for ParamSignature {
 pub enum OutputVarReferenceInfo {
     /// The output value is exactly the same as one of the parameters.
     SameAsParam { param_idx: usize },
-    /// The output was allocated as a temporary variable. Contains the index of the temporary
-    /// variable in case that more than one temporary variable was allocated by the libfunc.
-    NewTempVar { idx: usize },
+    /// The output was allocated as a temporary variable.
+    /// For the outputs that are at the top of the stack (contiguously), contains the index of the
+    /// temporary variable in the stack (0 is the lowest variable).
+    NewTempVar { idx: Option<usize> },
     /// The output was allocated as a local variable.
     NewLocalVar,
     /// The output is the result of a computation. For example `[ap] + [fp]`,
@@ -321,16 +365,17 @@ pub struct BranchSignature {
 }
 
 /// Describes the effect on the `ap` register in a given libfunc branch.
-// TODO(ilya): Try to combine this with the ApChange of `sierra_to_casm`.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SierraApChange {
     /// The libfunc changes `ap` in an unknown way.
     Unknown,
-    /// The libfunc changes `ap` by pushing new tempvars, as described by
-    /// [OutputVarReferenceInfo::NewTempVar] in [`BranchSignature::vars`].
-    Known(usize),
-    // The libfunc allocates locals, the `ap` change depends on the environment.
-    FinalizeLocals,
+    /// The libfunc changes `ap` in a known (during compilation) way.
+    Known {
+        /// `true` if all the new stack cells created by the libfunc are its output
+        /// variables (as described in [OutputVarReferenceInfo::NewTempVar] in
+        /// [`BranchSignature::vars`]).
+        new_vars_only: bool,
+    },
     /// Indicates that the value of ApChange was not assigned properly yet. Behaves as `Unknown`.
     /// This will be removed, once all places using it are fixed.
     // TODO(lior): Remove this value once it is no longer used.
@@ -403,17 +448,6 @@ pub trait SignatureBasedConcreteLibFunc {
     fn signature(&self) -> &LibFuncSignature;
 }
 
-/// Struct providing a ConcreteLibFunc only with a signature - should not be implemented for
-/// concrete libfuncs that require any extra data.
-pub struct SignatureOnlyConcreteLibFunc {
-    pub signature: LibFuncSignature,
-}
-impl SignatureBasedConcreteLibFunc for SignatureOnlyConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
-    }
-}
-
 impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibFunc
     for TSignatureBasedConcreteLibFunc
 {
@@ -425,6 +459,28 @@ impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibF
     }
     fn fallthrough(&self) -> Option<usize> {
         self.signature().fallthrough
+    }
+}
+
+/// Struct providing a ConcreteLibFunc only with a signature and a type.
+pub struct SignatureAndTypeConcreteLibFunc {
+    pub ty: ConcreteTypeId,
+    pub signature: LibFuncSignature,
+}
+impl SignatureBasedConcreteLibFunc for SignatureAndTypeConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
+    }
+}
+
+/// Struct providing a ConcreteLibFunc only with a signature - should not be implemented for
+/// concrete libfuncs that require any extra data.
+pub struct SignatureOnlyConcreteLibFunc {
+    pub signature: LibFuncSignature,
+}
+impl SignatureBasedConcreteLibFunc for SignatureOnlyConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
     }
 }
 

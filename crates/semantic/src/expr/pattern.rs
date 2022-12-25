@@ -16,7 +16,7 @@ use crate::{semantic, ExprLiteral, LocalVariable};
 // TODO(spapini): Replace this doc with a reference to the language documentation about patterns,
 // once it is available.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub enum Pattern {
     Literal(PatternLiteral),
     Variable(PatternVariable),
@@ -59,7 +59,7 @@ impl Pattern {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct PatternLiteral {
     pub literal: ExprLiteral,
     pub ty: semantic::TypeId,
@@ -79,7 +79,7 @@ impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
 
 /// A pattern that destructures a struct to its fields.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct PatternStruct {
     pub id: StructId,
     // TODO(spapini): This should be ConcreteMember, when available.
@@ -89,7 +89,7 @@ pub struct PatternStruct {
 
 /// A pattern that destructures a tuple to its fields.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct PatternTuple {
     pub field_patterns: Vec<Box<Pattern>>,
     pub ty: semantic::TypeId,
@@ -97,7 +97,7 @@ pub struct PatternTuple {
 
 /// A pattern that destructures a specific variant of an enum to its inner value.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct PatternEnumVariant {
     pub variant: semantic::ConcreteVariant,
     pub inner_pattern: Box<Pattern>,
@@ -105,7 +105,7 @@ pub struct PatternEnumVariant {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct PatternOtherwise {
     pub ty: semantic::TypeId,
 }

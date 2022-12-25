@@ -26,6 +26,7 @@ impl Literal {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
         let output = scope.living_variables.introduce_new_var(ctx, self.ty);
         scope.statements.push(Statement::Literal(StatementLiteral {
+            ty: self.ty,
             value: self.value,
             output: output.var_id(),
         }));

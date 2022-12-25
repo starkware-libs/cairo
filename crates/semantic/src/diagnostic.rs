@@ -2,13 +2,15 @@
 #[path = "diagnostic_test.rs"]
 mod test;
 
-use defs::db::PluginDiagnostic;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
-    TopLevelLanguageElementId, TraitId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
-use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
+use defs::plugin::{PluginDiagnostic, PluginMappedDiagnostic};
+use diagnostics::{
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
+};
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
@@ -27,17 +29,25 @@ impl SemanticDiagnostics {
     pub fn build(self) -> Diagnostics<SemanticDiagnostic> {
         self.diagnostics.build()
     }
-    pub fn report<TNode: TypedSyntaxNode>(&mut self, node: &TNode, kind: SemanticDiagnosticKind) {
+    pub fn report<TNode: TypedSyntaxNode>(
+        &mut self,
+        node: &TNode,
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded {
         self.diagnostics.add(SemanticDiagnostic {
             stable_location: StableLocation::from_ast(self.module_file_id, node),
             kind,
-        });
+        })
     }
-    pub fn report_by_ptr(&mut self, stable_ptr: SyntaxStablePtrId, kind: SemanticDiagnosticKind) {
+    pub fn report_by_ptr(
+        &mut self,
+        stable_ptr: SyntaxStablePtrId,
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded {
         self.diagnostics.add(SemanticDiagnostic {
             stable_location: StableLocation::new(self.module_file_id, stable_ptr),
             kind,
-        });
+        })
     }
 }
 
@@ -51,7 +61,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
-            SemanticDiagnosticKind::FileNotFound => "File not found.".into(),
+            SemanticDiagnosticKind::ModuleFileNotFound { path } => {
+                format!("Module file not found. Expected path: {path}")
+            }
             SemanticDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
             SemanticDiagnosticKind::UnsupportedUnaryOperator { op, ty } => {
@@ -72,6 +84,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
+            SemanticDiagnosticKind::NoLiteralFunctionFound => {
+                "A literal with this type cannot be created.".into()
+            }
             SemanticDiagnosticKind::NotAVariant => {
                 "Not a variant. Use the full name Enum::Variant.".into()
             }
@@ -149,6 +164,46 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::TraitParamMutable { trait_id, function_id } => {
+                let defs_db = db.upcast();
+                format!(
+                    "Parameter of trait function `{}::{}` can't be defined as mutable.",
+                    trait_id.name(defs_db),
+                    function_id.name(defs_db),
+                )
+            }
+            SemanticDiagnosticKind::ParamaterShouldBeReference {
+                impl_id,
+                impl_function_id,
+                trait_id,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Parameter of impl function {}::{} is incompatible with {}::{}. It should be \
+                     a reference.",
+                    impl_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                )
+            }
+            SemanticDiagnosticKind::ParamaterShouldNotBeReference {
+                impl_id,
+                impl_function_id,
+                trait_id,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Parameter of impl function {}::{} is incompatible with {}::{}. It should not \
+                     be a reference.",
+                    impl_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
                 )
             }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
@@ -246,13 +301,25 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
             SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
+            SemanticDiagnosticKind::RefArgNotMutable => {
+                "ref argument must be a mutable variable.".into()
+            }
             SemanticDiagnosticKind::AssignmentToImmutableVar => {
                 "Cannot assign to an immutable variable.".into()
             }
             SemanticDiagnosticKind::InvalidLhsForAssignment => {
                 "Invalid left-hand side of assignment.".into()
             }
-            SemanticDiagnosticKind::PathNotFound => "Path not found.".into(),
+            SemanticDiagnosticKind::PathNotFound(item_type) => match item_type {
+                NotFoundItemType::Identifier => "Identifier not found.".into(),
+                NotFoundItemType::Function => "Function not found.".into(),
+                NotFoundItemType::Type => "Type not found.".into(),
+                NotFoundItemType::Trait => "Trait not found.".into(),
+                NotFoundItemType::Impl => "Impl not found.".into(),
+            },
+            SemanticDiagnosticKind::SuperUsedInRootModule => {
+                "'super' cannot be used for the crate's root module.".into()
+            }
             SemanticDiagnosticKind::UnexpectedLiteralPattern { ty } => format!(
                 r#"Unexpected type for literal pattern. Expected: felt. Got: "{}""#,
                 ty.format(db),
@@ -279,12 +346,18 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RedundantModifier { current_modifier, previous_modifier } => {
                 format!(
                     "`{current_modifier}` modifier was specified after another modifier \
-                     (`{previous_modifier}`). Only a single modifier is allowed. "
+                     (`{previous_modifier}`). Only a single modifier is allowed."
                 )
             }
             SemanticDiagnosticKind::ReferenceLocalVariable => {
                 "`ref` is only allowed for function parameters, not for local variables."
                     .to_string()
+            }
+            SemanticDiagnosticKind::ShortStringMustBeAscii => {
+                "Short strings can only include ASCII characters.".into()
+            }
+            SemanticDiagnosticKind::IllegalStringEscaping(err) => {
+                format!("Invalid string escaping:\n{err}")
             }
             SemanticDiagnosticKind::InvalidCopyTraitImpl => {
                 "Invalid copy trait implementation.".into()
@@ -312,17 +385,29 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
+            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, original_diag: _ } => {
+                // TODO(spapini): Support nested diagnostics.
+                format!("Plugin diagnostic: {}", diagnostic.message)
+            }
         }
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        self.stable_location.diagnostic_location(db.upcast())
+        let location = self.stable_location.diagnostic_location(db.upcast());
+        match &self.kind {
+            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, .. } => {
+                DiagnosticLocation { span: diagnostic.span, ..location }
+            }
+            _ => location,
+        }
     }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SemanticDiagnosticKind {
-    FileNotFound,
+    ModuleFileNotFound {
+        path: String,
+    },
     Unsupported,
     UnknownLiteral,
     UnsupportedUnaryOperator {
@@ -342,6 +427,7 @@ pub enum SemanticDiagnosticKind {
     UnknownType,
     UnknownStruct,
     UnknownEnum,
+    NoLiteralFunctionFound,
     NotAVariant,
     NotAStruct,
     NotAType,
@@ -380,6 +466,20 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
+    },
+    TraitParamMutable {
+        trait_id: TraitId,
+        function_id: TraitFunctionId,
+    },
+    ParamaterShouldBeReference {
+        impl_id: ImplId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+    },
+    ParamaterShouldNotBeReference {
+        impl_id: ImplId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
     },
     WrongArgumentType {
         expected_ty: semantic::TypeId,
@@ -439,11 +539,13 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
     },
     RefArgNotAVariable,
+    RefArgNotMutable,
     AssignmentToImmutableVar,
     InvalidLhsForAssignment,
     InvalidMemberExpression,
     InvalidPath,
-    PathNotFound,
+    PathNotFound(NotFoundItemType),
+    SuperUsedInRootModule,
     RedundantModifier {
         current_modifier: SmolStr,
         previous_modifier: SmolStr,
@@ -465,6 +567,8 @@ pub enum SemanticDiagnosticKind {
         expected_enum: EnumId,
         actual_enum: EnumId,
     },
+    ShortStringMustBeAscii,
+    IllegalStringEscaping(String),
     InvalidCopyTraitImpl,
     InvalidDropTraitImpl,
     InvalidImplItem {
@@ -477,4 +581,17 @@ pub enum SemanticDiagnosticKind {
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
+    WrappedPluginDiagnostic {
+        diagnostic: PluginMappedDiagnostic,
+        original_diag: Box<SemanticDiagnostic>,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum NotFoundItemType {
+    Identifier,
+    Function,
+    Type,
+    Trait,
+    Impl,
 }

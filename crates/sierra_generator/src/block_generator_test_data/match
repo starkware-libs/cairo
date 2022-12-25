@@ -4,7 +4,7 @@
 block_generator_test
 
 //! > function
-func foo() -> felt {
+fn foo() -> felt {
     let x = 10;
     match x {
         0 => 3,
@@ -29,15 +29,15 @@ foo
 //! > sierra_code
 felt_const<10>() -> ([0])
 felt_jump_nz([0]) { fallthrough() label0([1]) }
+branch_align() -> ()
 felt_const<3>() -> ([2])
 PushValues([2]: felt) -> ([3])
-burn_gas() -> ()
 jump() { label1() }
 label0:
+branch_align() -> ()
 felt_const<4>() -> ([4])
 PushValues([4]: felt) -> ([5])
 PushValues([5]: felt) -> ([3])
-burn_gas() -> ()
 label1:
 
 //! > ==========================================================================
@@ -48,7 +48,7 @@ label1:
 block_generator_test
 
 //! > function
-func foo() -> felt {
+fn foo() -> felt {
     let x = 7;
     match x {
         0 => x,
@@ -70,11 +70,11 @@ foo
 //! > sierra_code
 felt_const<7>() -> ([0])
 felt_jump_nz([0]) { fallthrough() label0([1]) }
+branch_align() -> ()
 PushValues([0]: felt) -> ([2])
-burn_gas() -> ()
 jump() { label1() }
 label0:
+branch_align() -> ()
 felt_const<7>() -> ([3])
 PushValues([3]: felt) -> ([2])
-burn_gas() -> ()
 label1:

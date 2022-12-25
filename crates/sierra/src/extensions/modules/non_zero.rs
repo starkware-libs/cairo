@@ -1,39 +1,35 @@
-use super::as_single_type;
 use crate::extensions::lib_func::{
     LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibFunc,
     SignatureSpecializationContext,
 };
-use crate::extensions::type_specialization_context::TypeSpecializationContext;
-use crate::extensions::types::TypeInfo;
-use crate::extensions::{ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError};
-use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
+use crate::extensions::types::{
+    GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
+};
+use crate::extensions::{
+    args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
+};
+use crate::ids::{GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type wrapping a value as non zero.
 #[derive(Default)]
-pub struct NonZeroType {}
-impl NamedType for NonZeroType {
-    type Concrete = NonZeroConcreteType;
+pub struct NonZeroTypeWrapped {}
+impl GenericTypeArgGenericType for NonZeroTypeWrapped {
     const ID: GenericTypeId = GenericTypeId::new_inline("NonZero");
 
-    fn specialize(
+    fn calc_info(
         &self,
-        context: &dyn TypeSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = as_single_type(args)?;
-        Ok(NonZeroConcreteType { info: context.get_type_info(ty.clone())?, ty })
+        long_id: crate::program::ConcreteTypeLongId,
+        wrapped_info: TypeInfo,
+    ) -> Result<TypeInfo, SpecializationError> {
+        if !wrapped_info.storable {
+            Err(SpecializationError::UnsupportedGenericArg)
+        } else {
+            Ok(TypeInfo { long_id, ..wrapped_info })
+        }
     }
 }
-pub struct NonZeroConcreteType {
-    pub info: TypeInfo,
-    pub ty: ConcreteTypeId,
-}
-impl ConcreteType for NonZeroConcreteType {
-    fn info(&self) -> &TypeInfo {
-        &self.info
-    }
-}
+pub type NonZeroType = GenericTypeArgGenericTypeWrapper<NonZeroTypeWrapped>;
 
 /// LibFunc for unwrapping a `NonZero<T>` back into a T.
 #[derive(Default)]
@@ -46,14 +42,14 @@ impl SignatureOnlyGenericLibFunc for UnwrapNonZeroLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(args)?;
+        let ty = args_as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?],
             vec![OutputVarInfo {
                 ty,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }

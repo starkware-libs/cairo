@@ -6,7 +6,7 @@ use std::collections::hash_map::Entry;
 use std::sync::Arc;
 
 use defs::ids::{FreeFunctionId, GenericFunctionId};
-use diagnostics::{Diagnostics, DiagnosticsBuilder};
+use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use itertools::zip_eq;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::lib_func::LibFuncSignature;
@@ -27,14 +27,14 @@ use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::store_variables::{add_store_statements, LocalVariables};
 use crate::utils::{
     alloc_local_libfunc_id, drop_libfunc_id, dup_libfunc_id, finalize_locals_libfunc_id,
-    get_libfunc_signature, revoke_ap_tracking_libfunc_id, simple_statement,
+    get_libfunc_signature, simple_statement,
 };
 use crate::SierraGeneratorDiagnostic;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SierraFreeFunctionData {
     pub diagnostics: Diagnostics<SierraGeneratorDiagnostic>,
-    pub function: Option<Arc<pre_sierra::Function>>,
+    pub function: Maybe<Arc<pre_sierra::Function>>,
 }
 
 /// Query implementation of [SierraGenGroup::priv_free_function_sierra_data].
@@ -59,7 +59,7 @@ pub fn free_function_sierra_diagnostics(
 pub fn free_function_sierra(
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
-) -> Option<Arc<pre_sierra::Function>> {
+) -> Maybe<Arc<pre_sierra::Function>> {
     db.priv_free_function_sierra_data(function_id).function
 }
 
@@ -67,7 +67,7 @@ fn get_function_code(
     diagnostics: &mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
-) -> Option<Arc<pre_sierra::Function>> {
+) -> Maybe<Arc<pre_sierra::Function>> {
     let signature = db.free_function_declaration_signature(function_id)?;
     let lowered_function = &*db.free_function_lowered(function_id)?;
     let block = &lowered_function.blocks[lowered_function.root?];
@@ -99,19 +99,18 @@ fn get_function_code(
         allocate_local_variables(&mut context, &local_variables)?;
     statements.extend(allocate_local_statements);
 
-    // TODO(ilya, 10/10/2022): Add revoke_ap_tracking only when necessary.
-    statements.push(simple_statement(revoke_ap_tracking_libfunc_id(context.get_db()), &[], &[]));
-
+    let prolog_size = statements.len();
     // Generate the function's body.
     let body_statements = generate_block_code(&mut context, block)?;
     statements.extend(body_statements);
 
     // Generate the return statement if necessary.
     match &block.end {
-        lowering::BlockEnd::Callsite(returned_variables) => {
+        lowering::BlockEnd::Callsite(returned_variables)
+        | lowering::BlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(&mut context, returned_variables)?);
         }
-        lowering::BlockEnd::Return(_) | lowering::BlockEnd::Unreachable => {}
+        lowering::BlockEnd::Unreachable => {}
     };
 
     let statements = add_store_statements(
@@ -127,22 +126,21 @@ fn get_function_code(
 
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
     // be regarded as private.
-    Some(
-        pre_sierra::Function {
-            id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
-                function: semantic::ConcreteFunction {
-                    generic_function: GenericFunctionId::Free(function_id),
-                    // TODO(lior): Add generic arguments.
-                    generic_args: vec![],
-                },
-            })),
-            body: statements,
-            entry_point: label_id,
-            parameters,
-            ret_types,
-        }
-        .into(),
-    )
+    Ok(pre_sierra::Function {
+        id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
+            function: semantic::ConcreteFunction {
+                generic_function: GenericFunctionId::Free(function_id),
+                // TODO(lior): Add generic arguments.
+                generic_args: vec![],
+            },
+        })),
+        prolog_size,
+        body: statements,
+        entry_point: label_id,
+        parameters,
+        ret_types,
+    }
+    .into())
 }
 
 /// Allocates space for the local variables.
@@ -153,7 +151,7 @@ fn get_function_code(
 fn allocate_local_variables(
     context: &mut ExprGeneratorContext<'_>,
     local_variables: &OrderedHashSet<lowering::VariableId>,
-) -> Option<(LocalVariables, Vec<Statement>)> {
+) -> Maybe<(LocalVariables, Vec<Statement>)> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     let mut sierra_local_variables =
         OrderedHashMap::<sierra::ids::VarId, sierra::ids::VarId>::default();
@@ -177,7 +175,7 @@ fn allocate_local_variables(
         statements.push(simple_statement(finalize_locals_libfunc_id(context.get_db()), &[], &[]));
     }
 
-    Some((sierra_local_variables, statements))
+    Ok((sierra_local_variables, statements))
 }
 
 /// Adds drops and duplicates of felts to the sierra code.

@@ -104,7 +104,7 @@ pub fn compile(
 
     let registry = ProgramRegistry::<CoreType, CoreLibFunc>::with_ap_change(
         program,
-        metadata.function_ap_change.clone(),
+        metadata.ap_change_info.function_ap_change.clone(),
     )
     .map_err(CompilationError::ProgramRegistryError)?;
     let type_sizes = get_type_size_map(program, &registry)
@@ -122,7 +122,6 @@ pub fn compile(
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
         statement_offsets.push(program_offset);
-
         match statement {
             Statement::Return(ref_ids) => {
                 let (annotations, return_refs) = program_annotations

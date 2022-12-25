@@ -9,7 +9,7 @@ use crate::replace_ids::replace_sierra_ids;
 use crate::test_utils::SierraGenDatabaseForTesting;
 use crate::SierraGeneratorDiagnostic;
 
-utils::test_file_test!(
+test_utils::test_file_test!(
     lowering_test,
     [
         "src/block_generator_test_data/early_return",
@@ -37,7 +37,7 @@ fn block_generator_test(
     // Lower code.
     let lowered = lower(db, test_function.function_id).unwrap();
 
-    if lowered.root.is_none() {
+    if lowered.root.is_err() {
         return OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), lowered.diagnostics.format(db)),

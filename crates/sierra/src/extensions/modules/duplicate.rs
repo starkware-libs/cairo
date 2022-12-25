@@ -1,9 +1,8 @@
-use super::as_single_type;
 use crate::extensions::lib_func::{
     LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibFunc,
     SignatureSpecializationContext,
 };
-use crate::extensions::{OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{args_as_single_type, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::GenericLibFuncId;
 use crate::program::GenericArg;
 
@@ -18,7 +17,7 @@ impl SignatureOnlyGenericLibFunc for DupLibFunc {
         context: &dyn SignatureSpecializationContext,
         generic_args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = as_single_type(generic_args)?;
+        let ty = args_as_single_type(generic_args)?;
         let info = context.get_type_info(ty.clone())?;
         if !info.duplicatable {
             return Err(SpecializationError::UnsupportedGenericArg);
@@ -36,7 +35,7 @@ impl SignatureOnlyGenericLibFunc for DupLibFunc {
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
             ],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }

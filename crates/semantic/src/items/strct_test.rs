@@ -25,7 +25,7 @@ fn test_struct() {
                 a: ()
             }
 
-            func foo(a: A) {
+            fn foo(a: A) {
                 5;
             }
         "},
@@ -34,12 +34,12 @@ fn test_struct() {
     assert_eq!(
         diagnostics,
         indoc! {r#"
-        error: Redefinition of member "a" on struct "test_crate::A".
+        error: Redefinition of member "a" on struct "test::A".
          --> lib.cairo:6:5
             a: (),
             ^***^
 
-        error: Redefinition of member "a" on struct "test_crate::A".
+        error: Redefinition of member "a" on struct "test::A".
          --> lib.cairo:7:5
             a: ()
             ^***^
@@ -49,7 +49,7 @@ fn test_struct() {
     let module_id = test_module.module_id;
 
     let struct_id = extract_matches!(
-        db.module_item_by_name(module_id, "A".into()).unwrap(),
+        db.module_item_by_name(module_id, "A".into()).unwrap().unwrap(),
         ModuleItemId::Struct
     );
     let actual = db
@@ -62,9 +62,9 @@ fn test_struct() {
     assert_eq!(
         actual,
         indoc! {"
-            a: Member { id: MemberId(test_crate::a), ty: () },
-            b: Member { id: MemberId(test_crate::b), ty: (core::felt, core::felt) },
-            c: Member { id: MemberId(test_crate::c), ty: () }"}
+            a: Member { id: MemberId(test::a), ty: () },
+            b: Member { id: MemberId(test::b), ty: (core::felt, core::felt) },
+            c: Member { id: MemberId(test::c), ty: () }"}
     );
 
     assert_eq!(

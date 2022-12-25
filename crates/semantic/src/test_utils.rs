@@ -3,16 +3,18 @@ use std::sync::Arc;
 use db_utils::Upcast;
 use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
 use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
+use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateId, CrateLongId, Directory};
 use parser::db::ParserDatabase;
+use plugins::get_default_plugins;
 use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::{extract_matches, OptionFrom};
 
 use crate::db::{SemanticDatabase, SemanticGroup};
-use crate::semantic;
+use crate::{semantic, SemanticDiagnostic};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SemanticDatabaseForTesting {
@@ -24,6 +26,7 @@ impl Default for SemanticDatabaseForTesting {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_defs_group(&mut res);
+        res.set_macro_plugins(get_default_plugins());
         res
     }
 }
@@ -77,12 +80,13 @@ impl<T> WithStringDiagnostics<T> {
 
 /// Helper struct for the return value of [setup_test_module].
 pub struct TestModule {
+    pub crate_id: CrateId,
     pub module_id: ModuleId,
 }
 
 /// Sets up a crate with given content, and returns its crate id.
 pub fn setup_test_crate(db: &mut (dyn SemanticGroup + 'static), content: &str) -> CrateId {
-    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
     let directory = Directory("src".into());
     db.set_crate_root(crate_id, Some(directory));
     let file_id = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
@@ -103,7 +107,7 @@ pub fn setup_test_module(
     let semantic_diagnostics = db.module_semantic_diagnostics(module_id).unwrap().format(db);
 
     WithStringDiagnostics {
-        value: TestModule { module_id },
+        value: TestModule { crate_id, module_id },
         diagnostics: format!("{syntax_diagnostics}{semantic_diagnostics}"),
     }
 }
@@ -133,6 +137,7 @@ pub fn setup_test_function(
     let (test_module, diagnostics) = setup_test_module(db, &content).split();
     let generic_function_id = db
         .module_item_by_name(test_module.module_id, function_name.into())
+        .expect("Failed to load module")
         .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function {function_name} was not found."));
     let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
@@ -165,7 +170,7 @@ pub fn setup_test_expr(
     module_code: &str,
     function_body: &str,
 ) -> WithStringDiagnostics<TestExpr> {
-    let function_code = format!("func test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
+    let function_code = format!("fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
     let (test_function, diagnostics) =
         setup_test_function(db, &function_code, "test_func", module_code).split();
     let semantic::ExprBlock { statements, .. } = extract_matches!(
@@ -243,6 +248,19 @@ pub fn test_function_diagnostics(
 #[macro_export]
 macro_rules! semantic_test {
     ($test_name:ident, $filenames:expr, $func:ident) => {
-        utils::test_file_test!($test_name, $filenames, SemanticDatabaseForTesting, $func);
+        test_utils::test_file_test!($test_name, $filenames, SemanticDatabaseForTesting, $func);
     };
+}
+
+/// Gets the diagnostics for all the modules (including nested) in the given crate.
+pub fn get_crate_semantic_diagnostics(
+    db: &dyn SemanticGroup,
+    crate_id: CrateId,
+) -> Diagnostics<SemanticDiagnostic> {
+    let submodules = db.crate_modules(crate_id);
+    let mut diagnostics = DiagnosticsBuilder::default();
+    for submodule_id in submodules.iter() {
+        diagnostics.extend(db.module_semantic_diagnostics(*submodule_id).unwrap());
+    }
+    diagnostics.build()
 }

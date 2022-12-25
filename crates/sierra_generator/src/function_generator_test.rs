@@ -17,12 +17,12 @@ fn test_function_generator() {
     let module_id = setup_test_module(
         &mut db,
         indoc! {"
-                func foo(a: felt, b: felt) -> felt {
+                fn foo(a: felt, b: felt) -> felt {
                     let b = felt_add(a, 5);
                     bar(b, b, b)
                 }
 
-                func bar(x: felt, y: felt, z: felt) -> felt {
+                fn bar(x: felt, y: felt, z: felt) -> felt {
                     0
                 }
             "},
@@ -47,7 +47,6 @@ fn test_function_generator() {
         vec![
             "label1:",
             "drop<felt>([1]) -> ()",
-            "revoke_ap_tracking() -> ()",
             "felt_const<5>() -> ([2])",
             "felt_add([0], [2]) -> ([3])",
             "store_temp<felt>([3]) -> ([3])",
@@ -56,9 +55,8 @@ fn test_function_generator() {
             "dup<felt>([3]) -> ([3], [10])",
             "store_temp<felt>([10]) -> ([6])",
             "store_temp<felt>([3]) -> ([7])",
-            "function_call<user@test_crate::bar>([5], [6], [7]) -> ([4])",
+            "function_call<user@test::bar>([5], [6], [7]) -> ([4])",
             "rename<felt>([4]) -> ([8])",
-            "burn_gas() -> ()",
             "return([8])",
         ]
     );
@@ -71,14 +69,14 @@ fn test_function_generator_local_vars() {
     let module_id = setup_test_module(
         &mut db,
         indoc! {"
-            func foo(a: felt) -> felt {
+            fn foo(a: felt) -> felt {
                 let b = a + a + a;
                 revoke_ap();
                 b
             }
 
             // Revokes ap since this function is recursive.
-            func revoke_ap() -> felt {
+            fn revoke_ap() -> felt {
                 revoke_ap()
             }
         "},
@@ -104,17 +102,15 @@ fn test_function_generator_local_vars() {
             "label0:",
             "alloc_local<felt>() -> ([2])",
             "finalize_locals() -> ()",
-            "revoke_ap_tracking() -> ()",
             "dup<felt>([0]) -> ([0], [6])",
             "dup<felt>([0]) -> ([0], [7])",
             "felt_add([6], [7]) -> ([3])",
             "store_temp<felt>([3]) -> ([3])",
             "felt_add([3], [0]) -> ([1])",
             "store_local<felt>([2], [1]) -> ([1])",
-            "function_call<user@test_crate::revoke_ap>() -> ([4])",
+            "function_call<user@test::revoke_ap>() -> ([4])",
             "drop<felt>([4]) -> ()",
             "store_temp<felt>([1]) -> ([5])",
-            "burn_gas() -> ()",
             "return([5])",
         ]
     );

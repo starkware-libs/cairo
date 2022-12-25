@@ -1,4 +1,7 @@
-use defs::db::{MacroPlugin, PluginDiagnostic, PluginResult};
+use defs::plugin::{
+    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    TrivialMapper,
+};
 use itertools::Itertools;
 use syntax::node::ast::AttributeList;
 use syntax::node::db::SyntaxGroup;
@@ -54,20 +57,31 @@ fn generate_panicable_code(
             };
         }
 
-        let Some(inner_ty_text) = extract_option_ty(db, &signature) else {
+        let Some((inner_ty_text, success_variant, failure_variant)) =
+            extract_success_ty_and_variants(db, &signature) else {
             return PluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {
                     stable_ptr: signature.stable_ptr().untyped(),
-                    message: "Currently only wrapping functions returning an Option<T>".into(),
+                    message: "Currently only wrapping functions returning an Option<T> or \
+                                Result<T, E>"
+                        .into(),
                 }],
             };
         };
 
-        let Some(err_value) = try_extract_matches!(attr.args(db), ast::OptionAttributeArgs::AttributeArgs).and_then(
+        let Some((err_value, panicable_name)) = try_extract_matches!(attr.args(db), ast::OptionAttributeArgs::AttributeArgs).and_then(
             |args| {
-            if let [ast::Expr::Literal(err_value)] = &args.arg_list(db).elements(db)[..] {
-                Some(err_value.text(db)) } else { None}
+            if let [ast::Expr::ShortString(err_value), ast::Expr::Path(name)] = &args.arg_list(db).elements(db)[..] {
+                // TODO(orizi): Once generic user functions are supported, support generic params, e.g. for `array_at<T>`.
+                if let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] {
+                    Some((err_value.text(db), segment.ident(db).text(db)))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
         }) else {
             return PluginResult {
                 code: None,
@@ -87,33 +101,38 @@ fn generate_panicable_code(
             .map(|param| param.name(db).as_syntax_node().get_text(db))
             .join(", ");
         return PluginResult {
-            code: Some((
-                "panicable".into(),
-                indoc::formatdoc!(
+            code: Some(PluginGeneratedFile {
+                name: "panicable".into(),
+                content: indoc::formatdoc!(
                     r#"
-                    func {function_name}_panicable({params}) -> {inner_ty_text} {{
+                    fn {panicable_name}({params}) -> {inner_ty_text} {{
                         match {function_name}({args}) {{
-                            Option::Some (v) => {{
+                            {success_variant} (v) => {{
                                 v
                             }},
-                            Option::None (v) => {{
-                                let data = array_new::<felt>();
+                            {failure_variant} (v) => {{
+                                let mut data = array_new::<felt>();
                                 array_append::<felt>(data, {err_value});
-                                panic(data);
+                                panic(data)
                             }},
                         }}
                     }}
                 "#
                 ),
-            )),
+                diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+            }),
             diagnostics: vec![],
         };
     }
     PluginResult { code: None, diagnostics: vec![] }
 }
 
-/// Given a function signature, if it returns `Option::<T>`, returns T. Otherwise, returns None.
-fn extract_option_ty(db: &dyn SyntaxGroup, signature: &ast::FunctionSignature) -> Option<String> {
+/// Given a function signature, if it returns `Option::<T>` or `Result::<T, E>`, returns T and the
+/// variant match strings. Otherwise, returns None.
+fn extract_success_ty_and_variants(
+    db: &dyn SyntaxGroup,
+    signature: &ast::FunctionSignature,
+) -> Option<(String, String, String)> {
     let ret_ty_expr =
         try_extract_matches!(signature.ret_ty(db), ast::OptionReturnTypeClause::ReturnTypeClause)?
             .ty(db);
@@ -123,9 +142,22 @@ fn extract_option_ty(db: &dyn SyntaxGroup, signature: &ast::FunctionSignature) -
     let [ast::PathSegment::WithGenericArgs(segment)] = &ret_ty_path.elements(db)[..] else {
         return None;
     };
-    if segment.ident(db).text(db) != "Option" {
-        return None;
+    let ty = segment.ident(db).text(db);
+    if ty == "Option" {
+        let [inner] = &segment.generic_args(db).generic_args(db).elements(db)[..] else { return None; };
+        Some((
+            inner.as_syntax_node().get_text(db),
+            "Option::Some".to_owned(),
+            "Option::None".to_owned(),
+        ))
+    } else if ty == "Result" {
+        let [inner, _err] = &segment.generic_args(db).generic_args(db).elements(db)[..] else { return None; };
+        Some((
+            inner.as_syntax_node().get_text(db),
+            "Result::Ok".to_owned(),
+            "Result::Err".to_owned(),
+        ))
+    } else {
+        None
     }
-
-    Some(segment.generic_args(db).generic_args(db).as_syntax_node().get_text(db))
 }

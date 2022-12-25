@@ -1,8 +1,10 @@
+use filesystem::db::FilesGroup;
 use indoc::indoc;
+use itertools::Itertools;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::{setup_test_crate, SemanticDatabaseForTesting};
 
-use crate::contract::{find_contract_structs, resolve_contract_impls};
+use crate::contract::{find_contracts, get_external_functions, starknet_keccak};
 
 #[test]
 fn test_contract_resolving() {
@@ -11,45 +13,57 @@ fn test_contract_resolving() {
     let _crate_id = setup_test_crate(
         db,
         indoc! {"
-            struct NotAContract {}
+            mod NotAContract {}
 
-            trait IERC20 {}
-            impl ERC20Impl of IERC20 {}
+            #[contract]
+            mod ERC20 {
+                fn internal_func(ref system: System) -> felt {
+                    1
+                }
 
-            #[contract(ERC20Impl)]
-            struct ERC20 {}
+                #[external]
+                fn ep1() {}
 
-            #[contract(ERC20)]
-            struct StructInsteadOfImpl {}
+                #[external]
+                fn ep2() {}
+            }
 
-            #[contract(1+2)]
-            struct BadImplExpr {}
+            mod __generated__ERC20 {
+                fn internal_func(ref system: System) -> felt {
+                    1
+                }
 
-            #[contract(NoSuchPath)]
-            struct BadImplPath {}
+                #[external]
+                fn ep1() {}
+
+                #[external]
+                fn ep2() {}
+
+                mod __external {
+                    fn ep1() {}
+                    fn ep2() {}
+                }
+            }
         "},
     );
 
-    let contracts = find_contract_structs(db);
-    assert_eq!(contracts.len(), 4);
+    let contracts = find_contracts(db, &db.crates());
+    assert_eq!(contracts.len(), 1);
 
     assert_eq!(
-        format!("{:?}", resolve_contract_impls(db, &contracts[0]).unwrap()),
-        "[ConcreteImplId(0)]"
+        get_external_functions(db, &contracts[0])
+            .unwrap()
+            .into_iter()
+            .map(|func_id| func_id.name(db))
+            .collect_vec(),
+        vec!["ep1", "ep2"]
     );
+}
 
+#[test]
+fn test_starknet_keccak() {
     assert_eq!(
-        resolve_contract_impls(db, &contracts[1]).expect_err("").to_string(),
-        "`ERC20` is not an `impl`."
-    );
-
-    assert_eq!(
-        resolve_contract_impls(db, &contracts[2]).expect_err("").to_string(),
-        "Expected a path, Got `1+2`."
-    );
-
-    assert_eq!(
-        resolve_contract_impls(db, &contracts[3]).expect_err("").to_string(),
-        "Failed to resolve `NoSuchPath`."
-    );
+        format!("0x{:x}", starknet_keccak("__execute__".as_bytes())),
+        "0x15d40a3d6ca2ac30f4031e42be28da9b056fef9bb7357ac5e85627ee876e5ad",
+    )
 }

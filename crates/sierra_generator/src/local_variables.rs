@@ -2,6 +2,7 @@
 #[path = "local_variables_test.rs"]
 mod test;
 
+use diagnostics::Maybe;
 use itertools::zip_eq;
 use lowering::lower::Lowered;
 use lowering::{BlockId, VariableId};
@@ -10,7 +11,7 @@ use utils::ordered_hash_map::OrderedHashMap;
 use utils::ordered_hash_set::OrderedHashSet;
 
 use crate::db::SierraGenGroup;
-use crate::replace_ids::replace_libfunc_id;
+use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, match_enum_libfunc_id,
     struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
@@ -21,7 +22,7 @@ use crate::utils::{
 pub fn find_local_variables(
     db: &dyn SierraGenGroup,
     lowered_function: &Lowered,
-) -> Option<OrderedHashSet<VariableId>> {
+) -> Maybe<OrderedHashSet<VariableId>> {
     let mut res = OrderedHashSet::<VariableId>::default();
     inner_find_local_variables(
         db,
@@ -30,7 +31,7 @@ pub fn find_local_variables(
         LocalVariablesState::default(),
         &mut res,
     )?;
-    Some(res)
+    Ok(res)
 }
 
 /// Helper function for [find_local_variables].
@@ -42,7 +43,7 @@ fn inner_find_local_variables(
     block_id: BlockId,
     mut state: LocalVariablesState,
     res: &mut OrderedHashSet<VariableId>,
-) -> Option<bool> {
+) -> Maybe<bool> {
     let block = &lowered_function.blocks[block_id];
     let mut known_ap_change = true;
 
@@ -170,7 +171,7 @@ fn inner_find_local_variables(
         }
         lowering::BlockEnd::Unreachable => {}
     }
-    Some(known_ap_change)
+    Ok(known_ap_change)
 }
 
 /// Handles a match ([lowering::Statement::MatchExtern] and [lowering::Statement::MatchEnum]).
@@ -184,7 +185,7 @@ fn handle_match(
     statement: &lowering::Statement,
     state: &mut LocalVariablesState,
     res: &mut OrderedHashSet<id_arena::Id<lowering::Variable>>,
-) -> Option<bool> {
+) -> Maybe<bool> {
     // The number of branches that continue to the next statement after the match.
     let mut reachable_branches: usize = 0;
     // Is the ap change known after all of the branches.
@@ -222,7 +223,7 @@ fn handle_match(
     };
     state.mark_outputs_as_temporary(statement);
 
-    Some(known_ap_change)
+    Ok(known_ap_change)
 }
 
 /// Helper function for statements that result in a simple function call, such as
@@ -240,17 +241,26 @@ fn handle_function_call(
         libfunc_signature.branch_signatures.len(),
         1,
         "Unexpected branches in '{}'.",
-        replace_libfunc_id(db, &concrete_function_id)
+        DebugReplacer { db }.replace_libfunc_id(&concrete_function_id)
     );
 
     match libfunc_signature.branch_signatures[0].ap_change {
-        sierra::extensions::lib_func::SierraApChange::Known(_) => {}
+        sierra::extensions::lib_func::SierraApChange::Known { .. } => {}
         _ => {
             state.revoke_temporary_variables();
             *known_ap_change = false;
         }
     }
-    state.register_outputs(inputs, outputs, &libfunc_signature.branch_signatures[0].vars);
+
+    let vars = &libfunc_signature.branch_signatures[0].vars;
+    assert_eq!(
+        outputs.len(),
+        vars.len(),
+        "Wrong number of outputs for '{}'. The 'extern' declaration of the libfunc does not match \
+         the Sierra definition.",
+        DebugReplacer { db }.replace_libfunc_id(&concrete_function_id)
+    );
+    state.register_outputs(inputs, outputs, vars);
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

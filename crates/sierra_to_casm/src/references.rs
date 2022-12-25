@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use casm::ap_change::ApplyApChange;
-use casm::operand::{CellRef, DerefOrImmediate, Register};
+use casm::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
 use num_bigint::BigInt;
-use sierra::extensions::felt::FeltOperator;
+use num_traits::cast::ToPrimitive;
+use sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
-use utils::casts::usize_as_i16;
 use utils::try_extract_matches;
 use {casm, sierra};
 
@@ -37,8 +37,23 @@ pub struct ReferenceValue {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UnaryOpExpression {
+    pub op: FeltUnaryOperator,
+    pub a: DerefOrImmediate,
+}
+impl ApplyApChange for UnaryOpExpression {
+    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
+        Some(UnaryOpExpression { op: self.op, a: self.a.apply_known_ap_change(ap_change)? })
+    }
+
+    fn can_apply_unknown(&self) -> bool {
+        self.a.can_apply_unknown()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BinOpExpression {
-    pub op: FeltOperator,
+    pub op: FeltBinaryOperator,
     pub a: CellRef,
     pub b: DerefOrImmediate,
 }
@@ -64,7 +79,75 @@ pub enum CellExpression {
     DoubleDeref(CellRef, i16),
     IntoSingleCellRef(CellRef),
     Immediate(BigInt),
+    UnaryOp(UnaryOpExpression),
     BinOp(BinOpExpression),
+}
+impl CellExpression {
+    pub fn from_res_operand(operand: ResOperand) -> Self {
+        match operand {
+            ResOperand::Deref(cell) => Self::Deref(cell),
+            ResOperand::DoubleDeref(cell, offset) => Self::DoubleDeref(cell, offset),
+            ResOperand::Immediate(imm) => Self::Immediate(imm),
+            ResOperand::BinOp(op) => Self::BinOp(BinOpExpression {
+                op: match op.op {
+                    casm::operand::Operation::Add => FeltBinaryOperator::Add,
+                    casm::operand::Operation::Mul => FeltBinaryOperator::Mul,
+                },
+                a: op.a,
+                b: op.b,
+            }),
+        }
+    }
+
+    /// Extract the cell reference from the cell expression.
+    pub fn to_deref(&self) -> Result<CellRef, InvocationError> {
+        try_extract_matches!(self, CellExpression::Deref)
+            .cloned()
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
+    }
+
+    /// Extract a deref or immediate from the cell expression.
+    pub fn to_deref_or_immediate(&self) -> Result<DerefOrImmediate, InvocationError> {
+        match self {
+            CellExpression::Deref(cell) => Ok(DerefOrImmediate::Deref(*cell)),
+            CellExpression::Immediate(imm) => Ok(DerefOrImmediate::Immediate(imm.clone())),
+            _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
+        }
+    }
+
+    /// Given `[ref] + offset` returns `([ref], offset)`.
+    pub fn to_deref_with_offset(&self) -> Result<(CellRef, i16), InvocationError> {
+        match self {
+            CellExpression::Deref(cell) => Ok((*cell, 0i16)),
+            CellExpression::BinOp(BinOpExpression {
+                op: FeltBinaryOperator::Add,
+                a: cell,
+                b: DerefOrImmediate::Immediate(offset),
+            }) => Ok((
+                *cell,
+                offset.to_i16().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+            )),
+            _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
+        }
+    }
+
+    /// Returns the reference as a buffer with at least `required_slack` next cells that can be
+    /// written as an instruction offset.
+    pub fn to_buffer(&self, required_slack: i16) -> Result<ResOperand, InvocationError> {
+        let (base, offset) = self.to_deref_with_offset()?;
+        offset
+            .checked_add(required_slack)
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+        if offset == 0 {
+            Ok(ResOperand::Deref(base))
+        } else {
+            Ok(ResOperand::BinOp(BinOpOperand {
+                op: casm::operand::Operation::Add,
+                a: base,
+                b: DerefOrImmediate::Immediate(offset.into()),
+            }))
+        }
+    }
 }
 
 /// A collection of Cell Expression which represents one logical object.
@@ -78,13 +161,18 @@ impl ReferenceExpression {
     pub fn from_cell(cell_expr: CellExpression) -> Self {
         Self { cells: vec![cell_expr] }
     }
+
+    /// If returns the cells as an array of the requested size if the size is correct.
+    pub fn try_unpack<const SIZE: usize>(
+        &self,
+    ) -> Result<&[CellExpression; SIZE], InvocationError> {
+        <&[CellExpression; SIZE]>::try_from(&self.cells[..])
+            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)
+    }
+
     /// If there is only one cell in the ReferenceExpression returns the contained CellExpression.
-    pub fn try_unpack_single(&self) -> Result<CellExpression, ReferencesError> {
-        if let [cell_expr] = &self.cells[..] {
-            Ok(cell_expr.clone())
-        } else {
-            Err(ReferencesError::InvalidReferenceTypeForArgument)
-        }
+    pub fn try_unpack_single(&self) -> Result<&CellExpression, InvocationError> {
+        Ok(&self.try_unpack::<1>()?[0])
     }
 }
 
@@ -100,6 +188,9 @@ impl ApplyApChange for CellExpression {
             CellExpression::IntoSingleCellRef(operand) => {
                 CellExpression::IntoSingleCellRef(operand.apply_known_ap_change(ap_change)?)
             }
+            CellExpression::UnaryOp(operand) => {
+                CellExpression::UnaryOp(operand.apply_known_ap_change(ap_change)?)
+            }
             CellExpression::BinOp(operand) => {
                 CellExpression::BinOp(operand.apply_known_ap_change(ap_change)?)
             }
@@ -113,6 +204,7 @@ impl ApplyApChange for CellExpression {
             | CellExpression::DoubleDeref(operand, _)
             | CellExpression::IntoSingleCellRef(operand) => operand.can_apply_unknown(),
             CellExpression::Immediate(_) => true,
+            CellExpression::UnaryOp(operand) => operand.can_apply_unknown(),
             CellExpression::BinOp(operand) => operand.can_apply_unknown(),
         }
     }
@@ -150,7 +242,7 @@ pub fn build_function_arguments_refs(
                 param.id.clone(),
                 ReferenceValue {
                     expression: ReferenceExpression {
-                        cells: ((offset - usize_as_i16(*size) + 1)..(offset + 1))
+                        cells: ((offset - size + 1)..(offset + 1))
                             .map(|i| {
                                 CellExpression::Deref(CellRef { register: Register::FP, offset: i })
                             })
@@ -163,7 +255,7 @@ pub fn build_function_arguments_refs(
         {
             return Err(ReferencesError::InvalidFunctionDeclaration(func.clone()));
         }
-        offset -= usize_as_i16(*size);
+        offset -= size;
     }
     Ok(refs)
 }
@@ -178,12 +270,4 @@ pub fn check_types_match(
     } else {
         Err(ReferencesError::InvalidReferenceTypeForArgument)
     }
-}
-
-/// Extract the cell reference from the reference expression.
-pub fn try_unpack_deref(expr: &ReferenceExpression) -> Result<CellRef, InvocationError> {
-    expr.try_unpack_single()
-        .ok()
-        .and_then(|cell| try_extract_matches!(cell, CellExpression::Deref))
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
 }

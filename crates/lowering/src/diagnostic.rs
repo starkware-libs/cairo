@@ -1,6 +1,8 @@
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::ModuleFileId;
-use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
+use diagnostics::{
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
+};
 use semantic::db::SemanticGroup;
 use syntax::node::ids::SyntaxStablePtrId;
 
@@ -15,11 +17,15 @@ impl LoweringDiagnostics {
     pub fn build(self) -> Diagnostics<LoweringDiagnostic> {
         self.diagnostics.build()
     }
-    pub fn report(&mut self, stable_ptr: SyntaxStablePtrId, kind: LoweringDiagnosticKind) {
+    pub fn report(
+        &mut self,
+        stable_ptr: SyntaxStablePtrId,
+        kind: LoweringDiagnosticKind,
+    ) -> DiagnosticAdded {
         self.diagnostics.add(LoweringDiagnostic {
             stable_location: StableLocation::new(self.module_file_id, stable_ptr),
             kind,
-        });
+        })
     }
 }
 
@@ -40,7 +46,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::OnlyMatchZeroIsSupported => {
                 "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
             }
-            LoweringDiagnosticKind::VariableMoved => "Variable has previously moved.".into(),
+            LoweringDiagnosticKind::VariableMoved => "Variable was previously moved.".into(),
         }
     }
 

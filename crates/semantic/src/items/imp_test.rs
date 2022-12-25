@@ -16,13 +16,13 @@ fn test_impl() {
         indoc::indoc! {"
             #[ABI]
             trait IContract {
-                func foo(a: felt);
+                fn foo(a: felt);
             }
 
 
             #[Contract]
             impl Contract of IContract {
-                func foo(a: felt) {
+                fn foo(a: felt) {
                     return 1;
                 }
             }
@@ -31,7 +31,7 @@ fn test_impl() {
     .unwrap();
 
     let impl_id = extract_matches!(
-        db.module_item_by_name(test_module.module_id, "Contract".into()).unwrap(),
+        db.module_item_by_name(test_module.module_id, "Contract".into()).unwrap().unwrap(),
         ModuleItemId::Impl
     );
 

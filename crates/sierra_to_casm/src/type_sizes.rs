@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
 use sierra::extensions::core::{CoreLibFunc, CoreType, CoreTypeConcrete};
-use sierra::extensions::non_zero::NonZeroConcreteType;
+use sierra::extensions::starknet::StarkNetTypeConcrete;
+use sierra::extensions::types::InfoAndTypeConcreteType;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::Program;
 use sierra::program_registry::ProgramRegistry;
 
-pub type TypeSizeMap = HashMap<ConcreteTypeId, usize>;
+pub type TypeSizeMap = HashMap<ConcreteTypeId, i16>;
 
 /// Returns a mapping for the sizes of all types for the given program.
 pub fn get_type_size_map(
@@ -19,12 +20,20 @@ pub fn get_type_size_map(
         let size = match ty {
             CoreTypeConcrete::Felt(_)
             | CoreTypeConcrete::GasBuiltin(_)
+            | CoreTypeConcrete::Bitwise(_)
+            | CoreTypeConcrete::BuiltinCosts(_)
+            | CoreTypeConcrete::Nullable(_)
             | CoreTypeConcrete::Uint128(_)
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)
-            | CoreTypeConcrete::Pedersen(_) => Some(1),
-            CoreTypeConcrete::Array(_) | CoreTypeConcrete::DictFeltTo(_) => Some(2),
-            CoreTypeConcrete::NonZero(NonZeroConcreteType { ty, .. }) => {
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_))
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageAddress(_))
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
+            | CoreTypeConcrete::Pedersen(_)
+            | CoreTypeConcrete::DictFeltTo(_)
+            | CoreTypeConcrete::DictManager(_) => Some(1),
+            CoreTypeConcrete::Array(_) | CoreTypeConcrete::SquashedDictFeltTo(_) => Some(2),
+            CoreTypeConcrete::NonZero(InfoAndTypeConcreteType { ty, .. }) => {
                 type_sizes.get(ty).cloned()
             }
             CoreTypeConcrete::Enum(enum_type) => {

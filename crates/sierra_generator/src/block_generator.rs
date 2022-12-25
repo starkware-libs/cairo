@@ -3,15 +3,16 @@
 mod test;
 
 use defs::ids::GenericFunctionId;
+use diagnostics::Maybe;
 use itertools::{chain, enumerate, zip_eq};
 use sierra::program;
 
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
 use crate::utils::{
-    burn_gas_libfunc_id, enum_init_libfunc_id, felt_const_libfunc_id, get_concrete_libfunc_id,
-    jump_libfunc_id, jump_statement, match_enum_libfunc_id, return_statement, simple_statement,
-    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    branch_align_libfunc_id, const_libfunc_id_by_type, enum_init_libfunc_id,
+    get_concrete_libfunc_id, jump_libfunc_id, jump_statement, match_enum_libfunc_id,
+    return_statement, simple_statement, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Generates Sierra code that computes a given [lowering::Block].
@@ -19,13 +20,13 @@ use crate::utils::{
 pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
     block: &lowering::Block,
-) -> Option<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::Statement>> {
     // Process the statements.
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     for statement in &block.statements {
         statements.extend(generate_statement_code(context, statement)?);
     }
-    Some(statements)
+    Ok(statements)
 }
 
 /// Generates Sierra code that computes a given [lowering::Block].
@@ -38,7 +39,7 @@ pub fn generate_block_code_and_push_values(
     context: &mut ExprGeneratorContext<'_>,
     block: &lowering::Block,
     binds: &[lowering::VariableId],
-) -> Option<(Vec<pre_sierra::Statement>, bool)> {
+) -> Maybe<(Vec<pre_sierra::Statement>, bool)> {
     let mut statements = generate_block_code(context, block)?;
     match &block.end {
         lowering::BlockEnd::Callsite(inner_outputs) => {
@@ -58,13 +59,13 @@ pub fn generate_block_code_and_push_values(
                 })
             }
             statements.push(pre_sierra::Statement::PushValues(push_values));
-            Some((statements, true))
+            Ok((statements, true))
         }
         lowering::BlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(context, returned_variables)?);
-            Some((statements, false))
+            Ok((statements, false))
         }
-        lowering::BlockEnd::Unreachable => Some((statements, false)),
+        lowering::BlockEnd::Unreachable => Ok((statements, false)),
     }
 }
 
@@ -75,7 +76,7 @@ pub fn generate_block_code_and_push_values(
 pub fn generate_return_code(
     context: &mut ExprGeneratorContext<'_>,
     returned_variables: &Vec<id_arena::Id<lowering::Variable>>,
-) -> Option<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::Statement>> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     // Copy the result to the top of the stack before returning.
     let mut return_variables_on_stack = vec![];
@@ -92,18 +93,16 @@ pub fn generate_return_code(
     }
 
     statements.push(pre_sierra::Statement::PushValues(push_values));
-    // Add burn_gas to equalize gas costs across all return paths.
-    statements.push(simple_statement(burn_gas_libfunc_id(context.get_db()), &[], &[]));
     statements.push(return_statement(return_variables_on_stack));
 
-    Some(statements)
+    Ok(statements)
 }
 
 /// Generates Sierra code for [lowering::Statement].
 pub fn generate_statement_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::Statement,
-) -> Option<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::Statement>> {
     match statement {
         lowering::Statement::Literal(statement_literal) => {
             generate_statement_literal_code(context, statement_literal)
@@ -136,10 +135,10 @@ pub fn generate_statement_code(
 fn generate_statement_literal_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementLiteral,
-) -> Option<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::Statement>> {
     let output_var = context.get_sierra_variable(statement.output);
-    Some(vec![simple_statement(
-        felt_const_libfunc_id(context.get_db(), statement.value.clone()),
+    Ok(vec![simple_statement(
+        const_libfunc_id_by_type(context.get_db(), statement.ty, statement.value.clone()),
         &[],
         &[output_var],
     )])
@@ -149,7 +148,7 @@ fn generate_statement_literal_code(
 fn generate_statement_call_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementCall,
-) -> Option<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::Statement>> {
     // Prepare the Sierra input and output variables.
     let inputs = context.get_sierra_variables(&statement.inputs);
     let outputs = context.get_sierra_variables(&statement.outputs);
@@ -176,14 +175,14 @@ fn generate_statement_call_code(
                 args_on_stack.push(arg_on_stack);
             }
 
-            Some(vec![
+            Ok(vec![
                 // Push the arguments.
                 pre_sierra::Statement::PushValues(push_values_vec),
                 // Call the function.
                 simple_statement(libfunc_id, &args_on_stack, &outputs),
             ])
         }
-        GenericFunctionId::Extern(_) => Some(vec![simple_statement(libfunc_id, &inputs, &outputs)]),
+        GenericFunctionId::Extern(_) => Ok(vec![simple_statement(libfunc_id, &inputs, &outputs)]),
         GenericFunctionId::TraitFunction(_) => {
             panic!("Trait function should be replaced with concrete functions.")
         }
@@ -195,7 +194,7 @@ fn generate_statement_call_code(
 fn generate_statement_match_extern_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementMatchExtern,
-) -> Option<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::Statement>> {
     // Prepare the Sierra input and output variables.
     let args = context.get_sierra_variables(&statement.inputs);
 
@@ -238,6 +237,8 @@ fn generate_statement_match_extern_code(
         if i > 0 {
             statements.push(arm_labels[i - 1].0.clone());
         }
+        // Add branch_align to equalize gas costs across the merging paths.
+        statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
         // TODO(lior): Try to avoid the following clone().
         let lowered_block = context.get_lowered_block(*block_id);
@@ -246,9 +247,6 @@ fn generate_statement_match_extern_code(
         statements.extend(code);
 
         if is_reachable {
-            // Add burn_gas to equalize gas costs across the merging paths.
-            statements.push(simple_statement(burn_gas_libfunc_id(context.get_db()), &[], &[]));
-
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
                 statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
@@ -259,25 +257,25 @@ fn generate_statement_match_extern_code(
     // Post match.
     statements.push(end_label);
 
-    Some(statements)
+    Ok(statements)
 }
 
 /// Generates Sierra code for [lowering::StatementCallBlock].
 fn generate_statement_call_block_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementCallBlock,
-) -> Option<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::Statement>> {
     let lowered_block = context.get_lowered_block(statement.block);
     // TODO(lior): Rename instead of using PushValues.
-    Some(generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?.0)
+    Ok(generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?.0)
 }
 
 /// Generates Sierra code for [lowering::StatementEnumConstruct].
 fn generate_statement_enum_construct(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementEnumConstruct,
-) -> Option<Vec<pre_sierra::Statement>> {
-    Some(vec![simple_statement(
+) -> Maybe<Vec<pre_sierra::Statement>> {
+    Ok(vec![simple_statement(
         enum_init_libfunc_id(
             context.get_db(),
             context.get_variable_sierra_type(statement.output)?,
@@ -292,8 +290,8 @@ fn generate_statement_enum_construct(
 fn generate_statement_struct_construct_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementStructConstruct,
-) -> Option<Vec<pre_sierra::Statement>> {
-    Some(vec![simple_statement(
+) -> Maybe<Vec<pre_sierra::Statement>> {
+    Ok(vec![simple_statement(
         struct_construct_libfunc_id(
             context.get_db(),
             context.get_variable_sierra_type(statement.output)?,
@@ -307,8 +305,8 @@ fn generate_statement_struct_construct_code(
 fn generate_statement_struct_destructure_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementStructDestructure,
-) -> Option<Vec<pre_sierra::Statement>> {
-    Some(vec![simple_statement(
+) -> Maybe<Vec<pre_sierra::Statement>> {
+    Ok(vec![simple_statement(
         struct_deconstruct_libfunc_id(
             context.get_db(),
             context.get_variable_sierra_type(statement.input)?,
@@ -322,7 +320,7 @@ fn generate_statement_struct_destructure_code(
 fn generate_statement_match_enum(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementMatchEnum,
-) -> Option<Vec<pre_sierra::Statement>> {
+) -> Maybe<Vec<pre_sierra::Statement>> {
     let matched_enum = context.get_sierra_variable(statement.input);
     let concrete_enum_type = context.get_variable_sierra_type(statement.input)?;
     // Generate labels for all the arms.
@@ -355,6 +353,8 @@ fn generate_statement_match_enum(
         enumerate(zip_eq(arm_label_statements, &statement.arms))
     {
         statements.push(label_statement);
+        // Add branch_align to equalize gas costs across the merging paths.
+        statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
         let lowered_block = context.get_lowered_block(*arm);
         let (code, is_reachable) =
@@ -362,9 +362,6 @@ fn generate_statement_match_enum(
         statements.extend(code);
 
         if is_reachable {
-            // Add burn_gas to equalize gas costs across the merging paths.
-            statements.push(simple_statement(burn_gas_libfunc_id(context.get_db()), &[], &[]));
-
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
                 statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
@@ -374,5 +371,5 @@ fn generate_statement_match_enum(
     // Post match.
     statements.push(end_label);
 
-    Some(statements)
+    Ok(statements)
 }

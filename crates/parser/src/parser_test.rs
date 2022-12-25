@@ -273,8 +273,9 @@ pub fn test_partial_parser_tree(
 parser_test!(
     diagnostic_tests,
     [
+        "src/parser_test_data/module_diagnostics",
         "src/parser_test_data/exprs",
-        "src/parser_test_data/func",
+        "src/parser_test_data/fn",
         "src/parser_test_data/if",
         "src/parser_test_data/match",
         "src/parser_test_data/pattern",
@@ -296,6 +297,7 @@ parser_test!(
     ["src/parser_test_data/function_signature"],
     test_partial_parser_tree
 );
+parser_test!(function_call, ["src/parser_test_data/function_call"], test_partial_parser_tree);
 parser_test!(
     not_isnt_a_binary_operator,
     ["src/parser_test_data/not_isnt_a_binary_operator"],
@@ -306,3 +308,4 @@ parser_test!(let_statement, ["src/parser_test_data/let_statement"], test_partial
 parser_test!(if_else, ["src/parser_test_data/if_else"], test_partial_parser_tree);
 
 parser_test!(literal, ["src/parser_test_data/literal"], test_partial_parser_tree);
+parser_test!(module, ["src/parser_test_data/module"], test_partial_parser_tree);

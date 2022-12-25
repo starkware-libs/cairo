@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use db_utils::Upcast;
 use defs::ids::{EnumId, GenericParamId, LanguageElementId, VariantId, VariantLongId};
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, Maybe, ToMaybe};
 use diagnostics_proc_macros::DebugWithDb;
 use itertools::enumerate;
 use smol_str::SmolStr;
@@ -60,16 +60,16 @@ pub fn enum_semantic_diagnostics(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_generic_params].
-pub fn enum_generic_params(db: &dyn SemanticGroup, enum_id: EnumId) -> Option<Vec<GenericParamId>> {
-    Some(db.priv_enum_semantic_data(enum_id)?.generic_params)
+pub fn enum_generic_params(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<Vec<GenericParamId>> {
+    Ok(db.priv_enum_semantic_data(enum_id)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_variants].
 pub fn enum_variants(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
-) -> Option<OrderedHashMap<SmolStr, VariantId>> {
-    Some(db.priv_enum_semantic_data(enum_id)?.variants)
+) -> Maybe<OrderedHashMap<SmolStr, VariantId>> {
+    Ok(db.priv_enum_semantic_data(enum_id)?.variants)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::variant_semantic].
@@ -77,27 +77,27 @@ pub fn variant_semantic(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
     variant_id: VariantId,
-) -> Option<Variant> {
+) -> Maybe<Variant> {
     let data = db.priv_enum_semantic_data(enum_id)?;
-    data.variant_semantic.get(&variant_id).cloned()
+    data.variant_semantic.get(&variant_id).cloned().to_maybe()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_resolved_lookback].
 pub fn enum_resolved_lookback(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
-) -> Option<Arc<ResolvedLookback>> {
-    Some(db.priv_enum_semantic_data(enum_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_enum_semantic_data(enum_id)?.resolved_lookback)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_semantic_data].
-pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Option<EnumData> {
+pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<EnumData> {
     // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
     // selector.
     let module_file_id = enum_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_data = db.module_data(module_file_id.0)?;
-    let enum_ast = module_data.enums.get(&enum_id)?;
+    let enum_ast = module_data.enums.get(&enum_id).to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.
@@ -122,14 +122,14 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
         );
         let variant_name = variant.name(syntax_db).text(syntax_db);
         if let Some(_other_variant) = variants.insert(variant_name.clone(), id) {
-            diagnostics.report(&variant, EnumVariantRedefinition { enum_id, variant_name })
+            diagnostics.report(&variant, EnumVariantRedefinition { enum_id, variant_name });
         }
         variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
     }
 
     let resolved_lookback = Arc::new(resolver.lookback);
 
-    Some(EnumData {
+    Ok(EnumData {
         diagnostics: diagnostics.build(),
         generic_params,
         variants,
@@ -145,7 +145,7 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         &self,
         concrete_enum_id: ConcreteEnumId,
         variant: &Variant,
-    ) -> Option<ConcreteVariant> {
+    ) -> Maybe<ConcreteVariant> {
         // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
         //   always have the correct number of generic arguments.
         let db = self.upcast();
@@ -154,14 +154,14 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let substitution = &generic_params.into_iter().zip(generic_args.into_iter()).collect();
 
         let ty = substitute_generics(db, substitution, variant.ty);
-        Some(ConcreteVariant { concrete_enum_id, id: variant.id, ty, idx: variant.idx })
+        Ok(ConcreteVariant { concrete_enum_id, id: variant.id, ty, idx: variant.idx })
     }
 
     /// Retrieves all the [ConcreteVariant]s for a [ConcreteEnumId].
     fn concrete_enum_variants(
         &self,
         concrete_enum_id: ConcreteEnumId,
-    ) -> Option<Vec<ConcreteVariant>> {
+    ) -> Maybe<Vec<ConcreteVariant>> {
         // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
         //   always have the correct number of generic arguments.
         let db = self.upcast();

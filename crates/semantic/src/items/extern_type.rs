@@ -1,5 +1,5 @@
 use defs::ids::{ExternTypeId, GenericParamId, LanguageElementId};
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, Maybe, ToMaybe};
 use diagnostics_proc_macros::DebugWithDb;
 
 use super::generics::semantic_generic_params;
@@ -33,8 +33,8 @@ pub fn extern_type_declaration_diagnostics(
 pub fn extern_type_declaration_generic_params(
     db: &dyn SemanticGroup,
     extern_type_id: ExternTypeId,
-) -> Option<Vec<GenericParamId>> {
-    Some(db.priv_extern_type_declaration_data(extern_type_id)?.generic_params)
+) -> Maybe<Vec<GenericParamId>> {
+    Ok(db.priv_extern_type_declaration_data(extern_type_id)?.generic_params)
 }
 
 // Computation.
@@ -42,16 +42,16 @@ pub fn extern_type_declaration_generic_params(
 pub fn priv_extern_type_declaration_data(
     db: &dyn SemanticGroup,
     extern_type_id: ExternTypeId,
-) -> Option<ExternTypeDeclarationData> {
+) -> Maybe<ExternTypeDeclarationData> {
     let module_file_id = extern_type_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_data = db.module_data(module_file_id.0)?;
-    let type_syntax = module_data.extern_types.get(&extern_type_id)?;
+    let type_syntax = module_data.extern_types.get(&extern_type_id).to_maybe()?;
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         module_file_id,
         &type_syntax.generic_params(db.upcast()),
     );
-    Some(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params })
+    Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params })
 }

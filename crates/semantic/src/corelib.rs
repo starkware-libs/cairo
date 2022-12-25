@@ -1,4 +1,5 @@
 use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
+use diagnostics::{Maybe, ToOption};
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
 use syntax::node::ast::{self, BinaryOperator, UnaryOperator};
@@ -25,27 +26,24 @@ pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
     get_core_ty_by_name(db, "felt".into(), vec![])
 }
 
-pub fn core_uint128_ty(db: &dyn SemanticGroup) -> TypeId {
-    get_core_ty_by_name(db, "uint128".into(), vec![])
-}
-
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
 }
 
-pub fn get_core_ty_by_name(
+pub fn try_get_core_ty_by_name(
     db: &dyn SemanticGroup,
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
-) -> TypeId {
+) -> Result<TypeId, SemanticDiagnosticKind> {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let module_item_id = db
         .module_item_by_name(core_module, name.clone())
-        .unwrap_or_else(|| panic!("Type '{name}' was not found in core lib."));
+        .map_err(|_| SemanticDiagnosticKind::UnknownType)?
+        .ok_or(SemanticDiagnosticKind::UnknownType)?;
     let generic_type = match module_item_id {
         ModuleItemId::Use(use_id) => {
-            db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
+            db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericType)
             })
         }
@@ -53,11 +51,19 @@ pub fn get_core_ty_by_name(
     }
     .unwrap_or_else(|| panic!("{name} is not a type."));
 
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
+    Ok(db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
         db,
         generic_type,
         generic_args,
-    )))
+    ))))
+}
+
+pub fn get_core_ty_by_name(
+    db: &dyn SemanticGroup,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> TypeId {
+    try_get_core_ty_by_name(db, name, generic_args).unwrap()
 }
 
 pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -65,6 +71,7 @@ pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
     // This should not fail if the corelib is present.
     let generic_type = db
         .module_item_by_name(core_module, "bool".into())
+        .expect("Failed to load core lib.")
         .and_then(GenericTypeId::option_from)
         .expect("Type bool was not found in core lib.");
     db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
@@ -81,6 +88,7 @@ pub fn core_bool_enum(db: &dyn SemanticGroup) -> ConcreteEnumId {
     // This should not fail if the corelib is present.
     let enum_id = db
         .module_item_by_name(core_module, "bool".into())
+        .expect("Failed to load core lib.")
         .and_then(EnumId::option_from)
         .expect("Type bool was not found in core lib.");
     db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] })
@@ -160,7 +168,7 @@ pub fn get_enum_concrete_variant(
     variant_name: &str,
 ) -> ConcreteVariant {
     let module_id = core_module(db);
-    let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap();
+    let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap().unwrap();
     let enum_id = extract_matches!(enum_item, ModuleItemId::Enum);
     let concrete_enum_id = db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args });
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
@@ -171,6 +179,22 @@ pub fn get_enum_concrete_variant(
 /// Gets the unit type ().
 pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
     db.intern_type(semantic::TypeLongId::Tuple(vec![]))
+}
+
+/// Gets the never type ().
+pub fn never_ty(db: &dyn SemanticGroup) -> TypeId {
+    let core_module = db.core_module();
+    // This should not fail if the corelib is present.
+    let generic_type = db
+        .module_item_by_name(core_module, "never".into())
+        .expect("Failed to load core lib.")
+        .and_then(GenericTypeId::option_from)
+        .expect("Type bool was not found in core lib.");
+    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
+        db,
+        generic_type,
+        vec![],
+    )))
 }
 
 /// Attempts to unwrap error propagation types (Option, Result).
@@ -184,7 +208,9 @@ pub fn unwrap_error_propagation_type(
         TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
             let name = enm.enum_id(db.upcast()).name(db.upcast());
             if name == "Option" || name == "Result" {
-                if let [ok_variant, err_variant] = db.concrete_enum_variants(enm)?.as_slice() {
+                if let [ok_variant, err_variant] =
+                    db.concrete_enum_variants(enm).to_option()?.as_slice()
+                {
                     Some((ok_variant.clone(), err_variant.clone()))
                 } else {
                     None
@@ -201,8 +227,7 @@ pub fn unwrap_error_propagation_type(
             semantic::ConcreteTypeId::Struct(_) | semantic::ConcreteTypeId::Extern(_),
         )
         | TypeLongId::Tuple(_)
-        | TypeLongId::Never
-        | TypeLongId::Missing => None,
+        | TypeLongId::Missing(_) => None,
     }
 }
 
@@ -241,45 +266,78 @@ pub fn core_binary_operator(
     binary_op: &BinaryOperator,
     type1: TypeId,
     type2: TypeId,
-) -> Result<FunctionId, SemanticDiagnosticKind> {
+) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
     // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
     //   traits.
+    type1.check_not_missing(db)?;
+    type2.check_not_missing(db)?;
+
     let felt_ty = core_felt_ty(db);
-    let uint128_ty = core_uint128_ty(db);
+    let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
+    let u256_ty = get_core_ty_by_name(db, "u256".into(), vec![]);
     let bool_ty = core_bool_ty(db);
     let unsupported_operator = |op: &str| {
-        Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 })
+        Ok(Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 }))
     };
     let function_name = match binary_op {
         BinaryOperator::Plus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_add",
-        BinaryOperator::Plus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_add",
         BinaryOperator::Plus(_) => return unsupported_operator("+"),
         BinaryOperator::Minus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_sub",
-        BinaryOperator::Minus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_sub",
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
         BinaryOperator::Mul(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_mul",
+        BinaryOperator::Mul(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_mul",
+        BinaryOperator::Mul(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_mul",
         BinaryOperator::Mul(_) => return unsupported_operator("*"),
         BinaryOperator::Div(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_div",
+        BinaryOperator::Div(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_div",
         BinaryOperator::Div(_) => return unsupported_operator("/"),
+        BinaryOperator::Mod(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_mod",
+        BinaryOperator::Mod(_) => return unsupported_operator("%"),
         BinaryOperator::EqEq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_eq",
         BinaryOperator::EqEq(_) => return unsupported_operator("=="),
+        BinaryOperator::Neq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ne",
+        BinaryOperator::Neq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_ne",
+        BinaryOperator::Neq(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_ne",
+        BinaryOperator::Neq(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_ne",
+        BinaryOperator::Neq(_) => return unsupported_operator("!="),
         BinaryOperator::And(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_and",
+        BinaryOperator::And(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_and",
+        BinaryOperator::And(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_and",
         BinaryOperator::And(_) => return unsupported_operator("&"),
         BinaryOperator::Or(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_or",
+        BinaryOperator::Or(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_or",
+        BinaryOperator::Or(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_or",
         BinaryOperator::Or(_) => return unsupported_operator("|"),
+        BinaryOperator::Xor(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_xor",
+        BinaryOperator::Xor(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_xor",
+        BinaryOperator::Xor(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_xor",
+        BinaryOperator::Xor(_) => return unsupported_operator("^"),
         BinaryOperator::LE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_le",
-        BinaryOperator::LE(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_le",
+        BinaryOperator::LE(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_le",
+        BinaryOperator::LE(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_le",
         BinaryOperator::LE(_) => return unsupported_operator("<="),
         BinaryOperator::GE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ge",
+        BinaryOperator::GE(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_ge",
+        BinaryOperator::GE(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_ge",
         BinaryOperator::GE(_) => return unsupported_operator(">="),
         BinaryOperator::LT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_lt",
-        BinaryOperator::LT(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_lt",
+        BinaryOperator::LT(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_lt",
+        BinaryOperator::LT(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_lt",
         BinaryOperator::LT(_) => return unsupported_operator("<"),
         BinaryOperator::GT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_gt",
+        BinaryOperator::GT(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_gt",
+        BinaryOperator::GT(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_gt",
         BinaryOperator::GT(_) => return unsupported_operator(">"),
-        _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
+        _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
-    Ok(get_core_function_id(db, function_name.into(), vec![]))
+    Ok(Ok(get_core_function_id(db, function_name.into(), vec![])))
 }
 
 pub fn felt_eq(db: &dyn SemanticGroup) -> FunctionId {
@@ -312,10 +370,11 @@ pub fn get_core_generic_function_id(db: &dyn SemanticGroup, name: SmolStr) -> Ge
     let core_module = db.core_module();
     let module_item_id = db
         .module_item_by_name(core_module, name.clone())
+        .expect("Failed to load core lib.")
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
     match module_item_id {
         ModuleItemId::Use(use_id) => {
-            db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
+            db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericFunction)
             })
         }
@@ -354,8 +413,10 @@ fn get_core_concrete_trait(
 fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
-    let use_id =
-        extract_matches!(db.module_item_by_name(core_module, name).unwrap(), ModuleItemId::Use);
+    let use_id = extract_matches!(
+        db.module_item_by_name(core_module, name).unwrap().unwrap(),
+        ModuleItemId::Use
+    );
     let trait_id =
         extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait);
     trait_id
@@ -363,4 +424,24 @@ fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
 
 pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
     get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
+}
+
+/// Returns the name of the libfunc that creates a constant of type `ty`.
+pub fn try_get_const_libfunc_name_by_type(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Result<String, SemanticDiagnosticKind> {
+    let felt_ty = core_felt_ty(db);
+    let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
+    if ty == felt_ty {
+        Ok("felt_const".into())
+    } else if ty == u128_ty {
+        Ok("u128_const".into())
+    } else {
+        Err(SemanticDiagnosticKind::NoLiteralFunctionFound)
+    }
+}
+
+pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
+    try_get_const_libfunc_name_by_type(db, ty).unwrap()
 }

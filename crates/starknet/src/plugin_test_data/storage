@@ -1,0 +1,37 @@
+//! > Test expansion of StarkNet storage logic.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+// TODO(ilya): update format.
+#[contract]
+mod TestContract {
+    struct Storage {
+        storage_var: felt,
+    }
+}
+
+//! > generated_cairo_code
+mod storage_var {
+    fn read(ref system: System) -> felt {
+        starknet::storage_read_syscall(
+            system,
+            starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>()
+        )
+    }
+    fn write(ref system: System, value: felt) -> Result::<(), felt> {
+        starknet::storage_write_syscall(
+            system,
+            starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>(),
+            value
+        )
+    }
+}
+mod __generated__TestContract {
+    struct Storage { storage_var: felt, }
+    mod __external {
+    }
+}
+
+//! > expected_diagnostics

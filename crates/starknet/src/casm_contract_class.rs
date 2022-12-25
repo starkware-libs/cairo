@@ -1,11 +1,22 @@
+#[cfg(test)]
+#[path = "casm_contract_class_test.rs"]
+mod test;
+
 use std::collections::HashMap;
 
-use num_bigint::{BigInt, BigUint};
-use num_traits::Num;
+use convert_case::{Case, Casing};
+use num_bigint::BigUint;
+use num_integer::Integer;
+use num_traits::{Num, Signed};
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
-use sierra::ids::FunctionId;
-use sierra::program::StatementIdx;
+use sierra::extensions::gas::GasBuiltinType;
+use sierra::extensions::modules::starknet::syscalls::SystemType;
+use sierra::extensions::pedersen::PedersenType;
+use sierra::extensions::range_check::RangeCheckType;
+use sierra::extensions::NoGenericArgsGenericType;
+use sierra::ids::ConcreteTypeId;
+use sierra_ap_change::{calc_ap_changes, ApChangeError};
 use sierra_gas::{calc_gas_info, CostError};
 use sierra_to_casm::compiler::CompilationError;
 use sierra_to_casm::metadata::Metadata;
@@ -19,14 +30,23 @@ pub enum StarknetSierraCompilationError {
     CompilationError(#[from] CompilationError),
     #[error(transparent)]
     CostError(#[from] CostError),
+    #[error(transparent)]
+    ApChangeError(#[from] ApChangeError),
     #[error("Invalid entry point.")]
     EntryPointError,
+    #[error("{0} is not a supported builtin type.")]
+    InvalidBuiltinType(ConcreteTypeId),
+    #[error("Invalid entry point signature")]
+    InvalidEntryPointSignature,
 }
 
 /// Represents a contract in the StarkNet network.
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
-    pub bytecode: Vec<BigInt>,
+    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
+    pub prime: BigUint,
+    pub compiler_version: String,
+    pub bytecode: Vec<BigIntAsHex>,
     pub hints: Vec<(usize, Vec<String>)>,
     pub entry_points_by_type: CasmContractEntryPoints,
 }
@@ -35,13 +55,19 @@ impl CasmContractClass {
     pub fn from_contract_class(
         contract_class: ContractClass,
     ) -> Result<Self, StarknetSierraCompilationError> {
+        let prime = BigUint::from_str_radix(
+            "800000000000011000000000000000000000000000000000000000000000001",
+            16,
+        )
+        .unwrap();
+
         let program = contract_class.sierra_program;
         let gas_info = calc_gas_info(&program)?;
 
         let gas_usage_check = true;
         let cairo_program = sierra_to_casm::compiler::compile(
             &program,
-            &Metadata { function_ap_change: HashMap::new(), gas_info },
+            &Metadata { ap_change_info: calc_ap_changes(&program)?, gas_info },
             gas_usage_check,
         )?;
 
@@ -54,17 +80,71 @@ impl CasmContractClass {
                     instruction.hints.iter().map(|hint| hint.to_string()).collect(),
                 ))
             }
-            bytecode.extend(instruction.assemble().encode());
+            bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
+                let (_q, reminder) = big_int.magnitude().div_rem(&prime);
+
+                BigIntAsHex {
+                    value: if big_int.is_negative() { &prime - reminder } else { reminder },
+                }
+            }))
         }
 
-        // A mapping from func_id to statement_id
-        let func_sierra_entry_point: HashMap<&FunctionId, StatementIdx> =
-            program.funcs.iter().map(|func| (&func.id, func.entry_point)).collect();
+        let name_by_debug_id = HashMap::<u64, String>::from(
+            [RangeCheckType::ID, PedersenType::ID, GasBuiltinType::ID, SystemType::ID].map(
+                |generic_id| {
+                    (
+                        generic_id.id,
+                        generic_id
+                            .debug_name
+                            .expect("Sierra generic types have a full name.")
+                            .as_str()
+                            .to_case(Case::Snake),
+                    )
+                },
+            ),
+        );
+
+        let mut name_by_short_id = HashMap::<u64, &str>::default();
+        for decl in program.type_declarations {
+            if !decl.long_id.generic_args.is_empty() {
+                continue;
+            }
+
+            if let Some(name) = name_by_debug_id.get(&decl.long_id.generic_id.id) {
+                name_by_short_id.insert(decl.id.id, name);
+            }
+        }
 
         let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
-            let statement_id = func_sierra_entry_point
-                .get(&FunctionId::from_usize(contract_entry_point.function_id))
-                .ok_or(StarknetSierraCompilationError::EntryPointError)?;
+            let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
+                return Err(StarknetSierraCompilationError::EntryPointError);
+            };
+            let statement_id = function.entry_point;
+            let mut builtins = vec![];
+
+            // The expect return types are [builtins.., gas_builtin, system, PanicResult],
+            // So we ignore the last two return types.
+            let (signature_builtins, leftover) =
+                function.signature.ret_types.split_at(function.signature.ret_types.len() - 3);
+
+            // TODO(ilya): Check that the last argument is PanicResult.
+            if leftover[..2]
+                .iter()
+                .map(|type_id| name_by_short_id.get(&type_id.id))
+                .ne([Some(&"gas_builtin"), Some(&"system")])
+            {
+                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
+            }
+
+            for type_id in signature_builtins.iter() {
+                if let Some(name) = name_by_short_id.get(&type_id.id) {
+                    builtins.push(name.to_string());
+                } else {
+                    return Err(StarknetSierraCompilationError::InvalidBuiltinType(
+                        type_id.clone(),
+                    ));
+                }
+            }
 
             let code_offset = cairo_program
                 .debug_info
@@ -75,6 +155,7 @@ impl CasmContractClass {
             Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {
                 selector: contract_entry_point.selector,
                 offset: code_offset,
+                builtins,
             })
         };
 
@@ -87,6 +168,8 @@ impl CasmContractClass {
         };
 
         Ok(Self {
+            prime,
+            compiler_version: "1.0.0".to_string(),
             bytecode,
             hints,
             entry_points_by_type: CasmContractEntryPoints {
@@ -105,6 +188,8 @@ pub struct CasmContractEntryPoint {
     pub selector: BigUint,
     /// The offset of the instruction that should be called within the contract bytecode.
     pub offset: usize,
+    // list of builtins.
+    pub builtins: Vec<String>,
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -134,4 +219,13 @@ where
             .map_err(|error| serde::de::Error::custom(format!("{}", error))),
         None => Err(serde::de::Error::custom(format!("{s} does not start with `0x` is missing."))),
     }
+}
+
+// A wrapper for BigUint that serializes as hex.
+#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct BigIntAsHex {
+    /// A field element that encodes the signature of the called function.
+    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
+    pub value: BigUint,
 }

@@ -7,27 +7,27 @@ use utils::extract_matches;
 use super::value::CoreValue;
 use super::LibFuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibFunc;
+use crate::extensions::boolean::BoolConcreteLibFunc;
 use crate::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Struct, Uint128,
-    UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Enum, Felt, FunctionCall, Gas,
+    Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use crate::extensions::felt::{
-    FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltConstConcreteLibFunc,
-    FeltOperationConcreteLibFunc, FeltOperationWithConstConcreteLibFunc, FeltOperator,
+    FeltBinaryOpConcreteLibFunc, FeltBinaryOperationConcreteLibFunc, FeltBinaryOperator,
+    FeltConcrete, FeltConstConcreteLibFunc, FeltOperationWithConstConcreteLibFunc,
+    FeltUnaryOpConcreteLibFunc, FeltUnaryOperationConcreteLibFunc, FeltUnaryOperator,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
-use crate::extensions::gas::GasConcreteLibFunc::{BurnGas, GetGas, RefundGas};
-use crate::extensions::integer::{
-    IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
-    Uint128ConstConcreteLibFunc, Uint128OperationConcreteLibFunc,
-    Uint128OperationWithConstConcreteLibFunc,
-};
+use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use crate::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::strct::StructConcreteLibFunc;
+use crate::extensions::uint128::{
+    IntOperator, Uint128Concrete, Uint128ConstConcreteLibFunc, Uint128OperationConcreteLibFunc,
+};
 use crate::ids::FunctionId;
 
 // TODO(spapini): Proper errors when converting from bigint to u128.
@@ -46,6 +46,18 @@ pub fn simulate<
     simulate_function: SimulateFunction,
 ) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
     match libfunc {
+        Bitwise(_) => match &inputs[..] {
+            [CoreValue::Uint128(a), CoreValue::Uint128(b)] => Ok((
+                vec![
+                    CoreValue::Uint128(a & b),
+                    CoreValue::Uint128(a | b),
+                    CoreValue::Uint128(a ^ b),
+                ],
+                0,
+            )),
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         Drop(_) => match &inputs[..] {
             [_] => Ok((vec![], 0)),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
@@ -83,7 +95,7 @@ pub fn simulate<
             }?;
             Ok((vec![CoreValue::GasBuiltin(gas_counter + count)], 0))
         }
-        Gas(BurnGas(_)) => {
+        BranchAlign(_) => {
             get_statement_gas_info().ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
             Ok((vec![], 0))
         }
@@ -110,9 +122,9 @@ pub fn simulate<
                 iter.next(); // Ignore range check.
                 let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
                 let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint128) as usize;
-                match arr.clone().get(idx) {
+                match arr.get(idx).cloned() {
                     Some(element) => {
-                        Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr), element.clone()], 0))
+                        Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr), element], 0))
                     }
                     None => Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr)], 1)),
                 }
@@ -120,7 +132,17 @@ pub fn simulate<
             [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
+        Array(ArrayConcreteLibFunc::Len(_)) => match &inputs[..] {
+            [CoreValue::Array(_)] => {
+                let arr = extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Array);
+                let len = arr.len();
+                Ok((vec![CoreValue::Array(arr), CoreValue::Uint128(len as u128)], 0))
+            }
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         Uint128(libfunc) => simulate_integer_libfunc(libfunc, &inputs),
+        Bool(libfunc) => simulate_bool_libfunc(libfunc, &inputs),
         Felt(libfunc) => simulate_felt_libfunc(libfunc, &inputs),
         UnwrapNonZero(_) => match &inputs[..] {
             [CoreValue::NonZero(value)] => Ok((vec![*value.clone()], 0)),
@@ -206,9 +228,68 @@ pub fn simulate<
             [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
+        CoreConcreteLibFunc::DictFeltTo(DictFeltToConcreteLibFunc::Squash(_)) => {
+            match &inputs[..] {
+                [CoreValue::RangeCheck, CoreValue::Dict(_)] => {
+                    let mut iter = inputs.into_iter();
+                    iter.next();
+                    // Returning the same dict since it is exactly the same as the squashed one.
+                    let dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
+                    Ok((vec![CoreValue::RangeCheck, CoreValue::Dict(dict)], 0))
+                }
+                [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            }
+        }
         CoreConcreteLibFunc::Pedersen(_) => {
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }
+        CoreConcreteLibFunc::BuiltinCost(_) => {
+            todo!("Simulation of the builtin cost functionality is not implemented yet.")
+        }
+        CoreConcreteLibFunc::StarkNet(_) => {
+            unimplemented!("Simulation of the StarkNet functionalities is not implemented yet.")
+        }
+        CoreConcreteLibFunc::Nullable(_) => {
+            unimplemented!("Simulation of nullable is not implemented yet.")
+        }
+    }
+}
+
+/// Simulate boolean library functions.
+fn simulate_bool_libfunc(
+    libfunc: &BoolConcreteLibFunc,
+    inputs: &[CoreValue],
+) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
+    match libfunc {
+        BoolConcreteLibFunc::And(_) => match inputs {
+            [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
+                // The variant index defines the true/false "value". Index zero is false.
+                Ok((
+                    vec![CoreValue::Enum {
+                        value: Box::new(CoreValue::Struct(vec![])),
+                        index: usize::from(*a_index == 1_usize && *b_index == 1_usize),
+                    }],
+                    0,
+                ))
+            }
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        BoolConcreteLibFunc::Not(_) => match inputs {
+            [CoreValue::Enum { index, .. }] => {
+                // The variant index defines the true/false "value". Index zero is false.
+                Ok((
+                    vec![CoreValue::Enum {
+                        value: Box::new(CoreValue::Struct(vec![])),
+                        index: 1_usize - *index,
+                    }],
+                    0,
+                ))
+            }
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
@@ -240,100 +321,46 @@ fn simulate_integer_libfunc(
             [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Binary(
-            Uint128BinaryOperationConcreteLibFunc { operator, .. },
-        )) => match (inputs, operator) {
-            (
-                [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
-                IntOperator::WrappingAdd | IntOperator::WrappingSub | IntOperator::WrappingMul,
-            ) => Ok((
-                vec![
-                    CoreValue::RangeCheck,
-                    CoreValue::Uint128(match operator {
-                        IntOperator::WrappingAdd => lhs.wrapping_add(*rhs),
-                        IntOperator::WrappingSub => lhs.wrapping_sub(*rhs),
-                        IntOperator::WrappingMul => lhs.wrapping_mul(*rhs),
-                        _ => unreachable!("Arm only handles these cases."),
-                    }),
-                ],
-                0,
-            )),
-            (
-                [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)],
-                IntOperator::Div | IntOperator::Mod,
-            ) => {
-                if let CoreValue::Uint128(rhs) = **non_zero {
-                    Ok((
-                        vec![
-                            CoreValue::RangeCheck,
-                            CoreValue::Uint128(match operator {
-                                IntOperator::Div => lhs / rhs,
-                                IntOperator::Mod => lhs % rhs,
-                                _ => unreachable!("Arm only handles these cases."),
-                            }),
-                        ],
-                        0,
-                    ))
-                } else {
-                    Err(LibFuncSimulationError::MemoryLayoutMismatch)
-                }
-            }
-            (
-                [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
-                IntOperator::Add | IntOperator::Sub | IntOperator::Mul,
-            ) => Ok(
-                match match operator {
-                    IntOperator::Add => lhs.checked_add(*rhs),
-                    IntOperator::Sub => lhs.checked_sub(*rhs),
-                    IntOperator::Mul => lhs.checked_mul(*rhs),
-                    _ => unreachable!("Arm only handles these cases."),
-                } {
-                    Some(result) => (vec![CoreValue::RangeCheck, CoreValue::Uint128(result)], 0),
-                    None => (vec![CoreValue::RangeCheck], 1),
-                },
-            ),
-            ([_, _, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
-        },
-        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Const(
-            Uint128OperationWithConstConcreteLibFunc { operator, c, .. },
-        )) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint128(value)] => Ok(match operator {
-                IntOperator::WrappingAdd
-                | IntOperator::WrappingSub
-                | IntOperator::WrappingMul
-                | IntOperator::Div
-                | IntOperator::Mod => (
-                    vec![
-                        CoreValue::RangeCheck,
-                        CoreValue::Uint128(match operator {
-                            IntOperator::WrappingAdd => value.wrapping_add(*c),
-                            IntOperator::WrappingSub => value.wrapping_sub(*c),
-                            IntOperator::WrappingMul => value.wrapping_mul(*c),
-                            IntOperator::Div => value / *c,
-                            IntOperator::Mod => value % *c,
-                            _ => unreachable!("Arm only handles these cases."),
-                        }),
-                    ],
-                    0,
-                ),
-                IntOperator::Add | IntOperator::Sub | IntOperator::Mul => {
-                    match match operator {
-                        IntOperator::Add => value.checked_add(*c),
-                        IntOperator::Sub => value.checked_sub(*c),
-                        IntOperator::Mul => value.checked_mul(*c),
-                        _ => unreachable!("Arm only handles these cases."),
-                    } {
-                        Some(result) => {
-                            (vec![CoreValue::RangeCheck, CoreValue::Uint128(result)], 0)
-                        }
-                        None => (vec![CoreValue::RangeCheck], 1),
+        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc { operator, .. }) => {
+            match (inputs, operator) {
+                (
+                    [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)],
+                    IntOperator::DivMod,
+                ) => {
+                    if let CoreValue::Uint128(rhs) = **non_zero {
+                        Ok((
+                            vec![
+                                CoreValue::RangeCheck,
+                                CoreValue::Uint128(lhs / rhs),
+                                CoreValue::Uint128(lhs % rhs),
+                            ],
+                            0,
+                        ))
+                    } else {
+                        Err(LibFuncSimulationError::MemoryLayoutMismatch)
                     }
                 }
-            }),
-            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
-        },
+                (
+                    [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
+                    IntOperator::OverflowingAdd
+                    | IntOperator::OverflowingSub
+                    | IntOperator::OverflowingMul,
+                ) => {
+                    let (value, overflow) = match operator {
+                        IntOperator::OverflowingAdd => lhs.overflowing_add(*rhs),
+                        IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
+                        IntOperator::OverflowingMul => lhs.overflowing_mul(*rhs),
+                        _ => unreachable!("Arm only handles these cases."),
+                    };
+                    Ok((
+                        vec![CoreValue::RangeCheck, CoreValue::Uint128(value)],
+                        usize::from(overflow),
+                    ))
+                }
+                ([_, _, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            }
+        }
         Uint128Concrete::JumpNotZero(_) => {
             match inputs {
                 [CoreValue::Uint128(value)] if *value == 0 => {
@@ -356,6 +383,15 @@ fn simulate_integer_libfunc(
                 Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
             }
             [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint128Concrete::Equal(_) => match inputs {
+            [CoreValue::Uint128(a), CoreValue::Uint128(b)] => {
+                // "False" branch (branch 0) is the case a != b.
+                // "True" branch (branch 1) is the case a == b.
+                Ok((vec![], usize::from(a == b)))
+            }
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
         Uint128Concrete::LessThanOrEqual(_) => match inputs {
@@ -383,22 +419,30 @@ fn simulate_felt_libfunc(
                 Err(LibFuncSimulationError::WrongNumberOfArgs)
             }
         }
-        FeltConcrete::Operation(FeltOperationConcreteLibFunc::Binary(
-            FeltBinaryOperationConcreteLibFunc { operator, .. },
+        FeltConcrete::UnaryOperation(FeltUnaryOperationConcreteLibFunc::Unary(
+            FeltUnaryOpConcreteLibFunc { operator, .. },
+        )) => match (inputs, operator) {
+            ([CoreValue::Felt(val)], FeltUnaryOperator::Neg) => {
+                Ok((vec![CoreValue::Felt(-val)], 0))
+            }
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Binary(
+            FeltBinaryOpConcreteLibFunc { operator, .. },
         )) => match (inputs, operator) {
             (
                 [CoreValue::Felt(lhs), CoreValue::Felt(rhs)],
-                FeltOperator::Add | FeltOperator::Sub | FeltOperator::Mul,
+                FeltBinaryOperator::Add | FeltBinaryOperator::Sub | FeltBinaryOperator::Mul,
             ) => Ok((
                 vec![CoreValue::Felt(match operator {
-                    FeltOperator::Add => lhs + rhs,
-                    FeltOperator::Sub => lhs - rhs,
-                    FeltOperator::Mul => lhs * rhs,
+                    FeltBinaryOperator::Add => lhs + rhs,
+                    FeltBinaryOperator::Sub => lhs - rhs,
+                    FeltBinaryOperator::Mul => lhs * rhs,
                     _ => unreachable!("Arm only handles these cases."),
                 })],
                 0,
             )),
-            ([CoreValue::Felt(_lhs), CoreValue::NonZero(non_zero)], FeltOperator::Div) => {
+            ([CoreValue::Felt(_lhs), CoreValue::NonZero(non_zero)], FeltBinaryOperator::Div) => {
                 if let CoreValue::Felt(_rhs) = *non_zero.clone() {
                     todo!("Support felt_div operation.")
                 } else {
@@ -408,15 +452,15 @@ fn simulate_felt_libfunc(
             ([_, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
-        FeltConcrete::Operation(FeltOperationConcreteLibFunc::Const(
+        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Const(
             FeltOperationWithConstConcreteLibFunc { operator, c, .. },
         )) => match inputs {
             [CoreValue::Felt(value)] => Ok((
                 vec![CoreValue::Felt(match operator {
-                    FeltOperator::Add => value + c.clone(),
-                    FeltOperator::Sub => value - c.clone(),
-                    FeltOperator::Mul => value * c.clone(),
-                    FeltOperator::Div => todo!("Support full felt operations."),
+                    FeltBinaryOperator::Add => value + c.clone(),
+                    FeltBinaryOperator::Sub => value - c.clone(),
+                    FeltBinaryOperator::Mul => value * c.clone(),
+                    FeltBinaryOperator::Div => todo!("Support full felt operations."),
                 })],
                 0,
             )),

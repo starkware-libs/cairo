@@ -13,7 +13,6 @@
 
 use utils::try_extract_matches;
 
-use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -21,7 +20,9 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{
+    args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
+};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
@@ -115,7 +116,7 @@ impl SignatureOnlyGenericLibFunc for StructConstructLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let struct_type = as_single_type(args)?;
+        let struct_type = args_as_single_type(args)?;
         let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
         let member_types =
             StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
@@ -134,7 +135,7 @@ impl SignatureOnlyGenericLibFunc for StructConstructLibFunc {
                 ty: struct_type,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }
@@ -150,7 +151,7 @@ impl SignatureOnlyGenericLibFunc for StructDeconstructLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let struct_type = as_single_type(args)?;
+        let struct_type = args_as_single_type(args)?;
         let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
         let member_types =
             StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
@@ -166,7 +167,7 @@ impl SignatureOnlyGenericLibFunc for StructDeconstructLibFunc {
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 })
                 .collect(),
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }

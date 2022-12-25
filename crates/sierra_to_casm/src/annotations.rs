@@ -5,7 +5,6 @@ use std::iter;
 use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args};
-use sierra::extensions::lib_func::SierraApChange;
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
@@ -127,8 +126,8 @@ impl ProgramAnnotations {
         let mut annotations = ProgramAnnotations::new(n_statements);
         let mut return_annotations: HashMap<ReturnProperties, ReturnAnnotation> = HashMap::new();
         for func in functions {
-            let ap_change = match metadata.function_ap_change.get(&func.id) {
-                Some(SierraApChange::Known(x)) => ApChange::Known(*x),
+            let ap_change = match metadata.ap_change_info.function_ap_change.get(&func.id) {
+                Some(x) => ApChange::Known(*x),
                 _ => ApChange::Unknown,
             };
 
@@ -154,7 +153,7 @@ impl ProgramAnnotations {
                     return_annotation,
                     environment: if gas_usage_check {
                         Environment::new(GasWallet::Value(
-                            metadata.gas_info.function_costs[&func.id],
+                            metadata.gas_info.function_costs[&func.id].clone(),
                         ))
                     } else {
                         Environment::new(GasWallet::Disabled)

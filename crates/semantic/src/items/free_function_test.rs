@@ -19,7 +19,7 @@ fn test_expr_lookup() {
         indoc::indoc! {"
             #[external]
             #[my_attr]
-            func foo<A, B>(a: felt) -> felt {
+            fn foo<A, B>(a: felt) -> felt {
                 let x = 5 + 5;
                 match 1 * (1) {
                     0 => {5},
@@ -32,14 +32,14 @@ fn test_expr_lookup() {
     let module_id = test_module.module_id;
 
     let free_function_id = extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap(),
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     );
     let expr_formatter = ExprFormatter { db, free_function_id };
     let definition_data = db.priv_free_function_definition_data(free_function_id).unwrap();
     let mut expr_debugs = Vec::new();
     for (expr_id, expr) in &definition_data.definition.exprs {
-        assert_eq!(db.lookup_expr_by_ptr(free_function_id, expr.stable_ptr()), Some(expr_id));
+        assert_eq!(db.lookup_expr_by_ptr(free_function_id, expr.stable_ptr()), Ok(expr_id));
         expr_debugs.push(format!("{:?}", expr.debug(&expr_formatter)));
     }
     expr_debugs.sort();

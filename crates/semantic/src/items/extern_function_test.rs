@@ -15,14 +15,14 @@ fn test_extern_function() {
     let test_module = setup_test_module(
         db,
         indoc::indoc! {"
-            extern func foo<A, B>() nopanic;
+            extern fn foo<A, B>() nopanic;
         "},
     )
     .unwrap();
     let module_id = test_module.module_id;
 
     let extern_function_id = extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap(),
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::ExternFunction
     );
     let signature = db.extern_function_declaration_signature(extern_function_id).unwrap();

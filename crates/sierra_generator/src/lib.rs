@@ -2,6 +2,7 @@
 
 mod ap_change;
 mod block_generator;
+pub mod canonical_id_replacer;
 pub mod db;
 mod diagnostic;
 mod dup_and_drop;
@@ -23,5 +24,4 @@ pub mod test_utils;
 mod types;
 mod utils;
 
-pub use ap_change::ApChange;
 pub use diagnostic::SierraGeneratorDiagnostic;

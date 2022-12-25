@@ -17,7 +17,7 @@ pub struct Contract {
 impl Contract {
     /// Creates a Starknet contract ABI from a TraitId.
     pub fn from_trait(db: &dyn SemanticGroup, trait_id: TraitId) -> Result<Self, ABIError> {
-        if !db.trait_generic_params(trait_id).ok_or(ABIError::CompilationError)?.is_empty() {
+        if !db.trait_generic_params(trait_id).map_err(|_| ABIError::CompilationError)?.is_empty() {
             return Err(ABIError::GenericTraitsUnsupported);
         }
 
@@ -38,8 +38,9 @@ impl Contract {
     ) -> Result<(), ABIError> {
         let defs_db = db.upcast();
         let name = trait_function_id.name(defs_db).into();
-        let signature =
-            db.trait_function_signature(trait_function_id).ok_or(ABIError::CompilationError)?;
+        let signature = db
+            .trait_function_signature(trait_function_id)
+            .map_err(|_| ABIError::CompilationError)?;
         self.items.push(Item::Function(Function {
             name,
             inputs: signature

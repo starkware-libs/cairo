@@ -2,10 +2,11 @@ use db_utils::Upcast;
 use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use parser::db::ParserDatabase;
+use plugins::get_default_plugins;
 use semantic::db::{SemanticDatabase, SemanticGroup};
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
-use crate::db::{LoweringDatabase, LoweringGroup};
+use crate::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 
 #[salsa::database(
     LoweringDatabase,
@@ -24,6 +25,8 @@ impl Default for LoweringDatabaseForTesting {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_defs_group(&mut res);
+        init_lowering_group(&mut res);
+        res.set_macro_plugins(get_default_plugins());
         res
     }
 }
