@@ -1,6 +1,9 @@
 use smol_str::SmolStr;
 
-use super::ast::{self, Modifier, TerminalIdentifierGreen, TokenIdentifierGreen};
+use super::ast::{
+    self, FunctionDeclaration, FunctionDeclarationGreen, ItemFreeFunctionPtr, Modifier,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunctionPtr,
+};
 use super::db::SyntaxGroup;
 use super::kind::SyntaxKind;
 use super::Terminal;
@@ -85,5 +88,25 @@ impl GetIdentifier for ast::Modifier {
             Modifier::Ref(r) => r.text(db),
             Modifier::Mut(m) => m.text(db),
         }
+    }
+}
+
+impl FunctionDeclarationGreen {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        TerminalIdentifierGreen(
+            db.lookup_intern_green(self.0).children()[FunctionDeclaration::INDEX_NAME],
+        )
+    }
+}
+
+impl ItemFreeFunctionPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        self.declaration_green(db).name_green(db)
+    }
+}
+
+impl TraitItemFunctionPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        self.declaration_green(db).name_green(db)
     }
 }

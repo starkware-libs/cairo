@@ -142,7 +142,7 @@ fn generate_entry_point_wrapper(
 ) -> Option<rust::Tokens> {
     let mut successful_expansion = true;
 
-    let sig = function.signature(db);
+    let sig = function.declaration(db).signature(db);
     let params = sig.parameters(db).elements(db);
     // TODO(yuval): support types of size >1. `params_len` should be sum of the params lengths.
     let params_len = params.len();
@@ -195,7 +195,8 @@ fn generate_entry_point_wrapper(
     }
     let param_names_tokens = join(arg_names.into_iter(), ", ");
 
-    let function_name = function.name(db).text(db).to_string();
+    let declaration = function.declaration(db);
+    let function_name = declaration.name(db).text(db).to_string();
     let wrapped_name = format!("super::{function_name}");
     let oog_err = "'OOG'";
 
