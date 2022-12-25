@@ -2225,6 +2225,7 @@ dependencies = [
  "anyhow",
  "clap 4.0.26",
  "compiler",
+ "convert_case",
  "defs",
  "diagnostics",
  "env_logger",
