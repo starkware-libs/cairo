@@ -426,12 +426,11 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [ap + -5] + [ap + -1], ap++;
                 [ap + 0] = [[ap + -1] + 0], ap++;
                 %{
-                dict_tracker = __dict_manager.get_tracker(memory[ap + -1] + 0)
+                dict_tracker = __dict_manager.get_tracker(memory[ap + -1])
                 dict_tracker.current_ptr += 3
                 memory[ap + 0] = dict_tracker.data[memory[ap + -10]]
                 %}
-                ap += 1;
-                [ap + -11] = [[ap + -2] + 0];
+                [ap + -10] = [[ap + -1] + 0], ap++;
                 [ap + -1] = [[ap + -2] + 1];
                 [ap + -1] = [[ap + -2] + 2];
                 %{
@@ -440,8 +439,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 memory[ap + 0] = dict_tracker.data[memory[ap + -10]]
                 dict_tracker.data[memory[ap + -10]] = memory[ap + -9]
                 %}
-                ap += 1;
-                [ap + -11] = [[ap + -3] + 3];
+                [ap + -10] = [[ap + -2] + 3], ap++;
                 [ap + -1] = [[ap + -3] + 4];
                 [ap + -10] = [[ap + -3] + 5];
                 [ap + 0] = [fp + -4], ap++;
