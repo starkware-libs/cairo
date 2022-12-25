@@ -20,16 +20,14 @@ pub enum Hint {
         dict_manager_ptr: ResOperand,
     },
     DictFeltToRead {
-        dict_ptr: CellRef,
-        dict_offset: u16,
-        key: CellRef,
+        dict_ptr: ResOperand,
+        key: ResOperand,
         value_dst: CellRef,
     },
     DictFeltToWrite {
-        dict_ptr: CellRef,
-        dict_offset: u16,
-        key: CellRef,
-        value: CellRef,
+        dict_ptr: ResOperand,
+        key: ResOperand,
+        value: ResOperand,
         prev_value_dst: CellRef,
     },
     TestLessThan {
@@ -99,23 +97,23 @@ impl Display for Hint {
                 )?;
             }
             // TODO(Gil): get the 3 from DictAccess or pass it as an argument.
-            Hint::DictFeltToRead { dict_ptr, dict_offset, key, value_dst } => {
+            Hint::DictFeltToRead { dict_ptr, key, value_dst } => {
                 writedoc!(
                     f,
                     "
 
-                        dict_tracker = __dict_manager.get_tracker(memory{dict_ptr} + {dict_offset})
+                        dict_tracker = __dict_manager.get_tracker(memory{dict_ptr})
                         dict_tracker.current_ptr += 3
                         memory{value_dst} = dict_tracker.data[memory{key}]
                     "
                 )?;
             }
-            Hint::DictFeltToWrite { dict_ptr, dict_offset, key, value, prev_value_dst } => {
+            Hint::DictFeltToWrite { dict_ptr, key, value, prev_value_dst } => {
                 writedoc!(
                     f,
                     "
 
-                        dict_tracker = __dict_manager.get_tracker(memory{dict_ptr} + {dict_offset})
+                        dict_tracker = __dict_manager.get_tracker(memory{dict_ptr})
                         dict_tracker.current_ptr += 3
                         memory{prev_value_dst} = dict_tracker.data[memory{key}]
                         dict_tracker.data[memory{key}] = memory{value}
