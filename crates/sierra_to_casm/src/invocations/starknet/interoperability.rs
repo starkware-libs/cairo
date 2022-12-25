@@ -1,14 +1,12 @@
-use casm::builder::{CasmBuildResult, CasmBuilder};
+use casm::builder::CasmBuilder;
 use casm::casm_build_extend;
 use casm::operand::ResOperand;
 use num_bigint::BigInt;
 use sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
-use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
 use crate::references::{CellExpression, ReferenceExpression};
-use crate::relocations::{Relocation, RelocationEntry};
 
 #[cfg(test)]
 #[path = "interoperability_test.rs"]
@@ -53,62 +51,16 @@ pub fn build_call_contract(
         let res_end = *(system++);
         jump Failure if revert_reason != 0;
     };
-
-    let CasmBuildResult {
-        instructions,
-        branches: [(fallthrough_state, _), (failure_state, awaiting_relocations)],
-    } = casm_builder.build(["Fallthrough", "Failure"]);
-    // TODO(orizi): Extract the assertion out of the libfunc implementation.
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, failure_state.ap_change]
-            .map(sierra_ap_change::ApChange::Known)
-    );
-    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
-    Ok(builder.build(
-        instructions,
-        vec![RelocationEntry {
-            instruction_idx: *relocation_index,
-            relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
-        }],
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
         [
-            // Success branch - return (gas builtin, system, result_array)
-            vec![
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    fallthrough_state.get_adjusted(updated_gas_builtin),
-                )),
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    fallthrough_state.get_adjusted(system),
-                )),
-                ReferenceExpression {
-                    cells: vec![
-                        CellExpression::from_res_operand(fallthrough_state.get_adjusted(res_start)),
-                        CellExpression::from_res_operand(fallthrough_state.get_adjusted(res_end)),
-                    ],
-                },
-            ]
-            .into_iter(),
-            // Failure branch - return (gas builtin, system, revert_reason, result_array)
-            vec![
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    failure_state.get_adjusted(updated_gas_builtin),
-                )),
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    failure_state.get_adjusted(system),
-                )),
-                ReferenceExpression::from_cell(CellExpression::Deref(
-                    failure_state.get_adjusted_as_cell_ref(revert_reason),
-                )),
-                ReferenceExpression {
-                    cells: vec![
-                        CellExpression::from_res_operand(failure_state.get_adjusted(res_start)),
-                        CellExpression::from_res_operand(failure_state.get_adjusted(res_end)),
-                    ],
-                },
-            ]
-            .into_iter(),
-        ]
-        .into_iter(),
+            ("Fallthrough", &[&[updated_gas_builtin], &[system], &[res_start, res_end]], None),
+            (
+                "Failure",
+                &[&[updated_gas_builtin], &[system], &[revert_reason], &[res_start, res_end]],
+                Some(failure_handle_statement_id),
+            ),
+        ],
     ))
 }
 
