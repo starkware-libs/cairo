@@ -3,7 +3,61 @@ use std::collections::HashMap;
 use defs::db::DefsGroup;
 use filesystem::span::{TextOffset, TextSpan};
 use syntax::node::db::SyntaxGroup;
-use syntax::node::SyntaxNode;
+use syntax::node::{SyntaxNode, TypedSyntaxNode};
+use utils::extract_matches;
+
+/// Interface for modifying syntax nodes.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RewriteNode {
+    Copied(SyntaxNode),
+    Modified(ModifiedNode),
+    Text(String),
+}
+impl RewriteNode {
+    /// Creates a rewrite node from an AST object.
+    pub fn from_ast<T: TypedSyntaxNode>(node: &T) -> Self {
+        RewriteNode::Copied(node.as_syntax_node())
+    }
+
+    /// Prepares a node for modification.
+    pub fn modify(&mut self, db: &dyn SyntaxGroup) -> &mut ModifiedNode {
+        match self {
+            RewriteNode::Copied(syntax_node) => {
+                *self = RewriteNode::Modified(ModifiedNode {
+                    children: syntax_node.children(db).map(RewriteNode::from).collect(),
+                });
+                extract_matches!(self, RewriteNode::Modified)
+            }
+            RewriteNode::Modified(modified) => modified,
+            RewriteNode::Text(_) => {
+                *self = RewriteNode::Modified(ModifiedNode { children: vec![] });
+                extract_matches!(self, RewriteNode::Modified)
+            }
+        }
+    }
+
+    /// Prepares a node for modification and returns a specific child.
+    pub fn modify_child(&mut self, db: &dyn SyntaxGroup, index: usize) -> &mut RewriteNode {
+        &mut self.modify(db).children[index]
+    }
+
+    /// Replaces this node with text.
+    pub fn set_str(&mut self, s: String) {
+        *self = RewriteNode::Text(s)
+    }
+}
+impl From<SyntaxNode> for RewriteNode {
+    fn from(node: SyntaxNode) -> Self {
+        RewriteNode::Copied(node)
+    }
+}
+
+/// A modified rewrite node.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ModifiedNode {
+    /// Children of the node.
+    pub children: Vec<RewriteNode>,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Patch {
@@ -45,6 +99,18 @@ impl<'a> PatchBuilder<'a> {
         self.code += s;
     }
 
+    pub fn add_modified(&mut self, node: RewriteNode) {
+        match node {
+            RewriteNode::Copied(node) => self.add_node(node),
+            RewriteNode::Modified(modified) => {
+                for child in modified.children {
+                    self.add_modified(child)
+                }
+            }
+            RewriteNode::Text(s) => self.add_str(s.as_str()),
+        }
+    }
+
     pub fn add_node(&mut self, node: SyntaxNode) {
         let orig_span = node.span(self.db);
         let start = TextOffset(self.code.len());
@@ -58,7 +124,7 @@ impl<'a> PatchBuilder<'a> {
     /// Interpolates a string with patches.
     /// Each substring of the form `$<name>$` is replaced with syntax nodes from `replaces`.
     /// The `$$` substring is replaced with `$`.
-    pub fn interpolate_patched(&mut self, code: &str, replaces: HashMap<String, SyntaxNode>) {
+    pub fn interpolate_patched(&mut self, code: &str, replaces: HashMap<String, RewriteNode>) {
         let mut chars = code.chars().peekable();
         while let Some(c) = chars.next() {
             if c != '$' {
@@ -83,7 +149,7 @@ impl<'a> PatchBuilder<'a> {
             }
 
             // Replace the substring with a syntax node.
-            self.add_node(replaces[&name].clone());
+            self.add_modified(replaces[&name].clone());
         }
     }
 }
