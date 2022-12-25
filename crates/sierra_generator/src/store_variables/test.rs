@@ -182,6 +182,25 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             }],
             SierraApChange::Known { new_vars_only: false },
         ),
+        "dup" => LibFuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: felt_ty.clone(),
+                allow_deferred: true,
+                allow_add_const: true,
+                allow_const: true,
+            }],
+            vec![
+                OutputVarInfo {
+                    ty: felt_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+                OutputVarInfo {
+                    ty: felt_ty,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ),
         _ => panic!("get_branch_signatures() is not implemented for '{}'.", name),
     }
 }
@@ -320,6 +339,31 @@ fn store_local_simple() {
             "label1:",
             "return()",
         ],
+    );
+}
+
+#[test]
+fn same_as_param() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add3", &["0"], &["1"]),
+        dummy_simple_statement(&db, "dup", &["1"], &["2", "3"]),
+        dummy_simple_statement(&db, "felt_add3", &["2"], &["4"]),
+        dummy_simple_statement(&db, "felt_add", &["3", "4"], &["5"]),
+        dummy_return_statement(&[]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec![
+            "felt_add3(0) -> (1)",
+            "dup(1) -> (2, 3)",
+            "felt_add3(2) -> (4)",
+            "store_temp<felt>(3) -> (3)",
+            "store_temp<felt>(4) -> (4)",
+            "felt_add(3, 4) -> (5)",
+            "return()",
+        ]
     );
 }
 

@@ -42,7 +42,7 @@ fn build_felt_unary_op(
     builder: CompiledInvocationBuilder<'_>,
     op: FeltUnaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let a = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref_of_immediate()?;
+    let a = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref_or_immediate()?;
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::UnaryOp(UnaryOpExpression { op, a }))]
             .into_iter(),
@@ -56,7 +56,7 @@ fn build_felt_op(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_a, expr_b] = builder.try_get_refs()?;
     let a = expr_a.try_unpack_single()?.to_deref()?;
-    let b = expr_b.try_unpack_single()?.to_deref_of_immediate()?;
+    let b = expr_b.try_unpack_single()?.to_deref_or_immediate()?;
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression { op, a, b }))]
             .into_iter(),

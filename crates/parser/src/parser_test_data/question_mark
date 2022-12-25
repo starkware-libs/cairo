@@ -4,7 +4,7 @@
 get_diagnostics
 
 //! > cairo_code
-func f() {
+fn f() {
     let x = calc()?;
     let y = calc1(calc2()?)?;
     let z = w?;

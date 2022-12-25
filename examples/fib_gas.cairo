@@ -1,5 +1,5 @@
 // Calculates fib...
-func fib(a: felt, b: felt, n: felt) -> felt implicits(RangeCheck, GasBuiltin) {
+fn fib(a: felt, b: felt, n: felt) -> felt implicits(RangeCheck, GasBuiltin) {
     match get_gas() {
         Option::Some(x) => {
         },

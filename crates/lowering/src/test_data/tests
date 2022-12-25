@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(a: felt) -> felt {
+fn foo(a: felt) -> felt {
     return a + a * a;
     5;6;7;
 }
@@ -16,9 +16,9 @@ foo
 
 //! > semantic_diagnostics
 error: Unexpected return type. Expected: "core::felt", found: "()".
- --> lib.cairo:1:27
-func foo(a: felt) -> felt {
-                          ^
+ --> lib.cairo:1:25
+fn foo(a: felt) -> felt {
+                        ^
 
 //! > lowering_diagnostics
 error: Unreachable code
@@ -44,7 +44,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(a: felt) -> felt {
+fn foo(a: felt) -> felt {
     let (_, b) = (1, a);
     5
 }
@@ -76,7 +76,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(a: felt) -> felt {
+fn foo(a: felt) -> felt {
   let x = {7;};
   {x;}
   let y = if 1 == 1 { 6 } else { 7 };
@@ -165,7 +165,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(x: MyEnum) -> felt {
+fn foo(x: MyEnum) -> felt {
   match x {
     MyEnum::A(inner) => {return 5;},
     MyEnum::B(inner) => {inner},
@@ -255,7 +255,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(a : Array::<felt, 5>) -> felt {
+fn foo(a : Array::<felt, 5>) -> felt {
   felt_const::<17>()
 }
 

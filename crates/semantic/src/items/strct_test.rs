@@ -25,7 +25,7 @@ fn test_struct() {
                 a: ()
             }
 
-            func foo(a: A) {
+            fn foo(a: A) {
                 5;
             }
         "},

@@ -118,11 +118,11 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> S
 
         let generated_submodule = quote! {
             mod $name {
-                func read(ref system: System) -> felt {
+                fn read(ref system: System) -> felt {
                     starknet::storage_read_syscall(
                         system, starknet::storage_address_const::<$(address.clone())>())
                 }
-                func write(ref system: System, value: felt) -> Result::<(), felt> {
+                fn write(ref system: System, value: felt) -> Result::<(), felt> {
                     starknet::storage_write_syscall(
                         system, starknet::storage_address_const::<$address>(), value)
                 }
@@ -196,9 +196,19 @@ fn generate_entry_point_wrapper(
 
     let function_name = function.name(db).text(db).to_string();
     let wrapped_name = format!("super::{function_name}");
+    let oog_err = "'OOG'";
 
     Some(quote! {
-        func $function_name(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+        fn $function_name(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+            match get_gas() {
+                Option::Some(_) => {},
+                Option::None(_) => {
+                    let mut data = array_new::<felt>();
+                    array_append::<felt>(data, $oog_err);
+                    panic(data);
+                },
+            }
+
             if array::array_len::<felt>(data) != $(params_len)_u128 {
                 // TODO(yuval): add error message.
                 panic(array::array_new::<felt>());

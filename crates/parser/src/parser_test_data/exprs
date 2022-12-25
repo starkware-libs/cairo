@@ -4,7 +4,7 @@
 get_diagnostics
 
 //! > cairo_code
-func f() {
+fn f() {
     {4} - 1 + * 2 + {5}
 }
 
@@ -22,7 +22,7 @@ error: Missing tokens. Expected an expression.
 get_diagnostics
 
 //! > cairo_code
-func f() {
+fn f() {
     {5} + match x { E::V1(_) => 4, E::V2(_) => 2 } - if cond { 32 } else { 1 }
 }
 

@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-func foo() {
+fn foo() {
     let mut ref mut ref ref a = 3;
 }
 
@@ -42,7 +42,7 @@ error: `ref` modifier was specified after another modifier (`mut`). Only a singl
 test_function_diagnostics
 
 //! > function
-func foo() {
+fn foo() {
     let ref mut a = 3;
 }
 
@@ -70,7 +70,7 @@ error: `ref` is only allowed for function parameters, not for local variables.
 test_function_diagnostics
 
 //! > function
-func foo() {
+fn foo() {
     let ref a = 3;
 }
 

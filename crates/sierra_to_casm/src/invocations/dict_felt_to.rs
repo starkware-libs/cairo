@@ -4,15 +4,13 @@ use std::vec;
 use casm::ap_change::ApplyApChange;
 use casm::builder::CasmBuilder;
 use casm::hints::Hint;
-use casm::instructions::{AddApInstruction, Instruction, InstructionBody};
-use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
+use casm::operand::{CellRef, Register, ResOperand};
 use casm::{casm, casm_build_extend, casm_extend};
 use num_bigint::BigInt;
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
-use sierra::extensions::felt::FeltBinaryOperator;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
+use crate::references::{CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra single cell dict operations.
 pub fn build(
@@ -63,51 +61,22 @@ fn build_dict_felt_to_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_dict, expr_key] = builder.try_get_refs()?;
-    let (mut dict_ptr, mut dict_offset) = expr_dict.try_unpack_single()?.to_deref_with_offset()?;
-    let mut key = expr_key.try_unpack_single()?.to_deref()?;
+    let dict_ptr = expr_dict.try_unpack_single()?.to_buffer(2)?;
+    let key = expr_key.try_unpack_single()?.to_deref()?;
 
-    let mut instructions = vec![Instruction {
-        body: InstructionBody::AddAp(AddApInstruction { operand: ResOperand::from(1) }),
-        inc_ap: false,
-        hints: vec![Hint::DictFeltToRead {
-            dict_ptr,
-            dict_offset: dict_offset as u16,
-            value_dst: CellRef { register: Register::AP, offset: 0 },
-            key,
-        }],
-    }];
-    // Correct references for the stack changes in the hint above.
-    let ap_change = 1;
-    key = key.unchecked_apply_known_ap_change(ap_change);
-    dict_ptr = dict_ptr.unchecked_apply_known_ap_change(ap_change);
-    instructions.extend(
-        DictFeltToAccess {
-            key,
-            prev_value: CellRef { register: Register::AP, offset: -1 },
-            new_value: CellRef { register: Register::AP, offset: -1 },
-        }
-        .get_instructions(dict_ptr, dict_offset),
-    );
-    dict_offset += DictFeltToAccess::size() as i16;
-
-    Ok(builder.build(
-        instructions,
-        vec![],
-        [[
-            ReferenceExpression {
-                cells: vec![CellExpression::BinOp(BinOpExpression {
-                    op: FeltBinaryOperator::Add,
-                    a: dict_ptr,
-                    b: DerefOrImmediate::Immediate(BigInt::from(dict_offset)),
-                })],
-            },
-            ReferenceExpression {
-                cells: vec![CellExpression::Deref(CellRef { register: Register::AP, offset: -1 })],
-            },
-        ]
-        .into_iter()]
-        .into_iter(),
-    ))
+    let mut casm_builder = CasmBuilder::default();
+    let dict_ptr = casm_builder.add_var(dict_ptr);
+    let key = casm_builder.add_var(ResOperand::Deref(key));
+    casm_build_extend! {casm_builder,
+        tempvar value;
+        hint DictFeltToRead {dict_ptr: dict_ptr, key: key} into {value_dst: value};
+        // Write the new dict access.
+        assert key = *(dict_ptr++);
+        assert value = *(dict_ptr++);
+        assert value = *(dict_ptr++);
+    }
+    Ok(builder
+        .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[dict_ptr], &[value]], None)]))
 }
 
 /// Handles instruction for writing to a single cell dict.
@@ -115,48 +84,23 @@ fn build_dict_felt_to_write(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_dict, expr_key, expr_value] = builder.try_get_refs()?;
-    let (mut dict_ptr, mut dict_offset) = expr_dict.try_unpack_single()?.to_deref_with_offset()?;
-    let mut key = expr_key.try_unpack_single()?.to_deref()?;
-    let mut value = expr_value.try_unpack_single()?.to_deref()?;
+    let dict_ptr = expr_dict.try_unpack_single()?.to_buffer(2)?;
+    let key = expr_key.try_unpack_single()?.to_deref()?;
+    let value = expr_value.try_unpack_single()?.to_deref()?;
 
-    let mut instructions = vec![Instruction {
-        body: InstructionBody::AddAp(AddApInstruction { operand: ResOperand::from(1) }),
-        inc_ap: false,
-        hints: vec![Hint::DictFeltToWrite {
-            dict_ptr,
-            dict_offset: dict_offset as u16,
-            key,
-            value,
-            prev_value_dst: CellRef { register: Register::AP, offset: 0 },
-        }],
-    }];
-    // Correct references for the stack changes in the hint above.
-    let ap_change = 1;
-    key = key.unchecked_apply_known_ap_change(ap_change);
-    value = value.unchecked_apply_known_ap_change(ap_change);
-    dict_ptr = dict_ptr.unchecked_apply_known_ap_change(ap_change);
-    instructions.extend(
-        DictFeltToAccess {
-            key,
-            prev_value: CellRef { register: Register::AP, offset: -1 },
-            new_value: value,
-        }
-        .get_instructions(dict_ptr, dict_offset),
-    );
-    dict_offset += DictFeltToAccess::size() as i16;
-    Ok(builder.build(
-        instructions,
-        vec![],
-        [[ReferenceExpression {
-            cells: vec![CellExpression::BinOp(BinOpExpression {
-                op: FeltBinaryOperator::Add,
-                a: dict_ptr,
-                b: DerefOrImmediate::Immediate(BigInt::from(dict_offset)),
-            })],
-        }]
-        .into_iter()]
-        .into_iter(),
-    ))
+    let mut casm_builder = CasmBuilder::default();
+    let dict_ptr = casm_builder.add_var(dict_ptr);
+    let key = casm_builder.add_var(ResOperand::Deref(key));
+    let value = casm_builder.add_var(ResOperand::Deref(value));
+    casm_build_extend! {casm_builder,
+        tempvar prev_value;
+        hint DictFeltToWrite {dict_ptr: dict_ptr, key: key, value: value} into {prev_value_dst: prev_value};
+        // Write the new dict access.
+        assert key = *(dict_ptr++);
+        assert prev_value = *(dict_ptr++);
+        assert value = *(dict_ptr++);
+    }
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[dict_ptr]], None)]))
 }
 
 /// Handles the dict_squash instruction.
@@ -388,32 +332,4 @@ fn build_dict_felt_to_squash(
         .into_iter()]
         .into_iter(),
     ))
-}
-
-/// Represents a read/write access to the dict.
-struct DictFeltToAccess {
-    key: CellRef,
-    prev_value: CellRef,
-    new_value: CellRef,
-}
-
-impl DictFeltToAccess {
-    /// Returns a set of instructions for storing the dict access data into the set of consecutive
-    /// cells at the end of the dict_segment.
-    fn get_instructions(&self, dict_ptr: CellRef, dict_offset: i16) -> Vec<Instruction> {
-        // TODO(Gil): Try to avoid the following assignments.
-        let key = self.key;
-        let prev_value = self.prev_value;
-        let new_value = self.new_value;
-        casm! {
-           key = [[&dict_ptr] + dict_offset];
-           prev_value = [[&dict_ptr] + (dict_offset + 1)];
-           new_value = [[&dict_ptr] + (dict_offset + 2)];
-        }
-        .instructions
-    }
-    /// Returns the number casm cells representing a DictAccess.
-    fn size() -> usize {
-        3
-    }
 }

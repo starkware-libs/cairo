@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-func foo(b: A) -> felt {
+fn foo(b: A) -> felt {
     match (b, 4) {
         (A::a(x), _) => { 1 },
         (A::b(x), 1) => { x },
@@ -44,7 +44,7 @@ error: Wrong number of generic arguments. Expected 2, found: 3
 test_function_diagnostics
 
 //! > function
-func foo(a: bool) -> felt {
+fn foo(a: bool) -> felt {
     match a + 1 {
         A::a(_) => 0,
         A::b(_) => 1,

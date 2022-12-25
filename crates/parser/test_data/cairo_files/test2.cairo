@@ -1,4 +1,4 @@
-func foo (x:T) -> S
+fn foo (x:T) -> S
 {
     let x = -5 + 3;
     let y : T = x*2 + 3*5; // Comment.
@@ -9,7 +9,7 @@ func foo (x:T) -> S
 }
 
 mod my_mod{
-    func bar (x:T0, s: S) -> X {
+    fn bar (x:T0, s: S) -> X {
         x.a *+-. s.s * foo(1,3)
     }
     struct A{

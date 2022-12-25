@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-func foo(x: (felt, felt)) {
+fn foo(x: (felt, felt)) {
 }
 
 //! > function_name
@@ -22,7 +22,7 @@ foo
 test_function_diagnostics
 
 //! > function
-func foo(s2: Struct2) {
+fn foo(s2: Struct2) {
     let Struct2{member1, member2, member3} = s2;
     let Struct2{member1, member2} = s2;
     let Struct2{member1, member2, ..} = s2;

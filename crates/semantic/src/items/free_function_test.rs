@@ -19,7 +19,7 @@ fn test_expr_lookup() {
         indoc::indoc! {"
             #[external]
             #[my_attr]
-            func foo<A, B>(a: felt) -> felt {
+            fn foo<A, B>(a: felt) -> felt {
                 let x = 5 + 5;
                 match 1 * (1) {
                     0 => {5},

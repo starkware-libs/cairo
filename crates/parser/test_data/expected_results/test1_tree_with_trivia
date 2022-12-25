@@ -54,7 +54,7 @@
     │   │   │   │   ├── child #4 (kind: TokenNewline).
     │   │   │   │   ├── child #5 (kind: TokenSkipped): ';'
     │   │   │   │   └── child #6 (kind: TokenNewline).
-    │   │   │   ├── token (kind: TokenFunction): 'func'
+    │   │   │   ├── token (kind: TokenFunction): 'fn'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │   ├── name (kind: TerminalIdentifier)
@@ -948,7 +948,7 @@
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TokenNewline).
-    │   │   │   ├── token (kind: TokenFunction): 'func'
+    │   │   │   ├── token (kind: TokenFunction): 'fn'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │   ├── name (kind: TerminalIdentifier)
@@ -1058,7 +1058,7 @@
     │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   ├── token (kind: TokenFunction): 'func'
+    │   │   │   ├── token (kind: TokenFunction): 'fn'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │   ├── name (kind: TerminalIdentifier)

@@ -2,7 +2,7 @@
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemFreeFunction)
     │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── function_kw (kind: TokenFunction): 'func'
+    │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
@@ -142,7 +142,7 @@
     │           ├── items (kind: ItemList)
     │           │   ├── child #0 (kind: ItemFreeFunction)
     │           │   │   ├── attributes (kind: AttributeList) []
-    │           │   │   ├── function_kw (kind: TokenFunction): 'func'
+    │           │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │           │   │   ├── name (kind: TokenIdentifier): 'bar'
     │           │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │           │   │   ├── signature (kind: FunctionSignature)

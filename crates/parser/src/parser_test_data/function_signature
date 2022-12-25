@@ -4,7 +4,7 @@
 test_partial_parser_tree
 
 //! > cairo_code
-func foo(a: int, mut b: felt, ref c: int, mut ref d: felt) -> felt implicits(RangeCheck, Hash) nopanic {
+fn foo(a: int, mut b: felt, ref c: int, mut ref d: felt) -> felt implicits(RangeCheck, Hash) nopanic {
     return a;
 }
 

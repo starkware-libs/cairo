@@ -16,13 +16,13 @@ fn test_impl() {
         indoc::indoc! {"
             #[ABI]
             trait IContract {
-                func foo(a: felt);
+                fn foo(a: felt);
             }
 
 
             #[Contract]
             impl Contract of IContract {
-                func foo(a: felt) {
+                fn foo(a: felt) {
                     return 1;
                 }
             }

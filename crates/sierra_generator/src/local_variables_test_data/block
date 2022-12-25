@@ -7,7 +7,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-func foo(x: felt) -> felt {
+fn foo(x: felt) -> felt {
     let x1 = x + x;
     let x2 = x1 + x1;
     // TODO(lior): Replace with let (y, z) = { ... } and make sure z does not appear in the result.
@@ -23,7 +23,7 @@ func foo(x: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-func revoke_ap() -> felt {
+fn revoke_ap() -> felt {
     revoke_ap()
 }
 

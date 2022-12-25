@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-func foo(a: MyType) {
+fn foo(a: MyType) {
     a + a * a;
 }
 
@@ -28,7 +28,7 @@ error: Binary operator '*' is not supported for types 'test::MyType' and 'test::
 test_function_diagnostics
 
 //! > function
-func foo(a: felt, b: bool) implicits(RangeCheck) {
+fn foo(a: felt, b: bool) implicits(RangeCheck) {
     // Valid.
     a + a * a - a;
     b & b | b & (a == a | a > a)
@@ -62,7 +62,7 @@ error: Binary operator '-' is not supported for types 'core::felt' and 'core::bo
 test_function_diagnostics
 
 //! > function
-func foo() {
+fn foo() {
     -(1 == 2);
     !17;
 }

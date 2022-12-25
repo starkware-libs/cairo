@@ -2,7 +2,7 @@
 #[derive(Copy, Drop)]
 struct FibResult { value: felt, index: felt, nothing: () }
 
-func fib(a: felt, b: felt, n: felt) -> FibResult {
+fn fib(a: felt, b: felt, n: felt) -> FibResult {
     match n {
         0 => FibResult { nothing: (), value: a, index: 0 },
         _ => {

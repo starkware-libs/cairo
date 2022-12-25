@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(ref a: felt) -> felt {
+fn foo(ref a: felt) -> felt {
     let b = true;
     if true {
       bar(a, b);
@@ -21,7 +21,7 @@ func foo(ref a: felt) -> felt {
 foo
 
 //! > module_code
-func bar(ref a: felt, b: bool) {
+fn bar(ref a: felt, b: bool) {
 }
 
 //! > semantic_diagnostics

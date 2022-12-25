@@ -3,12 +3,45 @@
   "compiler_version": "1.0.0",
   "bytecode": [
     "0x40780017fff7fff",
-    "0x2",
+    "0x3",
+    "0xa0680017fff8000",
+    "0x7",
+    "0x482680017ffa8000",
+    "0xffffffffffffffffffffffffffffb17c",
+    "0x400280007ff97fff",
+    "0x10780017fff7fff",
+    "0xa",
+    "0x4825800180007ffa",
+    "0x4e84",
+    "0x400280007ff97fff",
+    "0x482680017ff98000",
+    "0x1",
+    "0x48127ffe7fff8000",
+    "0x10780017fff7fff",
+    "0x13",
+    "0x40780017fff7fff",
+    "0x53",
+    "0x40780017fff7fff",
+    "0x1",
+    "0x480680017fff8000",
+    "0x4f4f47",
+    "0x400080007ffe7fff",
+    "0x482680017ff98000",
+    "0x1",
+    "0x480a7ffa7fff8000",
+    "0x480a7ffb7fff8000",
+    "0x480680017fff8000",
+    "0x1",
+    "0x48127ffa7fff8000",
+    "0x482480017ff98000",
+    "0x1",
+    "0x208b7fff7fff7ffe",
     "0x48297ffc80007ffd",
     "0x480680017fff8000",
     "0x4",
     "0x1104800180018000",
-    "0xc6",
+    "0xc7",
+    "0x40137ff57fff8000",
     "0x20680017fff7fff",
     "0x6",
     "0x10780017fff7fff",
@@ -19,8 +52,8 @@
     "0x48",
     "0x40780017fff7fff",
     "0x1",
-    "0x480a7ff97fff8000",
-    "0x480a7ffa7fff8000",
+    "0x48127fab7fff8000",
+    "0x480a80007fff8000",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
@@ -33,15 +66,15 @@
     "0xa0680017fff8000",
     "0x6",
     "0x48307ffe80007ffd",
-    "0x400280007ff97ffd",
+    "0x400080007ff07ffd",
     "0x10780017fff7fff",
     "0x10",
     "0x482480017ffd8000",
     "0x1",
     "0x48307ffd80007fff",
-    "0x400280007ff97ffe",
+    "0x400080007fef7ffe",
     "0x48327ffb7ffc8000",
-    "0x482680017ff98000",
+    "0x482480017fee8000",
     "0x1",
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
@@ -52,7 +85,7 @@
     "0xc",
     "0x40780017fff7fff",
     "0x2",
-    "0x482680017ff98000",
+    "0x482480017fee8000",
     "0x1",
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
@@ -72,7 +105,7 @@
     "0x40780017fff7fff",
     "0x1",
     "0x48127fbd7fff8000",
-    "0x480a7ffa7fff8000",
+    "0x480a80007fff8000",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
@@ -81,7 +114,7 @@
     "0x208b7fff7fff7ffe",
     "0x480680017fff8000",
     "0x1",
-    "0x40137ffe7fff8000",
+    "0x40137ffe7fff8001",
     "0x48307ffa80007ffb",
     "0xa0680017fff8000",
     "0x6",
@@ -125,7 +158,7 @@
     "0x40780017fff7fff",
     "0x1",
     "0x48127fc97fff8000",
-    "0x480a7ffa7fff8000",
+    "0x480a80007fff8000",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
@@ -134,7 +167,7 @@
     "0x208b7fff7fff7ffe",
     "0x480680017fff8000",
     "0x2",
-    "0x40137ffe7fff8001",
+    "0x40137ffe7fff8002",
     "0x48307ffa80007ffb",
     "0xa0680017fff8000",
     "0x6",
@@ -178,17 +211,17 @@
     "0x40780017fff7fff",
     "0x1",
     "0x48127fd57fff8000",
-    "0x480a7ffa7fff8000",
+    "0x480a80007fff8000",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x48127ffb7fff8000",
     "0x48127ffa7fff8000",
     "0x208b7fff7fff7ffe",
-    "0x480a7ffa7fff8000",
-    "0x480a7ffb7fff8000",
     "0x480a80007fff8000",
+    "0x480a7ffb7fff8000",
     "0x480a80017fff8000",
+    "0x480a80027fff8000",
     "0x48127ffb7fff8000",
     "0x1104800180018000",
     "0x1d",
@@ -285,61 +318,73 @@
   ],
   "hints": [
     [
-      15,
+      2,
+      [
+        "%{ memory[ap + 0] = 20100 <= memory[fp + -6] %}"
+      ]
+    ],
+    [
+      19,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      28,
+      48,
+      [
+        "%{ memory[ap + 0] = segments.add() %}"
+      ]
+    ],
+    [
+      61,
       [
         "%{ memory[ap + 0] = memory[ap + -2] < memory[ap + -1] %}"
       ]
     ],
     [
-      67,
+      100,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      81,
+      114,
       [
         "%{ memory[ap + 0] = memory[ap + -2] < memory[ap + -1] %}"
       ]
     ],
     [
-      120,
+      153,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      134,
+      167,
       [
         "%{ memory[ap + 0] = memory[ap + -2] < memory[ap + -1] %}"
       ]
     ],
     [
-      173,
+      206,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      190,
+      223,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      244,
+      277,
       [
         "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -3]) %}"
       ]
     ],
     [
-      257,
+      290,
       [
         "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -4]) %}"
       ]
