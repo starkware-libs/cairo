@@ -175,7 +175,7 @@ fn build_array_at(
     };
     casm_build_extend! {casm_builder,
         // Assert offset - length >= 0.
-        assert *(range_check++) = array_length;
+        assert array_length = *(range_check++);
         jump FailureHandle;
         InRange:
         // Assert offset < length, or that length-(offset+1) is in [0, 2^128).
@@ -187,7 +187,7 @@ fn build_array_at(
         tempvar offset_length_diff;
         assert element_offset_plus_1 = offset_length_diff + array_cell_size;
         // Assert length-(offset+1) is in [0, 2^128).
-        assert *(range_check++) = element_offset_plus_1;
+        assert element_offset_plus_1 = *(range_check++);
         // Compute address of target cell.
         tempvar target_cell;
         assert target_cell = array_start + element_offset;

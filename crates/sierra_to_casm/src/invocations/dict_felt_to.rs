@@ -49,19 +49,19 @@ fn build_dict_felt_to_new(
         hint AllocDictFeltTo {dict_manager_ptr: dict_manager_ptr};
         // Previous dict info
         tempvar dict_infos_start;
-        assert *(dict_manager_ptr++) = dict_infos_start;
+        assert dict_infos_start = *(dict_manager_ptr++);
         tempvar n_dicts;
-        assert *(dict_manager_ptr++) = n_dicts;
+        assert n_dicts = *(dict_manager_ptr++);
         tempvar n_destructed;
-        assert *(dict_manager_ptr++) = n_destructed;
+        assert n_destructed = *(dict_manager_ptr++);
         let new_dict_manager_ptr = dict_manager_ptr;
         // New dict info
-        assert *(dict_manager_ptr++) = dict_infos_start;
+        assert dict_infos_start = *(dict_manager_ptr++);
         tempvar new_n_dicts;
         const imm_1 = 1;
         assert new_n_dicts = n_dicts + imm_1;
-        assert *(dict_manager_ptr++) = new_n_dicts;
-        assert *(dict_manager_ptr++) = n_destructed;
+        assert new_n_dicts = *(dict_manager_ptr++);
+        assert n_destructed = *(dict_manager_ptr++);
         tempvar offset;
         const imm_3 = 3;
         assert offset = n_dicts * imm_3;

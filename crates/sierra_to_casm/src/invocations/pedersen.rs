@@ -48,8 +48,8 @@ fn build_pedersen_hash(
     let x = casm_builder.add_var(ResOperand::Deref(x));
     let y = casm_builder.add_var(ResOperand::Deref(y));
     casm_build_extend! {casm_builder,
-        assert *(pedersen++) = x;
-        assert *(pedersen++) = y;
+        assert x = *(pedersen++);
+        assert y = *(pedersen++);
         let result = *(pedersen++);
     };
     let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();

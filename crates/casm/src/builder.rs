@@ -480,7 +480,7 @@ macro_rules! casm_build_extend {
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, assert * ( $buffer:ident ++ ) = $value:ident; $($tok:tt)*) => {
+    ($builder:ident, assert $value:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         $builder.buffer_write_and_inc($buffer, $value);
         $crate::casm_build_extend!($builder, $($tok)*)
     };

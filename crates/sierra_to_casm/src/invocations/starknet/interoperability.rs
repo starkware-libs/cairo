@@ -62,17 +62,17 @@ pub fn build_call_contract(
         const selector_imm = selector_imm;
         assert selector = selector_imm;
         let original_system = system;
-        assert *(system++) = selector;
-         assert *(system++) = gas_builtin;
-        assert *(system++) = contract_address;
-        assert *(system++) = call_data_start;
-        assert *(system++) = call_data_end;
+        assert selector = *(system++);
+        assert gas_builtin = *(system++);
+        assert contract_address = *(system++);
+        assert call_data_start = *(system++);
+        assert call_data_end = *(system++);
         hint SystemCall { system: original_system };
 
         let updated_gas_builtin = *(system++);
         // `revert_reason` is 0 on success, nonzero on failure/revert.
         tempvar revert_reason;
-        assert *(system++) = revert_reason;
+        assert revert_reason = *(system++);
         let res_start = *(system++);
         let res_end = *(system++);
         jump Failure if revert_reason != 0;
