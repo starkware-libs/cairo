@@ -67,7 +67,7 @@ fn build_array_at(
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
     let arr_start = arr_start.to_deref()?;
     let arr_end = arr_end.to_deref()?;
-    let index = expr_index.try_unpack_single()?.to_deref_of_immediate()?;
+    let index = expr_index.try_unpack_single()?.to_deref_or_immediate()?;
 
     let element_size = builder.program_info.type_sizes[elem_ty];
 
