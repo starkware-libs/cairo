@@ -43,6 +43,7 @@ pretty_assertions.workspace = true
 semantic = { path = "../semantic", features = ["testing"] }
 test-log.workspace = true
 test_utils = { path = "../test_utils" }
+test-case.workspace = true
 
 [[bin]]
 name = "starknet-compile"

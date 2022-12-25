@@ -2253,6 +2253,7 @@ dependencies = [
  "sierra_to_casm",
  "smol_str",
  "syntax",
+ "test-case",
  "test-log",
  "test_utils",
  "thiserror",
