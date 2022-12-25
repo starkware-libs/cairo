@@ -1,13 +1,10 @@
-use casm::builder::{CasmBuildResult, CasmBuilder};
+use casm::builder::CasmBuilder;
 use casm::casm_build_extend;
 use casm::operand::ResOperand;
 use num_bigint::BigInt;
-use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{CellExpression, ReferenceExpression};
-use crate::relocations::{Relocation, RelocationEntry};
 
 #[cfg(test)]
 #[path = "storage_test.rs"]
@@ -35,27 +32,9 @@ pub fn build_storage_read(
         hint SystemCall { system: original_system };
         tempvar read_value = *(system++);
     };
-
-    let CasmBuildResult { instructions, branches: [(state, _)] } =
-        casm_builder.build(["Fallthrough"]);
-    // TODO(orizi): Extract the assertion out of the libfunc implementation.
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [sierra_ap_change::ApChange::Known(state.ap_change)]
-    );
-    Ok(builder.build(
-        instructions,
-        vec![],
-        [vec![
-            ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                state.get_adjusted(system),
-            )),
-            ReferenceExpression::from_cell(CellExpression::Deref(
-                state.get_adjusted_as_cell_ref(read_value),
-            )),
-        ]
-        .into_iter()]
-        .into_iter(),
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[system], &[read_value]], None)],
     ))
 }
 
@@ -92,49 +71,15 @@ pub fn build_storage_write(
         let _ignore = *(system++);
         jump Failure if revert_reason != 0;
     };
-
-    let CasmBuildResult {
-        instructions,
-        branches: [(fallthrough_state, _), (failure_state, awaiting_relocations)],
-    } = casm_builder.build(["Fallthrough", "Failure"]);
-    // TODO(orizi): Extract the assertion out of the libfunc implementation.
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, failure_state.ap_change]
-            .map(sierra_ap_change::ApChange::Known)
-    );
-    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
-    Ok(builder.build(
-        instructions,
-        vec![RelocationEntry {
-            instruction_idx: *relocation_index,
-            relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
-        }],
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
         [
-            // Success branch - return (gas builtin, system)
-            vec![
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    fallthrough_state.get_adjusted(updated_gas_builtin),
-                )),
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    fallthrough_state.get_adjusted(system),
-                )),
-            ]
-            .into_iter(),
-            // Failure branch - return (gas builtin, system, revert_reason)
-            vec![
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    failure_state.get_adjusted(updated_gas_builtin),
-                )),
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    failure_state.get_adjusted(system),
-                )),
-                ReferenceExpression::from_cell(CellExpression::Deref(
-                    failure_state.get_adjusted_as_cell_ref(revert_reason),
-                )),
-            ]
-            .into_iter(),
-        ]
-        .into_iter(),
+            ("Fallthrough", &[&[updated_gas_builtin], &[system]], None),
+            (
+                "Failure",
+                &[&[updated_gas_builtin], &[system], &[revert_reason]],
+                Some(failure_handle_statement_id),
+            ),
+        ],
     ))
 }

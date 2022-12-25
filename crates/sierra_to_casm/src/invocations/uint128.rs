@@ -1,14 +1,12 @@
-use casm::builder::{CasmBuildResult, CasmBuilder};
+use casm::builder::CasmBuilder;
 use casm::casm_build_extend;
 use casm::operand::{CellRef, ResOperand};
 use num_bigint::BigInt;
 use sierra::extensions::uint128::{IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc};
-use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
 use crate::references::{CellExpression, ReferenceExpression};
-use crate::relocations::{Relocation, RelocationEntry};
 
 #[cfg(test)]
 #[path = "uint128_test.rs"]
@@ -96,44 +94,16 @@ fn build_u128_op(
                 NoOverflow:
                     assert possible_overflow = *(range_check++);
             };
-            let CasmBuildResult {
-                instructions,
-                branches: [(fallthrough_state, ..), (target_state, awaiting_relocations)],
-            } = casm_builder.build(["Fallthrough", "Target"]);
-            // TODO(orizi): Extract the assertion out of the libfunc implementation.
-            assert_eq!(
-                core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-                [fallthrough_state.ap_change, target_state.ap_change]
-                    .map(sierra_ap_change::ApChange::Known)
-            );
-            let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
-            Ok(builder.build(
-                instructions,
-                vec![RelocationEntry {
-                    instruction_idx: *relocation_index,
-                    relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
-                }],
+            Ok(builder.build_from_casm_builder(
+                casm_builder,
                 [
-                    vec![
-                        ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                            fallthrough_state.get_adjusted(range_check),
-                        )),
-                        ReferenceExpression::from_cell(CellExpression::Deref(
-                            fallthrough_state.get_adjusted_as_cell_ref(possible_overflow),
-                        )),
-                    ]
-                    .into_iter(),
-                    vec![
-                        ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                            target_state.get_adjusted(range_check),
-                        )),
-                        ReferenceExpression::from_cell(CellExpression::Deref(
-                            target_state.get_adjusted_as_cell_ref(overflow_fixed),
-                        )),
-                    ]
-                    .into_iter(),
-                ]
-                .into_iter(),
+                    ("Fallthrough", &[&[range_check], &[possible_overflow]], None),
+                    (
+                        "Target",
+                        &[&[range_check], &[overflow_fixed]],
+                        Some(failure_handle_statement_id),
+                    ),
+                ],
             ))
         }
         IntOperator::DivMod => {
@@ -188,33 +158,9 @@ fn build_u128_op(
                 assert bq = b * q;
                 assert a = bq + r;
             };
-
-            let CasmBuildResult { instructions, branches: [(fallthrough_state, ..)] } =
-                casm_builder.build(["Fallthrough"]);
-            // TODO(orizi): Extract the assertion out of the libfunc implementation.
-            assert_eq!(
-                core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-                [fallthrough_state.ap_change].map(sierra_ap_change::ApChange::Known)
-            );
-
-            Ok(builder.build(
-                instructions,
-                vec![],
-                vec![
-                    vec![
-                        ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                            fallthrough_state.get_adjusted(range_check),
-                        )),
-                        ReferenceExpression::from_cell(CellExpression::Deref(
-                            fallthrough_state.get_adjusted_as_cell_ref(q),
-                        )),
-                        ReferenceExpression::from_cell(CellExpression::Deref(
-                            fallthrough_state.get_adjusted_as_cell_ref(r),
-                        )),
-                    ]
-                    .into_iter(),
-                ]
-                .into_iter(),
+            Ok(builder.build_from_casm_builder(
+                casm_builder,
+                [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
             ))
         }
         IntOperator::OverflowingMul => {
@@ -284,47 +230,12 @@ fn build_u128_from_felt(
         NoOverflow:
             assert value = *(range_check++);
     };
-    let CasmBuildResult {
-        instructions,
-        branches: [(fallthrough_state, ..), (failure_state, awaiting_relocations)],
-    } = casm_builder.build(["Fallthrough", "FailureHandle"]);
-    // TODO(orizi): Extract the assertion out of the libfunc implementation.
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, failure_state.ap_change]
-            .map(sierra_ap_change::ApChange::Known)
-    );
-    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
-    Ok(builder.build(
-        instructions,
-        vec![RelocationEntry {
-            instruction_idx: *relocation_index,
-            relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
-        }],
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
         [
-            vec![
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    fallthrough_state.get_adjusted(range_check),
-                )),
-                ReferenceExpression::from_cell(CellExpression::Deref(
-                    fallthrough_state.get_adjusted_as_cell_ref(value),
-                )),
-            ]
-            .into_iter(),
-            vec![
-                ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                    failure_state.get_adjusted(range_check),
-                )),
-                ReferenceExpression::from_cell(CellExpression::Deref(
-                    failure_state.get_adjusted_as_cell_ref(x),
-                )),
-                ReferenceExpression::from_cell(CellExpression::Deref(
-                    failure_state.get_adjusted_as_cell_ref(y),
-                )),
-            ]
-            .into_iter(),
-        ]
-        .into_iter(),
+            ("Fallthrough", &[&[range_check], &[value]], None),
+            ("FailureHandle", &[&[range_check], &[x], &[y]], Some(failure_handle_statement_id)),
+        ],
     ))
 }
 
@@ -349,33 +260,12 @@ fn build_u128_lt(
         False:
             assert a_minus_b = *(range_check++);
     };
-    let CasmBuildResult {
-        instructions,
-        branches: [(false_state, ..), (true_state, awaiting_relocations)],
-    } = casm_builder.build(["Fallthrough", "True"]);
-    // TODO(orizi): Extract the assertion out of the libfunc implementation.
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [false_state.ap_change, true_state.ap_change].map(sierra_ap_change::ApChange::Known)
-    );
-    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
-    Ok(builder.build(
-        instructions,
-        vec![RelocationEntry {
-            instruction_idx: *relocation_index,
-            relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
-        }],
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
         [
-            vec![ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                false_state.get_adjusted(range_check),
-            ))]
-            .into_iter(),
-            vec![ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                true_state.get_adjusted(range_check),
-            ))]
-            .into_iter(),
-        ]
-        .into_iter(),
+            ("Fallthrough", &[&[range_check]], None),
+            ("True", &[&[range_check]], Some(failure_handle_statement_id)),
+        ],
     ))
 }
 
@@ -400,33 +290,12 @@ fn build_u128_le(
             tempvar wrapping_a_minus_b = b_minus_a + u128_limit;
             assert wrapping_a_minus_b = *(range_check++);
     };
-    let CasmBuildResult {
-        instructions,
-        branches: [(false_state, ..), (true_state, awaiting_relocations)],
-    } = casm_builder.build(["Fallthrough", "True"]);
-    // TODO(orizi): Extract the assertion out of the libfunc implementation.
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [false_state.ap_change, true_state.ap_change].map(sierra_ap_change::ApChange::Known)
-    );
-    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
-    Ok(builder.build(
-        instructions,
-        vec![RelocationEntry {
-            instruction_idx: *relocation_index,
-            relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
-        }],
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
         [
-            vec![ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                false_state.get_adjusted(range_check),
-            ))]
-            .into_iter(),
-            vec![ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                true_state.get_adjusted(range_check),
-            ))]
-            .into_iter(),
-        ]
-        .into_iter(),
+            ("Fallthrough", &[&[range_check]], None),
+            ("True", &[&[range_check]], Some(failure_handle_statement_id)),
+        ],
     ))
 }
 
@@ -452,24 +321,8 @@ fn build_u128_eq(
             jump Equal;
         NotEqual:
     };
-
-    let CasmBuildResult {
-        instructions,
-        branches: [(fallthrough_state, _), (equal_state, awaiting_relocations)],
-    } = casm_builder.build(["Fallthrough", "Equal"]);
-
-    // TODO(orizi): Extract the assertion out of the libfunc implementation.
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [fallthrough_state.ap_change, equal_state.ap_change].map(sierra_ap_change::ApChange::Known)
-    );
-    let [relocation_index] = &awaiting_relocations[..] else { panic!("Malformed casm builder usage.") };
-    Ok(builder.build(
-        instructions,
-        vec![RelocationEntry {
-            instruction_idx: *relocation_index,
-            relocation: Relocation::RelativeStatementId(target_statement_id),
-        }],
-        vec![vec![].into_iter(), vec![].into_iter()].into_iter(),
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
     ))
 }

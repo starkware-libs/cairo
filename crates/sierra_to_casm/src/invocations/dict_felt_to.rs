@@ -2,7 +2,7 @@ use std::str::FromStr;
 use std::vec;
 
 use casm::ap_change::ApplyApChange;
-use casm::builder::{CasmBuildResult, CasmBuilder};
+use casm::builder::CasmBuilder;
 use casm::hints::Hint;
 use casm::instructions::{AddApInstruction, Instruction, InstructionBody};
 use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
@@ -10,7 +10,6 @@ use casm::{casm, casm_build_extend, casm_extend};
 use num_bigint::BigInt;
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::felt::FeltBinaryOperator;
-use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
@@ -53,26 +52,9 @@ fn build_dict_felt_to_new(
         tempvar new_dict_end_ptr = dict_infos_start + offset;
         let new_dict_end = *new_dict_end_ptr;
     };
-
-    let CasmBuildResult { instructions, branches: [(state, _)] } =
-        casm_builder.build(["Fallthrough"]);
-    assert_eq!(
-        core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-        [sierra_ap_change::ApChange::Known(state.ap_change)]
-    );
-    Ok(builder.build(
-        instructions,
-        vec![],
-        [[
-            ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                state.get_adjusted(new_dict_manager_ptr),
-            )),
-            ReferenceExpression::from_cell(CellExpression::from_res_operand(
-                state.get_adjusted(new_dict_end),
-            )),
-        ]
-        .into_iter()]
-        .into_iter(),
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[new_dict_manager_ptr], &[new_dict_end]], None)],
     ))
 }
 
