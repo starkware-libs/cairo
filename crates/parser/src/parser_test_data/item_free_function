@@ -49,8 +49,9 @@ FunctionSignature
     │       ├── attr (kind: TokenIdentifier): 'view'
     │       ├── args (kind: OptionAttributeArgsEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
-    ├── function_kw (kind: TokenFunction): 'fn'
-    ├── name (kind: TokenIdentifier): 'foo'
-    ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
-    ├── signature (kind: FunctionSignature) <ignored>
+    ├── declaration (kind: FunctionDeclaration)
+    │   ├── function_kw (kind: TokenFunction): 'fn'
+    │   ├── name (kind: TokenIdentifier): 'foo'
+    │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │   └── signature (kind: FunctionSignature) <ignored>
     └── body (kind: ExprBlock) <ignored>
