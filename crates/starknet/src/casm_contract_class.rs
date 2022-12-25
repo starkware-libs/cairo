@@ -4,12 +4,14 @@ mod test;
 
 use std::collections::HashMap;
 
+use convert_case::{Case, Casing};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
 use sierra::extensions::gas::GasBuiltinType;
+use sierra::extensions::modules::starknet::syscalls::SystemType;
 use sierra::extensions::pedersen::PedersenType;
 use sierra::extensions::range_check::RangeCheckType;
 use sierra::extensions::NoGenericArgsGenericType;
@@ -34,6 +36,8 @@ pub enum StarknetSierraCompilationError {
     EntryPointError,
     #[error("{0} is not a supported builtin type.")]
     InvalidBuiltinType(ConcreteTypeId),
+    #[error("Invalid entry point signature")]
+    InvalidEntryPointSignature,
 }
 
 /// Represents a contract in the StarkNet network.
@@ -86,15 +90,18 @@ impl CasmContractClass {
         }
 
         let name_by_debug_id = HashMap::<u64, String>::from(
-            [RangeCheckType::ID, PedersenType::ID, GasBuiltinType::ID].map(|generic_id| {
-                (
-                    generic_id.id,
-                    generic_id
-                        .debug_name
-                        .expect("Sierra generic types have a full name.")
-                        .to_string(),
-                )
-            }),
+            [RangeCheckType::ID, PedersenType::ID, GasBuiltinType::ID, SystemType::ID].map(
+                |generic_id| {
+                    (
+                        generic_id.id,
+                        generic_id
+                            .debug_name
+                            .expect("Sierra generic types have a full name.")
+                            .as_str()
+                            .to_case(Case::Snake),
+                    )
+                },
+            ),
         );
 
         let mut name_by_short_id = HashMap::<u64, &str>::default();
@@ -115,9 +122,21 @@ impl CasmContractClass {
             let statement_id = function.entry_point;
             let mut builtins = vec![];
 
-            // The expect return types are [builtins.., System, PanicResult],
+            // The expect return types are [builtins.., gas_builtin, system, PanicResult],
             // So we ignore the last two return types.
-            for type_id in &function.signature.ret_types[..function.signature.ret_types.len() - 2] {
+            let (signature_builtins, leftover) =
+                function.signature.ret_types.split_at(function.signature.ret_types.len() - 3);
+
+            // TODO(ilya): Check that the last argument is PanicResult.
+            if leftover[..2]
+                .iter()
+                .map(|type_id| name_by_short_id.get(&type_id.id))
+                .ne([Some(&"gas_builtin"), Some(&"system")])
+            {
+                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
+            }
+
+            for type_id in signature_builtins.iter() {
                 if let Some(name) = name_by_short_id.get(&type_id.id) {
                     builtins.push(name.to_string());
                 } else {
