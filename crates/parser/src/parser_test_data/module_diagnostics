@@ -5,7 +5,7 @@ get_diagnostics
 
 //! > cairo_code
 mod my_mod
-func foo() {}
+fn foo() {}
 
 //! > expected_diagnostics
 error: Missing token TerminalSemicolon.
@@ -43,10 +43,10 @@ get_diagnostics
 
 //! > cairo_code
 mod my_mod {
-func foo() {}
+fn foo() {}
 
 //! > expected_diagnostics
 error: Missing token TerminalRBrace.
- --> dummy_file.cairo:2:14
-func foo() {}
-             ^
+ --> dummy_file.cairo:2:12
+fn foo() {}
+           ^

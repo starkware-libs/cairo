@@ -24,9 +24,9 @@ fn test_resolve_path() {
         indoc! {"
             use core::Box;
             extern type S<T>;
-            extern func bar<T>(value: S::<felt>) -> S::<()> nopanic;
+            extern fn bar<T>(value: S::<felt>) -> S::<()> nopanic;
 
-            func foo<Q>(value: S::<felt>, b: Q, c: Box::<Q>) {
+            fn foo<Q>(value: S::<felt>, b: Q, c: Box::<Q>) {
                 bar::<(felt,Q)>(value);
                 let c = b;
             }

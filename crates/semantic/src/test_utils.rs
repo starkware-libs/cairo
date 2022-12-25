@@ -169,7 +169,7 @@ pub fn setup_test_expr(
     module_code: &str,
     function_body: &str,
 ) -> WithStringDiagnostics<TestExpr> {
-    let function_code = format!("func test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
+    let function_code = format!("fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
     let (test_function, diagnostics) =
         setup_test_function(db, &function_code, "test_func", module_code).split();
     let semantic::ExprBlock { statements, .. } = extract_matches!(
@@ -246,7 +246,7 @@ pub fn test_function_diagnostics(
 
 #[macro_export]
 macro_rules! semantic_test {
-    ($test_name:ident, $filenames:expr, $func:ident) => {
-        test_utils::test_file_test!($test_name, $filenames, SemanticDatabaseForTesting, $func);
+    ($test_name:ident, $filenames:expr, $fn:ident) => {
+        test_utils::test_file_test!($test_name, $filenames, SemanticDatabaseForTesting, $fn);
     };
 }

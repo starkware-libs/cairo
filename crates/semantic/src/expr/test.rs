@@ -130,7 +130,7 @@ fn test_member_access() {
             struct B {
                 a: felt
             }
-            func foo(a: A){
+            fn foo(a: A){
                 (a).a;
                 a.b;
                 a.c;
@@ -196,7 +196,7 @@ fn test_member_access_failures() {
                 b: felt,
                 c: felt,
             }
-            func foo(a: A){
+            fn foo(a: A){
                 a.f
                 a.a::b;
                 a.4.4;
@@ -240,8 +240,7 @@ fn test_member_access_failures() {
 #[test]
 fn test_function_with_param() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let test_function =
-        setup_test_function(&mut db_val, "func foo(a: felt) {}", "foo", "").unwrap();
+    let test_function = setup_test_function(&mut db_val, "fn foo(a: felt) {}", "foo", "").unwrap();
     let _db = &db_val;
     let signature = test_function.signature;
 
@@ -255,7 +254,7 @@ fn test_function_with_param() {
 fn test_tuple_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_function =
-        setup_test_function(&mut db_val, "func foo(mut a: (felt, (), (felt,))) {}", "foo", "")
+        setup_test_function(&mut db_val, "fn foo(mut a: (felt, (), (felt,))) {}", "foo", "")
             .unwrap();
     let db = &db_val;
     let signature = test_function.signature;
@@ -273,7 +272,7 @@ fn test_tuple_type() {
 fn test_function_with_return_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_function =
-        setup_test_function(&mut db_val, "func foo() -> felt { 5 }", "foo", "").unwrap();
+        setup_test_function(&mut db_val, "fn foo() -> felt { 5 }", "foo", "").unwrap();
     let _db = &db_val;
     let signature = test_function.signature;
 
@@ -285,14 +284,14 @@ fn test_function_with_return_type() {
 fn test_function_with_return_type_failures() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let diagnostics =
-        setup_test_function(&mut db_val, "func foo() -> felt { }", "foo", "").get_diagnostics();
+        setup_test_function(&mut db_val, "fn foo() -> felt { }", "foo", "").get_diagnostics();
     assert_eq!(
         diagnostics,
         indoc! {r#"
             error: Unexpected return type. Expected: "core::felt", found: "()".
-             --> lib.cairo:1:20
-            func foo() -> felt { }
-                               ^*^
+             --> lib.cairo:1:18
+            fn foo() -> felt { }
+                             ^*^
 
         "#}
     );
@@ -304,7 +303,7 @@ fn test_let_statement() {
     let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
-            func foo() {
+            fn foo() {
                 let a: felt = 3;
                 let b = a;
             }
@@ -332,7 +331,7 @@ fn test_let_statement_failures() {
     let diagnostics = setup_test_function(
         &mut db_val,
         indoc! {"
-            func foo() {
+            fn foo() {
                 let a: () = 3;
             }
         "},
@@ -358,7 +357,7 @@ fn test_expr_var() {
     let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
-            func foo(a: felt) -> felt {
+            fn foo(a: felt) -> felt {
                 a
             }
         "},
@@ -388,7 +387,7 @@ fn test_expr_var_failures() {
     let diagnostics = setup_test_function(
         &mut db_val,
         indoc! {"
-            func foo(a: felt) {
+            fn foo(a: felt) {
                 a::b;
             }
         "},
@@ -414,7 +413,7 @@ fn test_expr_match() {
     let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
-            func foo(a: felt) -> felt {
+            fn foo(a: felt) -> felt {
                 match a {
                     0 => 0,
                     _ => 1,
@@ -448,7 +447,7 @@ fn test_expr_match_failures() {
     let diagnostics = setup_test_function(
         &mut db_val,
         indoc! {"
-            func foo(a: felt, b: bool) -> felt {
+            fn foo(a: felt, b: bool) -> felt {
                 match a {
                     0 => 0,
                     _ => b,
@@ -531,7 +530,7 @@ fn test_expr_block_with_tail_expression() {
 fn test_expr_call() {
     let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let test_expr = setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "").unwrap();
+    let test_expr = setup_test_expr(&mut db_val, "foo()", "fn foo() {6;}", "").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
@@ -578,7 +577,7 @@ fn test_function_body() {
     let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
-            func foo(a: felt) {
+            fn foo(a: felt) {
                 a;
             }
         "},
@@ -668,7 +667,7 @@ fn test_expr_struct_ctor_failures() {
                 a: felt,
                 b: ()
             }
-            func foo(a: A) -> A {
+            fn foo(a: A) -> A {
                 A {
                     b: 1,
                     a: 2,

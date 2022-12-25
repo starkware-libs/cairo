@@ -1,5 +1,5 @@
 // Calculates H(...H(H(0, 1), ..., n))...) where H is the Pedersen hash function.
-func hash_chain(n: felt, costs: BuiltinCosts) -> felt {
+fn hash_chain(n: felt, costs: BuiltinCosts) -> felt {
     if n == 0 {
         return 0;
     }

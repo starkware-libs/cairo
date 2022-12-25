@@ -275,7 +275,7 @@ parser_test!(
     [
         "src/parser_test_data/module_diagnostics",
         "src/parser_test_data/exprs",
-        "src/parser_test_data/func",
+        "src/parser_test_data/fn",
         "src/parser_test_data/if",
         "src/parser_test_data/match",
         "src/parser_test_data/pattern",

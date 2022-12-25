@@ -1,4 +1,4 @@
-func foo(x: T) -> S {
+fn foo(x: T) -> S {
     // Cascaded dangling break
     let x1 = 1
         + 2
@@ -112,7 +112,7 @@ func foo(x: T) -> S {
                                 + (8 + 0 + (9 + 0 + (1 + 0 + (2 + 0 + (3 + 0 + (4 + 0)))))))))))));
 }
 
-func bar(
+fn bar(
     first_arg: T,
     second_arg: T,
     third_arg: T,

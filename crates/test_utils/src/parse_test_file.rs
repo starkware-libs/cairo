@@ -137,16 +137,16 @@ impl TestBuilder {
 /// Creates a test that reads test files for a given function.
 /// test_name - the name of the test.
 /// filenames - a vector of tests files the test applies to.
-/// func - the function to be applied on the test params to generate the tested result.
+/// fn - the function to be applied on the test params to generate the tested result.
 ///
-/// The signature of `func` should be of the form:
+/// The signature of `fn` should be of the form:
 /// ```ignore
-/// fn func(
+/// fn fn(
 ///     db: &mut SomeCrateDatabaseForTesting,
 ///     inputs: &OrderedHashMap<String, String>
 /// ) -> OrderedHashMap<String, String>;
 /// ```
-/// And `func` can read the tags from the file from the input map. It should return the expected
+/// And `fn` can read the tags from the file from the input map. It should return the expected
 /// outputs with the same tags as the file, in the output map.
 ///
 /// The structure of the file must be of the following form:
@@ -177,8 +177,8 @@ impl TestBuilder {
 /// ```ignore
 /// #[macro_export]
 /// macro_rules! parser_test {
-///     ($test_name:ident, $filenames:expr, $func:ident) => {
-///         test_utils::test_file_test!($test_name, $filenames, ParserDatabaseForTesting, $func);
+///     ($test_name:ident, $filenames:expr, $fn:ident) => {
+///         test_utils::test_file_test!($test_name, $filenames, ParserDatabaseForTesting, $fn);
 ///     };
 /// }
 /// ```
@@ -189,7 +189,7 @@ impl TestBuilder {
 /// ```
 #[macro_export]
 macro_rules! test_file_test {
-    ($test_name:ident, $filenames:expr, $db_type:ty, $func:ident) => {
+    ($test_name:ident, $filenames:expr, $db_type:ty, $fn:ident) => {
         #[test_log::test]
         fn $test_name() -> Result<(), std::io::Error> {
             // TODO(mkaput): consider extracting this part into a function and passing macro args
@@ -204,10 +204,10 @@ macro_rules! test_file_test {
                     test_utils::parse_test_file::Test,
                 >::default();
                 // TODO(alont): global tags for all tests in a file.
-                let test_func_name = stringify!($func);
+                let test_func_name = stringify!($fn);
                 for (test_name, test) in tests {
                     log::debug!(r#"Running test: {test_func_name}::{filename}::"{test_name}""#);
-                    let outputs = $func(&mut <$db_type>::default(), &test.attributes);
+                    let outputs = $fn(&mut <$db_type>::default(), &test.attributes);
                     let line_num = test.line_num;
                     let full_filename = std::fs::canonicalize(path.as_path())?;
                     let full_filename_str = full_filename.to_str().unwrap();

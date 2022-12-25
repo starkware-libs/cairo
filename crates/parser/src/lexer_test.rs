@@ -28,7 +28,7 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalFalse => vec!["false"],
         SyntaxKind::TerminalExtern => vec!["extern"],
         SyntaxKind::TerminalType => vec!["type"],
-        SyntaxKind::TerminalFunction => vec!["func"],
+        SyntaxKind::TerminalFunction => vec!["fn"],
         SyntaxKind::TerminalTrait => vec!["trait"],
         SyntaxKind::TerminalImpl => vec!["impl"],
         SyntaxKind::TerminalOf => vec!["of"],

@@ -4,7 +4,7 @@
 block_generator_test
 
 //! > function
-func foo() -> () {
+fn foo() -> () {
     let x = 5;
     let y = 6;
     let x = 0x1a;

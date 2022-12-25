@@ -226,7 +226,7 @@ impl<T: SignatureOnlyGenericLibFunc> NamedLibFunc for T {
 }
 
 /// Trait for implementing a specialization generator expecting a single generic param type, and
-/// creating a concrete lib func containing that type as well.
+/// creating a concrete lib fn containing that type as well.
 pub trait SignatureAndTypeGenericLibFunc: Default {
     const ID: GenericLibFuncId;
 
