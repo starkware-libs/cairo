@@ -358,12 +358,14 @@ impl NoGenericArgsGenericLibFunc for Uint128EqualLibFunc {
                 ap_change: SierraApChange::Known { new_vars_only: false },
             })
             .collect();
-
+        let param_signature = ParamSignature {
+            ty: u128_ty.clone(),
+            allow_deferred: false,
+            allow_add_const: false,
+            allow_const: true,
+        };
         Ok(LibFuncSignature {
-            param_signatures: vec![
-                ParamSignature::new(u128_ty.clone()),
-                ParamSignature::new(u128_ty),
-            ],
+            param_signatures: vec![param_signature.clone(), param_signature],
             branch_signatures,
             fallthrough: Some(0),
         })
