@@ -95,22 +95,22 @@ fn build_array_at(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (range_check, array_view, index) = match builder.refs {
+    let (range_check, array_view, index_deref_or_imm) = match builder.refs {
         [
             ReferenceValue { expression: expr_range_check, .. },
             ReferenceValue { expression: expr_arr, .. },
-            ReferenceValue { expression: expr_value, .. },
+            ReferenceValue { expression: expr_index, .. },
         ] => {
             let concrete_array_type = &builder.libfunc.param_signatures()[1].ty;
             let array_view =
                 ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-            let elem_value = match expr_value.try_unpack_single()? {
+            let index_deref_or_imm = match expr_index.try_unpack_single()? {
                 CellExpression::Deref(op) => DerefOrImmediate::Deref(op),
                 CellExpression::Immediate(op) => DerefOrImmediate::from(op),
                 _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             };
-            (expr_range_check.try_unpack_single()?.to_deref()?, array_view, elem_value)
+            (expr_range_check.try_unpack_single()?.to_deref()?, array_view, index_deref_or_imm)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -127,27 +127,24 @@ fn build_array_at(
     }
 
     let mut casm_builder = CasmBuilder::default();
-    let index = casm_builder.add_var(match index {
+    let index = casm_builder.add_var(match index_deref_or_imm {
         DerefOrImmediate::Immediate(imm) => ResOperand::Immediate(imm),
         DerefOrImmediate::Deref(cell) => ResOperand::Deref(cell),
     });
     let array_start = casm_builder.add_var(ResOperand::Deref(array_view.start));
     let array_end = casm_builder.add_var(ResOperand::Deref(array_view.end));
-    let element_size_var = casm_builder.add_var(ResOperand::Immediate(element_size.into()));
-    let one = casm_builder.add_var(ResOperand::Immediate(1.into()));
     let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
     casm_build_extend! {casm_builder,
-        tempvar array_cell_size;
         // Compute the length of the array (in felts).
-        assert array_end = array_cell_size + array_start;
+        tempvar array_cell_size = array_end - array_start;
     };
     let element_offset = if element_size == 1 {
         index
     } else {
         casm_build_extend! {casm_builder,
-            tempvar element_offset;
+            const element_size = element_size;
             // Compute the length of the array (in felts).
-            assert element_offset = index * element_size_var;
+            tempvar element_offset = index * element_size;
         };
         element_offset
     };
@@ -159,8 +156,7 @@ fn build_array_at(
         hint TestLessThan {lhs: element_offset, rhs: array_cell_size} into {dst: is_in_range};
         jump InRange if is_in_range != 0;
         // Index out of bounds. Compute offset - length.
-        tempvar offset_length_diff;
-        assert element_offset = offset_length_diff + array_cell_size;
+        tempvar offset_length_diff = element_offset - array_cell_size;
     };
     let array_length = if element_size == 1 {
         array_cell_size
@@ -168,28 +164,26 @@ fn build_array_at(
         casm_build_extend! {casm_builder,
             // Divide by element size. We assume the length is divisible by element size, and by
             // construction, so is the offset.
-            tempvar array_length;
-            assert array_cell_size = array_length * element_size_var;
+            const element_size = element_size;
+            tempvar array_length = array_cell_size / element_size;
         };
         array_length
     };
     casm_build_extend! {casm_builder,
         // Assert offset - length >= 0.
-        assert *(range_check++) = array_length;
+        assert array_length = *(range_check++);
         jump FailureHandle;
         InRange:
         // Assert offset < length, or that length-(offset+1) is in [0, 2^128).
         // Compute offset+1.
-        tempvar element_offset_plus_1;
-        assert element_offset_plus_1 = element_offset + one;
+        const one = 1;
+        tempvar element_offset_plus_1 = element_offset + one;
         // Compute length-(offset+1).
-        tempvar offset_length_diff;
-        assert element_offset_plus_1 = offset_length_diff + array_cell_size;
+        tempvar offset_length_diff = element_offset_plus_1 - array_cell_size;
         // Assert length-(offset+1) is in [0, 2^128).
-        assert *(range_check++) = element_offset_plus_1;
+        assert element_offset_plus_1 = *(range_check++);
         // Compute address of target cell.
-        tempvar target_cell;
-        assert target_cell = array_start + element_offset;
+        tempvar target_cell = array_start + element_offset;
     };
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =
         casm_builder.build();
@@ -284,12 +278,10 @@ fn build_array_len(
     let mut casm_builder = CasmBuilder::default();
     let start = casm_builder.add_var(ResOperand::Deref(array_view.start));
     let end = casm_builder.add_var(ResOperand::Deref(array_view.end));
-    let element_size = casm_builder.add_var(ResOperand::Immediate(element_size.into()));
     casm_build_extend! {casm_builder,
-        tempvar end_total_offset;
-        assert end = start + end_total_offset;
-        tempvar length;
-        assert end_total_offset = length * element_size;
+        tempvar end_total_offset = end - start;
+        const element_size = element_size;
+        tempvar length = end_total_offset / element_size;
     };
     let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
     // TODO(orizi): Extract the assertion out of the libfunc implementation.

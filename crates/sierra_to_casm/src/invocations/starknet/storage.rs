@@ -36,17 +36,15 @@ pub fn build_storage_read(
 
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
-    let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
     casm_build_extend! {casm_builder,
         let original_system = system;
-        tempvar selector;
-        assert selector = selector_imm;
-        assert *(system++) = selector;
-        assert *(system++) = storage_address;
+        const selector_imm = selector_imm;
+        tempvar selector = selector_imm;
+        assert selector = *(system++);
+        assert storage_address = *(system++);
         hint SystemCall { system: original_system };
-        tempvar read_value;
-        assert *(system++) = read_value;
+        tempvar read_value = *(system++);
     };
 
     let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
@@ -99,23 +97,21 @@ pub fn build_storage_write(
     };
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
-    let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
     let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
     let value = casm_builder.add_var(ResOperand::Deref(value));
     casm_build_extend! {casm_builder,
         let original_system = system;
-        tempvar selector;
-        assert selector = selector_imm;
-        assert *(system++) = selector;
-        assert *(system++) = gas_builtin;
-        assert *(system++) = storage_address;
-        assert *(system++) = value;
+        const selector_imm = selector_imm;
+        tempvar selector = selector_imm;
+        assert selector = *(system++);
+        assert gas_builtin = *(system++);
+        assert storage_address = *(system++);
+        assert value = *(system++);
         hint SystemCall { system: original_system };
         let updated_gas_builtin = *(system++);
         // `revert_reason` is 0 on success, nonzero on failure/revert.
-        tempvar revert_reason;
-        assert *(system++) = revert_reason;
+        tempvar revert_reason = *(system++);
         let _ignore = *(system++);
         jump Failure if revert_reason != 0;
     };

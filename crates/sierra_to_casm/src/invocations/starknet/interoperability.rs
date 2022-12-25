@@ -53,26 +53,24 @@ pub fn build_call_contract(
 
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
-    let selector_imm = casm_builder.add_var(ResOperand::Immediate(selector_imm));
     let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
     let contract_address = casm_builder.add_var(ResOperand::Deref(contract_address));
     let call_data_start = casm_builder.add_var(ResOperand::Deref(call_data.start));
     let call_data_end = casm_builder.add_var(ResOperand::Deref(call_data.end));
     casm_build_extend! {casm_builder,
-        tempvar selector;
-        assert selector = selector_imm;
+        const selector_imm = selector_imm;
+        tempvar selector = selector_imm;
         let original_system = system;
-        assert *(system++) = selector;
-         assert *(system++) = gas_builtin;
-        assert *(system++) = contract_address;
-        assert *(system++) = call_data_start;
-        assert *(system++) = call_data_end;
+        assert selector = *(system++);
+        assert gas_builtin = *(system++);
+        assert contract_address = *(system++);
+        assert call_data_start = *(system++);
+        assert call_data_end = *(system++);
         hint SystemCall { system: original_system };
 
         let updated_gas_builtin = *(system++);
         // `revert_reason` is 0 on success, nonzero on failure/revert.
-        tempvar revert_reason;
-        assert *(system++) = revert_reason;
+        tempvar revert_reason = *(system++);
         let res_start = *(system++);
         let res_end = *(system++);
         jump Failure if revert_reason != 0;

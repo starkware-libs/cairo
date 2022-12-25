@@ -119,7 +119,7 @@ fn test_expr_operator() {
 #[test]
 fn test_member_access() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let TestModule { module_id } = setup_test_module(
+    let TestModule { module_id, .. } = setup_test_module(
         &mut db_val,
         indoc! {"
             struct A {

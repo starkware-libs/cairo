@@ -100,20 +100,15 @@ fn build_builtin_get_gas(
     for (token_type, requested_count) in token_requested_counts {
         let offset = token_type.offset_in_builtin_costs();
         // Fetch the cost of a single instance.
-        let single_cost_val = casm_builder.double_deref(builtin_cost, offset);
-
         casm_build_extend! {casm_builder,
-            tempvar single_cost;
-            assert single_cost = single_cost_val;
+            tempvar single_cost = builtin_cost[offset];
         };
 
         // If necessary, multiply by the number of instances.
         let multi_cost = if requested_count != 1 {
-            let requested_count =
-                casm_builder.add_var(ResOperand::Immediate(requested_count.into()));
             casm_build_extend! {casm_builder,
-                tempvar multi_cost;
-                assert multi_cost = single_cost * requested_count;
+                const requested_count = requested_count;
+                tempvar multi_cost = single_cost * requested_count;
             };
             multi_cost
         } else {
@@ -121,28 +116,24 @@ fn build_builtin_get_gas(
         };
         // Add to the cumulative sum.
         casm_build_extend! {casm_builder,
-            tempvar updated_total_requested_count;
-            assert updated_total_requested_count = multi_cost + total_requested_count;
+            tempvar updated_total_requested_count = multi_cost + total_requested_count;
         };
         total_requested_count = updated_total_requested_count;
     }
-    let uint128_limit = casm_builder.add_var(ResOperand::Immediate(BigInt::from(u128::MAX) + 1));
 
     casm_build_extend! {casm_builder,
         tempvar has_enough_gas;
         hint TestLessThanOrEqual {lhs: total_requested_count, rhs: gas_counter} into {dst: has_enough_gas};
         jump HasEnoughGas if has_enough_gas != 0;
         // In this case amount > gas_counter_value, so amount - gas_counter_value - 1 >= 0.
-        tempvar gas_diff;
-        assert gas_counter = gas_diff + total_requested_count;
-        tempvar fixed_gas_diff;
-        assert fixed_gas_diff = gas_diff + uint128_limit;
-        assert *(range_check++) = fixed_gas_diff;
+        tempvar gas_diff = gas_counter - total_requested_count;
+        const uint128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
+        tempvar fixed_gas_diff = gas_diff + uint128_limit;
+        assert fixed_gas_diff = *(range_check++);
         jump Failure;
         HasEnoughGas:
-        tempvar updated_gas;
-        assert gas_counter = updated_gas + total_requested_count;
-        assert *(range_check++) = updated_gas;
+        tempvar updated_gas = gas_counter - total_requested_count;
+        assert updated_gas = *(range_check++);
     };
 
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =

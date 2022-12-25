@@ -1,0 +1,67 @@
+//! > null libfunc
+
+//! > test_comments
+// TODO(lior): Cost should be 2 rather than 1.
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+func foo() -> Nullable::<felt> {
+    null::<felt>()
+}
+
+//! > casm
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 1})
+
+//! > sierra_code
+type felt = felt;
+type Nullable<felt> = Nullable<felt>;
+
+libfunc null<felt> = null<felt>;
+libfunc store_temp<Nullable<felt>> = store_temp<Nullable<felt>>;
+libfunc rename<Nullable<felt>> = rename<Nullable<felt>>;
+
+null<felt>() -> ([0]);
+store_temp<Nullable<felt>>([0]) -> ([0]);
+rename<Nullable<felt>>([0]) -> ([1]);
+return([1]);
+
+test::foo@0() -> (Nullable<felt>);
+
+//! > ==========================================================================
+
+//! > into_nullable libfunc
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+func foo(x: Box::<felt>) -> Nullable::<felt> {
+    into_nullable::<felt>(x)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 1})
+
+//! > sierra_code
+type felt = felt;
+type Box<felt> = Box<felt>;
+type Nullable<felt> = Nullable<felt>;
+
+libfunc into_nullable<felt> = into_nullable<felt>;
+libfunc store_temp<Nullable<felt>> = store_temp<Nullable<felt>>;
+
+into_nullable<felt>([0]) -> ([1]);
+store_temp<Nullable<felt>>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: Box<felt>) -> (Nullable<felt>);

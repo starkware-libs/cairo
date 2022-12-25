@@ -33,6 +33,7 @@ mod function_call;
 mod gas;
 mod mem;
 mod misc;
+mod nullable;
 mod pedersen;
 mod starknet;
 
@@ -52,6 +53,8 @@ pub enum InvocationError {
     WrongNumberOfArguments { expected: usize, actual: usize },
     #[error("The requested functionality is not implemented yet.")]
     NotImplemented(Invocation),
+    #[error("The requested functionality is not implemented yet: {message}")]
+    NotImplementedStr { invocation: Invocation, message: String },
     #[error("The functionality is supported only for sized types.")]
     NotSized(Invocation),
     #[error("Expected type data not found.")]
@@ -305,6 +308,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibFunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
         CoreConcreteLibFunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
+        CoreConcreteLibFunc::Nullable(libfunc) => nullable::build(libfunc, builder),
     }
 }
 
