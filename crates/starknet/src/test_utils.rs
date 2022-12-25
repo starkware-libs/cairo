@@ -10,8 +10,8 @@ pub fn get_example_file_path(file_name: &str) -> PathBuf {
 }
 
 /// Returns the compiled test contract, with replaced ids.
-pub fn get_test_contract() -> crate::contract_class::ContractClass {
-    let path = get_example_file_path("test_contract.cairo");
+pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::ContractClass {
+    let path = get_example_file_path(example_file_name);
     let replace_ids = true;
     compile_path(&path, replace_ids).unwrap()
 }

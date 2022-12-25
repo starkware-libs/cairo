@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
+use test_case::test_case;
 use test_utils::compare_contents_or_fix_with_path;
 
 use crate::abi;
@@ -59,19 +60,21 @@ fn test_serialization() {
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
 }
 
-#[test]
-fn test_full_contract_deseralization() {
-    let contract = get_test_contract();
+#[test_case("test_contract")]
+#[test_case("hello_starknet")]
+fn test_full_contract_deseralization(example_file_name: &str) {
+    let contract = get_test_contract(format!("{}.cairo", example_file_name).as_str());
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
 }
 
-#[test]
-fn test_compile_path() {
-    let contract = get_test_contract();
+#[test_case("test_contract")]
+#[test_case("hello_starknet")]
+fn test_compile_path(example_file_name: &str) {
+    let contract = get_test_contract(format!("{}.cairo", example_file_name).as_str());
 
     compare_contents_or_fix_with_path(
-        &get_example_file_path("test_contract.json"),
+        &get_example_file_path(format!("{}.json", example_file_name).as_str()),
         serde_json::to_string_pretty(&contract).unwrap() + "\n",
     );
 
@@ -80,7 +83,7 @@ fn test_compile_path() {
 
     // There is a separate file for the sierra code as it is hard to review inside the json.
     compare_contents_or_fix_with_path(
-        &get_example_file_path("test_contract.sierra"),
+        &get_example_file_path(format!("{}.sierra", example_file_name).as_str()),
         sierra_program.to_string(),
     );
 }
