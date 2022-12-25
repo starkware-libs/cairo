@@ -64,6 +64,7 @@ pub enum SyntaxKind {
     OptionAttributeArgsEmpty,
     AttributeArgs,
     AttributeArgList,
+    FunctionDeclaration,
     ItemFreeFunction,
     ItemExternFunction,
     ItemExternType,

@@ -13,21 +13,17 @@ pub struct PanicablePlugin {}
 
 impl MacroPlugin for PanicablePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
-        match item_ast {
-            ast::Item::ExternFunction(extern_func_ast) => generate_panicable_code(
-                db,
-                extern_func_ast.name(db),
-                extern_func_ast.signature(db),
-                extern_func_ast.attributes(db),
-            ),
-            ast::Item::FreeFunction(free_func_ast) => generate_panicable_code(
-                db,
-                free_func_ast.name(db),
-                free_func_ast.signature(db),
-                free_func_ast.attributes(db),
-            ),
-            _ => PluginResult { code: None, diagnostics: vec![] },
-        }
+        let (declaration, attributes) = match item_ast {
+            ast::Item::ExternFunction(extern_func_ast) => {
+                (extern_func_ast.declaration(db), extern_func_ast.attributes(db))
+            }
+            ast::Item::FreeFunction(free_func_ast) => {
+                (free_func_ast.declaration(db), free_func_ast.attributes(db))
+            }
+            _ => return PluginResult { code: None, diagnostics: vec![] },
+        };
+
+        generate_panicable_code(db, declaration.name(db), declaration.signature(db), attributes)
     }
 }
 
