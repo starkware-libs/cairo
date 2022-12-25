@@ -105,7 +105,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                             SierraApChange::Known { .. } => {}
                         }
 
-                        self.state().register_outputs(results, branch_signature);
+                        self.state().register_outputs(results, branch_signature, &invocation.args);
                     }
                     _ => {
                         // This starts a branch. Store all deferred variables.
@@ -121,7 +121,11 @@ impl<'a> AddStoreVariableStatements<'a> {
                             zip_eq(&invocation.branches, signature.branch_signatures)
                         {
                             let mut state_at_branch = self.state().clone();
-                            state_at_branch.register_outputs(&branch.results, &branch_signature);
+                            state_at_branch.register_outputs(
+                                &branch.results,
+                                &branch_signature,
+                                &invocation.args,
+                            );
 
                             self.add_future_state(
                                 &branch.target,
