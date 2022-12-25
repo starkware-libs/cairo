@@ -107,7 +107,7 @@ impl CellExpression {
     }
 
     /// Extract a deref or immediate from the cell expression.
-    pub fn to_deref_of_immediate(&self) -> Result<DerefOrImmediate, InvocationError> {
+    pub fn to_deref_or_immediate(&self) -> Result<DerefOrImmediate, InvocationError> {
         match self {
             CellExpression::Deref(cell) => Ok(DerefOrImmediate::Deref(*cell)),
             CellExpression::Immediate(imm) => Ok(DerefOrImmediate::Immediate(imm.clone())),
