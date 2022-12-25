@@ -2,6 +2,7 @@ use test_log::test;
 
 use crate::hints::Hint;
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
+use crate::res;
 
 #[test]
 fn test_alloc_segment_format() {
@@ -13,9 +14,9 @@ fn test_alloc_segment_format() {
 
 #[test]
 fn test_less_than_format() {
-    let ap_based = DerefOrImmediate::Deref(CellRef { register: Register::AP, offset: 6 });
-    let fp_based = DerefOrImmediate::Deref(CellRef { register: Register::FP, offset: 4 });
-    let immediate = DerefOrImmediate::from(3);
+    let ap_based = res!([ap + 6]);
+    let fp_based = res!([fp + 4]);
+    let immediate = res!(3);
 
     assert_eq!(
         Hint::TestLessThan {
@@ -48,9 +49,9 @@ fn test_less_than_format() {
 
 #[test]
 fn test_less_than_or_equal_format() {
-    let ap_based = DerefOrImmediate::Deref(CellRef { register: Register::AP, offset: 6 });
-    let fp_based = DerefOrImmediate::Deref(CellRef { register: Register::FP, offset: 4 });
-    let immediate = DerefOrImmediate::from(3);
+    let ap_based = res!([ap + 6]);
+    let fp_based = res!([fp + 4]);
+    let immediate = res!(3);
 
     assert_eq!(
         Hint::TestLessThanOrEqual {
