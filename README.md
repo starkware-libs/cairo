@@ -65,9 +65,13 @@ Cairo becomes Rusty! Check by yourself👇
 
 ### Prerequisites
 
-- [Rust](https://www.rust-lang.org/tools/install)
+- Install [Rust](https://www.rust-lang.org/tools/install)
+- Setup Rust:
+```bash
+rustup override set stable && rustup update && cargo test
+```
 
-### Compile and running Cairo files
+### Compiling and running Cairo files
 
 ```bash
 cargo run --bin cairo-run -- -p /path/to/file.cairo
