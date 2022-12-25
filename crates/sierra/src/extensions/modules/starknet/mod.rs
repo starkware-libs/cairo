@@ -5,7 +5,7 @@ use storage::{
     StorageAddressConstLibFunc, StorageAddressType, StorageReadLibFunc, StorageWriteLibFunc,
 };
 
-mod syscalls;
+pub mod syscalls;
 use syscalls::SystemType;
 
 pub mod interoperability;

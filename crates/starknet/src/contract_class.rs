@@ -43,6 +43,7 @@ pub struct ContractClass {
     pub sierra_program: sierra::program::Program,
     pub entry_points_by_type: ContractEntryPoints,
     pub abi: abi::Contract,
+    
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
