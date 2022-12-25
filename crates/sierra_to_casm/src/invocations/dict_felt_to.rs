@@ -13,7 +13,7 @@ use sierra::extensions::felt::FeltBinaryOperator;
 use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra single cell dict operations.
 pub fn build(
@@ -32,17 +32,7 @@ pub fn build(
 fn build_dict_felt_to_new(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let dict_manager_ptr_ref = match builder.refs {
-        [ReferenceValue { expression: expr_dict_manager, .. }] => {
-            expr_dict_manager.try_unpack_single()?.to_buffer(2)?
-        }
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+    let dict_manager_ptr_ref = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_buffer(2)?;
     let mut casm_builder = CasmBuilder::default();
     let dict_manager_ptr = casm_builder.add_var(dict_manager_ptr_ref);
     casm_build_extend! {casm_builder,
@@ -88,22 +78,9 @@ fn build_dict_felt_to_new(
 fn build_dict_felt_to_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (mut dict_ptr, mut dict_offset, mut key) = match builder.refs {
-        [
-            ReferenceValue { expression: expr_dict, .. },
-            ReferenceValue { expression: expr_key, .. },
-        ] => {
-            let (dict_ptr, dict_offset) = expr_dict.try_unpack_single()?.to_deref_with_offset()?;
-            let key = expr_key.try_unpack_single()?.to_deref()?;
-            (dict_ptr, dict_offset, key)
-        }
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 2,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expr_dict, expr_key] = builder.try_get_refs()?;
+    let (mut dict_ptr, mut dict_offset) = expr_dict.try_unpack_single()?.to_deref_with_offset()?;
+    let mut key = expr_key.try_unpack_single()?.to_deref()?;
 
     let mut instructions = vec![Instruction {
         body: InstructionBody::AddAp(AddApInstruction { operand: ResOperand::from(1) }),
@@ -153,24 +130,11 @@ fn build_dict_felt_to_read(
 fn build_dict_felt_to_write(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (mut dict_ptr, mut dict_offset, mut key, mut value) = match builder.refs {
-        [
-            ReferenceValue { expression: expr_dict, .. },
-            ReferenceValue { expression: expr_key, .. },
-            ReferenceValue { expression: expr_value, .. },
-        ] => {
-            let (dict_ptr, dict_offset) = expr_dict.try_unpack_single()?.to_deref_with_offset()?;
-            let key = expr_key.try_unpack_single()?.to_deref()?;
-            let value = expr_value.try_unpack_single()?.to_deref()?;
-            (dict_ptr, dict_offset, key, value)
-        }
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 3,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expr_dict, expr_key, expr_value] = builder.try_get_refs()?;
+    let (mut dict_ptr, mut dict_offset) = expr_dict.try_unpack_single()?.to_deref_with_offset()?;
+    let mut key = expr_key.try_unpack_single()?.to_deref()?;
+    let mut value = expr_value.try_unpack_single()?.to_deref()?;
+
     let mut instructions = vec![Instruction {
         body: InstructionBody::AddAp(AddApInstruction { operand: ResOperand::from(1) }),
         inc_ap: false,
@@ -215,22 +179,10 @@ fn build_dict_felt_to_write(
 fn build_dict_felt_to_squash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (range_check, mut dict_ptr, dict_offset) = match builder.refs {
-        [
-            ReferenceValue { expression: expr_range_check, .. },
-            ReferenceValue { expression: expr_dict, .. },
-        ] => {
-            let (dict_ptr, dict_offset) = expr_dict.try_unpack_single()?.to_deref_with_offset()?;
-            let range_check = expr_range_check.try_unpack_single()?.to_deref()?;
-            (range_check, dict_ptr, dict_offset)
-        }
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expr_range_check, expr_dict] = builder.try_get_refs()?;
+    let (mut dict_ptr, dict_offset) = expr_dict.try_unpack_single()?.to_deref_with_offset()?;
+    let range_check = expr_range_check.try_unpack_single()?.to_deref()?;
+
     // ceil((PRIME / 2) / 2 ** 128).
     let prime_over_2_high = BigInt::from_str("3544607988759775765608368578435044694").unwrap();
     // ceil((PRIME / 3) / 2 ** 128).

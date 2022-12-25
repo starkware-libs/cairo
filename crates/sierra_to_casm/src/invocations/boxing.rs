@@ -2,7 +2,7 @@ use sierra::extensions::boxing::BoxConcreteLibFunc;
 use sierra::extensions::ConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra box operations.
 pub fn build(
@@ -25,15 +25,8 @@ fn build_into_box(
             message: "Box<T> is only supported for types of size 1.".into(),
         });
     }
-    let operand = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+
+    let operand = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::IntoSingleCellRef(operand))].into_iter(),
     ))
@@ -43,15 +36,8 @@ fn build_into_box(
 fn build_unbox(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let operand = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
+    let operand = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
+
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::DoubleDeref(operand, 0))].into_iter(),
     ))

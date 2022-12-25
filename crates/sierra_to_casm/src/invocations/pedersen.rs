@@ -9,7 +9,7 @@ use sierra::extensions::pedersen::PedersenConcreteLibFunc;
 use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -25,23 +25,10 @@ pub fn build(
 fn build_pedersen_hash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (pedersen, x, y) = match builder.refs {
-        [
-            ReferenceValue { expression: expr_pedersen, .. },
-            ReferenceValue { expression: expr_x, .. },
-            ReferenceValue { expression: expr_y, .. },
-        ] => (
-            expr_pedersen.try_unpack_single()?.to_buffer(2)?,
-            expr_x.try_unpack_single()?.to_deref()?,
-            expr_y.try_unpack_single()?.to_deref()?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 3,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expr_pedersen, expr_x, expr_y] = builder.try_get_refs()?;
+    let pedersen = expr_pedersen.try_unpack_single()?.to_buffer(2)?;
+    let x = expr_x.try_unpack_single()?.to_deref()?;
+    let y = expr_y.try_unpack_single()?.to_deref()?;
 
     let mut casm_builder = CasmBuilder::default();
     let pedersen = casm_builder.add_var(pedersen);

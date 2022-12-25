@@ -4,7 +4,7 @@ use casm::operand::ResOperand;
 use sierra_ap_change::core_libfunc_ap_change;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{CellExpression, ReferenceExpression};
 
 #[cfg(test)]
 #[path = "bitwise_test.rs"]
@@ -21,23 +21,10 @@ pub fn build(
 fn build_bitwise(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (bitwise, x, y) = match builder.refs {
-        [
-            ReferenceValue { expression: expr_bitwise, .. },
-            ReferenceValue { expression: expr_x, .. },
-            ReferenceValue { expression: expr_y, .. },
-        ] => (
-            expr_bitwise.try_unpack_single()?.to_buffer(4)?,
-            expr_x.try_unpack_single()?.to_deref()?,
-            expr_y.try_unpack_single()?.to_deref()?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 3,
-                actual: refs.len(),
-            });
-        }
-    };
+    let [expr_bitwise, expr_x, expr_y] = builder.try_get_refs()?;
+    let bitwise = expr_bitwise.try_unpack_single()?.to_buffer(4)?;
+    let x = expr_x.try_unpack_single()?.to_deref()?;
+    let y = expr_y.try_unpack_single()?.to_deref()?;
 
     let mut casm_builder = CasmBuilder::default();
     let x = casm_builder.add_var(ResOperand::Deref(x));

@@ -2,7 +2,7 @@ use sierra::extensions::strct::StructConcreteLibFunc;
 use sierra::extensions::ConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{ReferenceExpression, ReferenceValue};
+use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra struct operations.
 pub fn build(
@@ -21,20 +21,10 @@ pub fn build(
         }
         StructConcreteLibFunc::Deconstruct(libfunc) => {
             let struct_type = &libfunc.param_signatures()[0].ty;
-            let cells = match builder.refs {
-                [ReferenceValue { expression: ReferenceExpression { cells }, .. }]
-                    if cells.len() == builder.program_info.type_sizes[struct_type] as usize =>
-                {
-                    cells
-                }
-                [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-                refs => {
-                    return Err(InvocationError::WrongNumberOfArguments {
-                        expected: 1,
-                        actual: refs.len(),
-                    });
-                }
-            };
+            let cells = &builder.try_get_refs::<1>()?[0].cells;
+            if cells.len() != builder.program_info.type_sizes[struct_type] as usize {
+                return Err(InvocationError::InvalidReferenceExpressionForArgument);
+            }
             let output_types = libfunc.output_types();
             assert_eq!(output_types.len(), 1, "Wrong number of branches configured.");
             let mut offset = 0_usize;
