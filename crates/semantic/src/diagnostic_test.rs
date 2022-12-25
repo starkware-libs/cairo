@@ -69,9 +69,8 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
     ) -> PluginResult {
         match item_ast {
             ast::Item::FreeFunction(func) => {
-                let mut builder = PatchBuilder::default();
+                let mut builder = PatchBuilder::new(db);
                 builder.interpolate_patched(
-                    db,
                     indoc! {"
                         mod inner_mod {{
                             // Comment.
@@ -132,7 +131,7 @@ fn test_inline_module_diagnostics() {
         db,
         indoc! {"
             mod a {
-                func bad() -> u128 {
+                fn bad() -> u128 {
                     return 5;
                 }
             }

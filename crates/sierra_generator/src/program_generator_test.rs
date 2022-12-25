@@ -15,11 +15,11 @@ use crate::test_utils::{checked_compile_to_sierra, setup_db_and_get_crate_id};
 fn test_program_generator() {
     // TODO(lior): Make bar return something like felt_add(5, bar()).
     let program = checked_compile_to_sierra(indoc! {"
-                func foo(a: felt) -> felt {
+                fn foo(a: felt) -> felt {
                     bar(5)
                 }
 
-                func bar(a: felt) -> felt {
+                fn bar(a: felt) -> felt {
                     felt_add(a, a)
                 }
             "});
@@ -59,7 +59,7 @@ fn test_program_generator() {
 #[test]
 fn test_type_dependency() {
     let program = checked_compile_to_sierra(indoc! {"
-                func unbox_twice(a: Box::<Box::<Box::<felt>>>) -> Box::<felt> {
+                fn unbox_twice(a: Box::<Box::<Box::<felt>>>) -> Box::<felt> {
                     unbox::<Box::<felt>>(unbox::<Box::<Box::<felt>>>(a))
                 }
             "});
@@ -111,12 +111,12 @@ fn test_type_dependency() {
 #[test_case("f6", &["test::f6"]; "self loop")]
 fn test_only_include_dependecies(func_name: &str, sierra_used_funcs: &[&str]) {
     let (db, crate_id) = setup_db_and_get_crate_id(indoc! {"
-        func f1() { f2(); f3(); }
-        func f2() { f3(); f4(); f5(); }
-        func f3() { f5(); }
-        func f4() { f5(); f6(); }
-        func f5() { f6(); }
-        func f6() { f6(); }
+        fn f1() { f2(); f3(); }
+        fn f2() { f3(); f4(); f5(); }
+        fn f3() { f5(); }
+        fn f4() { f5(); f6(); }
+        fn f5() { f6(); }
+        fn f6() { f6(); }
     "});
     let func_id = db
         .crate_modules(crate_id)

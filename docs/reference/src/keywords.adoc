@@ -20,7 +20,7 @@ else
 enum
 false
 for
-func
+fn
 hint
 if
 impl

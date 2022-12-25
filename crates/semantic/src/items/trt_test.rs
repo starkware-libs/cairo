@@ -17,7 +17,7 @@ fn test_trait() {
         indoc::indoc! {"
             #[contract]
             trait MyContract {
-                func foo(a: felt);
+                fn foo(a: felt);
             }
         "},
     )

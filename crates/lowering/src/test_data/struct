@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(a: felt) -> MyStruct {
+fn foo(a: felt) -> MyStruct {
     MyStruct{a: (), c: (3, 7), b: a}
 }
 
@@ -43,7 +43,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(s: MyStruct) -> felt {
+fn foo(s: MyStruct) -> felt {
     s.b
 }
 
@@ -78,7 +78,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(s: MyStruct) -> (felt, felt) {
+fn foo(s: MyStruct) -> (felt, felt) {
     let MyStruct { a: _, c: (v, _), b} = s;
     (v, b)
 }

@@ -159,7 +159,7 @@ impl SierraCasmRunner {
         )
     }
 
-    /// Returns the final values and type of all if `func`s returning variables.
+    /// Returns the final values and type of all `func`s returning variables.
     fn get_results_data(
         &self,
         func: &Function,

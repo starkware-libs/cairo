@@ -29,12 +29,12 @@ test_partial_parser_tree
 mod my_mod {
     trait Foo<T>;
     impl FooImpl<S> of Foo::<S> {
-        func foo(a: int) -> felt {
+        fn foo(a: int) -> felt {
             return a;
         }
     }
 
-    func test() {
+    fn test() {
     }
 
     struct MyStruct {

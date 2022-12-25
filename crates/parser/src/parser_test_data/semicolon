@@ -4,7 +4,7 @@
 get_diagnostics
 
 //! > cairo_code
-func f() {
+fn f() {
     let x = 123
     let y = 4   let z = 5
     let y = 6 // comment

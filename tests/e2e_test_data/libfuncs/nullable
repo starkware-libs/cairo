@@ -7,7 +7,7 @@
 run_small_e2e_test
 
 //! > cairo
-func foo() -> Nullable::<felt> {
+fn foo() -> Nullable::<felt> {
     null::<felt>()
 }
 
@@ -41,7 +41,7 @@ test::foo@0() -> (Nullable<felt>);
 run_small_e2e_test
 
 //! > cairo
-func foo(x: Box::<felt>) -> Nullable::<felt> {
+fn foo(x: Box::<felt>) -> Nullable::<felt> {
     into_nullable::<felt>(x)
 }
 

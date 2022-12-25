@@ -1,5 +1,5 @@
 // Calculates fib...
-func fib(a: felt, b: felt, n: felt) -> (felt, felt) {
+fn fib(a: felt, b: felt, n: felt) -> (felt, felt) {
     match n {
         0 => (a, 0),
         _ => {
