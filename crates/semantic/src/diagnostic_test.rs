@@ -8,13 +8,16 @@ use defs::plugin::{
 };
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use syntax::node::ast;
 use syntax::node::db::SyntaxGroup;
+use syntax::node::{ast, Terminal};
 use test_log::test;
 
 use crate::db::SemanticGroup;
 use crate::patcher::{PatchBuilder, Patches, RewriteNode};
-use crate::test_utils::{setup_test_crate, test_expr_diagnostics, SemanticDatabaseForTesting};
+use crate::test_utils::{
+    get_crate_semantic_diagnostics, setup_test_crate, test_expr_diagnostics,
+    SemanticDatabaseForTesting,
+};
 use crate::{semantic_test, SemanticDiagnostic};
 
 semantic_test!(
@@ -68,26 +71,38 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
         item_ast: syntax::node::ast::Item,
     ) -> PluginResult {
         match item_ast {
-            ast::Item::FreeFunction(func) => {
+            ast::Item::FreeFunction(func)
+                if func
+                    .attributes(db)
+                    .elements(db)
+                    .iter()
+                    .any(|attr| attr.attr(db).text(db) == "test_change_return_type") =>
+            {
                 let mut builder = PatchBuilder::new(db);
                 let mut new_func = RewriteNode::from_ast(&func);
                 if matches!(
                     func.signature(db).ret_ty(db),
                     ast::OptionReturnTypeClause::ReturnTypeClause(_)
                 ) {
+                    // Change the return type.
                     new_func
                         .modify_child(db, ast::ItemFreeFunction::INDEX_SIGNATURE)
                         .modify_child(db, ast::FunctionSignature::INDEX_RET_TY)
                         .modify_child(db, ast::ReturnTypeClause::INDEX_TY)
                         .set_str("NewType".into());
+                    // Remove the attribute.
+                    new_func
+                        .modify_child(db, ast::ItemFreeFunction::INDEX_ATTRIBUTES)
+                        .modify(db)
+                        .children
+                        .remove(0);
                 }
                 builder.interpolate_patched(
                     indoc! {"
-                        extern type NewType;
                         mod inner_mod {{
-                            // Comment.
-                            // Comment.
-                            // Comment.
+                            extern type NewType;
+                            // Comment 1.
+                            // Comment 2.
                             $func$
                         }}
                     "},
@@ -105,7 +120,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                     diagnostics: vec![],
                 }
             }
-            _ => PluginResult { code: None, diagnostics: vec![] },
+            _ => PluginResult::default(),
         }
     }
 }
@@ -143,6 +158,7 @@ fn test_inline_module_diagnostics() {
         db,
         indoc! {"
             mod a {
+                #[test_change_return_type]
                 fn bad() -> u128 {
                     return 5;
                 }
@@ -150,32 +166,65 @@ fn test_inline_module_diagnostics() {
        "},
     );
 
-    let submodules = db.module_submodules(ModuleId::CrateRoot(crate_id)).unwrap();
-    let submodule_id = submodules.first().unwrap();
-
+    // Verify we get diagnostics both for the original and the generated code.
     assert_eq!(
-        db.module_semantic_diagnostics(*submodule_id).unwrap().format(db),
+        get_crate_semantic_diagnostics(db, crate_id).format(db),
         indoc! {r#"
             error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt".
-             --> lib.cairo:3:16
+             --> lib.cairo:4:16
+                    return 5;
+                           ^
+
+            error: Plugin diagnostic: Mapped error.
+             --> lib.cairo:4:16
                     return 5;
                            ^
 
             "#},
     );
+}
 
-    // Test diagnostics within a generated inline module.
-    let submodule_submodules = db.module_submodules(*submodule_id).unwrap();
-    let subsubmodule_id = submodule_submodules.first().unwrap();
+#[test]
+fn test_inline_inline_module_diagnostics() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let db = &mut db_val;
+    let crate_id = setup_test_crate(
+        db,
+        indoc! {"
+            mod a {
+                fn bad_a() -> u128 {
+                    return 1;
+                }
+            }
+            mod b {
+                mod c {
+                    fn bad_c() -> u128 {
+                        return 2;
+                    }
+                }
+                mod d {
+                    fn foo_d() {
+                    }
+                }
+            }
+            fn foo() {
+                b::c::bad_c();
+            }
+       "},
+    );
 
     assert_eq!(
-        db.module_semantic_diagnostics(*subsubmodule_id).unwrap().format(db),
-        indoc! {r#"
-            error: Plugin diagnostic: Mapped error.
+        get_crate_semantic_diagnostics(db, crate_id).format(db),
+        indoc! {r#"error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt".
              --> lib.cairo:3:16
-                    return 5;
+                    return 1;
                            ^
 
-            "#},
+            error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt".
+             --> lib.cairo:9:20
+                        return 2;
+                               ^
+
+    "#},
     );
 }
