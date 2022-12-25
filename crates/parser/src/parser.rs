@@ -231,25 +231,18 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Extern.
-    /// Expected pattern: `extern(<FunctionSignature>|type<Identifier>);`
+    /// Expected pattern: `extern(<FunctionDeclaration>|type<Identifier>);`
     fn expect_extern_item(&mut self, attributes: AttributeListGreen) -> ItemGreen {
         let extern_kw = self.take::<TerminalExtern>();
         match self.peek().kind {
             SyntaxKind::TerminalFunction => {
-                let function_kw = self.take::<TerminalFunction>();
-
-                let name = self.parse_identifier();
-                let generic_params = self.parse_optional_generic_params();
-                let signature = self.expect_function_signature();
+                let declaration = self.expect_function_declaration();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 ItemExternFunction::new_green(
                     self.db,
                     attributes,
                     extern_kw,
-                    function_kw,
-                    name,
-                    generic_params,
-                    signature,
+                    declaration,
                     semicolon,
                 )
                 .into()
@@ -370,22 +363,22 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Function.
-    /// Expected pattern: `<FunctionSignature><Block>`
-    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> ItemFreeFunctionGreen {
+    /// Expected pattern: `<FunctionDeclaration>`
+    fn expect_function_declaration(&mut self) -> FunctionDeclarationGreen {
         let function_kw = self.take::<TerminalFunction>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
         let signature = self.expect_function_signature();
+
+        FunctionDeclaration::new_green(self.db, function_kw, name, generic_params, signature)
+    }
+
+    /// Assumes the current token is Function.
+    /// Expected pattern: `<FunctionDeclaration><Block>`
+    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> ItemFreeFunctionGreen {
+        let declaration = self.expect_function_declaration();
         let function_body = self.parse_block();
-        ItemFreeFunction::new_green(
-            self.db,
-            attributes,
-            function_kw,
-            name,
-            generic_params,
-            signature,
-            function_body,
-        )
+        ItemFreeFunction::new_green(self.db, attributes, declaration, function_body)
     }
 
     /// Assumes the current token is Trait.
@@ -419,22 +412,11 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Function.
-    /// Expected pattern: `<FunctionSignature><SemiColon>`
+    /// Expected pattern: `<FunctionDeclaration><SemiColon>`
     fn expect_trait_function(&mut self, attributes: AttributeListGreen) -> TraitItemFunctionGreen {
-        let function_kw = self.take::<TerminalFunction>();
-        let name = self.parse_identifier();
-        let generic_params = self.parse_optional_generic_params();
-        let signature = self.expect_function_signature();
+        let declaration = self.expect_function_declaration();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        TraitItemFunction::new_green(
-            self.db,
-            attributes,
-            function_kw,
-            name,
-            generic_params,
-            signature,
-            semicolon,
-        )
+        TraitItemFunction::new_green(self.db, attributes, declaration, semicolon)
     }
 
     /// Assumes the current token is Impl.
