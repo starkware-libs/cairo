@@ -17,40 +17,41 @@
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #2 (kind: ItemFreeFunction)
     │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── function_kw (kind: TokenFunction): 'fn'
-    │   │   ├── name (kind: TokenIdentifier): 'foo'
-    │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
-    │   │   ├── signature (kind: FunctionSignature)
-    │   │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   │   ├── parameters (kind: ParamList)
-    │   │   │   │   ├── item #0 (kind: Param)
-    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   │   │   ├── name (kind: TokenIdentifier): 'var1'
-    │   │   │   │   │   └── type_clause (kind: TypeClause)
-    │   │   │   │   │       ├── colon (kind: TokenColon): ':'
-    │   │   │   │   │       └── ty (kind: ExprPath)
-    │   │   │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │               └── ident (kind: TokenIdentifier): 'int'
-    │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   ├── item #1 (kind: Param)
-    │   │   │   │   │   ├── modifiers (kind: ModifierList)
-    │   │   │   │   │   │   ├── child #0 (kind: TokenMut): 'mut'
-    │   │   │   │   │   │   └── child #1 (kind: TokenRef): 'ref'
-    │   │   │   │   │   ├── name (kind: TokenIdentifier): 'var2'
-    │   │   │   │   │   └── type_clause (kind: TypeClause)
-    │   │   │   │   │       ├── colon (kind: TokenColon): ':'
-    │   │   │   │   │       └── ty (kind: ExprPath)
-    │   │   │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │               └── ident (kind: TokenIdentifier): 'felt'
-    │   │   │   │   └── separator #1 (kind: TokenComma): ','
-    │   │   │   ├── rparen (kind: TokenRParen): ')'
-    │   │   │   ├── ret_ty (kind: ReturnTypeClause)
-    │   │   │   │   ├── arrow (kind: TokenArrow): '->'
-    │   │   │   │   └── ty (kind: ExprPath)
-    │   │   │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │           └── ident (kind: TokenIdentifier): 'int'
-    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
-    │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
+    │   │   │   ├── name (kind: TokenIdentifier): 'foo'
+    │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │   │   │   └── signature (kind: FunctionSignature)
+    │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │       ├── parameters (kind: ParamList)
+    │   │   │       │   ├── item #0 (kind: Param)
+    │   │   │       │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │       │   │   ├── name (kind: TokenIdentifier): 'var1'
+    │   │   │       │   │   └── type_clause (kind: TypeClause)
+    │   │   │       │   │       ├── colon (kind: TokenColon): ':'
+    │   │   │       │   │       └── ty (kind: ExprPath)
+    │   │   │       │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │   │               └── ident (kind: TokenIdentifier): 'int'
+    │   │   │       │   ├── separator #0 (kind: TokenComma): ','
+    │   │   │       │   ├── item #1 (kind: Param)
+    │   │   │       │   │   ├── modifiers (kind: ModifierList)
+    │   │   │       │   │   │   ├── child #0 (kind: TokenMut): 'mut'
+    │   │   │       │   │   │   └── child #1 (kind: TokenRef): 'ref'
+    │   │   │       │   │   ├── name (kind: TokenIdentifier): 'var2'
+    │   │   │       │   │   └── type_clause (kind: TypeClause)
+    │   │   │       │   │       ├── colon (kind: TokenColon): ':'
+    │   │   │       │   │       └── ty (kind: ExprPath)
+    │   │   │       │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   │   │       │   └── separator #1 (kind: TokenComma): ','
+    │   │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │       ├── ret_ty (kind: ReturnTypeClause)
+    │   │   │       │   ├── arrow (kind: TokenArrow): '->'
+    │   │   │       │   └── ty (kind: ExprPath)
+    │   │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │           └── ident (kind: TokenIdentifier): 'int'
+    │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList)
@@ -328,28 +329,29 @@
     │   │       └── rbrace: Missing
     │   ├── child #3 (kind: ItemFreeFunction)
     │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── function_kw (kind: TokenFunction): 'fn'
-    │   │   ├── name (kind: TokenIdentifier): 'bar'
-    │   │   ├── generic_params (kind: WrappedGenericParamList)
-    │   │   │   ├── langle (kind: TokenLT): '<'
-    │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   ├── item #0 (kind: GenericParam)
-    │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
-    │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   └── item #1 (kind: GenericParam)
-    │   │   │   │       └── name (kind: TokenIdentifier): 'B'
-    │   │   │   └── rangle (kind: TokenGT): '>'
-    │   │   ├── signature (kind: FunctionSignature)
-    │   │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   │   ├── parameters (kind: ParamList) []
-    │   │   │   ├── rparen (kind: TokenRParen): ')'
-    │   │   │   ├── ret_ty (kind: ReturnTypeClause)
-    │   │   │   │   ├── arrow (kind: TokenArrow): '->'
-    │   │   │   │   └── ty (kind: ExprPath)
-    │   │   │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │           └── ident (kind: TokenIdentifier): 'felt'
-    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
-    │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
+    │   │   │   ├── name (kind: TokenIdentifier): 'bar'
+    │   │   │   ├── generic_params (kind: WrappedGenericParamList)
+    │   │   │   │   ├── langle (kind: TokenLT): '<'
+    │   │   │   │   ├── generic_params (kind: GenericParamList)
+    │   │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
+    │   │   │   │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   │       └── name (kind: TokenIdentifier): 'B'
+    │   │   │   │   └── rangle (kind: TokenGT): '>'
+    │   │   │   └── signature (kind: FunctionSignature)
+    │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │       ├── parameters (kind: ParamList) []
+    │   │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │       ├── ret_ty (kind: ReturnTypeClause)
+    │   │   │       │   ├── arrow (kind: TokenArrow): '->'
+    │   │   │       │   └── ty (kind: ExprPath)
+    │   │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │           └── ident (kind: TokenIdentifier): 'felt'
+    │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList) []
@@ -366,40 +368,41 @@
     │   ├── child #5 (kind: ItemExternFunction)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
-    │   │   ├── function_kw (kind: TokenFunction): 'fn'
-    │   │   ├── name (kind: TokenIdentifier): 'glee'
-    │   │   ├── generic_params (kind: WrappedGenericParamList)
-    │   │   │   ├── langle (kind: TokenLT): '<'
-    │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   ├── item #0 (kind: GenericParam)
-    │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
-    │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   └── item #1 (kind: GenericParam)
-    │   │   │   │       └── name (kind: TokenIdentifier): 'b'
-    │   │   │   └── rangle (kind: TokenGT): '>'
-    │   │   ├── signature (kind: FunctionSignature)
-    │   │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   │   ├── parameters (kind: ParamList)
-    │   │   │   │   ├── item #0 (kind: Param)
-    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   │   │   ├── name (kind: TokenIdentifier): 'var1'
-    │   │   │   │   │   └── type_clause (kind: TypeClause)
-    │   │   │   │   │       ├── colon (kind: TokenColon): ':'
-    │   │   │   │   │       └── ty (kind: ExprPath)
-    │   │   │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │               └── ident (kind: TokenIdentifier): 'int'
-    │   │   │   │   └── separator #0 (kind: TokenComma): ','
-    │   │   │   ├── rparen (kind: TokenRParen): ')'
-    │   │   │   ├── ret_ty (kind: ReturnTypeClause)
-    │   │   │   │   ├── arrow (kind: TokenArrow): '->'
-    │   │   │   │   └── ty (kind: ExprPath)
-    │   │   │   │       ├── item #0 (kind: PathSegmentSimple)
-    │   │   │   │       │   └── ident (kind: TokenIdentifier): 'crate'
-    │   │   │   │       ├── separator #0 (kind: TokenColonColon): '::'
-    │   │   │   │       └── item #1 (kind: PathSegmentSimple)
-    │   │   │   │           └── ident (kind: TokenIdentifier): 'S'
-    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
-    │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
+    │   │   │   ├── name (kind: TokenIdentifier): 'glee'
+    │   │   │   ├── generic_params (kind: WrappedGenericParamList)
+    │   │   │   │   ├── langle (kind: TokenLT): '<'
+    │   │   │   │   ├── generic_params (kind: GenericParamList)
+    │   │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
+    │   │   │   │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   │       └── name (kind: TokenIdentifier): 'b'
+    │   │   │   │   └── rangle (kind: TokenGT): '>'
+    │   │   │   └── signature (kind: FunctionSignature)
+    │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │       ├── parameters (kind: ParamList)
+    │   │   │       │   ├── item #0 (kind: Param)
+    │   │   │       │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │       │   │   ├── name (kind: TokenIdentifier): 'var1'
+    │   │   │       │   │   └── type_clause (kind: TypeClause)
+    │   │   │       │   │       ├── colon (kind: TokenColon): ':'
+    │   │   │       │   │       └── ty (kind: ExprPath)
+    │   │   │       │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │   │               └── ident (kind: TokenIdentifier): 'int'
+    │   │   │       │   └── separator #0 (kind: TokenComma): ','
+    │   │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │       ├── ret_ty (kind: ReturnTypeClause)
+    │   │   │       │   ├── arrow (kind: TokenArrow): '->'
+    │   │   │       │   └── ty (kind: ExprPath)
+    │   │   │       │       ├── item #0 (kind: PathSegmentSimple)
+    │   │   │       │       │   └── ident (kind: TokenIdentifier): 'crate'
+    │   │   │       │       ├── separator #0 (kind: TokenColonColon): '::'
+    │   │   │       │       └── item #1 (kind: PathSegmentSimple)
+    │   │   │       │           └── ident (kind: TokenIdentifier): 'S'
+    │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── semicolon: Missing
     │   └── child #6 (kind: ItemStruct)
     │       ├── attributes (kind: AttributeList) []
