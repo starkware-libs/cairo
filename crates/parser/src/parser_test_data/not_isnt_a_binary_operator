@@ -9,7 +9,7 @@
 test_partial_parser_tree
 
 //! > cairo_code
-func foo() {
+fn foo() {
     1 ! 2;
 }
 

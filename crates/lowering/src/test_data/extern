@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(ref a: felt, b: felt) {
+fn foo(ref a: felt, b: felt) {
     f(a,b);
     g(a,b);
     h(a,b);
@@ -15,10 +15,10 @@ func foo(ref a: felt, b: felt) {
 foo
 
 //! > module_code
-extern func f(ref a: felt, b: felt) -> felt nopanic;
-extern func g(ref a: felt, b: felt) -> (felt,) nopanic;
-extern func h(ref a: felt, b: felt) -> (felt,felt) nopanic;
-extern func i(ref a: felt, b: felt) -> ((felt,),) nopanic;
+extern fn f(ref a: felt, b: felt) -> felt nopanic;
+extern fn g(ref a: felt, b: felt) -> (felt,) nopanic;
+extern fn h(ref a: felt, b: felt) -> (felt,felt) nopanic;
+extern fn i(ref a: felt, b: felt) -> ((felt,),) nopanic;
 
 //! > semantic_diagnostics
 
@@ -45,7 +45,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(ref a: felt, b: felt) {
+fn foo(ref a: felt, b: felt) {
   let x = f(a, b);
   match x {
     MyEnum::A(y) => (),
@@ -63,7 +63,7 @@ enum MyEnum {
   B: (felt,),
   C: (felt, felt),
 }
-extern func f(ref a: felt, b: felt) -> MyEnum nopanic;
+extern fn f(ref a: felt, b: felt) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -143,7 +143,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(a: felt, b: felt) -> felt {
+fn foo(a: felt, b: felt) -> felt {
   match f(a, b) {
     MyEnum::A(y) => y,
     MyEnum::B((y,)) => y,
@@ -160,7 +160,7 @@ enum MyEnum {
   B: (felt,),
   C: (felt, felt),
 }
-extern func f(a: felt, b: felt) -> MyEnum nopanic;
+extern fn f(a: felt, b: felt) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -208,7 +208,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(ref a: felt, b: felt) -> felt {
+fn foo(ref a: felt, b: felt) -> felt {
   match f(a, b) {
     MyEnum::A(y) => y,
     MyEnum::B((y,)) => y,
@@ -225,7 +225,7 @@ enum MyEnum {
   B: (felt,),
   C: (felt, felt),
 }
-extern func f(ref a: felt, b: felt) -> MyEnum nopanic;
+extern fn f(ref a: felt, b: felt) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -306,7 +306,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(ref a: felt, b: felt) {
+fn foo(ref a: felt, b: felt) {
   let x = f(a, b);
   match x {
     MyEnum::A(y) => (),
@@ -324,7 +324,7 @@ enum MyEnum {
   B: (felt,),
   C: (felt, felt),
 }
-extern func f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
+extern fn f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
 
@@ -404,7 +404,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(ref a: felt, b: felt) -> felt {
+fn foo(ref a: felt, b: felt) -> felt {
   match f(a, b) {
     MyEnum::A(y) => y,
     MyEnum::B((y,)) => y,
@@ -421,7 +421,7 @@ enum MyEnum {
   B: (felt,),
   C: (felt, felt),
 }
-extern func f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
+extern fn f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
 
@@ -502,7 +502,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(mut arr: Array::<felt>, mut b: (felt,)) -> Array::<felt> {
+fn foo(mut arr: Array::<felt>, mut b: (felt,)) -> Array::<felt> {
     let y = match f(arr, b) {
         MyEnum::A(x) => arr
     };
@@ -516,7 +516,7 @@ foo
 enum MyEnum {
   A: felt,
 }
-extern func f(ref arr: Array::<felt>, ref b: (felt,)) -> MyEnum nopanic;
+extern fn f(ref arr: Array::<felt>, ref b: (felt,)) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -559,7 +559,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo() {
+fn foo() {
   get_gas();
 }
 
@@ -611,7 +611,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo() -> Option::<()> {
+fn foo() -> Option::<()> {
   get_gas()
 }
 
@@ -662,7 +662,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo() -> Option::<()> {
+fn foo() -> Option::<()> {
   return get_gas();
 }
 

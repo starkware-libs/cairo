@@ -6,28 +6,28 @@ test_expand_contract
 //! > cairo_code
 #[contract]
 mod TestContract {
-func internal_func(ref system: System) -> felt {
+fn internal_func(ref system: System) -> felt {
     1
 }
 
 #[external]
-func test(ref system: System, ref arg: felt, num: felt) -> felt {
+fn test(ref system: System, ref arg: felt, num: felt) -> felt {
     1
 }
 }
 
 //! > generated_cairo_code
 mod __generated__TestContract {
-    func internal_func(ref system: System) -> felt {
+    fn internal_func(ref system: System) -> felt {
         1
     }
 
     #[external]
-    func test(ref system: System, ref arg: felt, num: felt) -> felt {
+    fn test(ref system: System, ref arg: felt, num: felt) -> felt {
         1
     }
     mod __external {
-        func test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+        fn test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
             if array::array_len::<felt>(data) != 3_u128 {
                 panic(array::array_new::<felt>());
             }

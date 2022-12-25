@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-func foo() {}
+fn foo() {}
 
 //! > function_name
 foo
@@ -12,15 +12,15 @@ foo
 //! > module_code
 struct A {}
 trait MyTrait<T> {
-    func param_test(ref a: u128) -> bad_type nopanic;
+    fn param_test(ref a: u128) -> bad_type nopanic;
 
-    func no_ret_ty(a: u128) -> felt;
+    fn no_ret_ty(a: u128) -> felt;
 }
 impl MyImpl of MyTrait::<A>;
 impl MyImpl2<T> of MyTrait::<T> {
     mod a;
     use b;
-    extern func extern_func() nopanic;
+    extern fn extern_func() nopanic;
     extern type DummyType;
 
     trait DummyTrait;
@@ -30,24 +30,24 @@ impl MyImpl2<T> of MyTrait::<T> {
 
     enum DummyEnum {}
 
-    func my_bar() {
+    fn my_bar() {
 
     }
 
-    func param_test(a: felt, b: felt, c: felt) -> u128 {
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
 
     }
 
-    func no_ret_ty(ref a: u128) {
+    fn no_ret_ty(ref a: u128) {
 
     }
 }
 
 //! > expected_diagnostics
 error: Type not found.
- --> lib.cairo:3:37
-    func param_test(ref a: u128) -> bad_type nopanic;
-                                    ^******^
+ --> lib.cairo:3:35
+    fn param_test(ref a: u128) -> bad_type nopanic;
+                                  ^******^
 
 error: `mod` is not allowed inside impl.
  --> lib.cairo:9:5
@@ -61,7 +61,7 @@ error: `use` is not allowed inside impl.
 
 error: `extern` is not allowed inside impl.
  --> lib.cairo:11:5
-    extern func extern_func() nopanic;
+    extern fn extern_func() nopanic;
     ^****^
 
 error: `extern` is not allowed inside impl.
@@ -91,43 +91,43 @@ error: `enum` is not allowed inside impl.
 
 error: Impl function `MyImpl2::my_bar` is not a member of trait `MyTrait`.
  --> lib.cairo:21:5
-    func my_bar() {
-    ^*************^
+    fn my_bar() {
+    ^***********^
 
 error: The number of parameters in the impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: 1, actual: 3.
- --> lib.cairo:25:21
-    func param_test(a: felt, b: felt, c: felt) -> u128 {
-                    ^***********************^
+ --> lib.cairo:25:19
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                  ^***********************^
 
 error: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `core::integer::u128`, actual: `core::felt`.
- --> lib.cairo:25:24
-    func param_test(a: felt, b: felt, c: felt) -> u128 {
-                       ^**^
+ --> lib.cairo:25:22
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                     ^**^
 
 error: Parameter of impl function MyImpl2::param_test is incompatible with MyTrait::param_test. It should be a reference.
- --> lib.cairo:25:21
-    func param_test(a: felt, b: felt, c: felt) -> u128 {
-                    ^
+ --> lib.cairo:25:19
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                  ^
 
 error: The signature of function `param_test` is incompatible with trait `MyTrait`. The trait function is declared as nopanic.
- --> lib.cairo:25:20
-    func param_test(a: felt, b: felt, c: felt) -> u128 {
-                   ^*********************************^
+ --> lib.cairo:25:18
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                 ^*********************************^
 
 error: Return type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `<missing>`, actual: `core::integer::u128`.
- --> lib.cairo:25:51
-    func param_test(a: felt, b: felt, c: felt) -> u128 {
-                                                  ^**^
+ --> lib.cairo:25:49
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                                                ^**^
 
 error: Parameter of impl function MyImpl2::no_ret_ty is incompatible with MyTrait::no_ret_ty. It should not be a reference.
- --> lib.cairo:29:20
-    func no_ret_ty(ref a: u128) {
-                   ^*^
+ --> lib.cairo:29:18
+    fn no_ret_ty(ref a: u128) {
+                 ^*^
 
 error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `MyTrait::no_ret_ty`. Expected: `core::felt`, actual: `()`.
- --> lib.cairo:29:33
-    func no_ret_ty(ref a: u128) {
-                                ^
+ --> lib.cairo:29:31
+    fn no_ret_ty(ref a: u128) {
+                              ^
 
 //! > ==========================================================================
 
@@ -137,7 +137,7 @@ error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `M
 test_function_diagnostics
 
 //! > function
-func foo() {}
+fn foo() {}
 
 //! > function_name
 foo
@@ -167,7 +167,7 @@ impl MyImpl4 of foo;
 test_function_diagnostics
 
 //! > function
-func foo() {}
+fn foo() {}
 
 //! > function_name
 foo
@@ -235,21 +235,21 @@ impl T2Drop of Drop::<(felt, Linear)>;
 test_function_diagnostics
 
 //! > function
-func foo() {}
+fn foo() {}
 
 //! > function_name
 foo
 
 //! > module_code
 trait MyTrait<T> {
-    func f(mut a: felt);
+    fn f(mut a: felt);
 }
 
 //! > expected_diagnostics
 error: Parameter of trait function `MyTrait::f` can't be defined as mutable.
- --> lib.cairo:2:12
-    func f(mut a: felt);
-           ^*^
+ --> lib.cairo:2:10
+    fn f(mut a: felt);
+         ^*^
 
 //! > ==========================================================================
 
@@ -259,20 +259,20 @@ error: Parameter of trait function `MyTrait::f` can't be defined as mutable.
 test_function_diagnostics
 
 //! > function
-func foo() {}
+fn foo() {}
 
 //! > function_name
 foo
 
 //! > module_code
 trait MyTrait<T> {
-   func f(a: felt);
+   fn f(a: felt);
 }
 impl MyImpl<T> of MyTrait::<T> {
-   func f(a: felt) {}
+   fn f(a: felt) {}
 }
 impl MyImpl2<T> of MyTrait::<T> {
-   func f(mut a: felt) {}
+   fn f(mut a: felt) {}
 }
 
 //! > expected_diagnostics

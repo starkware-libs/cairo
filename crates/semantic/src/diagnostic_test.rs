@@ -131,7 +131,7 @@ fn test_inline_module_diagnostics() {
         db,
         indoc! {"
             mod a {
-                func bad() -> u128 {
+                fn bad() -> u128 {
                     return 5;
                 }
             }

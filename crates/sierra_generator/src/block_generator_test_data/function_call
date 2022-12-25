@@ -4,12 +4,12 @@
 block_generator_test
 
 //! > function
-func foo(mut z: MyStruct) -> () {
+fn foo(mut z: MyStruct) -> () {
     let x = bar(1, 2, z);
     bar(x, x + x, z);
 }
 
-func bar(a: felt, b: felt, ref z: MyStruct) -> felt {
+fn bar(a: felt, b: felt, ref z: MyStruct) -> felt {
     0
 }
 
@@ -43,7 +43,7 @@ struct_construct<Unit>() -> ([14])
 block_generator_test
 
 //! > function
-func foo() -> felt {
+fn foo() -> felt {
     let x = 7;
     bar(x, 7);
     bar2(bar(x, 7), bar(x, 7))
@@ -53,10 +53,10 @@ func foo() -> felt {
 foo
 
 //! > module_code
-func bar(a: felt, b: felt) -> felt {
+fn bar(a: felt, b: felt) -> felt {
     0
 }
-func bar2(a: felt, b: felt) -> felt {
+fn bar2(a: felt, b: felt) -> felt {
     0
 }
 
@@ -88,7 +88,7 @@ function_call<user@test::bar2>([14], [15]) -> ([13])
 block_generator_test
 
 //! > function
-func foo() -> felt {
+fn foo() -> felt {
     my_libfunc(3, 6)
 }
 
@@ -96,13 +96,13 @@ func foo() -> felt {
 foo
 
 //! > module_code
-extern func my_libfunc(a: felt, b: felt) -> felt;
+extern fn my_libfunc(a: felt, b: felt) -> felt;
 
 //! > semantic_diagnostics
 error: An extern function must be marked as nopanic.
  --> lib.cairo:1:1
-extern func my_libfunc(a: felt, b: felt) -> felt;
-^***********************************************^
+extern fn my_libfunc(a: felt, b: felt) -> felt;
+^*********************************************^
 
 //! > lowering_diagnostics
 

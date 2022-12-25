@@ -4,11 +4,11 @@
 contains_cycles_test
 
 //! > module_code
-func non_cyclic() -> felt {
+fn non_cyclic() -> felt {
     non_cyclic2()
 }
 
-func non_cyclic2() -> felt {
+fn non_cyclic2() -> felt {
     0
 }
 
@@ -24,7 +24,7 @@ non_cyclic2: ap_change=Ok(Known { new_vars_only: false }), has_cycles=Ok(false)
 contains_cycles_test
 
 //! > module_code
-func simple_cycle(x: felt) -> felt {
+fn simple_cycle(x: felt) -> felt {
     if x == 0 {
         {
             return simple_cycle(x);
@@ -33,7 +33,7 @@ func simple_cycle(x: felt) -> felt {
     0
 }
 
-func calls_simple_cycle(x: felt) -> felt {
+fn calls_simple_cycle(x: felt) -> felt {
     simple_cycle(x)
 }
 
@@ -50,15 +50,15 @@ contains_cycles_test
 
 //! > module_code
 // a calls b, which then calls a.
-func cycle_of_len2_a(x: felt) -> felt {
+fn cycle_of_len2_a(x: felt) -> felt {
     cycle_of_len2_b(x)
 }
 
-func cycle_of_len2_b(x: felt) -> felt {
+fn cycle_of_len2_b(x: felt) -> felt {
     cycle_of_len2_a(x)
 }
 
-func call_cycle_of_len2(x: felt) -> felt {
+fn call_cycle_of_len2(x: felt) -> felt {
     cycle_of_len2_a(x)
 }
 

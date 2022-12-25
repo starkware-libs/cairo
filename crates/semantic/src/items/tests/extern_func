@@ -1,10 +1,10 @@
-//! > Test extern func diagnostics.
+//! > Test extern fn diagnostics.
 
 //! > test_function_name
 test_function_diagnostics
 
 //! > function
-func foo() {
+fn foo() {
     bar()
 }
 
@@ -12,15 +12,15 @@ func foo() {
 foo
 
 //! > module_code
-extern func bar() -> bad_type;
+extern fn bar() -> bad_type;
 
 //! > expected_diagnostics
 error: Type not found.
- --> lib.cairo:1:22
-extern func bar() -> bad_type;
-                     ^******^
+ --> lib.cairo:1:20
+extern fn bar() -> bad_type;
+                   ^******^
 
 error: An extern function must be marked as nopanic.
  --> lib.cairo:1:1
-extern func bar() -> bad_type;
-^****************************^
+extern fn bar() -> bad_type;
+^**************************^

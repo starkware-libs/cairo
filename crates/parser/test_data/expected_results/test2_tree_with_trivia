@@ -4,7 +4,7 @@
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   ├── token (kind: TokenFunction): 'func'
+    │   │   │   ├── token (kind: TokenFunction): 'fn'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │   ├── name (kind: TerminalIdentifier)
@@ -393,7 +393,7 @@
     │           │   │   ├── function_kw (kind: TerminalFunction)
     │           │   │   │   ├── leading_trivia (kind: Trivia)
     │           │   │   │   │   └── child #0 (kind: TokenWhitespace).
-    │           │   │   │   ├── token (kind: TokenFunction): 'func'
+    │           │   │   │   ├── token (kind: TokenFunction): 'fn'
     │           │   │   │   └── trailing_trivia (kind: Trivia)
     │           │   │   │       └── child #0 (kind: TokenWhitespace).
     │           │   │   ├── name (kind: TerminalIdentifier)

@@ -12,7 +12,7 @@
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   └── child #1 (kind: ItemFreeFunction)
     │       ├── attributes (kind: AttributeList) []
-    │       ├── function_kw (kind: TokenFunction): 'func'
+    │       ├── function_kw (kind: TokenFunction): 'fn'
     │       ├── name (kind: TokenIdentifier): 'foo'
     │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │       ├── signature (kind: FunctionSignature)

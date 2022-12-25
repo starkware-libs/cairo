@@ -105,7 +105,7 @@ fn generate_panicable_code(
                 name: "panicable".into(),
                 content: indoc::formatdoc!(
                     r#"
-                    func {panicable_name}({params}) -> {inner_ty_text} {{
+                    fn {panicable_name}({params}) -> {inner_ty_text} {{
                         match {function_name}({args}) {{
                             {success_variant} (v) => {{
                                 v
