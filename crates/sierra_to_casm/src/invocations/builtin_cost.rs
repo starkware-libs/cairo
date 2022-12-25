@@ -126,15 +126,13 @@ fn build_builtin_get_gas(
         hint TestLessThanOrEqual {lhs: total_requested_count, rhs: gas_counter} into {dst: has_enough_gas};
         jump HasEnoughGas if has_enough_gas != 0;
         // In this case amount > gas_counter_value, so amount - gas_counter_value - 1 >= 0.
-        tempvar gas_diff;
-        assert gas_counter = gas_diff + total_requested_count;
+        tempvar gas_diff = gas_counter - total_requested_count;
         const uint128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
         tempvar fixed_gas_diff = gas_diff + uint128_limit;
         assert fixed_gas_diff = *(range_check++);
         jump Failure;
         HasEnoughGas:
-        tempvar updated_gas;
-        assert gas_counter = updated_gas + total_requested_count;
+        tempvar updated_gas = gas_counter - total_requested_count;
         assert updated_gas = *(range_check++);
     };
 

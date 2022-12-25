@@ -480,6 +480,12 @@ macro_rules! casm_build_extend {
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
+    ($builder:ident, assert $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, assert $a = $dst + $b; $($tok)*)
+    };
+    ($builder:ident, assert $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, assert $a = $dst * $b; $($tok)*)
+    };
     ($builder:ident, assert $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
         {
             let __deref = $builder.double_deref($buffer, $offset);
@@ -506,6 +512,12 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, tempvar $var:ident = $lhs:ident * $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = $lhs * $rhs; $($tok)*);
+    };
+    ($builder:ident, tempvar $var:ident = $lhs:ident - $rhs:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, tempvar $var; assert $var = $lhs - $rhs; $($tok)*);
+    };
+    ($builder:ident, tempvar $var:ident = $lhs:ident / $rhs:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, tempvar $var; assert $var = $lhs / $rhs; $($tok)*);
     };
     ($builder:ident, tempvar $var:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = *($buffer++); $($tok)*);

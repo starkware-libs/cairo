@@ -135,9 +135,8 @@ fn build_array_at(
     let array_end = casm_builder.add_var(ResOperand::Deref(array_view.end));
     let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
     casm_build_extend! {casm_builder,
-        tempvar array_cell_size;
         // Compute the length of the array (in felts).
-        assert array_end = array_cell_size + array_start;
+        tempvar array_cell_size = array_end - array_start;
     };
     let element_offset = if element_size == 1 {
         index
@@ -157,8 +156,7 @@ fn build_array_at(
         hint TestLessThan {lhs: element_offset, rhs: array_cell_size} into {dst: is_in_range};
         jump InRange if is_in_range != 0;
         // Index out of bounds. Compute offset - length.
-        tempvar offset_length_diff;
-        assert element_offset = offset_length_diff + array_cell_size;
+        tempvar offset_length_diff = element_offset - array_cell_size;
     };
     let array_length = if element_size == 1 {
         array_cell_size
@@ -166,9 +164,8 @@ fn build_array_at(
         casm_build_extend! {casm_builder,
             // Divide by element size. We assume the length is divisible by element size, and by
             // construction, so is the offset.
-            tempvar array_length;
             const element_size = element_size;
-            assert array_cell_size = array_length * element_size;
+            tempvar array_length = array_cell_size / element_size;
         };
         array_length
     };
@@ -182,8 +179,7 @@ fn build_array_at(
         const one = 1;
         tempvar element_offset_plus_1 = element_offset + one;
         // Compute length-(offset+1).
-        tempvar offset_length_diff;
-        assert element_offset_plus_1 = offset_length_diff + array_cell_size;
+        tempvar offset_length_diff = element_offset_plus_1 - array_cell_size;
         // Assert length-(offset+1) is in [0, 2^128).
         assert element_offset_plus_1 = *(range_check++);
         // Compute address of target cell.
@@ -283,11 +279,9 @@ fn build_array_len(
     let start = casm_builder.add_var(ResOperand::Deref(array_view.start));
     let end = casm_builder.add_var(ResOperand::Deref(array_view.end));
     casm_build_extend! {casm_builder,
-        tempvar end_total_offset;
-        assert end = start + end_total_offset;
-        tempvar length;
+        tempvar end_total_offset = end - start;
         const element_size = element_size;
-        assert end_total_offset = length * element_size;
+        tempvar length = end_total_offset / element_size;
     };
     let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
     // TODO(orizi): Extract the assertion out of the libfunc implementation.
