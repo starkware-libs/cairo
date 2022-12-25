@@ -18,7 +18,6 @@ pub mod fmt;
 pub mod ids;
 pub mod program;
 pub mod program_registry;
-pub mod serialization;
 pub mod simulation;
 #[cfg(test)]
 mod test_utils;

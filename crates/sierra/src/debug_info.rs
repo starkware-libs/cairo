@@ -1,5 +1,8 @@
 use std::collections::HashMap;
+use std::hash::Hash;
 
+use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use crate::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId};
@@ -10,10 +13,22 @@ use crate::program::{GenericArg, Program, Statement};
 mod test;
 
 /// Debug information for a Sierra program, to get readable names.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DebugInfo {
+    #[serde(
+        serialize_with = "serialize_map::<ConcreteTypeId, _>",
+        deserialize_with = "deserialize_map::<ConcreteTypeId, _>"
+    )]
     pub type_names: HashMap<ConcreteTypeId, SmolStr>,
+    #[serde(
+        serialize_with = "serialize_map::<ConcreteLibFuncId, _>",
+        deserialize_with = "deserialize_map::<ConcreteLibFuncId, _>"
+    )]
     pub libfunc_names: HashMap<ConcreteLibFuncId, SmolStr>,
+    #[serde(
+        serialize_with = "serialize_map::<FunctionId, _>",
+        deserialize_with = "deserialize_map::<FunctionId, _>"
+    )]
     pub user_func_names: HashMap<FunctionId, SmolStr>,
 }
 impl DebugInfo {
@@ -111,4 +126,57 @@ impl DebugInfo {
             let _ = id.debug_name.insert(name);
         }
     }
+}
+
+/// Trait for handling serde for the ids as map keys.
+pub trait IdAsHashKey: Hash + Eq {
+    /// Get the inner id.
+    fn get(&self) -> u64;
+    /// Return a new id from the given value.
+    fn new(id: u64) -> Self;
+}
+
+impl IdAsHashKey for ConcreteTypeId {
+    fn get(&self) -> u64 {
+        self.id
+    }
+
+    fn new(id: u64) -> Self {
+        Self::new(id)
+    }
+}
+impl IdAsHashKey for ConcreteLibFuncId {
+    fn get(&self) -> u64 {
+        self.id
+    }
+
+    fn new(id: u64) -> Self {
+        Self::new(id)
+    }
+}
+impl IdAsHashKey for FunctionId {
+    fn get(&self) -> u64 {
+        self.id
+    }
+
+    fn new(id: u64) -> Self {
+        Self::new(id)
+    }
+}
+
+fn serialize_map<Id: IdAsHashKey, S: serde::Serializer>(
+    m: &HashMap<Id, SmolStr>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    let v: Vec<_> = m.iter().map(|(id, name)| (id.get(), name)).sorted().collect();
+    v.serialize(serializer)
+}
+
+fn deserialize_map<'de, Id: IdAsHashKey, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<HashMap<Id, SmolStr>, D::Error> {
+    Ok(Vec::<(u64, SmolStr)>::deserialize(deserializer)?
+        .into_iter()
+        .map(|(id, name)| (Id::new(id), name))
+        .collect())
 }
