@@ -530,12 +530,17 @@ fn gen_token_code(name: String) -> rust::Tokens {
 fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rust::Tokens {
     let green_name = format!("{name}Green");
     let mut body = rust::Tokens::new();
+    let mut field_indices = quote! {};
     let mut args = quote! {};
     let mut params = quote! {};
     let mut arg_missings = quote! {};
     let mut ptr_getters = quote! {};
     let mut key_field_index: usize = 0;
     for (i, Member { name, kind, key }) in members.iter().enumerate() {
+        let index_name = format!("INDEX_{}", name.to_uppercase());
+        field_indices.extend(quote! {
+            pub const $index_name : usize = $i;
+        });
         let key_name_green = format!("{name}_green");
         args.extend(quote! {$name.0,});
         // TODO(spapini): Validate that children SyntaxKinds are as expected.
@@ -592,6 +597,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
     } else {
         quote! {
             impl $(&name) {
+                $field_indices
                 pub fn new_green(db: &dyn SyntaxGroup, $params) -> $(&green_name) {
                     let children: Vec<GreenId> = vec![$args];
                     let width = children.iter().copied().map(|id|
