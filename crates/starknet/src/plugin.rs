@@ -196,9 +196,19 @@ fn generate_entry_point_wrapper(
 
     let function_name = function.name(db).text(db).to_string();
     let wrapped_name = format!("super::{function_name}");
+    let oog_err = "'OOG'";
 
     Some(quote! {
         fn $function_name(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+            match get_gas() {
+                Option::Some(_) => {},
+                Option::None(_) => {
+                    let mut data = array_new::<felt>();
+                    array_append::<felt>(data, $oog_err);
+                    panic(data);
+                },
+            }
+
             if array::array_len::<felt>(data) != $(params_len)_u128 {
                 // TODO(yuval): add error message.
                 panic(array::array_new::<felt>());

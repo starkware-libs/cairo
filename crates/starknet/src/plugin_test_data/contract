@@ -28,6 +28,15 @@ mod __generated__TestContract {
     }
     mod __external {
         fn test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut data = array_new::<felt>();
+                    array_append::<felt>(data, 'OOG');
+                    panic(data);
+                },
+            }
             if array::array_len::<felt>(data) != 3_u128 {
                 panic(array::array_new::<felt>());
             }

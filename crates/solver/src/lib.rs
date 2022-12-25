@@ -44,7 +44,7 @@ pub fn try_solve_equations<Var: Clone + Debug + PartialEq + Eq + Hash>(
     Some(
         orig_to_solver_var
             .into_iter()
-            .map(|(orig, solver)| (orig, solution.value(solver) as i64))
+            .map(|(orig, solver)| (orig, solution.value(solver).round() as i64))
             .collect(),
     )
 }
