@@ -1,6 +1,6 @@
 // Returns an array of size n with the values of the Fibonacci sequence, the length of the array,
 // and the value of the last element.
-func fib(n: u128) -> (Array::<felt>, felt, u128) {
+fn fib(n: u128) -> (Array::<felt>, felt, u128) {
     let mut arr = array_new::<felt>();
     array_append::<felt>(arr, 1);
     array_append::<felt>(arr, 1);
@@ -10,7 +10,7 @@ func fib(n: u128) -> (Array::<felt>, felt, u128) {
     return (arr, last, len);
 }
 
-func fib_inner(n: u128, mut arr: Array::<felt>) -> Array::<felt> {
+fn fib_inner(n: u128, mut arr: Array::<felt>) -> Array::<felt> {
     let length = array_len::<felt>(arr);
     if n <= length {
         return arr;
@@ -22,7 +22,7 @@ func fib_inner(n: u128, mut arr: Array::<felt>) -> Array::<felt> {
 }
 
 // TODO(orizi): Remove when a panicable `array_at` is introduced.
-func unchecked_array_at(ref arr: Array::<felt>, idx: u128) -> felt {
+fn unchecked_array_at(ref arr: Array::<felt>, idx: u128) -> felt {
     match array_at::<felt>(arr, idx) {
         Option::Some(v) => v,
         Option::None(()) => {

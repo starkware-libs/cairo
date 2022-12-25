@@ -4,7 +4,7 @@
 test_function_generator
 
 //! > function
-func foo(a: felt) -> felt {
+fn foo(a: felt) -> felt {
     bar(bar(a)) + bar(bar(a) + bar(a)) + bar(a)
 }
 
@@ -12,7 +12,7 @@ func foo(a: felt) -> felt {
 foo
 
 //! > module_code
-func bar(x: felt) -> felt {
+fn bar(x: felt) -> felt {
     bar(x)
 }
 
@@ -62,7 +62,7 @@ return([19])
 test_function_generator
 
 //! > function
-func foo() -> felt {
+fn foo() -> felt {
     let a = revoke_ap();
     let x = if true { 1 } else { revoke_ap() };
     revoke_ap();
@@ -73,7 +73,7 @@ func foo() -> felt {
 foo
 
 //! > module_code
-func revoke_ap() -> felt {
+fn revoke_ap() -> felt {
     revoke_ap()
 }
 
@@ -125,7 +125,7 @@ return([12])
 test_function_generator
 
 //! > function
-func foo(x: felt) -> felt {
+fn foo(x: felt) -> felt {
     let a = x + x;
     foo(a) + a
 }
@@ -164,7 +164,7 @@ return([6])
 test_function_generator
 
 //! > function
-func foo() -> felt {
+fn foo() -> felt {
     let x = revoke_ap();
     let (y, z) = dup::<felt>(x);
     revoke_ap();
@@ -175,7 +175,7 @@ func foo() -> felt {
 foo
 
 //! > module_code
-func revoke_ap() -> felt {
+fn revoke_ap() -> felt {
     revoke_ap()
 }
 

@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(a: Result::<Result::<u128, felt>, felt>) -> Result::<felt, felt> {
+fn foo(a: Result::<Result::<u128, felt>, felt>) -> Result::<felt, felt> {
     a??;
     Result::<felt, felt>::Ok(1)
 }

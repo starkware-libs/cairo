@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(a: felt) -> felt {
+fn foo(a: felt) -> felt {
     let x = 7;
     match x {
         0 => a + 1,
@@ -58,7 +58,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo() -> felt {
+fn foo() -> felt {
     let x = 7;
     match x {
         12 => x,
@@ -89,7 +89,7 @@ error: Match with a non-zero value is not supported.
 test_function_lowering
 
 //! > function
-func foo() -> felt {
+fn foo() -> felt {
   let x = 7;
   match x {
       0 => x,

@@ -165,7 +165,7 @@ impl<'a> Lexer<'a> {
             "true" => TokenKind::True,
             "extern" => TokenKind::Extern,
             "type" => TokenKind::Type,
-            "func" => TokenKind::Function,
+            "fn" => TokenKind::Function,
             "trait" => TokenKind::Trait,
             "impl" => TokenKind::Impl,
             "of" => TokenKind::Of,

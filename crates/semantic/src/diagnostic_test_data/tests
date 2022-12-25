@@ -63,7 +63,7 @@ test_expr_diagnostics
 }
 
 //! > module_code
-func foo() {
+fn foo() {
 }
 
 //! > function_body
@@ -96,7 +96,7 @@ test_expr_diagnostics
 }
 
 //! > module_code
-func foo(ref ref v: felt) {
+fn foo(ref ref v: felt) {
   let mut a = 1;
   foo(a);
 }
@@ -105,9 +105,9 @@ func foo(ref ref v: felt) {
 
 //! > expected_diagnostics
 error: `ref` modifier was specified after another modifier (`ref`). Only a single modifier is allowed.
- --> lib.cairo:1:14
-func foo(ref ref v: felt) {
-             ^*^
+ --> lib.cairo:1:12
+fn foo(ref ref v: felt) {
+           ^*^
 
 //! > ==========================================================================
 
@@ -121,7 +121,7 @@ test_expr_diagnostics
 }
 
 //! > module_code
-func foo(ref v: felt) {
+fn foo(ref v: felt) {
   foo(1);
 }
 
@@ -145,7 +145,7 @@ test_expr_diagnostics
 }
 
 //! > module_code
-func foo(ref v: felt) {
+fn foo(ref v: felt) {
   let a = 3;
   foo(a);
 }
@@ -174,7 +174,7 @@ test_expr_diagnostics
 }
 
 //! > module_code
-func foo() {
+fn foo() {
 }
 
 //! > function_body

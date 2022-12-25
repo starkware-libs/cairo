@@ -7,7 +7,7 @@
 get_diagnostics
 
 //! > cairo_code
-func f() {
+fn f() {
     if MyStruct{a: 0} == MyStruct{a: 1} {
     }
 }
@@ -29,7 +29,7 @@ error: Skipped tokens. Expected: statement.
 get_diagnostics
 
 //! > cairo_code
-func f() {
+fn f() {
     if 0 == if x {1} else {2} {
     }
 }

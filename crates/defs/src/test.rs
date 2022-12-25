@@ -71,8 +71,8 @@ fn test_resolve() {
     let module_id = setup_test_module(
         &mut db_val,
         indoc! {"
-            func foo() -> felt { 5 }
-            extern func felt_add(a: felt, b: felt) -> felt nopanic;
+            fn foo() -> felt { 5 }
+            extern fn felt_add(a: felt, b: felt) -> felt nopanic;
         "},
     );
     let db = &db_val;
@@ -131,7 +131,7 @@ fn test_submodules() {
     // Main module file.
     set_file_content(db, "src/lib.cairo", "mod submod;");
     set_file_content(db, "src/submod.cairo", "mod subsubmod;");
-    set_file_content(db, "src/submod/subsubmod.cairo", "func foo() {}");
+    set_file_content(db, "src/submod/subsubmod.cairo", "fn foo() {}");
 
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
@@ -171,7 +171,7 @@ impl MacroPlugin for DummyPlugin {
             ast::Item::Struct(struct_ast) => PluginResult {
                 code: Some(PluginGeneratedFile {
                     name: "virt".into(),
-                    content: format!("func foo(x:{}){{}}", struct_ast.name(db).text(db)),
+                    content: format!("fn foo(x:{}){{}}", struct_ast.name(db).text(db)),
                     diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
                 }),
                 diagnostics: vec![],

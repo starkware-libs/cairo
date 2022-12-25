@@ -80,19 +80,19 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
     vec![Arc::new(PanicablePlugin{})],
     indoc! {"
         #[panic_with('1', foo_improved)]
-        extern func foo(a: felt, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
+        extern fn foo(a: felt, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
         #[panic_with('2', bar_changed)]
-        extern func bar() -> Result::<felt, Err> nopanic;
+        extern fn bar() -> Result::<felt, Err> nopanic;
 
         #[panic_with('3', non_extern_stuff)]
-        func non_extern(_: some_type) -> Option::<(felt, other)> nopanic {
+        fn non_extern(_: some_type) -> Option::<(felt, other)> nopanic {
             (4, 56)
         }
     "},
     &[
         indoc! {"
-            func foo_improved(a: felt, b: other) -> () {
+            fn foo_improved(a: felt, b: other) -> () {
                 match foo(a, b) {
                     Option::Some (v) => {
                         v
@@ -106,7 +106,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
             }
         "},
         indoc! {"
-            func bar_changed() -> felt {
+            fn bar_changed() -> felt {
                 match bar() {
                     Result::Ok (v) => {
                         v
@@ -120,7 +120,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
             }
         "},
         indoc! {"
-            func non_extern_stuff(_: some_type) -> (felt, other) {
+            fn non_extern_stuff(_: some_type) -> (felt, other) {
                 match non_extern(_) {
                     Option::Some (v) => {
                         v

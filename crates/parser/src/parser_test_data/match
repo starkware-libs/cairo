@@ -7,7 +7,7 @@
 get_diagnostics
 
 //! > cairo_code
-func f() {
+fn f() {
     match MyStruct{a: 1} {
     }
     match x {

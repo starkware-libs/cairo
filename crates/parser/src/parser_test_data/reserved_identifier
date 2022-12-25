@@ -52,13 +52,13 @@ enum mod {}
 get_diagnostics
 
 //! > cairo_code
-extern func mod() nopanic;
+extern fn mod() nopanic;
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
- --> dummy_file.cairo:1:13
-extern func mod() nopanic;
-            ^*^
+ --> dummy_file.cairo:1:11
+extern fn mod() nopanic;
+          ^*^
 
 //! > ==========================================================================
 
@@ -85,7 +85,7 @@ get_diagnostics
 
 //! > cairo_code
 #[mod]
-func foo() {}
+fn foo() {}
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
@@ -101,13 +101,13 @@ error: 'mod' is a reserved identifier.
 get_diagnostics
 
 //! > cairo_code
-func mod() {}
+fn mod() {}
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
- --> dummy_file.cairo:1:6
-func mod() {}
-     ^*^
+ --> dummy_file.cairo:1:4
+fn mod() {}
+   ^*^
 
 //! > ==========================================================================
 
@@ -134,14 +134,14 @@ get_diagnostics
 
 //! > cairo_code
 trait trt {
-    func mod();
+    fn mod();
 }
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
- --> dummy_file.cairo:2:10
-    func mod();
-         ^*^
+ --> dummy_file.cairo:2:8
+    fn mod();
+       ^*^
 
 //! > ==========================================================================
 
@@ -167,7 +167,7 @@ impl mod of MyTrait {}
 get_diagnostics
 
 //! > cairo_code
-func foo() {
+fn foo() {
     A { mod }
 }
 
@@ -185,7 +185,7 @@ error: 'mod' is a reserved identifier.
 get_diagnostics
 
 //! > cairo_code
-func foo() {
+fn foo() {
     let ref mod = 3;
 }
 
@@ -203,7 +203,7 @@ error: 'mod' is a reserved identifier.
 get_diagnostics
 
 //! > cairo_code
-func foo() {
+fn foo() {
     let MyStruct { mod } = 3;
 }
 
@@ -221,13 +221,13 @@ error: 'mod' is a reserved identifier.
 get_diagnostics
 
 //! > cairo_code
-func f(ref mod: felt) {}
+fn f(ref mod: felt) {}
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
- --> dummy_file.cairo:1:12
-func f(ref mod: felt) {}
-           ^*^
+ --> dummy_file.cairo:1:10
+fn f(ref mod: felt) {}
+         ^*^
 
 //! > ==========================================================================
 
@@ -237,13 +237,13 @@ func f(ref mod: felt) {}
 get_diagnostics
 
 //! > cairo_code
-func f(mod: felt) {}
+fn f(mod: felt) {}
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
- --> dummy_file.cairo:1:8
-func f(mod: felt) {}
-       ^*^
+ --> dummy_file.cairo:1:6
+fn f(mod: felt) {}
+     ^*^
 
 //! > ==========================================================================
 
@@ -303,10 +303,10 @@ struct A<mod> {}
 get_diagnostics
 
 //! > cairo_code
-func foo() implicits(mod) {}
+fn foo() implicits(mod) {}
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
- --> dummy_file.cairo:1:22
-func foo() implicits(mod) {}
-                     ^*^
+ --> dummy_file.cairo:1:20
+fn foo() implicits(mod) {}
+                   ^*^

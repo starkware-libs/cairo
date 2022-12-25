@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(a: bool) -> felt {
+fn foo(a: bool) -> felt {
     let mut x = 2;
     if a { x = 3; } else {}
     x

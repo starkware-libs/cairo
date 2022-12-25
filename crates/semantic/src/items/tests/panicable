@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-func foo_panic() {
+fn foo_panic() {
     bar_panic();
     bar_nopanic();
 }
@@ -13,8 +13,8 @@ func foo_panic() {
 foo_panic
 
 //! > module_code
-func bar_panic() {}
-func bar_nopanic() nopanic {}
+fn bar_panic() {}
+fn bar_nopanic() nopanic {}
 
 //! > expected_diagnostics
 
@@ -26,7 +26,7 @@ func bar_nopanic() nopanic {}
 test_function_diagnostics
 
 //! > function
-func foo_nopanic() nopanic {
+fn foo_nopanic() nopanic {
     bar_panic();
     bar_nopanic();
 }
@@ -35,8 +35,8 @@ func foo_nopanic() nopanic {
 foo_nopanic
 
 //! > module_code
-func bar_panic() {}
-func bar_nopanic() nopanic {}
+fn bar_panic() {}
+fn bar_nopanic() nopanic {}
 
 //! > expected_diagnostics
 error: Function is declared as nopanic but calls a function that may panic.

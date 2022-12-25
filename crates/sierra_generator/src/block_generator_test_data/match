@@ -4,7 +4,7 @@
 block_generator_test
 
 //! > function
-func foo() -> felt {
+fn foo() -> felt {
     let x = 10;
     match x {
         0 => 3,
@@ -48,7 +48,7 @@ label1:
 block_generator_test
 
 //! > function
-func foo() -> felt {
+fn foo() -> felt {
     let x = 7;
     match x {
         0 => x,

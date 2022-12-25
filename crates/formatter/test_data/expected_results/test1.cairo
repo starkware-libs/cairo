@@ -1,6 +1,6 @@
 // try
 // try2
-func foo(x: T) -> S {
+fn foo(x: T) -> S {
     let x = -5 + 3;
     let y: T = x * 2 + 3 - 5; // Comment.
 
@@ -25,7 +25,7 @@ func foo(x: T) -> S {
     } // Comment.
 }
 
-func bar<T>(x: T) -> T {
+fn bar<T>(x: T) -> T {
     let x: T = 1;
 }
 
@@ -34,7 +34,7 @@ struct A { }
 struct B { }
 
 // Calculates fib, but all variables are boxes.
-func fib(a: Box::<felt>, b: Box::<felt>, n: Box::<felt>) -> Box::<felt> {
+fn fib(a: Box::<felt>, b: Box::<felt>, n: Box::<felt>) -> Box::<felt> {
     match n {
         0 => {
             a

@@ -24,7 +24,7 @@ fn test_enum() {
                 a: ()
             }
 
-            func foo(a: A) {
+            fn foo(a: A) {
                 5;
             }
         "},

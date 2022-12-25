@@ -7,7 +7,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-func foo() -> felt {
+fn foo() -> felt {
   let x = bar();
   let w1 = 2;
   let y = match x {
@@ -29,11 +29,11 @@ func foo() -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-func revoke_ap() -> felt {
+fn revoke_ap() -> felt {
     revoke_ap()
 }
 
-func bar() -> MyEnum {
+fn bar() -> MyEnum {
     bar()
 }
 
@@ -106,7 +106,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-func foo(x: MyEnum, z: felt) -> felt {
+fn foo(x: MyEnum, z: felt) -> felt {
     let w1 = z + z;
     match x {
         MyEnum::A(a) => {
@@ -137,7 +137,7 @@ func foo(x: MyEnum, z: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-func revoke_ap() -> felt {
+fn revoke_ap() -> felt {
     revoke_ap()
 }
 

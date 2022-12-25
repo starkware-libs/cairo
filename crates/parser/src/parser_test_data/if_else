@@ -4,7 +4,7 @@
 test_partial_parser_tree
 
 //! > cairo_code
-func f() {
+fn f() {
     if 1 == 2 {
         3
     } else if 4 == 5 {

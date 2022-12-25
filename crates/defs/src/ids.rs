@@ -5,16 +5,16 @@
 // Examples:
 // * let x = 5.
 // Has a definition for the variable "x".
-// * func foo<T>(a: T){ return (); }.
+// * fn foo<T>(a: T){ return (); }.
 // Has 3 definitions:
 //   * Function "foo".
 //   * Generic parameter "T" (only the first occurrence of "T").
 //   * Function parameter "a".
-// * trait MyTrait{ func foo() -> (); }
+// * trait MyTrait{ fn foo() -> (); }
 // Has 2 definitions:
 //   * Trait "MyTrait"
 //   * TraitFunction "foo".
-// * impl A for MyTrait{ func foo() -> (){...} }
+// * impl A for MyTrait{ fn foo() -> (){...} }
 // Has 2 definitions:
 //   * Impl "A"
 //   * ImplFunction "foo".

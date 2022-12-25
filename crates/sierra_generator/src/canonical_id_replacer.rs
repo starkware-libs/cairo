@@ -49,7 +49,7 @@ impl SierraIdReplacer for CanonicalReplacer {
         &self,
         id: &sierra::ids::ConcreteLibFuncId,
     ) -> sierra::ids::ConcreteLibFuncId {
-        self.libfunc_ids.get(id).expect("Unexpected lib func id.").clone()
+        self.libfunc_ids.get(id).expect("Unexpected libfunc id.").clone()
     }
 
     fn replace_type_id(&self, id: &sierra::ids::ConcreteTypeId) -> sierra::ids::ConcreteTypeId {

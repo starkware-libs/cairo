@@ -17,7 +17,7 @@
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #2 (kind: ItemFreeFunction)
     │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── function_kw (kind: TokenFunction): 'func'
+    │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
@@ -328,7 +328,7 @@
     │   │       └── rbrace: Missing
     │   ├── child #3 (kind: ItemFreeFunction)
     │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── function_kw (kind: TokenFunction): 'func'
+    │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   ├── name (kind: TokenIdentifier): 'bar'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   ├── langle (kind: TokenLT): '<'
@@ -366,7 +366,7 @@
     │   ├── child #5 (kind: ItemExternFunction)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
-    │   │   ├── function_kw (kind: TokenFunction): 'func'
+    │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   ├── name (kind: TokenIdentifier): 'glee'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   ├── langle (kind: TokenLT): '<'
@@ -453,14 +453,14 @@ error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternTy
 ^
 
 error: Skipped tokens. Expected: parameter.
- --> test1.cairo:7:10
-func foo(,var1: int,, mut ref var2: felt,) -> int {
-         ^
+ --> test1.cairo:7:8
+fn foo(,var1: int,, mut ref var2: felt,) -> int {
+       ^
 
 error: Skipped tokens. Expected: parameter.
- --> test1.cairo:7:21
-func foo(,var1: int,, mut ref var2: felt,) -> int {
-                    ^
+ --> test1.cairo:7:19
+fn foo(,var1: int,, mut ref var2: felt,) -> int {
+                  ^
 
 error: Missing token TerminalRBrace.
  --> test1.cairo:28:14
@@ -468,32 +468,32 @@ error: Missing token TerminalRBrace.
              ^
 
 error: Missing token TerminalSemicolon.
- --> test1.cairo:33:47
-extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
-                                              ^
+ --> test1.cairo:33:45
+extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
+                                            ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test1.cairo:33:47
-extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
-                                              ^
+ --> test1.cairo:33:45
+extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
+                                            ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test1.cairo:33:48
-extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
-                                               ^*^
+ --> test1.cairo:33:46
+extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
+                                             ^*^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
+ --> test1.cairo:33:49
+extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
+                                                ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test1.cairo:33:51
-extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
-                                                  ^
+extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
+                                                  ^*****^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test1.cairo:33:53
-extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
-                                                    ^*****^
-
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test1.cairo:33:60
-extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
-                                                           ^
+ --> test1.cairo:33:58
+extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
+                                                         ^
 

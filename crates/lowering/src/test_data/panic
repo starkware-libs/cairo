@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-func foo(a: bool) -> felt {
+fn foo(a: bool) -> felt {
   let mut data = array_new::<felt>();
   array_append::<felt>(data, 1);
   let y = panic(data);

@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-func foo(p: felt) {
+fn foo(p: felt) {
     p = 7;
     a = 1 + 2;
     let b = 1;

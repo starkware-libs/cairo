@@ -192,11 +192,11 @@ pub fn dummy_push_values(
 /// Creates a test for a given function that reads test files.
 /// filenames - a vector of tests files the test will apply to.
 /// db - the salsa DB to use for the test.
-/// func - the function to be applied on the test params to generate the tested result.
+/// fn - the function to be applied on the test params to generate the tested result.
 /// params - the function parameters. For functions specialized here the parameters can be omitted.
 #[macro_export]
 macro_rules! diagnostics_test {
-    ($test_name:ident, $filenames:expr, $db:expr, $func:expr, $($param:expr),*) => {
+    ($test_name:ident, $filenames:expr, $db:expr, $fn:expr, $($param:expr),*) => {
         #[test]
         fn $test_name() -> Result<(), std::io::Error> {
             let mut db = $db;
@@ -205,7 +205,7 @@ macro_rules! diagnostics_test {
                     std::path::Path::new(filename)
                 )?;
                 for (name, test) in tests {
-                    let test_expr = $func(
+                    let test_expr = $fn(
                         &mut db,
                         $(&test.attributes[$param],)*
                     )
