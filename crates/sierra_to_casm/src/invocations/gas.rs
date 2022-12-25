@@ -65,9 +65,8 @@ fn build_get_gas(
         const requested_count_imm = requested_count;
         hint TestLessThanOrEqual {lhs: requested_count_imm, rhs: gas_counter} into {dst: has_enough_gas};
         jump HasEnoughGas if has_enough_gas != 0;
-        tempvar gas_diff;
         const gas_counter_fix = (BigInt::from(u128::MAX) + 1 - requested_count) as BigInt;
-        assert gas_diff = gas_counter + gas_counter_fix;
+        tempvar gas_diff = gas_counter + gas_counter_fix;
         assert gas_diff = *(range_check++);
         jump Failure;
         HasEnoughGas:

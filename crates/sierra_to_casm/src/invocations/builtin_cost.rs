@@ -100,19 +100,15 @@ fn build_builtin_get_gas(
     for (token_type, requested_count) in token_requested_counts {
         let offset = token_type.offset_in_builtin_costs();
         // Fetch the cost of a single instance.
-        let single_cost_val = casm_builder.double_deref(builtin_cost, offset);
-
         casm_build_extend! {casm_builder,
-            tempvar single_cost;
-            assert single_cost = single_cost_val;
+            tempvar single_cost = builtin_cost[offset];
         };
 
         // If necessary, multiply by the number of instances.
         let multi_cost = if requested_count != 1 {
             casm_build_extend! {casm_builder,
-                tempvar multi_cost;
                 const requested_count = requested_count;
-                assert multi_cost = single_cost * requested_count;
+                tempvar multi_cost = single_cost * requested_count;
             };
             multi_cost
         } else {
@@ -120,8 +116,7 @@ fn build_builtin_get_gas(
         };
         // Add to the cumulative sum.
         casm_build_extend! {casm_builder,
-            tempvar updated_total_requested_count;
-            assert updated_total_requested_count = multi_cost + total_requested_count;
+            tempvar updated_total_requested_count = multi_cost + total_requested_count;
         };
         total_requested_count = updated_total_requested_count;
     }
@@ -133,9 +128,8 @@ fn build_builtin_get_gas(
         // In this case amount > gas_counter_value, so amount - gas_counter_value - 1 >= 0.
         tempvar gas_diff;
         assert gas_counter = gas_diff + total_requested_count;
-        tempvar fixed_gas_diff;
         const uint128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-        assert fixed_gas_diff = gas_diff + uint128_limit;
+        tempvar fixed_gas_diff = gas_diff + uint128_limit;
         assert fixed_gas_diff = *(range_check++);
         jump Failure;
         HasEnoughGas:

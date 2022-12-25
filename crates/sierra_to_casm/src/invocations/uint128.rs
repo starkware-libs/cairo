@@ -72,8 +72,7 @@ fn build_u128_op(
                 IntOperator::OverflowingAdd => {
                     casm_build_extend! {casm_builder,
                         tempvar no_overflow;
-                        tempvar a_plus_b;
-                        assert a_plus_b = a + b;
+                        tempvar a_plus_b = a + b;
                         const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
                         hint TestLessThan {lhs: a_plus_b, rhs: u128_limit} into {dst: no_overflow};
                         jump NoOverflow if no_overflow != 0;
@@ -94,8 +93,7 @@ fn build_u128_op(
                         jump NoOverflow if no_overflow != 0;
                         // Underflow:
                         // Here we know that 0 - (2**128 - 1) <= a - b < 0.
-                        tempvar wrapping_a_minus_b;
-                        assert wrapping_a_minus_b = a_minus_b + u128_limit;
+                        tempvar wrapping_a_minus_b = a_minus_b + u128_limit;
                     };
                     (a_minus_b, wrapping_a_minus_b)
                 }
@@ -375,8 +373,7 @@ fn build_u128_lt(
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
             hint TestLessThan {lhs: a_minus_b, rhs: u128_limit} into {dst: a_ge_b};
             jump False if a_ge_b != 0;
-            tempvar wrapping_a_minus_b;
-            assert wrapping_a_minus_b = a_minus_b + u128_limit;
+            tempvar wrapping_a_minus_b = a_minus_b + u128_limit;
             assert wrapping_a_minus_b = *(range_check++);
             jump True;
         False:
@@ -430,8 +427,7 @@ fn build_u128_le(
             assert b_minus_a = *(range_check++);
             jump True;
         False:
-            tempvar wrapping_a_minus_b;
-            assert wrapping_a_minus_b = b_minus_a + u128_limit;
+            tempvar wrapping_a_minus_b = b_minus_a + u128_limit;
             assert wrapping_a_minus_b = *(range_check++);
     };
     let CasmBuildResult { instructions, awaiting_relocations, label_state, fallthrough_state } =

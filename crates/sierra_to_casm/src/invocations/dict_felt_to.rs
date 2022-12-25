@@ -48,25 +48,19 @@ fn build_dict_felt_to_new(
     casm_build_extend! {casm_builder,
         hint AllocDictFeltTo {dict_manager_ptr: dict_manager_ptr};
         // Previous dict info
-        tempvar dict_infos_start;
-        assert dict_infos_start = *(dict_manager_ptr++);
-        tempvar n_dicts;
-        assert n_dicts = *(dict_manager_ptr++);
-        tempvar n_destructed;
-        assert n_destructed = *(dict_manager_ptr++);
+        tempvar dict_infos_start = *(dict_manager_ptr++);
+        tempvar n_dicts = *(dict_manager_ptr++);
+        tempvar n_destructed = *(dict_manager_ptr++);
         let new_dict_manager_ptr = dict_manager_ptr;
         // New dict info
         assert dict_infos_start = *(dict_manager_ptr++);
-        tempvar new_n_dicts;
         const imm_1 = 1;
-        assert new_n_dicts = n_dicts + imm_1;
+        tempvar new_n_dicts = n_dicts + imm_1;
         assert new_n_dicts = *(dict_manager_ptr++);
         assert n_destructed = *(dict_manager_ptr++);
-        tempvar offset;
         const imm_3 = 3;
-        assert offset = n_dicts * imm_3;
-        tempvar new_dict_end_ptr;
-        assert new_dict_end_ptr = dict_infos_start + offset;
+        tempvar offset = n_dicts * imm_3;
+        tempvar new_dict_end_ptr = dict_infos_start + offset;
         let new_dict_end = *new_dict_end_ptr;
     };
     let CasmBuildResult { instructions, fallthrough_state, .. } = casm_builder.build();
