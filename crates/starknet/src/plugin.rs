@@ -13,9 +13,10 @@ use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::contract::starknet_keccak;
 
-pub static CONTRACT_ATTR: &str = "contract";
-pub static EXTERNAL_ATTR: &str = "external";
-pub static EXTERNAL_MODULE: &str = "__external";
+pub const CONTRACT_ATTR: &str = "contract";
+const EXTERNAL_ATTR: &str = "external";
+const VIEW_ATTR: &str = "view";
+pub const EXTERNAL_MODULE: &str = "__external";
 
 #[cfg(test)]
 #[path = "plugin_test.rs"]
@@ -63,11 +64,9 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     for item in body.items(db).elements(db) {
         match &item {
             ast::Item::FreeFunction(item_function)
-                if item_function
-                    .attributes(db)
-                    .elements(db)
-                    .iter()
-                    .any(|attr| attr.attr(db).text(db) == EXTERNAL_ATTR) =>
+                if item_function.attributes(db).elements(db).iter().any(|attr| {
+                    matches!(attr.attr(db).text(db).as_str(), EXTERNAL_ATTR | VIEW_ATTR)
+                }) =>
             {
                 {
                     // TODO(ilya): propagate the diagnostics in case of failure.
