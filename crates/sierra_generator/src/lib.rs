@@ -11,6 +11,7 @@ mod function_generator;
 #[cfg(any(feature = "testing", test))]
 pub mod function_generator_test_utils;
 mod id_allocator;
+mod lifetime;
 mod local_variables;
 mod next_statement_index_fetch;
 pub mod pre_sierra;
