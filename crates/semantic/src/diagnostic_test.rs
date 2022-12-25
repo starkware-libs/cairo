@@ -81,12 +81,13 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                 let mut builder = PatchBuilder::new(db);
                 let mut new_func = RewriteNode::from_ast(&func);
                 if matches!(
-                    func.signature(db).ret_ty(db),
+                    func.declaration(db).signature(db).ret_ty(db),
                     ast::OptionReturnTypeClause::ReturnTypeClause(_)
                 ) {
                     // Change the return type.
                     new_func
-                        .modify_child(db, ast::ItemFreeFunction::INDEX_SIGNATURE)
+                        .modify_child(db, ast::ItemFreeFunction::INDEX_DECLARATION)
+                        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
                         .modify_child(db, ast::FunctionSignature::INDEX_RET_TY)
                         .modify_child(db, ast::ReturnTypeClause::INDEX_TY)
                         .set_str("NewType".into());

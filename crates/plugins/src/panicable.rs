@@ -20,12 +20,15 @@ impl MacroPlugin for PanicablePlugin {
                 extern_func_ast.signature(db),
                 extern_func_ast.attributes(db),
             ),
-            ast::Item::FreeFunction(free_func_ast) => generate_panicable_code(
-                db,
-                free_func_ast.name(db),
-                free_func_ast.signature(db),
-                free_func_ast.attributes(db),
-            ),
+            ast::Item::FreeFunction(free_func_ast) => {
+                let declaration = free_func_ast.declaration(db);
+                generate_panicable_code(
+                    db,
+                    declaration.name(db),
+                    declaration.signature(db),
+                    free_func_ast.attributes(db),
+                )
+            }
             _ => PluginResult { code: None, diagnostics: vec![] },
         }
     }

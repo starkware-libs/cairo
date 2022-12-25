@@ -376,16 +376,11 @@ impl<'a> Parser<'a> {
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
         let signature = self.expect_function_signature();
+
+        let declaration =
+            FunctionDeclaration::new_green(self.db, function_kw, name, generic_params, signature);
         let function_body = self.parse_block();
-        ItemFreeFunction::new_green(
-            self.db,
-            attributes,
-            function_kw,
-            name,
-            generic_params,
-            signature,
-            function_body,
-        )
+        ItemFreeFunction::new_green(self.db, attributes, declaration, function_body)
     }
 
     /// Assumes the current token is Trait.
