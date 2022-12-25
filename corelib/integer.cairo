@@ -259,6 +259,28 @@ fn u256_ne(a: u256, b: u256) -> bool implicits() {
     !(a == b)
 }
 
+fn u256_lt(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
+    if a.high < b.high {
+        true
+    } else if a.high == b.high {
+        a.low < b.low
+    } else {
+        false
+    }
+}
+
+fn u256_le(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
+    !u256_lt(b, a)
+}
+
+fn u256_gt(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
+    u256_lt(b, a)
+}
+
+fn u256_ge(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
+    !u256_lt(a, b)
+}
+
 fn u256_and(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
     u256 { low: a.low & b.low, high: a.high & b.high }
 }
