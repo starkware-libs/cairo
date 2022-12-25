@@ -8,12 +8,12 @@ use defs::plugin::{
 };
 use indoc::indoc;
 use pretty_assertions::assert_eq;
+use syntax::node::ast;
 use syntax::node::db::SyntaxGroup;
-use syntax::node::{ast, TypedSyntaxNode};
 use test_log::test;
 
 use crate::db::SemanticGroup;
-use crate::patcher::{PatchBuilder, Patches};
+use crate::patcher::{PatchBuilder, Patches, RewriteNode};
 use crate::test_utils::{setup_test_crate, test_expr_diagnostics, SemanticDatabaseForTesting};
 use crate::{semantic_test, SemanticDiagnostic};
 
@@ -70,8 +70,20 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
         match item_ast {
             ast::Item::FreeFunction(func) => {
                 let mut builder = PatchBuilder::new(db);
+                let mut new_func = RewriteNode::from_ast(&func);
+                if matches!(
+                    func.signature(db).ret_ty(db),
+                    ast::OptionReturnTypeClause::ReturnTypeClause(_)
+                ) {
+                    new_func
+                        .modify_child(db, ast::ItemFreeFunction::INDEX_SIGNATURE)
+                        .modify_child(db, ast::FunctionSignature::INDEX_RET_TY)
+                        .modify_child(db, ast::ReturnTypeClause::INDEX_TY)
+                        .set_str("NewType".into());
+                }
                 builder.interpolate_patched(
                     indoc! {"
+                        extern type NewType;
                         mod inner_mod {{
                             // Comment.
                             // Comment.
@@ -79,7 +91,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                             $func$
                         }}
                     "},
-                    [("func".to_string(), func.as_syntax_node())].into(),
+                    [("func".to_string(), new_func)].into(),
                 );
 
                 PluginResult {

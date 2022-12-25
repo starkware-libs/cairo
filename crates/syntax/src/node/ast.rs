@@ -622,6 +622,7 @@ pub struct PathSegmentSimple {
     children: Vec<SyntaxNode>,
 }
 impl PathSegmentSimple {
+    pub const INDEX_IDENT: usize = 0;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         ident: TerminalIdentifierGreen,
@@ -689,6 +690,9 @@ pub struct PathSegmentWithGenericArgs {
     children: Vec<SyntaxNode>,
 }
 impl PathSegmentWithGenericArgs {
+    pub const INDEX_IDENT: usize = 0;
+    pub const INDEX_SEPARATOR: usize = 1;
+    pub const INDEX_GENERIC_ARGS: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         ident: TerminalIdentifierGreen,
@@ -846,6 +850,9 @@ pub struct ExprParenthesized {
     children: Vec<SyntaxNode>,
 }
 impl ExprParenthesized {
+    pub const INDEX_LPAREN: usize = 0;
+    pub const INDEX_EXPR: usize = 1;
+    pub const INDEX_RPAREN: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lparen: TerminalLParenGreen,
@@ -925,6 +932,8 @@ pub struct ExprUnary {
     children: Vec<SyntaxNode>,
 }
 impl ExprUnary {
+    pub const INDEX_OP: usize = 0;
+    pub const INDEX_EXPR: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         op: UnaryOperatorGreen,
@@ -1060,6 +1069,9 @@ pub struct ExprBinary {
     children: Vec<SyntaxNode>,
 }
 impl ExprBinary {
+    pub const INDEX_LHS: usize = 0;
+    pub const INDEX_OP: usize = 1;
+    pub const INDEX_RHS: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lhs: ExprGreen,
@@ -1404,6 +1416,9 @@ pub struct ExprTuple {
     children: Vec<SyntaxNode>,
 }
 impl ExprTuple {
+    pub const INDEX_LPAREN: usize = 0;
+    pub const INDEX_EXPRESSIONS: usize = 1;
+    pub const INDEX_RPAREN: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lparen: TerminalLParenGreen,
@@ -1483,6 +1498,8 @@ pub struct ExprFunctionCall {
     children: Vec<SyntaxNode>,
 }
 impl ExprFunctionCall {
+    pub const INDEX_PATH: usize = 0;
+    pub const INDEX_ARGUMENTS: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         path: ExprPathGreen,
@@ -1554,6 +1571,9 @@ pub struct ExprListParenthesized {
     children: Vec<SyntaxNode>,
 }
 impl ExprListParenthesized {
+    pub const INDEX_LPAREN: usize = 0;
+    pub const INDEX_EXPRESSIONS: usize = 1;
+    pub const INDEX_RPAREN: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lparen: TerminalLParenGreen,
@@ -1633,6 +1653,8 @@ pub struct ExprStructCtorCall {
     children: Vec<SyntaxNode>,
 }
 impl ExprStructCtorCall {
+    pub const INDEX_PATH: usize = 0;
+    pub const INDEX_ARGUMENTS: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         path: ExprPathGreen,
@@ -1704,6 +1726,9 @@ pub struct ExprBlock {
     children: Vec<SyntaxNode>,
 }
 impl ExprBlock {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_STATEMENTS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrace: TerminalLBraceGreen,
@@ -1783,6 +1808,11 @@ pub struct ExprMatch {
     children: Vec<SyntaxNode>,
 }
 impl ExprMatch {
+    pub const INDEX_MATCH_KW: usize = 0;
+    pub const INDEX_EXPR: usize = 1;
+    pub const INDEX_LBRACE: usize = 2;
+    pub const INDEX_ARMS: usize = 3;
+    pub const INDEX_RBRACE: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         match_kw: TerminalMatchGreen,
@@ -1950,6 +1980,9 @@ pub struct MatchArm {
     children: Vec<SyntaxNode>,
 }
 impl MatchArm {
+    pub const INDEX_PATTERN: usize = 0;
+    pub const INDEX_ARROW: usize = 1;
+    pub const INDEX_EXPRESSION: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         pattern: PatternGreen,
@@ -2029,6 +2062,10 @@ pub struct ExprIf {
     children: Vec<SyntaxNode>,
 }
 impl ExprIf {
+    pub const INDEX_IF_KW: usize = 0;
+    pub const INDEX_CONDITION: usize = 1;
+    pub const INDEX_IF_BLOCK: usize = 2;
+    pub const INDEX_ELSE_CLAUSE: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         if_kw: TerminalIfGreen,
@@ -2175,6 +2212,8 @@ pub struct ElseClause {
     children: Vec<SyntaxNode>,
 }
 impl ElseClause {
+    pub const INDEX_ELSE_KW: usize = 0;
+    pub const INDEX_ELSE_BLOCK_OR_IF: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         else_kw: TerminalElseGreen,
@@ -2372,6 +2411,8 @@ pub struct ExprErrorPropagate {
     children: Vec<SyntaxNode>,
 }
 impl ExprErrorPropagate {
+    pub const INDEX_EXPR: usize = 0;
+    pub const INDEX_OP: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         expr: ExprGreen,
@@ -2443,6 +2484,8 @@ pub struct StructArgExpr {
     children: Vec<SyntaxNode>,
 }
 impl StructArgExpr {
+    pub const INDEX_COLON: usize = 0;
+    pub const INDEX_EXPR: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         colon: TerminalColonGreen,
@@ -2640,6 +2683,8 @@ pub struct StructArgSingle {
     children: Vec<SyntaxNode>,
 }
 impl StructArgSingle {
+    pub const INDEX_IDENTIFIER: usize = 0;
+    pub const INDEX_ARG_EXPR: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         identifier: TerminalIdentifierGreen,
@@ -2722,6 +2767,8 @@ pub struct StructArgTail {
     children: Vec<SyntaxNode>,
 }
 impl StructArgTail {
+    pub const INDEX_DOTDOT: usize = 0;
+    pub const INDEX_EXPRESSION: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         dotdot: TerminalDotDotGreen,
@@ -2937,6 +2984,9 @@ pub struct ArgListBraced {
     children: Vec<SyntaxNode>,
 }
 impl ArgListBraced {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_ARGUMENTS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrace: TerminalLBraceGreen,
@@ -3164,6 +3214,8 @@ pub struct PatternIdentifier {
     children: Vec<SyntaxNode>,
 }
 impl PatternIdentifier {
+    pub const INDEX_MODIFIERS: usize = 0;
+    pub const INDEX_NAME: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         modifiers: ModifierListGreen,
@@ -3243,6 +3295,10 @@ pub struct PatternStruct {
     children: Vec<SyntaxNode>,
 }
 impl PatternStruct {
+    pub const INDEX_PATH: usize = 0;
+    pub const INDEX_LBRACE: usize = 1;
+    pub const INDEX_PARAMS: usize = 2;
+    pub const INDEX_RBRACE: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         path: ExprPathGreen,
@@ -3405,6 +3461,9 @@ pub struct PatternTuple {
     children: Vec<SyntaxNode>,
 }
 impl PatternTuple {
+    pub const INDEX_LPAREN: usize = 0;
+    pub const INDEX_PATTERNS: usize = 1;
+    pub const INDEX_RPAREN: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lparen: TerminalLParenGreen,
@@ -3646,6 +3705,9 @@ pub struct PatternStructParamWithExpr {
     children: Vec<SyntaxNode>,
 }
 impl PatternStructParamWithExpr {
+    pub const INDEX_NAME: usize = 0;
+    pub const INDEX_COLON: usize = 1;
+    pub const INDEX_PATTERN: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         name: TerminalIdentifierGreen,
@@ -3725,6 +3787,10 @@ pub struct PatternEnum {
     children: Vec<SyntaxNode>,
 }
 impl PatternEnum {
+    pub const INDEX_PATH: usize = 0;
+    pub const INDEX_LPAREN: usize = 1;
+    pub const INDEX_PATTERN: usize = 2;
+    pub const INDEX_RPAREN: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         path: ExprPathGreen,
@@ -3809,6 +3875,8 @@ pub struct TypeClause {
     children: Vec<SyntaxNode>,
 }
 impl TypeClause {
+    pub const INDEX_COLON: usize = 0;
+    pub const INDEX_TY: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         colon: TerminalColonGreen,
@@ -4006,6 +4074,8 @@ pub struct ReturnTypeClause {
     children: Vec<SyntaxNode>,
 }
 impl ReturnTypeClause {
+    pub const INDEX_ARROW: usize = 0;
+    pub const INDEX_TY: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         arrow: TerminalArrowGreen,
@@ -4404,6 +4474,12 @@ pub struct StatementLet {
     children: Vec<SyntaxNode>,
 }
 impl StatementLet {
+    pub const INDEX_LET_KW: usize = 0;
+    pub const INDEX_PATTERN: usize = 1;
+    pub const INDEX_TYPE_CLAUSE: usize = 2;
+    pub const INDEX_EQ: usize = 3;
+    pub const INDEX_RHS: usize = 4;
+    pub const INDEX_SEMICOLON: usize = 5;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         let_kw: TerminalLetGreen,
@@ -4633,6 +4709,8 @@ pub struct StatementExpr {
     children: Vec<SyntaxNode>,
 }
 impl StatementExpr {
+    pub const INDEX_EXPR: usize = 0;
+    pub const INDEX_SEMICOLON: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         expr: ExprGreen,
@@ -4704,6 +4782,9 @@ pub struct StatementReturn {
     children: Vec<SyntaxNode>,
 }
 impl StatementReturn {
+    pub const INDEX_RETURN_KW: usize = 0;
+    pub const INDEX_EXPR: usize = 1;
+    pub const INDEX_SEMICOLON: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         return_kw: TerminalReturnGreen,
@@ -4849,6 +4930,9 @@ pub struct Param {
     children: Vec<SyntaxNode>,
 }
 impl Param {
+    pub const INDEX_MODIFIERS: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_TYPE_CLAUSE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         modifiers: ModifierListGreen,
@@ -5128,6 +5212,10 @@ pub struct ImplicitsClause {
     children: Vec<SyntaxNode>,
 }
 impl ImplicitsClause {
+    pub const INDEX_IMPLICITS_KW: usize = 0;
+    pub const INDEX_LPAREN: usize = 1;
+    pub const INDEX_IMPLICITS: usize = 2;
+    pub const INDEX_RPAREN: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         implicits_kw: TerminalImplicitsGreen,
@@ -5542,6 +5630,12 @@ pub struct FunctionSignature {
     children: Vec<SyntaxNode>,
 }
 impl FunctionSignature {
+    pub const INDEX_LPAREN: usize = 0;
+    pub const INDEX_PARAMETERS: usize = 1;
+    pub const INDEX_RPAREN: usize = 2;
+    pub const INDEX_RET_TY: usize = 3;
+    pub const INDEX_IMPLICITS_CLAUSE: usize = 4;
+    pub const INDEX_OPTIONAL_NO_PANIC: usize = 5;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lparen: TerminalLParenGreen,
@@ -5643,6 +5737,8 @@ pub struct Member {
     children: Vec<SyntaxNode>,
 }
 impl Member {
+    pub const INDEX_NAME: usize = 0;
+    pub const INDEX_TYPE_CLAUSE: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         name: TerminalIdentifierGreen,
@@ -6011,6 +6107,11 @@ pub struct Attribute {
     children: Vec<SyntaxNode>,
 }
 impl Attribute {
+    pub const INDEX_HASH: usize = 0;
+    pub const INDEX_LBRACK: usize = 1;
+    pub const INDEX_ATTR: usize = 2;
+    pub const INDEX_ARGS: usize = 3;
+    pub const INDEX_RBRACK: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         hash: TerminalHashGreen,
@@ -6152,6 +6253,10 @@ pub struct ItemModule {
     children: Vec<SyntaxNode>,
 }
 impl ItemModule {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_MODULE_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_BODY: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
@@ -6310,6 +6415,9 @@ pub struct ModuleBody {
     children: Vec<SyntaxNode>,
 }
 impl ModuleBody {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_ITEMS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrace: TerminalLBraceGreen,
@@ -6515,6 +6623,9 @@ pub struct AttributeArgs {
     children: Vec<SyntaxNode>,
 }
 impl AttributeArgs {
+    pub const INDEX_LPAREN: usize = 0;
+    pub const INDEX_ARG_LIST: usize = 1;
+    pub const INDEX_RANGLE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lparen: TerminalLParenGreen,
@@ -6672,6 +6783,12 @@ pub struct ItemFreeFunction {
     children: Vec<SyntaxNode>,
 }
 impl ItemFreeFunction {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_FUNCTION_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_SIGNATURE: usize = 4;
+    pub const INDEX_BODY: usize = 5;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
@@ -6775,6 +6892,13 @@ pub struct ItemExternFunction {
     children: Vec<SyntaxNode>,
 }
 impl ItemExternFunction {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_EXTERN_KW: usize = 1;
+    pub const INDEX_FUNCTION_KW: usize = 2;
+    pub const INDEX_NAME: usize = 3;
+    pub const INDEX_GENERIC_PARAMS: usize = 4;
+    pub const INDEX_SIGNATURE: usize = 5;
+    pub const INDEX_SEMICOLON: usize = 6;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
@@ -6890,6 +7014,11 @@ pub struct ItemExternType {
     children: Vec<SyntaxNode>,
 }
 impl ItemExternType {
+    pub const INDEX_EXTERN_KW: usize = 0;
+    pub const INDEX_TYPE_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_SEMICOLON: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         extern_kw: TerminalExternGreen,
@@ -6988,6 +7117,11 @@ pub struct ItemTrait {
     children: Vec<SyntaxNode>,
 }
 impl ItemTrait {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_TRAIT_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_BODY: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
@@ -7152,6 +7286,9 @@ pub struct TraitBody {
     children: Vec<SyntaxNode>,
 }
 impl TraitBody {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_ITEMS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrace: TerminalLBraceGreen,
@@ -7334,6 +7471,12 @@ pub struct TraitItemFunction {
     children: Vec<SyntaxNode>,
 }
 impl TraitItemFunction {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_FUNCTION_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_SIGNATURE: usize = 4;
+    pub const INDEX_SEMICOLON: usize = 5;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
@@ -7437,6 +7580,13 @@ pub struct ItemImpl {
     children: Vec<SyntaxNode>,
 }
 impl ItemImpl {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_IMPL_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_OF_KW: usize = 4;
+    pub const INDEX_TRAIT_PATH: usize = 5;
+    pub const INDEX_BODY: usize = 6;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
@@ -7609,6 +7759,9 @@ pub struct ImplBody {
     children: Vec<SyntaxNode>,
 }
 impl ImplBody {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_ITEMS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrace: TerminalLBraceGreen,
@@ -7688,6 +7841,13 @@ pub struct ItemStruct {
     children: Vec<SyntaxNode>,
 }
 impl ItemStruct {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_STRUCT_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_LBRACE: usize = 4;
+    pub const INDEX_MEMBERS: usize = 5;
+    pub const INDEX_RBRACE: usize = 6;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
@@ -7803,6 +7963,13 @@ pub struct ItemEnum {
     children: Vec<SyntaxNode>,
 }
 impl ItemEnum {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_ENUM_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_LBRACE: usize = 4;
+    pub const INDEX_VARIANTS: usize = 5;
+    pub const INDEX_RBRACE: usize = 6;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
@@ -7911,6 +8078,10 @@ pub struct ItemUse {
     children: Vec<SyntaxNode>,
 }
 impl ItemUse {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_USE_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_SEMICOLON: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
@@ -8003,6 +8174,9 @@ pub struct GenericArgs {
     children: Vec<SyntaxNode>,
 }
 impl GenericArgs {
+    pub const INDEX_LANGLE: usize = 0;
+    pub const INDEX_GENERIC_ARGS: usize = 1;
+    pub const INDEX_RANGLE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         langle: TerminalLTGreen,
@@ -8288,6 +8462,9 @@ pub struct WrappedGenericParamList {
     children: Vec<SyntaxNode>,
 }
 impl WrappedGenericParamList {
+    pub const INDEX_LANGLE: usize = 0;
+    pub const INDEX_GENERIC_PARAMS: usize = 1;
+    pub const INDEX_RANGLE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         langle: TerminalLTGreen,
@@ -8445,6 +8622,7 @@ pub struct GenericParam {
     children: Vec<SyntaxNode>,
 }
 impl GenericParam {
+    pub const INDEX_NAME: usize = 0;
     pub fn new_green(db: &dyn SyntaxGroup, name: TerminalIdentifierGreen) -> GenericParamGreen {
         let children: Vec<GreenId> = vec![name.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
@@ -17120,6 +17298,8 @@ pub struct SyntaxFile {
     children: Vec<SyntaxNode>,
 }
 impl SyntaxFile {
+    pub const INDEX_ITEMS: usize = 0;
+    pub const INDEX_EOF: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         items: ItemListGreen,
