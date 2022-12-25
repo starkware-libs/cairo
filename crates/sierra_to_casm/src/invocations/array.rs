@@ -64,10 +64,8 @@ fn build_array_append(
             ReferenceValue { expression: expr_arr, .. },
             ReferenceValue { expression: expr_elem, .. },
         ] => {
-            let [start, end] = &expr_arr.cells[..] else {
-                return Err(InvocationError::InvalidReferenceExpressionForArgument);
-            };
-            ((start.to_buffer(0)?, end.to_buffer(expr_elem.cells.len() as i16)?), expr_elem)
+            let [arr_start, arr_end] = expr_arr.try_unpack::<2>()?;
+            ((arr_start.to_buffer(0)?, arr_end.to_buffer(expr_elem.cells.len() as i16)?), expr_elem)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
@@ -114,18 +112,11 @@ fn build_array_at(
             ReferenceValue { expression: expr_arr, .. },
             ReferenceValue { expression: expr_index, .. },
         ] => {
-            let [start, end] = &expr_arr.cells[..] else {
-                return Err(InvocationError::InvalidReferenceExpressionForArgument);
-            };
-            let index_deref_or_imm = match expr_index.try_unpack_single()? {
-                CellExpression::Deref(op) => DerefOrImmediate::Deref(op),
-                CellExpression::Immediate(op) => DerefOrImmediate::from(op),
-                _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-            };
+            let [arr_start, arr_end] = expr_arr.try_unpack::<2>()?;
             (
                 expr_range_check.try_unpack_single()?.to_deref()?,
-                (start.to_deref()?, end.to_deref()?),
-                index_deref_or_imm,
+                (arr_start.to_deref()?, arr_end.to_deref()?),
+                expr_index.try_unpack_single()?.to_deref_of_immediate()?,
             )
         }
         refs => {
@@ -260,10 +251,8 @@ fn build_array_len(
 ) -> Result<CompiledInvocation, InvocationError> {
     let (arr_start, arr_end) = match builder.refs {
         [ReferenceValue { expression: expr_arr, .. }] => {
-            let [start, end] = &expr_arr.cells[..] else {
-                return Err(InvocationError::InvalidReferenceExpressionForArgument);
-            };
-            (start.to_deref()?, end.to_deref()?)
+            let [arr_start, arr_end] = expr_arr.try_unpack::<2>()?;
+            (arr_start.to_deref()?, arr_end.to_deref()?)
         }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {

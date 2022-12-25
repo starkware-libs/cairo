@@ -44,8 +44,10 @@ fn build_felt_unary_op(
     builder: CompiledInvocationBuilder<'_>,
     op: FeltUnaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let expr = match builder.refs {
-        [ReferenceValue { expression: expr, .. }] => expr,
+    let a = match builder.refs {
+        [ReferenceValue { expression: expr, .. }] => {
+            expr.try_unpack_single()?.to_deref_of_immediate()?
+        }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 1,
@@ -53,19 +55,9 @@ fn build_felt_unary_op(
             });
         }
     };
-    let cell = expr
-        .try_unpack_single()
-        .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-    let expression = UnaryOpExpression {
-        op,
-        a: match cell {
-            CellExpression::Deref(a) => DerefOrImmediate::Deref(a),
-            CellExpression::Immediate(a) => DerefOrImmediate::Immediate(a),
-            _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-        },
-    };
     Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::UnaryOp(expression))].into_iter(),
+        [ReferenceExpression::from_cell(CellExpression::UnaryOp(UnaryOpExpression { op, a }))]
+            .into_iter(),
     ))
 }
 
@@ -74,10 +66,11 @@ fn build_felt_op(
     builder: CompiledInvocationBuilder<'_>,
     op: FeltBinaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let (expr_a, expr_b) = match builder.refs {
-        [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
-            (expr_a, expr_b)
-        }
+    let (a, b) = match builder.refs {
+        [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => (
+            expr_a.try_unpack_single()?.to_deref()?,
+            expr_b.try_unpack_single()?.to_deref_of_immediate()?,
+        ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 2,
@@ -85,23 +78,9 @@ fn build_felt_op(
             });
         }
     };
-    let cell_a = expr_a
-        .try_unpack_single()
-        .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-    let cell_b = expr_b
-        .try_unpack_single()
-        .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-    let bin_expression = match (cell_a, cell_b) {
-        (CellExpression::Deref(a), CellExpression::Deref(b)) => {
-            BinOpExpression { op, a, b: DerefOrImmediate::Deref(b) }
-        }
-        (CellExpression::Deref(a), CellExpression::Immediate(b)) => {
-            BinOpExpression { op, a, b: DerefOrImmediate::Immediate(b) }
-        }
-        _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-    };
     Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::BinOp(bin_expression))].into_iter(),
+        [ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression { op, a, b }))]
+            .into_iter(),
     ))
 }
 
@@ -111,8 +90,8 @@ fn build_felt_op_with_const(
     op: FeltBinaryOperator,
     c: BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let expr = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression,
+    let a = match builder.refs {
+        [ReferenceValue { expression, .. }] => expression.try_unpack_single()?.to_deref()?,
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 1,
@@ -120,15 +99,12 @@ fn build_felt_op_with_const(
             });
         }
     };
-    let cell_expr = expr
-        .try_unpack_single()
-        .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-    let ref_expression = if let CellExpression::Deref(a) = cell_expr {
-        BinOpExpression { op, a, b: DerefOrImmediate::Immediate(c) }
-    } else {
-        return Err(InvocationError::InvalidReferenceExpressionForArgument);
-    };
     Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::BinOp(ref_expression))].into_iter(),
+        [ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
+            op,
+            a,
+            b: DerefOrImmediate::Immediate(c),
+        }))]
+        .into_iter(),
     ))
 }
