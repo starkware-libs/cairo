@@ -116,6 +116,13 @@ use box::Box;
 use box::into_box;
 use box::unbox;
 
+// Nullable
+mod nullable;
+use nullable::Nullable;
+use nullable::null;
+use nullable::into_nullable;
+use nullable::from_nullable;
+
 // Arrays.
 mod array;
 use array::Array;
@@ -164,6 +171,7 @@ use integer::u256_and;
 use integer::u256_or;
 use integer::u256_xor;
 use integer::u256_from_felt;
+use integer::Bitwise;
 
 // Gas.
 mod gas;

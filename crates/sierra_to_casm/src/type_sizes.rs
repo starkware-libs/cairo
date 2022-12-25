@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use sierra::extensions::core::{CoreLibFunc, CoreType, CoreTypeConcrete};
-use sierra::extensions::non_zero::NonZeroConcreteType;
 use sierra::extensions::starknet::StarkNetTypeConcrete;
+use sierra::extensions::types::InfoAndTypeConcreteType;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::Program;
 use sierra::program_registry::ProgramRegistry;
@@ -22,17 +22,18 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::GasBuiltin(_)
             | CoreTypeConcrete::Bitwise(_)
             | CoreTypeConcrete::BuiltinCosts(_)
+            | CoreTypeConcrete::Nullable(_)
             | CoreTypeConcrete::Uint128(_)
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
-            | CoreTypeConcrete::Pedersen(_) => Some(1),
-            CoreTypeConcrete::Array(_)
+            | CoreTypeConcrete::Pedersen(_)
             | CoreTypeConcrete::DictFeltTo(_)
-            | CoreTypeConcrete::SquashedDictFeltTo(_) => Some(2),
-            CoreTypeConcrete::NonZero(NonZeroConcreteType { ty, .. }) => {
+            | CoreTypeConcrete::DictManager(_) => Some(1),
+            CoreTypeConcrete::Array(_) | CoreTypeConcrete::SquashedDictFeltTo(_) => Some(2),
+            CoreTypeConcrete::NonZero(InfoAndTypeConcreteType { ty, .. }) => {
                 type_sizes.get(ty).cloned()
             }
             CoreTypeConcrete::Enum(enum_type) => {

@@ -16,6 +16,7 @@ use sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use sierra::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
+use sierra::extensions::nullable::NullableConcreteLibFunc;
 use sierra::extensions::strct::StructConcreteLibFunc;
 use sierra::extensions::uint128::{IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc};
 use sierra::program::Function;
@@ -88,7 +89,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             vec![ops.const_cost(0)]
         }
         DictFeltTo(DictFeltToConcreteLibFunc::New(_)) => {
-            vec![ops.const_cost(1)]
+            vec![ops.const_cost(7)]
         }
         DictFeltTo(DictFeltToConcreteLibFunc::Read(_)) => {
             vec![ops.const_cost(4)]
@@ -116,6 +117,10 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             ]
         }
         CoreConcreteLibFunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
+        CoreConcreteLibFunc::Nullable(libfunc) => match libfunc {
+            NullableConcreteLibFunc::Null(_) => vec![ops.const_cost(0)],
+            NullableConcreteLibFunc::IntoNullable(_) => vec![ops.const_cost(0)],
+        },
     }
 }
 

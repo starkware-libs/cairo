@@ -33,10 +33,15 @@ pub struct PatchBuilder {
     pub patches: Patches,
 }
 impl PatchBuilder {
-    fn add_char(&mut self, c: char) {
+    pub fn add_char(&mut self, c: char) {
         self.code.push(c);
     }
-    fn add_node(&mut self, db: &dyn SyntaxGroup, node: SyntaxNode) {
+
+    pub fn add_str(&mut self, s: &str) {
+        self.code += s;
+    }
+
+    pub fn add_node(&mut self, db: &dyn SyntaxGroup, node: SyntaxNode) {
         let orig_span = node.span(db);
         let start = TextOffset(self.code.len());
         self.patches.patches.push(Patch {
@@ -45,42 +50,41 @@ impl PatchBuilder {
         });
         self.code += node.get_text(db).as_str();
     }
-}
 
-/// Interpolare a string with patches.
-/// Each substring of the form `$<name>$` is replaced with syntax nodes from `replaces`.
-/// The `$$` substring is replaced with `$`.
-pub fn interpolate_patched(
-    db: &dyn SyntaxGroup,
-    code: &str,
-    replaces: HashMap<String, SyntaxNode>,
-) -> PatchBuilder {
-    let mut builder = PatchBuilder::default();
-    let mut chars = code.chars().peekable();
-    while let Some(c) = chars.next() {
-        if c != '$' {
-            builder.add_char(c);
-            continue;
-        }
-
-        // An opening $ was detected.
-        let mut name = String::new();
-        for d in chars.by_ref() {
-            if d == '$' {
-                break;
+    /// Interpolates a string with patches.
+    /// Each substring of the form `$<name>$` is replaced with syntax nodes from `replaces`.
+    /// The `$$` substring is replaced with `$`.
+    pub fn interpolate_patched(
+        &mut self,
+        db: &dyn SyntaxGroup,
+        code: &str,
+        replaces: HashMap<String, SyntaxNode>,
+    ) {
+        let mut chars = code.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c != '$' {
+                self.add_char(c);
+                continue;
             }
-            name.push(d);
-        }
 
-        // A closing $ was found.
-        // If the string between the `$` is empty, push a single `$` to the output.
-        if name.is_empty() {
-            builder.add_char('$');
-            continue;
-        }
+            // An opening $ was detected.
+            let mut name = String::new();
+            for d in chars.by_ref() {
+                if d == '$' {
+                    break;
+                }
+                name.push(d);
+            }
 
-        // Replace the substring with a syntax node.
-        builder.add_node(db, replaces[&name].clone());
+            // A closing $ was found.
+            // If the string between the `$` is empty, push a single `$` to the output.
+            if name.is_empty() {
+                self.add_char('$');
+                continue;
+            }
+
+            // Replace the substring with a syntax node.
+            self.add_node(db, replaces[&name].clone());
+        }
     }
-    builder
 }

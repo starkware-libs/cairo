@@ -38,7 +38,7 @@ edition = "2021"
 anyhow = "1.0.66"
 assert_matches = "1.5"
 bimap = "0.6.2"
-cairo-rs = { git = "https://github.com/lambdaclass/cairo-rs", rev="3a2dead" }
+cairo-rs = { git = "https://github.com/lambdaclass/cairo-rs", rev="42dadd1" }
 chrono = "0.4.23"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"
