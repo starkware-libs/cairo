@@ -21,3 +21,8 @@ semantic_test!(
 );
 semantic_test!(struct_diagnostics_tests, ["src/items/tests/struct"], test_function_diagnostics);
 semantic_test!(trait_diagnostics_tests, ["src/items/tests/trait"], test_function_diagnostics);
+semantic_test!(
+    type_alias_diagnostics_tests,
+    ["src/items/tests/type_alias"],
+    test_function_diagnostics
+);
