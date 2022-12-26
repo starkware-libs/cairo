@@ -368,7 +368,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
                 format!("`{}` is not allowed inside impl.", item_kw)
             }
-            SemanticDiagnosticKind::PassPanicAsNonpanic { impl_function_id, trait_id } => {
+            SemanticDiagnosticKind::PassPanicAsNopanic { impl_function_id, trait_id } => {
                 let name = impl_function_id.name(db.upcast());
                 let trait_name = trait_id.name(db.upcast());
                 format!(
@@ -574,7 +574,7 @@ pub enum SemanticDiagnosticKind {
     InvalidImplItem {
         item_kw: SmolStr,
     },
-    PassPanicAsNonpanic {
+    PassPanicAsNopanic {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
