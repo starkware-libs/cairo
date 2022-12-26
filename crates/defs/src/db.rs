@@ -386,6 +386,10 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleItems> {
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Enum(*enum_id)
             )),
+            module_data.type_aliases.iter().map(|(type_alias_id, syntax)| (
+                syntax.name(syntax_db).text(syntax_db),
+                ModuleItemId::TypeAlias(*type_alias_id)
+            )),
             module_data.traits.iter().map(|(trait_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Trait(*trait_id)
