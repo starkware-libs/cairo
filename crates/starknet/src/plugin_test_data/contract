@@ -10,14 +10,12 @@ fn internal_func(ref system: System) -> felt {
     1
 }
 
-#[external]
-fn ext_test(ref system: System, ref arg: felt, num: felt) -> felt {
+#[view]
+fn get_something(ref system: System, ref arg: felt, num: felt) -> felt {
     1
 }
-
-#[view]
-fn view_test(ref system: System, ref arg: felt, num: felt) -> felt {
-    1
+#[external]
+fn set_something(ref system: System, ref arg: felt, num: felt) {
 }
 }
 
@@ -27,17 +25,15 @@ mod __generated__TestContract {
         1
     }
 
-    #[external]
-    fn ext_test(ref system: System, ref arg: felt, num: felt) -> felt {
+    #[view]
+    fn get_something(ref system: System, ref arg: felt, num: felt) -> felt {
         1
     }
-
-    #[view]
-    fn view_test(ref system: System, ref arg: felt, num: felt) -> felt {
-        1
+    #[external]
+    fn set_something(ref system: System, ref arg: felt, num: felt) {
     }
     mod __external {
-        fn ext_test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+        fn get_something(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -58,13 +54,13 @@ mod __generated__TestContract {
                 Option::Some(x) => x,
                 Option::None(()) => panic(array::array_new::<felt>()),
             };
-            let res = super::ext_test(system, __arg_arg, __arg_num);
+            let res = super::get_something(system, __arg_arg, __arg_num);
             let mut arr = array::array_new::<felt>();
             array::array_append::<felt>(arr, __arg_arg);
             array::array_append::<felt>(arr, res);
             arr
         }
-        fn view_test(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+        fn set_something(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -85,10 +81,9 @@ mod __generated__TestContract {
                 Option::Some(x) => x,
                 Option::None(()) => panic(array::array_new::<felt>()),
             };
-            let res = super::view_test(system, __arg_arg, __arg_num);
+            super::set_something(system, __arg_arg, __arg_num);
             let mut arr = array::array_new::<felt>();
             array::array_append::<felt>(arr, __arg_arg);
-            array::array_append::<felt>(arr, res);
             arr
         }
     }

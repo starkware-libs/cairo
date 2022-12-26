@@ -6,7 +6,9 @@ use defs::plugin::{
 };
 use genco::prelude::*;
 use itertools::join;
-use syntax::node::ast::{ItemFreeFunction, MaybeModuleBody, Modifier, Param};
+use syntax::node::ast::{
+    ItemFreeFunction, MaybeModuleBody, Modifier, OptionReturnTypeClause, Param,
+};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -197,6 +199,13 @@ fn generate_entry_point_wrapper(
     let wrapped_name = format!("super::{function_name}");
     let oog_err = "'OOG'";
 
+    let (let_res, append_res) = match sig.ret_ty(db) {
+        OptionReturnTypeClause::Empty(_) => ("", ""),
+        OptionReturnTypeClause::ReturnTypeClause(_) => {
+            ("let res = ", "array::array_append::<felt>(arr, res);")
+        }
+    };
+
     Some(quote! {
         fn $function_name(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
@@ -213,10 +222,10 @@ fn generate_entry_point_wrapper(
                 panic(array::array_new::<felt>());
             }
             $arg_definitions
-            let res = $wrapped_name(system, $param_names_tokens);
+            $let_res $wrapped_name(system, $param_names_tokens);
             let mut arr = array::array_new::<felt>();
             $ref_appends
-            array::array_append::<felt>(arr, res);
+            $append_res
             arr
         }
     })
