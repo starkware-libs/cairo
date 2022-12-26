@@ -2547,5 +2547,32 @@
     "L1_HANDLER": [],
     "CONSTRUCTOR": []
   },
-  "abi": []
+  "abi": [
+    {
+      "type": "function",
+      "name": "increase_balance",
+      "inputs": [
+        {
+          "name": "system",
+          "ty": "core::starknet::System"
+        },
+        {
+          "name": "amount",
+          "ty": "core::felt"
+        }
+      ],
+      "output_ty": "()"
+    },
+    {
+      "type": "function",
+      "name": "get_balance",
+      "inputs": [
+        {
+          "name": "system",
+          "ty": "core::starknet::System"
+        }
+      ],
+      "output_ty": "core::felt"
+    }
+  ]
 }
