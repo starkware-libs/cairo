@@ -6,34 +6,34 @@ test_expand_contract
 //! > cairo_code
 #[contract]
 mod TestContract {
-fn internal_func(ref system: System) -> felt {
-    1
-}
-
-#[view]
-fn get_something(ref system: System, ref arg: felt, num: felt) -> felt {
-    1
-}
-#[external]
-fn set_something(ref system: System, ref arg: felt, num: felt) {
-}
-}
-
-//! > generated_cairo_code
-mod __generated__TestContract {
-    fn internal_func(ref system: System) -> felt {
+    fn internal_func() -> felt {
         1
     }
 
     #[view]
-    fn get_something(ref system: System, ref arg: felt, num: felt) -> felt {
+    fn get_something(ref arg: felt, num: felt) -> felt {
         1
     }
     #[external]
-    fn set_something(ref system: System, ref arg: felt, num: felt) {
+    fn set_something(ref arg: felt, num: felt) {
+    }
+}
+
+//! > generated_cairo_code
+mod __generated__TestContract {
+    fn internal_func() -> felt {
+        1
+    }
+
+    #[view]
+    fn get_something(ref arg: felt, num: felt) -> felt {
+        1
+    }
+    #[external]
+    fn set_something(ref arg: felt, num: felt) {
     }
     mod __external {
-        fn get_something(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+        fn get_something(mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -43,7 +43,7 @@ mod __generated__TestContract {
                     panic(data);
                 },
             }
-            if array::array_len::<felt>(data) != 3_u128 {
+            if array::array_len::<felt>(data) != 2_u128 {
                 panic(array::array_new::<felt>());
             }
             let mut __arg_arg: felt = match array::array_at::<felt>(data, 0_u128) {
@@ -54,13 +54,13 @@ mod __generated__TestContract {
                 Option::Some(x) => x,
                 Option::None(()) => panic(array::array_new::<felt>()),
             };
-            let res = super::get_something(system, __arg_arg, __arg_num);
+            let res = super::get_something(__arg_arg, __arg_num);
             let mut arr = array::array_new::<felt>();
             array::array_append::<felt>(arr, __arg_arg);
             array::array_append::<felt>(arr, res);
             arr
         }
-        fn set_something(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+        fn set_something(mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -70,7 +70,7 @@ mod __generated__TestContract {
                     panic(data);
                 },
             }
-            if array::array_len::<felt>(data) != 3_u128 {
+            if array::array_len::<felt>(data) != 2_u128 {
                 panic(array::array_new::<felt>());
             }
             let mut __arg_arg: felt = match array::array_at::<felt>(data, 0_u128) {
@@ -81,7 +81,7 @@ mod __generated__TestContract {
                 Option::Some(x) => x,
                 Option::None(()) => panic(array::array_new::<felt>()),
             };
-            super::set_something(system, __arg_arg, __arg_num);
+            super::set_something(__arg_arg, __arg_num);
             let mut arr = array::array_new::<felt>();
             array::array_append::<felt>(arr, __arg_arg);
             arr
