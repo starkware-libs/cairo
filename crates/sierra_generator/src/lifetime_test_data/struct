@@ -1,0 +1,56 @@
+//! > Test variable lifetime for structs
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: MyStruct) -> MyStruct {
+    let s = MyStruct{ a: x.a, b: x.b };
+    let w = MyStruct{ a: s.a, b: s.b };
+    MyStruct{ a: 10, b: 20 }
+}
+
+//! > module_code
+#[derive(Copy)]
+struct MyStruct {
+    a: felt,
+    b: felt,
+}
+
+//! > lowering_format
+blk0 (root):
+Inputs: v0: test::MyStruct
+Statements:
+  (v1: core::felt, v2: core::felt) <- struct_destructure(v0)
+  (v3: core::felt, v4: core::felt) <- struct_destructure(v0)
+  (v5: test::MyStruct) <- struct_construct(v1, v4)
+  (v6: core::felt, v7: core::felt) <- struct_destructure(v5)
+  (v8: core::felt, v9: core::felt) <- struct_destructure(v5)
+  (v10: test::MyStruct) <- struct_construct(v6, v9)
+  (v11: core::felt) <- 10u
+  (v12: core::felt) <- 20u
+  (v13: test::MyStruct) <- struct_construct(v11, v12)
+Drops: v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12
+End:
+  Callsite(v13)
+
+//! > last_use
+v13: [(Id { idx: 0 }, 9)]
+v11: [(Id { idx: 0 }, 8)]
+v12: [(Id { idx: 0 }, 8)]
+v6: [(Id { idx: 0 }, 5)]
+v9: [(Id { idx: 0 }, 5)]
+v5: [(Id { idx: 0 }, 4)]
+v1: [(Id { idx: 0 }, 2)]
+v4: [(Id { idx: 0 }, 2)]
+v0: [(Id { idx: 0 }, 1)]
+
+//! > drops
+v10: [PostStatement((Id { idx: 0 }, 5))]
+v8: [PostStatement((Id { idx: 0 }, 4))]
+v7: [PostStatement((Id { idx: 0 }, 3))]
+v3: [PostStatement((Id { idx: 0 }, 1))]
+v2: [PostStatement((Id { idx: 0 }, 0))]
