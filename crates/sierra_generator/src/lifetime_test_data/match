@@ -1,0 +1,279 @@
+//! > Last use in one branch
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt, y: felt) -> felt {
+    if x == 0 { y } else { 0 }
+}
+
+//! > module_code
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite(v1)
+
+blk1:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+  (v3: core::felt) <- 0u
+Drops: v2, v1
+End:
+  Callsite(v3)
+
+blk2 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v4: core::felt) <- match core::felt_jump_nz(v0) {
+    () => blk0,
+    (v2) => blk1,
+  }
+Drops: v0, v1
+End:
+  Callsite(v4)
+
+//! > last_use
+v4: [(Id { idx: 2 }, 1)]
+v1: [(Id { idx: 0 }, 0)]
+v3: [(Id { idx: 1 }, 1)]
+v0: [(Id { idx: 2 }, 0)]
+
+//! > drops
+v2: [BeginningOfBlock(Id { idx: 1 })]
+v1: [BeginningOfBlock(Id { idx: 1 })]
+
+//! > ==========================================================================
+
+//! > Last use after branch
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt, y: felt) -> felt {
+    let z = if x == 0 { y } else { 0 };
+    y
+}
+
+//! > module_code
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite(v1)
+
+blk1:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+  (v3: core::felt) <- 0u
+Drops: v2, v1
+End:
+  Callsite(v3)
+
+blk2 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v4: core::felt) <- match core::felt_jump_nz(v0) {
+    () => blk0,
+    (v2) => blk1,
+  }
+Drops: v0, v4
+End:
+  Callsite(v1)
+
+//! > last_use
+v1: [(Id { idx: 2 }, 1)]
+v3: [(Id { idx: 1 }, 1)]
+v0: [(Id { idx: 2 }, 0)]
+
+//! > drops
+v4: [PostStatement((Id { idx: 2 }, 0))]
+v2: [BeginningOfBlock(Id { idx: 1 })]
+
+//! > ==========================================================================
+
+//! > Last use in both branches
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt, y: felt) {
+    let z = if x == 0 { y } else { y + 3 };
+}
+
+//! > module_code
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite(v1)
+
+blk1:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+  (v3: core::felt) <- 3u
+  (v4: core::felt) <- core::felt_add(v1, v3)
+Drops: v2, v1, v3
+End:
+  Callsite(v4)
+
+blk2 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v5: core::felt) <- match core::felt_jump_nz(v0) {
+    () => blk0,
+    (v2) => blk1,
+  }
+  (v6: ()) <- struct_construct()
+Drops: v0, v1, v5
+End:
+  Callsite(v6)
+
+//! > last_use
+v6: [(Id { idx: 2 }, 2)]
+v1: [(Id { idx: 0 }, 0), (Id { idx: 1 }, 1)]
+v4: [(Id { idx: 1 }, 2)]
+v3: [(Id { idx: 1 }, 1)]
+v0: [(Id { idx: 2 }, 0)]
+
+//! > drops
+v5: [PostStatement((Id { idx: 2 }, 0))]
+v2: [BeginningOfBlock(Id { idx: 1 })]
+
+//! > ==========================================================================
+
+//! > Nested ifs
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt, y: felt) {
+    let z = if x == 0 {
+        y
+    } else {
+        if x == 1 {
+            if x == y {
+                y
+            } else {
+                1234
+            }
+        } else {
+            1000
+        }
+    };
+}
+
+//! > module_code
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite(v1)
+
+blk1:
+Inputs: v6: core::NonZero::<core::felt>
+Statements:
+  (v7: core::felt) <- 1234u
+Drops: v6, v1
+End:
+  Callsite(v7)
+
+blk2:
+Inputs:
+Statements:
+  (v5: core::felt) <- core::felt_sub(v0, v1)
+  (v8: core::felt) <- match core::felt_jump_nz(v5) {
+    () => blk0,
+    (v6) => blk1,
+  }
+Drops: v5
+End:
+  Callsite(v8)
+
+blk3:
+Inputs: v9: core::NonZero::<core::felt>
+Statements:
+  (v10: core::felt) <- 1000u
+Drops: v9
+End:
+  Callsite(v10)
+
+blk4:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite(v1)
+
+blk5:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+  (v3: core::felt) <- 1u
+  (v4: core::felt) <- core::felt_sub(v0, v3)
+  (v11: core::felt) <- match core::felt_jump_nz(v4) {
+    () => blk2,
+    (v9) => blk3,
+  }
+Drops: v2, v1, v3, v4
+End:
+  Callsite(v11)
+
+blk6 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v12: core::felt) <- match core::felt_jump_nz(v0) {
+    () => blk4,
+    (v2) => blk5,
+  }
+  (v13: ()) <- struct_construct()
+Drops: v0, v1, v12
+End:
+  Callsite(v13)
+
+//! > last_use
+v13: [(Id { idx: 6 }, 2)]
+v1: [(Id { idx: 4 }, 0), (Id { idx: 0 }, 0)]
+v11: [(Id { idx: 5 }, 3)]
+v8: [(Id { idx: 2 }, 2)]
+v7: [(Id { idx: 1 }, 1)]
+v5: [(Id { idx: 2 }, 1)]
+v0: [(Id { idx: 2 }, 0)]
+v10: [(Id { idx: 3 }, 1)]
+v4: [(Id { idx: 5 }, 2)]
+v3: [(Id { idx: 5 }, 1)]
+
+//! > drops
+v12: [PostStatement((Id { idx: 6 }, 0))]
+v6: [BeginningOfBlock(Id { idx: 1 })]
+v1: [BeginningOfBlock(Id { idx: 1 }), BeginningOfBlock(Id { idx: 3 })]
+v9: [BeginningOfBlock(Id { idx: 3 })]
+v0: [BeginningOfBlock(Id { idx: 3 }), BeginningOfBlock(Id { idx: 4 })]
+v2: [BeginningOfBlock(Id { idx: 5 })]
