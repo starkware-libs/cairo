@@ -175,20 +175,22 @@ pub fn priv_trait_function_data(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Maybe<TraitFunctionData> {
+    let syntax_db = db.upcast();
     let module_file_id = trait_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_semantic_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
+    let declaration = function_syntax.declaration(syntax_db);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         module_file_id,
-        &function_syntax.generic_params(db.upcast()),
+        &declaration.generic_params(syntax_db),
     );
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
-    let syntax_db = db.upcast();
-    let signature_syntax = function_syntax.signature(syntax_db);
+
+    let signature_syntax = declaration.signature(syntax_db);
     let mut environment = Environment::default();
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,

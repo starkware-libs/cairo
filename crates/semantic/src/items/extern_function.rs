@@ -90,19 +90,21 @@ pub fn priv_extern_function_declaration_data(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
 ) -> Maybe<ExternFunctionDeclarationData> {
+    let syntax_db = db.upcast();
     let module_file_id = extern_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_data = db.module_data(module_file_id.0)?;
     let function_syntax = module_data.extern_functions.get(&extern_function_id).to_maybe()?;
+    let declaration = function_syntax.declaration(syntax_db);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         module_file_id,
-        &function_syntax.generic_params(db.upcast()),
+        &declaration.generic_params(syntax_db),
     );
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
     let mut environment = Environment::default();
-    let signature_syntax = function_syntax.signature(db.upcast());
+    let signature_syntax = declaration.signature(syntax_db);
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,

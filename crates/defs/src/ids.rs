@@ -25,7 +25,7 @@ use db_utils::define_short_id;
 use debug::debug::DebugWithDb;
 use filesystem::ids::{CrateId, FileId};
 use smol_str::SmolStr;
-use syntax::node::helpers::GetIdentifier;
+use syntax::node::helpers::{GetIdentifier, NameGreen};
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::stable_ptr::SyntaxStablePtr;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};

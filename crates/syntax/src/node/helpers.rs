@@ -1,6 +1,10 @@
 use smol_str::SmolStr;
 
-use super::ast::{self, Modifier, TerminalIdentifierGreen, TokenIdentifierGreen};
+use super::ast::{
+    self, FunctionDeclaration, FunctionDeclarationGreen, ItemExternFunctionPtr,
+    ItemFreeFunctionPtr, Modifier, TerminalIdentifierGreen, TokenIdentifierGreen,
+    TraitItemFunctionPtr,
+};
 use super::db::SyntaxGroup;
 use super::kind::SyntaxKind;
 use super::Terminal;
@@ -52,7 +56,7 @@ impl GetIdentifier for ast::ParamNameGreen {
     }
 }
 
-// Helper trait for ast::PathSegment.
+/// Helper trait for ast::PathSegment.
 pub trait PathSegmentEx {
     fn identifier_ast(&self, db: &dyn SyntaxGroup) -> ast::TerminalIdentifier;
 }
@@ -85,5 +89,37 @@ impl GetIdentifier for ast::Modifier {
             Modifier::Ref(r) => r.text(db),
             Modifier::Mut(m) => m.text(db),
         }
+    }
+}
+
+/// Trait for ast object with a name terminal.
+pub trait NameGreen {
+    /// Returns the TerminalIdentifierGreen of the `name` node.
+    fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen;
+}
+
+impl NameGreen for FunctionDeclarationGreen {
+    fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        TerminalIdentifierGreen(
+            db.lookup_intern_green(self.0).children()[FunctionDeclaration::INDEX_NAME],
+        )
+    }
+}
+
+impl NameGreen for ItemFreeFunctionPtr {
+    fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        self.declaration_green(db).name_green(db)
+    }
+}
+
+impl NameGreen for ItemExternFunctionPtr {
+    fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        self.declaration_green(db).name_green(db)
+    }
+}
+
+impl NameGreen for TraitItemFunctionPtr {
+    fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        self.declaration_green(db).name_green(db)
     }
 }
