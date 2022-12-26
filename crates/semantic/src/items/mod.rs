@@ -9,6 +9,7 @@ pub mod imp;
 pub mod modifiers;
 pub mod strct;
 pub mod trt;
+pub mod type_alias;
 pub mod us;
 
 #[cfg(test)]
