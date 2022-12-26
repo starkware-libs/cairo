@@ -137,6 +137,9 @@ fn integer_libfunc_cost<Ops: CostOperations>(
                 IntOperator::DivMod => {
                     vec![ops.const_cost(7)]
                 }
+                IntOperator::WideMul => {
+                    vec![ops.const_cost(25)]
+                }
                 IntOperator::OverflowingAdd
                 | IntOperator::OverflowingSub
                 | IntOperator::OverflowingMul => {
