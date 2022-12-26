@@ -47,12 +47,12 @@ fn generate_panicable_code(
             signature.optional_no_panic(db),
             ast::OptionTerminalNoPanic::TerminalNoPanic(_)
         ) {
-            // Only nonpanic functions can be wrapped.
+            // Only nopanic functions can be wrapped.
             return PluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {
                     stable_ptr: signature.stable_ptr().untyped(),
-                    message: "Only nonpanic functions can be wrapped".into(),
+                    message: "Only nopanic functions can be wrapped".into(),
                 }],
             };
         }

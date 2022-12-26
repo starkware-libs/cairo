@@ -544,7 +544,7 @@ fn validate_impl_function_signature(
     }
 
     if !trait_signature.panicable && signature.panicable {
-        diagnostics.report(signature_syntax, PassPanicAsNonpanic { impl_function_id, trait_id });
+        diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
     }
 
     let expected_ty = trait_signature.return_type;
