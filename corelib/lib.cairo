@@ -86,22 +86,20 @@ fn felt_ne(a: felt, b: felt) -> bool nopanic {
     !(a == b)
 }
 
-// TODO(orizi): Change to extern when added.
 fn felt_lt(a: felt, b: felt) -> bool implicits(RangeCheck) {
-    u128_lt(u128_from_felt(a), u128_from_felt(b))
+    u256_from_felt(a) < u256_from_felt(b)
 }
 
 fn felt_gt(a: felt, b: felt) -> bool implicits(RangeCheck) {
-    felt_lt(b, a)
+    b < a
 }
 
-// TODO(orizi): Change to extern when added.
 fn felt_le(a: felt, b: felt) -> bool implicits(RangeCheck) {
-    bool_not(felt_gt(a, b))
+    !(b < a)
 }
 
 fn felt_ge(a: felt, b: felt) -> bool implicits(RangeCheck) {
-    felt_le(b, a)
+    !(a < b)
 }
 
 extern fn felt_jump_nz(a: felt) -> JumpNzResult::<felt> nopanic;
