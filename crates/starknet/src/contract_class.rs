@@ -76,7 +76,7 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
 
     // Override implicit precedence for compatibility with the StarkNet OS.
     db.set_implicit_precedence(Arc::new(
-        ["Pedersen", "RangeCheck", "Bitwise", "GasBuiltin"]
+        ["Pedersen", "RangeCheck", "Bitwise", "GasBuiltin", "System"]
             .iter()
             .map(|name| get_core_ty_by_name(db, name.into(), vec![]))
             .collect_vec(),

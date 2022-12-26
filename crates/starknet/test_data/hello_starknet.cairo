@@ -4,16 +4,13 @@ mod HelloStarknet {
 
     // Increases the balance by the given amount.
     #[external]
-    // TODO(yuval): return nothing
-    // TODO(yuval): make system implicit.
-    fn increase_balance(ref system: System, amount: felt) {
-        let res = super::balance::read(system);
-        super::balance::write(system, res + amount);
+    fn increase_balance(amount: felt) {
+        super::balance::write(super::balance::read() + amount);
     }
 
     // Returns the current balance.
     #[view]
-    fn get_balance(ref system: System) -> felt {
-        super::balance::read(system)
+    fn get_balance() -> felt {
+        super::balance::read()
     }
 }
