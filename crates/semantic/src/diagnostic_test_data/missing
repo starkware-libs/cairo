@@ -61,16 +61,6 @@ struct MyStruct {
 //! > function_body
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "<missing>", found: "core::felt".
- --> lib.cairo:5:11
-MyStruct{ a: 0 }
-          ^
-
-error: Missing member "a".
- --> lib.cairo:5:1
-MyStruct{ a: 0 }
-^**************^
-
 error: Type not found.
  --> lib.cairo:2:8
     a: UnknownType

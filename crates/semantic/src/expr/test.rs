@@ -702,11 +702,6 @@ fn test_expr_struct_ctor_failures() {
                     ..d,
                     ^*^
 
-            error: Missing member "b".
-             --> lib.cairo:6:5
-                A {
-                ^*^
-
         "#}
     );
 }
