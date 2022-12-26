@@ -49,23 +49,31 @@ mod __generated__TestContract {
                     panic(err_data);
                 },
             }
-            if array_len::<felt>(data) != 2_u128 {
+            let mut __arg_arg = match serde::deserialize_felt(data) {
+                Option::Some(x) => x,
+                Option::None(()) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, 'Input too short for arguments');
+                    panic(err_data)
+                },
+            };
+            let __arg_num = match serde::deserialize_felt(data) {
+                Option::Some(x) => x,
+                Option::None(()) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, 'Input too short for arguments');
+                    panic(err_data)
+                },
+            };
+            if array_len::<felt>(data) != 0_u128 {
                 let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, 'Wrong number of arguments');
+                array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            let mut __arg_arg: felt = match array_at::<felt>(data, 0_u128) {
-                Option::Some(x) => x,
-                Option::None(()) => panic(array_new::<felt>()),
-            };
-            let __arg_num: felt = match array_at::<felt>(data, 1_u128) {
-                Option::Some(x) => x,
-                Option::None(()) => panic(array_new::<felt>()),
-            };
             let res = super::get_something(__arg_arg, __arg_num);
             let mut arr = array_new::<felt>();
-            array_append::<felt>(arr, __arg_arg);
-            array_append::<felt>(arr, res);
+            serde::serialize_felt(arr, __arg_arg);
+            serde::serialize_felt(arr, res)
             arr
         }
         fn set_something(mut data: Array::<felt>) -> Array::<felt> {
@@ -78,22 +86,30 @@ mod __generated__TestContract {
                     panic(err_data);
                 },
             }
-            if array_len::<felt>(data) != 2_u128 {
+            let mut __arg_arg = match serde::deserialize_felt(data) {
+                Option::Some(x) => x,
+                Option::None(()) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, 'Input too short for arguments');
+                    panic(err_data)
+                },
+            };
+            let __arg_num = match serde::deserialize_felt(data) {
+                Option::Some(x) => x,
+                Option::None(()) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, 'Input too short for arguments');
+                    panic(err_data)
+                },
+            };
+            if array_len::<felt>(data) != 0_u128 {
                 let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, 'Wrong number of arguments');
+                array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            let mut __arg_arg: felt = match array_at::<felt>(data, 0_u128) {
-                Option::Some(x) => x,
-                Option::None(()) => panic(array_new::<felt>()),
-            };
-            let __arg_num: felt = match array_at::<felt>(data, 1_u128) {
-                Option::Some(x) => x,
-                Option::None(()) => panic(array_new::<felt>()),
-            };
             super::set_something(__arg_arg, __arg_num);
             let mut arr = array_new::<felt>();
-            array_append::<felt>(arr, __arg_arg);
+            serde::serialize_felt(arr, __arg_arg);
             arr
         }
     }
