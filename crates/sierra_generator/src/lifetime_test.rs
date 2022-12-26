@@ -10,7 +10,7 @@ use crate::test_utils::SierraGenDatabaseForTesting;
 
 test_utils::test_file_test!(
     variable_lifetime,
-    ["src/lifetime_test_data/simple",],
+    ["src/lifetime_test_data/simple", "src/lifetime_test_data/block",],
     SierraGenDatabaseForTesting,
     check_variable_lifetime
 );
