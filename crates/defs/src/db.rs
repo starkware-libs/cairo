@@ -38,6 +38,8 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_enum(&self, id: EnumLongId) -> EnumId;
     #[salsa::interned]
+    fn intern_type_alias(&self, id: TypeAliasLongId) -> TypeAliasId;
+    #[salsa::interned]
     fn intern_member(&self, id: MemberLongId) -> MemberId;
     #[salsa::interned]
     fn intern_variant(&self, id: VariantLongId) -> VariantId;
@@ -199,6 +201,7 @@ pub struct ModuleData {
     pub free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
     pub structs: OrderedHashMap<StructId, ast::ItemStruct>,
     pub enums: OrderedHashMap<EnumId, ast::ItemEnum>,
+    pub type_aliases: OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>,
     pub traits: OrderedHashMap<TraitId, ast::ItemTrait>,
     pub impls: OrderedHashMap<ImplId, ast::ItemImpl>,
     pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
@@ -321,6 +324,13 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
                 ast::Item::Enum(enm) => {
                     let item_id = db.intern_enum(EnumLongId(module_file_id, enm.stable_ptr()));
                     res.enums.insert(item_id, enm);
+                }
+                ast::Item::TypeAlias(type_alias) => {
+                    let item_id = db.intern_type_alias(TypeAliasLongId(
+                        module_file_id,
+                        type_alias.stable_ptr(),
+                    ));
+                    res.type_aliases.insert(item_id, type_alias);
                 }
             }
         }
