@@ -89,7 +89,8 @@ fn inner_find_variable_lifetime(
             lowering::Statement::Literal(_)
             | lowering::Statement::Call(_)
             | lowering::Statement::StructConstruct(_)
-            | lowering::Statement::StructDestructure(_) => {}
+            | lowering::Statement::StructDestructure(_)
+            | lowering::Statement::EnumConstruct(_) => {}
             lowering::Statement::CallBlock(statement_call_block) => {
                 inner_find_variable_lifetime(
                     lowered_function,
@@ -103,8 +104,11 @@ fn inner_find_variable_lifetime(
                     statement_match_extern.arms.iter().map(|(_, block_id)| *block_id).collect();
                 handle_match(lowered_function, &arm_blocks, state, res);
             }
-            lowering::Statement::MatchEnum(_statement_match_enum) => todo!(),
-            lowering::Statement::EnumConstruct(_statement_enum_construct) => todo!(),
+            lowering::Statement::MatchEnum(statement_match_enum) => {
+                let arm_blocks: Vec<_> =
+                    statement_match_enum.arms.iter().map(|(_, block_id)| *block_id).collect();
+                handle_match(lowered_function, &arm_blocks, state, res);
+            }
         }
 
         // Mark the input variables as required.

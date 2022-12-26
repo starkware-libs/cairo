@@ -1,0 +1,127 @@
+//! > Test variable lifetime in enum and match
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: MyEnum, y: felt, z: felt, w: felt) -> felt {
+    match x {
+        MyEnum::A(a) => {
+            MyEnum::A(1);
+            MyEnum::A(2)
+        },
+        MyEnum::B(b) => {
+            MyEnum::A(b + y + z)
+        },
+        MyEnum::C((c0, c1)) => {
+            MyEnum::C((z, w))
+        },
+    };
+    w
+}
+
+//! > module_code
+enum MyEnum {
+    A: felt,
+    B: felt,
+    C: (felt, felt),
+}
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v5: core::felt) <- 1u
+  (v6: test::MyEnum) <- MyEnum::A(v5)
+  (v7: core::felt) <- 2u
+  (v8: test::MyEnum) <- MyEnum::A(v7)
+Drops: v5, v6, v7
+End:
+  Callsite(v8)
+
+blk1:
+Inputs:
+Statements:
+  (v11: core::felt) <- core::felt_add(v10, v1)
+  (v12: core::felt) <- core::felt_add(v11, v2)
+  (v13: test::MyEnum) <- MyEnum::A(v12)
+Drops: v12, v11
+End:
+  Callsite(v13)
+
+blk2:
+Inputs:
+Statements:
+  (v18: (core::felt, core::felt)) <- struct_construct(v2, v3)
+  (v19: test::MyEnum) <- MyEnum::C(v18)
+Drops: v18
+End:
+  Callsite(v19)
+
+blk3:
+Inputs: v4: core::felt
+Statements:
+  (v9: test::MyEnum) <- blk0()
+Drops: v4
+End:
+  Callsite(v9)
+
+blk4:
+Inputs: v10: core::felt
+Statements:
+  (v14: test::MyEnum) <- blk1()
+Drops: v10
+End:
+  Callsite(v14)
+
+blk5:
+Inputs: v15: (core::felt, core::felt)
+Statements:
+  (v16: core::felt, v17: core::felt) <- struct_destructure(v15)
+  (v20: test::MyEnum) <- blk2()
+Drops: v15, v16, v17
+End:
+  Callsite(v20)
+
+blk6 (root):
+Inputs: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt
+Statements:
+  (v21: test::MyEnum) <- match_enum(v0) {
+    MyEnum::A => blk3,
+    MyEnum::B => blk4,
+    MyEnum::C => blk5,
+  }
+Drops: v21, v1, v2
+End:
+  Callsite(v3)
+
+//! > last_use
+v3: [(Id { idx: 6 }, 1)]
+v9: [(Id { idx: 3 }, 1)]
+v8: [(Id { idx: 0 }, 4)]
+v7: [(Id { idx: 0 }, 3)]
+v5: [(Id { idx: 0 }, 1)]
+v14: [(Id { idx: 4 }, 1)]
+v13: [(Id { idx: 1 }, 3)]
+v12: [(Id { idx: 1 }, 2)]
+v11: [(Id { idx: 1 }, 1)]
+v2: [(Id { idx: 1 }, 1), (Id { idx: 2 }, 0)]
+v10: [(Id { idx: 1 }, 0)]
+v1: [(Id { idx: 1 }, 0)]
+v20: [(Id { idx: 5 }, 2)]
+v19: [(Id { idx: 2 }, 2)]
+v18: [(Id { idx: 2 }, 1)]
+v15: [(Id { idx: 5 }, 0)]
+v0: [(Id { idx: 6 }, 0)]
+
+//! > drops
+v21: [PostStatement((Id { idx: 6 }, 0))]
+v6: [PostStatement((Id { idx: 0 }, 1))]
+v4: [BeginningOfBlock(Id { idx: 3 })]
+v16: [PostStatement((Id { idx: 5 }, 0))]
+v17: [PostStatement((Id { idx: 5 }, 0))]
+v2: [BeginningOfBlock(Id { idx: 3 })]
+v1: [BeginningOfBlock(Id { idx: 3 }), BeginningOfBlock(Id { idx: 5 })]
