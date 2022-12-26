@@ -75,6 +75,7 @@ pub enum SyntaxKind {
     ImplBody,
     ItemStruct,
     ItemEnum,
+    ItemTypeAlias,
     ItemUse,
     GenericArgs,
     GenericArgList,
