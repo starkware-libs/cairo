@@ -132,6 +132,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalModule => Some(self.expect_module(attributes).into()),
             SyntaxKind::TerminalStruct => Some(self.expect_struct(attributes).into()),
             SyntaxKind::TerminalEnum => Some(self.expect_enum(attributes).into()),
+            SyntaxKind::TerminalType => Some(self.expect_type_alias(attributes).into()),
             SyntaxKind::TerminalExtern => Some(self.expect_extern_item(attributes)),
             SyntaxKind::TerminalFunction => Some(self.expect_free_function(attributes).into()),
             SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
@@ -203,6 +204,29 @@ impl<'a> Parser<'a> {
             lbrace,
             variants,
             rbrace,
+        )
+    }
+
+    /// Assumes the current token is type.
+    /// Expected pattern: `type <Identifier>{<ParamList>} = <TypeExpression>`
+    fn expect_type_alias(&mut self, attributes: AttributeListGreen) -> ItemTypeAliasGreen {
+        let type_kw = self.take::<TerminalType>();
+        let name = self.parse_identifier();
+        let generic_params = self.parse_optional_generic_params();
+        let eq = self.parse_token::<TerminalEq>();
+        let ty = self.try_parse_type_expr().unwrap_or_else(|| {
+            self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingTypeExpression)
+        });
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        ItemTypeAlias::new_green(
+            self.db,
+            attributes,
+            type_kw,
+            name,
+            generic_params,
+            eq,
+            ty,
+            semicolon,
         )
     }
 

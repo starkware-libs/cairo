@@ -340,6 +340,13 @@ define_language_element_id!(
 define_language_element_id!(StructId, StructLongId, ast::ItemStruct, lookup_intern_struct, name);
 define_language_element_id!(EnumId, EnumLongId, ast::ItemEnum, lookup_intern_enum, name);
 define_language_element_id!(
+    TypeAliasId,
+    TypeAliasLongId,
+    ast::ItemTypeAlias,
+    lookup_intern_type_alias,
+    name
+);
+define_language_element_id!(
     ExternTypeId,
     ExternTypeLongId,
     ast::ItemExternType,
