@@ -23,8 +23,9 @@ use sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdRepla
 use thiserror::Error;
 
 use crate::abi;
-use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint};
+use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
 use crate::contract::{find_contracts, get_external_functions, starknet_keccak};
+use crate::felt_serde::sierra_to_felts;
 use crate::plugin::StarkNetPlugin;
 
 #[cfg(test)]
@@ -40,7 +41,8 @@ pub enum StarknetCompilationError {
 /// Represents a contract in the StarkNet network.
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractClass {
-    pub sierra_program: sierra::program::Program,
+    pub sierra_program: Vec<BigIntAsHex>,
+    pub sierra_program_debug_info: sierra::debug_info::DebugInfo,
     pub entry_points_by_type: ContractEntryPoints,
     pub abi: abi::Contract,
 }
@@ -114,7 +116,12 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
     let entry_points_by_type = get_entry_points(db, &external_functions, &replacer)?;
     // TODO(ilya): fix abi.
     let abi = abi::Contract::default();
-    Ok(ContractClass { sierra_program, entry_points_by_type, abi })
+    Ok(ContractClass {
+        sierra_program: sierra_to_felts(&sierra_program)?,
+        sierra_program_debug_info: sierra::debug_info::DebugInfo::extract(&sierra_program),
+        entry_points_by_type,
+        abi,
+    })
 }
 
 /// Return the entry points given a trait and a module_id where they are implemented.

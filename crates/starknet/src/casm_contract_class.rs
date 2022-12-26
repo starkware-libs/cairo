@@ -23,11 +23,14 @@ use sierra_to_casm::metadata::Metadata;
 use thiserror::Error;
 
 use crate::contract_class::{ContractClass, ContractEntryPoint};
+use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum StarknetSierraCompilationError {
     #[error(transparent)]
     CompilationError(#[from] CompilationError),
+    #[error(transparent)]
+    FeltSerdeError(#[from] FeltSerdeError),
     #[error(transparent)]
     CostError(#[from] CostError),
     #[error(transparent)]
@@ -61,7 +64,7 @@ impl CasmContractClass {
         )
         .unwrap();
 
-        let program = contract_class.sierra_program;
+        let program = sierra_from_felts(&contract_class.sierra_program)?;
         let gas_info = calc_gas_info(&program)?;
 
         let gas_usage_check = true;
