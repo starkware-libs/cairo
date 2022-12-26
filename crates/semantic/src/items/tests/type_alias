@@ -1,0 +1,233 @@
+//! > Test simple struct type alias.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: RenamedStruct) -> felt {
+    a.a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+    a: felt
+}
+
+type RenamedStruct = MyStruct;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test simple enum type alias.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: RenamedEnum) -> felt {
+    match a {
+        MyEnum::f(v) => v,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    f: felt
+}
+
+type RenamedEnum = MyEnum;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test tuple type alias.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: RenamedTuple) -> felt {
+    let (v, _) = a;
+    v
+}
+
+//! > function_name
+foo
+
+//! > module_code
+type RenamedTuple = (felt, u128);
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test generic enum type alias.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: OptionFelt) -> felt {
+    match a {
+        Option::Some(v) => v,
+        Option::None(_) => 1,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+type OptionFelt = Option::<felt>;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test generic tuple type alias.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: RenamedTuple::<u128>) -> u128 {
+    let (_, v) = a;
+    v
+}
+
+//! > function_name
+foo
+
+//! > module_code
+type RenamedTuple<T> = (felt, T);
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type alias chain.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: A::<bool>) -> (felt, u128, bool) {
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+type A<P4> = B::<felt, P4, u128>;
+type B<P1, P2, P3> = (P1, P3, P2);
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type alias wrong generic argument.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+// TODO(orizi): Add diagnostics for this case.
+fn foo(a: A::<5>) -> felt {
+    let (v, _) = a;
+    v
+}
+
+//! > function_name
+foo
+
+//! > module_code
+type A<T> = (felt, T);
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type alias cycle.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: A) -> B {
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+type A = B;
+type B = A;
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'type alias' items.
+ --> lib.cairo:1:6
+type A = B;
+     ^
+
+error: Cycle detected while resolving 'type alias' items.
+ --> lib.cairo:2:6
+type B = A;
+     ^
+
+//! > ==========================================================================
+
+//! > Test type alias cycle of size 1.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: A) -> A {
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+type A = A;
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'type alias' items.
+ --> lib.cairo:1:6
+type A = A;
+     ^
+
+//! > ==========================================================================
+
+//! > Test simple unknown type alias.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: Alias) -> felt {
+    a.a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+type Alias = bad_type;
+
+//! > expected_diagnostics
+error: Type not found.
+ --> lib.cairo:1:14
+type Alias = bad_type;
+             ^******^

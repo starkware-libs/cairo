@@ -114,6 +114,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UseCycle => {
                 "Cycle detected while resolving 'use' items.".into()
             }
+            SemanticDiagnosticKind::TypeAliasCycle => {
+                "Cycle detected while resolving 'type alias' items.".into()
+            }
             SemanticDiagnosticKind::ExpectedConcreteVariant => {
                 "Expected a concrete variant. Use `::<>` syntax.".to_string()
             }
@@ -441,6 +444,7 @@ pub enum SemanticDiagnosticKind {
     UnknownMember,
     MemberSpecifiedMoreThanOnce,
     UseCycle,
+    TypeAliasCycle,
     ExpectedConcreteVariant,
     MissingMember {
         member_name: SmolStr,

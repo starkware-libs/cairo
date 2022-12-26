@@ -6,7 +6,7 @@ use std::iter::Peekable;
 
 use defs::ids::{
     GenericFunctionId, GenericParamId, GenericTypeId, ImplId, LanguageElementId, ModuleFileId,
-    ModuleId, ModuleItemId, TraitId,
+    ModuleId, ModuleItemId, TraitId, TypeAliasId,
 };
 use diagnostics::Maybe;
 use diagnostics_proc_macros::DebugWithDb;
@@ -26,7 +26,7 @@ use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
 use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
 use crate::literals::LiteralLongId;
-use crate::types::resolve_type;
+use crate::types::{resolve_type, substitute_generics};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
     TypeLongId, Variant,
@@ -51,6 +51,7 @@ pub enum ResolvedGenericItem {
     Module(ModuleId),
     GenericFunction(GenericFunctionId),
     GenericType(GenericTypeId),
+    GenericTypeAlias(TypeAliasId),
     Variant(Variant),
     Trait(TraitId),
     Impl(ImplId),
@@ -443,6 +444,26 @@ impl<'db> Resolver<'db> {
                     generic_args.unwrap_or_default(),
                 )?)
             }
+            ResolvedGenericItem::GenericTypeAlias(type_alias_id) => {
+                // Check for cycles in this type alias definition.
+                // TODO(orizi): Handle this without using `priv_type_alias_semantic_data`.
+                self.db.priv_type_alias_semantic_data(type_alias_id)?.check_no_cycle()?;
+
+                let ty = self.db.type_alias_resolved_type(type_alias_id)?;
+                let mut generic_args = generic_args.unwrap_or_default();
+                let generic_params = self.db.type_alias_generic_params(type_alias_id)?;
+                conform_generic_args(
+                    self.db,
+                    diagnostics,
+                    &generic_params,
+                    &mut generic_args,
+                    identifier.stable_ptr().untyped(),
+                );
+                let substitution =
+                    &generic_params.into_iter().zip(generic_args.into_iter()).collect();
+
+                ResolvedConcreteItem::Type(substitute_generics(self.db, substitution, ty))
+            }
             ResolvedGenericItem::Variant(_) => {
                 panic!("Variant is not a module item.")
             }
@@ -519,6 +540,7 @@ impl<'db> Resolver<'db> {
             }
             ModuleItemId::Struct(id) => ResolvedGenericItem::GenericType(GenericTypeId::Struct(id)),
             ModuleItemId::Enum(id) => ResolvedGenericItem::GenericType(GenericTypeId::Enum(id)),
+            ModuleItemId::TypeAlias(id) => ResolvedGenericItem::GenericTypeAlias(id),
             ModuleItemId::ExternType(id) => {
                 ResolvedGenericItem::GenericType(GenericTypeId::Extern(id))
             }
@@ -586,7 +608,7 @@ fn specialize_trait(
         .trait_generic_params(trait_id)
         .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownTrait))?;
 
-    conform_generic_args(db, diagnostics, generic_params, &mut generic_args, stable_ptr);
+    conform_generic_args(db, diagnostics, &generic_params, &mut generic_args, stable_ptr);
 
     Ok(db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }))
 }
@@ -604,7 +626,7 @@ fn specialize_impl(
         .impl_generic_params(impl_id)
         .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownImpl))?;
 
-    conform_generic_args(db, diagnostics, generic_params, &mut generic_args, stable_ptr);
+    conform_generic_args(db, diagnostics, &generic_params, &mut generic_args, stable_ptr);
 
     Ok(db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args }))
 }
@@ -622,7 +644,7 @@ pub fn specialize_function(
         .generic_function_generic_params(generic_function)
         .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
 
-    conform_generic_args(db, diagnostics, generic_params, &mut generic_args, stable_ptr);
+    conform_generic_args(db, diagnostics, &generic_params, &mut generic_args, stable_ptr);
 
     Ok(db.intern_function(FunctionLongId {
         function: ConcreteFunction { generic_function, generic_args },
@@ -641,7 +663,7 @@ pub fn specialize_type(
         .generic_type_generic_params(generic_type)
         .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownType))?;
 
-    conform_generic_args(db, diagnostics, generic_params, &mut generic_args, stable_ptr);
+    conform_generic_args(db, diagnostics, &generic_params, &mut generic_args, stable_ptr);
 
     Ok(db.intern_type(TypeLongId::Concrete(ConcreteTypeId::new(db, generic_type, generic_args))))
 }
@@ -649,7 +671,7 @@ pub fn specialize_type(
 fn conform_generic_args(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    generic_params: Vec<GenericParamId>,
+    generic_params: &[GenericParamId],
     generic_args: &mut Vec<GenericArgumentId>,
     stable_ptr: SyntaxStablePtrId,
 ) {
