@@ -22,46 +22,41 @@ foo
 blk0:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
 Statements:
-Drops:
 End:
-  Callsite(v1)
+  Callsite()
 
 blk1:
 Inputs: v2: core::felt
 Statements:
   (v3: core::result::Result::<core::felt, core::felt>) <- Result::Err(v2)
-Drops: v2, v0
 End:
   Return(v3)
 
 blk2:
-Inputs: v5: core::integer::u128
+Inputs: v4: core::integer::u128
 Statements:
-Drops:
 End:
-  Callsite(v5)
+  Callsite()
 
 blk3:
-Inputs: v6: core::felt
+Inputs: v5: core::felt
 Statements:
-  (v7: core::result::Result::<core::felt, core::felt>) <- Result::Err(v6)
-Drops: v6, v4
+  (v6: core::result::Result::<core::felt, core::felt>) <- Result::Err(v5)
 End:
-  Return(v7)
+  Return(v6)
 
 blk4 (root):
 Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
 Statements:
-  (v4: core::result::Result::<core::integer::u128, core::felt>) <- match_enum(v0) {
+  () <- match_enum(v0) {
     Result::Ok => blk0,
     Result::Err => blk1,
   }
-  (v8: core::integer::u128) <- match_enum(v4) {
+  () <- match_enum(v1) {
     Result::Ok => blk2,
     Result::Err => blk3,
   }
-  (v9: core::felt) <- 1u
-  (v10: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v9)
-Drops: v8, v9
+  (v7: core::felt) <- 1u
+  (v8: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v7)
 End:
-  Callsite(v10)
+  Return(v8)

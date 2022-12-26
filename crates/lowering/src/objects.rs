@@ -6,6 +6,7 @@
 use id_arena::Id;
 use num_bigint::BigInt;
 use semantic::{ConcreteEnumId, ConcreteVariant};
+use utils::ordered_hash_map::OrderedHashMap;
 
 pub type BlockId = Id<Block>;
 pub type VariableId = Id<Variable>;
@@ -26,18 +27,21 @@ pub struct Block {
     /// Note: Match is a possible statement, which means it has control flow logic inside, but
     /// after its execution is completed, the flow returns to the following statement of the block.
     pub statements: Vec<Statement>,
-    /// Which variables are needed to be dropped at the end of this block. Note that these are
-    /// not explicitly dropped by statements.
-    pub drops: Vec<VariableId>,
     /// Describes how this block ends: returns to the caller or exits the function.
     pub end: BlockEnd,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Remapping {
+    pub remapping: OrderedHashMap<VariableId, VariableId>,
 }
 
 /// Describes what happens to the program flow at the end of a block.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BlockEnd {
-    /// This block returns to the call-site, outputting variables to the call-site.
-    Callsite(Vec<VariableId>),
+    // TODO(spapini): Goto.
+    Callsite(Remapping),
+    Panic(VariableId),
     /// This block ends with a `return` statement, exiting the function.
     Return(Vec<VariableId>),
     /// The last statement ended the flow (e.g., match will all arms ending in return),
@@ -48,12 +52,9 @@ pub enum BlockEnd {
 /// Lowered variable representation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Variable {
-    /// Can the type be (trivially) dropped.
-    pub droppable: bool,
-    /// Can the type be (trivially) duplicated.
-    pub duplicatable: bool,
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
+    // TODO(spapini): Add a stable pointer / location for declaration.
 }
 
 /// Lowered statement.
@@ -93,12 +94,12 @@ impl Statement {
         match &self {
             Statement::Literal(stmt) => vec![stmt.output],
             Statement::Call(stmt) => stmt.outputs.clone(),
-            Statement::CallBlock(stmt) => stmt.outputs.clone(),
-            Statement::MatchExtern(stmt) => stmt.outputs.clone(),
+            Statement::CallBlock(_) => vec![],
+            Statement::MatchExtern(_) => vec![],
             Statement::StructConstruct(stmt) => vec![stmt.output],
             Statement::StructDestructure(stmt) => stmt.outputs.clone(),
             Statement::EnumConstruct(stmt) => vec![stmt.output],
-            Statement::MatchEnum(stmt) => stmt.outputs.clone(),
+            Statement::MatchEnum(_) => vec![],
         }
     }
 }
@@ -131,8 +132,6 @@ pub struct StatementCall {
 pub struct StatementCallBlock {
     /// A block to "call".
     pub block: BlockId,
-    /// New variables to be introduced into the current scope, moved from the callee block outputs.
-    pub outputs: Vec<VariableId>,
 }
 
 /// A statement that calls an extern function with branches, and "calls" a possibly different block
@@ -147,8 +146,6 @@ pub struct StatementMatchExtern {
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
-    /// New variables to be introduced into the current scope from the arm outputs.
-    pub outputs: Vec<VariableId>,
 }
 
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
@@ -165,14 +162,12 @@ pub struct StatementEnumConstruct {
 /// A statement that matches an enum, and "calls" a possibly different block for each branch.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementMatchEnum {
-    pub concrete_enum: ConcreteEnumId,
+    pub concrete_enum_id: ConcreteEnumId,
     /// A living variable in current scope to match on.
     pub input: VariableId,
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
-    /// New variables to be introduced into the current scope from the arm outputs.
-    pub outputs: Vec<VariableId>,
 }
 
 /// A statement that constructs a struct (tuple included) into a new variable.

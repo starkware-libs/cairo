@@ -51,19 +51,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for Block {
             writeln!(f)?;
         }
 
-        write!(f, "Drops:")?;
-        let mut drops = self.drops.iter().peekable();
-        if drops.peek().is_some() {
-            write!(f, " ")?;
-        }
-        while let Some(var) = drops.next() {
-            var.fmt(f, ctx)?;
-            if drops.peek().is_some() {
-                write!(f, ", ")?;
-            }
-        }
-
-        writeln!(f, "\nEnd:")?;
+        writeln!(f, "End:")?;
         self.end.fmt(f, ctx)?;
         writeln!(f)
     }
@@ -71,27 +59,40 @@ impl DebugWithDb<LoweredFormatter<'_>> for Block {
 
 impl DebugWithDb<LoweredFormatter<'_>> for BlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let outputs = match &self {
-            BlockEnd::Callsite(outputs) => {
+        match &self {
+            BlockEnd::Callsite(remapping) => {
                 write!(f, "  Callsite(")?;
-                outputs
+                let mut remapping = remapping.remapping.iter().peekable();
+                while let Some((var_a, var_b)) = remapping.next() {
+                    var_a.fmt(f, ctx)?;
+                    write!(f, " ->")?;
+                    var_b.fmt(f, ctx)?;
+                    if remapping.peek().is_some() {
+                        write!(f, ", ")?;
+                    }
+                }
+                write!(f, ")")
             }
             BlockEnd::Return(outputs) => {
                 write!(f, "  Return(")?;
-                outputs
+                let mut outputs = outputs.iter().peekable();
+                while let Some(var) = outputs.next() {
+                    var.fmt(f, ctx)?;
+                    if outputs.peek().is_some() {
+                        write!(f, ", ")?;
+                    }
+                }
+                write!(f, ")")
+            }
+            BlockEnd::Panic(data_var) => {
+                write!(f, "  Panic(")?;
+                data_var.fmt(f, ctx)?;
+                write!(f, ")")
             }
             BlockEnd::Unreachable => {
-                return write!(f, "  Unreachable");
-            }
-        };
-        let mut outputs = outputs.iter().peekable();
-        while let Some(var) = outputs.next() {
-            var.fmt(f, ctx)?;
-            if outputs.peek().is_some() {
-                write!(f, ", ")?;
+                write!(f, "  Unreachable")
             }
         }
-        write!(f, ")")
     }
 }
 
