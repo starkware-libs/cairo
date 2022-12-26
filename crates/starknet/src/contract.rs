@@ -1,12 +1,12 @@
 use anyhow::Context;
-use defs::ids::{FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId};
+use defs::ids::{FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId, TraitId};
 use diagnostics::ToOption;
 use filesystem::ids::CrateId;
 use num_bigint::BigUint;
 use semantic::db::SemanticGroup;
 use sha3::{Digest, Keccak256};
 
-use crate::plugin::{CONTRACT_ATTR, EXTERNAL_MODULE};
+use crate::plugin::{ABI_TRAIT, CONTRACT_ATTR, EXTERNAL_MODULE};
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -65,7 +65,45 @@ pub fn get_external_functions(
     db: &(dyn SemanticGroup + 'static),
     contract: &ContractDeclaration,
 ) -> anyhow::Result<Vec<FreeFunctionId>> {
-    // The wrappers are currently in the parent module.
+    let generated_module_id = get_generated_contract_module(db, contract)?;
+    match db
+        .module_items(generated_module_id)
+        .to_option()
+        .with_context(|| "Failed to get generated module items.")?
+        .items
+        .get(EXTERNAL_MODULE)
+    {
+        Some(ModuleItemId::Submodule(external_module_id)) => Ok(db
+            .module_free_functions(ModuleId::Submodule(*external_module_id))
+            .to_option()
+            .with_context(|| "Failed to get module items.")?),
+        _ => anyhow::bail!("Failed to get the entry points module."),
+    }
+}
+
+/// Returns the ABI trait of the given contract.
+pub fn get_abi(
+    db: &(dyn SemanticGroup + 'static),
+    contract: &ContractDeclaration,
+) -> anyhow::Result<TraitId> {
+    let generated_module_id = get_generated_contract_module(db, contract)?;
+    match db
+        .module_items(generated_module_id)
+        .to_option()
+        .with_context(|| "Failed to get generated module items.")?
+        .items
+        .get(ABI_TRAIT)
+    {
+        Some(ModuleItemId::Trait(trait_id)) => Ok(*trait_id),
+        _ => anyhow::bail!("Failed to get the ABI trait."),
+    }
+}
+
+/// Returns the generated contract module.
+fn get_generated_contract_module(
+    db: &(dyn SemanticGroup + 'static),
+    contract: &ContractDeclaration,
+) -> anyhow::Result<ModuleId> {
     let parent_module_id = contract.submodule_id.module(db.upcast());
     let contract_name = contract.submodule_id.name(db.upcast());
     let generated_module_name = format!("__generated__{contract_name}");
@@ -78,19 +116,7 @@ pub fn get_external_functions(
         .get(generated_module_name.as_str())
     {
         Some(ModuleItemId::Submodule(generated_module_id)) => {
-            match db
-                .module_items(ModuleId::Submodule(*generated_module_id))
-                .to_option()
-                .with_context(|| "Failed to get generated module items.")?
-                .items
-                .get(EXTERNAL_MODULE)
-            {
-                Some(ModuleItemId::Submodule(external_module_id)) => Ok(db
-                    .module_free_functions(ModuleId::Submodule(*external_module_id))
-                    .to_option()
-                    .with_context(|| "Failed to get module items.")?),
-                _ => anyhow::bail!("Failed to get the entry points module."),
-            }
+            Ok(ModuleId::Submodule(*generated_module_id))
         }
         _ => anyhow::bail!(format!(
             "Failed to get generated module {}.",

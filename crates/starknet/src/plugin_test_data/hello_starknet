@@ -51,6 +51,8 @@ mod __generated__HelloStarknet {
     fn get_balance() -> felt {
         super::balance::read()
     }
+    trait __abi {
+    fn increase_balance(amount: felt); fn get_balance() -> felt; }
     mod __external {
         fn increase_balance(mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
