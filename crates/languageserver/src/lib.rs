@@ -396,6 +396,11 @@ impl LanguageServer for Backend {
                     generic_type.file_index(defs_db),
                     generic_type.untyped_stable_ptr(defs_db),
                 ),
+                ResolvedGenericItem::GenericTypeAlias(type_alias) => (
+                    type_alias.parent_module(defs_db),
+                    type_alias.file_index(defs_db),
+                    type_alias.untyped_stable_ptr(defs_db),
+                ),
                 ResolvedGenericItem::Variant(variant) => (
                     variant.id.parent_module(defs_db),
                     variant.id.file_index(defs_db),
