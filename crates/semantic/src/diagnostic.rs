@@ -368,7 +368,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
                 format!("`{}` is not allowed inside impl.", item_kw)
             }
-            SemanticDiagnosticKind::PassPanicAsNonpanic { impl_function_id, trait_id } => {
+            SemanticDiagnosticKind::PassPanicAsNopanic { impl_function_id, trait_id } => {
                 let name = impl_function_id.name(db.upcast());
                 let trait_name = trait_id.name(db.upcast());
                 format!(
@@ -376,7 +376,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                      `{trait_name}`. The trait function is declared as nopanic."
                 )
             }
-            SemanticDiagnosticKind::PanicableFromNonPanicable => {
+            SemanticDiagnosticKind::PanicableFromNoPanicable => {
                 "Function is declared as nopanic but calls a function that may panic.".into()
             }
             SemanticDiagnosticKind::PanicableExternFunction => {
@@ -574,11 +574,11 @@ pub enum SemanticDiagnosticKind {
     InvalidImplItem {
         item_kw: SmolStr,
     },
-    PassPanicAsNonpanic {
+    PassPanicAsNopanic {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
-    PanicableFromNonPanicable,
+    PanicableFromNoPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
     WrappedPluginDiagnostic {
