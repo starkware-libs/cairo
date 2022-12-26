@@ -13,35 +13,31 @@ pub struct PanicablePlugin {}
 
 impl MacroPlugin for PanicablePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
-        match item_ast {
-            ast::Item::ExternFunction(extern_func_ast) => generate_panicable_code(
-                db,
-                extern_func_ast.name(db),
-                extern_func_ast.signature(db),
-                extern_func_ast.attributes(db),
-            ),
-            ast::Item::FreeFunction(free_func_ast) => generate_panicable_code(
-                db,
-                free_func_ast.name(db),
-                free_func_ast.signature(db),
-                free_func_ast.attributes(db),
-            ),
-            _ => PluginResult { code: None, diagnostics: vec![] },
-        }
+        let (declaration, attributes) = match item_ast {
+            ast::Item::ExternFunction(extern_func_ast) => {
+                (extern_func_ast.declaration(db), extern_func_ast.attributes(db))
+            }
+            ast::Item::FreeFunction(free_func_ast) => {
+                (free_func_ast.declaration(db), free_func_ast.attributes(db))
+            }
+            _ => return PluginResult { code: None, diagnostics: vec![] },
+        };
+
+        generate_panicable_code(db, declaration, attributes)
     }
 }
 
 /// Adds an implementation for all requested derives for the type.
 fn generate_panicable_code(
     db: &dyn SyntaxGroup,
-    ident: ast::TerminalIdentifier,
-    signature: ast::FunctionSignature,
+    declaration: ast::FunctionDeclaration,
     attributes: AttributeList,
 ) -> PluginResult {
     for attr in attributes.elements(db) {
         if attr.attr(db).text(db) != "panic_with" {
             continue;
         }
+        let signature = declaration.signature(db);
         // TODO(orizi): Add diagnostics for all the unexpected cases.
         if !matches!(
             signature.optional_no_panic(db),
@@ -92,7 +88,7 @@ fn generate_panicable_code(
             };
         };
 
-        let function_name = ident.text(db);
+        let function_name = declaration.name(db).text(db);
         let params = signature.parameters(db).as_syntax_node().get_text(db);
         let args = signature
             .parameters(db)

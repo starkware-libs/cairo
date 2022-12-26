@@ -357,11 +357,11 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleItems> {
                 ModuleItemId::Use(*use_id)
             )),
             module_data.free_functions.iter().map(|(free_function_id, syntax)| (
-                syntax.name(syntax_db).text(syntax_db),
+                syntax.declaration(syntax_db).name(syntax_db).text(syntax_db),
                 ModuleItemId::FreeFunction(*free_function_id),
             )),
             module_data.extern_functions.iter().map(|(extern_function_id, syntax)| (
-                syntax.name(syntax_db).text(syntax_db),
+                syntax.declaration(syntax_db).name(syntax_db).text(syntax_db),
                 ModuleItemId::ExternFunction(*extern_function_id),
             )),
             module_data.extern_types.iter().map(|(extern_type_id, syntax)| (

@@ -6778,28 +6778,117 @@ impl TypedSyntaxNode for AttributeArgList {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct FunctionDeclaration {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl FunctionDeclaration {
+    pub const INDEX_FUNCTION_KW: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_GENERIC_PARAMS: usize = 2;
+    pub const INDEX_SIGNATURE: usize = 3;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        function_kw: TerminalFunctionGreen,
+        name: TerminalIdentifierGreen,
+        generic_params: OptionWrappedGenericParamListGreen,
+        signature: FunctionSignatureGreen,
+    ) -> FunctionDeclarationGreen {
+        let children: Vec<GreenId> = vec![function_kw.0, name.0, generic_params.0, signature.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        FunctionDeclarationGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::FunctionDeclaration,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl FunctionDeclaration {
+    pub fn function_kw(&self, db: &dyn SyntaxGroup) -> TerminalFunction {
+        TerminalFunction::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
+        FunctionSignature::from_syntax_node(db, self.children[3].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct FunctionDeclarationPtr(pub SyntaxStablePtrId);
+impl FunctionDeclarationPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct FunctionDeclarationGreen(pub GreenId);
+impl TypedSyntaxNode for FunctionDeclaration {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::FunctionDeclaration);
+    type StablePtr = FunctionDeclarationPtr;
+    type Green = FunctionDeclarationGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        FunctionDeclarationGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::FunctionDeclaration,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalFunction::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    OptionWrappedGenericParamList::missing(db).0,
+                    FunctionSignature::missing(db).0,
+                ],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::FunctionDeclaration,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::FunctionDeclaration
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        FunctionDeclarationPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemFreeFunction {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
 impl ItemFreeFunction {
     pub const INDEX_ATTRIBUTES: usize = 0;
-    pub const INDEX_FUNCTION_KW: usize = 1;
-    pub const INDEX_NAME: usize = 2;
-    pub const INDEX_GENERIC_PARAMS: usize = 3;
-    pub const INDEX_SIGNATURE: usize = 4;
-    pub const INDEX_BODY: usize = 5;
+    pub const INDEX_DECLARATION: usize = 1;
+    pub const INDEX_BODY: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
-        function_kw: TerminalFunctionGreen,
-        name: TerminalIdentifierGreen,
-        generic_params: OptionWrappedGenericParamListGreen,
-        signature: FunctionSignatureGreen,
+        declaration: FunctionDeclarationGreen,
         body: ExprBlockGreen,
     ) -> ItemFreeFunctionGreen {
-        let children: Vec<GreenId> =
-            vec![attributes.0, function_kw.0, name.0, generic_params.0, signature.0, body.0];
+        let children: Vec<GreenId> = vec![attributes.0, declaration.0, body.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemFreeFunctionGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemFreeFunction,
@@ -6811,29 +6900,20 @@ impl ItemFreeFunction {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
         AttributeList::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn function_kw(&self, db: &dyn SyntaxGroup) -> TerminalFunction {
-        TerminalFunction::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
-    }
-    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
-    }
-    pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
-        FunctionSignature::from_syntax_node(db, self.children[4].clone())
+    pub fn declaration(&self, db: &dyn SyntaxGroup) -> FunctionDeclaration {
+        FunctionDeclaration::from_syntax_node(db, self.children[1].clone())
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[5].clone())
+        ExprBlock::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemFreeFunctionPtr(pub SyntaxStablePtrId);
 impl ItemFreeFunctionPtr {
-    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+    pub fn declaration_green(self, db: &dyn SyntaxGroup) -> FunctionDeclarationGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
+            FunctionDeclarationGreen(key_fields[0])
         } else {
             panic!("Unexpected key field query on root.");
         }
@@ -6854,10 +6934,7 @@ impl TypedSyntaxNode for ItemFreeFunction {
             details: GreenNodeDetails::Node {
                 children: vec![
                     AttributeList::missing(db).0,
-                    TerminalFunction::missing(db).0,
-                    TerminalIdentifier::missing(db).0,
-                    OptionWrappedGenericParamList::missing(db).0,
-                    FunctionSignature::missing(db).0,
+                    FunctionDeclaration::missing(db).0,
                     ExprBlock::missing(db).0,
                 ],
                 width: 0,
@@ -6894,30 +6971,16 @@ pub struct ItemExternFunction {
 impl ItemExternFunction {
     pub const INDEX_ATTRIBUTES: usize = 0;
     pub const INDEX_EXTERN_KW: usize = 1;
-    pub const INDEX_FUNCTION_KW: usize = 2;
-    pub const INDEX_NAME: usize = 3;
-    pub const INDEX_GENERIC_PARAMS: usize = 4;
-    pub const INDEX_SIGNATURE: usize = 5;
-    pub const INDEX_SEMICOLON: usize = 6;
+    pub const INDEX_DECLARATION: usize = 2;
+    pub const INDEX_SEMICOLON: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
         extern_kw: TerminalExternGreen,
-        function_kw: TerminalFunctionGreen,
-        name: TerminalIdentifierGreen,
-        generic_params: OptionWrappedGenericParamListGreen,
-        signature: FunctionSignatureGreen,
+        declaration: FunctionDeclarationGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> ItemExternFunctionGreen {
-        let children: Vec<GreenId> = vec![
-            attributes.0,
-            extern_kw.0,
-            function_kw.0,
-            name.0,
-            generic_params.0,
-            signature.0,
-            semicolon.0,
-        ];
+        let children: Vec<GreenId> = vec![attributes.0, extern_kw.0, declaration.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemExternFunctionGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemExternFunction,
@@ -6932,29 +6995,20 @@ impl ItemExternFunction {
     pub fn extern_kw(&self, db: &dyn SyntaxGroup) -> TerminalExtern {
         TerminalExtern::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn function_kw(&self, db: &dyn SyntaxGroup) -> TerminalFunction {
-        TerminalFunction::from_syntax_node(db, self.children[2].clone())
-    }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
-    }
-    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4].clone())
-    }
-    pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
-        FunctionSignature::from_syntax_node(db, self.children[5].clone())
+    pub fn declaration(&self, db: &dyn SyntaxGroup) -> FunctionDeclaration {
+        FunctionDeclaration::from_syntax_node(db, self.children[2].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[6].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemExternFunctionPtr(pub SyntaxStablePtrId);
 impl ItemExternFunctionPtr {
-    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+    pub fn declaration_green(self, db: &dyn SyntaxGroup) -> FunctionDeclarationGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
+            FunctionDeclarationGreen(key_fields[0])
         } else {
             panic!("Unexpected key field query on root.");
         }
@@ -6976,10 +7030,7 @@ impl TypedSyntaxNode for ItemExternFunction {
                 children: vec![
                     AttributeList::missing(db).0,
                     TerminalExtern::missing(db).0,
-                    TerminalFunction::missing(db).0,
-                    TerminalIdentifier::missing(db).0,
-                    OptionWrappedGenericParamList::missing(db).0,
-                    FunctionSignature::missing(db).0,
+                    FunctionDeclaration::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: 0,
@@ -7472,22 +7523,15 @@ pub struct TraitItemFunction {
 }
 impl TraitItemFunction {
     pub const INDEX_ATTRIBUTES: usize = 0;
-    pub const INDEX_FUNCTION_KW: usize = 1;
-    pub const INDEX_NAME: usize = 2;
-    pub const INDEX_GENERIC_PARAMS: usize = 3;
-    pub const INDEX_SIGNATURE: usize = 4;
-    pub const INDEX_SEMICOLON: usize = 5;
+    pub const INDEX_DECLARATION: usize = 1;
+    pub const INDEX_SEMICOLON: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
-        function_kw: TerminalFunctionGreen,
-        name: TerminalIdentifierGreen,
-        generic_params: OptionWrappedGenericParamListGreen,
-        signature: FunctionSignatureGreen,
+        declaration: FunctionDeclarationGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> TraitItemFunctionGreen {
-        let children: Vec<GreenId> =
-            vec![attributes.0, function_kw.0, name.0, generic_params.0, signature.0, semicolon.0];
+        let children: Vec<GreenId> = vec![attributes.0, declaration.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         TraitItemFunctionGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::TraitItemFunction,
@@ -7499,29 +7543,20 @@ impl TraitItemFunction {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
         AttributeList::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn function_kw(&self, db: &dyn SyntaxGroup) -> TerminalFunction {
-        TerminalFunction::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
-    }
-    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
-    }
-    pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
-        FunctionSignature::from_syntax_node(db, self.children[4].clone())
+    pub fn declaration(&self, db: &dyn SyntaxGroup) -> FunctionDeclaration {
+        FunctionDeclaration::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[5].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TraitItemFunctionPtr(pub SyntaxStablePtrId);
 impl TraitItemFunctionPtr {
-    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+    pub fn declaration_green(self, db: &dyn SyntaxGroup) -> FunctionDeclarationGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
+            FunctionDeclarationGreen(key_fields[0])
         } else {
             panic!("Unexpected key field query on root.");
         }
@@ -7542,10 +7577,7 @@ impl TypedSyntaxNode for TraitItemFunction {
             details: GreenNodeDetails::Node {
                 children: vec![
                     AttributeList::missing(db).0,
-                    TerminalFunction::missing(db).0,
-                    TerminalIdentifier::missing(db).0,
-                    OptionWrappedGenericParamList::missing(db).0,
-                    FunctionSignature::missing(db).0,
+                    FunctionDeclaration::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: 0,

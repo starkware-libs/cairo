@@ -70,6 +70,7 @@ impl SemanticTokensTraverser {
                     SyntaxKind::ItemFreeFunction => {
                         self.mark_future_token(
                             ast::ItemFreeFunction::from_syntax_node(db, node)
+                                .declaration(db)
                                 .name(db)
                                 .as_syntax_node()
                                 .offset(),

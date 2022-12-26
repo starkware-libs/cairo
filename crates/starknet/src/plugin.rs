@@ -140,7 +140,8 @@ fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
     function: &ItemFreeFunction,
 ) -> Option<rust::Tokens> {
-    let sig = function.signature(db);
+    let declaration = function.declaration(db);
+    let sig = declaration.signature(db);
     let params = sig.parameters(db).elements(db);
     // TODO(yuval): support types of size >1. `params_len` should be sum of the params lengths.
     let params_len = params.len();
@@ -168,7 +169,7 @@ fn generate_entry_point_wrapper(
     }
     let param_names_tokens = join(arg_names.into_iter(), ", ");
 
-    let function_name = function.name(db).text(db).to_string();
+    let function_name = declaration.name(db).text(db).to_string();
     let wrapped_name = format!("super::{function_name}");
 
     let (let_res, append_res) = match sig.ret_ty(db) {
