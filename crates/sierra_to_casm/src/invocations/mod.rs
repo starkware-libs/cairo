@@ -273,10 +273,10 @@ impl CompiledInvocationBuilder<'_> {
     ) -> CompiledInvocation {
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
-        assert!(itertools::equal(
+        itertools::assert_equal(
             core_libfunc_ap_change(self.libfunc),
-            branches.iter().map(|(state, _)| sierra_ap_change::ApChange::Known(state.ap_change))
-        ));
+            branches.iter().map(|(state, _)| sierra_ap_change::ApChange::Known(state.ap_change)),
+        );
         let relocations = branches
             .iter()
             .zip_eq(branch_extractions.iter())
