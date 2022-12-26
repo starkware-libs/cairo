@@ -116,6 +116,20 @@ pub fn simulate<
             [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
+        Array(ArrayConcreteLibFunc::PopFront(_)) => match &inputs[..] {
+            [CoreValue::Array(_)] => {
+                let mut iter = inputs.into_iter();
+                let mut arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
+                if arr.is_empty() {
+                    Ok((vec![CoreValue::Array(arr)], 1))
+                } else {
+                    let front = arr.remove(0);
+                    Ok((vec![CoreValue::Array(arr), front], 0))
+                }
+            }
+            [_] => Err(LibFuncSimulationError::WrongArgType),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         Array(ArrayConcreteLibFunc::At(_)) => match &inputs[..] {
             [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint128(_)] => {
                 let mut iter = inputs.into_iter();

@@ -1,0 +1,66 @@
+//! > array_pop_front libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(ref arr: Array::<felt>) -> Option::<felt> {
+    array_pop_front::<felt>(arr)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 10;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[fp + -4] + 0], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 7})
+
+//! > sierra_code
+type felt = felt;
+type Array<felt> = Array<felt>;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<core::felt> = Enum<ut@core::option::Option::<core::felt>, felt, Unit>;
+
+libfunc array_pop_front<felt> = array_pop_front<felt>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::felt>, 0> = enum_init<core::option::Option::<core::felt>, 0>;
+libfunc store_temp<Array<felt>> = store_temp<Array<felt>>;
+libfunc rename<Array<felt>> = rename<Array<felt>>;
+libfunc store_temp<core::option::Option::<core::felt>> = store_temp<core::option::Option::<core::felt>>;
+libfunc rename<core::option::Option::<core::felt>> = rename<core::option::Option::<core::felt>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::felt>, 1> = enum_init<core::option::Option::<core::felt>, 1>;
+
+array_pop_front<felt>([0]) { fallthrough([1], [2]) 8([3]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::felt>, 0>([2]) -> ([4]);
+store_temp<Array<felt>>([1]) -> ([1]);
+rename<Array<felt>>([1]) -> ([5]);
+store_temp<core::option::Option::<core::felt>>([4]) -> ([4]);
+rename<core::option::Option::<core::felt>>([4]) -> ([6]);
+jump() { 14() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([7]);
+enum_init<core::option::Option::<core::felt>, 1>([7]) -> ([8]);
+store_temp<Array<felt>>([3]) -> ([5]);
+store_temp<core::option::Option::<core::felt>>([8]) -> ([8]);
+rename<core::option::Option::<core::felt>>([8]) -> ([6]);
+rename<Array<felt>>([5]) -> ([9]);
+rename<core::option::Option::<core::felt>>([6]) -> ([10]);
+return([9], [10]);
+
+test::foo@0([0]: Array<felt>) -> (Array<felt>, core::option::Option::<core::felt>);

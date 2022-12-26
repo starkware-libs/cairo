@@ -17,6 +17,7 @@ pub fn build(
     match libfunc {
         ArrayConcreteLibFunc::New(_) => build_array_new(builder),
         ArrayConcreteLibFunc::Append(_) => build_array_append(builder),
+        ArrayConcreteLibFunc::PopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
         ArrayConcreteLibFunc::At(libfunc) => build_array_at(&libfunc.ty, builder),
         ArrayConcreteLibFunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
     }
@@ -55,6 +56,39 @@ fn build_array_append(
     }
     Ok(builder
         .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[arr_start, arr_end]], None)]))
+}
+
+/// Handles a Sierra statement for popping an element from the begining of an array.
+fn build_pop_front(
+    elem_ty: &ConcreteTypeId,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+    let arr_start = arr_start.to_deref()?;
+    let arr_end = arr_end.to_deref()?;
+    let element_size = builder.program_info.type_sizes[elem_ty];
+
+    let mut casm_builder = CasmBuilder::default();
+    let arr_start = casm_builder.add_var(ResOperand::Deref(arr_start));
+    let arr_end = casm_builder.add_var(ResOperand::Deref(arr_end));
+    casm_build_extend! {casm_builder,
+        tempvar is_non_empty = arr_end - arr_start;
+        jump NonEmpty if is_non_empty != 0;
+        jump Failure;
+        NonEmpty:
+        const element_size_imm = element_size;
+        let new_start = arr_start + element_size_imm;
+    };
+    let elem_cells: Vec<_> =
+        (0..element_size).map(|i| casm_builder.double_deref(arr_start, i)).collect();
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[new_start, arr_end], &elem_cells], None),
+            ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
+        ],
+    ))
 }
 
 /// Handles a Sierra statement for fetching an array element at a specific index.
