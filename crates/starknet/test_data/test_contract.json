@@ -2894,5 +2894,25 @@
     "L1_HANDLER": [],
     "CONSTRUCTOR": []
   },
-  "abi": []
+  "abi": [
+    {
+      "type": "function",
+      "name": "test",
+      "inputs": [
+        {
+          "name": "arg",
+          "ty": "core::felt"
+        },
+        {
+          "name": "arg1",
+          "ty": "core::felt"
+        },
+        {
+          "name": "arg2",
+          "ty": "core::felt"
+        }
+      ],
+      "output_ty": "core::felt"
+    }
+  ]
 }
