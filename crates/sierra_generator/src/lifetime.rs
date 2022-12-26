@@ -11,9 +11,7 @@ use utils::unordered_hash_set::UnorderedHashSet;
 pub type StatementLocation = (BlockId, usize);
 
 /// Represents the location where a drop statement for a variable should be added.
-// TODO(lior): Remove the following `allow(dead_code)` once all variants are used.
-#[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum DropLocation {
     BeginningOfBlock(BlockId),
     PostStatement(StatementLocation),
@@ -70,7 +68,11 @@ fn inner_find_variable_lifetime(
         let statement_location = (block_id, idx);
 
         // Add the new variables from the statement's output.
-        state.handle_new_variables(&statement.outputs(), statement_location, res);
+        state.handle_new_variables(
+            &statement.outputs(),
+            DropLocation::PostStatement(statement_location),
+            res,
+        );
 
         match statement {
             lowering::Statement::Literal(_)
@@ -93,6 +95,9 @@ fn inner_find_variable_lifetime(
         // Mark the input variables as required.
         state.use_variables(&statement.inputs(), statement_location, res);
     }
+
+    // Handle the block's inputs.
+    state.handle_new_variables(&block.inputs, DropLocation::BeginningOfBlock(block_id), res);
 }
 
 /// Helper struct with the state maintained by [inner_find_variable_lifetime].
@@ -113,17 +118,16 @@ impl VariableLifetimeState {
     fn handle_new_variables(
         &mut self,
         var_ids: &[VariableId],
-        statement_location: StatementLocation,
+        drop_location: DropLocation,
         res: &mut VariableLifetimeResult,
     ) {
         for var_id in var_ids {
             if !self.used_variables.contains(var_id) {
                 // The variable will not be used, drop it immediately after the statement.
-                let new_drop_location = DropLocation::PostStatement(statement_location);
                 if let Some(drop_locations) = res.drops.get_mut(var_id) {
-                    drop_locations.push(new_drop_location);
+                    drop_locations.push(drop_location);
                 } else {
-                    res.drops.insert(*var_id, vec![new_drop_location]);
+                    res.drops.insert(*var_id, vec![drop_location]);
                 }
             }
         }
