@@ -144,6 +144,7 @@ mod integer;
 use integer::u128;
 use integer::u128_const;
 use integer::u128_from_felt;
+use integer::u128_try_from_felt;
 use integer::u128_to_felt;
 use integer::u128_add;
 use integer::u128_sub;
@@ -197,6 +198,8 @@ fn assert(cond: bool, err_code: felt) {
     }
 }
 
+// Serialization and Deserialization. DO NOT USE DIRECTLY - direct usage pending traits.
+mod serde;
 
 // Hash functions.
 mod hash;
