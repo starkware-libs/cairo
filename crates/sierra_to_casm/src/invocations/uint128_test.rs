@@ -110,40 +110,24 @@ fn test_wide_mul() {
                 [ap + 0] = [ap + -9] * [ap + -6], ap++;
                 [ap + 0] = [ap + -9] * [ap + -8], ap++;
                 [ap + 0] = [ap + -10] * [ap + -8], ap++;
-                %{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[ap + -3], (BigInt::from(2).pow(64))) %}
-                %{ (memory[ap + 2], memory[ap + 3]) = divmod(memory[ap + -2], (BigInt::from(2).pow(64))) %}
-                [ap + 0] = [[ap + -14] + 6], ap++;
-                [ap + 0] = [[ap + -15] + 7], ap++;
-                [ap + 0] = [[ap + -16] + 8], ap++;
-                [ap + 0] = [[ap + -17] + 9], ap++;
-                [ap + 0] = [ap + -3] + (BigInt::from(2).pow(128) - BigInt::from(2).pow(64)), ap++;
-                [ap + 0] = [ap + -2] + (BigInt::from(2).pow(128) - BigInt::from(2).pow(64)), ap++;
-                [ap + -2] = [[ap + -20] + 10];
-                [ap + -1] = [[ap + -20] + 11];
-                [ap + 0] = [ap + -6] * (BigInt::from(2).pow(64)), ap++;
-                [ap + 0] = [ap + -5] * (BigInt::from(2).pow(64)), ap++;
-                [ap + -11] = [ap + -2] + [ap + -7];
-                [ap + -10] = [ap + -1] + [ap + -5];
-                [ap + 0] = [ap + -7] + [ap + -5], ap++;
+                [ap + 0] = [ap + -3] + [ap + -2], ap++;
                 [ap + 0] = [ap + -1] * (BigInt::from(2).pow(64)), ap++;
-                [ap + 0] = [ap + -1] + [ap + -14], ap++;
-                %{ (memory[ap + 0], memory[ap + 6]) = divmod(memory[ap + -1], (BigInt::from(2).pow(128))) %}
-                [ap + 6] = [[ap + -25] + 12], ap++;
-                [ap + -1] = [[ap + -26] + 13], ap++;
-                [ap + -1] = [ap + -2] + (BigInt::from(2).pow(128) - BigInt::from(2).pow(64)), ap++;
-                [ap + -2] = [[ap + -28] + 14], ap++;
+                [ap + 0] = [ap + -1] + [ap + -6], ap++;
+                %{ (memory[ap + 0], memory[ap + 4]) = divmod(memory[ap + -1], (BigInt::from(2).pow(128))) %}
+                [ap + 4] = [[ap + -17] + 6], ap++;
+                [ap + -1] = [[ap + -18] + 7], ap++;
+                [ap + -1] = [ap + -2] + (BigInt::from(2).pow(128) - BigInt::from(2).pow(66)), ap++;
+                [ap + -2] = [[ap + -20] + 8], ap++;
                 [ap + -2] = [ap + -4] * (BigInt::from(2).pow(128)), ap++;
-                [ap + -6] = [ap + -3] + [ap + 1], ap++;
-                [ap + -3] = [ap + -17] + [ap + -15], ap++;
-                [ap + -3] = [ap + -19] + [ap + -7];
-                [ap + -2] = [ap + -4] + [ap + -3];
+                [ap + -6] = [ap + -3] + [ap + -1];
+                [ap + -2] = [ap + -9] + [ap + -5];
             }
             .instructions,
             relocations: vec![],
             results: vec![
                 ReducedBranchChanges {
-                    refs: vec![ref_expr!([ap - 32] + 15), ref_expr!([ap - 2]), ref_expr!([ap - 1])],
-                    ap_change: ApChange::Known(30)
+                    refs: vec![ref_expr!([ap - 22] + 9), ref_expr!([ap - 2]), ref_expr!([ap - 1])],
+                    ap_change: ApChange::Known(20)
                 }
             ]
         }
