@@ -45,6 +45,7 @@ define_libfunc_hierarchy! {
     pub enum ArrayLibFunc {
         New(ArrayNewLibFunc),
         Append(ArrayAppendLibFunc),
+        PopFront(ArrayPopFrontLibFunc),
         At(ArrayAtLibFunc),
         Len(ArrayLenLibFunc),
     }, ArrayConcreteLibFunc
@@ -136,6 +137,50 @@ impl SignatureAndTypeGenericLibFunc for ArrayAppendLibFuncWrapped {
     }
 }
 pub type ArrayAppendLibFunc = WrapSignatureAndTypeGenericLibFunc<ArrayAppendLibFuncWrapped>;
+
+/// LibFunc for popping the first value from the begining of an array.
+#[derive(Default)]
+pub struct ArrayPopFrontLibFuncWrapped {}
+impl SignatureAndTypeGenericLibFunc for ArrayPopFrontLibFuncWrapped {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("array_pop_front");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        Ok(LibFuncSignature {
+            param_signatures: vec![ParamSignature::new(arr_ty.clone())],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: arr_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: arr_ty,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+pub type ArrayPopFrontLibFunc = WrapSignatureAndTypeGenericLibFunc<ArrayPopFrontLibFuncWrapped>;
 
 /// LibFunc for fetching a value from a specific array index.
 #[derive(Default)]
