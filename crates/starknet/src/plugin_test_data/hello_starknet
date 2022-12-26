@@ -10,29 +10,27 @@ mod HelloStarknet {
 
     // Increases the balance by the given amount.
     #[external]
-    fn increase_balance(ref system: System, amount: felt) {
-        let res = super::balance::read(system);
-        super::balance::write(system, res + amount);
+    fn increase_balance(amount: felt) {
+        let res = super::balance::read();
+        super::balance::write(res + amount);
     }
 
     // Returns the current balance.
     #[view]
-    fn get_balance(ref system: System) -> felt {
-        super::balance::read(system)
+    fn get_balance() -> felt {
+        super::balance::read()
     }
 }
 
 //! > generated_cairo_code
 mod balance {
-    fn read(ref system: System) -> felt {
+    fn read() -> felt {
         starknet::storage_read_syscall(
-            system,
             starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
         )
     }
-    fn write(ref system: System, value: felt) -> Result::<(), felt> {
+    fn write(value: felt) -> Result::<(), felt> {
         starknet::storage_write_syscall(
-            system,
             starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>(),
             value
         )
@@ -43,39 +41,18 @@ mod __generated__HelloStarknet {
 
     // Increases the balance by the given amount.
     #[external]
-    fn increase_balance(ref system: System, amount: felt) {
-        let res = super::balance::read(system);
-        super::balance::write(system, res + amount);
+    fn increase_balance(amount: felt) {
+        let res = super::balance::read();
+        super::balance::write(res + amount);
     }
 
     // Returns the current balance.
     #[view]
-    fn get_balance(ref system: System) -> felt {
-        super::balance::read(system)
+    fn get_balance() -> felt {
+        super::balance::read()
     }
     mod __external {
-        fn increase_balance(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
-            match get_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut data = array_new::<felt>();
-                    array_append::<felt>(data, 'OOG');
-                    panic(data);
-                },
-            }
-            if array::array_len::<felt>(data) != 2_u128 {
-                panic(array::array_new::<felt>());
-            }
-            let __arg_amount: felt = match array::array_at::<felt>(data, 0_u128) {
-                Option::Some(x) => x,
-                Option::None(()) => panic(array::array_new::<felt>()),
-            };
-            super::increase_balance(system, __arg_amount);
-            let mut arr = array::array_new::<felt>();
-            arr
-        }
-        fn get_balance(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+        fn increase_balance(mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -88,7 +65,28 @@ mod __generated__HelloStarknet {
             if array::array_len::<felt>(data) != 1_u128 {
                 panic(array::array_new::<felt>());
             }
-            let res = super::get_balance(system,);
+            let __arg_amount: felt = match array::array_at::<felt>(data, 0_u128) {
+                Option::Some(x) => x,
+                Option::None(()) => panic(array::array_new::<felt>()),
+            };
+            super::increase_balance(__arg_amount);
+            let mut arr = array::array_new::<felt>();
+            arr
+        }
+        fn get_balance(mut data: Array::<felt>) -> Array::<felt> {
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut data = array_new::<felt>();
+                    array_append::<felt>(data, 'OOG');
+                    panic(data);
+                },
+            }
+            if array::array_len::<felt>(data) != 0_u128 {
+                panic(array::array_new::<felt>());
+            }
+            let res = super::get_balance();
             let mut arr = array::array_new::<felt>();
             array::array_append::<felt>(arr, res);
             arr

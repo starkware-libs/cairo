@@ -119,13 +119,13 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> S
 
         let generated_submodule = quote! {
             mod $name {
-                fn read(ref system: System) -> felt {
+                fn read() -> felt {
                     starknet::storage_read_syscall(
-                        system, starknet::storage_address_const::<$(address.clone())>())
+                        starknet::storage_address_const::<$(address.clone())>())
                 }
-                fn write(ref system: System, value: felt) -> Result::<(), felt> {
+                fn write(value: felt) -> Result::<(), felt> {
                     starknet::storage_write_syscall(
-                        system, starknet::storage_address_const::<$address>(), value)
+                        starknet::storage_address_const::<$address>(), value)
                 }
             }
         };
@@ -140,42 +140,15 @@ fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
     function: &ItemFreeFunction,
 ) -> Option<rust::Tokens> {
-    let mut successful_expansion = true;
-
     let sig = function.signature(db);
     let params = sig.parameters(db).elements(db);
     // TODO(yuval): support types of size >1. `params_len` should be sum of the params lengths.
     let params_len = params.len();
-    let mut params_iter = params.into_iter();
-
-    // Assert the first parameter is System.
-    // TODO(yuval): get_text includes trivia... This wouldn't always work.
-    match params_iter.next() {
-        Some(first_param) => {
-            let first_param_type = first_param.type_clause(db).ty(db).as_syntax_node().get_text(db);
-            if first_param_type != "System" {
-                // TODO(yuval): diagnostic
-                successful_expansion = false;
-            }
-            if !is_ref_param(db, &first_param) {
-                // TODO(yuval): diagnostic
-                successful_expansion = false;
-            }
-        }
-        None => {
-            // TODO(yuval): diagnostic
-            successful_expansion = false;
-        }
-    }
-
-    if !successful_expansion {
-        return None;
-    }
 
     let mut arg_names = Vec::new();
     let mut arg_definitions = quote! {};
     let mut ref_appends = quote! {};
-    for (idx, param) in params_iter.enumerate() {
+    for (idx, param) in params.into_iter().enumerate() {
         let arg_name = format!("__arg_{}", param.name(db).identifier(db));
         let is_ref = is_ref_param(db, &param);
 
@@ -207,7 +180,7 @@ fn generate_entry_point_wrapper(
     };
 
     Some(quote! {
-        fn $function_name(ref system: System, mut data: Array::<felt>) -> Array::<felt> {
+        fn $function_name(mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
                 Option::Some(_) => {},
                 Option::None(_) => {
@@ -222,7 +195,7 @@ fn generate_entry_point_wrapper(
                 panic(array::array_new::<felt>());
             }
             $arg_definitions
-            $let_res $wrapped_name(system, $param_names_tokens);
+            $let_res $wrapped_name($param_names_tokens);
             let mut arr = array::array_new::<felt>();
             $ref_appends
             $append_res

@@ -125,7 +125,7 @@ impl CasmContractClass {
             let statement_id = function.entry_point;
             let mut builtins = vec![];
 
-            // The expect return types are [builtins.., gas_builtin, system, PanicResult],
+            // The expected return types are [builtins.., gas_builtin, system, PanicResult],
             // So we ignore the last two return types.
             let (signature_builtins, leftover) =
                 function.signature.ret_types.split_at(function.signature.ret_types.len() - 3);
