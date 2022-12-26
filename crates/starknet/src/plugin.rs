@@ -156,47 +156,50 @@ fn generate_entry_point_wrapper(
         let mut_modifier = if is_ref { "mut " } else { "" };
         // TODO(yuval): use panicable version of `array_at` once panic_with supports generic
         // params.
-        arg_definitions.append(quote! {let $mut_modifier$(arg_name.clone()): felt = match array::array_at::<felt>(data, $(idx)_u128) {
+        arg_definitions.append(quote! {let $mut_modifier$(arg_name.clone()): felt = match array_at::<felt>(data, $(idx)_u128) {
                     Option::Some(x) => x,
-                    Option::None(()) => panic(array::array_new::<felt>()),
+                    Option::None(()) => panic(array_new::<felt>()),
                 };});
 
         if is_ref {
             // TODO(yuval): support types != felt.
-            ref_appends.append(quote! {array::array_append::<felt>(arr, $arg_name);});
+            ref_appends.append(quote! {array_append::<felt>(arr, $arg_name);});
         }
     }
     let param_names_tokens = join(arg_names.into_iter(), ", ");
 
     let function_name = function.name(db).text(db).to_string();
     let wrapped_name = format!("super::{function_name}");
-    let oog_err = "'OOG'";
 
     let (let_res, append_res) = match sig.ret_ty(db) {
         OptionReturnTypeClause::Empty(_) => ("", ""),
         OptionReturnTypeClause::ReturnTypeClause(_) => {
-            ("let res = ", "array::array_append::<felt>(arr, res);")
+            ("let res = ", "array_append::<felt>(arr, res);")
         }
     };
 
+    let oog_err = "'Out of gas'";
+    let wrong_num_args_err = "'Wrong number of arguments'";
     Some(quote! {
         fn $function_name(mut data: Array::<felt>) -> Array::<felt> {
+            // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
             match get_gas() {
                 Option::Some(_) => {},
                 Option::None(_) => {
-                    let mut data = array_new::<felt>();
-                    array_append::<felt>(data, $oog_err);
-                    panic(data);
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, $oog_err);
+                    panic(err_data);
                 },
             }
 
-            if array::array_len::<felt>(data) != $(params_len)_u128 {
-                // TODO(yuval): add error message.
-                panic(array::array_new::<felt>());
+            if array_len::<felt>(data) != $(params_len)_u128 {
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, $wrong_num_args_err);
+                panic(err_data);
             }
             $arg_definitions
             $let_res $wrapped_name($param_names_tokens);
-            let mut arr = array::array_new::<felt>();
+            let mut arr = array_new::<felt>();
             $ref_appends
             $append_res
             arr

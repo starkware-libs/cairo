@@ -38,26 +38,28 @@ mod __generated__TestContract {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut data = array_new::<felt>();
-                    array_append::<felt>(data, 'OOG');
-                    panic(data);
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, 'Out of gas');
+                    panic(err_data);
                 },
             }
-            if array::array_len::<felt>(data) != 2_u128 {
-                panic(array::array_new::<felt>());
+            if array_len::<felt>(data) != 2_u128 {
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, 'Wrong number of arguments');
+                panic(err_data);
             }
-            let mut __arg_arg: felt = match array::array_at::<felt>(data, 0_u128) {
+            let mut __arg_arg: felt = match array_at::<felt>(data, 0_u128) {
                 Option::Some(x) => x,
-                Option::None(()) => panic(array::array_new::<felt>()),
+                Option::None(()) => panic(array_new::<felt>()),
             };
-            let __arg_num: felt = match array::array_at::<felt>(data, 1_u128) {
+            let __arg_num: felt = match array_at::<felt>(data, 1_u128) {
                 Option::Some(x) => x,
-                Option::None(()) => panic(array::array_new::<felt>()),
+                Option::None(()) => panic(array_new::<felt>()),
             };
             let res = super::get_something(__arg_arg, __arg_num);
-            let mut arr = array::array_new::<felt>();
-            array::array_append::<felt>(arr, __arg_arg);
-            array::array_append::<felt>(arr, res);
+            let mut arr = array_new::<felt>();
+            array_append::<felt>(arr, __arg_arg);
+            array_append::<felt>(arr, res);
             arr
         }
         fn set_something(mut data: Array::<felt>) -> Array::<felt> {
@@ -65,25 +67,27 @@ mod __generated__TestContract {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut data = array_new::<felt>();
-                    array_append::<felt>(data, 'OOG');
-                    panic(data);
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, 'Out of gas');
+                    panic(err_data);
                 },
             }
-            if array::array_len::<felt>(data) != 2_u128 {
-                panic(array::array_new::<felt>());
+            if array_len::<felt>(data) != 2_u128 {
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, 'Wrong number of arguments');
+                panic(err_data);
             }
-            let mut __arg_arg: felt = match array::array_at::<felt>(data, 0_u128) {
+            let mut __arg_arg: felt = match array_at::<felt>(data, 0_u128) {
                 Option::Some(x) => x,
-                Option::None(()) => panic(array::array_new::<felt>()),
+                Option::None(()) => panic(array_new::<felt>()),
             };
-            let __arg_num: felt = match array::array_at::<felt>(data, 1_u128) {
+            let __arg_num: felt = match array_at::<felt>(data, 1_u128) {
                 Option::Some(x) => x,
-                Option::None(()) => panic(array::array_new::<felt>()),
+                Option::None(()) => panic(array_new::<felt>()),
             };
             super::set_something(__arg_arg, __arg_num);
-            let mut arr = array::array_new::<felt>();
-            array::array_append::<felt>(arr, __arg_arg);
+            let mut arr = array_new::<felt>();
+            array_append::<felt>(arr, __arg_arg);
             arr
         }
     }

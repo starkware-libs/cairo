@@ -24,7 +24,7 @@
     "0x40780017fff7fff",
     "0x1",
     "0x480680017fff8000",
-    "0x4f4f47",
+    "0x4f7574206f6620676173",
     "0x400080007ffe7fff",
     "0x482680017ff98000",
     "0x1",
@@ -40,25 +40,29 @@
     "0x480680017fff8000",
     "0x3",
     "0x1104800180018000",
-    "0xc7",
+    "0xcb",
     "0x40137ff57fff8000",
     "0x20680017fff7fff",
     "0x6",
     "0x10780017fff7fff",
     "0x2",
     "0x10780017fff7fff",
-    "0xe",
+    "0x12",
     "0x40780017fff7fff",
-    "0x46",
+    "0x45",
     "0x40780017fff7fff",
     "0x1",
+    "0x480680017fff8000",
+    "0x57726f6e67206e756d626572206f6620617267756d656e7473",
+    "0x400080007ffe7fff",
     "0x48127fad7fff8000",
     "0x480a80007fff8000",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
-    "0x48127ffb7fff8000",
     "0x48127ffa7fff8000",
+    "0x482480017ff98000",
+    "0x1",
     "0x208b7fff7fff7ffe",
     "0x480680017fff8000",
     "0x0",
@@ -334,55 +338,55 @@
       ]
     ],
     [
-      61,
+      65,
       [
         "%{ memory[ap + 0] = memory[ap + -2] < memory[ap + -1] %}"
       ]
     ],
     [
-      100,
+      104,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      114,
+      118,
       [
         "%{ memory[ap + 0] = memory[ap + -2] < memory[ap + -1] %}"
       ]
     ],
     [
-      153,
+      157,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      167,
+      171,
       [
         "%{ memory[ap + 0] = memory[ap + -2] < memory[ap + -1] %}"
       ]
     ],
     [
-      206,
+      210,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      223,
+      227,
       [
         "%{ memory[ap + 0] = segments.add() %}"
       ]
     ],
     [
-      276,
+      280,
       [
         "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -3]) %}"
       ]
     ],
     [
-      289,
+      293,
       [
         "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -4]) %}"
       ]
