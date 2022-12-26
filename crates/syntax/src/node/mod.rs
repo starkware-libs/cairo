@@ -212,7 +212,7 @@ impl<'db> Iterator for SyntaxNodeChildIterator<'db> {
         let green = self.db.lookup_intern_green(green_id);
         let width = green.width();
         let kind = green.kind;
-        let key_fields: Vec<GreenId> = get_key_fields(kind, green.children());
+        let key_fields: Vec<GreenId> = get_key_fields(self.db, kind, green.children());
         let index = match self.key_map.entry((kind, key_fields.clone())) {
             Entry::Occupied(mut entry) => entry.insert(entry.get() + 1),
             Entry::Vacant(entry) => {
