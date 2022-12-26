@@ -272,6 +272,7 @@ define_language_element_id_as_enum! {
         FreeFunction(FreeFunctionId),
         Struct(StructId),
         Enum(EnumId),
+        TypeAlias(TypeAliasId),
         Trait(TraitId),
         Impl(ImplId),
         ExternType(ExternTypeId),
@@ -447,7 +448,7 @@ define_language_element_id_as_enum! {
         Struct(StructId),
         Enum(EnumId),
         Extern(ExternTypeId),
-        // TODO(spapini): enums, associated types in impls.
+        // TODO(spapini): associated types in impls.
     }
 }
 impl GenericTypeId {
@@ -468,6 +469,7 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
             | ModuleItemId::Impl(_)
             | ModuleItemId::Struct(_)
             | ModuleItemId::Enum(_)
+            | ModuleItemId::TypeAlias(_)
             | ModuleItemId::ExternType(_) => None,
         }
     }
@@ -481,6 +483,7 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             ModuleItemId::Enum(id) => Some(GenericTypeId::Enum(id)),
             ModuleItemId::ExternType(id) => Some(GenericTypeId::Extern(id)),
             ModuleItemId::Submodule(_)
+            | ModuleItemId::TypeAlias(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::FreeFunction(_)
             | ModuleItemId::Trait(_)
