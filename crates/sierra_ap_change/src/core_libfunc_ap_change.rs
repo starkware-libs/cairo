@@ -22,6 +22,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
         CoreConcreteLibFunc::Array(libfunc) => match libfunc {
             ArrayConcreteLibFunc::New(_) => vec![ApChange::Known(1)],
             ArrayConcreteLibFunc::Append(_) => vec![ApChange::Known(0)],
+            ArrayConcreteLibFunc::PopFront(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             ArrayConcreteLibFunc::At(_) => vec![ApChange::Known(5), ApChange::Known(3)],
             ArrayConcreteLibFunc::Len(_) => vec![ApChange::Known(0)],
         },
