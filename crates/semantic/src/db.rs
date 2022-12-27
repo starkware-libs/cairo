@@ -29,6 +29,12 @@ use crate::{
     SemanticDiagnostic, TypeId,
 };
 
+/// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
+/// SemanticGroup.
+pub trait Elongate {
+    fn elongate(&self) -> &(dyn SemanticGroup + 'static);
+}
+
 // Salsa database interface.
 // All queries starting with priv_ are for internal use only by this crate.
 // They appear in the public API because of salsa limitations.
@@ -37,7 +43,12 @@ use crate::{
 // This prevents cycles where there shouldn't be any.
 #[salsa::query_group(SemanticDatabase)]
 pub trait SemanticGroup:
-    DefsGroup + Upcast<dyn DefsGroup> + ParserGroup + Upcast<dyn FilesGroup> + AsFilesGroupMut
+    DefsGroup
+    + Upcast<dyn DefsGroup>
+    + ParserGroup
+    + Upcast<dyn FilesGroup>
+    + AsFilesGroupMut
+    + Elongate
 {
     #[salsa::interned]
     fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
@@ -544,6 +555,12 @@ pub trait SemanticGroup:
     fn semantic_plugins(&self) -> Vec<Arc<dyn SemanticPlugin>>;
 }
 
+impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {
+    fn elongate(&self) -> &(dyn SemanticGroup + 'static) {
+        self.upcast()
+    }
+}
+
 /// Initializes a database with DefsGroup.
 pub fn init_semantic_group(db: &mut (dyn SemanticGroup + 'static)) {
     // Initialize inputs.
@@ -629,7 +646,7 @@ fn module_semantic_diagnostics(
     }
 
     Ok(map_diagnostics(
-        db.upcast(),
+        db.elongate(),
         module_id,
         &module_data.generated_file_info,
         diagnostics.build(),
@@ -640,7 +657,7 @@ fn module_semantic_diagnostics(
 /// Transforms diagnostics that originate from plugin generated files. Uses the plugin's diagnostic
 /// mapper.
 fn map_diagnostics(
-    db: &dyn SemanticGroup,
+    db: &(dyn SemanticGroup + 'static),
     module_id: ModuleId,
     generated_file_info: &[Option<GeneratedFileInfo>],
     original_diagnostics: Diagnostics<SemanticDiagnostic>,
@@ -664,7 +681,7 @@ fn map_diagnostics(
                 .0
                 .as_any()
                 .downcast_ref::<DynDiagnosticMapper>()
-                .and_then(|mapper| mapper.map_diag(db, diag));
+                .and_then(|mapper| mapper.map_diag(db.upcast(), diag));
             if let Some(plugin_diag) = opt_diag {
                 // We don't have a real location, so we give a dummy location in the correct file.
                 // SemanticDiagnostic struct knowns to give the proper span for
