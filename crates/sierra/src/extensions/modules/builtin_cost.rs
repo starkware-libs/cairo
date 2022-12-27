@@ -47,7 +47,10 @@ impl CostTokenType {
     }
 }
 
-/// Represents the cost of a single invocation of a builtin.
+/// Represents a pointer to an array with the builtin costs.
+/// Every element in the array is the cost of a single invocation of a builtin.
+///
+/// Offsets to the array are given by [CostTokenType::offset_in_builtin_costs].
 #[derive(Default)]
 pub struct BuiltinCostsType {}
 impl NoGenericArgsGenericType for BuiltinCostsType {
