@@ -52,6 +52,8 @@ pub struct PluginResult {
     pub code: Option<PluginGeneratedFile>,
     /// Diagnostics.
     pub diagnostics: Vec<PluginDiagnostic>,
+    /// If true - the original item should be removed, if false - it should remain as is.
+    pub remove_original_item: bool,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

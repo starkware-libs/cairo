@@ -258,13 +258,21 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
         res.files.push(module_file);
 
         for item_ast in item_asts.elements(syntax_db) {
+            let mut remove_original_item = false;
             for plugin in db.macro_plugins() {
                 let result = plugin.generate_code(db.upcast(), item_ast.clone());
                 for plugin_diag in result.diagnostics {
                     res.plugin_diagnostics.push((module_file_id, plugin_diag));
                 }
+                if result.remove_original_item {
+                    remove_original_item = true;
+                }
 
-                let Some(generated) = result.code else { continue };
+                let generated = if let Some(generated) = result.code {
+                    generated
+                } else {
+                    continue;
+                };
                 let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
                     parent: Some(module_file),
                     name: generated.name,
@@ -275,6 +283,13 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
                     origin: module_file_id,
                 }));
                 module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
+                // New code was generated for this item. If there are more plugins that should
+                // operate on it, they should operate on the result (the rest of the attributes
+                // should be copied to the new generated code).
+                break;
+            }
+            if remove_original_item {
+                continue;
             }
             match item_ast {
                 ast::Item::Module(module) => {

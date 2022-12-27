@@ -22,7 +22,7 @@ impl MacroPlugin for PanicablePlugin {
             ast::Item::FreeFunction(free_func_ast) => {
                 (free_func_ast.declaration(db), free_func_ast.attributes(db))
             }
-            _ => return PluginResult { code: None, diagnostics: vec![] },
+            _ => return PluginResult::default(),
         };
 
         generate_panicable_code(db, declaration, attributes)
@@ -44,6 +44,7 @@ fn generate_panicable_code(
     declaration: ast::FunctionDeclaration,
     attributes: AttributeList,
 ) -> PluginResult {
+    let remove_original_item = false;
     for attr in attributes.elements(db) {
         if attr.attr(db).text(db) != "panic_with" {
             continue;
@@ -61,6 +62,7 @@ fn generate_panicable_code(
                     stable_ptr: signature.stable_ptr().untyped(),
                     message: "Only nopanic functions can be wrapped".into(),
                 }],
+                remove_original_item,
             };
         }
 
@@ -74,6 +76,7 @@ fn generate_panicable_code(
                                 Result<T, E>"
                         .into(),
                 }],
+                remove_original_item,
             };
         };
 
@@ -96,6 +99,7 @@ fn generate_panicable_code(
                     stable_ptr: signature.stable_ptr().untyped(),
                     message: "Failed to extract panic data attribute".into(),
                 }],
+                remove_original_item,
             };
         };
 
@@ -129,9 +133,10 @@ fn generate_panicable_code(
                 aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
             }),
             diagnostics: vec![],
+            remove_original_item,
         };
     }
-    PluginResult { code: None, diagnostics: vec![] }
+    PluginResult::default()
 }
 
 /// Given a function signature, if it returns `Option::<T>` or `Result::<T, E>`, returns T and the

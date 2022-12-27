@@ -26,6 +26,7 @@ mod storage_var {
         )
     }
 }
+#[generated_contract]
 mod __generated__TestContract {
     struct Storage { storage_var: felt, }
     trait __abi {

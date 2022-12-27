@@ -185,26 +185,35 @@ impl MacroPlugin for DummyPlugin {
         item_ast: syntax::node::ast::Item,
     ) -> PluginResult {
         match item_ast {
-            ast::Item::Struct(struct_ast) => PluginResult {
-                code: Some(PluginGeneratedFile {
-                    name: "virt".into(),
-                    content: format!("fn foo(x:{}){{}}", struct_ast.name(db).text(db)),
-                    aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
-                }),
-                diagnostics: vec![],
-            },
-            ast::Item::FreeFunction(item) => PluginResult {
+            ast::Item::Struct(struct_ast) => {
+                let remove_original_item = struct_ast
+                    .attributes(db)
+                    .elements(db)
+                    .iter()
+                    .any(|attr| attr.attr(db).text(db) == "remove_orig");
+                PluginResult {
+                    code: Some(PluginGeneratedFile {
+                        name: "virt".into(),
+                        content: format!("fn foo(x:{}){{}}", struct_ast.name(db).text(db)),
+                        aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
+                    }),
+                    diagnostics: vec![],
+                    remove_original_item,
+                }
+            }
+            ast::Item::FreeFunction(free_function_ast) => PluginResult {
                 code: Some(PluginGeneratedFile {
                     name: "virt2".into(),
                     content: "extern type B;".into(),
                     aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
                 }),
                 diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: item.stable_ptr().untyped(),
+                    stable_ptr: free_function_ast.stable_ptr().untyped(),
                     message: "bla".into(),
                 }],
+                remove_original_item: false,
             },
-            _ => PluginResult { code: None, diagnostics: vec![] },
+            _ => PluginResult::default(),
         }
     }
 }
@@ -224,11 +233,49 @@ fn test_plugin() {
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
 
+    // Verify the original struct still exists.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "A".into()).unwrap().debug(db)),
+        "Some(StructId(test::A))"
+    );
+
+    // Verify the expected items were generated.
     assert_eq!(
         format!("{:?}", db.module_item_by_name(module_id, "foo".into()).unwrap().debug(db)),
         "Some(FreeFunctionId(test::foo))"
     );
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "B".into()).unwrap().debug(db)),
+        "Some(ExternTypeId(test::B))"
+    );
+}
 
+#[test]
+fn test_plugin_remove_original() {
+    let mut db_val = DatabaseForTesting::default();
+    let db = &mut db_val;
+
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
+    let root = Directory("src".into());
+    db.set_crate_root(crate_id, Some(root));
+
+    // Main module file.
+    set_file_content(db, "src/lib.cairo", "#[remove_orig] struct A{}");
+
+    // Find submodules.
+    let module_id = ModuleId::CrateRoot(crate_id);
+
+    // Verify the original struct was removed.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "A".into()).unwrap().debug(db)),
+        "None"
+    );
+
+    // Verify the expected items were generated.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).unwrap().debug(db)),
+        "Some(FreeFunctionId(test::foo))"
+    );
     assert_eq!(
         format!("{:?}", db.module_item_by_name(module_id, "B".into()).unwrap().debug(db)),
         "Some(ExternTypeId(test::B))"

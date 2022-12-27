@@ -36,6 +36,7 @@ mod balance {
         )
     }
 }
+#[generated_contract]
 mod __generated__HelloStarknet {
     struct Storage { balance: felt, }
 
