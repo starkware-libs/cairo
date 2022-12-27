@@ -1,6 +1,7 @@
 use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::hash::Hash;
+use std::ops::Sub;
 
 /// A hash set that does not care about the order of insertion.
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
@@ -14,6 +15,16 @@ impl<Key: Hash + Eq> UnorderedHashSet<Key> {
     /// If an equivalent item already exists in the set, returns `false`. Otherwise, returns `true`.
     pub fn insert(&mut self, key: Key) -> bool {
         self.0.insert(key)
+    }
+
+    /// Extends the set with the content of the given iterator.
+    pub fn extend<I: IntoIterator<Item = Key>>(&mut self, iter: I) {
+        self.0.extend(iter)
+    }
+
+    /// Extends the set with the content of another set.
+    pub fn extend_unordered(&mut self, other: Self) {
+        self.0.extend(other.0)
     }
 
     /// Return true if an equivalent to value exists in the set.
@@ -49,5 +60,13 @@ impl<Key: Hash + Eq> Default for UnorderedHashSet<Key> {
 impl<Key: Hash + Eq> FromIterator<Key> for UnorderedHashSet<Key> {
     fn from_iter<T: IntoIterator<Item = Key>>(iter: T) -> Self {
         Self(iter.into_iter().collect())
+    }
+}
+
+impl<'a, Key: Hash + Eq + Clone> Sub<&'a UnorderedHashSet<Key>> for &'a UnorderedHashSet<Key> {
+    type Output = UnorderedHashSet<Key>;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        UnorderedHashSet::<Key>(&self.0 - &rhs.0)
     }
 }
