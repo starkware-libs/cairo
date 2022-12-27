@@ -9,7 +9,7 @@ use sierra::extensions::pedersen::PedersenConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 
-/// Builds instructions for Sierra array operations.
+/// Builds instructions for Sierra pedersen operations.
 pub fn build(
     libfunc: &PedersenConcreteLibFunc,
     builder: CompiledInvocationBuilder<'_>,
@@ -19,7 +19,7 @@ pub fn build(
     }
 }
 
-/// Handles instruction for appending an element to an array.
+/// Handles instruction for computing a pedersen hash on two felts.
 fn build_pedersen_hash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
