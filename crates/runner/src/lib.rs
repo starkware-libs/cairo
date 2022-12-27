@@ -75,7 +75,8 @@ impl SierraCasmRunner {
         let metadata = create_metadata(&sierra_program, calc_gas)?;
         let sierra_program_registry =
             ProgramRegistry::<CoreType, CoreLibFunc>::new(&sierra_program)?;
-        let casm_program = sierra_to_casm::compiler::compile(&sierra_program, &metadata, calc_gas)?;
+        let casm_program =
+            sierra_to_casm::compiler::compile(&sierra_program, &metadata, calc_gas).unwrap();
         Ok(Self { sierra_program, metadata, sierra_program_registry, casm_program })
     }
 

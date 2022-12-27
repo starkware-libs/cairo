@@ -24,6 +24,7 @@ semantic = { path = "../semantic" }
 sierra = { path = "../sierra" }
 sierra_generator = { path = "../sierra_generator" }
 sierra_to_casm = { path = "../sierra_to_casm" }
+starknet = { path = "../starknet" }
 syntax = { path = "../syntax" }
 thiserror.workspace = true
 utils = { path = "../utils" }

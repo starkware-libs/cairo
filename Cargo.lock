@@ -2470,6 +2470,7 @@ dependencies = [
  "sierra",
  "sierra_generator",
  "sierra_to_casm",
+ "starknet",
  "syntax",
  "thiserror",
  "utils",
