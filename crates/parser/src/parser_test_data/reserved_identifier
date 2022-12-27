@@ -125,6 +125,16 @@ error: 'mod' is a reserved identifier.
 trait mod {}
       ^*^
 
+error: Skipped tokens. Expected: trait item or an attribute.
+ --> dummy_file.cairo:1:12
+trait mod {}
+           ^
+
+error: Missing token TerminalRBrace.
+ --> dummy_file.cairo:1:13
+trait mod {}
+            ^
+
 //! > ==========================================================================
 
 //! > Trait function name  - reserved identifier.
@@ -142,6 +152,16 @@ error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:2:8
     fn mod();
        ^*^
+
+error: Skipped tokens. Expected: trait item or an attribute.
+ --> dummy_file.cairo:3:1
+}
+^
+
+error: Missing token TerminalRBrace.
+ --> dummy_file.cairo:3:2
+}
+ ^
 
 //! > ==========================================================================
 

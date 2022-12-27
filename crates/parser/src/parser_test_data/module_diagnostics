@@ -29,7 +29,7 @@ error: Missing token TerminalSemicolon.
 mod my_mod }
           ^
 
-error: Skipped tokens. Expected: item.
+error: Skipped tokens. Expected: item or an attribute.
  --> dummy_file.cairo:1:12
 mod my_mod }
            ^

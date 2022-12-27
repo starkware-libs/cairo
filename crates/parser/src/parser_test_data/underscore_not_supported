@@ -125,6 +125,16 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 trait _ {}
       ^
 
+error: Skipped tokens. Expected: trait item or an attribute.
+ --> dummy_file.cairo:1:10
+trait _ {}
+         ^
+
+error: Missing token TerminalRBrace.
+ --> dummy_file.cairo:1:11
+trait _ {}
+          ^
+
 //! > ==========================================================================
 
 //! > Trait function name - underscore not supported.
@@ -142,6 +152,16 @@ error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:2:8
     fn _();
        ^
+
+error: Skipped tokens. Expected: trait item or an attribute.
+ --> dummy_file.cairo:3:1
+}
+^
+
+error: Missing token TerminalRBrace.
+ --> dummy_file.cairo:3:2
+}
+ ^
 
 //! > ==========================================================================
 
