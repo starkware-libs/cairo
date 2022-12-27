@@ -12,6 +12,7 @@ test_utils::test_file_test!(
     variable_lifetime,
     [
         "src/lifetime_test_data/block",
+        "src/lifetime_test_data/enum",
         "src/lifetime_test_data/simple",
         "src/lifetime_test_data/struct",
         "src/lifetime_test_data/match",
