@@ -1,12 +1,15 @@
+use std::sync::Arc;
+
 use db_utils::Upcast;
-use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
+use defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use defs::ids::ModuleId;
+use defs::plugin::MacroPlugin;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use parser::db::ParserDatabase;
 use plugins::get_default_plugins;
 use salsa::{InternId, InternKey};
-use semantic::db::{SemanticDatabase, SemanticGroup};
+use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use semantic::test_utils::setup_test_crate;
 use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
 use sierra::program;
@@ -34,9 +37,8 @@ impl Default for SierraGenDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        init_defs_group(&mut res);
         init_lowering_group(&mut res);
-        res.set_macro_plugins(get_default_plugins());
+        res.set_semantic_plugins(get_default_plugins());
         res
     }
 }
@@ -68,6 +70,11 @@ impl Upcast<dyn SemanticGroup> for SierraGenDatabaseForTesting {
 impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
     fn upcast(&self) -> &(dyn lowering::db::LoweringGroup + 'static) {
         self
+    }
+}
+impl HasMacroPlugins for SierraGenDatabaseForTesting {
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
+        self.get_macro_plugins()
     }
 }
 

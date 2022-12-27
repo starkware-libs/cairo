@@ -5,7 +5,6 @@ use anyhow::Context;
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
-use defs::db::DefsGroup;
 use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::ToOption;
 use itertools::Itertools;
@@ -84,7 +83,7 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
 
     let mut plugins = get_default_plugins();
     plugins.push(Arc::new(StarkNetPlugin {}));
-    db.set_macro_plugins(plugins);
+    db.set_semantic_plugins(plugins);
 
     if check_and_eprint_diagnostics(db) {
         anyhow::bail!("Failed to compile: {}", path.display());

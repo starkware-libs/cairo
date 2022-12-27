@@ -1,8 +1,10 @@
+use std::sync::Arc;
+
 use defs::plugin::{
-    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
-    TrivialMapper,
+    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use itertools::Itertools;
+use semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
 use syntax::node::ast::AttributeList;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -26,6 +28,15 @@ impl MacroPlugin for PanicablePlugin {
         generate_panicable_code(db, declaration, attributes)
     }
 }
+impl AsDynMacroPlugin for PanicablePlugin {
+    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
+    where
+        Self: 'a,
+    {
+        self
+    }
+}
+impl SemanticPlugin for PanicablePlugin {}
 
 /// Adds an implementation for all requested derives for the type.
 fn generate_panicable_code(
@@ -115,7 +126,7 @@ fn generate_panicable_code(
                     }}
                 "#
                 ),
-                diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+                aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
             }),
             diagnostics: vec![],
         };
