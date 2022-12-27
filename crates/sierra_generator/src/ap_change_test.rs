@@ -27,9 +27,8 @@ fn contains_cycles_test(
         .expect_with_db(db, "Unexpected diagnostics.");
 
     let result = db
-        .module_data(test_module.module_id)
+        .module_free_functions(test_module.module_id)
         .unwrap()
-        .free_functions
         .iter()
         .map(|(function_id, _)| {
             let name = db.lookup_intern_free_function(*function_id).name(db);

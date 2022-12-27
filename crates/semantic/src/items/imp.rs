@@ -85,12 +85,10 @@ pub fn priv_impl_declaration_data(
     db: &dyn SemanticGroup,
     impl_id: ImplId,
 ) -> Maybe<ImplDeclarationData> {
-    // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
-    // selector.
     let module_file_id = impl_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let impl_ast = module_data.impls.get(&impl_id).to_maybe()?;
+    let module_impls = db.module_impls(module_file_id.0)?;
+    let impl_ast = module_impls.get(&impl_id).to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.
@@ -170,8 +168,8 @@ pub fn priv_impl_definition_data(
     let declaration_data = db.priv_impl_declaration_data(impl_id)?;
     let concrete_trait = declaration_data.concrete_trait?;
 
-    let module_data = db.module_data(module_file_id.0)?;
-    let impl_ast = module_data.impls.get(&impl_id).to_maybe()?;
+    let module_impls = db.module_impls(module_file_id.0)?;
+    let impl_ast = module_impls.get(&impl_id).to_maybe()?;
     let syntax_db = db.upcast();
 
     let lookup_context = ImplLookupContext {
@@ -318,7 +316,7 @@ pub fn find_impls_at_module(
     concrete_trait_id: ConcreteTraitId,
 ) -> Maybe<Vec<ConcreteImplId>> {
     let mut res = Vec::new();
-    let impls = db.module_data(module_id)?.impls;
+    let impls = db.module_impls(module_id)?;
     // TODO(spapini): Index better.
     for impl_id in impls.keys().copied() {
         let Ok(imp_data)= db.priv_impl_declaration_data(impl_id) else {continue};
@@ -358,11 +356,11 @@ pub fn find_impls_at_context(
             res.extend(imps);
         }
     }
-    for submodule in db.module_submodules(lookup_context.module_id)? {
-        res.extend(find_impls_at_module(db, submodule, concrete_trait_id)?);
+    for submodule in db.module_submodules_ids(lookup_context.module_id)? {
+        res.extend(find_impls_at_module(db, ModuleId::Submodule(submodule), concrete_trait_id)?);
     }
-    for use_id in db.module_data(lookup_context.module_id)?.uses.keys() {
-        if let Ok(ResolvedGenericItem::Module(submodule)) = db.use_resolved_item(*use_id) {
+    for use_id in db.module_uses_ids(lookup_context.module_id)? {
+        if let Ok(ResolvedGenericItem::Module(submodule)) = db.use_resolved_item(use_id) {
             res.extend(find_impls_at_module(db, submodule, concrete_trait_id)?);
         }
     }
