@@ -122,6 +122,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                         )),
                     }),
                     diagnostics: vec![],
+                    remove_original_item: false,
                 }
             }
             _ => PluginResult::default(),

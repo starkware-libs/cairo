@@ -207,11 +207,11 @@
     "0x1",
     "0x2",
     "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
-    "0x1c6489aeae34c1e",
+    "0x26a38667531876bb",
     "0x13862ed316aec3c6",
     "0x1",
     "0x3",
-    "0xa80f42a6b88e0852",
+    "0xee258eef7ff5cdcd",
     "0x5521fbfd6000c2c3",
     "0x13862ed316aec3c6",
     "0x1",
@@ -328,11 +328,11 @@
     "0x1",
     "0x1",
     "0xe74fce603b886267",
-    "0x5d62c4355f20bea6",
+    "0x6dd9dffc2626891",
     "0x13862ed316aec3c6",
     "0x1",
     "0x3",
-    "0xfe69e57c7ab34856",
+    "0x368b13f928889537",
     "0xcb6a317e425994cd",
     "0x6cf23f6e840da115",
     "0x1",
@@ -1279,7 +1279,7 @@
     "0x1",
     "0x54",
     "0x0",
-    "0x1c6489aeae34c1e",
+    "0x26a38667531876bb",
     "0x5",
     "0x50",
     "0x51",
@@ -1774,7 +1774,7 @@
     "0xffffffffffffffff",
     "0x0",
     "0x0",
-    "0x5d62c4355f20bea6",
+    "0x6dd9dffc2626891",
     "0x0",
     "0x1",
     "0xffffffffffffffff",
@@ -2184,7 +2184,7 @@
     "0x1",
     "0x1",
     "0x9",
-    "0xf77c73306c943b3b",
+    "0xecf867dce092bdb0",
     "0x4",
     "0x4796fc05dd91ed72",
     "0x73b9292e27823975",
@@ -2227,7 +2227,7 @@
     "0x1",
     "0x9478b2e531ac5cf1",
     "0x95",
-    "0xa80f42a6b88e0852",
+    "0xee258eef7ff5cdcd",
     "0x5",
     "0x73b9292e27823975",
     "0xa81e2cdaf6921adc",
@@ -2300,7 +2300,7 @@
     "0x2",
     "0x1019fc7928c89c74",
     "0xcc",
-    "0xfe69e57c7ab34856",
+    "0x368b13f928889537",
     "0x0",
     "0x1",
     "0x1019fc7928c89c74",
@@ -2364,8 +2364,8 @@
         "enum_match<core::option::Option::<core::felt>>"
       ],
       [
-        127869469629565982,
-        "function_call<user@test_contract::test_contract::__generated__TestContract::test>"
+        494725255884073105,
+        "function_call<user@test_contract::test_contract::TestContract::internal_func>"
       ],
       [
         533362876658986487,
@@ -2410,6 +2410,10 @@
       [
         2173817310628021807,
         "array_pop_front<felt>"
+      ],
+      [
+        2784216772978964155,
+        "function_call<user@test_contract::test_contract::TestContract::test>"
       ],
       [
         2785814028946806345,
@@ -2470,10 +2474,6 @@
       [
         6318534592060038018,
         "store_temp<core::option::Option::<core::felt>>"
-      ],
-      [
-        6729156526753234598,
-        "function_call<user@test_contract::test_contract::__generated__TestContract::internal_func>"
       ],
       [
         6888485821176052388,
@@ -2634,6 +2634,10 @@
         "test_contract::test_contract::my_storage_var::read"
       ],
       [
+        3930257060658713911,
+        "test_contract::test_contract::TestContract::internal_func"
+      ],
+      [
         8967289948748444261,
         "core::serde::serialize_felt"
       ],
@@ -2646,20 +2650,16 @@
         "test_contract::test_contract::my_storage_var::write"
       ],
       [
-        12109971206850873426,
-        "test_contract::test_contract::__generated__TestContract::test"
-      ],
-      [
         14488085933457395572,
         "core::bool_not"
       ],
       [
-        17833255276297599803,
-        "test_contract::test_contract::__generated__TestContract::__external::test"
+        17075512185533414832,
+        "test_contract::test_contract::TestContract::__external::test"
       ],
       [
-        18332436080985589846,
-        "test_contract::test_contract::__generated__TestContract::internal_func"
+        17160279114460286413,
+        "test_contract::test_contract::TestContract::test"
       ]
     ]
   },

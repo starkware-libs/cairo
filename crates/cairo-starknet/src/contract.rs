@@ -8,7 +8,7 @@ use cairo_semantic::db::SemanticGroup;
 use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
 
-use crate::plugin::{ABI_TRAIT, CONTRACT_ATTR, EXTERNAL_MODULE};
+use crate::plugin::{ABI_TRAIT, EXTERNAL_MODULE, GENERATED_CONTRACT_ATTR};
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -51,7 +51,7 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
             for module_id in submodules {
                 if let ModuleId::Submodule(submodule_id) = module_id {
                     if let Ok(attrs) = db.module_attributes(module_id) {
-                        if attrs.iter().any(|attr| attr.id == CONTRACT_ATTR) {
+                        if attrs.iter().any(|attr| attr.id == GENERATED_CONTRACT_ATTR) {
                             contracts.push(ContractDeclaration { submodule_id });
                         };
                     }
@@ -108,21 +108,17 @@ fn get_generated_contract_module(
 ) -> anyhow::Result<ModuleId> {
     let parent_module_id = contract.submodule_id.parent_module(db.upcast());
     let contract_name = contract.submodule_id.name(db.upcast());
-    let generated_module_name = format!("__generated__{contract_name}");
 
     match db
         .module_items(parent_module_id)
         .to_option()
         .with_context(|| "Failed to get root module items.")?
         .items
-        .get(generated_module_name.as_str())
+        .get(contract_name.as_str())
     {
         Some(ModuleItemId::Submodule(generated_module_id)) => {
             Ok(ModuleId::Submodule(*generated_module_id))
         }
-        _ => anyhow::bail!(format!(
-            "Failed to get generated module {}.",
-            generated_module_name.clone()
-        )),
+        _ => anyhow::bail!(format!("Failed to get generated module {}.", contract_name.clone())),
     }
 }
