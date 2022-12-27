@@ -14,7 +14,7 @@ pub struct ParserDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
     // TODO(spapini): Add tokens from the recovery set to the message.
-    SkippedElement { element_name: &'static str },
+    SkippedElement { element_name: SmolStr },
     MissingToken(SyntaxKind),
     MissingExpression,
     MissingPathSegment,
@@ -28,7 +28,7 @@ impl DiagnosticEntry for ParserDiagnostic {
 
     fn format(&self, _db: &dyn FilesGroup) -> String {
         match self.kind {
-            ParserDiagnosticKind::SkippedElement { element_name } => {
+            ParserDiagnosticKind::SkippedElement { ref element_name } => {
                 format!("Skipped tokens. Expected: {element_name}.")
             }
             ParserDiagnosticKind::MissingToken(kind) => {
