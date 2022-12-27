@@ -86,13 +86,14 @@ impl SierraCasmRunner {
         mut self,
         name_suffix: &str,
         args: &[BigInt],
-        available_gas: &Option<usize>,
+        available_gas: Option<usize>,
     ) -> Result<RunResult, RunnerError> {
         // Extracting instructions before since `self` becomes borrowed later.
         let instructions = self.casm_program.instructions;
         self.casm_program.instructions = vec![];
         let func = self.find_function(name_suffix)?;
-        let (entry_code, builtins) = self.create_entry_code(func, args, available_gas)?;
+        let initial_gas = self.get_initial_gas(func, available_gas)?;
+        let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let (cells, ap) =
             casm::run::run_function(chain!(entry_code, instructions).collect(), builtins)?;
         let mut results_data = self.get_results_data(func, &cells, ap)?;
@@ -195,7 +196,7 @@ impl SierraCasmRunner {
         &self,
         func: &Function,
         args: &[BigInt],
-        available_gas: &Option<usize>,
+        initial_gas: usize,
     ) -> Result<(Vec<Instruction>, Vec<String>), RunnerError> {
         let mut arg_iter = args.iter();
         let mut expected_arguments_size = 0;
@@ -218,21 +219,8 @@ impl SierraCasmRunner {
                     [ap + 0] = [fp - offset], ap++;
                 }
             } else if ty == &"GasBuiltin".into() {
-                if let Some(available_gas) = available_gas {
-                    // TODO(lior): Handle the other token types.
-                    let initial_gas = available_gas.checked_sub(
-                        self.metadata.gas_info.function_costs[&func.id][CostTokenType::Step]
-                            as usize,
-                    );
-                    if let Some(initial_gas) = initial_gas {
-                        casm_extend! {ctx,
-                            [ap + 0] = initial_gas, ap++;
-                        }
-                    } else {
-                        return Err(RunnerError::NotEnoughGasToCall);
-                    }
-                } else {
-                    return Err(RunnerError::GasBuiltinRequired);
+                casm_extend! {ctx,
+                    [ap + 0] = initial_gas, ap++;
                 }
             } else {
                 let arg_size = self.sierra_program_registry.get_type(ty)?.info().size;
@@ -262,6 +250,24 @@ impl SierraCasmRunner {
         }
         assert_eq!(before_final_call + final_call_size, ctx.current_code_offset);
         Ok((ctx.instructions, builtins))
+    }
+
+    /// Returns the initial value for the gas counter.
+    fn get_initial_gas(
+        &self,
+        func: &Function,
+        available_gas: Option<usize>,
+    ) -> Result<usize, RunnerError> {
+        // In case we don't have any costs - it means no equations were solved - so the gas builtin
+        // is irrelevant, and we can return any value.
+        if self.metadata.gas_info.function_costs.is_empty() {
+            return Ok(0);
+        }
+        let Some(available_gas) = available_gas else { return Ok(0); };
+        // TODO(lior): Handle the other token types.
+        let required_gas =
+            self.metadata.gas_info.function_costs[&func.id][CostTokenType::Step] as usize;
+        available_gas.checked_sub(required_gas).ok_or(RunnerError::NotEnoughGasToCall)
     }
 }
 
