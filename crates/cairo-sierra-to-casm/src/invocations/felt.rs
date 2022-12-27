@@ -1,8 +1,7 @@
 use cairo_casm::operand::DerefOrImmediate;
 use cairo_sierra::extensions::felt::{
     FeltBinaryOpConcreteLibFunc, FeltBinaryOperationConcreteLibFunc, FeltBinaryOperator,
-    FeltConcrete, FeltOperationWithConstConcreteLibFunc, FeltUnaryOpConcreteLibFunc,
-    FeltUnaryOperationConcreteLibFunc, FeltUnaryOperator,
+    FeltConcrete, FeltOperationWithConstConcreteLibFunc,
 };
 use num_bigint::BigInt;
 
@@ -20,9 +19,6 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        FeltConcrete::UnaryOperation(FeltUnaryOperationConcreteLibFunc::Unary(
-            FeltUnaryOpConcreteLibFunc { operator, .. },
-        )) => build_felt_unary_op(builder, *operator),
         FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Binary(
             FeltBinaryOpConcreteLibFunc { operator, .. },
         )) => build_felt_op(builder, *operator),
@@ -34,30 +30,6 @@ pub fn build(
             [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))]
                 .into_iter(),
         )),
-    }
-}
-
-/// Handles a felt operation with the given unary op.
-fn build_felt_unary_op(
-    builder: CompiledInvocationBuilder<'_>,
-    op: FeltUnaryOperator,
-) -> Result<CompiledInvocation, InvocationError> {
-    let cell = builder.try_get_refs::<1>()?[0].try_unpack_single()?.clone();
-    match (op, cell) {
-        (FeltUnaryOperator::Neg, CellExpression::Deref(a)) => Ok(builder
-            .build_only_reference_changes(
-                [ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltBinaryOperator::Mul,
-                    a,
-                    b: DerefOrImmediate::Immediate((-1).into()),
-                }))]
-                .into_iter(),
-            )),
-        (FeltUnaryOperator::Neg, CellExpression::Immediate(imm)) => Ok(builder
-            .build_only_reference_changes(
-                [ReferenceExpression::from_cell(CellExpression::Immediate(-imm))].into_iter(),
-            )),
-        _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
     }
 }
 

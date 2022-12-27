@@ -19,7 +19,6 @@ use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use crate::extensions::felt::{
     FeltBinaryOpConcreteLibFunc, FeltBinaryOperationConcreteLibFunc, FeltBinaryOperator,
     FeltConcrete, FeltConstConcreteLibFunc, FeltOperationWithConstConcreteLibFunc,
-    FeltUnaryOpConcreteLibFunc, FeltUnaryOperationConcreteLibFunc, FeltUnaryOperator,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
 use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
@@ -477,14 +476,6 @@ fn simulate_felt_libfunc(
                 Err(LibFuncSimulationError::WrongNumberOfArgs)
             }
         }
-        FeltConcrete::UnaryOperation(FeltUnaryOperationConcreteLibFunc::Unary(
-            FeltUnaryOpConcreteLibFunc { operator, .. },
-        )) => match (inputs, operator) {
-            ([CoreValue::Felt(val)], FeltUnaryOperator::Neg) => {
-                Ok((vec![CoreValue::Felt(-val)], 0))
-            }
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
-        },
         FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Binary(
             FeltBinaryOpConcreteLibFunc { operator, .. },
         )) => match (inputs, operator) {
