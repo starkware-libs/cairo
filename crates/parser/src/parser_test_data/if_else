@@ -22,6 +22,8 @@ ExprIf
 //! > ignored_kinds
 ExprBinary
 
+//! > expected_diagnostics
+
 //! > expected_tree
 └── Top level kind: ExprIf
     ├── if_kw (kind: TokenIf): 'if'

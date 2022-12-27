@@ -17,6 +17,8 @@ SyntaxFile
 //! > ignored_kinds
 ItemFreeFunction
 
+//! > expected_diagnostics
+
 //! > expected_tree
 └── Top level kind: SyntaxFile
     ├── items (kind: ItemList)
@@ -77,6 +79,8 @@ impl FooImpl<S> of Foo::<S> {}
 SyntaxFile
 
 //! > ignored_kinds
+
+//! > expected_diagnostics
 
 //! > expected_tree
 └── Top level kind: SyntaxFile

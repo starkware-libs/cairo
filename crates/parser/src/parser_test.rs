@@ -260,8 +260,7 @@ pub fn test_partial_parser_tree(
     let file_id = create_virtual_file(db, "dummy_file.cairo", &inputs["cairo_code"]);
     let (syntax_root, diagnostics) =
         get_syntax_root_and_diagnostics(db, file_id, &inputs["cairo_code"]);
-    // TODO(yuval): also test diagnostics
-    assert_eq!(diagnostics.format(db), "");
+    assert_eq!(diagnostics.format(db), inputs["expected_diagnostics"]);
 
     let ignored_kinds: Vec<&str> = inputs["ignored_kinds"].split('\n').collect();
     OrderedHashMap::from([(

@@ -18,6 +18,8 @@ ItemFreeFunction
 ExprBlock
 FunctionSignature
 
+//! > expected_diagnostics
+
 //! > expected_tree
 └── Top level kind: ItemFreeFunction
     ├── attributes (kind: AttributeList)

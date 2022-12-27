@@ -18,6 +18,8 @@ StatementList
 
 //! > ignored_kinds
 
+//! > expected_diagnostics
+
 //! > expected_tree
 └── Top level kind: StatementList
     ├── child #0 (kind: StatementExpr)
