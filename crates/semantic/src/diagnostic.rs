@@ -7,7 +7,7 @@ use defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
-use defs::plugin::{PluginDiagnostic, PluginMappedDiagnostic};
+use defs::plugin::PluginDiagnostic;
 use diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
 };
@@ -16,6 +16,7 @@ use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
 
 use crate::db::SemanticGroup;
+use crate::plugin::PluginMappedDiagnostic;
 use crate::semantic;
 
 pub struct SemanticDiagnostics {

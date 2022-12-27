@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use defs::plugin::MacroPlugin;
+use semantic::plugin::SemanticPlugin;
 
 use crate::derive::DerivePlugin;
 use crate::panicable::PanicablePlugin;
@@ -12,6 +12,6 @@ pub mod panicable;
 mod test;
 
 /// Gets the list of default plugins to load into the Cairo compiler.
-pub fn get_default_plugins() -> Vec<Arc<dyn MacroPlugin>> {
+pub fn get_default_plugins() -> Vec<Arc<dyn SemanticPlugin>> {
     vec![Arc::new(DerivePlugin {}), Arc::new(PanicablePlugin {})]
 }

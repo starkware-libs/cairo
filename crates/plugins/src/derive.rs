@@ -1,7 +1,9 @@
+use std::sync::Arc;
+
 use defs::plugin::{
-    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
-    TrivialMapper,
+    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
 use syntax::node::ast::AttributeList;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -22,6 +24,15 @@ impl MacroPlugin for DerivePlugin {
         }
     }
 }
+impl AsDynMacroPlugin for DerivePlugin {
+    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
+    where
+        Self: 'a,
+    {
+        self
+    }
+}
+impl SemanticPlugin for DerivePlugin {}
 
 /// Adds an implementation for all requested derives for the type.
 fn generate_derive_code_for_type(
@@ -77,7 +88,7 @@ fn generate_derive_code_for_type(
             code: Some(PluginGeneratedFile {
                 name: "impls".into(),
                 content: impls.join(""),
-                diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+                aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
             }),
             diagnostics: vec![],
         }

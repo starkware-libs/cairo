@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use db_utils::Upcast;
-use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
+use defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
+use defs::plugin::MacroPlugin;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use parser::db::ParserDatabase;
 use plugins::get_default_plugins;
-use semantic::db::{SemanticDatabase, SemanticGroup};
+use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
@@ -24,9 +27,8 @@ impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        init_defs_group(&mut res);
         init_lowering_group(&mut res);
-        res.set_macro_plugins(get_default_plugins());
+        res.set_semantic_plugins(get_default_plugins());
         res
     }
 }
@@ -58,5 +60,10 @@ impl Upcast<dyn SemanticGroup> for LoweringDatabaseForTesting {
 impl Upcast<dyn LoweringGroup> for LoweringDatabaseForTesting {
     fn upcast(&self) -> &(dyn LoweringGroup + 'static) {
         self
+    }
+}
+impl HasMacroPlugins for LoweringDatabaseForTesting {
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
+        self.get_macro_plugins()
     }
 }

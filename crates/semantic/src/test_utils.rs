@@ -1,19 +1,19 @@
 use std::sync::Arc;
 
 use db_utils::Upcast;
-use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
+use defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
+use defs::plugin::MacroPlugin;
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateId, CrateLongId, Directory};
 use parser::db::ParserDatabase;
-use plugins::get_default_plugins;
 use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::{extract_matches, OptionFrom};
 
-use crate::db::{SemanticDatabase, SemanticGroup};
+use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use crate::{semantic, SemanticDiagnostic};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -25,8 +25,7 @@ impl Default for SemanticDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        init_defs_group(&mut res);
-        res.set_macro_plugins(get_default_plugins());
+        res.set_semantic_plugins(vec![]);
         res
     }
 }
@@ -53,6 +52,11 @@ impl Upcast<dyn DefsGroup> for SemanticDatabaseForTesting {
 impl Upcast<dyn SemanticGroup> for SemanticDatabaseForTesting {
     fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
         self
+    }
+}
+impl HasMacroPlugins for SemanticDatabaseForTesting {
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
+        self.get_macro_plugins()
     }
 }
 
