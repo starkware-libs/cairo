@@ -1,0 +1,2 @@
+[crate_roots]
+cairo_level_tests = "."
