@@ -93,8 +93,8 @@ pub fn priv_extern_function_declaration_data(
     let syntax_db = db.upcast();
     let module_file_id = extern_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let function_syntax = module_data.extern_functions.get(&extern_function_id).to_maybe()?;
+    let module_extern_functions = db.module_extern_functions(module_file_id.0)?;
+    let function_syntax = module_extern_functions.get(&extern_function_id).to_maybe()?;
     let declaration = function_syntax.declaration(syntax_db);
     let generic_params = semantic_generic_params(
         db,
