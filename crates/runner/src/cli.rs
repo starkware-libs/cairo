@@ -50,7 +50,7 @@ fn main() -> anyhow::Result<()> {
     )
     .with_context(|| "Failed setting up runner.")?;
     let result = runner
-        .run_function("::main", &[], &args.available_gas)
+        .run_function("::main", &[], args.available_gas)
         .with_context(|| "Failed to run the function.")?;
     match result.value {
         runner::RunResultValue::Success(values) => {
