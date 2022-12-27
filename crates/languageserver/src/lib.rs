@@ -387,27 +387,27 @@ impl LanguageServer for Backend {
                     (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
                 }
                 ResolvedGenericItem::GenericFunction(item) => (
-                    item.module(defs_db),
+                    item.parent_module(defs_db),
                     item.file_index(defs_db),
                     item.untyped_stable_ptr(defs_db),
                 ),
                 ResolvedGenericItem::GenericType(generic_type) => (
-                    generic_type.module(defs_db),
+                    generic_type.parent_module(defs_db),
                     generic_type.file_index(defs_db),
                     generic_type.untyped_stable_ptr(defs_db),
                 ),
                 ResolvedGenericItem::Variant(variant) => (
-                    variant.id.module(defs_db),
+                    variant.id.parent_module(defs_db),
                     variant.id.file_index(defs_db),
                     variant.id.stable_ptr(defs_db).untyped(),
                 ),
                 ResolvedGenericItem::Trait(trt) => (
-                    trt.module(defs_db),
+                    trt.parent_module(defs_db),
                     trt.file_index(defs_db),
                     trt.stable_ptr(defs_db).untyped(),
                 ),
                 ResolvedGenericItem::Impl(imp) => (
-                    imp.module(defs_db),
+                    imp.parent_module(defs_db),
                     imp.file_index(defs_db),
                     imp.stable_ptr(defs_db).untyped(),
                 ),
