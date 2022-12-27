@@ -406,61 +406,57 @@ fn build_u128_eq(
     let mut a = expr_a.try_unpack_single()?.to_deref_or_immediate()?;
     let mut b = expr_b.try_unpack_single()?.to_deref_or_immediate()?;
 
-    // casm_build_extend! won't work if a is immediate.
-    // If a, b are both immediates - init both_are_immediates as true so a - b will be calculated
-    // "outside" the casm code.
-    // if a is an immediate and b is a deref - swap them.
-    let both_are_immediates = match a {
-        DerefOrImmediate::Deref(_) => false,
-        DerefOrImmediate::Immediate(_) => match b {
-            DerefOrImmediate::Immediate(_) => true,
-            DerefOrImmediate::Deref(_) => {
-                [a, b] = [b, a];
-                false
-            }
-        },
-    };
+    // The casm line 'tempvar diff = a - b;' won't work if a is an immediate.
+    // if a is an immediate and b is a deref, this swap will be enough.
+    // If a, b are both immediates - a will still be an immediate after the swap, so a - b will be
+    // calculated "outside" the casm code (see below).
+    if let DerefOrImmediate::Immediate(_) = a {
+        [a, b] = [b, a];
+    }
+    let diff = match a {
+        DerefOrImmediate::Immediate(_) => {
+            let [big_int_a, big_int_b] = match [a, b] {
+                [
+                    DerefOrImmediate::Immediate(big_int_a),
+                    DerefOrImmediate::Immediate(big_int_b),
+                ] => [big_int_a, big_int_b],
+                _ => {
+                    panic!("a, b should be of type DerefOrImmediate::Immediate.");
+                }
+            };
+            let diff = big_int_a - big_int_b;
 
-    let diff = if both_are_immediates {
-        let [big_int_a, big_int_b] = match [a, b] {
-            [DerefOrImmediate::Immediate(big_int_a), DerefOrImmediate::Immediate(big_int_b)] => {
-                [big_int_a, big_int_b]
-            }
-            _ => {
-                panic!("a, b should be of type DerefOrImmediate::Immediate.");
-            }
-        };
-        let diff = big_int_a - big_int_b;
+            casm_build_extend! {casm_builder,
+                // This line is needed because a tempvar does not accept (only) an immediate in the rhs.
+                const _diff = diff;
 
-        casm_build_extend! {casm_builder,
-            // This line is needed because a tempvar does not accept (only) an immediate in the rhs.
-            const _diff = diff;
+                tempvar diff = _diff;
+            };
+            diff
+        }
+        DerefOrImmediate::Deref(_) => {
+            let a = match a {
+                DerefOrImmediate::Deref(cell_ref_a) => {
+                    casm_builder.add_var(ResOperand::Deref(cell_ref_a))
+                }
+                _ => {
+                    panic!("a should be of type DerefOrImmediate::Deref.");
+                }
+            };
+            let b = match b {
+                DerefOrImmediate::Deref(cell_ref_b) => {
+                    casm_builder.add_var(ResOperand::Deref(cell_ref_b))
+                }
+                DerefOrImmediate::Immediate(big_int_b) => {
+                    casm_builder.add_var(ResOperand::Immediate(big_int_b))
+                }
+            };
 
-            tempvar diff = _diff;
-        };
-        diff
-    } else {
-        let a = match a {
-            DerefOrImmediate::Deref(cell_ref_a) => {
-                casm_builder.add_var(ResOperand::Deref(cell_ref_a))
-            }
-            _ => {
-                panic!("a should be of type DerefOrImmediate::Deref.");
-            }
-        };
-        let b = match b {
-            DerefOrImmediate::Deref(cell_ref_b) => {
-                casm_builder.add_var(ResOperand::Deref(cell_ref_b))
-            }
-            DerefOrImmediate::Immediate(big_int_b) => {
-                casm_builder.add_var(ResOperand::Immediate(big_int_b))
-            }
-        };
-
-        casm_build_extend! {casm_builder,
-            tempvar diff = a - b;
-        };
-        diff
+            casm_build_extend! {casm_builder,
+                tempvar diff = a - b;
+            };
+            diff
+        }
     };
 
     casm_build_extend! {casm_builder,
