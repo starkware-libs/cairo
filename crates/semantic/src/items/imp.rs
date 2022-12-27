@@ -223,7 +223,9 @@ pub fn priv_impl_definition_data(
                 Item::Enum(enm) => {
                     report_invalid_in_impl(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
                 }
-
+                Item::TypeAlias(ty) => {
+                    report_invalid_in_impl(syntax_db, &mut diagnostics, ty.type_kw(syntax_db))
+                }
                 Item::FreeFunction(func) => {
                     let impl_function_id = db.intern_impl_function(ImplFunctionLongId(
                         module_file_id,
