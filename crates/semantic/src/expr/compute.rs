@@ -776,6 +776,8 @@ fn struct_ctor_expr(
 
     let members = db.concrete_struct_members(concrete_struct)?;
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
+    // A set of struct members for which a diagnostic has been reported.
+    let mut skipped_members: UnorderedHashSet<MemberId> = UnorderedHashSet::default();
     for arg in ctor_syntax.arguments(syntax_db).arguments(syntax_db).elements(syntax_db) {
         // TODO: Extract to a function for results.
         let arg = match arg {
@@ -787,6 +789,7 @@ fn struct_ctor_expr(
         };
         let arg_identifier = arg.identifier(syntax_db);
         let arg_name = arg_identifier.text(syntax_db);
+
         // Find struct member by name.
         let member = if let Some(member) = members.get(&arg_name) {
             member
@@ -794,6 +797,7 @@ fn struct_ctor_expr(
             ctx.diagnostics.report(&arg_identifier, UnknownMember);
             continue;
         };
+
         // Extract expression.
         let arg_expr = match arg.arg_expr(syntax_db) {
             ast::OptionStructArgExpr::Empty(_) => {
@@ -803,12 +807,16 @@ fn struct_ctor_expr(
                 compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
             }
         };
+
         // Check types.
         if arg_expr.ty() != member.ty {
-            ctx.diagnostics.report(
-                &arg_identifier,
-                WrongArgumentType { expected_ty: member.ty, actual_ty: arg_expr.ty() },
-            );
+            if !member.ty.is_missing(db) {
+                ctx.diagnostics.report(
+                    &arg_identifier,
+                    WrongArgumentType { expected_ty: member.ty, actual_ty: arg_expr.ty() },
+                );
+            }
+            skipped_members.insert(member.id);
             continue;
         }
         // Insert and check for duplicates.
@@ -816,12 +824,14 @@ fn struct_ctor_expr(
             ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
         }
     }
+
     // Report errors for missing members.
     for (member_name, member) in members.iter() {
-        if !member_exprs.contains_key(&member.id) {
+        if !member_exprs.contains_key(&member.id) && !skipped_members.contains(&member.id) {
             ctx.diagnostics.report(ctor_syntax, MissingMember { member_name: member_name.clone() });
         }
     }
+
     Ok(Expr::StructCtor(ExprStructCtor {
         struct_id: concrete_struct.struct_id(db),
         members: member_exprs.into_iter().collect(),
