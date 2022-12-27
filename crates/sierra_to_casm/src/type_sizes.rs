@@ -32,7 +32,9 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Pedersen(_)
             | CoreTypeConcrete::DictFeltTo(_)
             | CoreTypeConcrete::DictManager(_) => Some(1),
-            CoreTypeConcrete::Array(_) | CoreTypeConcrete::SquashedDictFeltTo(_) => Some(2),
+            CoreTypeConcrete::Array(_)
+            | CoreTypeConcrete::EcPoint(_)
+            | CoreTypeConcrete::SquashedDictFeltTo(_) => Some(2),
             CoreTypeConcrete::NonZero(InfoAndTypeConcreteType { ty, .. }) => {
                 type_sizes.get(ty).cloned()
             }

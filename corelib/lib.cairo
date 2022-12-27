@@ -52,6 +52,11 @@ fn bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
     !(a == b)
 }
 
+// EC.
+extern type EcPoint;
+extern fn create_ec_point(x: felt, y: felt) -> Result::<EcPoint, ()> nopanic;
+
+// Felt.
 extern type RangeCheck;
 
 extern type felt;
