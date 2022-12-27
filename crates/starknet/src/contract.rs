@@ -104,7 +104,7 @@ fn get_generated_contract_module(
     db: &(dyn SemanticGroup + 'static),
     contract: &ContractDeclaration,
 ) -> anyhow::Result<ModuleId> {
-    let parent_module_id = contract.submodule_id.module(db.upcast());
+    let parent_module_id = contract.submodule_id.parent_module(db.upcast());
     let contract_name = contract.submodule_id.name(db.upcast());
     let generated_module_name = format!("__generated__{contract_name}");
 

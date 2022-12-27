@@ -87,7 +87,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
         ref_params: &ref_params,
         implicits: implicits_ref,
         lookup_context: ImplLookupContext {
-            module_id: free_function_id.module(db.upcast()),
+            module_id: free_function_id.parent_module(db.upcast()),
             extra_modules: vec![],
             generic_params,
         },

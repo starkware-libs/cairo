@@ -60,7 +60,7 @@ pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<V
         ModuleId::CrateRoot(_) | ModuleId::VirtualSubmodule(_) => vec![],
         ModuleId::Submodule(submodule_id) => {
             let module_ast =
-                &db.module_data(submodule_id.module(db.upcast()))?.submodules[submodule_id];
+                &db.module_data(submodule_id.parent_module(db.upcast()))?.submodules[submodule_id];
             let syntax_db = db.upcast();
 
             ast_attributes_to_semantic(syntax_db, module_ast.attributes(syntax_db))
