@@ -43,9 +43,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
         },
         CoreConcreteLibFunc::Drop(_) | CoreConcreteLibFunc::Dup(_) => vec![ApChange::Known(0)],
         CoreConcreteLibFunc::Felt(libfunc) => match libfunc {
-            FeltConcrete::BinaryOperation(_)
-            | FeltConcrete::UnaryOperation(_)
-            | FeltConcrete::Const(_) => vec![ApChange::Known(0)],
+            FeltConcrete::BinaryOperation(_) | FeltConcrete::Const(_) => vec![ApChange::Known(0)],
             FeltConcrete::JumpNotZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
         CoreConcreteLibFunc::FunctionCall(libfunc) => {

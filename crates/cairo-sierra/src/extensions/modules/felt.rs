@@ -30,7 +30,6 @@ impl NoGenericArgsGenericType for FeltType {
 define_libfunc_hierarchy! {
     pub enum FeltLibFunc {
         BinaryOperation(FeltBinaryOperationLibFunc),
-        UnaryOperation(FeltUnaryOperationLibFunc),
         Const(FeltConstLibFunc),
         JumpNotZero(FeltJumpNotZeroLibFunc),
     }, FeltConcrete
@@ -43,12 +42,6 @@ impl JumpNotZeroTraits for FeltTraits {
     const GENERIC_TYPE_ID: GenericTypeId = <FeltType as NamedType>::ID;
 }
 pub type FeltJumpNotZeroLibFunc = JumpNotZeroLibFunc<FeltTraits>;
-
-/// Felt unary operators.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum FeltUnaryOperator {
-    Neg,
-}
 
 /// Felt binary operators.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -160,79 +153,6 @@ impl GenericLibFunc for FeltBinaryOperationLibFunc {
     }
 }
 
-/// Libfunc for felt unary operations.
-pub struct FeltUnaryOperationLibFunc {
-    pub operator: FeltUnaryOperator,
-}
-impl FeltUnaryOperationLibFunc {
-    fn new(operator: FeltUnaryOperator) -> Self {
-        Self { operator }
-    }
-}
-impl GenericLibFunc for FeltUnaryOperationLibFunc {
-    type Concrete = FeltUnaryOperationConcreteLibFunc;
-
-    fn by_id(id: &GenericLibFuncId) -> Option<Self> {
-        const NEG: GenericLibFuncId = GenericLibFuncId::new_inline("felt_neg");
-        match id {
-            id if id == &NEG => Some(Self::new(FeltUnaryOperator::Neg)),
-            _ => None,
-        }
-    }
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = context.get_concrete_type(FeltType::id(), &[])?;
-        match args {
-            [] if matches!(self.operator, FeltUnaryOperator::Neg) => {
-                Ok(LibFuncSignature::new_non_branch_ex(
-                    vec![ParamSignature {
-                        ty: ty.clone(),
-                        allow_deferred: false,
-                        allow_add_const: false,
-                        allow_const: true,
-                    }],
-                    vec![OutputVarInfo {
-                        ty,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                    }],
-                    SierraApChange::Known { new_vars_only: true },
-                ))
-            }
-            _ => Err(SpecializationError::UnsupportedGenericArg),
-        }
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        match args {
-            [] if matches!(self.operator, FeltUnaryOperator::Neg) => Ok({
-                FeltUnaryOperationConcreteLibFunc::Unary(FeltUnaryOpConcreteLibFunc {
-                    operator: self.operator,
-                    signature: self.specialize_signature(context.upcast(), args)?,
-                })
-            }),
-            _ => Err(SpecializationError::UnsupportedGenericArg),
-        }
-    }
-}
-
-pub struct FeltUnaryOpConcreteLibFunc {
-    pub operator: FeltUnaryOperator,
-    pub signature: LibFuncSignature,
-}
-impl SignatureBasedConcreteLibFunc for FeltUnaryOpConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
-    }
-}
-
 pub struct FeltBinaryOpConcreteLibFunc {
     pub operator: FeltBinaryOperator,
     pub signature: LibFuncSignature,
@@ -253,12 +173,6 @@ define_concrete_libfunc_hierarchy! {
     pub enum FeltBinaryOperationConcreteLibFunc {
         Binary(FeltBinaryOpConcreteLibFunc),
         Const(FeltOperationWithConstConcreteLibFunc),
-    }
-}
-
-define_concrete_libfunc_hierarchy! {
-    pub enum FeltUnaryOperationConcreteLibFunc {
-        Unary(FeltUnaryOpConcreteLibFunc),
     }
 }
 

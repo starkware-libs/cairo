@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cairo_casm::ap_change::ApplyApChange;
 use cairo_casm::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
-use cairo_sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
+use cairo_sierra::extensions::felt::FeltBinaryOperator;
 use cairo_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_sierra::program::{Function, StatementIdx};
 use cairo_utils::try_extract_matches;
@@ -34,21 +34,6 @@ pub type StatementRefs = HashMap<VarId, ReferenceValue>;
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct UnaryOpExpression {
-    pub op: FeltUnaryOperator,
-    pub a: DerefOrImmediate,
-}
-impl ApplyApChange for UnaryOpExpression {
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
-        Some(UnaryOpExpression { op: self.op, a: self.a.apply_known_ap_change(ap_change)? })
-    }
-
-    fn can_apply_unknown(&self) -> bool {
-        self.a.can_apply_unknown()
-    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
