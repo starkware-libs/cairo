@@ -54,6 +54,7 @@ jobs:
           toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
       - run: cargo +nightly-2022-11-03 run --bin cairo-test -- --path corelib/
+      - run: cargo +nightly-2022-11-03 run --bin cairo-test -- --path crates/starknet/cairo_level_tests/ --starknet --available-gas=20000
 
   # Check for unnecessary dependencies.
   udeps:
