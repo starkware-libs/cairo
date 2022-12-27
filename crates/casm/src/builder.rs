@@ -381,6 +381,18 @@ impl CasmBuilder {
         self.reachable = true;
     }
 
+    /// Rescoping the values, while ignoring all vars not stated in `vars` and giving the vars on
+    /// the left side the values of the vars on the right side.
+    pub fn rescope<const VAR_COUNT: usize>(&mut self, vars: [(Var, Var); VAR_COUNT]) {
+        self.main_state.validate_finality();
+        let values =
+            vars.map(|(new_var, value_var)| (new_var, self.main_state.get_adjusted(value_var)));
+        self.main_state.ap_change = 0;
+        self.main_state.allocated = 0;
+        self.main_state.vars.clear();
+        self.main_state.vars.extend(values.into_iter());
+    }
+
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
     fn get_value(&self, var: Var, adjust_ap: bool) -> ResOperand {
         if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
@@ -556,10 +568,12 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
+        println!("{}", stringify!(jump $target if $condition != 0;));
         $builder.jump_nz($condition, std::stringify!($target).to_owned());
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, $label:ident: $($tok:tt)*) => {
+        println!("{}", stringify!($label:));
         $builder.label(std::stringify!($label).to_owned());
         $crate::casm_build_extend!($builder, $($tok)*)
     };
@@ -584,6 +598,11 @@ macro_rules! casm_build_extend {
             |[$buffer_name], []| $crate::hints::Hint::$hint_name { $buffer_name },
             [$buffer_value], []
         );
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, rescope { $($new_var:ident = $value_var:ident),* }; $($tok:tt)*) => {
+        println!("{}", stringify!(rescope { $($new_var = $value_var),* }));
+        $builder.rescope([$(($new_var, $value_var)),*]);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
 }

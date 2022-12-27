@@ -1,5 +1,6 @@
 use indoc::indoc;
 use itertools::join;
+use pretty_assertions::assert_eq;
 
 use super::CasmBuilder;
 use crate::builder::CasmBuildResult;
@@ -156,4 +157,37 @@ fn test_unaligned_branch_intersect() {
         ONESIDED_ALLOC:
     };
     builder.build(["Fallthrough"]);
+}
+
+#[test]
+fn test_calculation_loop() {
+    let mut builder = CasmBuilder::default();
+    casm_build_extend! {builder,
+        const one = 1;
+        const ten = 10;
+        tempvar a = one;
+        tempvar n = ten;
+        tempvar b = one;
+        rescope{a = a, b = b, n = n, one = one};
+        FIB:
+        tempvar new_n = n - one;
+        tempvar new_b = a + b;
+        rescope{a = b, b = new_b, n = new_n, one = one};
+        jump FIB if n != 0;
+    };
+    let CasmBuildResult { instructions, branches: [(state, awaiting_relocations)] } =
+        builder.build(["Fallthrough"]);
+    assert!(awaiting_relocations.is_empty());
+    assert_eq!(state.get_adjusted(b), res!([ap - 1]));
+    assert_eq!(
+        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
+        indoc! {"
+            [ap + 0] = 1, ap++;
+            [ap + 0] = 10, ap++;
+            [ap + 0] = 1, ap++;
+            [ap + -2] = [ap + 0] + 1, ap++;
+            [ap + 0] = [ap + -4] + [ap + -2], ap++;
+            jmp rel -3 if [ap + -2] != 0;
+        "}
+    );
 }
