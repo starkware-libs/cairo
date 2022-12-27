@@ -79,7 +79,6 @@ pub enum CellExpression {
     DoubleDeref(CellRef, i16),
     IntoSingleCellRef(CellRef),
     Immediate(BigInt),
-    UnaryOp(UnaryOpExpression),
     BinOp(BinOpExpression),
 }
 impl CellExpression {
@@ -188,9 +187,6 @@ impl ApplyApChange for CellExpression {
             CellExpression::IntoSingleCellRef(operand) => {
                 CellExpression::IntoSingleCellRef(operand.apply_known_ap_change(ap_change)?)
             }
-            CellExpression::UnaryOp(operand) => {
-                CellExpression::UnaryOp(operand.apply_known_ap_change(ap_change)?)
-            }
             CellExpression::BinOp(operand) => {
                 CellExpression::BinOp(operand.apply_known_ap_change(ap_change)?)
             }
@@ -204,7 +200,6 @@ impl ApplyApChange for CellExpression {
             | CellExpression::DoubleDeref(operand, _)
             | CellExpression::IntoSingleCellRef(operand) => operand.can_apply_unknown(),
             CellExpression::Immediate(_) => true,
-            CellExpression::UnaryOp(operand) => operand.can_apply_unknown(),
             CellExpression::BinOp(operand) => operand.can_apply_unknown(),
         }
     }
