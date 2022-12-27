@@ -8,6 +8,7 @@ use defs::ids::{
     GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
     StructId, TraitFunctionId, TraitId, TypeAliasId, UseId, VariantId,
 };
+use defs::plugin::MacroPlugin;
 use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
 use filesystem::ids::{FileId, FileLongId};
@@ -21,6 +22,7 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
 use crate::items::imp::{ConcreteImplId, ImplLookupContext};
 use crate::items::trt::ConcreteTraitId;
+use crate::plugin::{DynDiagnosticMapper, SemanticPlugin};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
     corelib, items, literals, semantic, types, FreeFunctionDefinition, FunctionId, Parameter,
@@ -535,7 +537,29 @@ pub trait SemanticGroup:
     fn core_module(&self) -> ModuleId;
     #[salsa::invoke(corelib::core_felt_ty)]
     fn core_felt_ty(&self) -> semantic::TypeId;
+
+    // Plugins.
+    // ========
+    #[salsa::input]
+    fn semantic_plugins(&self) -> Vec<Arc<dyn SemanticPlugin>>;
 }
+
+/// Initializes a database with DefsGroup.
+pub fn init_semantic_group(db: &mut (dyn SemanticGroup + 'static)) {
+    // Initialize inputs.
+    db.set_semantic_plugins(Vec::new());
+}
+
+pub trait SemanticGroupEx: Upcast<dyn SemanticGroup> {
+    fn get_macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
+        self.upcast()
+            .semantic_plugins()
+            .into_iter()
+            .map(|plugin| plugin.as_dyn_macro_plugin())
+            .collect()
+    }
+}
+impl<T: Upcast<dyn SemanticGroup> + ?Sized> SemanticGroupEx for T {}
 
 fn module_semantic_diagnostics(
     db: &dyn SemanticGroup,
@@ -616,7 +640,7 @@ fn module_semantic_diagnostics(
 /// Transforms diagnostics that originate from plugin generated files. Uses the plugin's diagnostic
 /// mapper.
 fn map_diagnostics(
-    db: &dyn DefsGroup,
+    db: &dyn SemanticGroup,
     module_id: ModuleId,
     generated_file_info: &[Option<GeneratedFileInfo>],
     original_diagnostics: Diagnostics<SemanticDiagnostic>,
@@ -635,7 +659,13 @@ fn map_diagnostics(
         assert_eq!(diag.stable_location.module_file_id.0, module_id, "Unexpected module id.");
         let file_index = diag.stable_location.module_file_id.1;
         if let Some(file_info) = &generated_file_info[file_index.0] {
-            if let Some(plugin_diag) = file_info.diagnostic_mapper.map_diag(db, diag) {
+            let opt_diag = file_info
+                .aux_data
+                .0
+                .as_any()
+                .downcast_ref::<DynDiagnosticMapper>()
+                .and_then(|mapper| mapper.map_diag(db, diag));
+            if let Some(plugin_diag) = opt_diag {
                 // We don't have a real location, so we give a dummy location in the correct file.
                 // SemanticDiagnostic struct knowns to give the proper span for
                 // WrappedPluginDiagnostic.

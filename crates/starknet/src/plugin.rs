@@ -1,11 +1,12 @@
+use std::sync::Arc;
 use std::vec;
 
 use defs::plugin::{
-    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
-    TrivialMapper,
+    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use genco::prelude::*;
 use itertools::join;
+use semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
 use syntax::node::ast::{
     ItemFreeFunction, MaybeModuleBody, Modifier, OptionReturnTypeClause, Param,
 };
@@ -37,6 +38,15 @@ impl MacroPlugin for StarkNetPlugin {
         }
     }
 }
+impl AsDynMacroPlugin for StarkNetPlugin {
+    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
+    where
+        Self: 'a,
+    {
+        self
+    }
+}
+impl SemanticPlugin for StarkNetPlugin {}
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
 fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
@@ -117,7 +127,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
             content: contract_code,
-            diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+            aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
         }),
         diagnostics: vec![],
     }

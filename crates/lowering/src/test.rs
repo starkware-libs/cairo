@@ -1,4 +1,6 @@
 use debug::DebugWithDb;
+use plugins::get_default_plugins;
+use semantic::db::SemanticGroup;
 use semantic::test_utils::setup_test_function;
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -30,6 +32,7 @@ fn test_function_lowering(
     db: &mut LoweringDatabaseForTesting,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    db.set_semantic_plugins(get_default_plugins());
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
         inputs["function"].as_str(),

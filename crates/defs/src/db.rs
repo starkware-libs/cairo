@@ -15,13 +15,18 @@ use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
-use crate::plugin::{DynDiagnosticMapper, MacroPlugin, PluginDiagnostic};
+use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic};
 
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
 #[salsa::query_group(DefsDatabase)]
 pub trait DefsGroup:
-    FilesGroup + SyntaxGroup + Upcast<dyn SyntaxGroup> + ParserGroup + Upcast<dyn FilesGroup>
+    FilesGroup
+    + SyntaxGroup
+    + Upcast<dyn SyntaxGroup>
+    + ParserGroup
+    + Upcast<dyn FilesGroup>
+    + HasMacroPlugins
 {
     #[salsa::interned]
     fn intern_virtual_submodule(&self, virtual_submodule: VirtualSubmodule) -> VirtualSubmoduleId;
@@ -88,16 +93,10 @@ pub trait DefsGroup:
         module_id: ModuleId,
         name: SmolStr,
     ) -> Maybe<Option<ModuleItemId>>;
-
-    // Plugins.
-    #[salsa::input]
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
 }
 
-/// Initializes a database with DefsGroup.
-pub fn init_defs_group(db: &mut (dyn DefsGroup + 'static)) {
-    // Initialize inputs.
-    db.set_macro_plugins(Vec::new());
+pub trait HasMacroPlugins {
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
 }
 
 fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
@@ -189,7 +188,7 @@ fn file_modules(db: &dyn DefsGroup, file_id: FileId) -> Maybe<Vec<ModuleId>> {
 /// Information about the generation of a virtual file.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GeneratedFileInfo {
-    pub diagnostic_mapper: DynDiagnosticMapper,
+    pub aux_data: DynGeneratedFileAuxData,
     /// The module and file index from which the current file was generated.
     pub origin: ModuleFileId,
 }
@@ -272,7 +271,7 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
                     content: Arc::new(generated.content),
                 }));
                 res.generated_file_info.push(Some(GeneratedFileInfo {
-                    diagnostic_mapper: generated.diagnostic_mapper,
+                    aux_data: generated.aux_data,
                     origin: module_file_id,
                 }));
                 module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
