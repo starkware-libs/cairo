@@ -74,7 +74,14 @@ fn inner_find_variable_lifetime(
 
         match statement {
             lowering::Statement::Literal(_) | lowering::Statement::Call(_) => {}
-            lowering::Statement::CallBlock(_statement_call_block) => todo!(),
+            lowering::Statement::CallBlock(statement_call_block) => {
+                inner_find_variable_lifetime(
+                    lowered_function,
+                    statement_call_block.block,
+                    state,
+                    res,
+                );
+            }
             lowering::Statement::MatchExtern(_statement_match_extern) => todo!(),
             lowering::Statement::MatchEnum(_statement_match_enum) => todo!(),
             lowering::Statement::StructConstruct(_statement_struct_construct) => todo!(),
