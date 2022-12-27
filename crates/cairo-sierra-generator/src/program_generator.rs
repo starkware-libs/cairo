@@ -31,8 +31,8 @@ pub fn module_sierra_diagnostics(
     module_id: ModuleId,
 ) -> Diagnostics<SierraGeneratorDiagnostic> {
     let mut diagnostics = DiagnosticsBuilder::new();
-    for free_function_id in db.module_data(module_id).unwrap_or_default().free_functions.keys() {
-        diagnostics.extend(db.free_function_sierra_diagnostics(*free_function_id))
+    for free_function_id in db.module_free_functions_ids(module_id).unwrap_or_default() {
+        diagnostics.extend(db.free_function_sierra_diagnostics(free_function_id))
     }
     diagnostics.build()
 }
@@ -228,7 +228,7 @@ pub fn get_sierra_program(
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {
-            for (free_func_id, _) in db.module_data(*module_id)?.free_functions {
+            for (free_func_id, _) in db.module_free_functions(*module_id)? {
                 requested_function_ids.push(free_func_id)
             }
         }

@@ -90,14 +90,14 @@ pub fn trait_functions(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_data].
 pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<TraitData> {
-    // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
-    // selector.
-
     let syntax_db = db.upcast();
     let module_file_id = trait_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let trait_ast = module_data.traits.get(&trait_id).to_maybe()?;
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
+    let module_traits = db.module_traits(module_file_id.0)?;
+    let trait_ast = module_traits.get(&trait_id).to_maybe()?;
 
     // Generic params.
     let generic_params = semantic_generic_params(

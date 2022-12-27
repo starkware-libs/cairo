@@ -47,10 +47,10 @@ fn test_missing_module_file() {
     );
 
     let submodule_id =
-        *db.module_submodules(ModuleId::CrateRoot(crate_id)).unwrap().first().unwrap();
+        *db.module_submodules_ids(ModuleId::CrateRoot(crate_id)).unwrap().first().unwrap();
 
     assert_eq!(
-        db.module_semantic_diagnostics(submodule_id).unwrap().format(db),
+        db.module_semantic_diagnostics(ModuleId::Submodule(submodule_id)).unwrap().format(db),
         indoc! {"
             error: Module file not found. Expected path: src/a/abc.cairo
              --> lib.cairo:3:9

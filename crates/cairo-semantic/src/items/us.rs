@@ -19,14 +19,15 @@ pub struct UseData {
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_semantic_data].
 pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Maybe<UseData> {
-    // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
-    // selector.
     let module_file_id = use_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): Add generic args when they are supported on structs.
     let mut resolver = Resolver::new(db, module_file_id, &[]);
-    let module_data = db.module_data(module_file_id.0)?;
-    let use_ast = module_data.uses.get(&use_id).to_maybe()?;
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
+    let module_uses = db.module_uses(module_file_id.0)?;
+    let use_ast = module_uses.get(&use_id).to_maybe()?;
     let syntax_db = db.upcast();
     let resolved_item = resolver.resolve_generic_path(
         &mut diagnostics,
@@ -45,8 +46,8 @@ pub fn priv_use_semantic_data_cycle(
 ) -> Maybe<UseData> {
     let module_file_id = use_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let use_ast = module_data.uses.get(use_id).to_maybe()?;
+    let module_uses = db.module_uses(module_file_id.0)?;
+    let use_ast = module_uses.get(use_id).to_maybe()?;
     let syntax_db = db.upcast();
     let err = Err(diagnostics.report(&use_ast.name(syntax_db), SemanticDiagnosticKind::UseCycle));
     Ok(UseData {
