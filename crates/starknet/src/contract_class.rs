@@ -22,9 +22,9 @@ use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
 use thiserror::Error;
 
-use crate::abi;
+use crate::abi::{self, Contract};
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
-use crate::contract::{find_contracts, get_external_functions, starknet_keccak};
+use crate::contract::{find_contracts, get_abi, get_external_functions, starknet_keccak};
 use crate::felt_serde::sierra_to_felts;
 use crate::plugin::StarkNetPlugin;
 
@@ -114,17 +114,15 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
     };
 
     let entry_points_by_type = get_entry_points(db, &external_functions, &replacer)?;
-    // TODO(ilya): fix abi.
-    let abi = abi::Contract::default();
     Ok(ContractClass {
         sierra_program: sierra_to_felts(&sierra_program)?,
         sierra_program_debug_info: sierra::debug_info::DebugInfo::extract(&sierra_program),
         entry_points_by_type,
-        abi,
+        abi: Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?,
     })
 }
 
-/// Return the entry points given a trait and a module_id where they are implemented.
+/// Return the entry points given their IDs.
 fn get_entry_points(
     db: &mut RootDatabase,
     external_functions: &[FreeFunctionId],

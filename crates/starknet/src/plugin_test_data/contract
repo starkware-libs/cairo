@@ -32,6 +32,12 @@ mod __generated__TestContract {
     #[external]
     fn set_something(ref arg: felt, num: felt) {
     }
+    trait __abi {
+    fn get_something(
+        ref arg: felt, num: felt
+        ) -> felt; fn set_something(
+        ref arg: felt, num: felt
+    ); }
     mod __external {
         fn get_something(mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {

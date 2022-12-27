@@ -18,6 +18,7 @@ use crate::contract::starknet_keccak;
 pub const CONTRACT_ATTR: &str = "contract";
 const EXTERNAL_ATTR: &str = "external";
 const VIEW_ATTR: &str = "view";
+pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
 
 #[cfg(test)]
@@ -63,6 +64,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
     let mut storage_code = "".to_string();
     let mut original_items = rust::Tokens::new();
+    let mut external_declarations = rust::Tokens::new();
     for item in body.items(db).elements(db) {
         match &item {
             ast::Item::FreeFunction(item_function)
@@ -71,6 +73,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 }) =>
             {
                 {
+                    // TODO(yuval): change to item_function.declaration
+                    let declaration = item_function.declaration(db).as_syntax_node().get_text(db);
+                    external_declarations.append(quote! {$declaration;});
+
                     // TODO(ilya): propagate the diagnostics in case of failure.
                     if let Some(generated_function) =
                         generate_entry_point_wrapper(db, item_function)
@@ -88,16 +94,24 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         original_items.append(quote! {$orig_text})
     }
 
-    let external_entry_points: rust::Tokens = quote! {
+    let generated_contract_mod: rust::Tokens = quote! {
         mod __generated__$contract_name {
             $original_items
+
+            // TODO(yuval): consider adding and impl of __abi and use it from the wrappers, instead
+            // of the original functions (they can be removed).
+            trait $ABI_TRAIT {
+                $external_declarations
+            }
+
             mod $EXTERNAL_MODULE {
                 $generated_external_functions
             }
         }
     };
 
-    let contract_code = format!("{}\n{}", storage_code, external_entry_points.to_string().unwrap());
+    let contract_code =
+        format!("{}\n{}", storage_code, generated_contract_mod.to_string().unwrap());
 
     PluginResult {
         code: Some(PluginGeneratedFile {
