@@ -15,12 +15,12 @@ We currently only run the a `main` function with no arguments beside implicits.
 
 ## With gas:
 ```
-fn main() -> Option::<felt> implicits(RangeCheck, GasBuiltin) {
+fn main() -> Option::<felt> {
     fib(1, 1, 13)
 }
 
 /// Calculates fib...
-fn fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits(RangeCheck, GasBuiltin) {
+fn fib(a: felt, b: felt, n: felt) -> Option::<felt> {
     get_gas()?;
     match n {
         0 => Option::<felt>::Some(a),
@@ -32,17 +32,15 @@ fn fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits(RangeCheck, GasBui
 ## Without gas:
 ```
 // Calculates fib...
-fn main() -> Option::<u128> implicits(RangeCheck) {
-    fib(u128_from_felt(1)?, u128_from_felt(1)?, u128_from_felt(100)?)
+fn main() -> u128 {
+    fib(1_u128, 1_u128, 100_u128)
 }
 
-fn fib(a: u128, b: u128, n: u128) -> Option::<u128> implicits(RangeCheck) {
-    match u128_to_felt(n) {
-        0 => Option::<u128>::Some(a),
-        _ => {
-            let r = fib(b, (a + b)?, (n - u128_from_felt(1)?)?)?;
-            Option::<u128>::Some(r)
-        },
+fn fib(a: u128, b: u128, n: u128) -> u128 {
+    if n == 0 {
+        a
+    } else {
+        fib(b, a + b, n - 1_u128)
     }
 }
 ```
