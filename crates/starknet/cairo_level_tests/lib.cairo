@@ -24,8 +24,7 @@ fn test_wrapper_too_many_enough_args() {
     __generated__TestContract::__external::test(array_new::<felt>());
 }
 
-#[test]
-fn test_wrapper_enough_args() {
+fn run_wrapper_valid_args() {
     let mut calldata = array_new::<felt>();
     array_append::<felt>(calldata, 1);
     let mut retdata = __generated__TestContract::__external::test(calldata);
@@ -38,4 +37,17 @@ fn test_wrapper_enough_args() {
         },
     }
     assert(array_len::<felt>(retdata) == 0_u128, 'Got too long result data');
+}
+
+#[test]
+#[available_gas(20000)]
+fn test_wrapper_valid_args() {
+    run_wrapper_valid_args()
+}
+
+#[test]
+#[available_gas(200)]
+#[should_panic]
+fn test_wrapper_valid_args_out_of_gas() {
+    run_wrapper_valid_args()
 }

@@ -197,7 +197,7 @@ fn run_function_test(
     let runner = SierraCasmRunner::new(checked_compile_to_sierra(name), available_gas.is_some())
         .expect("Failed setting up runner.");
     let result = runner
-        .run_function(/* find first */ "", params, &available_gas)
+        .run_function(/* find first */ "", params, available_gas)
         .expect("Failed running the function.");
     result.value
 }

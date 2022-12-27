@@ -23,6 +23,8 @@ use semantic::{ConcreteFunction, FunctionLongId};
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use starknet::plugin::StarkNetPlugin;
+use syntax::node::ast::Expr;
+use syntax::node::Token;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -35,10 +37,6 @@ struct Args {
     /// Should we add the starknet plugin to run the tests.
     #[arg(long, default_value_t = false)]
     starknet: bool,
-    /// In cases where gas is available, the amount of provided gas.
-    // TODO(orizi): Makes this a possible part of the test description.
-    #[arg(long)]
-    available_gas: Option<usize>,
 }
 
 /// The status of a ran test.
@@ -88,7 +86,7 @@ fn main() -> anyhow::Result<()> {
         })
         .collect_vec();
     let TestsSummary { passed, failed, ignored, failed_run_results } =
-        run_tests(named_tests, sierra_program, args.available_gas)?;
+        run_tests(named_tests, sierra_program)?;
     if failed.is_empty() {
         println!(
             "test result: {}. {} passed; {} failed; {} ignored",
@@ -157,7 +155,6 @@ struct TestsSummary {
 fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: sierra::program::Program,
-    available_gas: Option<usize>,
 ) -> anyhow::Result<TestsSummary> {
     println!("running {} tests", named_tests.len());
     let wrapped_summary = Mutex::new(Ok(TestsSummary {
@@ -172,10 +169,10 @@ fn run_tests(
             if test.ignored {
                 return Ok((name, TestStatus::Ignore));
             }
-            let runner = SierraCasmRunner::new(sierra_program.clone(), available_gas.is_some())
+            let runner = SierraCasmRunner::new(sierra_program.clone(), true)
                 .with_context(|| "Failed setting up runner.")?;
             let result = runner
-                .run_function(name.as_str(), &[], &available_gas)
+                .run_function(name.as_str(), &[], test.available_gas)
                 .with_context(|| "Failed to run the function.")?;
             Ok((
                 name,
@@ -228,6 +225,8 @@ enum TestExpectation {
 struct TestConfig {
     /// The function id of the test function.
     func_id: FreeFunctionId,
+    /// The amount of gas the test requested.
+    available_gas: Option<usize>,
     /// The expected result of the run.
     expectation: TestExpectation,
     /// Should the test be ignored.
@@ -248,12 +247,23 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
                 if let ModuleItemId::FreeFunction(func_id) = item {
                     if let Ok(attrs) = db.free_function_declaration_attributes(*func_id) {
                         let mut is_test = false;
+                        let mut available_gas = None;
                         let mut ignored = false;
                         let mut should_panic = false;
                         for attr in attrs {
                             match attr.id.as_str() {
                                 "test" => {
                                     is_test = true;
+                                }
+                                "available_gas" => {
+                                    // TODO(orizi): Provide diagnostics when this does not match.
+                                    if let [Expr::Literal(literal)] = &attr.args[..] {
+                                        available_gas = literal
+                                            .token(db.upcast())
+                                            .text(db.upcast())
+                                            .parse::<usize>()
+                                            .ok();
+                                    }
                                 }
                                 "should_panic" => {
                                     should_panic = true;
@@ -267,6 +277,7 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
                         if is_test {
                             tests.push(TestConfig {
                                 func_id: *func_id,
+                                available_gas,
                                 expectation: if should_panic {
                                     TestExpectation::Panics
                                 } else {
