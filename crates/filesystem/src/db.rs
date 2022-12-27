@@ -10,6 +10,7 @@ use std::sync::Arc;
 use db_utils::Upcast;
 use project::ProjectConfig;
 
+use crate::detect::detect_corelib;
 use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
 use crate::span::{FileSummary, TextOffset};
 
@@ -51,9 +52,7 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     // Set core config.
     let core_crate = db.intern_crate(CrateLongId("core".into()));
     // TODO(spapini): find the correct path.
-    // This is the directory of Cargo.toml of the syntax_codegen crate.
-    let dir = env!("CARGO_MANIFEST_DIR");
-    let path = PathBuf::from(format!("{dir}/../../corelib"));
+    let path = detect_corelib();
     let core_root_dir = Directory(path);
     db.set_crate_root(core_crate, Some(core_root_dir));
 }
