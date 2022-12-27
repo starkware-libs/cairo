@@ -162,3 +162,68 @@ SyntaxFile
     │           ├── items (kind: ItemList) []
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test trait function with "accidental" body in a module - later items should still be in the module.
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+mod X {
+    trait A {
+        fn foo() {}
+    }
+    struct Y {}
+}
+
+//! > top_level_kind
+SyntaxFile
+
+//! > ignored_kinds
+FunctionDeclaration
+ItemStruct
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:3:17
+        fn foo() {}
+                ^
+
+error: Skipped tokens. Expected: trait item or an attribute.
+ --> dummy_file.cairo:3:18
+        fn foo() {}
+                 ^
+
+error: Skipped tokens. Expected: item or an attribute.
+ --> dummy_file.cairo:6:1
+}
+^
+
+//! > expected_tree
+└── Top level kind: SyntaxFile
+    ├── items (kind: ItemList)
+    │   ├── child #0 (kind: ItemModule)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── module_kw (kind: TokenModule): 'mod'
+    │   │   ├── name (kind: TokenIdentifier): 'X'
+    │   │   └── body (kind: ModuleBody)
+    │   │       ├── lbrace (kind: TokenLBrace): '{'
+    │   │       ├── items (kind: ItemList)
+    │   │       │   └── child #0 (kind: ItemTrait)
+    │   │       │       ├── attributes (kind: AttributeList) []
+    │   │       │       ├── trait_kw (kind: TokenTrait): 'trait'
+    │   │       │       ├── name (kind: TokenIdentifier): 'A'
+    │   │       │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │   │       │       └── body (kind: TraitBody)
+    │   │       │           ├── lbrace (kind: TokenLBrace): '{'
+    │   │       │           ├── items (kind: TraitItemList)
+    │   │       │           │   └── child #0 (kind: TraitItemFunction)
+    │   │       │           │       ├── attributes (kind: AttributeList) []
+    │   │       │           │       ├── declaration (kind: FunctionDeclaration) <ignored>
+    │   │       │           │       └── semicolon: Missing
+    │   │       │           └── rbrace (kind: TokenRBrace): '}'
+    │   │       └── rbrace (kind: TokenRBrace): '}'
+    │   └── child #1 (kind: ItemStruct) <ignored>
+    └── eof (kind: TokenEndOfFile).
