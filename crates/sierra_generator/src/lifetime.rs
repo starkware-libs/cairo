@@ -73,10 +73,7 @@ fn inner_find_variable_lifetime(
         state.handle_new_variables(&statement.outputs(), statement_location, res);
 
         match statement {
-            lowering::Statement::Literal(_statement_literal) => {
-                todo!();
-            }
-            lowering::Statement::Call(_) => {}
+            lowering::Statement::Literal(_) | lowering::Statement::Call(_) => {}
             lowering::Statement::CallBlock(_statement_call_block) => todo!(),
             lowering::Statement::MatchExtern(_statement_match_extern) => todo!(),
             lowering::Statement::MatchEnum(_statement_match_enum) => todo!(),
