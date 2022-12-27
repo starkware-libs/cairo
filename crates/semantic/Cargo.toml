@@ -24,7 +24,6 @@ salsa.workspace = true
 smol_str.workspace = true
 syntax = { path = "../syntax" }
 utils = { path = "../utils" }
-plugins = { path = "../plugins" }
 unescaper.workspace = true
 
 [dev-dependencies]
@@ -32,6 +31,7 @@ assert_matches.workspace = true
 env_logger.workspace = true
 indoc.workspace = true
 log.workspace = true
+plugins = { path = "../plugins" }
 pretty_assertions.workspace = true
 test-log.workspace = true
 test_utils = { path = "../test_utils" }

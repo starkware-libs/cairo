@@ -1,10 +1,13 @@
+use std::sync::Arc;
+
 use db_utils::Upcast;
-use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
+use defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
+use defs::plugin::MacroPlugin;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use parser::db::ParserDatabase;
 use plugins::get_default_plugins;
-use semantic::db::{SemanticDatabase, SemanticGroup};
+use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use sierra_generator::db::SierraGenDatabase;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
@@ -25,10 +28,9 @@ impl Default for RootDatabase {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        init_defs_group(&mut res);
         init_lowering_group(&mut res);
         // TODO(spapini): Consider taking from config.
-        res.set_macro_plugins(get_default_plugins());
+        res.set_semantic_plugins(get_default_plugins());
         res
     }
 }
@@ -60,5 +62,10 @@ impl Upcast<dyn SemanticGroup> for RootDatabase {
 impl Upcast<dyn LoweringGroup> for RootDatabase {
     fn upcast(&self) -> &(dyn lowering::db::LoweringGroup + 'static) {
         self
+    }
+}
+impl HasMacroPlugins for RootDatabase {
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
+        self.get_macro_plugins()
     }
 }

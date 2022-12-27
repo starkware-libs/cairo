@@ -1616,6 +1616,7 @@ dependencies = [
  "parser",
  "pretty_assertions",
  "salsa",
+ "semantic",
  "smol_str",
  "syntax",
  "test-case",
