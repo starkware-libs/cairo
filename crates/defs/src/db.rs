@@ -105,7 +105,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
             db.crate_root_dir(crate_id).to_maybe()?.file(db.upcast(), "lib.cairo".into())
         }
         ModuleId::Submodule(submodule_id) => {
-            let parent = submodule_id.module(db);
+            let parent = submodule_id.parent_module(db);
             let item_module_ast = &db.module_data(parent)?.submodules[submodule_id];
             match item_module_ast.body(db.upcast()) {
                 MaybeModuleBody::Some(_) => {
@@ -138,7 +138,7 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
     match module_id {
         ModuleId::CrateRoot(crate_id) => db.crate_root_dir(crate_id).to_maybe(),
         ModuleId::Submodule(submodule_id) => {
-            let parent = submodule_id.module(db);
+            let parent = submodule_id.parent_module(db);
             let name = submodule_id.name(db);
             Ok(db.module_dir(parent)?.subdir(name))
         }
@@ -226,7 +226,7 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     let item_asts = match module_id {
         ModuleId::CrateRoot(_) | ModuleId::VirtualSubmodule(_) => file_syntax.items(syntax_db),
         ModuleId::Submodule(submodule_id) => {
-            let parent_module_data = db.module_data(submodule_id.module(db))?;
+            let parent_module_data = db.module_data(submodule_id.parent_module(db))?;
             let item_module_ast = &parent_module_data.submodules[submodule_id];
 
             match item_module_ast.body(syntax_db) {
@@ -384,6 +384,10 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleItems> {
             module_data.enums.iter().map(|(enum_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Enum(*enum_id)
+            )),
+            module_data.type_aliases.iter().map(|(type_alias_id, syntax)| (
+                syntax.name(syntax_db).text(syntax_db),
+                ModuleItemId::TypeAlias(*type_alias_id)
             )),
             module_data.traits.iter().map(|(trait_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),

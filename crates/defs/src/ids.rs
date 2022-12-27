@@ -35,17 +35,17 @@ use crate::db::DefsGroup;
 
 // A trait for an id for a language element.
 pub trait LanguageElementId {
-    fn module(&self, db: &dyn DefsGroup) -> ModuleId;
+    fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId;
     fn file_index(&self, db: &dyn DefsGroup) -> FileIndex;
     fn module_file(&self, db: &dyn DefsGroup) -> ModuleFileId {
-        ModuleFileId(self.module(db), self.file_index(db))
+        ModuleFileId(self.parent_module(db), self.file_index(db))
     }
     fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId;
 }
 pub trait TopLevelLanguageElementId: LanguageElementId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.module(db).full_path(db), self.name(db))
+        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
     }
 }
 
@@ -96,7 +96,7 @@ macro_rules! define_language_element_id {
             )?
         }
         impl LanguageElementId for $short_id {
-            fn module(&self, db: &dyn DefsGroup) -> ModuleId {
+            fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId {
                 db.$lookup(*self).0.0
             }
             fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
@@ -165,10 +165,10 @@ macro_rules! define_language_element_id_as_enum {
             }
         }
         impl LanguageElementId for $enum_name {
-            fn module(&self, db: &dyn DefsGroup) -> ModuleId {
+            fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId {
                 match self {
                     $(
-                        $enum_name::$variant(id) => id.module(db),
+                        $enum_name::$variant(id) => id.parent_module(db),
                     )*
                 }
             }
@@ -234,7 +234,7 @@ impl ModuleId {
         match self {
             ModuleId::CrateRoot(id) => db.lookup_intern_crate(*id).0.to_string(),
             ModuleId::Submodule(id) => {
-                format!("{}::{}", id.module(db).full_path(db), id.name(db))
+                format!("{}::{}", id.parent_module(db).full_path(db), id.name(db))
             }
             ModuleId::VirtualSubmodule(virtual_submodule_id) => {
                 let virtual_submodule = db.lookup_intern_virtual_submodule(*virtual_submodule_id);
@@ -272,6 +272,7 @@ define_language_element_id_as_enum! {
         FreeFunction(FreeFunctionId),
         Struct(StructId),
         Enum(EnumId),
+        TypeAlias(TypeAliasId),
         Trait(TraitId),
         Impl(ImplId),
         ExternType(ExternTypeId),
@@ -436,7 +437,7 @@ define_language_element_id_as_enum! {
 }
 impl GenericFunctionId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
-        format!("{}::{}", self.module(db).full_path(db), self.name(db))
+        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
     }
 }
 
@@ -447,12 +448,12 @@ define_language_element_id_as_enum! {
         Struct(StructId),
         Enum(EnumId),
         Extern(ExternTypeId),
-        // TODO(spapini): enums, associated types in impls.
+        // TODO(spapini): associated types in impls.
     }
 }
 impl GenericTypeId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
-        format!("{}::{}", self.module(db).full_path(db), self.name(db))
+        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
     }
 }
 
@@ -468,6 +469,7 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
             | ModuleItemId::Impl(_)
             | ModuleItemId::Struct(_)
             | ModuleItemId::Enum(_)
+            | ModuleItemId::TypeAlias(_)
             | ModuleItemId::ExternType(_) => None,
         }
     }
@@ -481,6 +483,7 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             ModuleItemId::Enum(id) => Some(GenericTypeId::Enum(id)),
             ModuleItemId::ExternType(id) => Some(GenericTypeId::Extern(id)),
             ModuleItemId::Submodule(_)
+            | ModuleItemId::TypeAlias(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::FreeFunction(_)
             | ModuleItemId::Trait(_)
