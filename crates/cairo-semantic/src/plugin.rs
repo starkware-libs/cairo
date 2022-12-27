@@ -19,7 +19,11 @@ pub trait AsDynMacroPlugin {
 pub trait DiagnosticMapper:
     std::fmt::Debug + Sync + Send + GeneratedFileAuxData + AsDynGeneratedFileAuxData
 {
-    fn map_diag(&self, db: &dyn SemanticGroup, diag: &dyn Any) -> Option<PluginMappedDiagnostic>;
+    fn map_diag(
+        &self,
+        db: &(dyn SemanticGroup + 'static),
+        diag: &dyn Any,
+    ) -> Option<PluginMappedDiagnostic>;
 }
 pub trait AsDynGeneratedFileAuxData {
     fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static);
