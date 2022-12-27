@@ -9,6 +9,13 @@ use sierra_to_casm::test_utils::build_metadata;
 use utils::ordered_hash_map::OrderedHashMap;
 
 test_utils::test_file_test!(
+    uint128_e2e,
+    ["e2e_test_data/libfuncs/uint128",],
+    RootDatabase,
+    run_small_e2e_test
+);
+
+test_utils::test_file_test!(
     nullable_e2e,
     ["e2e_test_data/libfuncs/nullable",],
     RootDatabase,

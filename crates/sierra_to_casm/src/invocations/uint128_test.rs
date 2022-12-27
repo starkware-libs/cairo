@@ -84,57 +84,6 @@ fn test_sub() {
 }
 
 #[test]
-fn test_wide_mul() {
-    assert_eq!(
-        compile_libfunc(
-            "u128_wide_mul",
-            vec![ref_expr!([ap - 2]), ref_expr!([ap - 1]), ref_expr!([fp + 7])]
-        ),
-        ReducedCompiledInvocation {
-            instructions: casm! {
-                %{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[ap + -1], (BigInt::from(2).pow(64))) %}
-                %{ (memory[ap + 3], memory[ap + 2]) = divmod(memory[fp + 7], (BigInt::from(2).pow(64))) %}
-                [ap + 0] = [[ap + -2] + 0], ap++;
-                [ap + 0] = [[ap + -3] + 1], ap++;
-                [ap + 0] = [[ap + -4] + 2], ap++;
-                [ap + 0] = [[ap + -5] + 3], ap++;
-                [ap + 0] = [ap + -4] + (BigInt::from(2).pow(128) - BigInt::from(2).pow(64)), ap++;
-                [ap + 0] = [ap + -3] + (BigInt::from(2).pow(128) - BigInt::from(2).pow(64)), ap++;
-                [ap + -2] = [[ap + -8] + 4];
-                [ap + -1] = [[ap + -8] + 5];
-                [ap + 0] = [ap + -5] * (BigInt::from(2).pow(64)), ap++;
-                [ap + -8] = [ap + -1] + [ap + -7];
-                [ap + 0] = [ap + -4] * (BigInt::from(2).pow(64)), ap++;
-                [fp + 7] = [ap + -1] + [ap + -6];
-                [ap + 0] = [ap + -8] * [ap + -6], ap++;
-                [ap + 0] = [ap + -9] * [ap + -6], ap++;
-                [ap + 0] = [ap + -9] * [ap + -8], ap++;
-                [ap + 0] = [ap + -10] * [ap + -8], ap++;
-                [ap + 0] = [ap + -3] + [ap + -2], ap++;
-                [ap + 0] = [ap + -1] * (BigInt::from(2).pow(64)), ap++;
-                [ap + 0] = [ap + -1] + [ap + -6], ap++;
-                %{ (memory[ap + 0], memory[ap + 4]) = divmod(memory[ap + -1], (BigInt::from(2).pow(128))) %}
-                [ap + 4] = [[ap + -17] + 6], ap++;
-                [ap + -1] = [[ap + -18] + 7], ap++;
-                [ap + -1] = [ap + -2] + (BigInt::from(2).pow(128) - BigInt::from(2).pow(66)), ap++;
-                [ap + -2] = [[ap + -20] + 8], ap++;
-                [ap + -2] = [ap + -4] * (BigInt::from(2).pow(128)), ap++;
-                [ap + -6] = [ap + -3] + [ap + -1];
-                [ap + -2] = [ap + -9] + [ap + -5];
-            }
-            .instructions,
-            relocations: vec![],
-            results: vec![
-                ReducedBranchChanges {
-                    refs: vec![ref_expr!([ap - 22] + 9), ref_expr!([ap - 2]), ref_expr!([ap - 1])],
-                    ap_change: ApChange::Known(20)
-                }
-            ]
-        }
-    );
-}
-
-#[test]
 fn test_lt() {
     let u128_limit: BigInt = BigInt::from(u128::MAX) + 1;
     assert_eq!(
