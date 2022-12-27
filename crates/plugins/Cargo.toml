@@ -11,7 +11,9 @@ filesystem = { path = "../filesystem" }
 indoc.workspace = true
 itertools.workspace = true
 parser = { path = "../parser" }
+pretty_assertions.workspace = true
 salsa.workspace = true
+semantic = { path = "../semantic" }
 smol_str.workspace = true
 syntax = { path = "../syntax" }
 utils = { path = "../utils" }
@@ -20,5 +22,4 @@ utils = { path = "../utils" }
 debug = { path = "../debug" }
 indoc.workspace = true
 parser = { path = "../parser" }
-pretty_assertions.workspace = true
 test-case.workspace = true
