@@ -7,7 +7,7 @@ use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGrou
 use lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use parser::db::ParserDatabase;
 use plugins::get_default_plugins;
-use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use semantic::db::{Elongate, SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 #[salsa::database(
@@ -65,5 +65,10 @@ impl Upcast<dyn LoweringGroup> for RootDatabase {
 impl HasMacroPlugins for RootDatabase {
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
         self.get_macro_plugins()
+    }
+}
+impl Elongate for RootDatabase {
+    fn elongate(&self) -> &(dyn SemanticGroup + 'static) {
+        self
     }
 }

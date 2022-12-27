@@ -10,7 +10,7 @@ use indoc::indoc;
 use itertools::zip_eq;
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
-use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use semantic::db::{Elongate, SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use semantic::plugin::SemanticPlugin;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use test_case::test_case;
@@ -58,6 +58,11 @@ impl Upcast<dyn SemanticGroup> for DatabaseForTesting {
 impl HasMacroPlugins for DatabaseForTesting {
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
         self.get_macro_plugins()
+    }
+}
+impl Elongate for DatabaseForTesting {
+    fn elongate(&self) -> &(dyn SemanticGroup + 'static) {
+        self
     }
 }
 

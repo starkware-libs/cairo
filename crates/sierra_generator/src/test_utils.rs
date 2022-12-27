@@ -9,7 +9,7 @@ use lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use parser::db::ParserDatabase;
 use plugins::get_default_plugins;
 use salsa::{InternId, InternKey};
-use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use semantic::db::{Elongate, SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use semantic::test_utils::setup_test_crate;
 use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
 use sierra::program;
@@ -75,6 +75,11 @@ impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
 impl HasMacroPlugins for SierraGenDatabaseForTesting {
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
         self.get_macro_plugins()
+    }
+}
+impl Elongate for SierraGenDatabaseForTesting {
+    fn elongate(&self) -> &(dyn SemanticGroup + 'static) {
+        self
     }
 }
 

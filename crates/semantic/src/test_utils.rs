@@ -13,7 +13,7 @@ use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::{extract_matches, OptionFrom};
 
-use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use crate::db::{Elongate, SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use crate::{semantic, SemanticDiagnostic};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -57,6 +57,11 @@ impl Upcast<dyn SemanticGroup> for SemanticDatabaseForTesting {
 impl HasMacroPlugins for SemanticDatabaseForTesting {
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
         self.get_macro_plugins()
+    }
+}
+impl Elongate for SemanticDatabaseForTesting {
+    fn elongate(&self) -> &(dyn SemanticGroup + 'static) {
+        self
     }
 }
 

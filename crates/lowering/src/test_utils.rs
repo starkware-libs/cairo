@@ -6,7 +6,7 @@ use defs::plugin::MacroPlugin;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use parser::db::ParserDatabase;
 use plugins::get_default_plugins;
-use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use semantic::db::{Elongate, SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
@@ -65,5 +65,10 @@ impl Upcast<dyn LoweringGroup> for LoweringDatabaseForTesting {
 impl HasMacroPlugins for LoweringDatabaseForTesting {
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
         self.get_macro_plugins()
+    }
+}
+impl Elongate for LoweringDatabaseForTesting {
+    fn elongate(&self) -> &(dyn SemanticGroup + 'static) {
+        self
     }
 }
