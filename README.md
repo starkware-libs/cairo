@@ -73,6 +73,17 @@ rustup override set stable && rustup update && cargo test
 
 ### Compiling and running Cairo files
 
+Compile Cairo to Sierra:
+```bash
+cargo run --bin cairo-compile -- /path/to/input.cairo /path/to/output.sierra --replace-ids
+```
+
+Compile Sierra to casm:
+```bash
+cargo run --bin sierra-compile -- /path/to/input.sierra /path/to/output.casm
+```
+
+Run Cairo code directly:
 ```bash
 cargo run --bin cairo-run -- -p /path/to/file.cairo
 ```
