@@ -92,12 +92,13 @@ pub fn enum_resolved_lookback(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_semantic_data].
 pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<EnumData> {
-    // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
-    // selector.
     let module_file_id = enum_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let enum_ast = module_data.enums.get(&enum_id).to_maybe()?;
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
+    let module_enums = db.module_enums(module_file_id.0)?;
+    let enum_ast = module_enums.get(&enum_id).to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.

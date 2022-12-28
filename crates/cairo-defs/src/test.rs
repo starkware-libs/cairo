@@ -148,12 +148,10 @@ fn test_submodules() {
 
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
-    let submodule_id = ModuleId::Submodule(
-        *db.module_data(module_id).unwrap().submodules.iter().next().unwrap().0,
-    );
-    let subsubmodule_id = ModuleId::Submodule(
-        *db.module_data(submodule_id).unwrap().submodules.iter().next().unwrap().0,
-    );
+    let submodule_id =
+        ModuleId::Submodule(*db.module_submodules_ids(module_id).unwrap().first().unwrap());
+    let subsubmodule_id =
+        ModuleId::Submodule(*db.module_submodules_ids(submodule_id).unwrap().first().unwrap());
 
     db.module_item_by_name(subsubmodule_id, "foo".into())
         .unwrap()
