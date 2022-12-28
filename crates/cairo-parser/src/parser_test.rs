@@ -174,10 +174,10 @@ fn compare_printed_and_expected_maybe_fix(
         } else {
             panic!(
                 "assertion failed: printed != expected.\nTo automatically fix this, run:\n  cargo \
-                 test -p parser -F fix_parser_tests --tests cairo_parser::test::fix_parser_tests \
-                 -- --nocapture\nNote to carefully review it and not to blindly paste it there, \
-                 as this loses the whole point of the test.\nTo debug this without fixing, use \
-                 _debug_failure()."
+                 test -p cairo-parser -F fix_parser_tests --tests \
+                 cairo_parser::test::fix_parser_tests -- --nocapture\nNote to carefully review it \
+                 and not to blindly paste it there, as this loses the whole point of the \
+                 test.\nTo debug this without fixing, use _debug_failure()."
             );
         }
     }

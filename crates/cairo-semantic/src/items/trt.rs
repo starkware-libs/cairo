@@ -209,6 +209,16 @@ pub fn priv_trait_function_data(
         &signature,
         &signature_syntax,
     );
+    // Validate trait function body is empty.
+    if matches!(function_syntax.body(syntax_db), ast::MaybeTraitFunctionBody::Some(_)) {
+        diagnostics.report(
+            &function_syntax.body(syntax_db),
+            crate::diagnostic::SemanticDiagnosticKind::TraitFunctionWithBody {
+                trait_id,
+                function_id: trait_function_id,
+            },
+        );
+    }
 
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);

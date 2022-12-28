@@ -414,7 +414,11 @@ impl<'a> Parser<'a> {
             let lbrace = self.take::<TerminalLBrace>();
             let items = TraitItemList::new_green(
                 self.db,
-                self.parse_list(Self::try_parse_trait_item, is_of_kind!(rbrace), "trait item"),
+                self.parse_list(
+                    Self::try_parse_trait_item,
+                    is_of_kind!(rbrace, top_level),
+                    "trait item",
+                ),
             );
             let rbrace = self.parse_token::<TerminalRBrace>();
             TraitBody::new_green(self.db, lbrace, items, rbrace).into()
@@ -440,8 +444,12 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `<FunctionDeclaration><SemiColon>`
     fn expect_trait_function(&mut self, attributes: AttributeListGreen) -> TraitItemFunctionGreen {
         let declaration = self.expect_function_declaration();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
-        TraitItemFunction::new_green(self.db, attributes, declaration, semicolon)
+        let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
+            self.parse_block().into()
+        } else {
+            self.parse_token::<TerminalSemicolon>().into()
+        };
+        TraitItemFunction::new_green(self.db, attributes, declaration, body)
     }
 
     /// Assumes the current token is Impl.
