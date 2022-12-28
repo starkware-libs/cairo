@@ -635,7 +635,9 @@ fn module_semantic_diagnostics(
                     }
                 }
             }
-            ModuleItemId::ExternType(_) => {}
+            ModuleItemId::ExternType(extern_type) => {
+                diagnostics.extend(db.extern_type_declaration_diagnostics(*extern_type));
+            }
             ModuleItemId::ExternFunction(extern_function) => {
                 diagnostics.extend(db.extern_function_declaration_diagnostics(*extern_function));
             }
