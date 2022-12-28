@@ -32,9 +32,21 @@ impl NoGenericArgsGenericType for EcPointType {
     const SIZE: i16 = 2;
 }
 
+/// An EC state is an EC point and a pointer to a random EC point shift.
+#[derive(Default)]
+pub struct EcStateType {}
+impl NoGenericArgsGenericType for EcStateType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("EcState");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const SIZE: i16 = 3;
+}
+
 define_libfunc_hierarchy! {
     pub enum EcLibFunc {
         CreatePoint(EcCreatePointLibFunc),
+        InitState(EcInitStateLibFunc),
     }, EcConcreteLibFunc
 }
 
@@ -69,5 +81,28 @@ impl NoGenericArgsGenericLibFunc for EcCreatePointLibFunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// LibFunc for initializing an EC state from an EC point.
+#[derive(Default)]
+pub struct EcInitStateLibFunc {}
+impl NoGenericArgsGenericLibFunc for EcInitStateLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("ec_init_state");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ec_point_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        let ec_state_ty = context.get_concrete_type(EcStateType::id(), &[])?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![ec_point_ty],
+            vec![OutputVarInfo {
+                ty: ec_state_ty,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
     }
 }
