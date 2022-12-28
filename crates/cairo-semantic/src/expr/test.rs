@@ -47,7 +47,7 @@ semantic_test!(
 #[test_case(r"'\x12\x34'_u128", 0x1234, "u128")]
 fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let test_expr = setup_test_expr(&mut db_val, expr, "", "").unwrap();
+    let test_expr = setup_test_expr(&mut db_val, expr, "", "").unwrap().unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
@@ -78,7 +78,8 @@ fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
 #[test]
 fn test_expr_assignment() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let test_expr = setup_test_expr(&mut db_val, "a = a * 3", "", "let mut a = 5;").unwrap();
+    let test_expr =
+        setup_test_expr(&mut db_val, "a = a * 3", "", "let mut a = 5;").unwrap().unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
@@ -95,7 +96,7 @@ fn test_expr_assignment() {
 #[test]
 fn test_expr_operator() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let test_expr = setup_test_expr(&mut db_val, "!(-5 + 9 * 3 == 0)", "", "").unwrap();
+    let test_expr = setup_test_expr(&mut db_val, "!(-5 + 9 * 3 == 0)", "", "").unwrap().unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
@@ -313,7 +314,7 @@ fn test_let_statement() {
     )
     .unwrap();
     let db = &db_val;
-    let expr = db.expr_semantic(test_function.function_id, test_function.body);
+    let expr = db.expr_semantic(test_function.function_id, test_function.body.unwrap());
     let expr_formatter = ExprFormatter { db, free_function_id: test_function.function_id };
 
     assert_eq!(
@@ -368,7 +369,7 @@ fn test_expr_var() {
     let db = &db_val;
 
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
-        db.expr_semantic(test_function.function_id, test_function.body),
+        db.expr_semantic(test_function.function_id, test_function.body.unwrap()),
         crate::Expr::Block
     );
 
@@ -426,7 +427,7 @@ fn test_expr_match() {
     .unwrap();
     let db = &db_val;
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
-        db.expr_semantic(test_function.function_id, test_function.body),
+        db.expr_semantic(test_function.function_id, test_function.body.unwrap()),
         crate::Expr::Block
     );
     let expr = db.expr_semantic(test_function.function_id, tail.unwrap());
@@ -473,7 +474,7 @@ fn test_expr_match_failures() {
 #[test]
 fn test_expr_block() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let test_expr = setup_test_expr(&mut db_val, "{6;8;}", "", "").unwrap();
+    let test_expr = setup_test_expr(&mut db_val, "{6;8;}", "", "").unwrap().unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
@@ -497,7 +498,7 @@ fn test_expr_block() {
 #[test]
 fn test_expr_block_with_tail_expression() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let test_expr = setup_test_expr(&mut db_val, "{6;8;9}", "", "").unwrap();
+    let test_expr = setup_test_expr(&mut db_val, "{6;8;9}", "", "").unwrap().unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
@@ -530,7 +531,7 @@ fn test_expr_block_with_tail_expression() {
 fn test_expr_call() {
     let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let test_expr = setup_test_expr(&mut db_val, "foo()", "fn foo() {6;}", "").unwrap();
+    let test_expr = setup_test_expr(&mut db_val, "foo()", "fn foo() {6;}", "").unwrap().unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
@@ -546,9 +547,7 @@ fn test_expr_call() {
 fn test_expr_call_failures() {
     let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let (test_expr, diagnostics) = setup_test_expr(&mut db_val, "foo()", "", "").split();
-    let db = &db_val;
-    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
+    let diagnostics = setup_test_expr(&mut db_val, "foo()", "", "").get_diagnostics();
 
     // Check expr.
     assert_eq!(
@@ -560,14 +559,6 @@ fn test_expr_call_failures() {
             ^*^
 
         "}
-    );
-    assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");
-    assert_eq!(
-        format!(
-            "{:?}",
-            db.expr_semantic(test_expr.function_id, test_expr.expr_id).debug(&expr_formatter)
-        ),
-        "Missing(ExprMissing { ty: <missing> })"
     );
 }
 
@@ -627,6 +618,7 @@ fn test_expr_struct_ctor() {
         "},
         "let b = 2;",
     )
+    .unwrap()
     .unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
@@ -642,7 +634,7 @@ fn test_expr_struct_ctor() {
 #[test]
 fn test_expr_tuple() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let test_expr = setup_test_expr(&mut db_val, "(1 + 2, (2, 3))", "", "").unwrap();
+    let test_expr = setup_test_expr(&mut db_val, "(1 + 2, (2, 3))", "", "").unwrap().unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
