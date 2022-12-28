@@ -276,3 +276,27 @@ impl MyImpl2<T> of MyTrait::<T> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test trait function with body.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+   fn foo() {}
+}
+
+//! > expected_diagnostics
+error: Trait function `MyTrait::foo` has a body. Trait functions with body are not supported.
+ --> lib.cairo:2:13
+   fn foo() {}
+            ^^
