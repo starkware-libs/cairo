@@ -104,8 +104,10 @@ impl SierraCasmRunner {
                 assert!(values.is_empty());
                 false
             } else {
-                // TODO(orizi): Actually return the range check data.
-                *ty != "RangeCheck".into() && *ty != "Bitwise".into() && *ty != "Pedersen".into()
+                *ty != "RangeCheck".into()
+                    && *ty != "Bitwise".into()
+                    && *ty != "Pedersen".into()
+                    && *ty != "System".into()
             }
         });
         assert!(results_data.len() <= 1);

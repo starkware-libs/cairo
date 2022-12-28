@@ -11,11 +11,12 @@ use cairo_rs::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_rs::vm::errors::vm_errors::VirtualMachineError;
 use cairo_rs::vm::runners::cairo_runner::CairoRunner;
 use cairo_rs::vm::vm_core::VirtualMachine;
+use cairo_utils::extract_matches;
 use num_bigint::BigInt;
 
 use crate::hints::Hint;
 use crate::instructions::Instruction;
-use crate::operand::{CellRef, Register, ResOperand};
+use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
 
 #[cfg(test)]
 #[path = "run_test.rs"]
@@ -73,7 +74,7 @@ impl CairoHintProcessor {
     }
 }
 
-fn cell_ref_to_relocatable(cell_ref: CellRef, vm: &VirtualMachine) -> Relocatable {
+fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
     let base = match cell_ref.register {
         Register::AP => vm.get_ap(),
         Register::FP => vm.get_fp(),
@@ -81,34 +82,46 @@ fn cell_ref_to_relocatable(cell_ref: CellRef, vm: &VirtualMachine) -> Relocatabl
     base + (cell_ref.offset as i32)
 }
 
+/// Execution scope for starknet related data.
+struct StarknetExecScope {
+    /// The values of addresses in the simulated storage.
+    storage: HashMap<BigInt, BigInt>,
+}
+
 impl HintProcessor for CairoHintProcessor {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
         &self,
         vm: &mut VirtualMachine,
-        _exec_scopes: &mut ExecutionScopes,
+        exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, BigInt>,
     ) -> Result<(), VirtualMachineError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
-        let get_cell_val = |x: CellRef| -> Result<BigInt, VirtualMachineError> {
+        let get_cell_val = |x: &CellRef| -> Result<BigInt, VirtualMachineError> {
             Ok(vm.get_integer(&cell_ref_to_relocatable(x, vm))?.as_ref().clone())
         };
-        let get_val = |x: ResOperand| -> Result<BigInt, VirtualMachineError> {
+        let get_ptr =
+            |cell: &CellRef, offset: &BigInt| -> Result<Relocatable, VirtualMachineError> {
+                let base_ptr = vm.get_relocatable(&cell_ref_to_relocatable(cell, vm))?;
+                base_ptr.add_int_mod(offset, &get_prime())
+            };
+        let get_double_deref_val =
+            |cell: &CellRef, offset: &BigInt| -> Result<BigInt, VirtualMachineError> {
+                Ok(vm.get_integer(&get_ptr(cell, offset)?)?.as_ref().clone())
+            };
+        let get_val = |x: &ResOperand| -> Result<BigInt, VirtualMachineError> {
             match x {
                 ResOperand::Deref(cell) => get_cell_val(cell),
                 ResOperand::DoubleDeref(cell, offset) => {
-                    let base_ptr = vm.get_relocatable(&cell_ref_to_relocatable(cell, vm))?;
-                    let ptr = base_ptr.add_int_mod(&offset.into(), &get_prime())?;
-                    let value = vm.get_integer(&ptr)?;
-                    Ok(value.as_ref().clone())
+                    get_double_deref_val(cell, &(*offset).into())
                 }
-                ResOperand::Immediate(x) => Ok(x),
+                ResOperand::Immediate(x) => Ok(x.clone()),
                 ResOperand::BinOp(op) => {
-                    let a = get_cell_val(op.a)?;
-                    let b = match op.b {
+                    let a = get_cell_val(&op.a)?;
+                    let b = match &op.b {
                         crate::operand::DerefOrImmediate::Deref(cell) => get_cell_val(cell)?,
-                        crate::operand::DerefOrImmediate::Immediate(x) => x,
+                        crate::operand::DerefOrImmediate::Immediate(x) => x.clone(),
                     };
                     match op.op {
                         crate::operand::Operation::Add => Ok(a + b),
@@ -120,32 +133,32 @@ impl HintProcessor for CairoHintProcessor {
         match hint {
             Hint::AllocSegment { dst } => {
                 let segment = vm.add_memory_segment();
-                vm.insert_value(&cell_ref_to_relocatable(*dst, vm), segment)?;
+                vm.insert_value(&cell_ref_to_relocatable(dst, vm), segment)?;
             }
             Hint::TestLessThan { lhs, rhs, dst } => {
-                let lhs_val = get_val(lhs.clone())?;
-                let rhs_val = get_val(rhs.clone())?;
+                let lhs_val = get_val(lhs)?;
+                let rhs_val = get_val(rhs)?;
                 vm.insert_value(
-                    &cell_ref_to_relocatable(*dst, vm),
+                    &cell_ref_to_relocatable(dst, vm),
                     if lhs_val < rhs_val { BigInt::from(1) } else { BigInt::from(0) },
                 )?;
             }
             Hint::TestLessThanOrEqual { lhs, rhs, dst } => {
-                let lhs_val = get_val(lhs.clone())?;
-                let rhs_val = get_val(rhs.clone())?;
+                let lhs_val = get_val(lhs)?;
+                let rhs_val = get_val(rhs)?;
                 vm.insert_value(
-                    &cell_ref_to_relocatable(*dst, vm),
+                    &cell_ref_to_relocatable(dst, vm),
                     if lhs_val <= rhs_val { BigInt::from(1) } else { BigInt::from(0) },
                 )?;
             }
             Hint::DivMod { lhs, rhs, quotient, remainder } => {
-                let lhs_val = get_val(lhs.clone())?;
-                let rhs_val = get_val(rhs.clone())?;
+                let lhs_val = get_val(lhs)?;
+                let rhs_val = get_val(rhs)?;
                 vm.insert_value(
-                    &cell_ref_to_relocatable(*quotient, vm),
+                    &cell_ref_to_relocatable(quotient, vm),
                     lhs_val.clone() / rhs_val.clone(),
                 )?;
-                vm.insert_value(&cell_ref_to_relocatable(*remainder, vm), lhs_val % rhs_val)?;
+                vm.insert_value(&cell_ref_to_relocatable(remainder, vm), lhs_val % rhs_val)?;
             }
             Hint::AllocDictFeltTo { .. } => todo!(),
             Hint::DictFeltToRead { .. } => todo!(),
@@ -153,7 +166,63 @@ impl HintProcessor for CairoHintProcessor {
             Hint::EnterScope => todo!(),
             Hint::ExitScope => todo!(),
             Hint::DictSquashHints { .. } => todo!(),
-            Hint::SystemCall { .. } => todo!(),
+            Hint::SystemCall { system } => {
+                let starknet_exec_scope =
+                    match exec_scopes.get_mut_ref::<StarknetExecScope>("starknet_exec_scope") {
+                        Ok(starknet_exec_scope) => starknet_exec_scope,
+                        Err(_) => {
+                            exec_scopes.assign_or_update_variable(
+                                "starknet_exec_scope",
+                                Box::new(StarknetExecScope { storage: HashMap::default() }),
+                            );
+                            exec_scopes.get_mut_ref::<StarknetExecScope>("starknet_exec_scope")?
+                        }
+                    };
+                let (cell, base_offset) = match system {
+                    ResOperand::Deref(cell) => (cell, 0.into()),
+                    ResOperand::BinOp(BinOpOperand {
+                        op: crate::operand::Operation::Add,
+                        a,
+                        b,
+                    }) => (a, extract_matches!(b, DerefOrImmediate::Immediate).clone()),
+                    _ => panic!("Illegal argument for system pointer."),
+                };
+                let (selector_sign, selector) =
+                    get_double_deref_val(cell, &base_offset)?.to_bytes_le();
+                assert_eq!(selector_sign, num_bigint::Sign::Plus, "Illegal selector.");
+                if selector == "storage_write".as_bytes() {
+                    let gas_counter = get_double_deref_val(cell, &(base_offset.clone() + 1))?;
+                    const WRITE_GAS_SIM_COST: usize = 1000;
+                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 4))?;
+                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 5))?;
+                    if gas_counter >= WRITE_GAS_SIM_COST.into() {
+                        let addr = get_double_deref_val(cell, &(base_offset.clone() + 2))?;
+                        let value = get_double_deref_val(cell, &(base_offset + 3))?;
+                        starknet_exec_scope.storage.insert(addr, value);
+                        vm.insert_value(
+                            &gas_counter_updated_ptr,
+                            gas_counter - WRITE_GAS_SIM_COST,
+                        )?;
+                        vm.insert_value(&revert_reason_ptr, BigInt::from(0))?;
+                    } else {
+                        vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
+                        vm.insert_value(&revert_reason_ptr, BigInt::from(1))?;
+                    }
+                } else if selector == "storage_read".as_bytes() {
+                    let addr = get_double_deref_val(cell, &(base_offset.clone() + 1))?;
+                    let value = starknet_exec_scope
+                        .storage
+                        .get(&addr)
+                        .cloned()
+                        .unwrap_or_else(|| BigInt::from(0));
+                    let result_ptr = get_ptr(cell, &(base_offset + 2))?;
+                    vm.insert_value(&result_ptr, value)?;
+                } else if selector == "call_contract".as_bytes() {
+                    todo!()
+                } else {
+                    panic!("Unknown selector for system call!");
+                }
+            }
         };
         Ok(())
     }
