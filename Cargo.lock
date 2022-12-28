@@ -219,6 +219,269 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
 
 [[package]]
+name = "cairo-casm"
+version = "0.1.0"
+dependencies = [
+ "cairo-rs",
+ "cairo-utils",
+ "env_logger",
+ "indoc",
+ "itertools",
+ "num-bigint",
+ "pretty_assertions",
+ "test-case",
+ "test-log",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-compiler"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cairo-db-utils",
+ "cairo-defs",
+ "cairo-diagnostics",
+ "cairo-filesystem",
+ "cairo-lowering",
+ "cairo-parser",
+ "cairo-plugins",
+ "cairo-project",
+ "cairo-semantic",
+ "cairo-sierra",
+ "cairo-sierra-generator",
+ "cairo-syntax",
+ "cairo-utils",
+ "clap 4.0.26",
+ "log",
+ "salsa",
+ "test-log",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-db-utils"
+version = "0.1.0"
+dependencies = [
+ "test-log",
+]
+
+[[package]]
+name = "cairo-debug"
+version = "0.1.0"
+dependencies = [
+ "cairo-db-utils",
+ "cairo-diagnostics-proc-macros",
+ "env_logger",
+ "salsa",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-defs"
+version = "0.1.0"
+dependencies = [
+ "cairo-db-utils",
+ "cairo-debug",
+ "cairo-diagnostics",
+ "cairo-filesystem",
+ "cairo-parser",
+ "cairo-syntax",
+ "cairo-utils",
+ "indexmap",
+ "indoc",
+ "itertools",
+ "pretty_assertions",
+ "salsa",
+ "smol_str",
+ "test-log",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-diagnostics"
+version = "0.1.0"
+dependencies = [
+ "cairo-db-utils",
+ "cairo-diagnostics-proc-macros",
+ "cairo-filesystem",
+ "env_logger",
+ "indoc",
+ "itertools",
+ "pretty_assertions",
+ "salsa",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-diagnostics-proc-macros"
+version = "0.1.0"
+dependencies = [
+ "cairo-debug",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "cairo-eq-solver"
+version = "0.1.0"
+dependencies = [
+ "cairo-utils",
+ "env_logger",
+ "good_lp",
+ "indoc",
+ "itertools",
+ "test-case",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-filesystem"
+version = "0.1.0"
+dependencies = [
+ "cairo-db-utils",
+ "cairo-debug",
+ "cairo-project",
+ "env_logger",
+ "path-clean",
+ "salsa",
+ "smol_str",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-formatter"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cairo-db-utils",
+ "cairo-diagnostics",
+ "cairo-filesystem",
+ "cairo-parser",
+ "cairo-syntax",
+ "cairo-utils",
+ "clap 4.0.26",
+ "colored",
+ "diffy",
+ "itertools",
+ "log",
+ "pretty_assertions",
+ "salsa",
+ "smol_str",
+ "test-case",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-language-server"
+version = "0.1.0"
+dependencies = [
+ "cairo-db-utils",
+ "cairo-debug",
+ "cairo-defs",
+ "cairo-diagnostics",
+ "cairo-filesystem",
+ "cairo-formatter",
+ "cairo-lowering",
+ "cairo-parser",
+ "cairo-plugins",
+ "cairo-project",
+ "cairo-semantic",
+ "cairo-syntax",
+ "cairo-utils",
+ "lsp-types",
+ "salsa",
+ "serde_json",
+ "test-log",
+ "tokio",
+ "tower-lsp",
+]
+
+[[package]]
+name = "cairo-lowering"
+version = "0.1.0"
+dependencies = [
+ "cairo-db-utils",
+ "cairo-debug",
+ "cairo-defs",
+ "cairo-diagnostics",
+ "cairo-diagnostics-proc-macros",
+ "cairo-filesystem",
+ "cairo-parser",
+ "cairo-plugins",
+ "cairo-semantic",
+ "cairo-syntax",
+ "cairo-test-utils",
+ "cairo-utils",
+ "env_logger",
+ "id-arena",
+ "indoc",
+ "itertools",
+ "log",
+ "num-bigint",
+ "num-traits 0.2.15",
+ "pretty_assertions",
+ "salsa",
+ "smol_str",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-parser"
+version = "0.1.0"
+dependencies = [
+ "cairo-db-utils",
+ "cairo-diagnostics",
+ "cairo-filesystem",
+ "cairo-syntax",
+ "cairo-syntax-codegen",
+ "cairo-test-utils",
+ "cairo-utils",
+ "colored",
+ "env_logger",
+ "itertools",
+ "log",
+ "pretty_assertions",
+ "salsa",
+ "smol_str",
+ "test-case",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-plugins"
+version = "0.1.0"
+dependencies = [
+ "cairo-db-utils",
+ "cairo-debug",
+ "cairo-defs",
+ "cairo-diagnostics",
+ "cairo-filesystem",
+ "cairo-parser",
+ "cairo-semantic",
+ "cairo-syntax",
+ "cairo-utils",
+ "indoc",
+ "itertools",
+ "pretty_assertions",
+ "salsa",
+ "smol_str",
+ "test-case",
+]
+
+[[package]]
+name = "cairo-project"
+version = "0.1.0"
+dependencies = [
+ "indoc",
+ "serde",
+ "smol_str",
+ "test-log",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
 name = "cairo-rs"
 version = "0.1.0"
 source = "git+https://github.com/lambdaclass/cairo-rs?rev=42dadd1#42dadd1631c9196e39d91b77f130a78f73d83f5f"
@@ -246,19 +509,289 @@ dependencies = [
 ]
 
 [[package]]
-name = "casm"
+name = "cairo-runner"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "cairo-casm",
+ "cairo-compiler",
+ "cairo-diagnostics",
  "cairo-rs",
+ "cairo-sierra",
+ "cairo-sierra-ap-change",
+ "cairo-sierra-gas",
+ "cairo-sierra-generator",
+ "cairo-sierra-to-casm",
+ "cairo-utils",
+ "clap 4.0.26",
+ "itertools",
+ "num-bigint",
+ "salsa",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-semantic"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "cairo-db-utils",
+ "cairo-debug",
+ "cairo-defs",
+ "cairo-diagnostics",
+ "cairo-diagnostics-proc-macros",
+ "cairo-filesystem",
+ "cairo-parser",
+ "cairo-plugins",
+ "cairo-syntax",
+ "cairo-test-utils",
+ "cairo-utils",
+ "env_logger",
+ "id-arena",
+ "indoc",
+ "itertools",
+ "log",
+ "num-bigint",
+ "num-traits 0.2.15",
+ "pretty_assertions",
+ "salsa",
+ "smol_str",
+ "test-case",
+ "test-log",
+ "unescaper",
+]
+
+[[package]]
+name = "cairo-sierra"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "bimap",
+ "cairo-utils",
+ "const-fnv1a-hash",
+ "convert_case",
+ "derivative",
  "env_logger",
  "indoc",
  "itertools",
+ "lalrpop",
+ "lalrpop-util",
  "num-bigint",
+ "num-traits 0.2.15",
+ "regex",
+ "salsa",
+ "serde",
+ "smol_str",
+ "test-case",
+ "test-log",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-sierra-ap-change"
+version = "0.1.0"
+dependencies = [
+ "cairo-eq-solver",
+ "cairo-sierra",
+ "cairo-utils",
+ "env_logger",
+ "indoc",
+ "itertools",
+ "test-case",
+ "test-log",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-sierra-gas"
+version = "0.1.0"
+dependencies = [
+ "cairo-eq-solver",
+ "cairo-sierra",
+ "cairo-utils",
+ "env_logger",
+ "indoc",
+ "itertools",
+ "test-case",
+ "test-log",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-sierra-generator"
+version = "0.1.0"
+dependencies = [
+ "cairo-db-utils",
+ "cairo-debug",
+ "cairo-defs",
+ "cairo-diagnostics",
+ "cairo-diagnostics-proc-macros",
+ "cairo-filesystem",
+ "cairo-lowering",
+ "cairo-parser",
+ "cairo-plugins",
+ "cairo-semantic",
+ "cairo-sierra",
+ "cairo-syntax",
+ "cairo-test-utils",
+ "cairo-utils",
+ "env_logger",
+ "id-arena",
+ "indoc",
+ "itertools",
+ "log",
+ "num-bigint",
+ "pretty_assertions",
+ "salsa",
+ "smol_str",
+ "test-case",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-sierra-to-casm"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "cairo-casm",
+ "cairo-sierra",
+ "cairo-sierra-ap-change",
+ "cairo-sierra-gas",
+ "cairo-utils",
+ "clap 4.0.26",
+ "env_logger",
+ "indoc",
+ "itertools",
+ "log",
+ "num-bigint",
+ "num-traits 0.2.15",
  "pretty_assertions",
  "test-case",
  "test-log",
  "thiserror",
- "utils",
+]
+
+[[package]]
+name = "cairo-starknet"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cairo-compiler",
+ "cairo-defs",
+ "cairo-diagnostics",
+ "cairo-filesystem",
+ "cairo-formatter",
+ "cairo-lowering",
+ "cairo-parser",
+ "cairo-plugins",
+ "cairo-semantic",
+ "cairo-sierra",
+ "cairo-sierra-ap-change",
+ "cairo-sierra-gas",
+ "cairo-sierra-generator",
+ "cairo-sierra-to-casm",
+ "cairo-syntax",
+ "cairo-test-utils",
+ "cairo-utils",
+ "clap 4.0.26",
+ "convert_case",
+ "env_logger",
+ "genco",
+ "indoc",
+ "itertools",
+ "log",
+ "num-bigint",
+ "num-integer",
+ "num-traits 0.2.15",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "sha3",
+ "smol_str",
+ "test-case",
+ "test-log",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-syntax"
+version = "0.1.0"
+dependencies = [
+ "cairo-db-utils",
+ "cairo-debug",
+ "cairo-filesystem",
+ "cairo-utils",
+ "env_logger",
+ "pretty_assertions",
+ "salsa",
+ "smol_str",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-syntax-codegen"
+version = "0.1.0"
+dependencies = [
+ "cairo-utils",
+ "env_logger",
+ "genco",
+ "log",
+ "test-log",
+ "xshell",
+]
+
+[[package]]
+name = "cairo-test-runner"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cairo-casm",
+ "cairo-compiler",
+ "cairo-debug",
+ "cairo-defs",
+ "cairo-diagnostics",
+ "cairo-filesystem",
+ "cairo-project",
+ "cairo-rs",
+ "cairo-runner",
+ "cairo-semantic",
+ "cairo-sierra",
+ "cairo-sierra-generator",
+ "cairo-sierra-to-casm",
+ "cairo-starknet",
+ "cairo-syntax",
+ "cairo-utils",
+ "clap 4.0.26",
+ "colored",
+ "itertools",
+ "num-bigint",
+ "rayon",
+ "salsa",
+ "thiserror",
+]
+
+[[package]]
+name = "cairo-test-utils"
+version = "0.1.0"
+dependencies = [
+ "cairo-utils",
+ "env_logger",
+ "log",
+ "pretty_assertions",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-utils"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "env_logger",
+ "indexmap",
+ "itertools",
+ "log",
+ "test-case",
+ "test-log",
 ]
 
 [[package]]
@@ -383,31 +916,6 @@ dependencies = [
  "atty",
  "lazy_static",
  "winapi",
-]
-
-[[package]]
-name = "compiler"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap 4.0.26",
- "db_utils",
- "defs",
- "diagnostics",
- "filesystem",
- "log",
- "lowering",
- "parser",
- "plugins",
- "project",
- "salsa",
- "semantic",
- "sierra",
- "sierra_generator",
- "syntax",
- "test-log",
- "thiserror",
- "utils",
 ]
 
 [[package]]
@@ -589,75 +1097,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "db_utils"
-version = "0.1.0"
-dependencies = [
- "test-log",
-]
-
-[[package]]
-name = "debug"
-version = "0.1.0"
-dependencies = [
- "db_utils",
- "diagnostics_proc_macros",
- "env_logger",
- "salsa",
- "test-log",
-]
-
-[[package]]
-name = "defs"
-version = "0.1.0"
-dependencies = [
- "db_utils",
- "debug",
- "diagnostics",
- "filesystem",
- "indexmap",
- "indoc",
- "itertools",
- "parser",
- "pretty_assertions",
- "salsa",
- "smol_str",
- "syntax",
- "test-log",
- "thiserror",
- "utils",
-]
-
-[[package]]
 name = "derivative"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
 dependencies = [
  "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "diagnostics"
-version = "0.1.0"
-dependencies = [
- "db_utils",
- "diagnostics_proc_macros",
- "env_logger",
- "filesystem",
- "indoc",
- "itertools",
- "pretty_assertions",
- "salsa",
- "test-log",
-]
-
-[[package]]
-name = "diagnostics_proc_macros"
-version = "0.1.0"
-dependencies = [
- "debug",
  "quote",
  "syn",
 ]
@@ -746,20 +1191,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "filesystem"
-version = "0.1.0"
-dependencies = [
- "db_utils",
- "debug",
- "env_logger",
- "path-clean",
- "project",
- "salsa",
- "smol_str",
- "test-log",
-]
-
-[[package]]
 name = "fixedbitset"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -778,29 +1209,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a9c384f161156f5260c24a097c56119f9be8c798586aecc13afbcbe7b7e26bf8"
 dependencies = [
  "percent-encoding",
-]
-
-[[package]]
-name = "formatter"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap 4.0.26",
- "colored",
- "db_utils",
- "diagnostics",
- "diffy",
- "filesystem",
- "itertools",
- "log",
- "parser",
- "pretty_assertions",
- "salsa",
- "smol_str",
- "syntax",
- "test-case",
- "test-log",
- "utils",
 ]
 
 [[package]]
@@ -1124,31 +1532,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "languageserver"
-version = "0.1.0"
-dependencies = [
- "db_utils",
- "debug",
- "defs",
- "diagnostics",
- "filesystem",
- "formatter",
- "lowering",
- "lsp-types",
- "parser",
- "plugins",
- "project",
- "salsa",
- "semantic",
- "serde_json",
- "syntax",
- "test-log",
- "tokio",
- "tower-lsp",
- "utils",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1196,35 +1579,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "lowering"
-version = "0.1.0"
-dependencies = [
- "db_utils",
- "debug",
- "defs",
- "diagnostics",
- "diagnostics_proc_macros",
- "env_logger",
- "filesystem",
- "id-arena",
- "indoc",
- "itertools",
- "log",
- "num-bigint",
- "num-traits 0.2.15",
- "parser",
- "plugins",
- "pretty_assertions",
- "salsa",
- "semantic",
- "smol_str",
- "syntax",
- "test-log",
- "test_utils",
- "utils",
 ]
 
 [[package]]
@@ -1496,28 +1850,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "parser"
-version = "0.1.0"
-dependencies = [
- "colored",
- "db_utils",
- "diagnostics",
- "env_logger",
- "filesystem",
- "itertools",
- "log",
- "pretty_assertions",
- "salsa",
- "smol_str",
- "syntax",
- "syntax_codegen",
- "test-case",
- "test-log",
- "test_utils",
- "utils",
-]
-
-[[package]]
 name = "paste"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1603,27 +1935,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
-name = "plugins"
-version = "0.1.0"
-dependencies = [
- "db_utils",
- "debug",
- "defs",
- "diagnostics",
- "filesystem",
- "indoc",
- "itertools",
- "parser",
- "pretty_assertions",
- "salsa",
- "semantic",
- "smol_str",
- "syntax",
- "test-case",
- "utils",
-]
-
-[[package]]
 name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1678,18 +1989,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ea3d908b0e36316caf9e9e2c4625cdde190a7e6f440d794667ed17a1855e725"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "project"
-version = "0.1.0"
-dependencies = [
- "indoc",
- "serde",
- "smol_str",
- "test-log",
- "thiserror",
- "toml",
 ]
 
 [[package]]
@@ -1813,28 +2112,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "runner"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cairo-rs",
- "casm",
- "clap 4.0.26",
- "compiler",
- "diagnostics",
- "itertools",
- "num-bigint",
- "salsa",
- "sierra",
- "sierra_ap_change",
- "sierra_gas",
- "sierra_generator",
- "sierra_to_casm",
- "thiserror",
- "utils",
-]
-
-[[package]]
 name = "rustc-hash"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1901,37 +2178,6 @@ name = "scratch"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c8132065adcfd6e02db789d9285a0deb2f3fcb04002865ab67d5fb103533898"
-
-[[package]]
-name = "semantic"
-version = "0.1.0"
-dependencies = [
- "assert_matches",
- "db_utils",
- "debug",
- "defs",
- "diagnostics",
- "diagnostics_proc_macros",
- "env_logger",
- "filesystem",
- "id-arena",
- "indoc",
- "itertools",
- "log",
- "num-bigint",
- "num-traits 0.2.15",
- "parser",
- "plugins",
- "pretty_assertions",
- "salsa",
- "smol_str",
- "syntax",
- "test-case",
- "test-log",
- "test_utils",
- "unescaper",
- "utils",
-]
 
 [[package]]
 name = "semver"
@@ -2037,116 +2283,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sierra"
-version = "0.1.0"
-dependencies = [
- "assert_matches",
- "bimap",
- "const-fnv1a-hash",
- "convert_case",
- "derivative",
- "env_logger",
- "indoc",
- "itertools",
- "lalrpop",
- "lalrpop-util",
- "num-bigint",
- "num-traits 0.2.15",
- "regex",
- "salsa",
- "serde",
- "smol_str",
- "test-case",
- "test-log",
- "thiserror",
- "utils",
-]
-
-[[package]]
-name = "sierra_ap_change"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "indoc",
- "itertools",
- "sierra",
- "solver",
- "test-case",
- "test-log",
- "thiserror",
- "utils",
-]
-
-[[package]]
-name = "sierra_gas"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "indoc",
- "itertools",
- "sierra",
- "solver",
- "test-case",
- "test-log",
- "thiserror",
- "utils",
-]
-
-[[package]]
-name = "sierra_generator"
-version = "0.1.0"
-dependencies = [
- "db_utils",
- "debug",
- "defs",
- "diagnostics",
- "diagnostics_proc_macros",
- "env_logger",
- "filesystem",
- "id-arena",
- "indoc",
- "itertools",
- "log",
- "lowering",
- "num-bigint",
- "parser",
- "plugins",
- "pretty_assertions",
- "salsa",
- "semantic",
- "sierra",
- "smol_str",
- "syntax",
- "test-case",
- "test-log",
- "test_utils",
- "utils",
-]
-
-[[package]]
-name = "sierra_to_casm"
-version = "0.1.0"
-dependencies = [
- "assert_matches",
- "casm",
- "clap 4.0.26",
- "env_logger",
- "indoc",
- "itertools",
- "log",
- "num-bigint",
- "num-traits 0.2.15",
- "pretty_assertions",
- "sierra",
- "sierra_ap_change",
- "sierra_gas",
- "test-case",
- "test-log",
- "thiserror",
- "utils",
-]
-
-[[package]]
 name = "signal-hook-registry"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2196,19 +2332,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "solver"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "good_lp",
- "indoc",
- "itertools",
- "test-case",
- "test-log",
- "utils",
-]
-
-[[package]]
 name = "sprs"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2217,48 +2340,6 @@ dependencies = [
  "ndarray",
  "num-complex",
  "num-traits 0.1.43",
-]
-
-[[package]]
-name = "starknet"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap 4.0.26",
- "compiler",
- "convert_case",
- "defs",
- "diagnostics",
- "env_logger",
- "filesystem",
- "formatter",
- "genco",
- "indoc",
- "itertools",
- "log",
- "lowering",
- "num-bigint",
- "num-integer",
- "num-traits 0.2.15",
- "parser",
- "plugins",
- "pretty_assertions",
- "semantic",
- "serde",
- "serde_json",
- "sha3",
- "sierra",
- "sierra_ap_change",
- "sierra_gas",
- "sierra_generator",
- "sierra_to_casm",
- "smol_str",
- "syntax",
- "test-case",
- "test-log",
- "test_utils",
- "thiserror",
- "utils",
 ]
 
 [[package]]
@@ -2367,33 +2448,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "syntax"
-version = "0.1.0"
-dependencies = [
- "db_utils",
- "debug",
- "env_logger",
- "filesystem",
- "pretty_assertions",
- "salsa",
- "smol_str",
- "test-log",
- "utils",
-]
-
-[[package]]
-name = "syntax_codegen"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "genco",
- "log",
- "test-log",
- "utils",
- "xshell",
-]
-
-[[package]]
 name = "term"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2447,76 +2501,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "test_runner"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cairo-rs",
- "casm",
- "clap 4.0.26",
- "colored",
- "compiler",
- "debug",
- "defs",
- "diagnostics",
- "filesystem",
- "itertools",
- "num-bigint",
- "project",
- "rayon",
- "runner",
- "salsa",
- "semantic",
- "sierra",
- "sierra_generator",
- "sierra_to_casm",
- "starknet",
- "syntax",
- "thiserror",
- "utils",
-]
-
-[[package]]
-name = "test_utils"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "log",
- "pretty_assertions",
- "test-log",
- "utils",
-]
-
-[[package]]
 name = "tests"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
+ "cairo-casm",
+ "cairo-compiler",
+ "cairo-defs",
+ "cairo-diagnostics",
+ "cairo-filesystem",
+ "cairo-parser",
+ "cairo-plugins",
  "cairo-rs",
- "casm",
- "compiler",
- "defs",
- "diagnostics",
+ "cairo-runner",
+ "cairo-semantic",
+ "cairo-sierra",
+ "cairo-sierra-gas",
+ "cairo-sierra-generator",
+ "cairo-sierra-to-casm",
+ "cairo-syntax",
+ "cairo-test-utils",
+ "cairo-utils",
  "env_logger",
- "filesystem",
  "itertools",
  "log",
  "num-bigint",
- "parser",
- "plugins",
  "pretty_assertions",
- "runner",
  "salsa",
- "semantic",
- "sierra",
- "sierra_gas",
- "sierra_generator",
- "sierra_to_casm",
- "syntax",
  "test-case",
  "test-log",
- "test_utils",
- "utils",
 ]
 
 [[package]]
@@ -2784,19 +2797,6 @@ dependencies = [
  "idna",
  "percent-encoding",
  "serde",
-]
-
-[[package]]
-name = "utils"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "env_logger",
- "indexmap",
- "itertools",
- "log",
- "test-case",
- "test-log",
 ]
 
 [[package]]

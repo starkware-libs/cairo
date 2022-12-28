@@ -1,7 +1,0 @@
-[package]
-name = "db_utils"
-version.workspace = true
-edition.workspace = true
-
-[dev-dependencies]
-test-log.workspace = true

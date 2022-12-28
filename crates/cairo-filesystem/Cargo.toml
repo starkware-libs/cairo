@@ -1,0 +1,16 @@
+[package]
+name = "cairo-filesystem"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-debug = { path = "../cairo-debug" }
+path-clean.workspace = true
+cairo-project = { path = "../cairo-project" }
+salsa.workspace = true
+smol_str.workspace = true
+
+[dev-dependencies]
+env_logger.workspace = true
+test-log.workspace = true

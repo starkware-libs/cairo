@@ -1,0 +1,32 @@
+[package]
+name = "cairo-sierra-to-casm"
+version.workspace = true
+edition.workspace = true
+
+[features]
+testing = []
+
+[dependencies]
+assert_matches.workspace = true
+cairo-casm = { path = "../cairo-casm" }
+clap.workspace = true
+itertools.workspace = true
+log.workspace = true
+num-bigint.workspace = true
+num-traits.workspace = true
+cairo-sierra = { path = "../cairo-sierra" }
+cairo-sierra-ap-change = { path = "../cairo-sierra-ap-change" }
+cairo-sierra-gas = { path = "../cairo-sierra-gas" }
+thiserror.workspace = true
+cairo-utils = { path = "../cairo-utils" }
+
+[dev-dependencies]
+env_logger.workspace = true
+indoc.workspace = true
+pretty_assertions.workspace = true
+test-case.workspace = true
+test-log.workspace = true
+
+[[bin]]
+name = "sierra-compile"
+path = "src/cli.rs"

@@ -1,0 +1,32 @@
+[package]
+name = "cairo-lowering"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-debug = { path = "../cairo-debug" }
+cairo-defs = { path = "../cairo-defs" }
+cairo-diagnostics = { path = "../cairo-diagnostics" }
+cairo-diagnostics-proc-macros = { path = "../cairo-diagnostics-proc-macros" }
+cairo-filesystem = { path = "../cairo-filesystem" }
+id-arena.workspace = true
+itertools.workspace = true
+log.workspace = true
+num-bigint.workspace = true
+num-traits.workspace = true
+cairo-parser = { path = "../cairo-parser" }
+salsa.workspace = true
+cairo-semantic = { path = "../cairo-semantic" }
+smol_str.workspace = true
+cairo-syntax = { path = "../cairo-syntax" }
+cairo-utils = { path = "../cairo-utils" }
+
+[dev-dependencies]
+env_logger.workspace = true
+indoc.workspace = true
+cairo-plugins = { path = "../cairo-plugins" }
+pretty_assertions.workspace = true
+cairo-semantic = { path = "../cairo-semantic", features = ["testing"] }
+test-log.workspace = true
+cairo-test-utils = { path = "../cairo-test-utils" }

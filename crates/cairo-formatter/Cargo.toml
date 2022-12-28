@@ -1,0 +1,29 @@
+[package]
+name = "cairo-formatter"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "cairo-format"
+path = "src/bin/cli.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+colored.workspace = true
+cairo-diagnostics = { path = "../cairo-diagnostics" }
+diffy.workspace = true
+cairo-filesystem = { path = "../cairo-filesystem" }
+itertools.workspace = true
+log.workspace = true
+cairo-parser = { path = "../cairo-parser" }
+salsa.workspace = true
+smol_str.workspace = true
+cairo-syntax = { path = "../cairo-syntax" }
+cairo-utils = { path = "../cairo-utils" }
+
+[dev-dependencies]
+cairo-db-utils = { path = "../cairo-db-utils" }
+pretty_assertions.workspace = true
+test-case.workspace = true
+test-log.workspace = true

@@ -6,27 +6,27 @@ edition.workspace = true
 [dev-dependencies]
 assert_matches.workspace = true
 cairo-rs.workspace = true
-casm = { path = "../crates/casm" }
-compiler = { path = "../crates/compiler" }
-defs = { path = "../crates/defs" }
-diagnostics = { path = "../crates/diagnostics" }
+cairo-casm = { path = "../crates/cairo-casm" }
+cairo-compiler = { path = "../crates/cairo-compiler" }
+cairo-defs = { path = "../crates/cairo-defs" }
+cairo-diagnostics = { path = "../crates/cairo-diagnostics" }
 env_logger.workspace = true
-filesystem = { path = "../crates/filesystem" }
+cairo-filesystem = { path = "../crates/cairo-filesystem" }
 itertools.workspace = true
 log.workspace = true
 num-bigint.workspace = true
-parser = { path = "../crates/parser" }
-plugins = { path = "../crates/plugins" }
+cairo-parser = { path = "../crates/cairo-parser" }
+cairo-plugins = { path = "../crates/cairo-plugins" }
 pretty_assertions.workspace = true
-runner = { path = "../crates/runner" }
-sierra = { path = "../crates/sierra" }
-sierra_gas = { path = "../crates/sierra_gas" }
-semantic = { path = "../crates/semantic", features = ["testing"] }
-sierra_generator = { path = "../crates/sierra_generator", features = ["testing"] }
-sierra_to_casm = { path = "../crates/sierra_to_casm", features = ["testing"] }
-syntax = { path = "../crates/syntax" }
-test_utils = { path = "../crates/test_utils" }
-utils = { path = "../crates/utils" }
+cairo-runner = { path = "../crates/cairo-runner" }
+cairo-sierra = { path = "../crates/cairo-sierra" }
+cairo-sierra-gas = { path = "../crates/cairo-sierra-gas" }
+cairo-semantic = { path = "../crates/cairo-semantic", features = ["testing"] }
+cairo-sierra-generator = { path = "../crates/cairo-sierra-generator", features = ["testing"] }
+cairo-sierra-to-casm = { path = "../crates/cairo-sierra-to-casm", features = ["testing"] }
+cairo-syntax = { path = "../crates/cairo-syntax" }
+cairo-test-utils = { path = "../crates/cairo-test-utils" }
+cairo-utils = { path = "../crates/cairo-utils" }
 salsa.workspace = true
 test-case.workspace = true
 test-log.workspace = true

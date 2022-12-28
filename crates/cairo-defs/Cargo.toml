@@ -1,0 +1,23 @@
+[package]
+name = "cairo-defs"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-debug = { path = "../cairo-debug" }
+cairo-diagnostics = { path = "../cairo-diagnostics" }
+cairo-filesystem = { path = "../cairo-filesystem" }
+indexmap.workspace = true
+itertools.workspace = true
+salsa.workspace = true
+cairo-syntax = { path = "../cairo-syntax" }
+thiserror.workspace = true
+cairo-parser = { path = "../cairo-parser" }
+smol_str.workspace = true
+cairo-utils = { path = "../cairo-utils" }
+
+[dev-dependencies]
+indoc.workspace = true
+pretty_assertions.workspace = true
+test-log.workspace = true

@@ -41,7 +41,7 @@ jobs:
           profile: minimal
           toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
-      - run: cargo +nightly-2022-11-03 run --bin formatter_cli -- --check --recursive
+      - run: cargo +nightly-2022-11-03 run --bin cairo-format -- --check --recursive
 
   # Checks all cairo corelib tests run correctly.
   cairotest:
@@ -54,7 +54,7 @@ jobs:
           toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
       - run: cargo +nightly-2022-11-03 run --bin cairo-test -- --path corelib/
-      - run: cargo +nightly-2022-11-03 run --bin cairo-test -- --path crates/starknet/cairo_level_tests/ --starknet
+      - run: cargo +nightly-2022-11-03 run --bin cairo-test -- --path crates/cairo-starknet/cairo_level_tests/ --starknet
 
   # Check for unnecessary dependencies.
   udeps:

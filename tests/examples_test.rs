@@ -1,18 +1,18 @@
 use std::path::PathBuf;
 
 use assert_matches::assert_matches;
-use compiler::db::RootDatabase;
-use compiler::diagnostics::check_and_eprint_diagnostics;
-use compiler::project::setup_project;
-use filesystem::ids::CrateId;
+use cairo_compiler::db::RootDatabase;
+use cairo_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_compiler::project::setup_project;
+use cairo_filesystem::ids::CrateId;
+use cairo_runner::{RunResultValue, SierraCasmRunner};
+use cairo_sierra_generator::db::SierraGenGroup;
+use cairo_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_sierra_to_casm::test_utils::build_metadata;
+use cairo_test_utils::compare_contents_or_fix_with_path;
+use cairo_utils::extract_matches;
 use num_bigint::BigInt;
-use runner::{RunResultValue, SierraCasmRunner};
-use sierra_generator::db::SierraGenGroup;
-use sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use sierra_to_casm::test_utils::build_metadata;
 use test_case::test_case;
-use test_utils::compare_contents_or_fix_with_path;
-use utils::extract_matches;
 
 /// Setups the cairo lowering to sierra db for the matching example.
 fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
@@ -40,7 +40,7 @@ fn compare_contents_or_fix(name: &str, test_type: &str, content: String) {
 }
 
 /// Compiles the Cairo code for `name` to a Sierra program.
-fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
+fn checked_compile_to_sierra(name: &str) -> cairo_sierra::program::Program {
     let (db, main_crate_ids) = setup(name);
     let sierra_program = db.get_sierra_program(main_crate_ids).unwrap();
     replace_sierra_ids_in_program(&db, &sierra_program)
@@ -89,7 +89,7 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     compare_contents_or_fix(
         name,
         "casm",
-        sierra_to_casm::compiler::compile(
+        cairo_sierra_to_casm::compiler::compile(
             &program,
             &build_metadata(&program, enable_gas_checks),
             enable_gas_checks,

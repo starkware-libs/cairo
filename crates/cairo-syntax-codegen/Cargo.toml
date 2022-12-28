@@ -1,0 +1,21 @@
+[package]
+name = "cairo-syntax-codegen"
+version.workspace = true
+edition.workspace = true
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["cairo-syntax"]
+
+[[bin]]
+name = "cairo-generate-syntax"
+path = "src/bin/generate_syntax.rs"
+
+[dependencies]
+genco.workspace = true
+log.workspace = true
+xshell.workspace = true
+cairo-utils = { path = "../cairo-utils" }
+
+[dev-dependencies]
+env_logger.workspace = true
+test-log.workspace = true
