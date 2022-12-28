@@ -21,6 +21,7 @@ use crate::block_generator::{generate_block_code, generate_return_code};
 use crate::db::SierraGenGroup;
 use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::expr_generator_context::ExprGeneratorContext;
+use crate::lifetime::find_variable_lifetime;
 use crate::local_variables::find_local_variables;
 use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -75,7 +76,11 @@ fn get_function_code(
     // Find the local variables.
     let local_variables = find_local_variables(db, lowered_function)?;
 
-    let mut context = ExprGeneratorContext::new(db, lowered_function, function_id, diagnostics);
+    // Get lifetime information.
+    let lifetime = find_variable_lifetime(lowered_function)?;
+
+    let mut context =
+        ExprGeneratorContext::new(db, lowered_function, function_id, &lifetime, diagnostics);
 
     // Generate a label for the function's body.
     let (label, label_id) = context.new_label();

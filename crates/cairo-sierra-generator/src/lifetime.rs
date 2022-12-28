@@ -45,8 +45,6 @@ impl VariableLifetimeResult {
 
 /// Given the lowering of a function, returns lifetime information for all the variables.
 /// See [VariableLifetimeResult].
-// TODO(lior): Remove the following `allow(dead_code)` once this function is used.
-#[allow(dead_code)]
 pub fn find_variable_lifetime(lowered_function: &Lowered) -> Maybe<VariableLifetimeResult> {
     let mut res = VariableLifetimeResult::default();
     inner_find_variable_lifetime(
