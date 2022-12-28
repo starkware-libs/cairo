@@ -60,7 +60,16 @@ impl Instruction {
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for hint in &self.hints {
-            writeln!(f, "{}", hint)?;
+            let hint_str = hint.to_string();
+            write!(f, "%{{")?;
+            if !hint_str.starts_with('\n') {
+                write!(f, " ")?;
+            }
+            write!(f, "{}", hint)?;
+            if !hint_str.ends_with('\n') {
+                write!(f, " ")?;
+            }
+            writeln!(f, "%}}")?;
         }
 
         write!(f, "{}", self.body)?;

@@ -281,67 +281,67 @@
     [
       0,
       [
-        "%{ memory[ap + 0] = 15500 <= memory[fp + -6] %}"
+        "memory[ap + 0] = 15500 <= memory[fp + -6]"
       ]
     ],
     [
       17,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       45,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       72,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       91,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       101,
       [
-        "%{ memory[ap + 0] = 8200 <= memory[fp + -6] %}"
+        "memory[ap + 0] = 8200 <= memory[fp + -6]"
       ]
     ],
     [
       118,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       146,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       163,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       242,
       [
-        "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -3]) %}"
+        "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
       ]
     ],
     [
       255,
       [
-        "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -4]) %}"
+        "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
       ]
     ]
   ],
