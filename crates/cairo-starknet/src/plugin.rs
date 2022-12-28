@@ -88,12 +88,17 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                     // TODO(yuval): change to item_function.declaration
                     let declaration = item_function.declaration(db).as_syntax_node().get_text(db);
                     external_declarations.append(quote! {$declaration;});
-
-                    // TODO(ilya): propagate the diagnostics in case of failure.
-                    if let Some(generated_function) =
-                        generate_entry_point_wrapper(db, item_function)
-                    {
-                        generated_external_functions.append(generated_function);
+                    match generate_entry_point_wrapper(db, item_function) {
+                        Ok(generated_function) => {
+                            generated_external_functions.append(generated_function);
+                        }
+                        Err(diag) => {
+                            return PluginResult {
+                                code: None,
+                                diagnostics: vec![diag],
+                                remove_original_item: false,
+                            };
+                        }
                     }
                 }
             }
@@ -163,11 +168,25 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> S
     code_tokens.to_string().unwrap()
 }
 
+/// Returns the serde functions for a type.
+// TODO(orizi): Use type ids when semantic information is available.
+// TODO(orizi): Use traits for serialization when supported.
+fn get_type_serde_funcs(name: &str) -> Option<(&str, &str)> {
+    match name.trim() {
+        "felt" => Some(("serde::serialize_felt", "serde::deserialize_felt")),
+        "bool" => Some(("serde::serialize_bool", "serde::deserialize_bool")),
+        "u128" => Some(("serde::serialize_u128", "serde::deserialize_u128")),
+        "u256" => Some(("serde::serialize_u256", "serde::deserialize_u256")),
+        "Array::<felt>" => Some(("serde::serialize_array_felt", "serde::deserialize_array_felt")),
+        _ => None,
+    }
+}
+
 /// Generates Cairo code for an entry point wrapper.
 fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
     function: &ItemFreeFunction,
-) -> Option<rust::Tokens> {
+) -> Result<rust::Tokens, PluginDiagnostic> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
     let params = sig.parameters(db).elements(db);
@@ -179,9 +198,11 @@ fn generate_entry_point_wrapper(
     for param in params {
         let arg_name = format!("__arg_{}", param.name(db).identifier(db));
         let type_name = param.type_clause(db).ty(db).as_syntax_node().get_text(db);
-        // TODO(orizi): Use traits for serialization when supported.
-        let ser_func = format!("serde::serialize_{type_name}");
-        let deser_func = format!("serde::deserialize_{type_name}");
+        let (ser_func, deser_func) =
+            get_type_serde_funcs(&type_name).ok_or_else(|| PluginDiagnostic {
+                stable_ptr: function.stable_ptr().0,
+                message: format!("Could not find serialization for type `{type_name}`"),
+            })?;
         let is_ref = is_ref_param(db, &param);
 
         arg_names.push(arg_name.clone());
@@ -210,13 +231,19 @@ fn generate_entry_point_wrapper(
         OptionReturnTypeClause::Empty(_) => ("", "".to_string()),
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
             let ret_type_name = ty.ty(db).as_syntax_node().get_text(db);
-            ("let res = ", format!("serde::serialize_{ret_type_name}(arr, res)"))
+            // TODO(orizi): Handle tuple types.
+            let (ser_func, _) =
+                get_type_serde_funcs(&ret_type_name).ok_or_else(|| PluginDiagnostic {
+                    stable_ptr: function.stable_ptr().0,
+                    message: format!("Could not find serialization for type `{ret_type_name}`"),
+                })?;
+            ("let res = ", format!("{ser_func}(arr, res)"))
         }
     };
 
     let oog_err = "'Out of gas'";
     let input_data_long_err = "'Input too long for arguments'";
-    Some(quote! {
+    Ok(quote! {
         fn $function_name(mut data: Array::<felt>) -> Array::<felt> {
             // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
             match get_gas() {
