@@ -28,6 +28,7 @@ mod boolean;
 mod boxing;
 mod builtin_cost;
 mod dict_felt_to;
+mod ec;
 mod enm;
 mod felt;
 mod function_call;
@@ -351,6 +352,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(libfunc) => felt::build(libfunc, builder),
         CoreConcreteLibFunc::Bitwise(_) => bitwise::build(builder),
         CoreConcreteLibFunc::Bool(libfunc) => boolean::build(libfunc, builder),
+        CoreConcreteLibFunc::Ec(libfunc) => ec::build(libfunc, builder),
         CoreConcreteLibFunc::Uint128(libfunc) => uint128::build(libfunc, builder),
         CoreConcreteLibFunc::Gas(libfunc) => gas::build(libfunc, builder),
         CoreConcreteLibFunc::BranchAlign(_) => misc::build_branch_align(builder),

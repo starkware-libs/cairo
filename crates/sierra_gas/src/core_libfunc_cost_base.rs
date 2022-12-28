@@ -5,10 +5,11 @@ use sierra::extensions::builtin_cost::{
 };
 use sierra::extensions::core::CoreConcreteLibFunc::{
     self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup,
-    Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump,
+    Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump,
     UnwrapNonZero,
 };
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
+use sierra::extensions::ec::EcConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
@@ -57,6 +58,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Bitwise(_) => vec![ops.const_cost(5)],
         Bool(BoolConcreteLibFunc::And(_)) => vec![ops.const_cost(0)],
         Bool(BoolConcreteLibFunc::Not(_)) => vec![ops.const_cost(1)],
+        Ec(EcConcreteLibFunc::CreatePoint(_)) => vec![ops.const_cost(3), ops.const_cost(3)],
         Gas(GetGas(_)) => {
             vec![
                 ops.sub(ops.const_cost(3), ops.statement_var_cost(CostTokenType::Step)),

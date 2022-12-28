@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use num_bigint::{BigInt, ToBigInt};
 use num_traits::{ToPrimitive, Zero};
@@ -9,10 +10,11 @@ use super::LibFuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibFunc;
 use crate::extensions::boolean::BoolConcreteLibFunc;
 use crate::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Enum, Felt, FunctionCall, Gas,
-    Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt, FunctionCall,
+    Gas, Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
+use crate::extensions::ec::EcConcreteLibFunc::CreatePoint;
 use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use crate::extensions::felt::{
     FeltBinaryOpConcreteLibFunc, FeltBinaryOperationConcreteLibFunc, FeltBinaryOperator,
@@ -29,6 +31,13 @@ use crate::extensions::uint128::{
     IntOperator, Uint128Concrete, Uint128ConstConcreteLibFunc, Uint128OperationConcreteLibFunc,
 };
 use crate::ids::FunctionId;
+
+// TODO(orizi): This def is duplicated.
+/// Returns the Beta value of the Starkware elliptic curve.
+fn get_beta() -> BigInt {
+    BigInt::from_str("3141592653589793238462643383279502884197169399375105820974944592307816406665")
+        .unwrap()
+}
 
 // TODO(spapini): Proper errors when converting from bigint to u128.
 /// Simulates the run of a single libfunc. Returns the value representations of the outputs, and
@@ -64,6 +73,24 @@ pub fn simulate<
         },
         Dup(_) => match &inputs[..] {
             [value] => Ok((vec![value.clone(), value.clone()], 0)),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        Ec(CreatePoint(_)) => match &inputs[..] {
+            [CoreValue::Felt(x), CoreValue::Felt(y)] => {
+                // If the point is on the curve use the fallthrough branch and return the point.
+                if y * y == x * x * x + x + get_beta() {
+                    Ok((
+                        vec![CoreValue::Struct(vec![
+                            CoreValue::Felt(x.clone()),
+                            CoreValue::Felt(y.clone()),
+                        ])],
+                        0,
+                    ))
+                } else {
+                    Ok((vec![], 1))
+                }
+            }
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
         FunctionCall(FunctionCallConcreteLibFunc { function, .. }) => {

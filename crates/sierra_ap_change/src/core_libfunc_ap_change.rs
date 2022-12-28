@@ -3,6 +3,7 @@ use sierra::extensions::boolean::BoolConcreteLibFunc;
 use sierra::extensions::builtin_cost::BuiltinCostGetGasLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
+use sierra::extensions::ec::EcConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::gas::GasConcreteLibFunc;
@@ -37,6 +38,9 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
             ApChange::Known(BuiltinCostGetGasLibFunc::cost_computation_max_steps() + 2),
             ApChange::Known(BuiltinCostGetGasLibFunc::cost_computation_max_steps() + 3),
         ],
+        CoreConcreteLibFunc::Ec(libfunc) => match libfunc {
+            EcConcreteLibFunc::CreatePoint(_) => vec![ApChange::Known(6), ApChange::Known(6)],
+        },
         CoreConcreteLibFunc::Drop(_) | CoreConcreteLibFunc::Dup(_) => vec![ApChange::Known(0)],
         CoreConcreteLibFunc::Felt(libfunc) => match libfunc {
             FeltConcrete::BinaryOperation(_)
