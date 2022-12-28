@@ -216,6 +216,11 @@ impl SierraCasmRunner {
                 casm_extend! {ctx,
                     [ap + 0] = [fp - offset], ap++;
                 }
+            } else if ty == &"System".into() {
+                casm_extend! {ctx,
+                    %{ memory[ap + 0] = segments.add() %}
+                    ap += 1;
+                }
             } else if ty == &"GasBuiltin".into() {
                 casm_extend! {ctx,
                     [ap + 0] = initial_gas, ap++;
