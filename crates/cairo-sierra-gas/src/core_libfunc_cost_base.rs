@@ -61,6 +61,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Bool(BoolConcreteLibFunc::And(_)) => vec![ops.const_cost(0)],
         Bool(BoolConcreteLibFunc::Not(_)) => vec![ops.const_cost(1)],
         Ec(EcConcreteLibFunc::CreatePoint(_)) => vec![ops.const_cost(3), ops.const_cost(3)],
+        Ec(EcConcreteLibFunc::CreatePointAtInfinity(_)) => vec![ops.const_cost(1)],
         Ec(EcConcreteLibFunc::InitState(_)) => {
             // TODO(dorimedini): compute cost.
             vec![ops.const_cost(0)]
