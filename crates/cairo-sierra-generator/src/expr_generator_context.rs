@@ -2,12 +2,13 @@ use cairo_defs::diagnostic_utils::StableLocation;
 use cairo_defs::ids::{FreeFunctionId, LanguageElementId, ModuleFileId};
 use cairo_diagnostics::{DiagnosticsBuilder, Maybe};
 use cairo_syntax::node::ids::SyntaxStablePtrId;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::diagnostic::SierraGeneratorDiagnosticKind;
 use crate::id_allocator::IdAllocator;
-use crate::lifetime::VariableLifetimeResult;
+use crate::lifetime::{DropLocation, VariableLifetimeResult};
 use crate::{pre_sierra, SierraGeneratorDiagnostic};
 
 /// Context for the methods that generate Sierra instructions for an expression.
@@ -117,5 +118,10 @@ impl<'a> ExprGeneratorContext<'a> {
         block_id: cairo_lowering::BlockId,
     ) -> &'a cairo_lowering::Block {
         &self.lowered.blocks[block_id]
+    }
+
+    /// Returns the places where variables should be dropped. See [VariableLifetimeResult::drops].
+    pub fn get_drops(&self) -> &'a OrderedHashMap<DropLocation, Vec<cairo_lowering::VariableId>> {
+        &self.lifetime.drops
     }
 }

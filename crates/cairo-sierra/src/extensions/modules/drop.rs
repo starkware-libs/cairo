@@ -1,5 +1,6 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, SierraApChange, SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
+    LibFuncSignature, ParamSignature, SierraApChange, SignatureOnlyGenericLibFunc,
+    SignatureSpecializationContext,
 };
 use crate::extensions::{args_as_single_type, SpecializationError};
 use crate::ids::GenericLibFuncId;
@@ -19,8 +20,13 @@ impl SignatureOnlyGenericLibFunc for DropLibFunc {
         let ty = args_as_single_type(generic_args)?;
         let info = context.get_type_info(ty.clone())?;
         if info.droppable {
-            Ok(LibFuncSignature::new_non_branch(
-                vec![ty],
+            Ok(LibFuncSignature::new_non_branch_ex(
+                vec![ParamSignature {
+                    ty,
+                    allow_deferred: true,
+                    allow_add_const: true,
+                    allow_const: true,
+                }],
                 vec![],
                 SierraApChange::Known { new_vars_only: true },
             ))
