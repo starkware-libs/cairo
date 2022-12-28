@@ -1,18 +1,18 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use diagnostics::{skip_diagnostic, Maybe, ToMaybe};
-use filesystem::db::FilesGroup;
-use filesystem::ids::{CrateId, Directory, FileId, FileLongId, VirtualFile};
+use cairo_db_utils::Upcast;
+use cairo_diagnostics::{skip_diagnostic, Maybe, ToMaybe};
+use cairo_filesystem::db::FilesGroup;
+use cairo_filesystem::ids::{CrateId, Directory, FileId, FileLongId, VirtualFile};
 use itertools::chain;
-use parser::db::ParserGroup;
+use cairo_parser::db::ParserGroup;
 use smol_str::SmolStr;
-use syntax::node::ast::MaybeModuleBody;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::helpers::GetIdentifier;
-use syntax::node::{ast, Terminal, TypedSyntaxNode};
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_syntax::node::ast::MaybeModuleBody;
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::helpers::GetIdentifier;
+use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
 use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic};

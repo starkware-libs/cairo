@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use filesystem::db::FilesGroup;
-use filesystem::ids::{FileId, FileLongId, VirtualFile};
-use filesystem::span::{TextOffset, TextSpan};
-use filesystem::test_utils::FilesDatabaseForTesting;
+use cairo_filesystem::db::FilesGroup;
+use cairo_filesystem::ids::{FileId, FileLongId, VirtualFile};
+use cairo_filesystem::span::{TextOffset, TextSpan};
+use cairo_filesystem::test_utils::FilesDatabaseForTesting;
 use indoc::indoc;
 use test_log::test;
 
@@ -17,11 +17,11 @@ struct SimpleDiag {
 impl DiagnosticEntry for SimpleDiag {
     type DbType = dyn FilesGroup;
 
-    fn format(&self, _db: &dyn filesystem::db::FilesGroup) -> String {
+    fn format(&self, _db: &dyn cairo_filesystem::db::FilesGroup) -> String {
         "Simple diagnostic.".into()
     }
 
-    fn location(&self, _db: &dyn filesystem::db::FilesGroup) -> DiagnosticLocation {
+    fn location(&self, _db: &dyn cairo_filesystem::db::FilesGroup) -> DiagnosticLocation {
         DiagnosticLocation {
             file_id: self.file_id,
             span: TextSpan { start: TextOffset(0), end: TextOffset(6) },

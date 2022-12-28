@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use defs::ids::{FreeFunctionId, ModuleId};
-use diagnostics::{Diagnostics, Maybe};
-use filesystem::ids::CrateId;
-use lowering::db::LoweringGroup;
-use semantic::corelib::get_core_ty_by_name;
-use semantic::{GenericArgumentId, Mutability};
-use sierra::extensions::lib_func::SierraApChange;
-use sierra::extensions::{ConcreteType, GenericTypeEx};
-use sierra::ids::ConcreteTypeId;
+use cairo_db_utils::Upcast;
+use cairo_defs::ids::{FreeFunctionId, ModuleId};
+use cairo_diagnostics::{Diagnostics, Maybe};
+use cairo_filesystem::ids::CrateId;
+use cairo_lowering::db::LoweringGroup;
+use cairo_semantic::corelib::get_core_ty_by_name;
+use cairo_semantic::{GenericArgumentId, Mutability};
+use cairo_sierra::extensions::lib_func::SierraApChange;
+use cairo_sierra::extensions::{ConcreteType, GenericTypeEx};
+use cairo_sierra::ids::ConcreteTypeId;
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -23,37 +23,42 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::interned]
     fn intern_concrete_lib_func(
         &self,
-        id: sierra::program::ConcreteLibFuncLongId,
-    ) -> sierra::ids::ConcreteLibFuncId;
+        id: cairo_sierra::program::ConcreteLibFuncLongId,
+    ) -> cairo_sierra::ids::ConcreteLibFuncId;
 
     #[salsa::interned]
     fn intern_concrete_type(
         &self,
-        id: sierra::program::ConcreteTypeLongId,
-    ) -> sierra::ids::ConcreteTypeId;
+        id: cairo_sierra::program::ConcreteTypeLongId,
+    ) -> cairo_sierra::ids::ConcreteTypeId;
 
     /// Creates a Sierra function id for a function id of the semantic model.
     // TODO(lior): Can we have the short and long ids in the same place? Currently, the short
     //   id is defined in sierra and the long id is defined in semantic.
     #[salsa::interned]
-    fn intern_sierra_function(&self, id: semantic::FunctionId) -> sierra::ids::FunctionId;
+    fn intern_sierra_function(
+        &self,
+        id: cairo_semantic::FunctionId,
+    ) -> cairo_sierra::ids::FunctionId;
 
     /// Returns the matching sierra concrete type id for a given semantic type id.
     #[salsa::invoke(crate::types::get_concrete_type_id)]
-    fn get_concrete_type_id(&self, type_id: semantic::TypeId)
-    -> Maybe<sierra::ids::ConcreteTypeId>;
+    fn get_concrete_type_id(
+        &self,
+        type_id: cairo_semantic::TypeId,
+    ) -> Maybe<cairo_sierra::ids::ConcreteTypeId>;
 
-    /// Returns the [sierra::program::FunctionSignature] object for the given function id.
+    /// Returns the [cairo_sierra::program::FunctionSignature] object for the given function id.
     fn get_function_signature(
         &self,
-        function_id: sierra::ids::FunctionId,
-    ) -> Maybe<Arc<sierra::program::FunctionSignature>>;
+        function_id: cairo_sierra::ids::FunctionId,
+    ) -> Maybe<Arc<cairo_sierra::program::FunctionSignature>>;
 
-    /// Returns the [sierra::extensions::types::TypeInfo] object for the given type id.
+    /// Returns the [cairo_sierra::extensions::types::TypeInfo] object for the given type id.
     fn get_type_info(
         &self,
-        concrete_type_id: sierra::ids::ConcreteTypeId,
-    ) -> Maybe<Arc<sierra::extensions::types::TypeInfo>>;
+        concrete_type_id: cairo_sierra::ids::ConcreteTypeId,
+    ) -> Maybe<Arc<cairo_sierra::extensions::types::TypeInfo>>;
 
     /// Private query to compute Sierra data about a free function.
     #[salsa::invoke(function_generator::priv_free_function_sierra_data)]
@@ -91,25 +96,25 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::invoke(ap_change::get_ap_change)]
     fn get_ap_change(&self, function_id: FreeFunctionId) -> Maybe<SierraApChange>;
 
-    /// Returns the [sierra::program::Program] object of the requested functions.
+    /// Returns the [cairo_sierra::program::Program] object of the requested functions.
     #[salsa::invoke(program_generator::get_sierra_program_for_functions)]
     fn get_sierra_program_for_functions(
         &self,
         requested_function_ids: Vec<FreeFunctionId>,
-    ) -> Maybe<Arc<sierra::program::Program>>;
+    ) -> Maybe<Arc<cairo_sierra::program::Program>>;
 
-    /// Returns the [sierra::program::Program] object of the requested crates.
+    /// Returns the [cairo_sierra::program::Program] object of the requested crates.
     #[salsa::invoke(program_generator::get_sierra_program)]
     fn get_sierra_program(
         &self,
         requested_crate_ids: Vec<CrateId>,
-    ) -> Maybe<Arc<sierra::program::Program>>;
+    ) -> Maybe<Arc<cairo_sierra::program::Program>>;
 }
 
 fn get_function_signature(
     db: &dyn SierraGenGroup,
-    function_id: sierra::ids::FunctionId,
-) -> Maybe<Arc<sierra::program::FunctionSignature>> {
+    function_id: cairo_sierra::ids::FunctionId,
+) -> Maybe<Arc<cairo_sierra::program::FunctionSignature>> {
     // TODO(yuval): add another version of this function that directly received semantic FunctionId.
     // Call it from function_generators::get_function_code. Take ret_types from the result instead
     // of only the explicit ret_type. Also use it for params instead of the current logic. Then use
@@ -148,15 +153,15 @@ fn get_function_signature(
     }
     ret_types.push(db.get_concrete_type_id(return_type)?);
 
-    Ok(Arc::new(sierra::program::FunctionSignature { param_types: all_params, ret_types }))
+    Ok(Arc::new(cairo_sierra::program::FunctionSignature { param_types: all_params, ret_types }))
 }
 
 fn get_type_info(
     db: &dyn SierraGenGroup,
-    concrete_type_id: sierra::ids::ConcreteTypeId,
-) -> Maybe<Arc<sierra::extensions::types::TypeInfo>> {
+    concrete_type_id: cairo_sierra::ids::ConcreteTypeId,
+) -> Maybe<Arc<cairo_sierra::extensions::types::TypeInfo>> {
     let long_id = db.lookup_intern_concrete_type(concrete_type_id);
-    let concrete_ty = sierra::extensions::core::CoreType::specialize_by_id(
+    let concrete_ty = cairo_sierra::extensions::core::CoreType::specialize_by_id(
         &SierraSignatureSpecializationContext(db),
         &long_id.generic_id,
         &long_id.generic_args,

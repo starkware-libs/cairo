@@ -4,13 +4,13 @@ use std::path::Path;
 
 use anyhow::{Context, Ok};
 use clap::Parser;
-use compiler::db::RootDatabase;
-use compiler::diagnostics::check_and_eprint_diagnostics;
-use compiler::project::setup_project;
-use diagnostics::ToOption;
-use runner::SierraCasmRunner;
-use sierra_generator::db::SierraGenGroup;
-use sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_compiler::db::RootDatabase;
+use cairo_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_compiler::project::setup_project;
+use cairo_diagnostics::ToOption;
+use cairo_runner::SierraCasmRunner;
+use cairo_sierra_generator::db::SierraGenGroup;
+use cairo_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -53,10 +53,10 @@ fn main() -> anyhow::Result<()> {
         .run_function("::main", &[], args.available_gas)
         .with_context(|| "Failed to run the function.")?;
     match result.value {
-        runner::RunResultValue::Success(values) => {
+        cairo_runner::RunResultValue::Success(values) => {
             println!("Run completed successfully, returning {values:?}")
         }
-        runner::RunResultValue::Panic(values) => {
+        cairo_runner::RunResultValue::Panic(values) => {
             println!("Run panicked with err values: {values:?}")
         }
     }

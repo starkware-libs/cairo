@@ -1,8 +1,8 @@
-use sierra::extensions::lib_func::{
+use cairo_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, OutputVarInfo, SierraApChange,
 };
-use sierra::extensions::OutputVarReferenceInfo;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_sierra::extensions::OutputVarReferenceInfo;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use super::known_stack::KnownStack;
 
@@ -11,7 +11,7 @@ use super::known_stack::KnownStack;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DeferredVariableInfo {
     /// The type of the variable.
-    pub ty: sierra::ids::ConcreteTypeId,
+    pub ty: cairo_sierra::ids::ConcreteTypeId,
     /// The deferred type.
     pub kind: DeferredVariableKind,
 }
@@ -31,11 +31,12 @@ pub enum DeferredVariableKind {
 /// For example, which variable contains a deferred value and which variable is on the stack.
 #[derive(Clone, Debug, Default)]
 pub struct State {
-    /// A map from [sierra::ids::VarId] of a deferred reference
+    /// A map from [cairo_sierra::ids::VarId] of a deferred reference
     /// (for example, `[ap - 1] + [ap - 2]`) to [DeferredVariableInfo].
-    pub deferred_variables: OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
-    /// A map from [sierra::ids::VarId] of temporary variables to their type.
-    pub temporary_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId>,
+    pub deferred_variables: OrderedHashMap<cairo_sierra::ids::VarId, DeferredVariableInfo>,
+    /// A map from [cairo_sierra::ids::VarId] of temporary variables to their type.
+    pub temporary_variables:
+        OrderedHashMap<cairo_sierra::ids::VarId, cairo_sierra::ids::ConcreteTypeId>,
     /// The information known about the top of the stack.
     pub known_stack: KnownStack,
 }
@@ -44,9 +45,9 @@ impl State {
     /// Clears the stack if needed.
     pub fn register_outputs(
         &mut self,
-        results: &[sierra::ids::VarId],
+        results: &[cairo_sierra::ids::VarId],
         branch_signature: &BranchSignature,
-        args: &[sierra::ids::VarId],
+        args: &[cairo_sierra::ids::VarId],
     ) {
         // Clear the stack if needed.
         match branch_signature.ap_change {
@@ -75,9 +76,9 @@ impl State {
     /// [Self::deferred_variables]. Similarly for [Self::temporary_variables].
     fn register_output(
         &mut self,
-        res: sierra::ids::VarId,
+        res: cairo_sierra::ids::VarId,
         output_info: &OutputVarInfo,
-        args: &[sierra::ids::VarId],
+        args: &[cairo_sierra::ids::VarId],
     ) {
         let mut is_deferred: Option<DeferredVariableKind> = None;
         let mut is_temp_var: bool = false;
@@ -141,7 +142,7 @@ impl State {
     /// Marks `dst` as a rename of `src`.
     ///
     /// Updates [Self::known_stack] and [Self::temporary_variables] if necessary.
-    pub fn rename_var(&mut self, src: &sierra::ids::VarId, dst: &sierra::ids::VarId) {
+    pub fn rename_var(&mut self, src: &cairo_sierra::ids::VarId, dst: &cairo_sierra::ids::VarId) {
         self.known_stack.clone_if_on_stack(src, dst);
         if let Some(uninitialized_local_var_id) = self.temporary_variables.get(src) {
             self.temporary_variables.insert(dst.clone(), uninitialized_local_var_id.clone());

@@ -1,9 +1,9 @@
-use defs::db::DefsGroup;
-use defs::ids::LocalVarId;
+use cairo_defs::db::DefsGroup;
+use cairo_defs::ids::LocalVarId;
 // Reexport objects
-pub use defs::ids::{ParamId, VarId};
-use diagnostics_proc_macros::DebugWithDb;
-use syntax::node::ast;
+pub use cairo_defs::ids::{ParamId, VarId};
+use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_syntax::node::ast;
 
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;

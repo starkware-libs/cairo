@@ -1,6 +1,6 @@
-use debug::DebugWithDb;
-use defs::ids::StructId;
-use diagnostics_proc_macros::DebugWithDb;
+use cairo_debug::DebugWithDb;
+use cairo_defs::ids::StructId;
+use cairo_diagnostics_proc_macros::DebugWithDb;
 use smol_str::SmolStr;
 
 use super::fmt::ExprFormatter;

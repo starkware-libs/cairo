@@ -1,17 +1,17 @@
 use std::collections::HashMap;
 
-use casm::ap_change::ApChange;
-use casm::instructions::Instruction;
+use cairo_casm::ap_change::ApChange;
+use cairo_casm::instructions::Instruction;
+use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
+use cairo_sierra::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
+use cairo_sierra::extensions::type_specialization_context::TypeSpecializationContext;
+use cairo_sierra::extensions::types::TypeInfo;
+use cairo_sierra::extensions::{ConcreteLibFunc, ConcreteType, GenericLibFuncEx, GenericTypeEx};
+use cairo_sierra::ids::{ConcreteTypeId, VarId};
+use cairo_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
+use cairo_sierra_ap_change::ap_change_info::ApChangeInfo;
+use cairo_sierra_gas::gas_info::GasInfo;
 use itertools::{zip_eq, Itertools};
-use sierra::extensions::core::{CoreLibFunc, CoreType};
-use sierra::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
-use sierra::extensions::type_specialization_context::TypeSpecializationContext;
-use sierra::extensions::types::TypeInfo;
-use sierra::extensions::{ConcreteLibFunc, ConcreteType, GenericLibFuncEx, GenericTypeEx};
-use sierra::ids::{ConcreteTypeId, VarId};
-use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
-use sierra_ap_change::ap_change_info::ApChangeInfo;
-use sierra_gas::gas_info::GasInfo;
 
 use super::{compile_invocation, CompiledInvocation, ProgramInfo};
 use crate::environment::gas_wallet::GasWallet;
@@ -24,16 +24,16 @@ use crate::relocations::RelocationEntry;
 #[macro_export]
 macro_rules! cell_expr_operator {
     (+) => {
-        sierra::extensions::felt::FeltBinaryOperator::Add
+        cairo_sierra::extensions::felt::FeltBinaryOperator::Add
     };
     (-) => {
-        sierra::extensions::felt::FeltBinaryOperator::Sub
+        cairo_sierra::extensions::felt::FeltBinaryOperator::Sub
     };
     (*) => {
-        sierra::extensions::felt::FeltBinaryOperator::Mul
+        cairo_sierra::extensions::felt::FeltBinaryOperator::Mul
     };
     (/) => {
-        sierra::extensions::felt::FeltBinaryOperator::Div
+        cairo_sierra::extensions::felt::FeltBinaryOperator::Div
     };
 }
 
@@ -43,7 +43,7 @@ macro_rules! ref_expr_extend {
     ($cells:ident) => {};
     ($cells:ident, [$a:ident $($op:tt $offset:expr)?] $(, $tok:tt)*) => {
         $cells.push(
-            $crate::references::CellExpression::Deref(casm::deref!([$a $($op $offset)?]))
+            $crate::references::CellExpression::Deref(cairo_casm::deref!([$a $($op $offset)?]))
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
@@ -51,26 +51,26 @@ macro_rules! ref_expr_extend {
         $cells.push(
             $crate::references::CellExpression::BinOp($crate::references::BinOpExpression {
                 op: $crate::cell_expr_operator!($operator),
-                a: casm::deref!([$a $($op $offset)?]),
-                b: casm::deref_or_immediate!($b),
+                a: cairo_casm::deref!([$a $($op $offset)?]),
+                b: cairo_casm::deref_or_immediate!($b),
         }));
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, [[$a:ident $($op:tt $offset:expr)?]] $(, $tok:tt)*) => {
         $cells.push(
-            $crate::references::CellExpression::DoubleDeref(casm::deref!([$a $($op $offset)?]), 0)
+            $crate::references::CellExpression::DoubleDeref(cairo_casm::deref!([$a $($op $offset)?]), 0)
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, [[$a:ident $($op:tt $offset:expr)?] + $offset2:expr] $(, $tok:tt)*) => {
         $cells.push(
-            $crate::references::CellExpression::DoubleDeref(casm::deref!([$a $($op $offset)?]), $offset2)
+            $crate::references::CellExpression::DoubleDeref(cairo_casm::deref!([$a $($op $offset)?]), $offset2)
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, & $a:ident $($op:tt $offset:expr)? $(, $tok:tt)*) => {
         $cells.push($crate::references::CellExpression::IntoSingleCellRef(
-            casm::deref!([$a $($op $offset)?])
+            cairo_casm::deref!([$a $($op $offset)?])
         ));
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
@@ -108,7 +108,7 @@ struct MockSpecializationContext {}
 impl TypeSpecializationContext for MockSpecializationContext {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         let long_id =
-            sierra::ConcreteTypeLongIdParser::new().parse(id.to_string().as_str()).unwrap();
+            cairo_sierra::ConcreteTypeLongIdParser::new().parse(id.to_string().as_str()).unwrap();
         Some(
             CoreType::specialize_by_id(self, &long_id.generic_id, &long_id.generic_args)
                 .ok()?
@@ -120,15 +120,15 @@ impl TypeSpecializationContext for MockSpecializationContext {
 impl SignatureSpecializationContext for MockSpecializationContext {
     fn try_get_concrete_type(
         &self,
-        id: sierra::ids::GenericTypeId,
-        generic_args: &[sierra::program::GenericArg],
+        id: cairo_sierra::ids::GenericTypeId,
+        generic_args: &[cairo_sierra::program::GenericArg],
     ) -> Option<ConcreteTypeId> {
         Some(if generic_args.is_empty() {
             id.to_string().into()
         } else {
             format!(
                 "{id}<{}>",
-                generic_args.iter().map(sierra::program::GenericArg::to_string).join(", ")
+                generic_args.iter().map(cairo_sierra::program::GenericArg::to_string).join(", ")
             )
             .into()
         })
@@ -136,15 +136,15 @@ impl SignatureSpecializationContext for MockSpecializationContext {
 
     fn try_get_function_signature(
         &self,
-        _function_id: &sierra::ids::FunctionId,
-    ) -> Option<sierra::program::FunctionSignature> {
+        _function_id: &cairo_sierra::ids::FunctionId,
+    ) -> Option<cairo_sierra::program::FunctionSignature> {
         unreachable!("Function related specialization functionalities are not implemented.")
     }
 
     fn try_get_function_ap_change(
         &self,
-        _function_id: &sierra::ids::FunctionId,
-    ) -> Option<sierra::extensions::lib_func::SierraApChange> {
+        _function_id: &cairo_sierra::ids::FunctionId,
+    ) -> Option<cairo_sierra::extensions::lib_func::SierraApChange> {
         unreachable!("Function related specialization functionalities are not implemented.")
     }
 
@@ -159,8 +159,8 @@ impl SpecializationContext for MockSpecializationContext {
 
     fn try_get_function(
         &self,
-        _function_id: &sierra::ids::FunctionId,
-    ) -> Option<sierra::program::Function> {
+        _function_id: &cairo_sierra::ids::FunctionId,
+    ) -> Option<cairo_sierra::program::Function> {
         unreachable!("Function related specialization functionalities are not implemented.")
     }
 }
@@ -228,8 +228,9 @@ impl std::fmt::Debug for ReducedCompiledInvocation {
 ///     k([0], [2],..., [n_k])
 /// }
 pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> ReducedCompiledInvocation {
-    let long_id =
-        sierra::ConcreteLibFuncLongIdParser::new().parse(libfunc.to_string().as_str()).unwrap();
+    let long_id = cairo_sierra::ConcreteLibFuncLongIdParser::new()
+        .parse(libfunc.to_string().as_str())
+        .unwrap();
     let context = MockSpecializationContext {};
     let libfunc =
         CoreLibFunc::specialize_by_id(&context, &long_id.generic_id, &long_id.generic_args)

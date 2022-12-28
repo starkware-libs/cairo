@@ -1,18 +1,18 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
-use defs::ids::{FreeFunctionId, ModuleId};
-use diagnostics::{skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
-use filesystem::ids::CrateId;
+use cairo_defs::ids::{FreeFunctionId, ModuleId};
+use cairo_diagnostics::{skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
+use cairo_filesystem::ids::CrateId;
+use cairo_sierra::extensions::core::CoreLibFunc;
+use cairo_sierra::extensions::lib_func::SierraApChange;
+use cairo_sierra::extensions::GenericLibFuncEx;
+use cairo_sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
+use cairo_sierra::program;
+use cairo_utils::ordered_hash_set::OrderedHashSet;
+use cairo_utils::try_extract_matches;
+use cairo_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
-use sierra::extensions::core::CoreLibFunc;
-use sierra::extensions::lib_func::SierraApChange;
-use sierra::extensions::GenericLibFuncEx;
-use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
-use sierra::program;
-use utils::ordered_hash_set::OrderedHashSet;
-use utils::try_extract_matches;
-use utils::unordered_hash_set::UnorderedHashSet;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self};
@@ -37,7 +37,7 @@ pub fn module_sierra_diagnostics(
     diagnostics.build()
 }
 
-/// Generates the list of [sierra::program::LibFuncDeclaration] for the given list of
+/// Generates the list of [cairo_sierra::program::LibFuncDeclaration] for the given list of
 /// [ConcreteLibFuncId].
 fn generate_libfunc_declarations<'a>(
     db: &dyn SierraGenGroup,
@@ -71,7 +71,8 @@ fn collect_used_libfuncs(
         .collect()
 }
 
-/// Generates the list of [sierra::program::TypeDeclaration] for the given list of [ConcreteTypeId].
+/// Generates the list of [cairo_sierra::program::TypeDeclaration] for the given list of
+/// [ConcreteTypeId].
 fn generate_type_declarations<'a>(
     db: &dyn SierraGenGroup,
     types: impl Iterator<Item = &'a ConcreteTypeId>,
@@ -136,7 +137,7 @@ fn collect_used_types(
 pub fn get_sierra_program_for_functions(
     db: &dyn SierraGenGroup,
     requested_function_ids: Vec<FreeFunctionId>,
-) -> Maybe<Arc<sierra::program::Program>> {
+) -> Maybe<Arc<cairo_sierra::program::Program>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     let mut processed_function_ids = UnorderedHashSet::<FreeFunctionId>::default();
@@ -208,7 +209,7 @@ fn try_get_free_function_id(
             db.lookup_intern_sierra_function(
                 try_extract_matches!(
                     libfunc.generic_args.get(0).to_maybe()?,
-                    sierra::program::GenericArg::UserFunc
+                    cairo_sierra::program::GenericArg::UserFunc
                 )
                 .to_maybe()?
                 .clone(),
@@ -216,13 +217,14 @@ fn try_get_free_function_id(
         )
         .function;
     assert!(function.generic_args.is_empty(), "Generic args are not yet supported");
-    try_extract_matches!(function.generic_function, defs::ids::GenericFunctionId::Free).to_maybe()
+    try_extract_matches!(function.generic_function, cairo_defs::ids::GenericFunctionId::Free)
+        .to_maybe()
 }
 
 pub fn get_sierra_program(
     db: &dyn SierraGenGroup,
     requested_crate_ids: Vec<CrateId>,
-) -> Maybe<Arc<sierra::program::Program>> {
+) -> Maybe<Arc<cairo_sierra::program::Program>> {
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {

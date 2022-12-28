@@ -1,6 +1,6 @@
-use defs::ids::{ExternTypeId, GenericParamId, LanguageElementId};
-use diagnostics::{Diagnostics, Maybe, ToMaybe};
-use diagnostics_proc_macros::DebugWithDb;
+use cairo_defs::ids::{ExternTypeId, GenericParamId, LanguageElementId};
+use cairo_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_diagnostics_proc_macros::DebugWithDb;
 
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;

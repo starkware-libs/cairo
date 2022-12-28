@@ -1,18 +1,18 @@
 use std::sync::Arc;
 use std::vec;
 
-use defs::plugin::{
+use cairo_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use genco::prelude::*;
-use itertools::join;
-use semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
-use syntax::node::ast::{
+use cairo_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
+use cairo_syntax::node::ast::{
     ItemFreeFunction, MaybeModuleBody, Modifier, OptionReturnTypeClause, Param,
 };
-use syntax::node::db::SyntaxGroup;
-use syntax::node::helpers::GetIdentifier;
-use syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::helpers::GetIdentifier;
+use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use genco::prelude::*;
+use itertools::join;
 
 use crate::contract::starknet_keccak;
 

@@ -2,23 +2,23 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Context;
-use compiler::db::RootDatabase;
-use compiler::diagnostics::check_and_eprint_diagnostics;
-use compiler::project::setup_project;
-use defs::ids::{FreeFunctionId, GenericFunctionId};
-use diagnostics::ToOption;
+use cairo_compiler::db::RootDatabase;
+use cairo_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_compiler::project::setup_project;
+use cairo_defs::ids::{FreeFunctionId, GenericFunctionId};
+use cairo_diagnostics::ToOption;
+use cairo_lowering::db::LoweringGroup;
+use cairo_plugins::get_default_plugins;
+use cairo_semantic::corelib::get_core_ty_by_name;
+use cairo_semantic::db::SemanticGroup;
+use cairo_semantic::{ConcreteFunction, FunctionLongId};
+use cairo_sierra::{self};
+use cairo_sierra_generator::canonical_id_replacer::CanonicalReplacer;
+use cairo_sierra_generator::db::SierraGenGroup;
+use cairo_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
 use itertools::Itertools;
-use lowering::db::LoweringGroup;
 use num_bigint::BigUint;
-use plugins::get_default_plugins;
-use semantic::corelib::get_core_ty_by_name;
-use semantic::db::SemanticGroup;
-use semantic::{ConcreteFunction, FunctionLongId};
 use serde::{Deserialize, Serialize};
-use sierra::{self};
-use sierra_generator::canonical_id_replacer::CanonicalReplacer;
-use sierra_generator::db::SierraGenGroup;
-use sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
 use thiserror::Error;
 
 use crate::abi::{self, Contract};
@@ -41,7 +41,7 @@ pub enum StarknetCompilationError {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractClass {
     pub sierra_program: Vec<BigIntAsHex>,
-    pub sierra_program_debug_info: sierra::debug_info::DebugInfo,
+    pub sierra_program_debug_info: cairo_sierra::debug_info::DebugInfo,
     pub entry_points_by_type: ContractEntryPoints,
     pub abi: abi::Contract,
 }
@@ -115,7 +115,7 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
     let entry_points_by_type = get_entry_points(db, &external_functions, &replacer)?;
     Ok(ContractClass {
         sierra_program: sierra_to_felts(&sierra_program)?,
-        sierra_program_debug_info: sierra::debug_info::DebugInfo::extract(&sierra_program),
+        sierra_program_debug_info: cairo_sierra::debug_info::DebugInfo::extract(&sierra_program),
         entry_points_by_type,
         abi: Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?,
     })

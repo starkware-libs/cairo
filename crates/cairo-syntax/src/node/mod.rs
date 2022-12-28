@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::vec;
 
-use filesystem::span::{TextOffset, TextSpan};
+use cairo_filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;

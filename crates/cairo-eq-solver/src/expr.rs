@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 
 use itertools::chain;
-use utils::collection_arithmetics::HasZero;
+use cairo_utils::collection_arithmetics::HasZero;
 
 #[cfg(test)]
 #[path = "expr_test.rs"]

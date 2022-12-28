@@ -1,5 +1,5 @@
-use sierra::extensions::strct::StructConcreteLibFunc;
-use sierra::extensions::ConcreteLibFunc;
+use cairo_sierra::extensions::strct::StructConcreteLibFunc;
+use cairo_sierra::extensions::ConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::ReferenceExpression;

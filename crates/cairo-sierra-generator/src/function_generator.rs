@@ -5,17 +5,17 @@ mod test;
 use std::collections::hash_map::Entry;
 use std::sync::Arc;
 
-use defs::ids::{FreeFunctionId, GenericFunctionId};
-use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_defs::ids::{FreeFunctionId, GenericFunctionId};
+use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_sierra::extensions::core::CoreLibFunc;
+use cairo_sierra::extensions::lib_func::LibFuncSignature;
+use cairo_sierra::extensions::GenericLibFuncEx;
+use cairo_sierra::ids::ConcreteLibFuncId;
+use cairo_sierra::program::Param;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::ordered_hash_set::OrderedHashSet;
+use cairo_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::zip_eq;
-use sierra::extensions::core::CoreLibFunc;
-use sierra::extensions::lib_func::LibFuncSignature;
-use sierra::extensions::GenericLibFuncEx;
-use sierra::ids::ConcreteLibFuncId;
-use sierra::program::Param;
-use utils::ordered_hash_map::OrderedHashMap;
-use utils::ordered_hash_set::OrderedHashSet;
-use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::block_generator::{generate_block_code, generate_return_code};
 use crate::db::SierraGenGroup;
@@ -81,11 +81,11 @@ fn get_function_code(
     let (label, label_id) = context.new_label();
 
     // Generate Sierra variables for the function parameters.
-    let mut parameters: Vec<sierra::program::Param> = Vec::new();
+    let mut parameters: Vec<cairo_sierra::program::Param> = Vec::new();
     for param_id in &block.inputs {
         let var = &lowered_function.variables[*param_id];
 
-        parameters.push(sierra::program::Param {
+        parameters.push(cairo_sierra::program::Param {
             id: context.get_sierra_variable(*param_id),
             ty: db.get_concrete_type_id(var.ty)?,
         })
@@ -106,11 +106,11 @@ fn get_function_code(
 
     // Generate the return statement if necessary.
     match &block.end {
-        lowering::BlockEnd::Callsite(returned_variables)
-        | lowering::BlockEnd::Return(returned_variables) => {
+        cairo_lowering::BlockEnd::Callsite(returned_variables)
+        | cairo_lowering::BlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(&mut context, returned_variables)?);
         }
-        lowering::BlockEnd::Unreachable => {}
+        cairo_lowering::BlockEnd::Unreachable => {}
     };
 
     let statements = add_store_statements(
@@ -127,8 +127,8 @@ fn get_function_code(
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
     // be regarded as private.
     Ok(pre_sierra::Function {
-        id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
-            function: semantic::ConcreteFunction {
+        id: db.intern_sierra_function(db.intern_function(cairo_semantic::FunctionLongId {
+            function: cairo_semantic::ConcreteFunction {
                 generic_function: GenericFunctionId::Free(function_id),
                 // TODO(lior): Add generic arguments.
                 generic_args: vec![],
@@ -150,11 +150,11 @@ fn get_function_code(
 /// * A list of Sierra statements.
 fn allocate_local_variables(
     context: &mut ExprGeneratorContext<'_>,
-    local_variables: &OrderedHashSet<lowering::VariableId>,
+    local_variables: &OrderedHashSet<cairo_lowering::VariableId>,
 ) -> Maybe<(LocalVariables, Vec<Statement>)> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     let mut sierra_local_variables =
-        OrderedHashMap::<sierra::ids::VarId, sierra::ids::VarId>::default();
+        OrderedHashMap::<cairo_sierra::ids::VarId, cairo_sierra::ids::VarId>::default();
     for lowering_var_id in local_variables.iter() {
         let sierra_var_id = context.get_sierra_variable(*lowering_var_id);
         let uninitialized_local_var_id = context.allocate_sierra_variable();
@@ -200,7 +200,7 @@ fn add_dups_and_drops(
                     )
                 })
                 .collect();
-            if let Statement::Sierra(sierra::program::GenStatement::Invocation(invocation)) =
+            if let Statement::Sierra(cairo_sierra::program::GenStatement::Invocation(invocation)) =
                 &mut statement
             {
                 for arg in &mut invocation.args {
@@ -226,7 +226,7 @@ fn add_dups_and_drops(
         .collect()
 }
 
-/// Returns the types ([sierra::ids::ConcreteTypeId]) of all the Sierra variables in the given
+/// Returns the types ([cairo_sierra::ids::ConcreteTypeId]) of all the Sierra variables in the given
 /// statements.
 ///
 /// Assumes every Sierra variable has a single type.
@@ -234,12 +234,12 @@ fn get_var_types(
     params: &[Param],
     statements: &[Statement],
     db: &dyn SierraGenGroup,
-) -> UnorderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId> {
+) -> UnorderedHashMap<cairo_sierra::ids::VarId, cairo_sierra::ids::ConcreteTypeId> {
     let mut var_types =
         UnorderedHashMap::from_iter(params.iter().map(|p| (p.id.clone(), p.ty.clone())));
     for statement in statements {
         match statement {
-            Statement::Sierra(sierra::program::GenStatement::Invocation(invocation)) => {
+            Statement::Sierra(cairo_sierra::program::GenStatement::Invocation(invocation)) => {
                 let long_id = db.lookup_intern_concrete_lib_func(invocation.libfunc_id.clone());
                 let signature = CoreLibFunc::specialize_signature_by_id(
                     &SierraSignatureSpecializationContext(db),
@@ -263,7 +263,8 @@ fn get_var_types(
                     }
                 }
             }
-            Statement::Sierra(sierra::program::GenStatement::Return(_)) | Statement::Label(_) => {}
+            Statement::Sierra(cairo_sierra::program::GenStatement::Return(_))
+            | Statement::Label(_) => {}
             Statement::PushValues(_) => {
                 panic!("Unexpected pre_sierra::Statement::PushValues in get_var_types.")
             }

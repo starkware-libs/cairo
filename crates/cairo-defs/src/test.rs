@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use debug::debug::DebugWithDb;
-use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
-use filesystem::ids::{CrateLongId, Directory, FileLongId};
+use cairo_db_utils::Upcast;
+use cairo_debug::debug::DebugWithDb;
+use cairo_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
+use cairo_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;
-use parser::db::ParserDatabase;
-use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use syntax::node::{ast, Terminal, TypedSyntaxNode};
-use utils::extract_matches;
+use cairo_parser::db::ParserDatabase;
+use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_utils::extract_matches;
 
 use crate::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use crate::ids::{ModuleId, ModuleItemId};
@@ -182,7 +182,7 @@ impl MacroPlugin for DummyPlugin {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
-        item_ast: syntax::node::ast::Item,
+        item_ast: cairo_syntax::node::ast::Item,
     ) -> PluginResult {
         match item_ast {
             ast::Item::Struct(struct_ast) => PluginResult {

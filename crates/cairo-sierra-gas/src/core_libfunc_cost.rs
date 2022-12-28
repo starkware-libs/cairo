@@ -1,8 +1,8 @@
-use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::extensions::core::CoreConcreteLibFunc;
-use sierra::program::StatementIdx;
-use utils::collection_arithmetics::{add_maps, sub_maps};
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::extensions::core::CoreConcreteLibFunc;
+use cairo_sierra::program::StatementIdx;
+use cairo_utils::collection_arithmetics::{add_maps, sub_maps};
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations};
 use crate::gas_info::GasInfo;
@@ -23,7 +23,7 @@ impl CostOperations for Ops<'_> {
         Some(OrderedHashMap::from_iter([(token_type, value as i64)]))
     }
 
-    fn function_cost(&mut self, function: &sierra::program::Function) -> Self::CostType {
+    fn function_cost(&mut self, function: &cairo_sierra::program::Function) -> Self::CostType {
         self.gas_info.function_costs.get(&function.id).cloned()
     }
 

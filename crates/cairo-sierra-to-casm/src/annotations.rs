@@ -2,11 +2,11 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter;
 
-use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
+use cairo_casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use itertools::zip_eq;
-use sierra::edit_state::{put_results, take_args};
-use sierra::ids::{ConcreteTypeId, VarId};
-use sierra::program::{BranchInfo, Function, StatementIdx};
+use cairo_sierra::edit_state::{put_results, take_args};
+use cairo_sierra::ids::{ConcreteTypeId, VarId};
+use cairo_sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
 
 use crate::environment::ap_tracking::update_ap_tracking;

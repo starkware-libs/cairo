@@ -1,11 +1,11 @@
 use std::fs;
 
 use clap::Parser;
-use sierra::ProgramParser;
-use sierra_ap_change::calc_ap_changes;
-use sierra_gas::calc_gas_info;
-use sierra_to_casm::metadata::Metadata;
-use utils::logging::init_logging;
+use cairo_sierra::ProgramParser;
+use cairo_sierra_ap_change::calc_ap_changes;
+use cairo_sierra_gas::calc_gas_info;
+use cairo_sierra_to_casm::metadata::Metadata;
+use cairo_utils::logging::init_logging;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -29,7 +29,7 @@ fn main() {
     let gas_info = calc_gas_info(&program).expect("Failed calculating gas variables.");
 
     let gas_usage_check = true;
-    let cairo_program = sierra_to_casm::compiler::compile(
+    let cairo_program = cairo_sierra_to_casm::compiler::compile(
         &program,
         &Metadata {
             ap_change_info: calc_ap_changes(&program).expect("Failed calculating ap changes."),

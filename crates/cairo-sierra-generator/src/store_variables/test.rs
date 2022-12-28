@@ -1,13 +1,13 @@
 use pretty_assertions::assert_eq;
-use semantic::corelib::get_core_ty_by_name;
-use semantic::GenericArgumentId;
-use sierra::extensions::lib_func::{
+use cairo_semantic::corelib::get_core_ty_by_name;
+use cairo_semantic::GenericArgumentId;
+use cairo_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange,
 };
-use sierra::extensions::OutputVarReferenceInfo;
-use sierra::ids::ConcreteLibFuncId;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_sierra::extensions::OutputVarReferenceInfo;
+use cairo_sierra::ids::ConcreteLibFuncId;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use super::LocalVariables;
 use crate::db::SierraGenGroup;

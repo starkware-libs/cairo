@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+use cairo_sierra::program::Program;
+use cairo_sierra_ap_change::ap_change_info::ApChangeInfo;
+use cairo_sierra_ap_change::calc_ap_changes;
+use cairo_sierra_gas::calc_gas_info;
+use cairo_sierra_gas::gas_info::GasInfo;
 use itertools::Itertools;
-use sierra::program::Program;
-use sierra_ap_change::ap_change_info::ApChangeInfo;
-use sierra_ap_change::calc_ap_changes;
-use sierra_gas::calc_gas_info;
-use sierra_gas::gas_info::GasInfo;
 
 use crate::metadata::Metadata;
 
@@ -30,7 +30,7 @@ pub fn build_metadata(program: &Program, calculate_gas_info: bool) -> Metadata {
 pub fn read_sierra_example_file(name: &str) -> String {
     // Pop the "/sierra_to_casm" suffix.
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_owned();
-    path.extend(["sierra", "examples", &format!("{name}.sierra")].into_iter());
+    path.extend(["cairo-sierra", "examples", &format!("{name}.sierra")].into_iter());
     fs::read_to_string(path).unwrap()
 }
 

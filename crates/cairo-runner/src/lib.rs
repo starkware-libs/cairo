@@ -1,22 +1,22 @@
 use std::collections::HashMap;
 
+use cairo_casm::instructions::Instruction;
+use cairo_casm::{casm, casm_extend};
 use cairo_rs::vm::errors::vm_errors::VirtualMachineError;
-use casm::instructions::Instruction;
-use casm::{casm, casm_extend};
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
+use cairo_sierra::extensions::ConcreteType;
+use cairo_sierra::program::{Function, GenericArg};
+use cairo_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_sierra_ap_change::{calc_ap_changes, ApChangeError};
+use cairo_sierra_gas::calc_gas_info;
+use cairo_sierra_gas::gas_info::GasInfo;
+use cairo_sierra_to_casm::compiler::{CairoProgram, CompilationError};
+use cairo_sierra_to_casm::metadata::Metadata;
+use cairo_utils::extract_matches;
 use itertools::chain;
 use num_bigint::BigInt;
-use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::extensions::core::{CoreLibFunc, CoreType};
-use sierra::extensions::ConcreteType;
-use sierra::program::{Function, GenericArg};
-use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use sierra_ap_change::{calc_ap_changes, ApChangeError};
-use sierra_gas::calc_gas_info;
-use sierra_gas::gas_info::GasInfo;
-use sierra_to_casm::compiler::{CairoProgram, CompilationError};
-use sierra_to_casm::metadata::Metadata;
 use thiserror::Error;
-use utils::extract_matches;
 
 #[derive(Debug, Error)]
 pub enum RunnerError {
@@ -59,7 +59,7 @@ pub enum RunResultValue {
 /// Runner enabling running a Sierra program on the vm.
 pub struct SierraCasmRunner {
     /// The sierra program.
-    sierra_program: sierra::program::Program,
+    sierra_program: cairo_sierra::program::Program,
     /// Metadata for the Sierra program.
     metadata: Metadata,
     /// Program registry for the Sierra program.
@@ -69,13 +69,14 @@ pub struct SierraCasmRunner {
 }
 impl SierraCasmRunner {
     pub fn new(
-        sierra_program: sierra::program::Program,
+        sierra_program: cairo_sierra::program::Program,
         calc_gas: bool,
     ) -> Result<Self, RunnerError> {
         let metadata = create_metadata(&sierra_program, calc_gas)?;
         let sierra_program_registry =
             ProgramRegistry::<CoreType, CoreLibFunc>::new(&sierra_program)?;
-        let casm_program = sierra_to_casm::compiler::compile(&sierra_program, &metadata, calc_gas)?;
+        let casm_program =
+            cairo_sierra_to_casm::compiler::compile(&sierra_program, &metadata, calc_gas)?;
         Ok(Self { sierra_program, metadata, sierra_program_registry, casm_program })
     }
 
@@ -90,7 +91,7 @@ impl SierraCasmRunner {
         let func = self.find_function(name_suffix)?;
         let initial_gas = self.get_initial_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
-        let (cells, ap) = casm::run::run_function(
+        let (cells, ap) = cairo_casm::run::run_function(
             chain!(entry_code.iter(), self.casm_program.instructions.iter()),
             builtins,
         )?;
@@ -121,7 +122,7 @@ impl SierraCasmRunner {
     /// Handling the main return value to create a `RunResultValue`.
     fn handle_main_return_value(
         &self,
-        ty: sierra::ids::ConcreteTypeId,
+        ty: cairo_sierra::ids::ConcreteTypeId,
         values: Vec<BigInt>,
         cells: &[Option<BigInt>],
     ) -> Result<RunResultValue, RunnerError> {
@@ -165,7 +166,7 @@ impl SierraCasmRunner {
         func: &Function,
         cells: &[Option<BigInt>],
         mut ap: usize,
-    ) -> Result<Vec<(sierra::ids::ConcreteTypeId, Vec<BigInt>)>, RunnerError> {
+    ) -> Result<Vec<(cairo_sierra::ids::ConcreteTypeId, Vec<BigInt>)>, RunnerError> {
         let mut results_data = vec![];
         for ty in func.signature.ret_types.iter().rev() {
             let size = self.sierra_program_registry.get_type(ty)?.info().size as usize;
@@ -205,11 +206,11 @@ impl SierraCasmRunner {
             .into_iter()
             .collect();
         // The offset [fp - i] for each of this builtins in this configuration.
-        let builtin_offset: HashMap<sierra::ids::ConcreteTypeId, i16> = HashMap::from([
-            (sierra::ids::ConcreteTypeId::new_inline("Pedersen"), 6),
-            (sierra::ids::ConcreteTypeId::new_inline("RangeCheck"), 5),
-            (sierra::ids::ConcreteTypeId::new_inline("Bitwise"), 4),
-            (sierra::ids::ConcreteTypeId::new_inline("EcOp"), 3),
+        let builtin_offset: HashMap<cairo_sierra::ids::ConcreteTypeId, i16> = HashMap::from([
+            (cairo_sierra::ids::ConcreteTypeId::new_inline("Pedersen"), 6),
+            (cairo_sierra::ids::ConcreteTypeId::new_inline("RangeCheck"), 5),
+            (cairo_sierra::ids::ConcreteTypeId::new_inline("Bitwise"), 4),
+            (cairo_sierra::ids::ConcreteTypeId::new_inline("EcOp"), 3),
         ]);
         for ty in func.signature.param_types.iter() {
             if let Some(offset) = builtin_offset.get(ty) {
@@ -277,7 +278,7 @@ impl SierraCasmRunner {
 
 /// Creates the metadata required for a Sierra program lowering to casm.
 fn create_metadata(
-    sierra_program: &sierra::program::Program,
+    sierra_program: &cairo_sierra::program::Program,
     calc_gas: bool,
 ) -> Result<Metadata, RunnerError> {
     let gas_info = if calc_gas {

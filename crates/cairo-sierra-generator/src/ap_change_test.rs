@@ -1,14 +1,14 @@
-use defs::db::DefsGroup;
+use cairo_defs::db::DefsGroup;
+use cairo_lowering::db::LoweringGroup;
+use cairo_semantic::test_utils::setup_test_module;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use lowering::db::LoweringGroup;
 use pretty_assertions::assert_eq;
-use semantic::test_utils::setup_test_module;
-use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
-test_utils::test_file_test!(
+cairo_test_utils::test_file_test!(
     ap_change,
     ["src/ap_change_test_data/tests",],
     SierraGenDatabaseForTesting,

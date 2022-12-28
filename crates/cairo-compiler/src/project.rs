@@ -2,11 +2,11 @@ use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::Arc;
 
-use defs::db::DefsGroup;
-use defs::ids::ModuleId;
-use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
-use filesystem::ids::{CrateId, CrateLongId, Directory};
-pub use project::*;
+use cairo_defs::db::DefsGroup;
+use cairo_defs::ids::ModuleId;
+use cairo_filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
+use cairo_filesystem::ids::{CrateId, CrateLongId, Directory};
+pub use cairo_project::*;
 
 use crate::db::RootDatabase;
 

@@ -1,5 +1,5 @@
-use sierra::extensions::boxing::BoxConcreteLibFunc;
-use sierra::extensions::ConcreteLibFunc;
+use cairo_sierra::extensions::boxing::BoxConcreteLibFunc;
+use cairo_sierra::extensions::ConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{CellExpression, ReferenceExpression};

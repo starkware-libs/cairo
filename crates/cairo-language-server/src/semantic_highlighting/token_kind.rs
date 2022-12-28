@@ -1,5 +1,5 @@
 use lsp::SemanticTokenType;
-use syntax::node::kind::SyntaxKind;
+use cairo_syntax::node::kind::SyntaxKind;
 
 #[allow(dead_code)]
 pub enum SemanticTokenKind {

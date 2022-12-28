@@ -8,40 +8,40 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 pub use db::RootDatabase;
-use db_utils::Upcast;
-use debug::DebugWithDb;
-use defs::db::DefsGroup;
-use defs::ids::{
+use cairo_db_utils::Upcast;
+use cairo_debug::DebugWithDb;
+use cairo_defs::db::DefsGroup;
+use cairo_defs::ids::{
     EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionId,
     FreeFunctionLongId, ImplLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleItemId,
     StructLongId, TraitLongId, UseLongId,
 };
-use diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
-use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
-use filesystem::ids::{FileId, FileLongId};
-use filesystem::span::TextPosition;
-use formatter::{get_formatted_file, FormatterConfig};
-use lowering::db::LoweringGroup;
-use lowering::diagnostic::LoweringDiagnostic;
-use parser::db::ParserGroup;
-use parser::ParserDiagnostic;
-use project::ProjectConfig;
-use semantic::db::SemanticGroup;
-use semantic::items::free_function::SemanticExprLookup;
-use semantic::resolve_path::ResolvedGenericItem;
-use semantic::SemanticDiagnostic;
+use cairo_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
+use cairo_filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
+use cairo_filesystem::ids::{FileId, FileLongId};
+use cairo_filesystem::span::TextPosition;
+use cairo_formatter::{get_formatted_file, FormatterConfig};
+use cairo_lowering::db::LoweringGroup;
+use cairo_lowering::diagnostic::LoweringDiagnostic;
+use cairo_parser::db::ParserGroup;
+use cairo_parser::ParserDiagnostic;
+use cairo_project::ProjectConfig;
+use cairo_semantic::db::SemanticGroup;
+use cairo_semantic::items::free_function::SemanticExprLookup;
+use cairo_semantic::resolve_path::ResolvedGenericItem;
+use cairo_semantic::SemanticDiagnostic;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::kind::SyntaxKind;
-use syntax::node::stable_ptr::SyntaxStablePtr;
-use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::kind::SyntaxKind;
+use cairo_syntax::node::stable_ptr::SyntaxStablePtr;
+use cairo_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
-use utils::ordered_hash_set::OrderedHashSet;
-use utils::OptionHelper;
+use cairo_utils::ordered_hash_set::OrderedHashSet;
+use cairo_utils::OptionHelper;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 

@@ -8,11 +8,11 @@ use anyhow::{bail, Result};
 use clap::Parser;
 use colored::Colorize;
 use diffy::{create_patch, PatchFormatter};
-use filesystem::db::FilesGroup;
-use filesystem::ids::{FileId, FileLongId, VirtualFile};
-use formatter::{get_formatted_file, FormatterConfig};
-use parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
-use utils::logging::init_logging;
+use cairo_filesystem::db::FilesGroup;
+use cairo_filesystem::ids::{FileId, FileLongId, VirtualFile};
+use cairo_formatter::{get_formatted_file, FormatterConfig};
+use cairo_parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
+use cairo_utils::logging::init_logging;
 
 #[derive(Debug)]
 enum Input<'a> {

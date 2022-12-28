@@ -1,5 +1,5 @@
-use casm::casm;
-use sierra::program::{BranchInfo, BranchTarget};
+use cairo_casm::casm;
+use cairo_sierra::program::{BranchInfo, BranchTarget};
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,

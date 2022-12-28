@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use defs::ids::{LanguageElementId, UseId};
-use diagnostics::{Diagnostics, Maybe, ToMaybe};
-use diagnostics_proc_macros::DebugWithDb;
+use cairo_defs::ids::{LanguageElementId, UseId};
+use cairo_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_diagnostics_proc_macros::DebugWithDb;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};

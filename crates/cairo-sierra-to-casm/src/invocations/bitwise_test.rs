@@ -1,5 +1,5 @@
-use casm::ap_change::ApChange;
-use casm::casm;
+use cairo_casm::ap_change::ApChange;
+use cairo_casm::casm;
 use pretty_assertions::assert_eq;
 use test_log::test;
 

@@ -1,26 +1,28 @@
-use sierra::extensions::array::ArrayConcreteLibFunc;
-use sierra::extensions::boolean::BoolConcreteLibFunc;
-use sierra::extensions::builtin_cost::{
+use cairo_sierra::extensions::array::ArrayConcreteLibFunc;
+use cairo_sierra::extensions::boolean::BoolConcreteLibFunc;
+use cairo_sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
 };
-use sierra::extensions::core::CoreConcreteLibFunc::{
+use cairo_sierra::extensions::core::CoreConcreteLibFunc::{
     self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup,
     Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump,
     UnwrapNonZero,
 };
-use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
-use sierra::extensions::ec::EcConcreteLibFunc;
-use sierra::extensions::enm::EnumConcreteLibFunc;
-use sierra::extensions::felt::FeltConcrete;
-use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
-use sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
-use sierra::extensions::mem::MemConcreteLibFunc::{
+use cairo_sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
+use cairo_sierra::extensions::ec::EcConcreteLibFunc;
+use cairo_sierra::extensions::enm::EnumConcreteLibFunc;
+use cairo_sierra::extensions::felt::FeltConcrete;
+use cairo_sierra::extensions::function_call::FunctionCallConcreteLibFunc;
+use cairo_sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
+use cairo_sierra::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
-use sierra::extensions::nullable::NullableConcreteLibFunc;
-use sierra::extensions::strct::StructConcreteLibFunc;
-use sierra::extensions::uint128::{IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc};
-use sierra::program::Function;
+use cairo_sierra::extensions::nullable::NullableConcreteLibFunc;
+use cairo_sierra::extensions::strct::StructConcreteLibFunc;
+use cairo_sierra::extensions::uint128::{
+    IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc,
+};
+use cairo_sierra::program::Function;
 
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 

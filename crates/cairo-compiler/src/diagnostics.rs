@@ -1,11 +1,11 @@
-use defs::db::DefsGroup;
-use defs::ids::ModuleId;
-use filesystem::db::FilesGroup;
-use filesystem::ids::FileLongId;
-use lowering::db::LoweringGroup;
-use parser::db::ParserGroup;
-use semantic::db::SemanticGroup;
-use sierra_generator::db::SierraGenGroup;
+use cairo_defs::db::DefsGroup;
+use cairo_defs::ids::ModuleId;
+use cairo_filesystem::db::FilesGroup;
+use cairo_filesystem::ids::FileLongId;
+use cairo_lowering::db::LoweringGroup;
+use cairo_parser::db::ParserGroup;
+use cairo_semantic::db::SemanticGroup;
+use cairo_sierra_generator::db::SierraGenGroup;
 
 use crate::db::RootDatabase;
 

@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
 
-use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::program::{Program, StatementIdx};
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::program::{Program, StatementIdx};
 use test_case::test_case;
 
 use crate::gas_info::GasInfo;
@@ -12,8 +12,8 @@ use crate::{calc_gas_info, CostError};
 fn get_example_program(name: &str) -> Program {
     // Pop the "/sierra_gas" suffix.
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_owned();
-    path.extend(["sierra", "examples", &format!("{name}.sierra")].into_iter());
-    sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
+    path.extend(["cairo-sierra", "examples", &format!("{name}.sierra")].into_iter());
+    cairo_sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
 }
 
 #[test_case("fib_jumps" =>

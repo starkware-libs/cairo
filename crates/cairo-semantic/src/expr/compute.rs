@@ -5,21 +5,21 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
-use diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
+use cairo_defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
+use cairo_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
+use cairo_syntax::node::ast::{BlockOrIf, PatternStructParam};
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
+use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_utils::{try_extract_matches, OptionHelper};
 use id_arena::Arena;
 use itertools::zip_eq;
 use num_bigint::{BigInt, Sign};
 use smol_str::SmolStr;
-use syntax::node::ast::{BlockOrIf, PatternStructParam};
-use syntax::node::db::SyntaxGroup;
-use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
-use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use unescaper::unescape;
-use utils::ordered_hash_map::OrderedHashMap;
-use utils::unordered_hash_map::UnorderedHashMap;
-use utils::unordered_hash_set::UnorderedHashSet;
-use utils::{try_extract_matches, OptionHelper};
 
 use super::objects::*;
 use super::pattern::{

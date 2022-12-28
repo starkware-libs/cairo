@@ -1,19 +1,19 @@
 use assert_matches::assert_matches;
-use casm::ap_change::ApChange;
-use casm::builder::{CasmBuildResult, CasmBuilder, Var};
-use casm::instructions::Instruction;
-use casm::operand::{CellRef, Register};
+use cairo_casm::ap_change::ApChange;
+use cairo_casm::builder::{CasmBuildResult, CasmBuilder, Var};
+use cairo_casm::instructions::Instruction;
+use cairo_casm::operand::{CellRef, Register};
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::extensions::core::CoreConcreteLibFunc;
+use cairo_sierra::extensions::lib_func::BranchSignature;
+use cairo_sierra::extensions::{ConcreteLibFunc, OutputVarReferenceInfo};
+use cairo_sierra::ids::ConcreteTypeId;
+use cairo_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
+use cairo_sierra_ap_change::core_libfunc_ap_change::core_libfunc_ap_change;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
-use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::extensions::core::CoreConcreteLibFunc;
-use sierra::extensions::lib_func::BranchSignature;
-use sierra::extensions::{ConcreteLibFunc, OutputVarReferenceInfo};
-use sierra::ids::ConcreteTypeId;
-use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
-use sierra_ap_change::core_libfunc_ap_change::core_libfunc_ap_change;
 use thiserror::Error;
-use utils::ordered_hash_map::OrderedHashMap;
-use {casm, sierra};
+use {cairo_casm, cairo_sierra};
 
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
@@ -184,7 +184,7 @@ impl CompiledInvocationBuilder<'_> {
             Item = impl ExactSizeIterator<Item = ReferenceExpression>,
         >,
     ) -> CompiledInvocation {
-        let gas_changes = sierra_gas::core_libfunc_cost::core_libfunc_cost(
+        let gas_changes = cairo_sierra_gas::core_libfunc_cost::core_libfunc_cost(
             &self.program_info.metadata.gas_info,
             &self.idx,
             self.libfunc,
@@ -217,27 +217,27 @@ impl CompiledInvocationBuilder<'_> {
             )
             .map(|((branch_signature, gas_change), (expressions, ap_change))| {
                 let ap_change = match ap_change {
-                    sierra_ap_change::ApChange::Known(x) => ApChange::Known(x),
-                    sierra_ap_change::ApChange::AtLocalsFinalizationByTypeSize(_) => {
+                    cairo_sierra_ap_change::ApChange::Known(x) => ApChange::Known(x),
+                    cairo_sierra_ap_change::ApChange::AtLocalsFinalizationByTypeSize(_) => {
                         ApChange::Known(0)
                     }
-                    sierra_ap_change::ApChange::FinalizeLocals => {
+                    cairo_sierra_ap_change::ApChange::FinalizeLocals => {
                         match self.environment.frame_state {
                             FrameState::Finalized { allocated } => ApChange::Known(allocated),
                             _ => panic!("Unexpected frame state."),
                         }
                     }
-                    sierra_ap_change::ApChange::KnownByTypeSize(ty) => {
+                    cairo_sierra_ap_change::ApChange::KnownByTypeSize(ty) => {
                         ApChange::Known(self.program_info.type_sizes[&ty] as usize)
                     }
-                    sierra_ap_change::ApChange::FunctionCall(id) => self
+                    cairo_sierra_ap_change::ApChange::FunctionCall(id) => self
                         .program_info
                         .metadata
                         .ap_change_info
                         .function_ap_change
                         .get(&id)
                         .map_or(ApChange::Unknown, |x| ApChange::Known(x + 2)),
-                    sierra_ap_change::ApChange::FromMetadata => ApChange::Known(
+                    cairo_sierra_ap_change::ApChange::FromMetadata => ApChange::Known(
                         *self
                             .program_info
                             .metadata
@@ -246,7 +246,7 @@ impl CompiledInvocationBuilder<'_> {
                             .get(&self.idx)
                             .unwrap_or(&0),
                     ),
-                    sierra_ap_change::ApChange::Unknown => ApChange::Unknown,
+                    cairo_sierra_ap_change::ApChange::Unknown => ApChange::Unknown,
                 };
 
                 BranchChanges::new(
@@ -276,7 +276,9 @@ impl CompiledInvocationBuilder<'_> {
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
         itertools::assert_equal(
             core_libfunc_ap_change(self.libfunc),
-            branches.iter().map(|(state, _)| sierra_ap_change::ApChange::Known(state.ap_change)),
+            branches
+                .iter()
+                .map(|(state, _)| cairo_sierra_ap_change::ApChange::Known(state.ap_change)),
         );
         let relocations = branches
             .iter()

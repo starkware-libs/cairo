@@ -2,18 +2,18 @@
 #[path = "diagnostic_test.rs"]
 mod test;
 
-use defs::diagnostic_utils::StableLocation;
-use defs::ids::{
+use cairo_defs::diagnostic_utils::StableLocation;
+use cairo_defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
-use defs::plugin::PluginDiagnostic;
-use diagnostics::{
+use cairo_defs::plugin::PluginDiagnostic;
+use cairo_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
 };
+use cairo_syntax::node::ids::SyntaxStablePtrId;
+use cairo_syntax::node::TypedSyntaxNode;
 use smol_str::SmolStr;
-use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::TypedSyntaxNode;
 
 use crate::db::SemanticGroup;
 use crate::plugin::PluginMappedDiagnostic;

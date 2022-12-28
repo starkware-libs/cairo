@@ -1,5 +1,5 @@
-use defs::ids::{GenericParamId, GenericParamLongId, ModuleFileId};
-use syntax::node::{ast, TypedSyntaxNode};
+use cairo_defs::ids::{GenericParamId, GenericParamLongId, ModuleFileId};
+use cairo_syntax::node::{ast, TypedSyntaxNode};
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
@@ -14,8 +14,8 @@ pub fn semantic_generic_params(
     let syntax_db = db.upcast();
 
     match generic_args {
-        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
-        syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
+        cairo_syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
+        cairo_syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
             .generic_params(syntax_db)
             .elements(syntax_db)
             .iter()

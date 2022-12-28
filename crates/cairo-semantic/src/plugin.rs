@@ -2,8 +2,8 @@ use std::any::Any;
 use std::ops::Deref;
 use std::sync::Arc;
 
-use defs::plugin::{GeneratedFileAuxData, MacroPlugin};
-use filesystem::span::TextSpan;
+use cairo_defs::plugin::{GeneratedFileAuxData, MacroPlugin};
+use cairo_filesystem::span::TextSpan;
 
 use crate::db::SemanticGroup;
 

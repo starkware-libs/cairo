@@ -1,13 +1,13 @@
 use std::str::FromStr;
 use std::vec;
 
-use casm::ap_change::ApplyApChange;
-use casm::builder::CasmBuilder;
-use casm::hints::Hint;
-use casm::operand::{CellRef, Register, ResOperand};
-use casm::{casm, casm_build_extend, casm_extend};
+use cairo_casm::ap_change::ApplyApChange;
+use cairo_casm::builder::CasmBuilder;
+use cairo_casm::hints::Hint;
+use cairo_casm::operand::{CellRef, Register, ResOperand};
+use cairo_casm::{casm, casm_build_extend, casm_extend};
 use num_bigint::BigInt;
-use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
+use cairo_sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{CellExpression, ReferenceExpression};

@@ -2,10 +2,10 @@
 #[path = "block_generator_test.rs"]
 mod test;
 
-use defs::ids::GenericFunctionId;
-use diagnostics::Maybe;
+use cairo_defs::ids::GenericFunctionId;
+use cairo_diagnostics::Maybe;
+use cairo_sierra::program;
 use itertools::{chain, enumerate, zip_eq};
-use sierra::program;
 
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
@@ -15,11 +15,11 @@ use crate::utils::{
     return_statement, simple_statement, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
-/// Generates Sierra code that computes a given [lowering::Block].
+/// Generates Sierra code that computes a given [cairo_lowering::Block].
 /// Returns a list of Sierra statements.
 pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
-    block: &lowering::Block,
+    block: &cairo_lowering::Block,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     // Process the statements.
     let mut statements: Vec<pre_sierra::Statement> = vec![];
@@ -29,7 +29,7 @@ pub fn generate_block_code(
     Ok(statements)
 }
 
-/// Generates Sierra code that computes a given [lowering::Block].
+/// Generates Sierra code that computes a given [cairo_lowering::Block].
 /// Pushes the values "returned" by the block on the top of the stack, and binds them to
 /// the given `binds` variables.
 ///
@@ -37,12 +37,12 @@ pub fn generate_block_code(
 /// the next instruction (true) or not (false).
 pub fn generate_block_code_and_push_values(
     context: &mut ExprGeneratorContext<'_>,
-    block: &lowering::Block,
-    binds: &[lowering::VariableId],
+    block: &cairo_lowering::Block,
+    binds: &[cairo_lowering::VariableId],
 ) -> Maybe<(Vec<pre_sierra::Statement>, bool)> {
     let mut statements = generate_block_code(context, block)?;
     match &block.end {
-        lowering::BlockEnd::Callsite(inner_outputs) => {
+        cairo_lowering::BlockEnd::Callsite(inner_outputs) => {
             let mut push_values = Vec::<pre_sierra::PushValue>::new();
             for (output, inner_output) in zip_eq(binds, inner_outputs) {
                 let ty = context.get_variable_sierra_type(*inner_output)?;
@@ -61,11 +61,11 @@ pub fn generate_block_code_and_push_values(
             statements.push(pre_sierra::Statement::PushValues(push_values));
             Ok((statements, true))
         }
-        lowering::BlockEnd::Return(returned_variables) => {
+        cairo_lowering::BlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(context, returned_variables)?);
             Ok((statements, false))
         }
-        lowering::BlockEnd::Unreachable => Ok((statements, false)),
+        cairo_lowering::BlockEnd::Unreachable => Ok((statements, false)),
     }
 }
 
@@ -75,7 +75,7 @@ pub fn generate_block_code_and_push_values(
 /// Returns a list of Sierra statements.
 pub fn generate_return_code(
     context: &mut ExprGeneratorContext<'_>,
-    returned_variables: &Vec<id_arena::Id<lowering::Variable>>,
+    returned_variables: &Vec<id_arena::Id<cairo_lowering::Variable>>,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     // Copy the result to the top of the stack before returning.
@@ -98,43 +98,43 @@ pub fn generate_return_code(
     Ok(statements)
 }
 
-/// Generates Sierra code for [lowering::Statement].
+/// Generates Sierra code for [cairo_lowering::Statement].
 pub fn generate_statement_code(
     context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::Statement,
+    statement: &cairo_lowering::Statement,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     match statement {
-        lowering::Statement::Literal(statement_literal) => {
+        cairo_lowering::Statement::Literal(statement_literal) => {
             generate_statement_literal_code(context, statement_literal)
         }
-        lowering::Statement::Call(statement_call) => {
+        cairo_lowering::Statement::Call(statement_call) => {
             generate_statement_call_code(context, statement_call)
         }
-        lowering::Statement::MatchExtern(statement_match_extern) => {
+        cairo_lowering::Statement::MatchExtern(statement_match_extern) => {
             generate_statement_match_extern_code(context, statement_match_extern)
         }
-        lowering::Statement::CallBlock(statement_call_block) => {
+        cairo_lowering::Statement::CallBlock(statement_call_block) => {
             generate_statement_call_block_code(context, statement_call_block)
         }
-        lowering::Statement::EnumConstruct(statement_enum_construct) => {
+        cairo_lowering::Statement::EnumConstruct(statement_enum_construct) => {
             generate_statement_enum_construct(context, statement_enum_construct)
         }
-        lowering::Statement::MatchEnum(statement_match_enum) => {
+        cairo_lowering::Statement::MatchEnum(statement_match_enum) => {
             generate_statement_match_enum(context, statement_match_enum)
         }
-        lowering::Statement::StructConstruct(statement) => {
+        cairo_lowering::Statement::StructConstruct(statement) => {
             generate_statement_struct_construct_code(context, statement)
         }
-        lowering::Statement::StructDestructure(statement) => {
+        cairo_lowering::Statement::StructDestructure(statement) => {
             generate_statement_struct_destructure_code(context, statement)
         }
     }
 }
 
-/// Generates Sierra code for [lowering::StatementLiteral].
+/// Generates Sierra code for [cairo_lowering::StatementLiteral].
 fn generate_statement_literal_code(
     context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementLiteral,
+    statement: &cairo_lowering::StatementLiteral,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let output_var = context.get_sierra_variable(statement.output);
     Ok(vec![simple_statement(
@@ -144,10 +144,10 @@ fn generate_statement_literal_code(
     )])
 }
 
-/// Generates Sierra code for [lowering::StatementCall].
+/// Generates Sierra code for [cairo_lowering::StatementCall].
 fn generate_statement_call_code(
     context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementCall,
+    statement: &cairo_lowering::StatementCall,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     // Prepare the Sierra input and output variables.
     let inputs = context.get_sierra_variables(&statement.inputs);
@@ -160,7 +160,7 @@ fn generate_statement_call_code(
     match function_long_id.generic_function {
         GenericFunctionId::Free(_) => {
             // Create [pre_sierra::PushValue] instances for the arguments.
-            let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
+            let mut args_on_stack: Vec<cairo_sierra::ids::VarId> = vec![];
             let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
 
             for (var_id, var) in zip_eq(&statement.inputs, inputs) {
@@ -190,10 +190,10 @@ fn generate_statement_call_code(
     }
 }
 
-/// Generates Sierra code for [lowering::StatementMatchExtern].
+/// Generates Sierra code for [cairo_lowering::StatementMatchExtern].
 fn generate_statement_match_extern_code(
     context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementMatchExtern,
+    statement: &cairo_lowering::StatementMatchExtern,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     // Prepare the Sierra input and output variables.
     let args = context.get_sierra_variables(&statement.inputs);
@@ -260,20 +260,20 @@ fn generate_statement_match_extern_code(
     Ok(statements)
 }
 
-/// Generates Sierra code for [lowering::StatementCallBlock].
+/// Generates Sierra code for [cairo_lowering::StatementCallBlock].
 fn generate_statement_call_block_code(
     context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementCallBlock,
+    statement: &cairo_lowering::StatementCallBlock,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let lowered_block = context.get_lowered_block(statement.block);
     // TODO(lior): Rename instead of using PushValues.
     Ok(generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?.0)
 }
 
-/// Generates Sierra code for [lowering::StatementEnumConstruct].
+/// Generates Sierra code for [cairo_lowering::StatementEnumConstruct].
 fn generate_statement_enum_construct(
     context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementEnumConstruct,
+    statement: &cairo_lowering::StatementEnumConstruct,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     Ok(vec![simple_statement(
         enum_init_libfunc_id(
@@ -286,10 +286,10 @@ fn generate_statement_enum_construct(
     )])
 }
 
-/// Generates Sierra code for [lowering::StatementStructConstruct].
+/// Generates Sierra code for [cairo_lowering::StatementStructConstruct].
 fn generate_statement_struct_construct_code(
     context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementStructConstruct,
+    statement: &cairo_lowering::StatementStructConstruct,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     Ok(vec![simple_statement(
         struct_construct_libfunc_id(
@@ -301,10 +301,10 @@ fn generate_statement_struct_construct_code(
     )])
 }
 
-/// Generates Sierra code for [lowering::StatementStructDestructure].
+/// Generates Sierra code for [cairo_lowering::StatementStructDestructure].
 fn generate_statement_struct_destructure_code(
     context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementStructDestructure,
+    statement: &cairo_lowering::StatementStructDestructure,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     Ok(vec![simple_statement(
         struct_deconstruct_libfunc_id(
@@ -316,10 +316,10 @@ fn generate_statement_struct_destructure_code(
     )])
 }
 
-/// Generates Sierra code for [lowering::StatementMatchEnum].
+/// Generates Sierra code for [cairo_lowering::StatementMatchEnum].
 fn generate_statement_match_enum(
     context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementMatchEnum,
+    statement: &cairo_lowering::StatementMatchEnum,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let matched_enum = context.get_sierra_variable(statement.input);
     let concrete_enum_type = context.get_variable_sierra_type(statement.input)?;
