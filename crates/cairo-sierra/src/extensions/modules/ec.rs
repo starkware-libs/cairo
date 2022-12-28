@@ -46,6 +46,7 @@ impl NoGenericArgsGenericType for EcStateType {
 define_libfunc_hierarchy! {
     pub enum EcLibFunc {
         CreatePoint(EcCreatePointLibFunc),
+        CreatePointAtInfinity(EcCreatePointAtInfinityLibFunc),
         InitState(EcInitStateLibFunc),
     }, EcConcreteLibFunc
 }
@@ -81,6 +82,27 @@ impl NoGenericArgsGenericLibFunc for EcCreatePointLibFunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// LibFunc for creating the EC point at infinity (0, 0).
+#[derive(Default)]
+pub struct EcCreatePointAtInfinityLibFunc {}
+impl NoGenericArgsGenericLibFunc for EcCreatePointAtInfinityLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("ec_create_inf_point");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        Ok(LibFuncSignature::new_non_branch(
+            vec![],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(EcPointType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 }
 
