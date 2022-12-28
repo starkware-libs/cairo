@@ -47,7 +47,8 @@ fn block_generator_test(
         ]);
     }
 
-    let block = &lowered.blocks[lowered.root.unwrap()];
+    let block_id = lowered.root.unwrap();
+    let block = &lowered.blocks[block_id];
 
     // Generate (pre-)Sierra statements.
     let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
@@ -60,7 +61,7 @@ fn block_generator_test(
         &lifetime,
         &mut diagnostics,
     );
-    let statements_opt = generate_block_code(&mut expr_generator_context, block);
+    let statements_opt = generate_block_code(&mut expr_generator_context, block_id, block);
     let expected_sierra_code = statements_opt.map_or("None".into(), |statements| {
         statements
             .iter()
