@@ -66,7 +66,11 @@ fn inner_find_variable_lifetime(
 
     // Go over the block in reverse order, starting from handling the block end.
     match &block.end {
-        cairo_lowering::BlockEnd::Callsite(vars) | cairo_lowering::BlockEnd::Return(vars) => {
+        cairo_lowering::BlockEnd::Callsite(vars) => {
+            state.use_variables(vars, (block_id, block.statements.len()), res);
+        }
+        cairo_lowering::BlockEnd::Return(vars) => {
+            state.clear();
             state.use_variables(vars, (block_id, block.statements.len()), res);
         }
         cairo_lowering::BlockEnd::Unreachable => {}
@@ -174,6 +178,11 @@ impl VariableLifetimeState {
     /// Called with the new used variables of sub-blocks of a match statement.
     fn extend_with_used_variables(&mut self, vars: OrderedHashSet<VariableId>) {
         self.used_variables.extend(vars);
+    }
+
+    /// Clears the state.
+    fn clear(&mut self) {
+        self.used_variables.clear();
     }
 
     /// Handles new variables in the following cases:
