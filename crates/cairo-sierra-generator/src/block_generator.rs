@@ -8,9 +8,10 @@ use cairo_sierra::program;
 use itertools::{chain, enumerate, zip_eq};
 
 use crate::expr_generator_context::ExprGeneratorContext;
+use crate::lifetime::DropLocation;
 use crate::pre_sierra;
 use crate::utils::{
-    branch_align_libfunc_id, const_libfunc_id_by_type, enum_init_libfunc_id,
+    branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, enum_init_libfunc_id,
     get_concrete_libfunc_id, jump_libfunc_id, jump_statement, match_enum_libfunc_id,
     return_statement, simple_statement, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
@@ -19,14 +20,31 @@ use crate::utils::{
 /// Returns a list of Sierra statements.
 pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
-    _block_id: cairo_lowering::BlockId,
+    block_id: cairo_lowering::BlockId,
     block: &cairo_lowering::Block,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
+    let drops = context.get_drops();
+
+    // TODO(lior): Add pre-block drops.
+
     // Process the statements.
     let mut statements: Vec<pre_sierra::Statement> = vec![];
-    for statement in &block.statements {
+    for (i, statement) in block.statements.iter().enumerate() {
         statements.extend(generate_statement_code(context, statement)?);
+        if let Some(vars) = drops.get(&DropLocation::PostStatement((block_id, i))) {
+            for lowering_var in vars {
+                let sierra_var = context.get_sierra_variable(*lowering_var);
+                let ty = context.get_variable_sierra_type(*lowering_var)?;
+                statements.push(simple_statement(
+                    drop_libfunc_id(context.get_db(), ty),
+                    &[sierra_var],
+                    &[],
+                ));
+            }
+        }
     }
+
+    // TODO(lior): Add post-block drops.
     Ok(statements)
 }
 

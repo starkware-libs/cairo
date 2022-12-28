@@ -7,7 +7,7 @@ jmp rel 12 if [fp + -4] != 0;
 [ap + 0] = 0, ap++;
 ret;
 [ap + 1] = [[fp + -3] + 0], ap++;
-[ap + 1] = [ap + 0] + 2800, ap++;
+[ap + 1] = [ap + 0] + 2700, ap++;
 %{ memory[ap + 1] = memory[ap + 0] <= memory[fp + -6] %}
 jmp rel 8 if [ap + 1] != 0, ap++;
 [fp + -6] = [ap + 1] + [ap + -1], ap++;
