@@ -1,4 +1,4 @@
-use filesystem::span::TextOffset;
+use cairo_filesystem::span::TextOffset;
 
 use crate::DiagnosticLocation;
 
@@ -7,7 +7,7 @@ use crate::DiagnosticLocation;
 mod test;
 
 pub fn get_location_marks(
-    db: &dyn filesystem::db::FilesGroup,
+    db: &dyn cairo_filesystem::db::FilesGroup,
     location: &DiagnosticLocation,
 ) -> String {
     // TODO(ilya, 10/10/2023): Handle locations which spread over a few lines.

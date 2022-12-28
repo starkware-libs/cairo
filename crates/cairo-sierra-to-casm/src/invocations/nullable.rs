@@ -1,5 +1,5 @@
-use sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
-use sierra::extensions::nullable::NullableConcreteLibFunc;
+use cairo_sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
+use cairo_sierra::extensions::nullable::NullableConcreteLibFunc;
 
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};

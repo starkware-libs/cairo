@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use defs::db::DefsGroup;
-use defs::ids::ModuleId;
-use defs::plugin::{
+use cairo_defs::db::DefsGroup;
+use cairo_defs::ids::ModuleId;
+use cairo_defs::plugin::{
     DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginGeneratedFile, PluginResult,
 };
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::{ast, Terminal};
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::{ast, Terminal};
 use test_log::test;
 
 use crate::db::SemanticGroup;
@@ -71,7 +71,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
-        item_ast: syntax::node::ast::Item,
+        item_ast: cairo_syntax::node::ast::Item,
     ) -> PluginResult {
         match item_ast {
             ast::Item::FreeFunction(func)

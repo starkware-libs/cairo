@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
+use cairo_sierra::program::{Program, StatementIdx};
+use cairo_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 use cost_expr::Var;
 use gas_info::GasInfo;
-use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::extensions::core::{CoreLibFunc, CoreType};
-use sierra::program::{Program, StatementIdx};
-use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
-use utils::ordered_hash_map::OrderedHashMap;
 
 pub mod core_libfunc_cost;
 mod core_libfunc_cost_base;
@@ -46,9 +46,9 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
 
     let mut variable_values = HashMap::<(StatementIdx, CostTokenType), i64>::default();
     let mut function_costs =
-        HashMap::<sierra::ids::FunctionId, OrderedHashMap<CostTokenType, i64>>::default();
+        HashMap::<cairo_sierra::ids::FunctionId, OrderedHashMap<CostTokenType, i64>>::default();
     for (token_type, token_equations) in equations {
-        let solution = solver::try_solve_equations(token_equations)
+        let solution = cairo_eq_solver::try_solve_equations(token_equations)
             .ok_or(CostError::SolvingGasEquationFailed)?;
         for func in &program.funcs {
             let id = &func.id;

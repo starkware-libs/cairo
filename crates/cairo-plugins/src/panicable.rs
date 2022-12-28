@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use defs::plugin::{
+use cairo_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use itertools::Itertools;
-use semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
-use syntax::node::ast::AttributeList;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::{ast, Terminal, TypedSyntaxNode};
-use utils::try_extract_matches;
+use cairo_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
+use cairo_syntax::node::ast::AttributeList;
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_utils::try_extract_matches;
 
 #[derive(Debug)]
 pub struct PanicablePlugin {}

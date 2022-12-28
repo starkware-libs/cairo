@@ -4,7 +4,7 @@ use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
-use test_utils::compare_contents_or_fix_with_path;
+use cairo_test_utils::compare_contents_or_fix_with_path;
 
 use crate::abi;
 use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
@@ -17,7 +17,7 @@ fn test_serialization() {
 
     let contract = ContractClass {
         sierra_program: vec![],
-        sierra_program_debug_info: sierra::debug_info::DebugInfo {
+        sierra_program_debug_info: cairo_sierra::debug_info::DebugInfo {
             type_names: HashMap::default(),
             libfunc_names: HashMap::default(),
             user_func_names: HashMap::default(),

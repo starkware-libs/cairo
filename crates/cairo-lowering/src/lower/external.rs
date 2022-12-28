@@ -7,9 +7,9 @@ use super::LoweredExpr;
 /// entry.
 pub fn extern_facade_return_tys(
     ctx: &mut LoweringContext<'_>,
-    ret_ty: semantic::TypeId,
-) -> Vec<semantic::TypeId> {
-    if let semantic::TypeLongId::Tuple(tys) = ctx.db.lookup_intern_type(ret_ty) {
+    ret_ty: cairo_semantic::TypeId,
+) -> Vec<cairo_semantic::TypeId> {
+    if let cairo_semantic::TypeLongId::Tuple(tys) = ctx.db.lookup_intern_type(ret_ty) {
         tys
     } else {
         vec![ret_ty]
@@ -22,10 +22,10 @@ pub fn extern_facade_return_tys(
 /// variable for each entry, the return expression is a single value of type tuple.
 pub fn extern_facade_expr(
     ctx: &mut LoweringContext<'_>,
-    ty: semantic::TypeId,
+    ty: cairo_semantic::TypeId,
     returns: Vec<LivingVar>,
 ) -> LoweredExpr {
-    if let semantic::TypeLongId::Tuple(subtypes) = ctx.db.lookup_intern_type(ty) {
+    if let cairo_semantic::TypeLongId::Tuple(subtypes) = ctx.db.lookup_intern_type(ty) {
         assert_eq!(returns.len(), subtypes.len());
         LoweredExpr::Tuple(returns.into_iter().map(LoweredExpr::AtVariable).collect())
     } else {

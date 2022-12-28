@@ -1,12 +1,12 @@
-use compiler::db::RootDatabase;
-use compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_compiler::db::RootDatabase;
+use cairo_compiler::diagnostics::check_and_eprint_diagnostics;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
-use semantic::test_utils::setup_test_module;
-use sierra_generator::db::SierraGenGroup;
-use sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use sierra_to_casm::test_utils::build_metadata;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_semantic::test_utils::setup_test_module;
+use cairo_sierra_generator::db::SierraGenGroup;
+use cairo_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_sierra_to_casm::test_utils::build_metadata;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 test_utils::test_file_test!(
     uint128_e2e,
@@ -53,7 +53,7 @@ fn run_small_e2e_test(
 
     // Compile to casm.
     let casm =
-        sierra_to_casm::compiler::compile(&sierra_program, &metadata, true).unwrap().to_string();
+        cairo_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true).unwrap().to_string();
 
     OrderedHashMap::from([
         ("casm".into(), casm),

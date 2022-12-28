@@ -1,8 +1,8 @@
-use casm::builder::CasmBuilder;
-use casm::casm_build_extend;
-use casm::operand::ResOperand;
+use cairo_casm::builder::CasmBuilder;
+use cairo_casm::casm_build_extend;
+use cairo_casm::operand::ResOperand;
 use num_bigint::BigInt;
-use sierra::extensions::builtin_cost::{
+use cairo_sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
 };
 

@@ -1,4 +1,4 @@
-use casm::ap_change::{ApChange, ApChangeError};
+use cairo_casm::ap_change::{ApChange, ApChangeError};
 
 /// Updates the function level ap_tracking based on ap_change.
 pub fn update_ap_tracking(

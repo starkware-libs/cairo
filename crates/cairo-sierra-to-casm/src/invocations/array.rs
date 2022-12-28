@@ -1,9 +1,9 @@
-use casm::builder::CasmBuilder;
-use casm::casm_build_extend;
-use casm::operand::{DerefOrImmediate, ResOperand};
-use sierra::extensions::array::ArrayConcreteLibFunc;
-use sierra::extensions::felt::FeltBinaryOperator;
-use sierra::ids::ConcreteTypeId;
+use cairo_casm::builder::CasmBuilder;
+use cairo_casm::casm_build_extend;
+use cairo_casm::operand::{DerefOrImmediate, ResOperand};
+use cairo_sierra::extensions::array::ArrayConcreteLibFunc;
+use cairo_sierra::extensions::felt::FeltBinaryOperator;
+use cairo_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;

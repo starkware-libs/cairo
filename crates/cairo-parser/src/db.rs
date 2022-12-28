@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
-use filesystem::db::FilesGroup;
-use filesystem::ids::FileId;
-use syntax::node::ast::SyntaxFile;
-use syntax::node::db::SyntaxGroup;
+use cairo_db_utils::Upcast;
+use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
+use cairo_filesystem::db::FilesGroup;
+use cairo_filesystem::ids::FileId;
+use cairo_syntax::node::ast::SyntaxFile;
+use cairo_syntax::node::db::SyntaxGroup;
 
 use crate::diagnostic::ParserDiagnostic;
 use crate::parser::Parser;

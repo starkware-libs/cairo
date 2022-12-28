@@ -4,7 +4,7 @@ use test_log::test;
 // Testing by parsing code and printing its display, making sure we get back the formatted code.
 #[test]
 fn format_test() {
-    let parser = sierra::ProgramParser::new();
+    let parser = cairo_sierra::ProgramParser::new();
     assert_eq!(
         parser
             .parse(indoc! {"

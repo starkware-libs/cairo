@@ -1,9 +1,9 @@
-use diagnostics::DiagnosticEntry;
-use filesystem::db::FilesGroup;
-use filesystem::ids::FileId;
-use filesystem::span::TextSpan;
+use cairo_diagnostics::DiagnosticEntry;
+use cairo_filesystem::db::FilesGroup;
+use cairo_filesystem::ids::FileId;
+use cairo_filesystem::span::TextSpan;
 use smol_str::SmolStr;
-use syntax::node::kind::SyntaxKind;
+use cairo_syntax::node::kind::SyntaxKind;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParserDiagnostic {
@@ -55,7 +55,7 @@ impl DiagnosticEntry for ParserDiagnostic {
         }
     }
 
-    fn location(&self, _db: &dyn FilesGroup) -> diagnostics::DiagnosticLocation {
-        diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
+    fn location(&self, _db: &dyn FilesGroup) -> cairo_diagnostics::DiagnosticLocation {
+        cairo_diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
     }
 }

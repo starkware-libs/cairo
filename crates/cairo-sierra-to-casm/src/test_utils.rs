@@ -3,11 +3,11 @@ use std::fs;
 use std::path::PathBuf;
 
 use itertools::Itertools;
-use sierra::program::Program;
-use sierra_ap_change::ap_change_info::ApChangeInfo;
-use sierra_ap_change::calc_ap_changes;
-use sierra_gas::calc_gas_info;
-use sierra_gas::gas_info::GasInfo;
+use cairo_sierra::program::Program;
+use cairo_sierra_ap_change::ap_change_info::ApChangeInfo;
+use cairo_sierra_ap_change::calc_ap_changes;
+use cairo_sierra_gas::calc_gas_info;
+use cairo_sierra_gas::gas_info::GasInfo;
 
 use crate::metadata::Metadata;
 

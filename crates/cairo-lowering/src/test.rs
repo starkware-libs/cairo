@@ -1,8 +1,8 @@
-use debug::DebugWithDb;
-use plugins::get_default_plugins;
-use semantic::db::SemanticGroup;
-use semantic::test_utils::setup_test_function;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_debug::DebugWithDb;
+use cairo_plugins::get_default_plugins;
+use cairo_semantic::db::SemanticGroup;
+use cairo_semantic::test_utils::setup_test_function;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::fmt::LoweredFormatter;
 use crate::lower::lower;

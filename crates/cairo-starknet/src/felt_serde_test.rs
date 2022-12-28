@@ -1,6 +1,6 @@
 use std::fs::read_to_string;
 
-use sierra::ProgramParser;
+use cairo_sierra::ProgramParser;
 use test_case::test_case;
 
 use super::{sierra_from_felts, sierra_to_felts};

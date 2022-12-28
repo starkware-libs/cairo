@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
-use debug::DebugWithDb;
-use defs::db::DefsGroup;
-use defs::ids::{ModuleId, ModuleItemId};
-use diagnostics::ToOption;
-use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
-use filesystem::ids::{CrateLongId, Directory, FileLongId};
+use cairo_debug::DebugWithDb;
+use cairo_defs::db::DefsGroup;
+use cairo_defs::ids::{ModuleId, ModuleItemId};
+use cairo_diagnostics::ToOption;
+use cairo_filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
+use cairo_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
-use utils::extract_matches;
+use cairo_utils::extract_matches;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;

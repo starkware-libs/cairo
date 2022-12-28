@@ -1,6 +1,6 @@
 use std::fmt;
 
-use utils::write_comma_separated;
+use cairo_utils::write_comma_separated;
 
 use crate::ids::{
     ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, UserTypeId,

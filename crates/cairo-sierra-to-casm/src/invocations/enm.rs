@@ -1,12 +1,12 @@
-use casm::operand::CellRef;
-use casm::{casm, casm_extend};
+use cairo_casm::operand::CellRef;
+use cairo_casm::{casm, casm_extend};
 use itertools::{chain, repeat_n};
 use num_bigint::BigInt;
-use sierra::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
-use sierra::extensions::ConcreteLibFunc;
-use sierra::ids::ConcreteTypeId;
-use sierra::program::{BranchInfo, BranchTarget, StatementIdx};
-use utils::try_extract_matches;
+use cairo_sierra::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
+use cairo_sierra::extensions::ConcreteLibFunc;
+use cairo_sierra::ids::ConcreteTypeId;
+use cairo_sierra::program::{BranchInfo, BranchTarget, StatementIdx};
+use cairo_utils::try_extract_matches;
 
 use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,

@@ -1,7 +1,7 @@
 /// Macro to try to evaluate an expression as a pattern and extract its fields.
 /// # Examples:
 /// ```
-/// use utils::try_extract_matches;
+/// use cairo_utils::try_extract_matches;
 ///
 /// #[derive(Debug, Clone, Copy)]
 /// struct Point {
@@ -28,7 +28,7 @@ macro_rules! try_extract_matches {
 /// Macro to verify an expression matches a pattern and extract its fields.
 /// # Examples:
 /// ```
-/// use utils::extract_matches;
+/// use cairo_utils::extract_matches;
 ///
 /// #[derive(Debug, Clone, Copy)]
 /// struct Point {

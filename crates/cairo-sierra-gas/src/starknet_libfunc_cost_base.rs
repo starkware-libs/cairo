@@ -1,4 +1,4 @@
-use sierra::extensions::starknet::StarkNetConcreteLibFunc;
+use cairo_sierra::extensions::starknet::StarkNetConcreteLibFunc;
 
 use crate::core_libfunc_cost_base::CostOperations;
 

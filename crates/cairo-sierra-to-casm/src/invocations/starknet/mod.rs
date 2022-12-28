@@ -1,6 +1,6 @@
 use num_bigint::BigInt;
-use sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
-use sierra::extensions::starknet::StarkNetConcreteLibFunc;
+use cairo_sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
+use cairo_sierra::extensions::starknet::StarkNetConcreteLibFunc;
 
 use self::interoperability::{build_call_contract, build_contract_address_const};
 use super::{CompiledInvocation, CompiledInvocationBuilder};

@@ -1,7 +1,7 @@
-use casm::ap_change::ApChange;
-use casm::casm;
+use cairo_casm::ap_change::ApChange;
+use cairo_casm::casm;
 use pretty_assertions::assert_eq;
-use sierra::program::StatementIdx;
+use cairo_sierra::program::StatementIdx;
 
 use crate::invocations::test_utils::{
     compile_libfunc, ReducedBranchChanges, ReducedCompiledInvocation,

@@ -1,13 +1,13 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use ::diagnostics::ToOption;
+use ::cairo_diagnostics::ToOption;
 use anyhow::{bail, Context, Result};
-use filesystem::db::FilesGroupEx;
-use filesystem::ids::CrateId;
-use sierra::program::Program;
-use sierra_generator::db::SierraGenGroup;
-use sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_filesystem::db::FilesGroupEx;
+use cairo_filesystem::ids::CrateId;
+use cairo_sierra::program::Program;
+use cairo_sierra_generator::db::SierraGenGroup;
+use cairo_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
 use crate::db::RootDatabase;
 use crate::diagnostics::{check_diagnostics, eprint_diagnostic};

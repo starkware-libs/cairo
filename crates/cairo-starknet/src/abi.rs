@@ -1,5 +1,5 @@
-use defs::ids::{TraitFunctionId, TraitId};
-use semantic::db::SemanticGroup;
+use cairo_defs::ids::{TraitFunctionId, TraitId};
+use cairo_semantic::db::SemanticGroup;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

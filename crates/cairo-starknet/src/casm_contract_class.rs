@@ -10,16 +10,16 @@ use num_integer::Integer;
 use num_traits::{Num, Signed};
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
-use sierra::extensions::gas::GasBuiltinType;
-use sierra::extensions::modules::starknet::syscalls::SystemType;
-use sierra::extensions::pedersen::PedersenType;
-use sierra::extensions::range_check::RangeCheckType;
-use sierra::extensions::NoGenericArgsGenericType;
-use sierra::ids::ConcreteTypeId;
-use sierra_ap_change::{calc_ap_changes, ApChangeError};
-use sierra_gas::{calc_gas_info, CostError};
-use sierra_to_casm::compiler::CompilationError;
-use sierra_to_casm::metadata::Metadata;
+use cairo_sierra::extensions::gas::GasBuiltinType;
+use cairo_sierra::extensions::modules::starknet::syscalls::SystemType;
+use cairo_sierra::extensions::pedersen::PedersenType;
+use cairo_sierra::extensions::range_check::RangeCheckType;
+use cairo_sierra::extensions::NoGenericArgsGenericType;
+use cairo_sierra::ids::ConcreteTypeId;
+use cairo_sierra_ap_change::{calc_ap_changes, ApChangeError};
+use cairo_sierra_gas::{calc_gas_info, CostError};
+use cairo_sierra_to_casm::compiler::CompilationError;
+use cairo_sierra_to_casm::metadata::Metadata;
 use thiserror::Error;
 
 use crate::contract_class::{ContractClass, ContractEntryPoint};
@@ -68,7 +68,7 @@ impl CasmContractClass {
         let gas_info = calc_gas_info(&program)?;
 
         let gas_usage_check = true;
-        let cairo_program = sierra_to_casm::compiler::compile(
+        let cairo_program = cairo_sierra_to_casm::compiler::compile(
             &program,
             &Metadata { ap_change_info: calc_ap_changes(&program)?, gas_info },
             gas_usage_check,

@@ -1,12 +1,12 @@
 use assert_matches::assert_matches;
-use debug::DebugWithDb;
-use defs::db::DefsGroup;
-use defs::ids::{ModuleItemId, VarId};
+use cairo_debug::DebugWithDb;
+use cairo_defs::db::DefsGroup;
+use cairo_defs::ids::{ModuleItemId, VarId};
+use cairo_utils::extract_matches;
 use indoc::indoc;
 use num_bigint::ToBigInt;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
-use utils::extract_matches;
 
 use crate::corelib::{core_felt_ty, get_core_ty_by_name, unit_ty};
 use crate::db::SemanticGroup;

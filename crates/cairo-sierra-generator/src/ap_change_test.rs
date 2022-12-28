@@ -1,9 +1,9 @@
-use defs::db::DefsGroup;
+use cairo_defs::db::DefsGroup;
 use itertools::Itertools;
-use lowering::db::LoweringGroup;
+use cairo_lowering::db::LoweringGroup;
 use pretty_assertions::assert_eq;
-use semantic::test_utils::setup_test_module;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_semantic::test_utils::setup_test_module;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::test_utils::SierraGenDatabaseForTesting;

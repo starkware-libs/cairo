@@ -24,13 +24,13 @@ macro_rules! define_short_id {
             }
         }
         // Impl transparent DebugWithDb.
-        impl<T: ?Sized + db_utils::Upcast<dyn $db + 'static>> debug::DebugWithDb<T> for $short_id {
+        impl<T: ?Sized + cairo_db_utils::Upcast<dyn $db + 'static>> cairo_debug::DebugWithDb<T> for $short_id {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
                 use std::fmt::Debug;
 
-                use debug::helper::Fallback;
+                use cairo_debug::helper::Fallback;
                 let db = db.upcast();
-                debug::helper::HelperDebug::<$long_id, dyn $db>::helper_debug(
+                cairo_debug::helper::HelperDebug::<$long_id, dyn $db>::helper_debug(
                     &db.$lookup(*self),
                     db,
                 )

@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 
-use db_utils::Upcast;
-use diagnostics::{Diagnostics, DiagnosticsBuilder};
-use filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
-use filesystem::ids::FileId;
-use syntax::node::ast::SyntaxFile;
-use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_db_utils::Upcast;
+use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder};
+use cairo_filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
+use cairo_filesystem::ids::FileId;
+use cairo_syntax::node::ast::SyntaxFile;
+use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 use crate::db::ParserDatabase;
 use crate::parser::Parser;

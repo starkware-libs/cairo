@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 
-use casm::ap_change::ApplyApChange;
-use casm::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
+use cairo_casm::ap_change::ApplyApChange;
+use cairo_casm::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
+use cairo_sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
+use cairo_sierra::ids::{ConcreteTypeId, VarId};
+use cairo_sierra::program::{Function, StatementIdx};
+use cairo_utils::try_extract_matches;
 use num_bigint::BigInt;
 use num_traits::cast::ToPrimitive;
-use sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
-use sierra::ids::{ConcreteTypeId, VarId};
-use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
-use utils::try_extract_matches;
-use {casm, sierra};
+use {cairo_casm, cairo_sierra};
 
 use crate::invocations::InvocationError;
 use crate::type_sizes::TypeSizeMap;
@@ -90,8 +90,8 @@ impl CellExpression {
             ResOperand::Immediate(imm) => Self::Immediate(imm),
             ResOperand::BinOp(op) => Self::BinOp(BinOpExpression {
                 op: match op.op {
-                    casm::operand::Operation::Add => FeltBinaryOperator::Add,
-                    casm::operand::Operation::Mul => FeltBinaryOperator::Mul,
+                    cairo_casm::operand::Operation::Add => FeltBinaryOperator::Add,
+                    cairo_casm::operand::Operation::Mul => FeltBinaryOperator::Mul,
                 },
                 a: op.a,
                 b: op.b,
@@ -142,7 +142,7 @@ impl CellExpression {
             Ok(ResOperand::Deref(base))
         } else {
             Ok(ResOperand::BinOp(BinOpOperand {
-                op: casm::operand::Operation::Add,
+                op: cairo_casm::operand::Operation::Add,
                 a: base,
                 b: DerefOrImmediate::Immediate(offset.into()),
             }))

@@ -2,13 +2,13 @@
 #[path = "local_variables_test.rs"]
 mod test;
 
-use diagnostics::Maybe;
+use cairo_diagnostics::Maybe;
+use cairo_lowering::lower::Lowered;
+use cairo_lowering::{BlockId, VariableId};
+use cairo_sierra::extensions::lib_func::OutputVarInfo;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::ordered_hash_set::OrderedHashSet;
 use itertools::zip_eq;
-use lowering::lower::Lowered;
-use lowering::{BlockId, VariableId};
-use sierra::extensions::lib_func::OutputVarInfo;
-use utils::ordered_hash_map::OrderedHashMap;
-use utils::ordered_hash_set::OrderedHashSet;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
@@ -52,14 +52,14 @@ fn inner_find_local_variables(
         state.use_variables(&statement.inputs(), res);
 
         match statement {
-            lowering::Statement::Literal(statement_literal) => {
+            cairo_lowering::Statement::Literal(statement_literal) => {
                 // Treat literal as a temporary variable.
                 state.set_variable_status(
                     statement_literal.output,
                     VariableStatus::TemporaryVariable,
                 );
             }
-            lowering::Statement::Call(statement_call) => {
+            cairo_lowering::Statement::Call(statement_call) => {
                 let (_, concrete_function_id) =
                     get_concrete_libfunc_id(db, statement_call.function);
 
@@ -72,7 +72,7 @@ fn inner_find_local_variables(
                     &statement_call.outputs,
                 );
             }
-            lowering::Statement::CallBlock(statement_call_block) => {
+            cairo_lowering::Statement::CallBlock(statement_call_block) => {
                 let block_known_ap_change = inner_find_local_variables(
                     db,
                     lowered_function,
@@ -86,7 +86,7 @@ fn inner_find_local_variables(
                 }
                 state.mark_outputs_as_temporary(statement);
             }
-            lowering::Statement::MatchExtern(statement_match_extern) => {
+            cairo_lowering::Statement::MatchExtern(statement_match_extern) => {
                 let (_, concrete_function_id) =
                     get_concrete_libfunc_id(db, statement_match_extern.function);
                 let arm_blocks: Vec<_> =
@@ -101,7 +101,7 @@ fn inner_find_local_variables(
                     res,
                 )?;
             }
-            lowering::Statement::MatchEnum(statement_match_enum) => {
+            cairo_lowering::Statement::MatchEnum(statement_match_enum) => {
                 let concrete_enum_type = db.get_concrete_type_id(
                     lowered_function.variables[statement_match_enum.input].ty,
                 )?;
@@ -121,7 +121,7 @@ fn inner_find_local_variables(
                     res,
                 )?;
             }
-            lowering::Statement::StructConstruct(statement_struct_construct) => {
+            cairo_lowering::Statement::StructConstruct(statement_struct_construct) => {
                 let ty = db.get_concrete_type_id(
                     lowered_function.variables[statement_struct_construct.output].ty,
                 )?;
@@ -134,7 +134,7 @@ fn inner_find_local_variables(
                     &[statement_struct_construct.output],
                 );
             }
-            lowering::Statement::StructDestructure(statement_struct_destructure) => {
+            cairo_lowering::Statement::StructDestructure(statement_struct_destructure) => {
                 let ty = db.get_concrete_type_id(
                     lowered_function.variables[statement_struct_destructure.input].ty,
                 )?;
@@ -147,7 +147,7 @@ fn inner_find_local_variables(
                     &statement_struct_destructure.outputs,
                 );
             }
-            lowering::Statement::EnumConstruct(statement_enum_construct) => {
+            cairo_lowering::Statement::EnumConstruct(statement_enum_construct) => {
                 let ty = db.get_concrete_type_id(
                     lowered_function.variables[statement_enum_construct.output].ty,
                 )?;
@@ -166,25 +166,26 @@ fn inner_find_local_variables(
     // TODO(lior): Handle block.drops.
 
     match &block.end {
-        lowering::BlockEnd::Callsite(vars) | lowering::BlockEnd::Return(vars) => {
+        cairo_lowering::BlockEnd::Callsite(vars) | cairo_lowering::BlockEnd::Return(vars) => {
             state.use_variables(vars, res);
         }
-        lowering::BlockEnd::Unreachable => {}
+        cairo_lowering::BlockEnd::Unreachable => {}
     }
     Ok(known_ap_change)
 }
 
-/// Handles a match ([lowering::Statement::MatchExtern] and [lowering::Statement::MatchEnum]).
+/// Handles a match ([cairo_lowering::Statement::MatchExtern] and
+/// [cairo_lowering::Statement::MatchEnum]).
 ///
 /// Returns true if executing the entire match results in a known ap change.
 fn handle_match(
     db: &dyn SierraGenGroup,
     lowered_function: &Lowered,
-    concrete_function_id: sierra::ids::ConcreteLibFuncId,
+    concrete_function_id: cairo_sierra::ids::ConcreteLibFuncId,
     arm_blocks: &[BlockId],
-    statement: &lowering::Statement,
+    statement: &cairo_lowering::Statement,
     state: &mut LocalVariablesState,
-    res: &mut OrderedHashSet<id_arena::Id<lowering::Variable>>,
+    res: &mut OrderedHashSet<id_arena::Id<cairo_lowering::Variable>>,
 ) -> Maybe<bool> {
     // The number of branches that continue to the next statement after the match.
     let mut reachable_branches: usize = 0;
@@ -205,7 +206,7 @@ fn handle_match(
             inner_find_local_variables(db, lowered_function, *block_id, state_clone, res)?;
 
         // Update reachable_branches and reachable_branches_known_ap_change.
-        if let lowering::BlockEnd::Callsite(_) = lowered_function.blocks[*block_id].end {
+        if let cairo_lowering::BlockEnd::Callsite(_) = lowered_function.blocks[*block_id].end {
             reachable_branches += 1;
             if !inner_known_ap_change {
                 reachable_branches_known_ap_change = false;
@@ -227,14 +228,14 @@ fn handle_match(
 }
 
 /// Helper function for statements that result in a simple function call, such as
-/// [lowering::Statement::Call] and [lowering::Statement::StructConstruct].
+/// [cairo_lowering::Statement::Call] and [cairo_lowering::Statement::StructConstruct].
 fn handle_function_call(
     db: &dyn SierraGenGroup,
     state: &mut LocalVariablesState,
     known_ap_change: &mut bool,
-    concrete_function_id: sierra::ids::ConcreteLibFuncId,
-    inputs: &[lowering::VariableId],
-    outputs: &[lowering::VariableId],
+    concrete_function_id: cairo_sierra::ids::ConcreteLibFuncId,
+    inputs: &[cairo_lowering::VariableId],
+    outputs: &[cairo_lowering::VariableId],
 ) {
     let libfunc_signature = get_libfunc_signature(db, concrete_function_id.clone());
     assert_eq!(
@@ -245,7 +246,7 @@ fn handle_function_call(
     );
 
     match libfunc_signature.branch_signatures[0].ap_change {
-        sierra::extensions::lib_func::SierraApChange::Known { .. } => {}
+        cairo_sierra::extensions::lib_func::SierraApChange::Known { .. } => {}
         _ => {
             state.revoke_temporary_variables();
             *known_ap_change = false;
@@ -301,14 +302,14 @@ impl LocalVariablesState {
     ) {
         for (var_id, var_info) in zip_eq(var_ids, var_infos) {
             match var_info.ref_info {
-                sierra::extensions::OutputVarReferenceInfo::SameAsParam { param_idx } => {
+                cairo_sierra::extensions::OutputVarReferenceInfo::SameAsParam { param_idx } => {
                     self.set_variable_status(*var_id, VariableStatus::Alias(params[param_idx]));
                 }
-                sierra::extensions::OutputVarReferenceInfo::NewTempVar { .. }
-                | sierra::extensions::OutputVarReferenceInfo::Deferred(_) => {
+                cairo_sierra::extensions::OutputVarReferenceInfo::NewTempVar { .. }
+                | cairo_sierra::extensions::OutputVarReferenceInfo::Deferred(_) => {
                     self.set_variable_status(*var_id, VariableStatus::TemporaryVariable);
                 }
-                sierra::extensions::OutputVarReferenceInfo::NewLocalVar => {}
+                cairo_sierra::extensions::OutputVarReferenceInfo::NewLocalVar => {}
             }
         }
     }
@@ -342,7 +343,7 @@ impl LocalVariablesState {
     }
 
     /// Marks all the outputs of the statement as [VariableStatus::TemporaryVariable].
-    fn mark_outputs_as_temporary(&mut self, statement: &lowering::Statement) {
+    fn mark_outputs_as_temporary(&mut self, statement: &cairo_lowering::Statement) {
         for var_id in statement.outputs() {
             self.set_variable_status(var_id, VariableStatus::TemporaryVariable);
         }

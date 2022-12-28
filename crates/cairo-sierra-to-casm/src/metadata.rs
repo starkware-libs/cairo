@@ -1,5 +1,5 @@
-use sierra_ap_change::ap_change_info::ApChangeInfo;
-use sierra_gas::gas_info::GasInfo;
+use cairo_sierra_ap_change::ap_change_info::ApChangeInfo;
+use cairo_sierra_gas::gas_info::GasInfo;
 
 /// Metadata provided with a Sierra program to simplify the compilation to casm.
 pub struct Metadata {

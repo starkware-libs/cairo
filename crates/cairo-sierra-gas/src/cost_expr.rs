@@ -1,8 +1,8 @@
 use core::fmt;
 
-use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::program::StatementIdx;
-use solver::Expr;
+use cairo_eq_solver::Expr;
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::program::StatementIdx;
 
 /// Variable parts of a cost expression.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]

@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
-use casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use sierra::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
-use sierra::extensions::ConcreteLibFunc;
-use sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
-use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use cairo_sierra::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
+use cairo_sierra::extensions::ConcreteLibFunc;
+use cairo_sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
+use cairo_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};

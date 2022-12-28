@@ -4,13 +4,13 @@ mod test;
 
 use std::mem;
 
-use diagnostics::DiagnosticsBuilder;
-use filesystem::ids::FileId;
-use filesystem::span::{TextOffset, TextSpan};
-use syntax::node::ast::*;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::kind::SyntaxKind;
-use syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
+use cairo_diagnostics::DiagnosticsBuilder;
+use cairo_filesystem::ids::FileId;
+use cairo_filesystem::span::{TextOffset, TextSpan};
+use cairo_syntax::node::ast::*;
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::kind::SyntaxKind;
+use cairo_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 
 use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
@@ -95,7 +95,7 @@ impl<'a> Parser<'a> {
 
     /// Returns the missing terminal and adds the corresponding missing token
     /// diagnostic report.
-    fn create_and_report_missing_terminal<Terminal: syntax::node::Terminal>(
+    fn create_and_report_missing_terminal<Terminal: cairo_syntax::node::Terminal>(
         &mut self,
     ) -> Terminal::Green {
         self.create_and_report_missing::<Terminal>(ParserDiagnosticKind::MissingToken(
@@ -1246,7 +1246,7 @@ impl<'a> Parser<'a> {
     /// is added and we continue to try to parse another element (with the same token).
     fn parse_separated_list<
         Element: TypedSyntaxNode,
-        Separator: syntax::node::Terminal,
+        Separator: cairo_syntax::node::Terminal,
         ElementOrSeparatorGreen,
     >(
         &mut self,
@@ -1327,7 +1327,7 @@ impl<'a> Parser<'a> {
 
     /// Skips the current token, reports the given diagnostic and returns missing kind of the
     /// expected terminal.
-    fn skip_token_and_return_missing<ExpectedTerminal: syntax::node::Terminal>(
+    fn skip_token_and_return_missing<ExpectedTerminal: cairo_syntax::node::Terminal>(
         &mut self,
         diagnostic: ParserDiagnosticKind,
     ) -> ExpectedTerminal::Green {
@@ -1337,7 +1337,7 @@ impl<'a> Parser<'a> {
 
     /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
     /// to the given terminal as extra leading trivia.
-    fn add_trivia_to_terminal<Terminal: syntax::node::Terminal>(
+    fn add_trivia_to_terminal<Terminal: cairo_syntax::node::Terminal>(
         &mut self,
         lexer_terminal: LexerTerminal,
     ) -> Terminal::Green {
@@ -1355,7 +1355,7 @@ impl<'a> Parser<'a> {
 
     /// Takes a token from the Lexer and place it in self.current. If tokens were skipped, glue them
     /// to this token as leading trivia.
-    fn take<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
+    fn take<Terminal: cairo_syntax::node::Terminal>(&mut self) -> Terminal::Green {
         let token = self.take_raw();
         assert_eq!(token.kind, Terminal::KIND);
         self.add_trivia_to_terminal::<Terminal>(token)
@@ -1365,7 +1365,7 @@ impl<'a> Parser<'a> {
     /// None.
     /// Note that this function should not be called for 'TerminalIdentifier' -
     /// try_parse_identifier() should be used instead.
-    fn try_parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Option<Terminal::Green> {
+    fn try_parse_token<Terminal: cairo_syntax::node::Terminal>(&mut self) -> Option<Terminal::Green> {
         if Terminal::KIND == self.peek().kind { Some(self.take::<Terminal>()) } else { None }
     }
 
@@ -1374,7 +1374,7 @@ impl<'a> Parser<'a> {
     ///
     /// Note that this function should not be called for 'TerminalIdentifier' - parse_identifier()
     /// should be used instead.
-    fn parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
+    fn parse_token<Terminal: cairo_syntax::node::Terminal>(&mut self) -> Terminal::Green {
         match self.try_parse_token::<Terminal>() {
             Some(green) => green,
             None => self.create_and_report_missing_terminal::<Terminal>(),

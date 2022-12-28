@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use num_bigint::{BigInt, ToBigInt};
 use num_traits::{ToPrimitive, Zero};
-use utils::extract_matches;
+use cairo_utils::extract_matches;
 
 use super::value::CoreValue;
 use super::LibFuncSimulationError;

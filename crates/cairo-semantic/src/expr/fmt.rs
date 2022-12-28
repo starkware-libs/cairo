@@ -1,6 +1,6 @@
-use db_utils::Upcast;
-use defs::db::DefsGroup;
-use defs::ids::FreeFunctionId;
+use cairo_db_utils::Upcast;
+use cairo_defs::db::DefsGroup;
+use cairo_defs::ids::FreeFunctionId;
 
 use crate::db::SemanticGroup;
 
