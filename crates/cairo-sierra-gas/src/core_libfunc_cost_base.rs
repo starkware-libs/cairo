@@ -63,7 +63,8 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.const_cost(2), ops.const_cost(2)],
-        Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(3), ops.const_cost(3)],
+        Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(6), ops.const_cost(6)],
+        Ec(EcConcreteLibfunc::InitState(_)) => vec![ops.const_cost(15)],
         Gas(GetGas(_)) => {
             vec![
                 ops.sub(ops.const_cost(3), ops.statement_var_cost(CostTokenType::Step)),
