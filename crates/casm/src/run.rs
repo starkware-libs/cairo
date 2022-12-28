@@ -153,6 +153,7 @@ impl HintProcessor for CairoHintProcessor {
             Hint::EnterScope => todo!(),
             Hint::ExitScope => todo!(),
             Hint::DictSquashHints { .. } => todo!(),
+            Hint::RandomEcPoint { .. } => todo!(),
             Hint::SystemCall { .. } => todo!(),
         };
         Ok(())
