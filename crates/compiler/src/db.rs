@@ -8,6 +8,7 @@ use lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use parser::db::ParserDatabase;
 use plugins::get_default_plugins;
 use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use semantic::plugin::SemanticPlugin;
 use sierra_generator::db::SierraGenDatabase;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
@@ -24,14 +25,21 @@ pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }
 impl salsa::Database for RootDatabase {}
-impl Default for RootDatabase {
-    fn default() -> Self {
+impl RootDatabase {
+    pub fn new(extra_plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_lowering_group(&mut res);
         // TODO(spapini): Consider taking from config.
-        res.set_semantic_plugins(get_default_plugins());
+        let mut plugins = get_default_plugins();
+        plugins.extend(extra_plugins.into_iter());
+        res.set_semantic_plugins(plugins);
         res
+    }
+}
+impl Default for RootDatabase {
+    fn default() -> Self {
+        Self::new(vec![])
     }
 }
 impl AsFilesGroupMut for RootDatabase {
