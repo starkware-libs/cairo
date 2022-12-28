@@ -1,0 +1,15 @@
+[package]
+name = "cairo-diagnostics-proc-macros"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+proc-macro = true
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["cairo-debug"]
+
+[dependencies]
+cairo-debug = { path = "../cairo-debug" }
+quote.workspace = true
+syn.workspace = true

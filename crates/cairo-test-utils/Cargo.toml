@@ -1,0 +1,13 @@
+[package]
+name = "cairo-test-utils"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+cairo-utils = { path = "../cairo-utils" }
+log.workspace = true
+env_logger.workspace = true
+pretty_assertions.workspace = true
+
+[dev-dependencies]
+test-log.workspace = true

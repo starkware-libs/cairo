@@ -1,0 +1,17 @@
+[package]
+name = "cairo-diagnostics"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-filesystem = { path = "../cairo-filesystem" }
+itertools.workspace = true
+salsa.workspace = true
+
+[dev-dependencies]
+cairo-diagnostics-proc-macros = { path = "../cairo-diagnostics-proc-macros" }
+env_logger.workspace = true
+indoc.workspace = true
+pretty_assertions.workspace = true
+test-log.workspace = true

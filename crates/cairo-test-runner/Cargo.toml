@@ -1,0 +1,34 @@
+[package]
+name = "cairo-test-runner"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+cairo-rs.workspace = true
+cairo-casm = { path = "../cairo-casm" }
+clap.workspace = true
+colored.workspace = true
+cairo-compiler = { path = "../cairo-compiler" }
+cairo-debug = { path = "../cairo-debug" }
+cairo-defs = { path = "../cairo-defs" }
+cairo-diagnostics = { path = "../cairo-diagnostics" }
+cairo-filesystem = { path = "../cairo-filesystem" }
+itertools.workspace = true
+num-bigint.workspace = true
+cairo-project = { path = "../cairo-project" }
+rayon.workspace = true
+cairo-runner = { path = "../cairo-runner" }
+salsa.workspace = true
+cairo-semantic = { path = "../cairo-semantic" }
+cairo-sierra = { path = "../cairo-sierra" }
+cairo-sierra-generator = { path = "../cairo-sierra-generator" }
+cairo-sierra-to-casm = { path = "../cairo-sierra-to-casm" }
+cairo-starknet = { path = "../cairo-starknet" }
+cairo-syntax = { path = "../cairo-syntax" }
+thiserror.workspace = true
+cairo-utils = { path = "../cairo-utils" }
+
+[[bin]]
+name = "cairo-test"
+path = "src/cli.rs"

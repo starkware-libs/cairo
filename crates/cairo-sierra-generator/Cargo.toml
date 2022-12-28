@@ -1,0 +1,37 @@
+[package]
+name = "cairo-sierra-generator"
+version.workspace = true
+edition.workspace = true
+
+[features]
+testing = []
+
+[dependencies]
+cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-debug = { path = "../cairo-debug" }
+cairo-defs = { path = "../cairo-defs" }
+cairo-diagnostics = { path = "../cairo-diagnostics" }
+cairo-diagnostics-proc-macros = { path = "../cairo-diagnostics-proc-macros" }
+cairo-filesystem = { path = "../cairo-filesystem" }
+id-arena.workspace = true
+itertools.workspace = true
+cairo-lowering = { path = "../cairo-lowering" }
+num-bigint.workspace = true
+cairo-parser = { path = "../cairo-parser" }
+cairo-plugins = { path = "../cairo-plugins" }
+salsa.workspace = true
+cairo-semantic = { path = "../cairo-semantic" }
+cairo-sierra = { path = "../cairo-sierra" }
+smol_str.workspace = true
+cairo-syntax = { path = "../cairo-syntax" }
+cairo-utils = { path = "../cairo-utils" }
+
+[dev-dependencies]
+env_logger.workspace = true
+indoc.workspace = true
+log.workspace = true
+pretty_assertions.workspace = true
+cairo-semantic = { path = "../cairo-semantic", features = ["testing"] }
+test-case.workspace = true
+cairo-test-utils = { path = "../cairo-test-utils" }
+test-log.workspace = true
