@@ -14,7 +14,7 @@ use crate::extensions::core::CoreConcreteLibfunc::{
     Gas, Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
-use crate::extensions::ec::EcConcreteLibfunc::CreatePoint;
+use crate::extensions::ec::EcConcreteLibfunc::{CreatePoint, InitState};
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt::{
     FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
@@ -86,6 +86,7 @@ pub fn simulate<
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Ec(InitState(_)) => todo!(),
         FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
