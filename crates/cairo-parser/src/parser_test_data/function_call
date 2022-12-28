@@ -13,6 +13,8 @@ ExprFunctionCall
 
 //! > ignored_kinds
 
+//! > expected_diagnostics
+
 //! > expected_tree
 └── Top level kind: ExprFunctionCall
     ├── path (kind: ExprPath)

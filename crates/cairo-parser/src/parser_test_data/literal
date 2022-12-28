@@ -14,6 +14,8 @@ StatementLet
 //! > ignored_kinds
 ExprPath
 
+//! > expected_diagnostics
+
 //! > expected_tree
 └── Top level kind: StatementLet
     ├── let_kw (kind: TokenLet): 'let'

@@ -11,6 +11,8 @@ ItemModule
 
 //! > ignored_kinds
 
+//! > expected_diagnostics
+
 //! > expected_tree
 └── Top level kind: ItemModule
     ├── attributes (kind: AttributeList) []
@@ -49,6 +51,8 @@ ItemFreeFunction
 ItemTrait
 ItemImpl
 ItemStruct
+
+//! > expected_diagnostics
 
 //! > expected_tree
 └── Top level kind: ItemModule

@@ -13,6 +13,8 @@ FunctionSignature
 
 //! > ignored_kinds
 
+//! > expected_diagnostics
+
 //! > expected_tree
 └── Top level kind: FunctionSignature
     ├── lparen (kind: TokenLParen): '('
