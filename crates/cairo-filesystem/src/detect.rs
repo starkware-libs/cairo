@@ -17,12 +17,18 @@ pub fn detect_corelib() -> PathBuf {
             return dir;
         }
     }
-    if let Ok(mut exe_dir) = std::env::current_exe() {
-        exe_dir.pop();
-        exe_dir.pop();
-        exe_dir.push("corelib");
-        if exe_dir.exists() {
-            return exe_dir;
+    if let Ok(mut dir) = std::env::current_exe() {
+        dir.pop();
+        dir.pop();
+        dir.push("corelib");
+        if dir.exists() {
+            return dir;
+        }
+        dir.pop();
+        dir.pop();
+        dir.push("corelib");
+        if dir.exists() {
+            return dir;
         }
     }
     panic!("Corelib not found.")

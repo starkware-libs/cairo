@@ -223,8 +223,12 @@ fn generate_entry_point_wrapper(
                     panic(err_data);
                 },
             }
+
             $arg_definitions
             if array_len::<felt>(data) != 0_u128 {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
                 let mut err_data = array_new::<felt>();
                 array_append::<felt>(err_data, $input_data_long_err);
                 panic(err_data);

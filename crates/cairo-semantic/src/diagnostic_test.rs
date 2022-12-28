@@ -5,6 +5,7 @@ use cairo_defs::ids::ModuleId;
 use cairo_defs::plugin::{
     DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginGeneratedFile, PluginResult,
 };
+use cairo_diagnostics::DiagnosticEntry;
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::{ast, Terminal};
 use indoc::indoc;
@@ -158,14 +159,14 @@ impl AsDynGeneratedFileAuxData for PatchMapper {
 impl DiagnosticMapper for PatchMapper {
     fn map_diag(
         &self,
-        db: &dyn SemanticGroup,
+        db: &(dyn SemanticGroup + 'static),
         diag: &dyn std::any::Any,
     ) -> Option<PluginMappedDiagnostic> {
         let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
         let span = self
             .patches
             .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
-        Some(PluginMappedDiagnostic { span, message: "Mapped error.".into() })
+        Some(PluginMappedDiagnostic { span, message: format!("Mapped error. {}", diag.format(db)) })
     }
 }
 
@@ -195,7 +196,7 @@ fn test_inline_module_diagnostics() {
                     return 5;
                            ^
 
-            error: Plugin diagnostic: Mapped error.
+            error: Plugin diagnostic: Mapped error. Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt".
              --> lib.cairo:4:16
                     return 5;
                            ^
