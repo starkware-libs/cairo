@@ -118,6 +118,10 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         Self(DiagnosticsBuilder::default().into())
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.leaves.is_empty() && self.0.subtrees.iter().all(|subtree| subtree.is_empty())
+    }
+
     pub fn format(&self, db: &TEntry::DbType) -> String {
         let mut res = String::new();
         // Format leaves.

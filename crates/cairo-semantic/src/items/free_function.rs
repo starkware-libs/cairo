@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_defs::ids::{FreeFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
-use cairo_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_diagnostics::{DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::ast;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
@@ -139,7 +139,7 @@ pub struct FreeFunctionDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
     resolved_lookback: Arc<ResolvedLookback>,
-    definition: Arc<FreeFunctionDefinition>,
+    definition: Maybe<Arc<FreeFunctionDefinition>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -170,7 +170,7 @@ pub fn free_function_definition_body(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<semantic::ExprId> {
-    Ok(db.priv_free_function_definition_data(free_function_id)?.definition.body)
+    Ok(db.priv_free_function_definition_data(free_function_id)?.definition?.body)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_definition_direct_callees].
@@ -178,7 +178,7 @@ pub fn free_function_definition_direct_callees(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<Vec<FunctionId>> {
-    Ok(db.priv_free_function_definition_data(free_function_id)?.definition.direct_callees.clone())
+    Ok(db.priv_free_function_definition_data(free_function_id)?.definition?.direct_callees.clone())
 }
 
 /// Query implementation of
@@ -204,7 +204,7 @@ pub fn free_function_definition(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<Arc<FreeFunctionDefinition>> {
-    Ok(db.priv_free_function_definition_data(free_function_id)?.definition)
+    db.priv_free_function_definition_data(free_function_id)?.definition
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_definition_resolved_lookback].
@@ -266,17 +266,18 @@ pub fn priv_free_function_definition_data(
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
     let resolved_lookback = Arc::new(resolver.lookback);
-    Ok(FreeFunctionDefinitionData {
-        diagnostics: diagnostics.build(),
-        expr_lookup,
-        resolved_lookback,
-        definition: Arc::new(FreeFunctionDefinition {
+    let diagnostics = diagnostics.build();
+    let definition = if diagnostics.is_empty() {
+        Ok(Arc::new(FreeFunctionDefinition {
             exprs,
             statements,
             body,
             direct_callees: direct_callees.into_iter().collect(),
-        }),
-    })
+        }))
+    } else {
+        Err(DiagnosticAdded)
+    };
+    Ok(FreeFunctionDefinitionData { diagnostics, expr_lookup, resolved_lookback, definition })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::expr_semantic].
@@ -289,6 +290,7 @@ pub fn expr_semantic(
     db.priv_free_function_definition_data(free_function_id)
         .unwrap()
         .definition
+        .unwrap()
         .exprs
         .get(id)
         .unwrap()
@@ -305,6 +307,7 @@ pub fn statement_semantic(
     db.priv_free_function_definition_data(free_function_id)
         .unwrap()
         .definition
+        .unwrap()
         .statements
         .get(id)
         .unwrap()
