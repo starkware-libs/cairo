@@ -8,6 +8,7 @@ use super::dict_felt_to::{DictFeltToLibFunc, DictFeltToType};
 use super::dict_manager::DictManagerType;
 use super::drop::DropLibFunc;
 use super::duplicate::DupLibFunc;
+use super::ec::{EcLibFunc, EcPointType};
 use super::enm::{EnumLibFunc, EnumType};
 use super::modules::boxing::{BoxLibFunc, BoxType};
 use super::modules::felt::{FeltLibFunc, FeltType};
@@ -31,6 +32,7 @@ define_type_hierarchy! {
         Array(ArrayType),
         Bitwise(BitwiseType),
         Box(BoxType),
+        EcPoint(EcPointType),
         Felt(FeltType),
         GasBuiltin(GasBuiltinType),
         BuiltinCosts(BuiltinCostsType),
@@ -60,6 +62,7 @@ define_libfunc_hierarchy! {
         BuiltinCost(BuiltinCostLibFunc),
         Drop(DropLibFunc),
         Dup(DupLibFunc),
+        Ec(EcLibFunc),
         Felt(FeltLibFunc),
         FunctionCall(FunctionCallLibFunc),
         Gas(GasLibFunc),

@@ -52,6 +52,7 @@ fn bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
     !(a == b)
 }
 
+// Felt.
 extern type RangeCheck;
 
 extern type felt;
@@ -138,6 +139,12 @@ use result::Result;
 // Option.
 mod option;
 use option::Option;
+
+// EC.
+mod ec;
+use ec::EcPoint;
+use ec::ec_point_from_felts;
+use ec::ec_point_try_create;
 
 // Integer.
 mod integer;

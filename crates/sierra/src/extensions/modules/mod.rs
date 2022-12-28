@@ -17,6 +17,7 @@ pub mod dict_felt_to;
 pub mod dict_manager;
 pub mod drop;
 pub mod duplicate;
+pub mod ec;
 pub mod enm;
 pub mod felt;
 pub mod function_call;
