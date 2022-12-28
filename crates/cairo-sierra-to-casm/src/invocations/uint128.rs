@@ -174,83 +174,87 @@ fn build_u128_op(
             casm_build_extend! {casm_builder,
                 tempvar a0;
                 tempvar a1;
-                tempvar b0;
-                tempvar b1;
                 const u64_limit = u64::MAX as u128 + 1;
+                // Break a into two 64bit halves s.t. a = a1 * 2**64 + a0.
+                hint DivMod { lhs: a, rhs: u64_limit } into { quotient: a1, remainder: a0 };
 
-                // Breaks a and b to 64bit halves:
-                hint DivMod { lhs: a, rhs: u64_limit } into { quotient: a1, remainder: a0 }; // a = a1 * 2**64 + a0.
-                hint DivMod { lhs: b, rhs: u64_limit } into { quotient: b1, remainder: b0 }; // b = b1 * 2**64 + b0.
-
-                // Verify that a0, a1, b0, b1 in [0, 2**128).
-                assert a0 = *(range_check++);
-                assert a1 = *(range_check++);
-                assert b0 = *(range_check++);
-                assert b1 = *(range_check++);
-
-                // Verify that a0, b0 < 2**64 by constraining {var} + (2**128-1) - (2**64-1) < 2**128.
+                // Verify that a0 < 2**64 by constraining a0 + (2**128-1) - (2**64-1) < 2**128.
                 const u64_upper_fixer = u128::MAX - u64::MAX as u128;
                 tempvar fixed_a0 = a0 + u64_upper_fixer;
-                tempvar fixed_b0 = b0 + u64_upper_fixer;
                 assert fixed_a0 = *(range_check++);
-                assert fixed_b0 = *(range_check++);
+                // Verify that a0, a1 are in [0, 2**128).
+                assert a0 = *(range_check++);
+                assert a1 = *(range_check++);
+                // Overall, we now have a0 in [0, 2**64) and a1 in [0, 2**128).
 
-                // Check the a,b break:
-                // a = a1 * 2**64 + a0.
+                // Check the break: a = a1 * 2**64 + a0.
                 // Note: `a` is uint128, the assertion will fail if a1 >= 2**64.
                 tempvar a1_times_2_64 = a1 * u64_limit;
                 assert a = a1_times_2_64 + a0;
-                // b = b1 * 2**64 + b0.
-                // Note: `b` is uint128, the assertion will fail if b1 >= 2**64.
-                tempvar b1_times_2_64 = b1 * u64_limit;
-                assert b = b1_times_2_64 + b0;
 
-                // These four ai_bi are each comprised verified u64 * u64 => within u128.
-                tempvar a0_b0 = a0 * b0;
-                tempvar a0_b1 = a0 * b1;
-                tempvar a1_b0 = a1 * b0;
-                tempvar a1_b1 = a1 * b1;
+
+                tempvar a0_b = a0 * b;
+                tempvar a1_b = a1 * b;
+                // An overview of the calculation to follow:
+                // The final 256 bits result should equal a1_b * 2 ** 64 + a0_b, where the lower 128
+                // bits are packed into `lower_uint128` and the higher bits go into `upper_uint128`.
+                //
+                // Since a0_b, a1_b are comprised of verified u64 * u128 => each fits within 192 bits.
+                // * The lower 128 bits of a0_b should go into the resulting `lower_uint128` and the
+                // upper 64 bits must carry over to the resulting `upper_uint128`.
+                // * Let's mark `b = b1 * 2**64 + b0` (same split as in `a`). Then
+                // a1_b = a1 * (b1 * 2**64 + b0) = a1b1 * (2**64) + a1b0. The bottom 64 bits of a1b0
+                // (which are also the lower 64 bits of a1_b) should be summed into the 64-msbs of
+                // `lower_uint128` and the remaining bits of a1b0 (which is u64*u64=>u128) as well
+                // as a1b1*(2**64) should fit into `upper_uint128`.
+
+                tempvar partial_upper_word;
+                tempvar a1_b0_bottom;
+                // Break a1_b into 128 and 64 bits parts, as explained above.
+                hint DivMod { lhs: a1_b, rhs: u64_limit } into { quotient: partial_upper_word, remainder: a1_b0_bottom };
+
+                // Verify that a1_b0_bottom is in [0, 2**64) and partial_upper_word in [0, 2**128).
+                tempvar fixed_a1_b0_bottom = a1_b0_bottom + u64_upper_fixer;
+                assert fixed_a1_b0_bottom = *(range_check++);
+                assert a1_b0_bottom = *(range_check++);
+                assert partial_upper_word = *(range_check++);
+                // Check the break.
+                tempvar partial_upper_word_times_2_64 = partial_upper_word * u64_limit;
+                assert a1_b = partial_upper_word_times_2_64 + a1_b0_bottom;
 
                 // Build the resulting two uint128 words from the calculated parts:
-                tempvar a0_b1_plus_a1_b0 = a0_b1 + a1_b0;
-                tempvar shifted_a0_b1_plus_a1_b0 = a0_b1_plus_a1_b0 * u64_limit;
-
-                tempvar lower_uint128_with_carry;
+                tempvar shifted_a1_b0_bottom = a1_b0_bottom * u64_limit;
                 tempvar carry;
                 tempvar fixed_carry;
                 tempvar shifted_carry;
+                tempvar lower_uint128_with_carry;
 
                 tempvar upper_uint128;
                 tempvar lower_uint128;
 
                 // Lower uint128 word:
-                assert lower_uint128_with_carry = shifted_a0_b1_plus_a1_b0 + a0_b0;
-                // Note that `lower_uint128_with_carry` is always bounded by 194 bits since:
-                // * `a0_b0`, `a0_b1` and `a1_b0` are each capped by 128 bits.
-                // * `a0_b1 + a1_b0` is capped by 129 bits => `shifted_a0_b1_plus_a1_b0` is capped
-                //    by 129+64=193 bits.
-                // * `a0_b0` can contribute at most 1 additional bit, added to (the carry of)
-                //   `lower_uint128_with_carry = shifted_a0_b1_plus_a1_b0 + a0_b0`.
+                assert lower_uint128_with_carry = a0_b + shifted_a1_b0_bottom;
+                // Note that `lower_uint128_with_carry` is bounded by 193 bits, as `a0_b` is capped
+                // at 192 bits and `shifted_a1_b0_bottom` can contribute at most 1 additional bit,
+                // added to (the carry of) `lower_uint128_with_carry = a0_b + shifted_a1_b0_bottom`.
                 const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
                 hint DivMod { lhs: lower_uint128_with_carry, rhs: u128_limit } into { quotient: carry, remainder: lower_uint128 };
-                // Verify the resulting lower_uint128 is indeed uint128 and that carry >= 0.
-                assert lower_uint128 = *(range_check++);
-                assert carry = *(range_check++);
-                // Verify that carry < 2**66 by constraining carry + (2**128-1) - (2**66-1) < 2**128.
-                const carry_range_fixer = u128::MAX - (2u128.pow(66) - 1);
+
+                // Verify that `carry` is in [0, 2**65) and `lower_uint128` is in [0, 2**128).
+                const carry_range_fixer = u128::MAX - (2u128.pow(65) - 1);
                 assert fixed_carry = carry + carry_range_fixer;
                 assert fixed_carry = *(range_check++);
+                assert carry = *(range_check++);
+                assert lower_uint128 = *(range_check++);
                 // Verify the outputted `lower_uint128` and `carry` from the DivMod hint.
                 assert shifted_carry = carry * u128_limit;
                 assert lower_uint128_with_carry = shifted_carry + lower_uint128;
                 // Note that reconstruction of the felt `lower_uint128_with_carry` is performed
-                // with no wrap-around: `carry` was capped at 66 bits and then shifted 128 bits.
-                // `lower_uint128` is range-checked for 128 bits. Overall, within 194 bits range.
+                // with no wrap-around: `carry` was capped at 65 bits and then shifted 128 bits.
+                // `lower_uint128` is range-checked for 128 bits. Overall, within 193 bits range.
 
                 // Upper uint128 word:
-                assert upper_uint128 = a1_b1 + carry;
-
-
+                assert upper_uint128 = partial_upper_word + carry;
             };
             Ok(builder.build_from_casm_builder(
                 casm_builder,
