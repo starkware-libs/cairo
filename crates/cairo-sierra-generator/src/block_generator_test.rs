@@ -5,6 +5,7 @@ use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use super::generate_block_code;
 use crate::expr_generator_context::ExprGeneratorContext;
+use crate::lifetime::find_variable_lifetime;
 use crate::replace_ids::replace_sierra_ids;
 use crate::test_utils::SierraGenDatabaseForTesting;
 use crate::SierraGeneratorDiagnostic;
@@ -50,8 +51,15 @@ fn block_generator_test(
 
     // Generate (pre-)Sierra statements.
     let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
-    let mut expr_generator_context =
-        ExprGeneratorContext::new(db, &lowered, test_function.function_id, &mut diagnostics);
+    let lifetime =
+        find_variable_lifetime(&lowered).expect("Failed to retrieve lifetime information.");
+    let mut expr_generator_context = ExprGeneratorContext::new(
+        db,
+        &lowered,
+        test_function.function_id,
+        &lifetime,
+        &mut diagnostics,
+    );
     let statements_opt = generate_block_code(&mut expr_generator_context, block);
     let expected_sierra_code = statements_opt.map_or("None".into(), |statements| {
         statements
