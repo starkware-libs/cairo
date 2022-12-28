@@ -1,0 +1,11 @@
+[package]
+name = "cairo-debug"
+version.workspace = true
+edition.workspace = true
+
+[dev-dependencies]
+cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-diagnostics-proc-macros = { path = "../cairo-diagnostics-proc-macros" }
+env_logger.workspace = true
+salsa.workspace = true
+test-log.workspace = true

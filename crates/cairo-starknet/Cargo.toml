@@ -1,0 +1,54 @@
+[package]
+name = "cairo-starknet"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+cairo-compiler = { path = "../cairo-compiler" }
+convert_case.workspace = true
+cairo-defs = { path = "../cairo-defs" }
+cairo-diagnostics = { path = "../cairo-diagnostics" }
+cairo-filesystem = { path = "../cairo-filesystem" }
+genco.workspace = true
+itertools.workspace = true
+log.workspace = true
+cairo-semantic = { path = "../cairo-semantic" }
+serde.workspace = true
+serde_json.workspace = true
+cairo-sierra = { path = "../cairo-sierra" }
+cairo-sierra-ap-change = { path = "../cairo-sierra-ap-change" }
+cairo-sierra-generator = { path = "../cairo-sierra-generator" }
+cairo-syntax = { path = "../cairo-syntax" }
+cairo-sierra-gas = { path = "../cairo-sierra-gas" }
+cairo-sierra-to-casm = { path = "../cairo-sierra-to-casm" }
+sha3.workspace = true
+smol_str.workspace = true
+thiserror.workspace = true
+num-bigint.workspace = true
+num-traits.workspace = true
+num-integer.workspace = true
+cairo-utils = { path = "../cairo-utils" }
+cairo-lowering = { path = "../cairo-lowering" }
+cairo-plugins = { path = "../cairo-plugins" }
+cairo-parser = { path = "../cairo-parser" }
+
+[dev-dependencies]
+cairo-diagnostics = { path = "../cairo-diagnostics" }
+env_logger.workspace = true
+cairo-formatter = { path = "../cairo-formatter" }
+indoc.workspace = true
+pretty_assertions.workspace = true
+cairo-semantic = { path = "../cairo-semantic", features = ["testing"] }
+test-log.workspace = true
+cairo-test-utils = { path = "../cairo-test-utils" }
+test-case.workspace = true
+
+[[bin]]
+name = "starknet-compile"
+path = "src/cli.rs"
+
+[[bin]]
+name = "starknet-sierra-compile"
+path = "src/starknet_sierra_compile.rs"

@@ -1,0 +1,25 @@
+[package]
+name = "cairo-plugins"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-defs = { path = "../cairo-defs" }
+cairo-diagnostics = { path = "../cairo-diagnostics" }
+cairo-filesystem = { path = "../cairo-filesystem" }
+indoc.workspace = true
+itertools.workspace = true
+cairo-parser = { path = "../cairo-parser" }
+pretty_assertions.workspace = true
+salsa.workspace = true
+cairo-semantic = { path = "../cairo-semantic" }
+smol_str.workspace = true
+cairo-syntax = { path = "../cairo-syntax" }
+cairo-utils = { path = "../cairo-utils" }
+
+[dev-dependencies]
+cairo-debug = { path = "../cairo-debug" }
+indoc.workspace = true
+cairo-parser = { path = "../cairo-parser" }
+test-case.workspace = true

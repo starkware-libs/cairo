@@ -1,0 +1,17 @@
+[package]
+name = "cairo-sierra-gas"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+itertools.workspace = true
+cairo-sierra = { path = "../cairo-sierra" }
+cairo-eq-solver = { path = "../cairo-eq-solver" }
+thiserror.workspace = true
+cairo-utils = { path = "../cairo-utils" }
+
+[dev-dependencies]
+env_logger.workspace = true
+indoc.workspace = true
+test-case.workspace = true
+test-log.workspace = true

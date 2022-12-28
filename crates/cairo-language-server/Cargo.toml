@@ -1,0 +1,32 @@
+[package]
+name = "cairo-language-server"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "cairo-language-server"
+path = "src/bin/languageserver.rs"
+
+[dependencies]
+cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-defs = { path = "../cairo-defs" }
+cairo-debug = { path = "../cairo-debug" }
+cairo-diagnostics = { path = "../cairo-diagnostics" }
+cairo-lowering = { path = "../cairo-lowering" }
+cairo-semantic = { path = "../cairo-semantic" }
+cairo-formatter = { path = "../cairo-formatter" }
+cairo-parser = { path = "../cairo-parser" }
+cairo-plugins = { path = "../cairo-plugins" }
+cairo-project = { path = "../cairo-project" }
+cairo-syntax = { path = "../cairo-syntax" }
+cairo-filesystem = { path = "../cairo-filesystem" }
+tokio.workspace = true
+tower-lsp.workspace = true
+lsp.workspace = true
+serde_json.workspace = true
+salsa.workspace = true
+cairo-utils = { path = "../cairo-utils" }
+
+[dev-dependencies]
+test-log.workspace = true
+

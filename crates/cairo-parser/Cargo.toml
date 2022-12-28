@@ -1,0 +1,27 @@
+[package]
+name = "cairo-parser"
+version.workspace = true
+edition.workspace = true
+
+[features]
+fix_parser_tests = ["cairo-utils/testing"]
+
+[dependencies]
+colored.workspace = true
+cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-diagnostics = { path = "../cairo-diagnostics" }
+cairo-filesystem = { path = "../cairo-filesystem" }
+itertools.workspace = true
+log.workspace = true
+salsa.workspace = true
+smol_str.workspace = true
+cairo-syntax = { path = "../cairo-syntax" }
+cairo-syntax-codegen = { path = "../cairo-syntax-codegen" }
+cairo-utils = { path = "../cairo-utils" }
+
+[dev-dependencies]
+env_logger.workspace = true
+pretty_assertions.workspace = true
+test-case.workspace = true
+test-log.workspace = true
+cairo-test-utils = { path = "../cairo-test-utils" }
