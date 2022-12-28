@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_debug::debug::DebugWithDb;
 use cairo_filesystem::db::{
     init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
@@ -9,7 +8,7 @@ use cairo_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_parser::db::ParserDatabase;
 use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_utils::{extract_matches, try_extract_matches};
+use cairo_utils::{extract_matches, try_extract_matches, Upcast};
 use indoc::indoc;
 
 use crate::db::{DefsDatabase, DefsGroup, HasMacroPlugins};

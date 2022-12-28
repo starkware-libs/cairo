@@ -2,6 +2,9 @@
 name = "tests"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = ""
 
 [dev-dependencies]
 assert_matches.workspace = true

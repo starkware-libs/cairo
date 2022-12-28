@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 
-use cairo_db_utils::define_short_id;
 use cairo_debug::DebugWithDb;
 use cairo_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId,
 };
 use cairo_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use cairo_syntax::node::ast;
-use cairo_utils::OptionFrom;
+use cairo_utils::{define_short_id, OptionFrom};
 use itertools::Itertools;
 
 use crate::corelib::{concrete_copy_trait, concrete_drop_trait};

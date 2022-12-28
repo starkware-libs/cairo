@@ -2,10 +2,13 @@
 name = "cairo-debug"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Debug utilities for query objects."
 
 [dev-dependencies]
-cairo-db-utils = { path = "../cairo-db-utils" }
-cairo-diagnostics-proc-macros = { path = "../cairo-diagnostics-proc-macros" }
+cairo-utils = { path = "../cairo-utils" }
+cairo-proc-macros = { path = "../cairo-proc-macros" }
 env_logger.workspace = true
 salsa.workspace = true
 test-log.workspace = true

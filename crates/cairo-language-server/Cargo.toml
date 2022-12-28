@@ -2,13 +2,15 @@
 name = "cairo-language-server"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo language server."
 
 [[bin]]
 name = "cairo-language-server"
 path = "src/bin/language_server.rs"
 
 [dependencies]
-cairo-db-utils = { path = "../cairo-db-utils" }
 cairo-defs = { path = "../cairo-defs" }
 cairo-debug = { path = "../cairo-debug" }
 cairo-diagnostics = { path = "../cairo-diagnostics" }

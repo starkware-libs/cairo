@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::ids::{FreeFunctionId, ModuleId};
 use cairo_diagnostics::{Diagnostics, Maybe};
 use cairo_filesystem::ids::CrateId;
@@ -10,6 +9,7 @@ use cairo_semantic::{GenericArgumentId, Mutability};
 use cairo_sierra::extensions::lib_func::SierraApChange;
 use cairo_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_sierra::ids::ConcreteTypeId;
+use cairo_utils::Upcast;
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;

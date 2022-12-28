@@ -2,6 +2,9 @@
 name = "cairo-test-runner"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo tests runner. Used to run tests written in Cairo."
 
 [dependencies]
 anyhow.workspace = true

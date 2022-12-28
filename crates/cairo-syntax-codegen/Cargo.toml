@@ -2,6 +2,9 @@
 name = "cairo-syntax-codegen"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo syntax code generation."
 
 [package.metadata.cargo-udeps.ignore]
 normal = ["cairo-syntax"]
