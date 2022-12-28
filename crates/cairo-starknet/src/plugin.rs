@@ -69,6 +69,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             };
         }
     };
+    let mut diagnostics = vec![];
 
     let contract_name = module_ast.name(db).text(db).to_string();
     let mut generated_external_functions = rust::Tokens::new();
@@ -82,15 +83,14 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 if item_function.has_attr(db, EXTERNAL_ATTR)
                     || item_function.has_attr(db, VIEW_ATTR) =>
             {
-                {
-                    let declaration = item_function.declaration(db).as_syntax_node().get_text(db);
-                    external_declarations.append(quote! {$declaration;});
-
-                    // TODO(ilya): propagate the diagnostics in case of failure.
-                    if let Some(generated_function) =
-                        generate_entry_point_wrapper(db, item_function)
-                    {
+                let declaration = item_function.declaration(db).as_syntax_node().get_text(db);
+                external_declarations.append(quote! {$declaration;});
+                match generate_entry_point_wrapper(db, item_function) {
+                    Ok(generated_function) => {
                         generated_external_functions.append(generated_function);
+                    }
+                    Err(entry_point_diagnostics) => {
+                        diagnostics.extend(entry_point_diagnostics);
                     }
                 }
             }
@@ -130,7 +130,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             content: cairo_formatter::format_string(db, contract_code),
             aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
         }),
-        diagnostics: vec![],
+        diagnostics,
         remove_original_item: true,
     }
 }
@@ -161,25 +161,45 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> S
     code_tokens.to_string().unwrap()
 }
 
+/// Returns the serde functions for a type.
+// TODO(orizi): Use type ids when semantic information is available.
+// TODO(orizi): Use traits for serialization when supported.
+fn get_type_serde_funcs(name: &str) -> Option<(&str, &str)> {
+    match name.trim() {
+        "felt" => Some(("serde::serialize_felt", "serde::deserialize_felt")),
+        "bool" => Some(("serde::serialize_bool", "serde::deserialize_bool")),
+        "u128" => Some(("serde::serialize_u128", "serde::deserialize_u128")),
+        "u256" => Some(("serde::serialize_u256", "serde::deserialize_u256")),
+        "Array::<felt>" => Some(("serde::serialize_array_felt", "serde::deserialize_array_felt")),
+        _ => None,
+    }
+}
+
 /// Generates Cairo code for an entry point wrapper.
 fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
     function: &ItemFreeFunction,
-) -> Option<rust::Tokens> {
+) -> Result<rust::Tokens, Vec<PluginDiagnostic>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
     let params = sig.parameters(db).elements(db);
-
+    let mut diagnostics = vec![];
     let mut arg_names = Vec::new();
     let mut arg_definitions = quote! {};
     let mut ref_appends = quote! {};
     let input_data_short_err = "'Input too short for arguments'";
     for param in params {
         let arg_name = format!("__arg_{}", param.name(db).identifier(db));
-        let type_name = param.type_clause(db).ty(db).as_syntax_node().get_text(db);
-        // TODO(orizi): Use traits for serialization when supported.
-        let ser_func = format!("serde::serialize_{type_name}");
-        let deser_func = format!("serde::deserialize_{type_name}");
+        let arg_type_ast = param.type_clause(db).ty(db);
+        let type_name = arg_type_ast.as_syntax_node().get_text(db);
+        let Some((ser_func, deser_func)) = get_type_serde_funcs(&type_name) else {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: arg_type_ast.stable_ptr().0,
+                message: format!("Could not find serialization for type `{type_name}`"),
+            });
+            continue;
+        };
+
         let is_ref = is_ref_param(db, &param);
 
         arg_names.push(arg_name.clone());
@@ -207,14 +227,27 @@ fn generate_entry_point_wrapper(
     let (let_res, append_res) = match sig.ret_ty(db) {
         OptionReturnTypeClause::Empty(_) => ("", "".to_string()),
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
-            let ret_type_name = ty.ty(db).as_syntax_node().get_text(db);
-            ("let res = ", format!("serde::serialize_{ret_type_name}(arr, res)"))
+            let ret_type_ast = ty.ty(db);
+            let ret_type_name = ret_type_ast.as_syntax_node().get_text(db);
+            // TODO(orizi): Handle tuple types.
+            if let Some((ser_func, _)) = get_type_serde_funcs(&ret_type_name) {
+                ("let res = ", format!("{ser_func}(arr, res)"))
+            } else {
+                diagnostics.push(PluginDiagnostic {
+                    stable_ptr: ret_type_ast.stable_ptr().0,
+                    message: format!("Could not find serialization for type `{ret_type_name}`"),
+                });
+                ("", "".to_string())
+            }
         }
     };
+    if !diagnostics.is_empty() {
+        return Err(diagnostics);
+    }
 
     let oog_err = "'Out of gas'";
     let input_data_long_err = "'Input too long for arguments'";
-    Some(quote! {
+    Ok(quote! {
         fn $function_name(mut data: Array::<felt>) -> Array::<felt> {
             // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
             match get_gas() {
