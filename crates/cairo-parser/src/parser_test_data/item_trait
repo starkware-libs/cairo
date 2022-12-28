@@ -133,7 +133,7 @@ SyntaxFile
     │   │       │       │       ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
     │   │       │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │   │       │       │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
-    │   │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │   │       │       └── body (kind: TokenSemicolon): ';'
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #1 (kind: ItemImpl)
     │       ├── attributes (kind: AttributeList) []
@@ -186,44 +186,33 @@ FunctionDeclaration
 ItemStruct
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
- --> dummy_file.cairo:3:17
-        fn foo() {}
-                ^
-
-error: Skipped tokens. Expected: trait item or an attribute.
- --> dummy_file.cairo:3:18
-        fn foo() {}
-                 ^
-
-error: Skipped tokens. Expected: item or an attribute.
- --> dummy_file.cairo:6:1
-}
-^
 
 //! > expected_tree
 └── Top level kind: SyntaxFile
     ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemModule)
-    │   │   ├── attributes (kind: AttributeList) []
-    │   │   ├── module_kw (kind: TokenModule): 'mod'
-    │   │   ├── name (kind: TokenIdentifier): 'X'
-    │   │   └── body (kind: ModuleBody)
-    │   │       ├── lbrace (kind: TokenLBrace): '{'
-    │   │       ├── items (kind: ItemList)
-    │   │       │   └── child #0 (kind: ItemTrait)
-    │   │       │       ├── attributes (kind: AttributeList) []
-    │   │       │       ├── trait_kw (kind: TokenTrait): 'trait'
-    │   │       │       ├── name (kind: TokenIdentifier): 'A'
-    │   │       │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
-    │   │       │       └── body (kind: TraitBody)
-    │   │       │           ├── lbrace (kind: TokenLBrace): '{'
-    │   │       │           ├── items (kind: TraitItemList)
-    │   │       │           │   └── child #0 (kind: TraitItemFunction)
-    │   │       │           │       ├── attributes (kind: AttributeList) []
-    │   │       │           │       ├── declaration (kind: FunctionDeclaration) <ignored>
-    │   │       │           │       └── semicolon: Missing
-    │   │       │           └── rbrace (kind: TokenRBrace): '}'
-    │   │       └── rbrace (kind: TokenRBrace): '}'
-    │   └── child #1 (kind: ItemStruct) <ignored>
+    │   └── child #0 (kind: ItemModule)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── module_kw (kind: TokenModule): 'mod'
+    │       ├── name (kind: TokenIdentifier): 'X'
+    │       └── body (kind: ModuleBody)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── items (kind: ItemList)
+    │           │   ├── child #0 (kind: ItemTrait)
+    │           │   │   ├── attributes (kind: AttributeList) []
+    │           │   │   ├── trait_kw (kind: TokenTrait): 'trait'
+    │           │   │   ├── name (kind: TokenIdentifier): 'A'
+    │           │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │           │   │   └── body (kind: TraitBody)
+    │           │   │       ├── lbrace (kind: TokenLBrace): '{'
+    │           │   │       ├── items (kind: TraitItemList)
+    │           │   │       │   └── child #0 (kind: TraitItemFunction)
+    │           │   │       │       ├── attributes (kind: AttributeList) []
+    │           │   │       │       ├── declaration (kind: FunctionDeclaration) <ignored>
+    │           │   │       │       └── body (kind: ExprBlock)
+    │           │   │       │           ├── lbrace (kind: TokenLBrace): '{'
+    │           │   │       │           ├── statements (kind: StatementList) []
+    │           │   │       │           └── rbrace (kind: TokenRBrace): '}'
+    │           │   │       └── rbrace (kind: TokenRBrace): '}'
+    │           │   └── child #1 (kind: ItemStruct) <ignored>
+    │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
