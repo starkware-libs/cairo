@@ -20,7 +20,7 @@ impl MacroPlugin for DerivePlugin {
             ast::Item::Enum(enum_ast) => {
                 generate_derive_code_for_type(db, enum_ast.name(db), enum_ast.attributes(db))
             }
-            _ => PluginResult { code: None, diagnostics: vec![] },
+            _ => PluginResult::default(),
         }
     }
 }
@@ -41,6 +41,7 @@ fn generate_derive_code_for_type(
     attributes: AttributeList,
 ) -> PluginResult {
     let mut impls = vec![];
+    let remove_original_item = false;
     for attr in attributes.elements(db) {
         if attr.attr(db).text(db) == "derive" {
             // TODO(orizi): Add diagnostics for all the unexpected cases.
@@ -58,6 +59,7 @@ fn generate_derive_code_for_type(
                                     stable_ptr: expr.stable_ptr().untyped(),
                                     message: "Expected a single segment.".into(),
                                 }],
+                                remove_original_item,
                             };
                         }
                     } else {
@@ -67,6 +69,7 @@ fn generate_derive_code_for_type(
                                 stable_ptr: arg.stable_ptr().untyped(),
                                 message: "Expected path.".into(),
                             }],
+                            remove_original_item,
                         };
                     }
                 }
@@ -77,12 +80,13 @@ fn generate_derive_code_for_type(
                         stable_ptr: attr.args(db).stable_ptr().untyped(),
                         message: "Expected args.".into(),
                     }],
+                    remove_original_item,
                 };
             }
         }
     }
     if impls.is_empty() {
-        PluginResult { code: None, diagnostics: vec![] }
+        PluginResult::default()
     } else {
         PluginResult {
             code: Some(PluginGeneratedFile {
@@ -91,6 +95,7 @@ fn generate_derive_code_for_type(
                 aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
             }),
             diagnostics: vec![],
+            remove_original_item,
         }
     }
 }

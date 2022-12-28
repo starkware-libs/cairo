@@ -212,11 +212,11 @@
     "0x1",
     "0x2",
     "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
-    "0xfe398eba141df97b",
+    "0xe44f994080943be4",
     "0x13862ed316aec3c6",
     "0x1",
     "0x3",
-    "0x74f1efeff2080961",
+    "0xf5e556eb646ab4f4",
     "0xcd78677550923043",
     "0xdd9d9fc20319c2ab",
     "0x2",
@@ -224,11 +224,11 @@
     "0x3fec3caf3eeac8c1",
     "0x2",
     "0x0",
-    "0x2eb6846a099305a7",
+    "0x4426d2cf6d3b499e",
     "0x13862ed316aec3c6",
     "0x1",
     "0x3",
-    "0xf85ec618b93279c5",
+    "0x2ea8bfeafa238b36",
     "0x5521fbfd6000c2c3",
     "0x13862ed316aec3c6",
     "0x1",
@@ -941,7 +941,7 @@
     "0x1",
     "0x38",
     "0x0",
-    "0xfe398eba141df97b",
+    "0xe44f994080943be4",
     "0x3",
     "0x36",
     "0x37",
@@ -1393,7 +1393,7 @@
     "0x1",
     "0x27",
     "0x0",
-    "0x2eb6846a099305a7",
+    "0x4426d2cf6d3b499e",
     "0x1",
     "0x27",
     "0x1",
@@ -2265,7 +2265,7 @@
     "0x10",
     "0x11",
     "0xb",
-    "0x3cb877b27cc758d8",
+    "0x5b53714636a83391",
     "0x4",
     "0x4796fc05dd91ed72",
     "0x73b9292e27823975",
@@ -2286,7 +2286,7 @@
     "0x3",
     "0xda421e7696ea3653",
     "0x0",
-    "0xfe29d2e490147dc2",
+    "0x84e14a61695a8d35",
     "0x4",
     "0x4796fc05dd91ed72",
     "0x73b9292e27823975",
@@ -2339,7 +2339,7 @@
     "0x0",
     "0xa81e2cdaf6921adc",
     "0xaf",
-    "0x74f1efeff2080961",
+    "0xf5e556eb646ab4f4",
     "0x3",
     "0x73b9292e27823975",
     "0xa81e2cdaf6921adc",
@@ -2356,7 +2356,7 @@
     "0x2",
     "0x1019fc7928c89c74",
     "0xb4",
-    "0xf85ec618b93279c5",
+    "0x2ea8bfeafa238b36",
     "0x1",
     "0xa81e2cdaf6921adc",
     "0x2",
@@ -2529,16 +2529,16 @@
         "branch_align"
       ],
       [
-        3366023362468054439,
-        "function_call<user@hello_starknet::hello_starknet::__generated__HelloStarknet::get_balance>"
-      ],
-      [
         4611715306201585493,
         "get_gas"
       ],
       [
         4748485488745683778,
         "function_call<user@hello_starknet::hello_starknet::balance::write>"
+      ],
+      [
+        4910844232026769822,
+        "function_call<user@hello_starknet::hello_starknet::HelloStarknet::get_balance>"
       ],
       [
         5005777036496317638,
@@ -2705,6 +2705,10 @@
         "store_temp<felt>"
       ],
       [
+        16451536466121866212,
+        "function_call<user@hello_starknet::hello_starknet::HelloStarknet::increase_balance>"
+      ],
+      [
         16940139219101328589,
         "jump"
       ],
@@ -2723,10 +2727,6 @@
       [
         18096672134894264448,
         "function_call<user@core::integer::u128_ne>"
-      ],
-      [
-        18318829889158773115,
-        "function_call<user@hello_starknet::hello_starknet::__generated__HelloStarknet::increase_balance>"
       ]
     ],
     "user_func_names": [
@@ -2739,16 +2739,16 @@
         "hello_starknet::hello_starknet::balance::read"
       ],
       [
-        4375378646471760088,
-        "hello_starknet::hello_starknet::__generated__HelloStarknet::__external::increase_balance"
+        3362148137771961142,
+        "hello_starknet::hello_starknet::HelloStarknet::get_balance"
       ],
       [
         6454902680932094846,
         "hello_starknet::hello_starknet::balance::write"
       ],
       [
-        8426780191623743841,
-        "hello_starknet::hello_starknet::__generated__HelloStarknet::increase_balance"
+        6580728026897068945,
+        "hello_starknet::hello_starknet::HelloStarknet::__external::increase_balance"
       ],
       [
         8967289948748444261,
@@ -2763,16 +2763,16 @@
         "core::integer::u128_ne"
       ],
       [
+        9575016065006210357,
+        "hello_starknet::hello_starknet::HelloStarknet::__external::get_balance"
+      ],
+      [
         14488085933457395572,
         "core::bool_not"
       ],
       [
-        17896959778705537477,
-        "hello_starknet::hello_starknet::__generated__HelloStarknet::get_balance"
-      ],
-      [
-        18314401238790471106,
-        "hello_starknet::hello_starknet::__generated__HelloStarknet::__external::get_balance"
+        17718663877961102580,
+        "hello_starknet::hello_starknet::HelloStarknet::increase_balance"
       ]
     ]
   },
