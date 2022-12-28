@@ -1,6 +1,10 @@
 use std::any::Any;
 use std::collections::HashMap;
+use std::str::FromStr;
 
+use ark_ff::fields::{Fp256, MontBackend, MontConfig};
+use ark_ff::{Field, PrimeField};
+use ark_std::UniformRand;
 use cairo_lang_utils::extract_matches;
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
 use cairo_vm::serde::deserialize_program::{
@@ -12,7 +16,7 @@ use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
-use num_bigint::BigInt;
+use num_bigint::{BigInt, BigUint};
 use num_traits::identities::Zero;
 
 use crate::hints::Hint;
@@ -27,6 +31,19 @@ mod test;
 fn get_prime() -> BigInt {
     (BigInt::from(1) << 251) + 17 * (BigInt::from(1) << 192) + 1
 }
+
+// TODO(orizi): This def is duplicated.
+/// Returns the Beta value of the Starkware elliptic curve.
+fn get_beta() -> BigInt {
+    BigInt::from_str("3141592653589793238462643383279502884197169399375105820974944592307816406665")
+        .unwrap()
+}
+
+#[derive(MontConfig)]
+#[modulus = "3618502788666131213697322783095070105623107215331596699973092056135872020481"]
+#[generator = "3"]
+struct FqConfig;
+type Fq = Fp256<MontBackend<FqConfig, 4>>;
 
 /// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
 fn hint_to_hint_params(hint: &Hint) -> HintParams {
@@ -167,7 +184,23 @@ impl HintProcessor for CairoHintProcessor {
             Hint::EnterScope => todo!(),
             Hint::ExitScope => todo!(),
             Hint::DictSquashHints { .. } => todo!(),
-            Hint::RandomEcPoint { .. } => todo!(),
+            Hint::RandomEcPoint { x, y } => {
+                // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
+                // residue.
+                let beta = Fq::from(get_beta().to_biguint().unwrap());
+                let mut rng = ark_std::test_rng();
+                let (random_x, random_y_squared) = loop {
+                    let random_x = Fq::rand(&mut rng);
+                    let random_y_squared = random_x * random_x * random_x + random_x + beta;
+                    if random_y_squared.legendre().is_qr() {
+                        break (random_x, random_y_squared);
+                    }
+                };
+                let x_bigint: BigUint = random_x.into_bigint().into();
+                let y_bigint: BigUint = random_y_squared.sqrt().unwrap().into_bigint().into();
+                vm.insert_value(&cell_ref_to_relocatable(x, vm), BigInt::from(x_bigint))?;
+                vm.insert_value(&cell_ref_to_relocatable(y, vm), BigInt::from(y_bigint))?;
+            }
             Hint::SystemCall { system } => {
                 let starknet_exec_scope =
                     match exec_scopes.get_mut_ref::<StarknetExecScope>("starknet_exec_scope") {

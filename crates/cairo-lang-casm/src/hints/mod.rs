@@ -148,16 +148,22 @@ impl Display for Hint {
             Hint::ExitScope => write!(f, "vm_exit_scope()")?,
             Hint::DictSquashHints { hint_index } => dict_squash::fmt_hint_by_index(f, *hint_index)?,
             Hint::RandomEcPoint { x, y } => {
-                write!(f, " def try_sample_point() -> Tuple[int, int]:")?;
-                write!(f, "     x = random.randrange(PRIME)")?;
-                write!(f, "     y2 = x**3 + ALPHA * x + BETA")?;
-                write!(f, "     return x, sympy.ntheory.residue_ntheory.sqrt_mod(")?;
-                write!(f, "         y2, PRIME, all_roots=True")?;
-                write!(f, "     )")?;
-                write!(f, " x, y = try_sample_point()")?;
-                write!(f, " while y is None:")?;
-                write!(f, "     x, y = try_sample_point()")?;
-                write!(f, " (memory{x}, memory{y}) = x, y")?;
+                writedoc!(
+                    f,
+                    "
+
+                        def try_sample_point() -> Tuple[int, int]:
+                            x = random.randrange(PRIME)
+                            y2 = x**3 + ALPHA * x + BETA
+                            return x, sympy.ntheory.residue_ntheory.sqrt_mod(
+                                y2, PRIME, all_roots=True
+                            )
+                        x, y = try_sample_point()
+                        while y is None:
+                            x, y = try_sample_point()
+                        (memory{x}, memory{y}) = x, y
+                    "
+                )?;
             }
             Hint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr=",)?;

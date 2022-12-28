@@ -38,6 +38,7 @@ pub fn get_type_size_map(
             CoreTypeConcrete::NonZero(InfoAndTypeConcreteType { ty, .. }) => {
                 type_sizes.get(ty).cloned()
             }
+            CoreTypeConcrete::EcState(_) => Some(3),
             CoreTypeConcrete::Enum(enum_type) => {
                 Some(1 + enum_type.variants.iter().map(|variant| type_sizes[variant]).max()?)
             }
