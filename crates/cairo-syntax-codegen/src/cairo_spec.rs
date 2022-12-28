@@ -374,8 +374,12 @@ pub fn get_spec() -> Vec<Node> {
         .node("attributes" ,"AttributeList")
          // TODO(ilya): Use only the name as key node.
         .key_node("declaration", "FunctionDeclaration")
-        .node("semicolon", "TerminalSemicolon")
+        .node("body", "MaybeTraitFunctionBody")
     )
+    .add_enum(EnumBuilder::new("MaybeTraitFunctionBody")
+        .node_with_explicit_kind("Some", "ExprBlock")
+        .node_with_explicit_kind("None", "TerminalSemicolon")
+        )
     .add_struct(StructBuilder::new("ItemImpl")
         .node("attributes" ,"AttributeList")
         .node("impl_kw", "TerminalImpl")

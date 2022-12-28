@@ -422,7 +422,7 @@ impl<'a> Parser<'a> {
                 self.db,
                 self.parse_attributed_list(
                     Self::try_parse_trait_item,
-                    is_of_kind!(rbrace),
+                    is_of_kind!(rbrace, top_level),
                     "trait item",
                 ),
             );
@@ -450,8 +450,12 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `<FunctionDeclaration><SemiColon>`
     fn expect_trait_function(&mut self, attributes: AttributeListGreen) -> TraitItemFunctionGreen {
         let declaration = self.expect_function_declaration();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
-        TraitItemFunction::new_green(self.db, attributes, declaration, semicolon)
+        let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
+            self.parse_block().into()
+        } else {
+            self.parse_token::<TerminalSemicolon>().into()
+        };
+        TraitItemFunction::new_green(self.db, attributes, declaration, body)
     }
 
     /// Assumes the current token is Impl.
