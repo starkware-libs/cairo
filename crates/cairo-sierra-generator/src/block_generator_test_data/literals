@@ -25,8 +25,13 @@ foo
 
 //! > sierra_code
 felt_const<5>() -> ([0])
+drop<felt>([0]) -> ()
 felt_const<6>() -> ([1])
+drop<felt>([1]) -> ()
 felt_const<26>() -> ([2])
+drop<felt>([2]) -> ()
 u128_const<12>() -> ([3])
+drop<u128>([3]) -> ()
 u128_const<18>() -> ([4])
+drop<u128>([4]) -> ()
 struct_construct<Unit>() -> ([5])
