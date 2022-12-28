@@ -39,7 +39,7 @@ v5: [(Id { idx: 0 }, 4)]
 v0: [(Id { idx: 0 }, 0)]
 
 //! > drops
-v7: [PostStatement((Id { idx: 0 }, 5))]
-v6: [PostStatement((Id { idx: 0 }, 4))]
-v4: [PostStatement((Id { idx: 0 }, 2))]
-v1: [BeginningOfBlock(Id { idx: 0 })]
+PostStatement((Id { idx: 0 }, 5)): v7
+PostStatement((Id { idx: 0 }, 4)): v6
+PostStatement((Id { idx: 0 }, 2)): v4
+BeginningOfBlock(Id { idx: 0 }): v1
