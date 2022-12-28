@@ -25,8 +25,6 @@
 <details open="open">
 <summary>Table of Contents</summary>
 
-- [Report a Bug](#report-a-bug)
-- [Request a Feature](#request-a-feature)
 - [About](#about)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
@@ -47,19 +45,7 @@
 
 ## About
 
-> Cairo is the first Turing-complete language for creating provable programs for general computation.
-
-Cairo becomes Rusty! Check by yourself👇
-
-<details>
-<summary>Code snippets</summary>
-<br>
-
-|                                 Fibonnaci                                 |                                    Enums                                    |
-| :-----------------------------------------------------------------------: | :-------------------------------------------------------------------------: |
-| <img src="resources/img/snippets/snippet-1.png" title="Fib" width="100%"> | <img src="resources/img/snippets/snippet-2.png" title="Enums" width="100%"> |
-
-</details>
+Cairo is the first Turing-complete language for creating provable programs for general computation.
 
 ## Getting Started
 
@@ -88,11 +74,9 @@ Run Cairo code directly:
 cargo run --bin cairo-run -- -p /path/to/file.cairo
 ```
 
-See more here: [runner](./crates/runner/README.md)
+See more information [here](./crates/runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.
 
-You can find Cairo examples in the [examples](./examples) directory.
-
-For running tests specifically see more here: [cairo-test](./crates/test_runner/README.md)
+For running tests specifically, see here: [cairo-test](./crates/test_runner/README.md)
 
 ### Development
 
@@ -110,9 +94,7 @@ See the [open issues](https://github.com/starkware-libs/cairo/issues) for a list
 
 ## Support
 
-Reach out to the maintainer at one of the following places:
-
-- [GitHub Discussions](https://github.com/starkware-libs/cairo/discussions)
+- We encourage developers to ask and answer questions on [stackoverflow](https://stackoverflow.com/questions/tagged/cairo-lang).
 - Contact options listed on [this GitHub profile](https://github.com/starkware-libs)
 
 ## Project assistance
@@ -120,7 +102,7 @@ Reach out to the maintainer at one of the following places:
 If you want to say **thank you** or/and support active development of Cairo:
 
 - Add a [GitHub Star](https://github.com/starkware-libs/cairo) to the project.
-- Tweet about the Cairo.
+- Tweet about your Cairo work.
 - Write interesting articles about the project on [Dev.to](https://dev.to/), [Medium](https://medium.com/) or your personal blog.
 
 Together, we can make Cairo **better**!

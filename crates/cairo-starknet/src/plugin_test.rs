@@ -22,7 +22,8 @@ pub fn test_expand_contract(
     let mut generated_items: Vec<String> = Vec::new();
     let mut diagnostic_items: Vec<String> = Vec::new();
     for item in syntax_file.items(db).elements(db).into_iter() {
-        let PluginResult { code, diagnostics } = plugin.generate_code(db, item);
+        let PluginResult { code, diagnostics, remove_original_item } =
+            plugin.generate_code(db, item.clone());
 
         diagnostic_items.extend(diagnostics.iter().map(|diag| {
             let syntax_node = file_syntax_node.lookup_ptr(db, diag.stable_ptr);
@@ -36,6 +37,9 @@ pub fn test_expand_contract(
             Some(PluginGeneratedFile { content, .. }) => content,
             None => continue,
         };
+        if !remove_original_item {
+            generated_items.push(item.as_syntax_node().get_text(db));
+        }
         generated_items.push(cairo_formatter::format_string(db, content));
     }
 

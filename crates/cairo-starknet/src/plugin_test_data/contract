@@ -20,7 +20,8 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod __generated__TestContract {
+#[generated_contract]
+mod TestContract {
     fn internal_func() -> felt {
         1
     }

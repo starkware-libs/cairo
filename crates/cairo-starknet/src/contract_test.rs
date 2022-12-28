@@ -15,7 +15,7 @@ fn test_contract_resolving() {
         indoc! {"
             mod NotAContract {}
 
-            #[contract]
+            #[generated_contract]
             mod ERC20 {
                 fn internal_func(ref system: System) -> felt {
                     1
@@ -26,19 +26,11 @@ fn test_contract_resolving() {
 
                 #[external]
                 fn ep2() {}
-            }
 
-            mod __generated__ERC20 {
-                fn internal_func(ref system: System) -> felt {
-                    1
+                trait __abi {
+                    fn ep1();
+                    fn ep2();
                 }
-
-                #[external]
-                fn ep1() {}
-
-                #[external]
-                fn ep2() {}
-
                 mod __external {
                     fn ep1() {}
                     fn ep2() {}

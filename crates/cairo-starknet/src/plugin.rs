@@ -16,9 +16,10 @@ use itertools::join;
 
 use crate::contract::starknet_keccak;
 
-pub const CONTRACT_ATTR: &str = "contract";
+const CONTRACT_ATTR: &str = "contract";
 const EXTERNAL_ATTR: &str = "external";
 const VIEW_ATTR: &str = "view";
+pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
 
@@ -65,6 +66,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                     message: "Contracts without body are not supported.".to_string(),
                     stable_ptr: empty_body.stable_ptr().untyped(),
                 }],
+                remove_original_item: false,
             };
         }
     };
@@ -105,7 +107,8 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     }
 
     let generated_contract_mod: rust::Tokens = quote! {
-        mod __generated__$contract_name {
+        #[$GENERATED_CONTRACT_ATTR]
+        mod $contract_name {
             $original_items
 
             // TODO(yuval): consider adding and impl of __abi and use it from the wrappers, instead
@@ -130,6 +133,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
         }),
         diagnostics: vec![],
+        remove_original_item: true,
     }
 }
 
