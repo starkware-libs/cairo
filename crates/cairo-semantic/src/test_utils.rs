@@ -122,7 +122,7 @@ pub struct TestFunction {
     pub module_id: ModuleId,
     pub function_id: FreeFunctionId,
     pub signature: semantic::Signature,
-    pub body: Option<semantic::ExprId>,
+    pub body: semantic::ExprId,
 }
 
 /// Returns the semantic model of a given function.
@@ -151,7 +151,7 @@ pub fn setup_test_function(
             module_id: test_module.module_id,
             function_id,
             signature: db.free_function_declaration_signature(function_id).unwrap(),
-            body: db.free_function_definition_body(function_id).ok(),
+            body: db.free_function_definition_body(function_id).unwrap(),
         },
         diagnostics,
     }
@@ -174,13 +174,14 @@ pub fn setup_test_expr(
     expr_code: &str,
     module_code: &str,
     function_body: &str,
-) -> WithStringDiagnostics<Option<TestExpr>> {
+) -> WithStringDiagnostics<TestExpr> {
     let function_code = format!("fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
     let (test_function, diagnostics) =
         setup_test_function(db, &function_code, "test_func", module_code).split();
-    let Some(body) = test_function.body else {return WithStringDiagnostics{value: None, diagnostics};};
-    let semantic::ExprBlock { statements, .. } =
-        extract_matches!(db.expr_semantic(test_function.function_id, body), semantic::Expr::Block);
+    let semantic::ExprBlock { statements, .. } = extract_matches!(
+        db.expr_semantic(test_function.function_id, test_function.body),
+        semantic::Expr::Block
+    );
     let statement_expr = extract_matches!(
         db.statement_semantic(test_function.function_id, *statements.last().unwrap()),
         semantic::Statement::Expr
@@ -194,13 +195,13 @@ pub fn setup_test_expr(
         "expr_code is not a valid expression. Consider using setup_test_block()."
     );
     WithStringDiagnostics {
-        value: Some(TestExpr {
+        value: TestExpr {
             module_id: test_function.module_id,
             function_id: test_function.function_id,
             signature: test_function.signature,
-            body,
+            body: test_function.body,
             expr_id: tail.unwrap(),
-        }),
+        },
         diagnostics,
     }
 }
@@ -213,7 +214,7 @@ pub fn setup_test_block(
     expr_code: &str,
     module_code: &str,
     function_body: &str,
-) -> WithStringDiagnostics<Option<TestExpr>> {
+) -> WithStringDiagnostics<TestExpr> {
     setup_test_expr(db, &format!("{{ \n{expr_code}\n }}"), module_code, function_body)
 }
 

@@ -40,21 +40,12 @@ fn test_function_lowering(
         inputs["module_code"].as_str(),
     )
     .split();
-    let lowered = lower(db, test_function.function_id);
+    let lowered = lower(db, test_function.function_id).unwrap();
 
+    let lowered_formatter = LoweredFormatter { db, lowered: &lowered };
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
-        (
-            "lowering_diagnostics".into(),
-            lowered.as_ref().map(|lowered| lowered.diagnostics.format(db)).unwrap_or_default(),
-        ),
-        (
-            "lowering_format".into(),
-            lowered
-                .map(|lowered| {
-                    format!("{:?}", lowered.debug(&LoweredFormatter { db, lowered: &lowered }))
-                })
-                .unwrap_or_default(),
-        ),
+        ("lowering_diagnostics".into(), lowered.diagnostics.format(db)),
+        ("lowering_format".into(), format!("{:?}", lowered.debug(&lowered_formatter))),
     ])
 }

@@ -38,7 +38,7 @@ fn test_expr_lookup() {
     let expr_formatter = ExprFormatter { db, free_function_id };
     let definition_data = db.priv_free_function_definition_data(free_function_id).unwrap();
     let mut expr_debugs = Vec::new();
-    for (expr_id, expr) in &definition_data.definition.unwrap().exprs {
+    for (expr_id, expr) in &definition_data.definition.exprs {
         assert_eq!(db.lookup_expr_by_ptr(free_function_id, expr.stable_ptr()), Ok(expr_id));
         expr_debugs.push(format!("{:?}", expr.debug(&expr_formatter)));
     }
