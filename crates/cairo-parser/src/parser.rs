@@ -1166,6 +1166,10 @@ impl<'a> Parser<'a> {
     fn try_parse_generic_arg(&mut self) -> Option<ExprGreen> {
         if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
             Some(self.take::<TerminalLiteralNumber>().into())
+        } else if self.peek().kind == SyntaxKind::TerminalMinus {
+            let minus = self.take::<TerminalMinus>().into();
+            let literal = self.parse_token::<TerminalLiteralNumber>().into();
+            Some(ExprUnary::new_green(self.db, minus, literal).into())
         } else if self.peek().kind == SyntaxKind::TerminalShortString {
             Some(self.take::<TerminalShortString>().into())
         } else {
