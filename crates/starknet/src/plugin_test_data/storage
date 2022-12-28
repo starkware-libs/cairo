@@ -28,6 +28,8 @@ mod storage_var {
 }
 mod __generated__TestContract {
     struct Storage { storage_var: felt, }
+    trait __abi {
+    }
     mod __external {
     }
 }

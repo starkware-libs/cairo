@@ -9,6 +9,7 @@ pub mod expr;
 pub mod items;
 pub mod literals;
 pub mod patcher;
+pub mod plugin;
 pub mod resolve_path;
 pub mod types;
 

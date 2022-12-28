@@ -113,6 +113,7 @@ fn module_lowering_diagnostics(
             ModuleItemId::Use(_) => {}
             ModuleItemId::Struct(_) => {}
             ModuleItemId::Enum(_) => {}
+            ModuleItemId::TypeAlias(_) => {}
             ModuleItemId::Trait(_) => {}
             ModuleItemId::Impl(_) => {}
             ModuleItemId::ExternType(_) => {}

@@ -7,7 +7,7 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt, y: felt) -> felt {
     let a = x + x;
     let b = a + a;
     let c = b + b;
@@ -20,25 +20,26 @@ fn foo(x: felt) -> felt {
 
 //! > lowering_format
 blk0 (root):
-Inputs: v0: core::felt
+Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
-  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v2: core::felt) <- core::felt_add(v0, v0)
   (v3: core::felt) <- core::felt_add(v2, v2)
-  (v4: core::felt) <- 1u
-  (v5: core::felt) <- core::felt_add(v2, v4)
-  (v6: core::felt) <- 1234u
-Drops: v0, v6, v2, v3, v4, v5
+  (v4: core::felt) <- core::felt_add(v3, v3)
+  (v5: core::felt) <- 1u
+  (v6: core::felt) <- core::felt_add(v3, v5)
+  (v7: core::felt) <- 1234u
+Drops: v0, v1, v7, v3, v4, v5, v6
 End:
-  Callsite(v1)
+  Callsite(v2)
 
 //! > last_use
-v1: [(Id { idx: 0 }, 6)]
-v2: [(Id { idx: 0 }, 4)]
-v4: [(Id { idx: 0 }, 4)]
+v2: [(Id { idx: 0 }, 6)]
+v3: [(Id { idx: 0 }, 4)]
+v5: [(Id { idx: 0 }, 4)]
 v0: [(Id { idx: 0 }, 0)]
 
 //! > drops
-v6: [PostStatement((Id { idx: 0 }, 5))]
-v5: [PostStatement((Id { idx: 0 }, 4))]
-v3: [PostStatement((Id { idx: 0 }, 2))]
+v7: [PostStatement((Id { idx: 0 }, 5))]
+v6: [PostStatement((Id { idx: 0 }, 4))]
+v4: [PostStatement((Id { idx: 0 }, 2))]
+v1: [BeginningOfBlock(Id { idx: 0 })]

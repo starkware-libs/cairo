@@ -1,4 +1,5 @@
 use std::hash::Hash;
+use std::ops::Sub;
 
 use indexmap::{Equivalent, IndexSet};
 use itertools::zip_eq;
@@ -19,6 +20,11 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
     /// If an equivalent item already exists in the set, returns `false`. Otherwise, returns `true`.
     pub fn insert(&mut self, key: Key) -> bool {
         self.0.insert(key)
+    }
+
+    /// Extends the set with the content of the given iterator.
+    pub fn extend<I: IntoIterator<Item = Key>>(&mut self, iter: I) {
+        self.0.extend(iter)
     }
 
     /// Return true if an equivalent to value exists in the set.
@@ -91,5 +97,13 @@ impl<Key: Hash + Eq> Default for OrderedHashSet<Key> {
 impl<Key: Hash + Eq> FromIterator<Key> for OrderedHashSet<Key> {
     fn from_iter<T: IntoIterator<Item = Key>>(iter: T) -> Self {
         Self(iter.into_iter().collect())
+    }
+}
+
+impl<'a, Key: Hash + Eq + Clone> Sub<&'a OrderedHashSet<Key>> for &'a OrderedHashSet<Key> {
+    type Output = OrderedHashSet<Key>;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        OrderedHashSet::<Key>(&self.0 - &rhs.0)
     }
 }

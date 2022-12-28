@@ -10,23 +10,23 @@ use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::extract_matches;
 
-use crate::db::{init_defs_group, DefsDatabase, DefsGroup};
+use crate::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use crate::ids::{ModuleId, ModuleItemId};
 use crate::plugin::{
-    DynDiagnosticMapper, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
-    TrivialMapper,
+    DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginDiagnostic,
+    PluginGeneratedFile, PluginResult,
 };
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
+    plugin: Arc<DummyPlugin>,
 }
 impl salsa::Database for DatabaseForTesting {}
 impl Default for DatabaseForTesting {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+        let mut res = Self { storage: Default::default(), plugin: Arc::new(DummyPlugin {}) };
         init_files_group(&mut res);
-        init_defs_group(&mut res);
         res
     }
 }
@@ -48,6 +48,11 @@ impl Upcast<dyn FilesGroup> for DatabaseForTesting {
 impl Upcast<dyn SyntaxGroup> for DatabaseForTesting {
     fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
         self
+    }
+}
+impl HasMacroPlugins for DatabaseForTesting {
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
+        vec![self.plugin.clone()]
     }
 }
 
@@ -161,6 +166,18 @@ fn test_submodules() {
 #[derive(Debug)]
 struct DummyPlugin {}
 
+#[derive(Debug)]
+struct DummyAuxData;
+impl GeneratedFileAuxData for DummyAuxData {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn eq(&self, _other: &dyn GeneratedFileAuxData) -> bool {
+        false
+    }
+}
+
 impl MacroPlugin for DummyPlugin {
     fn generate_code(
         &self,
@@ -172,7 +189,7 @@ impl MacroPlugin for DummyPlugin {
                 code: Some(PluginGeneratedFile {
                     name: "virt".into(),
                     content: format!("fn foo(x:{}){{}}", struct_ast.name(db).text(db)),
-                    diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+                    aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
                 }),
                 diagnostics: vec![],
             },
@@ -180,7 +197,7 @@ impl MacroPlugin for DummyPlugin {
                 code: Some(PluginGeneratedFile {
                     name: "virt2".into(),
                     content: "extern type B;".into(),
-                    diagnostic_mapper: DynDiagnosticMapper::new(TrivialMapper {}),
+                    aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
                 }),
                 diagnostics: vec![PluginDiagnostic {
                     stable_ptr: item.stable_ptr().untyped(),
@@ -200,7 +217,6 @@ fn test_plugin() {
     let crate_id = db.intern_crate(CrateLongId("test".into()));
     let root = Directory("src".into());
     db.set_crate_root(crate_id, Some(root));
-    db.set_macro_plugins(vec![Arc::new(DummyPlugin {})]);
 
     // Main module file.
     set_file_content(db, "src/lib.cairo", "struct A{}");

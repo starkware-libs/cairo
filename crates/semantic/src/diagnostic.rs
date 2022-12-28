@@ -7,7 +7,7 @@ use defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
-use defs::plugin::{PluginDiagnostic, PluginMappedDiagnostic};
+use defs::plugin::PluginDiagnostic;
 use diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
 };
@@ -16,6 +16,7 @@ use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
 
 use crate::db::SemanticGroup;
+use crate::plugin::PluginMappedDiagnostic;
 use crate::semantic;
 
 pub struct SemanticDiagnostics {
@@ -113,6 +114,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UseCycle => {
                 "Cycle detected while resolving 'use' items.".into()
+            }
+            SemanticDiagnosticKind::TypeAliasCycle => {
+                "Cycle detected while resolving 'type alias' items.".into()
             }
             SemanticDiagnosticKind::ExpectedConcreteVariant => {
                 "Expected a concrete variant. Use `::<>` syntax.".to_string()
@@ -441,6 +445,7 @@ pub enum SemanticDiagnosticKind {
     UnknownMember,
     MemberSpecifiedMoreThanOnce,
     UseCycle,
+    TypeAliasCycle,
     ExpectedConcreteVariant,
     MissingMember {
         member_name: SmolStr,

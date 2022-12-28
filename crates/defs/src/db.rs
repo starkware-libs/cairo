@@ -15,13 +15,18 @@ use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
-use crate::plugin::{DynDiagnosticMapper, MacroPlugin, PluginDiagnostic};
+use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic};
 
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
 #[salsa::query_group(DefsDatabase)]
 pub trait DefsGroup:
-    FilesGroup + SyntaxGroup + Upcast<dyn SyntaxGroup> + ParserGroup + Upcast<dyn FilesGroup>
+    FilesGroup
+    + SyntaxGroup
+    + Upcast<dyn SyntaxGroup>
+    + ParserGroup
+    + Upcast<dyn FilesGroup>
+    + HasMacroPlugins
 {
     #[salsa::interned]
     fn intern_virtual_submodule(&self, virtual_submodule: VirtualSubmodule) -> VirtualSubmoduleId;
@@ -37,6 +42,8 @@ pub trait DefsGroup:
     fn intern_struct(&self, id: StructLongId) -> StructId;
     #[salsa::interned]
     fn intern_enum(&self, id: EnumLongId) -> EnumId;
+    #[salsa::interned]
+    fn intern_type_alias(&self, id: TypeAliasLongId) -> TypeAliasId;
     #[salsa::interned]
     fn intern_member(&self, id: MemberLongId) -> MemberId;
     #[salsa::interned]
@@ -86,16 +93,10 @@ pub trait DefsGroup:
         module_id: ModuleId,
         name: SmolStr,
     ) -> Maybe<Option<ModuleItemId>>;
-
-    // Plugins.
-    #[salsa::input]
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
 }
 
-/// Initializes a database with DefsGroup.
-pub fn init_defs_group(db: &mut (dyn DefsGroup + 'static)) {
-    // Initialize inputs.
-    db.set_macro_plugins(Vec::new());
+pub trait HasMacroPlugins {
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
 }
 
 fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
@@ -104,7 +105,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
             db.crate_root_dir(crate_id).to_maybe()?.file(db.upcast(), "lib.cairo".into())
         }
         ModuleId::Submodule(submodule_id) => {
-            let parent = submodule_id.module(db);
+            let parent = submodule_id.parent_module(db);
             let item_module_ast = &db.module_data(parent)?.submodules[submodule_id];
             match item_module_ast.body(db.upcast()) {
                 MaybeModuleBody::Some(_) => {
@@ -137,7 +138,7 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
     match module_id {
         ModuleId::CrateRoot(crate_id) => db.crate_root_dir(crate_id).to_maybe(),
         ModuleId::Submodule(submodule_id) => {
-            let parent = submodule_id.module(db);
+            let parent = submodule_id.parent_module(db);
             let name = submodule_id.name(db);
             Ok(db.module_dir(parent)?.subdir(name))
         }
@@ -187,7 +188,7 @@ fn file_modules(db: &dyn DefsGroup, file_id: FileId) -> Maybe<Vec<ModuleId>> {
 /// Information about the generation of a virtual file.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GeneratedFileInfo {
-    pub diagnostic_mapper: DynDiagnosticMapper,
+    pub aux_data: DynGeneratedFileAuxData,
     /// The module and file index from which the current file was generated.
     pub origin: ModuleFileId,
 }
@@ -199,6 +200,7 @@ pub struct ModuleData {
     pub free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
     pub structs: OrderedHashMap<StructId, ast::ItemStruct>,
     pub enums: OrderedHashMap<EnumId, ast::ItemEnum>,
+    pub type_aliases: OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>,
     pub traits: OrderedHashMap<TraitId, ast::ItemTrait>,
     pub impls: OrderedHashMap<ImplId, ast::ItemImpl>,
     pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
@@ -224,7 +226,7 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     let item_asts = match module_id {
         ModuleId::CrateRoot(_) | ModuleId::VirtualSubmodule(_) => file_syntax.items(syntax_db),
         ModuleId::Submodule(submodule_id) => {
-            let parent_module_data = db.module_data(submodule_id.module(db))?;
+            let parent_module_data = db.module_data(submodule_id.parent_module(db))?;
             let item_module_ast = &parent_module_data.submodules[submodule_id];
 
             match item_module_ast.body(syntax_db) {
@@ -269,7 +271,7 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
                     content: Arc::new(generated.content),
                 }));
                 res.generated_file_info.push(Some(GeneratedFileInfo {
-                    diagnostic_mapper: generated.diagnostic_mapper,
+                    aux_data: generated.aux_data,
                     origin: module_file_id,
                 }));
                 module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
@@ -321,6 +323,13 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
                 ast::Item::Enum(enm) => {
                     let item_id = db.intern_enum(EnumLongId(module_file_id, enm.stable_ptr()));
                     res.enums.insert(item_id, enm);
+                }
+                ast::Item::TypeAlias(type_alias) => {
+                    let item_id = db.intern_type_alias(TypeAliasLongId(
+                        module_file_id,
+                        type_alias.stable_ptr(),
+                    ));
+                    res.type_aliases.insert(item_id, type_alias);
                 }
             }
         }
@@ -375,6 +384,10 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleItems> {
             module_data.enums.iter().map(|(enum_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Enum(*enum_id)
+            )),
+            module_data.type_aliases.iter().map(|(type_alias_id, syntax)| (
+                syntax.name(syntax_db).text(syntax_db),
+                ModuleItemId::TypeAlias(*type_alias_id)
             )),
             module_data.traits.iter().map(|(trait_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),

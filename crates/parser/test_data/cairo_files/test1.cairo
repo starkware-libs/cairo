@@ -36,3 +36,6 @@ struct A<A, B> {
     member: bool,
     member2: (bool, felt, ())
 }
+
+type Renamed = submod::inner::Other;
+type Generic<T> = super::other::OtherGeneric::<T>;

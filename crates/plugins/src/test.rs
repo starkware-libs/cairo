@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use db_utils::Upcast;
-use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
+use defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use defs::ids::ModuleId;
 use defs::plugin::MacroPlugin;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
@@ -10,13 +10,15 @@ use indoc::indoc;
 use itertools::zip_eq;
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
+use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use semantic::plugin::SemanticPlugin;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use test_case::test_case;
 
 use crate::derive::DerivePlugin;
 use crate::panicable::PanicablePlugin;
 
-#[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
+#[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
 }
@@ -25,7 +27,6 @@ impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        init_defs_group(&mut res);
         res
     }
 }
@@ -47,6 +48,16 @@ impl Upcast<dyn FilesGroup> for DatabaseForTesting {
 impl Upcast<dyn SyntaxGroup> for DatabaseForTesting {
     fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
         self
+    }
+}
+impl Upcast<dyn SemanticGroup> for DatabaseForTesting {
+    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
+        self
+    }
+}
+impl HasMacroPlugins for DatabaseForTesting {
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
+        self.get_macro_plugins()
     }
 }
 
@@ -136,14 +147,14 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
     ];
     "panicable"
 )]
-fn plugin_test(plugins: Vec<Arc<dyn MacroPlugin>>, content: &str, expected_codes: &[&str]) {
+fn plugin_test(plugins: Vec<Arc<dyn SemanticPlugin>>, content: &str, expected_codes: &[&str]) {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
     let crate_id = db.intern_crate(CrateLongId("test".into()));
     let root = Directory("src".into());
     db.set_crate_root(crate_id, Some(root));
-    db.set_macro_plugins(plugins);
+    db.set_semantic_plugins(plugins);
 
     // Main module file.
     set_file_content(db, "src/lib.cairo", content);

@@ -320,7 +320,7 @@ pub fn type_info(
     // TODO(spapini): Validate Copy and Drop for structs and enums.
     Ok(match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete_type_id) => {
-            let module = concrete_type_id.generic_type(db).module(db.upcast());
+            let module = concrete_type_id.generic_type(db).parent_module(db.upcast());
             // Look for Copy and Drop trait also in the defining module.
             if !lookup_context.extra_modules.contains(&module) {
                 lookup_context.extra_modules.push(module);

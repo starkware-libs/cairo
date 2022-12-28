@@ -1,7 +1,7 @@
 //! Compiles and runs a Cairo program.
 
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context};
 use clap::Parser;
@@ -18,9 +18,11 @@ use num_bigint::BigInt;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use runner::{RunResultValue, SierraCasmRunner};
 use semantic::db::SemanticGroup;
+use semantic::plugin::SemanticPlugin;
 use semantic::{ConcreteFunction, FunctionLongId};
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use starknet::plugin::StarkNetPlugin;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -30,6 +32,13 @@ struct Args {
     /// The file to compile and run.
     #[arg(short, long)]
     path: String,
+    /// Should we add the starknet plugin to run the tests.
+    #[arg(long, default_value_t = false)]
+    starknet: bool,
+    /// In cases where gas is available, the amount of provided gas.
+    // TODO(orizi): Makes this a possible part of the test description.
+    #[arg(long)]
+    available_gas: Option<usize>,
 }
 
 /// The status of a ran test.
@@ -42,7 +51,11 @@ enum TestStatus {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let mut db_val = RootDatabase::default();
+    let mut extra_plugins: Vec<Arc<dyn SemanticPlugin>> = vec![];
+    if args.starknet {
+        extra_plugins.push(Arc::new(StarkNetPlugin {}));
+    }
+    let mut db_val = RootDatabase::new(extra_plugins);
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
@@ -75,7 +88,7 @@ fn main() -> anyhow::Result<()> {
         })
         .collect_vec();
     let TestsSummary { passed, failed, ignored, failed_run_results } =
-        run_tests(named_tests, sierra_program)?;
+        run_tests(named_tests, sierra_program, args.available_gas)?;
     if failed.is_empty() {
         println!(
             "test result: {}. {} passed; {} failed; {} ignored",
@@ -144,6 +157,7 @@ struct TestsSummary {
 fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: sierra::program::Program,
+    available_gas: Option<usize>,
 ) -> anyhow::Result<TestsSummary> {
     println!("running {} tests", named_tests.len());
     let wrapped_summary = Mutex::new(Ok(TestsSummary {
@@ -158,10 +172,10 @@ fn run_tests(
             if test.ignored {
                 return Ok((name, TestStatus::Ignore));
             }
-            let runner = SierraCasmRunner::new(sierra_program.clone(), false)
+            let runner = SierraCasmRunner::new(sierra_program.clone(), available_gas.is_some())
                 .with_context(|| "Failed setting up runner.")?;
             let result = runner
-                .run_function(name.as_str(), &[], &None)
+                .run_function(name.as_str(), &[], &available_gas)
                 .with_context(|| "Failed to run the function.")?;
             Ok((
                 name,
