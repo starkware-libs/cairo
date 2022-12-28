@@ -12,4 +12,8 @@ mod TestContract {
         super::my_storage_var::write(x + 1);
         x + internal_func()
     }
+
+    #[external]
+    fn empty() {
+    }
 }
