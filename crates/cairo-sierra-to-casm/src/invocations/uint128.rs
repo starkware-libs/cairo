@@ -1,6 +1,6 @@
 use cairo_casm::builder::CasmBuilder;
 use cairo_casm::casm_build_extend;
-use cairo_casm::operand::{CellRef, DerefOrImmediate, ResOperand};
+use cairo_casm::operand::{CellRef, ResOperand};
 use cairo_sierra::extensions::uint128::{
     IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc,
 };
@@ -403,64 +403,52 @@ fn build_u128_eq(
 ) -> Result<CompiledInvocation, InvocationError> {
     let mut casm_builder = CasmBuilder::default();
     let [expr_a, expr_b] = builder.try_get_refs()?;
-    let mut a = expr_a.try_unpack_single()?.to_deref_or_immediate()?;
-    let mut b = expr_b.try_unpack_single()?.to_deref_or_immediate()?;
-
-    // The casm line 'tempvar diff = a - b;' won't work if a is an immediate.
-    // if a is an immediate and b is a deref, this swap will be enough.
-    // If a, b are both immediates - a will still be an immediate after the swap, so a - b will be
-    // calculated "outside" the casm code (see below).
-    if let DerefOrImmediate::Immediate(_) = a {
-        [a, b] = [b, a];
-    }
-    let diff = match a {
-        DerefOrImmediate::Immediate(big_int_a) => {
-            let big_int_b = match b {
-                DerefOrImmediate::Immediate(big_int_b) => big_int_b,
-                DerefOrImmediate::Deref(_) => {
-                    panic!("a & b should have been switched.");
-                }
-            };
-
-            let diff = big_int_a - big_int_b;
-
-            casm_build_extend! {casm_builder,
-                // This line is needed because a tempvar does not accept (only) an immediate in the
-                // rhs.
-                const _diff = diff;
-
-                tempvar diff = _diff;
-            };
-            diff
-        }
-        DerefOrImmediate::Deref(cell_ref_a) => {
-            let a = casm_builder.add_var(ResOperand::Deref(cell_ref_a));
-            let b = match b {
-                DerefOrImmediate::Deref(cell_ref_b) => {
-                    casm_builder.add_var(ResOperand::Deref(cell_ref_b))
-                }
-                DerefOrImmediate::Immediate(big_int_b) => {
-                    casm_builder.add_var(ResOperand::Immediate(big_int_b))
-                }
-            };
-
-            casm_build_extend! {casm_builder,
-                tempvar diff = a - b;
-            };
-            diff
-        }
-    };
-
-    casm_build_extend! {casm_builder,
-        // diff = a - b => (diff == 0) <==> (a == b)
-        jump NotEqual if diff != 0;
-        jump Equal;
-    NotEqual:
-    };
+    let a = expr_a.try_unpack_single()?;
+    let b = expr_b.try_unpack_single()?;
 
     // The target line to jump to if a != b.
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
 
+    let (a, b) = match (a, b) {
+        (CellExpression::Deref(cell_expr_a), CellExpression::Deref(cell_expr_b)) => {
+            (ResOperand::Deref(*cell_expr_a), ResOperand::Deref(*cell_expr_b))
+        }
+        (CellExpression::Deref(cell_expr_a), CellExpression::Immediate(big_int_b)) => {
+            (ResOperand::Deref(*cell_expr_a), ResOperand::Immediate(big_int_b.clone()))
+        }
+        // The casm line 'tempvar diff = a - b;' won't work if a is an immediate.
+        // So if a is an immediate and b is a deref: switch them.
+        // If a, b are both immediates, alternative cairo code will be used.
+        (CellExpression::Immediate(big_int_a), CellExpression::Deref(cell_expr_b)) => {
+            (ResOperand::Deref(*cell_expr_b), ResOperand::Immediate(big_int_a.clone()))
+        }
+        (CellExpression::Immediate(big_int_a), CellExpression::Immediate(big_int_b)) => {
+            casm_build_extend! {casm_builder,
+                const difference = big_int_a - big_int_b;
+                tempvar diff = difference;
+                // diff = a - b => (diff == 0) <==> (a == b)
+                jump NotEqual if diff != 0;
+                jump Equal;
+            NotEqual:
+            };
+            return Ok(builder.build_from_casm_builder(
+                casm_builder,
+                [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
+            ));
+        }
+        _ => {
+            return Err(InvocationError::InvalidReferenceExpressionForArgument);
+        }
+    };
+
+    let (a, b) = (casm_builder.add_var(a), casm_builder.add_var(b));
+    casm_build_extend! {casm_builder,
+        // diff = a - b => (diff == 0) <==> (a == b)
+        tempvar diff = a - b;
+        jump NotEqual if diff != 0;
+        jump Equal;
+    NotEqual:
+    };
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
