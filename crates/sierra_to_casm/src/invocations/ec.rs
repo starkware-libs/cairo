@@ -25,6 +25,32 @@ pub fn build(
     }
 }
 
+/// Extends the CASM builder to include verification that (x,y) is a point on the curve (and *not*
+/// the point at infinity).
+/// Either asserts the point is on the curve, or adds a jump statement to a label called NotOnCurve,
+/// depending on the boolean flag passed.
+fn verify_ec_point(casm_builder: &mut CasmBuilder, x: Var, y: Var, jump_if_not_on_curve: bool) {
+    casm_build_extend! {casm_builder,
+        const beta = (get_beta());
+        tempvar y2 = y * y;
+        tempvar x2 = x * x;
+        tempvar x3 = x2 * x;
+        tempvar alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
+        tempvar expected_y2 = x3 + alpha_x_plus_beta;
+    };
+    if jump_if_not_on_curve {
+        casm_build_extend! {casm_builder,
+            tempvar diff;
+            assert y2 = diff + expected_y2;
+            jump NotOnCurve if diff != 0;
+        };
+    } else {
+        casm_build_extend! {casm_builder,
+            assert y2 = expected_y2;
+        };
+    }
+}
+
 /// Handles instruction for creating an EC point.
 fn build_ec_point_try_create(
     builder: CompiledInvocationBuilder<'_>,
@@ -38,17 +64,8 @@ fn build_ec_point_try_create(
     let y = casm_builder.add_var(ResOperand::Deref(y));
 
     // Assert (x,y) is on the curve.
-    casm_build_extend! {casm_builder,
-        const beta = (get_beta());
-        tempvar y2 = y * y;
-        tempvar x2 = x * x;
-        tempvar x3 = x2 * x;
-        tempvar alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
-        tempvar expected_y2 = x3 + alpha_x_plus_beta;
-        tempvar diff;
-        assert y2 = diff + expected_y2;
-        jump NotOnCurve if diff != 0;
-    };
+    verify_ec_point(&mut casm_builder, x, y, true);
+
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
