@@ -39,7 +39,11 @@ function findLanguageServerExecutable(
     var configPath = config.get<string>('cairo1.languageServerPath');
     if (configPath) {
         // Replace placeholders, if present.
-        return configPath.replace(/\${workspaceFolder}/g, rootPath);
+        let serverPath = configPath.replace(/\${workspaceFolder}/g, rootPath);
+        if (!fs.existsSync(serverPath)) {
+            return undefined;
+        }
+        return serverPath;
     }
 
     // TODO(spapini): Use a bundled language server.
@@ -47,10 +51,7 @@ function findLanguageServerExecutable(
 }
 
 function setupLanguageServer(
-    config: vscode.WorkspaceConfiguration, context: vscode.ExtensionContext) {
-
-    let outputChannel = vscode.window.createOutputChannel("Cairo extension");
-    context.subscriptions.push(outputChannel);
+    config: vscode.WorkspaceConfiguration, context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) {
 
     let serverOptions: ServerOptions = () => {
         return new Promise((resolve) => {
@@ -89,8 +90,13 @@ function setupLanguageServer(
 
 export function activate(context: vscode.ExtensionContext) {
     const config = vscode.workspace.getConfiguration();
+    let outputChannel = vscode.window.createOutputChannel("Cairo extension");
+    context.subscriptions.push(outputChannel);
 
     if (config.get<boolean>('cairo1.enableLanguageServer')) {
-        setupLanguageServer(config, context);
+        setupLanguageServer(config, context, outputChannel);
+    } else {
+        outputChannel.appendLine(
+            "Language server is not enabled. Use the cairo1.enableLanguageServer config");
     }
 }
