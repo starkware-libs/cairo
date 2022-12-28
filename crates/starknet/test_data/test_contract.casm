@@ -274,55 +274,55 @@
     [
       0,
       [
-        "%{ memory[ap + 0] = 20500 <= memory[fp + -6] %}"
+        "memory[ap + 0] = 20500 <= memory[fp + -6]"
       ]
     ],
     [
       17,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       45,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       72,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       99,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       126,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       147,
       [
-        "%{ memory[ap + 0] = segments.add() %}"
+        "memory[ap + 0] = segments.add()"
       ]
     ],
     [
       232,
       [
-        "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -3]) %}"
+        "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
       ]
     ],
     [
       245,
       [
-        "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -4]) %}"
+        "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
       ]
     ]
   ],

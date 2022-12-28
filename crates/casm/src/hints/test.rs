@@ -9,7 +9,7 @@ fn test_alloc_segment_format() {
     let dst = CellRef { register: Register::AP, offset: 5 };
     let hint = Hint::AllocSegment { dst };
 
-    assert_eq!(hint.to_string(), "%{ memory[ap + 5] = segments.add() %}");
+    assert_eq!(hint.to_string(), "memory[ap + 5] = segments.add()");
 }
 
 #[test]
@@ -25,7 +25,7 @@ fn test_less_than_format() {
             dst: CellRef { register: Register::AP, offset: 0 }
         }
         .to_string(),
-        "%{ memory[ap + 0] = memory[ap + 6] < memory[fp + 4] %}"
+        "memory[ap + 0] = memory[ap + 6] < memory[fp + 4]"
     );
     assert_eq!(
         Hint::TestLessThan {
@@ -34,7 +34,7 @@ fn test_less_than_format() {
             dst: CellRef { register: Register::AP, offset: 0 }
         }
         .to_string(),
-        "%{ memory[ap + 0] = memory[fp + 4] < 3 %}"
+        "memory[ap + 0] = memory[fp + 4] < 3"
     );
     assert_eq!(
         Hint::TestLessThan {
@@ -43,7 +43,7 @@ fn test_less_than_format() {
             dst: CellRef { register: Register::AP, offset: 0 }
         }
         .to_string(),
-        "%{ memory[ap + 0] = 3 < memory[ap + 6] %}"
+        "memory[ap + 0] = 3 < memory[ap + 6]"
     );
 }
 
@@ -60,7 +60,7 @@ fn test_less_than_or_equal_format() {
             dst: CellRef { register: Register::AP, offset: 0 }
         }
         .to_string(),
-        "%{ memory[ap + 0] = memory[ap + 6] <= memory[fp + 4] %}"
+        "memory[ap + 0] = memory[ap + 6] <= memory[fp + 4]"
     );
     assert_eq!(
         Hint::TestLessThanOrEqual {
@@ -69,7 +69,7 @@ fn test_less_than_or_equal_format() {
             dst: CellRef { register: Register::AP, offset: 0 }
         }
         .to_string(),
-        "%{ memory[ap + 0] = memory[fp + 4] <= 3 %}"
+        "memory[ap + 0] = memory[fp + 4] <= 3"
     );
     assert_eq!(
         Hint::TestLessThanOrEqual {
@@ -78,7 +78,7 @@ fn test_less_than_or_equal_format() {
             dst: CellRef { register: Register::AP, offset: 0 }
         }
         .to_string(),
-        "%{ memory[ap + 0] = 3 <= memory[ap + 6] %}"
+        "memory[ap + 0] = 3 <= memory[ap + 6]"
     );
 }
 
@@ -92,6 +92,6 @@ fn test_syscall_hint_format() {
 
     assert_eq!(
         Hint::SystemCall { system }.to_string(),
-        "%{ syscall_handler.syscall(syscall_ptr=memory[fp + -3] + 3) %}"
+        "syscall_handler.syscall(syscall_ptr=memory[fp + -3] + 3)"
     );
 }

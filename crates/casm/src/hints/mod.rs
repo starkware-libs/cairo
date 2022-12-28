@@ -74,9 +74,9 @@ impl Display for Hint {
                 fmt_access_or_const(f, &bin_op.b)
             }
         };
-        write!(f, "%{{")?;
+
         match self {
-            Hint::AllocSegment { dst } => write!(f, " memory{dst} = segments.add() ")?,
+            Hint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()")?,
             Hint::AllocDictFeltTo { dict_manager_ptr } => {
                 writedoc!(
                     f,
@@ -117,39 +117,37 @@ impl Display for Hint {
                         dict_tracker.current_ptr += 3
                         memory{prev_value_dst} = dict_tracker.data[memory{key}]
                         dict_tracker.data[memory{key}] = memory{value}
-                "
+                    "
                 )?;
             }
             Hint::TestLessThan { lhs, rhs, dst } => {
-                write!(f, " memory{dst} = ")?;
+                write!(f, "memory{dst} = ")?;
                 fmt_res_operand(f, lhs)?;
                 write!(f, " < ")?;
                 fmt_res_operand(f, rhs)?;
-                write!(f, " ")?;
             }
             Hint::TestLessThanOrEqual { lhs, rhs, dst } => {
-                write!(f, " memory{dst} = ")?;
+                write!(f, "memory{dst} = ")?;
                 fmt_res_operand(f, lhs)?;
                 write!(f, " <= ")?;
-                fmt_res_operand(f, rhs)?;
-                write!(f, " ")?;
+                fmt_res_operand(f, rhs)?
             }
             Hint::DivMod { lhs, rhs, quotient, remainder } => {
-                write!(f, " (memory{quotient}, memory{remainder}) = divmod(")?;
+                write!(f, "(memory{quotient}, memory{remainder}) = divmod(")?;
                 fmt_res_operand(f, lhs)?;
                 write!(f, ", ")?;
                 fmt_res_operand(f, rhs)?;
-                write!(f, ") ")?;
+                write!(f, ")")?;
             }
-            Hint::EnterScope => write!(f, " vm_enter_scope() ")?,
-            Hint::ExitScope => write!(f, " vm_exit_scope() ")?,
+            Hint::EnterScope => write!(f, "vm_enter_scope()")?,
+            Hint::ExitScope => write!(f, "vm_exit_scope()")?,
             Hint::DictSquashHints { hint_index } => dict_squash::fmt_hint_by_index(f, *hint_index)?,
             Hint::SystemCall { system } => {
-                write!(f, " syscall_handler.syscall(syscall_ptr=",)?;
+                write!(f, "syscall_handler.syscall(syscall_ptr=",)?;
                 fmt_res_operand(f, system)?;
-                write!(f, ") ")?;
+                write!(f, ")")?;
             }
         }
-        write!(f, "%}}")
+        Ok(())
     }
 }
