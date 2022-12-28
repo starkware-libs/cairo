@@ -8,8 +8,8 @@ use crate::ap_change::ApplyApChange;
 use crate::deref_or_immediate;
 use crate::hints::Hint;
 use crate::instructions::{
-    AddApInstruction, AssertEqInstruction, Instruction, InstructionBody, JnzInstruction,
-    JumpInstruction,
+    AddApInstruction, AssertEqInstruction, CallInstruction, Instruction, InstructionBody,
+    JnzInstruction, JumpInstruction, RetInstruction,
 };
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
 
@@ -77,7 +77,7 @@ impl State {
 enum Statement {
     /// A final instruction, no need for further editting.
     Final(Instruction),
-    /// A jump command, requires fixing the actual target label.
+    /// A jump or call command, requires fixing the actual target label.
     Jump(String, Instruction),
     /// A target label for jumps.
     Label(String),
@@ -143,13 +143,18 @@ impl CasmBuilder {
                             | InstructionBody::Jump(JumpInstruction {
                                 target: DerefOrImmediate::Immediate(value),
                                 ..
+                            })
+                            | InstructionBody::Call(CallInstruction {
+                                target: DerefOrImmediate::Immediate(value),
+                                ..
                             }) => {
                                 // Updating the value, instead of assigning into it, to avoid
                                 // allocating a BigInt since it is already 0.
                                 *value += *label_offset;
                                 *value -= offset;
                             }
-                            _ => unreachable!("Only jump statements should be here."),
+
+                            _ => unreachable!("Only jump or call statements should be here."),
                         },
                         None => match branch_relocations.entry(label) {
                             Entry::Occupied(mut e) => e.get_mut().push(instructions.len()),
@@ -393,6 +398,82 @@ impl CasmBuilder {
         self.main_state.vars.extend(values.into_iter());
     }
 
+    /// Adds a call command to 'label'. All AP based variables are passed to the called function
+    /// state and dropped from the calling function state.
+    pub fn call(&mut self, label: String) {
+        self.main_state.validate_finality();
+        // Vars to be passed to the called function state.
+        let mut function_vars: HashMap<Var, ResOperand> = HashMap::default();
+        // FP based vars which will remain in the current state.
+        let mut main_vars: HashMap<Var, ResOperand> = HashMap::default();
+        let ap_change = self.main_state.ap_change;
+        let cell_to_var_flags = |cell: &CellRef| {
+            if cell.register == Register::AP { (true, false) } else { (false, true) }
+        };
+        for (var, value) in self.main_state.vars.iter() {
+            let (function_var, main_var) = match value {
+                ResOperand::DoubleDeref(cell, _) | ResOperand::Deref(cell) => {
+                    cell_to_var_flags(cell)
+                }
+                ResOperand::Immediate(_) => (true, true),
+                ResOperand::BinOp(bin_op) => match bin_op.b {
+                    DerefOrImmediate::Deref(cell) => {
+                        if bin_op.a.register == cell.register {
+                            cell_to_var_flags(&cell)
+                        } else {
+                            // Mixed FP and AP based, dropped from both states.
+                            (false, false)
+                        }
+                    }
+                    DerefOrImmediate::Immediate(_) => (true, true),
+                },
+            };
+            if function_var {
+                // Apply ap change (+2 because of the call statement) and change to FP based before
+                // the function call.
+                let mut value = value.clone().unchecked_apply_known_ap_change(ap_change + 2);
+                match &mut value {
+                    ResOperand::DoubleDeref(cell, _) | ResOperand::Deref(cell) => {
+                        cell.register = Register::FP
+                    }
+                    ResOperand::Immediate(_) => {}
+                    ResOperand::BinOp(BinOpOperand { a, b, .. }) => {
+                        a.register = Register::FP;
+                        match b {
+                            DerefOrImmediate::Deref(cell) => cell.register = Register::FP,
+                            DerefOrImmediate::Immediate(_) => {}
+                        }
+                    }
+                }
+                function_vars.insert(*var, value);
+            }
+            if main_var {
+                main_vars.insert(*var, value.clone());
+            }
+        }
+
+        let instruction = self.get_instruction(
+            InstructionBody::Call(CallInstruction {
+                relative: true,
+                target: deref_or_immediate!(0),
+            }),
+            false,
+        );
+        self.statements.push(Statement::Jump(label.clone(), instruction));
+
+        self.main_state.vars = main_vars;
+        self.main_state.ap_change = 0;
+        self.main_state.allocated = 0;
+        let function_state = State { vars: function_vars, ..Default::default() };
+        self.set_or_test_label_state(label, function_state);
+    }
+
+    /// A return statement in the code.
+    pub fn ret(&mut self) {
+        let instruction = self.get_instruction(InstructionBody::Ret(RetInstruction {}), false);
+        self.statements.push(Statement::Final(instruction));
+        self.reachable = false;
+    }
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
     fn get_value(&self, var: Var, adjust_ap: bool) -> ResOperand {
         if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
@@ -569,6 +650,14 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
         $builder.jump_nz($condition, std::stringify!($target).to_owned());
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, call $target:ident; $($tok:tt)*) => {
+        $builder.call(std::stringify!($target).to_owned());
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, ret; $($tok:tt)*) => {
+        $builder.ret();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, $label:ident: $($tok:tt)*) => {
