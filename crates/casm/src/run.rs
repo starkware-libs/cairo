@@ -47,13 +47,15 @@ struct CairoHintProcessor {
 }
 
 impl CairoHintProcessor {
-    pub fn new(program: Vec<Instruction>) -> Self {
+    pub fn new<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
+        instructions: Instructions,
+    ) -> Self {
         let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
         let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
 
         let mut hint_offset = 0;
 
-        for instruction in program.iter() {
+        for instruction in instructions {
             if !instruction.hints.is_empty() {
                 // Register hint with string for the hint processor.
                 for hint in instruction.hints.iter() {
@@ -169,17 +171,17 @@ impl HintProcessor for CairoHintProcessor {
 }
 
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
-pub fn run_function(
-    function: Vec<Instruction>,
+pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
+    instructions: Instructions,
     builtins: Vec<String>,
 ) -> Result<(Vec<Option<BigInt>>, usize), Box<VirtualMachineError>> {
-    let data: Vec<MaybeRelocatable> = function
-        .iter()
+    let data: Vec<MaybeRelocatable> = instructions
+        .clone()
         .flat_map(|inst| inst.assemble().encode())
         .map(MaybeRelocatable::from)
         .collect();
 
-    let hint_processor = CairoHintProcessor::new(function);
+    let hint_processor = CairoHintProcessor::new(instructions);
 
     let program = Program {
         builtins,
@@ -211,8 +213,8 @@ pub fn run_function(
 }
 
 /// Runs `function` and returns `n_returns` return values.
-pub fn run_function_return_values(
-    instructions: Vec<Instruction>,
+pub fn run_function_return_values<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
+    instructions: Instructions,
     builtins: Vec<String>,
     n_returns: usize,
 ) -> Result<Vec<BigInt>, Box<VirtualMachineError>> {
