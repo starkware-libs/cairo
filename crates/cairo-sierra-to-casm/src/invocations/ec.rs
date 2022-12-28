@@ -8,6 +8,7 @@ use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
+use crate::references::{CellExpression, ReferenceExpression};
 
 /// Returns the Beta value of the Starkware elliptic curve.
 fn get_beta() -> BigInt {
@@ -22,6 +23,15 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         EcConcreteLibFunc::CreatePoint(_) => build_ec_point_try_create(builder),
+        EcConcreteLibFunc::CreatePointAtInfinity(_) => Ok(builder.build_only_reference_changes(
+            [ReferenceExpression {
+                cells: vec![
+                    CellExpression::Immediate(BigInt::from(0)),
+                    CellExpression::Immediate(BigInt::from(0)),
+                ],
+            }]
+            .into_iter(),
+        )),
     }
 }
 

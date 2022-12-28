@@ -145,6 +145,7 @@ use option::Option;
 // EC.
 mod ec;
 use ec::EcPoint;
+use ec::ec_create_inf_point;
 use ec::ec_point_from_felts;
 use ec::ec_point_try_create;
 
