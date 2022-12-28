@@ -22,6 +22,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         EcConcreteLibfunc::CreatePoint(_) => build_ec_point_try_create(builder),
+        EcConcreteLibfunc::InitState(_) => build_ec_init_state(builder),
         EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
     }
 }
@@ -43,6 +44,107 @@ fn verify_ec_point(
         tempvar alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
         assert computed_rhs = x3 + alpha_x_plus_beta;
     };
+}
+
+/// Extends the CASM builder to compute the sum of two EC points and store the result in the given
+/// variables.
+/// Assumes neither point is the point at infinity, and asserts their sum is not the point at
+/// infinity (i.e. asserts p0 != -p1).
+/// Optionally asserts that the points are not equal (i.e. no doubling), in which case the AP stack
+/// is not padded to match this case.
+// Logic taken from ec_safe_add:
+// https://github.com/starkware-industries/starkware/blob/dev/src/starkware/python/math_utils.py#L165
+fn add_ec_points(
+    casm_builder: &mut CasmBuilder,
+    p0: (Var, Var),
+    p1: (Var, Var),
+    allow_doubling: bool,
+) -> (Var, Var) {
+    let (x0, y0) = p0;
+    let (x1, y1) = p1;
+
+    casm_build_extend! {casm_builder,
+        const one = 1;
+        const three = 3;
+        tempvar result_x;
+        tempvar result_y;
+        // If the X coordinate is the same, either the points are equal or their sum is the point at
+        // infinity.
+        tempvar diff_x = x0 - x1;
+        jump NotSameX if diff_x != 0;
+        // X coordinate is identical. If y0 + y1 is zero, the sum is the point at infinity, which we
+        // do not allow; however, there is no danger in ignoring this case (see the doubling
+        // computation below for the argument). Either we disallow doubling entirely (in which case
+        // the next instruction is an assertion of a contradiction), or we allow doubling and will
+        // fail on an assertion during the doubling computation.
+    };
+
+    if allow_doubling {
+        // Add computation of point doubling.
+        casm_build_extend! {casm_builder,
+            // The `X` coordinates are the same, which means either `y0 = y1` or `y0 = -y1`. We
+            // assume `y0 = y1`, and in addition, we assume `y0 + y1 != 0` (otherwise we will fail
+            // an assert, see argument below). This means neither `y0` nor `y1` is zero (so we can
+            // divide by `y0 + y1`).
+            // Compute the "slope": `(3 * X * X + ALPHA) / (y0 + y1)`, and use the slope to compute
+            // the doubled point:
+            // `result_x = slope * slope - 2 * X`
+            // `result_y = slope * (X - result_x) - y0`
+            tempvar x2 = x0 * x0;
+            tempvar x2_times_3 = three * x2;
+            tempvar numerator = x2_times_3 + one; // Alpha is 1 on our curve.
+            // We do not actually assert `y0 + y1 != 0`; however, if the sum of the Y coordinates is
+            // zero, then the next assertion means we must have `numerator = 0`. This can only occur
+            // if `x0^2 = -1 / 3` in our field. As `-1 / 3` in our field is
+            // `2412335192444087475798215188730046737082071476887731133315394704090581346987`, and
+            // this number is not a quadratic residue modulo our prime, this can never occur.
+            tempvar denominator = y0 + y1;
+            tempvar slope;
+            assert numerator = slope * denominator;
+            tempvar slope2 = slope * slope;
+            tempvar x_times_2 = x0 + x0;
+            assert x_times_2 = result_x + slope2;
+            tempvar x_minus_result_x = x0 - result_x;
+            tempvar x_minus_result_x_times_slope = x_minus_result_x * slope;
+            assert x_minus_result_x_times_slope = result_y + y0;
+            jump Done;
+        };
+    } else {
+        // The points are equal but doubling is not allowed; assert a contradiction.
+        casm_build_extend! {casm_builder,
+            assert y0 = y0 + one;
+        };
+    }
+
+    casm_build_extend! {casm_builder,
+        NotSameX:
+        // If we are here, then `p0 != p1` and `p0 != -p1`. Compute the "slope"
+        // (`(y0 - y1) / (x0 - x1)`), and use the slope to compute the sum:
+        // `result_x = slope * slope - x0 - x1`
+        // `result_y = slope * (x0 - result_x) - y0`
+        tempvar numerator = y0 - y1;
+        tempvar denominator = x0 - x1;
+        tempvar slope;
+        assert numerator = slope * denominator;
+        tempvar slope2 = slope * slope;
+        tempvar sum_x = x0 + x1;
+        assert slope2 = result_x + sum_x;
+        tempvar x_change = x0 - result_x;
+        tempvar slope_times_x_change = slope * x_change;
+        assert slope_times_x_change = result_y + y0;
+    }
+
+    // Done. If doubling is allowed, need to bump the AP stack to match the doubling case.
+    if allow_doubling {
+        casm_build_extend! {casm_builder,
+            ap += 3;
+        };
+    }
+    casm_build_extend! {casm_builder,
+        Done:
+    };
+
+    return (result_x, result_y);
 }
 
 /// Handles instruction for creating an EC point.
@@ -87,4 +189,44 @@ fn build_ec_point_unwrap(
     let y = casm_builder.add_var(ResOperand::Deref(y.to_deref()?));
 
     Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[x], &[y]], None)]))
+}
+
+/// Handles instruction for initializing an EC state from an EC point (that is not the point at
+/// infinity).
+fn build_ec_init_state(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_point] = builder.try_get_refs()?;
+    let [input_x, input_y] = expr_point.try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    let input_x = casm_builder.add_var(ResOperand::Deref(input_x.to_deref()?));
+    let input_y = casm_builder.add_var(ResOperand::Deref(input_y.to_deref()?));
+
+    // Sample a random point on the curve.
+    casm_build_extend! {casm_builder,
+        tempvar random_x;
+        tempvar random_y;
+        hint RandomEcPoint {} into { x: random_x, y: random_y };
+        // Assert the random point is on the curve.
+        tempvar y2;
+        tempvar expected_y2;
+    }
+    verify_ec_point(&mut casm_builder, random_x, random_y, y2, expected_y2);
+    casm_build_extend! {casm_builder,
+        assert y2 = expected_y2;
+        // Create a pointer to the random EC point to return as part of the state.
+        tempvar random_ptr;
+        hint AllocSegment {} into {dst: random_ptr};
+        assert random_x = random_ptr[0];
+        assert random_y = random_ptr[1];
+    };
+    let (result_x, result_y) =
+        add_ec_points(&mut casm_builder, (input_x, input_y), (random_x, random_y), false);
+
+    // The third entry in the EC state is a pointer to the originally sampled random EC point.
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[result_x, result_y, random_ptr]], None)],
+    ))
 }
