@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use sierra::ids::FunctionId;
-use sierra::program::StatementIdx;
+use cairo_sierra::ids::FunctionId;
+use cairo_sierra::program::StatementIdx;
 
 /// Ap change information for a Sierra program.
 #[derive(Debug, Eq, PartialEq)]

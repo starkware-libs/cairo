@@ -1,8 +1,8 @@
-use db_utils::define_short_id;
-use defs::ids::FreeFunctionId;
-use sierra::ids::ConcreteTypeId;
-use sierra::program;
-use utils::write_comma_separated;
+use cairo_db_utils::define_short_id;
+use cairo_defs::ids::FreeFunctionId;
+use cairo_sierra::ids::ConcreteTypeId;
+use cairo_sierra::program;
+use cairo_utils::write_comma_separated;
 
 use crate::db::SierraGenGroup;
 
@@ -27,7 +27,7 @@ impl std::fmt::Display for LabelId {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Function {
     /// The source function which was compiled.
-    pub id: sierra::ids::FunctionId,
+    pub id: cairo_sierra::ids::FunctionId,
     /// Number of statements in the body that are the function prolog, including the label and the
     /// local variables definition.
     pub prolog_size: usize,
@@ -38,7 +38,7 @@ pub struct Function {
     /// The parameters for the function.
     pub parameters: Vec<program::Param>,
     /// The return types from the function.
-    pub ret_types: Vec<sierra::ids::ConcreteTypeId>,
+    pub ret_types: Vec<cairo_sierra::ids::ConcreteTypeId>,
 }
 
 /// Represents a pre-sierra statement - a statement before label-resolution.
@@ -82,9 +82,9 @@ impl std::fmt::Display for Statement {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PushValue {
     /// The variable id to push.
-    pub var: sierra::ids::VarId,
+    pub var: cairo_sierra::ids::VarId,
     /// The variable id on the stack (e.g., the result of `store_temp()`).
-    pub var_on_stack: sierra::ids::VarId,
+    pub var_on_stack: cairo_sierra::ids::VarId,
     /// The type of the variable.
     pub ty: ConcreteTypeId,
 }

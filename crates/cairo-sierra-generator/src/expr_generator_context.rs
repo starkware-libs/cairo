@@ -1,8 +1,8 @@
-use defs::diagnostic_utils::StableLocation;
-use defs::ids::{FreeFunctionId, LanguageElementId, ModuleFileId};
-use diagnostics::{DiagnosticsBuilder, Maybe};
-use syntax::node::ids::SyntaxStablePtrId;
-use utils::unordered_hash_map::UnorderedHashMap;
+use cairo_defs::diagnostic_utils::StableLocation;
+use cairo_defs::ids::{FreeFunctionId, LanguageElementId, ModuleFileId};
+use cairo_diagnostics::{DiagnosticsBuilder, Maybe};
+use cairo_syntax::node::ids::SyntaxStablePtrId;
+use cairo_utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::diagnostic::SierraGeneratorDiagnosticKind;
@@ -12,19 +12,19 @@ use crate::{pre_sierra, SierraGeneratorDiagnostic};
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
-    lowered: &'a lowering::lower::Lowered,
+    lowered: &'a cairo_lowering::lower::Lowered,
     function_id: FreeFunctionId,
     module_file_id: ModuleFileId,
     diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    variables: UnorderedHashMap<lowering::VariableId, sierra::ids::VarId>,
+    variables: UnorderedHashMap<cairo_lowering::VariableId, cairo_sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
     pub fn new(
         db: &'a dyn SierraGenGroup,
-        lowered: &'a lowering::lower::Lowered,
+        lowered: &'a cairo_lowering::lower::Lowered,
         function_id: FreeFunctionId,
         diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     ) -> Self {
@@ -41,8 +41,8 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Allocates a new Sierra variable.
-    pub fn allocate_sierra_variable(&mut self) -> sierra::ids::VarId {
-        sierra::ids::VarId::from_usize(self.var_id_allocator.allocate())
+    pub fn allocate_sierra_variable(&mut self) -> cairo_sierra::ids::VarId {
+        cairo_sierra::ids::VarId::from_usize(self.var_id_allocator.allocate())
     }
 
     /// Returns the SierraGenGroup salsa database.
@@ -50,9 +50,12 @@ impl<'a> ExprGeneratorContext<'a> {
         self.db
     }
 
-    /// Returns the Sierra variable that corresponds to [lowering::VariableId].
+    /// Returns the Sierra variable that corresponds to [cairo_lowering::VariableId].
     /// Allocates a new Sierra variable on the first call (for each variable).
-    pub fn get_sierra_variable(&mut self, var: lowering::VariableId) -> sierra::ids::VarId {
+    pub fn get_sierra_variable(
+        &mut self,
+        var: cairo_lowering::VariableId,
+    ) -> cairo_sierra::ids::VarId {
         if let Some(sierra_var) = self.variables.get(&var) {
             return sierra_var.clone();
         }
@@ -65,8 +68,8 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Same as [Self::get_sierra_variable] except that it operates of a list of variables.
     pub fn get_sierra_variables(
         &mut self,
-        vars: &[lowering::VariableId],
-    ) -> Vec<sierra::ids::VarId> {
+        vars: &[cairo_lowering::VariableId],
+    ) -> Vec<cairo_sierra::ids::VarId> {
         vars.iter().map(|var| self.get_sierra_variable(*var)).collect()
     }
 
@@ -93,16 +96,20 @@ impl<'a> ExprGeneratorContext<'a> {
         });
     }
 
-    /// Returns the [sierra::ids::ConcreteTypeId] associated with [lowering::VariableId].
+    /// Returns the [cairo_sierra::ids::ConcreteTypeId] associated with
+    /// [cairo_lowering::VariableId].
     pub fn get_variable_sierra_type(
         &self,
-        var: lowering::VariableId,
-    ) -> Maybe<sierra::ids::ConcreteTypeId> {
+        var: cairo_lowering::VariableId,
+    ) -> Maybe<cairo_sierra::ids::ConcreteTypeId> {
         self.db.get_concrete_type_id(self.lowered.variables[var].ty)
     }
 
-    /// Returns the block ([lowering::Block]) associated with [lowering::BlockId].
-    pub fn get_lowered_block(&self, block_id: lowering::BlockId) -> &'a lowering::Block {
+    /// Returns the block ([cairo_lowering::Block]) associated with [cairo_lowering::BlockId].
+    pub fn get_lowered_block(
+        &self,
+        block_id: cairo_lowering::BlockId,
+    ) -> &'a cairo_lowering::Block {
         &self.lowered.blocks[block_id]
     }
 }

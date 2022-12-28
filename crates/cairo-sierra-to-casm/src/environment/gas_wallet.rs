@@ -1,9 +1,9 @@
 use std::fmt::Display;
 
-use sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
 use thiserror::Error;
-use utils::collection_arithmetics::add_maps;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::collection_arithmetics::add_maps;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum GasWalletError {

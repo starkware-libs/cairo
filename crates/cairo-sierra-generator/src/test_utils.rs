@@ -1,19 +1,19 @@
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
-use defs::ids::ModuleId;
-use defs::plugin::MacroPlugin;
-use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
-use lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
-use parser::db::ParserDatabase;
-use plugins::get_default_plugins;
+use cairo_db_utils::Upcast;
+use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
+use cairo_defs::ids::ModuleId;
+use cairo_defs::plugin::MacroPlugin;
+use cairo_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
+use cairo_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
+use cairo_parser::db::ParserDatabase;
+use cairo_plugins::get_default_plugins;
+use cairo_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use cairo_semantic::test_utils::setup_test_crate;
+use cairo_sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
+use cairo_sierra::program;
+use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use salsa::{InternId, InternKey};
-use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
-use semantic::test_utils::setup_test_crate;
-use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
-use sierra::program;
-use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
 use crate::pre_sierra;
@@ -58,17 +58,17 @@ impl Upcast<dyn SyntaxGroup> for SierraGenDatabaseForTesting {
     }
 }
 impl Upcast<dyn DefsGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn defs::db::DefsGroup + 'static) {
+    fn upcast(&self) -> &(dyn cairo_defs::db::DefsGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn SemanticGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn semantic::db::SemanticGroup + 'static) {
+    fn upcast(&self) -> &(dyn cairo_semantic::db::SemanticGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn lowering::db::LoweringGroup + 'static) {
+    fn upcast(&self) -> &(dyn cairo_lowering::db::LoweringGroup + 'static) {
         self
     }
 }
@@ -79,7 +79,7 @@ impl HasMacroPlugins for SierraGenDatabaseForTesting {
 }
 
 /// Compiles `content` to sierra and replaces the sierra ids to make it readable.
-pub fn checked_compile_to_sierra(content: &str) -> sierra::program::Program {
+pub fn checked_compile_to_sierra(content: &str) -> cairo_sierra::program::Program {
     let (db, crate_id) = setup_db_and_get_crate_id(content);
 
     let program = db.get_sierra_program(vec![crate_id]).unwrap();
@@ -89,7 +89,7 @@ pub fn checked_compile_to_sierra(content: &str) -> sierra::program::Program {
 /// Adds `content` to a salsa db and returns the crate id that points to it.
 pub fn setup_db_and_get_crate_id(
     content: &str,
-) -> (SierraGenDatabaseForTesting, filesystem::ids::CrateId) {
+) -> (SierraGenDatabaseForTesting, cairo_filesystem::ids::CrateId) {
     let mut db_val = SierraGenDatabaseForTesting::default();
     let db = &mut db_val;
     let crate_id = setup_test_crate(db, content);
@@ -127,7 +127,7 @@ fn dummy_concrete_lib_func_id(db: &dyn SierraGenGroup, name: &str) -> ConcreteLi
 }
 
 /// Returns a vector of variable ids based on the inputs mapped into varaible ids.
-pub fn as_var_id_vec(ids: &[&str]) -> Vec<sierra::ids::VarId> {
+pub fn as_var_id_vec(ids: &[&str]) -> Vec<cairo_sierra::ids::VarId> {
     ids.iter().map(|id| (*id).into()).collect()
 }
 
@@ -208,7 +208,7 @@ macro_rules! diagnostics_test {
         fn $test_name() -> Result<(), std::io::Error> {
             let mut db = $db;
             for filename in $filenames{
-                let tests = utils::parse_test_file::parse_test_file(
+                let tests = cairo_utils::parse_test_file::parse_test_file(
                     std::path::Path::new(filename)
                 )?;
                 for (name, test) in tests {

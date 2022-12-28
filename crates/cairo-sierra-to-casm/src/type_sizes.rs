@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use sierra::extensions::core::{CoreLibFunc, CoreType, CoreTypeConcrete};
-use sierra::extensions::starknet::StarkNetTypeConcrete;
-use sierra::extensions::types::InfoAndTypeConcreteType;
-use sierra::ids::ConcreteTypeId;
-use sierra::program::Program;
-use sierra::program_registry::ProgramRegistry;
+use cairo_sierra::extensions::core::{CoreLibFunc, CoreType, CoreTypeConcrete};
+use cairo_sierra::extensions::starknet::StarkNetTypeConcrete;
+use cairo_sierra::extensions::types::InfoAndTypeConcreteType;
+use cairo_sierra::ids::ConcreteTypeId;
+use cairo_sierra::program::Program;
+use cairo_sierra::program_registry::ProgramRegistry;
 
 pub type TypeSizeMap = HashMap<ConcreteTypeId, i16>;
 

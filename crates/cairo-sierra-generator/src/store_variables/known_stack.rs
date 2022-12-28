@@ -4,20 +4,20 @@ mod test;
 
 use std::cmp::max;
 
-use utils::ordered_hash_map::OrderedHashMap;
-use utils::unordered_hash_set::UnorderedHashSet;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::unordered_hash_set::UnorderedHashSet;
 
 use crate::pre_sierra;
 
 /// Represents the information known about the top of the stack at a given point in the code.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct KnownStack {
-    /// A map from [sierra::ids::VarId] of variables that are located on the stack
+    /// A map from [cairo_sierra::ids::VarId] of variables that are located on the stack
     /// (e.g., `[ap - 2]`) to their index on the stack, relative to `offset`.
     ///
     /// A variable with index `i` is at the (`offset-i`)-th slot from the top of the stack.
     /// In particular, the top element has `i = offset - 1`.
-    variables_on_stack: OrderedHashMap<sierra::ids::VarId, usize>,
+    variables_on_stack: OrderedHashMap<cairo_sierra::ids::VarId, usize>,
     offset: usize,
 }
 impl KnownStack {
@@ -31,19 +31,23 @@ impl KnownStack {
 
     /// Marks that the given variable appears on slot `idx` of the stack (note that `0` here means
     /// that the address is `ap`, and other indices will have larger addresses).
-    pub fn insert(&mut self, var: sierra::ids::VarId, idx: usize) {
+    pub fn insert(&mut self, var: cairo_sierra::ids::VarId, idx: usize) {
         self.variables_on_stack.insert(var, self.offset + idx);
     }
 
     /// Adds a value to the top of the stack, and advances `ap` accordingly (more precisely,
     /// `offset` is advanced by 1).
-    pub fn push(&mut self, var: &sierra::ids::VarId) {
+    pub fn push(&mut self, var: &cairo_sierra::ids::VarId) {
         self.insert(var.clone(), 0);
         self.offset += 1;
     }
 
     // If `src` is on the known stack, marks `dst` as located in the same cell.
-    pub fn clone_if_on_stack(&mut self, src: &sierra::ids::VarId, dst: &sierra::ids::VarId) {
+    pub fn clone_if_on_stack(
+        &mut self,
+        src: &cairo_sierra::ids::VarId,
+        dst: &cairo_sierra::ids::VarId,
+    ) {
         if let Some(index_on_stack) = self.variables_on_stack.get(src).cloned() {
             self.variables_on_stack.insert(dst.clone(), index_on_stack);
         }
@@ -58,7 +62,7 @@ impl KnownStack {
     }
 
     /// Removes the information known about the given variable.
-    pub fn remove_variable(&mut self, var: &sierra::ids::VarId) {
+    pub fn remove_variable(&mut self, var: &cairo_sierra::ids::VarId) {
         self.variables_on_stack.swap_remove(var);
     }
 
@@ -102,7 +106,8 @@ impl KnownStack {
         let mut indices = UnorderedHashSet::<usize>::default();
         // Prepares a temporary map of variables. This map will later be filtered when the actual
         // size of the merged stack is known.
-        let mut tmp_variables_on_stack = OrderedHashMap::<sierra::ids::VarId, usize>::default();
+        let mut tmp_variables_on_stack =
+            OrderedHashMap::<cairo_sierra::ids::VarId, usize>::default();
         for (var, self_index) in self.variables_on_stack.iter() {
             if let Some(other_index) = other.variables_on_stack.get(var) {
                 assert!(

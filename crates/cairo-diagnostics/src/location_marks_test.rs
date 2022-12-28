@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use filesystem::db::FilesGroup;
-use filesystem::ids::{FileLongId, VirtualFile};
-use filesystem::span::{TextOffset, TextSpan};
-use filesystem::test_utils::FilesDatabaseForTesting;
+use cairo_filesystem::db::FilesGroup;
+use cairo_filesystem::ids::{FileLongId, VirtualFile};
+use cairo_filesystem::span::{TextOffset, TextSpan};
+use cairo_filesystem::test_utils::FilesDatabaseForTesting;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;

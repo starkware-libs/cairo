@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use defs::db::DefsGroup;
-use filesystem::span::{TextOffset, TextSpan};
-use syntax::node::db::SyntaxGroup;
-use syntax::node::{SyntaxNode, TypedSyntaxNode};
-use utils::extract_matches;
+use cairo_defs::db::DefsGroup;
+use cairo_filesystem::span::{TextOffset, TextSpan};
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_utils::extract_matches;
 
 /// Interface for modifying syntax nodes.
 #[derive(Clone, Debug, PartialEq, Eq)]

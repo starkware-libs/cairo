@@ -1,4 +1,4 @@
-use casm::ap_change::ApChange;
+use cairo_casm::ap_change::ApChange;
 use frame_state::{FrameState, FrameStateError};
 use thiserror::Error;
 

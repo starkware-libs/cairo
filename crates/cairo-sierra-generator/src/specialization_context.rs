@@ -1,31 +1,31 @@
-use defs::ids::GenericFunctionId;
-use diagnostics::ToOption;
-use sierra::extensions::lib_func::{SierraApChange, SignatureSpecializationContext};
-use sierra::extensions::type_specialization_context::TypeSpecializationContext;
-use sierra::program::ConcreteTypeLongId;
+use cairo_defs::ids::GenericFunctionId;
+use cairo_diagnostics::ToOption;
+use cairo_sierra::extensions::lib_func::{SierraApChange, SignatureSpecializationContext};
+use cairo_sierra::extensions::type_specialization_context::TypeSpecializationContext;
+use cairo_sierra::program::ConcreteTypeLongId;
 
 use crate::db::SierraGenGroup;
 
 /// A wrapper over the [SierraGenGroup] salsa database, that provides the
 /// [SignatureSpecializationContext] functionality.
 /// In particular, it can be used when calling
-/// [specialize_signature_by_id](sierra::extensions::lib_func::GenericLibFuncEx::specialize_signature_by_id).
+/// [specialize_signature_by_id](cairo_sierra::extensions::lib_func::GenericLibFuncEx::specialize_signature_by_id).
 pub struct SierraSignatureSpecializationContext<'a>(pub &'a dyn SierraGenGroup);
 
 impl TypeSpecializationContext for SierraSignatureSpecializationContext<'_> {
     fn try_get_type_info(
         &self,
-        id: sierra::ids::ConcreteTypeId,
-    ) -> Option<sierra::extensions::types::TypeInfo> {
+        id: cairo_sierra::ids::ConcreteTypeId,
+    ) -> Option<cairo_sierra::extensions::types::TypeInfo> {
         self.0.get_type_info(id).map(|info| (*info).clone()).to_option()
     }
 }
 impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_> {
     fn try_get_concrete_type(
         &self,
-        id: sierra::ids::GenericTypeId,
-        generic_args: &[sierra::program::GenericArg],
-    ) -> Option<sierra::ids::ConcreteTypeId> {
+        id: cairo_sierra::ids::GenericTypeId,
+        generic_args: &[cairo_sierra::program::GenericArg],
+    ) -> Option<cairo_sierra::ids::ConcreteTypeId> {
         Some(self.0.intern_concrete_type(ConcreteTypeLongId {
             generic_id: id,
             generic_args: generic_args.to_vec(),
@@ -34,8 +34,8 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
 
     fn try_get_function_signature(
         &self,
-        function_id: &sierra::ids::FunctionId,
-    ) -> Option<sierra::program::FunctionSignature> {
+        function_id: &cairo_sierra::ids::FunctionId,
+    ) -> Option<cairo_sierra::program::FunctionSignature> {
         self.0
             .get_function_signature(function_id.clone())
             .map(|signature| (*signature).clone())
@@ -48,7 +48,7 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
 
     fn try_get_function_ap_change(
         &self,
-        function_id: &sierra::ids::FunctionId,
+        function_id: &cairo_sierra::ids::FunctionId,
     ) -> Option<SierraApChange> {
         let concrete_function = self
             .0

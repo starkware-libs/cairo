@@ -1,6 +1,6 @@
-use casm::ap_change::ApChange;
-use casm::casm;
-use sierra::program::StatementIdx;
+use cairo_casm::ap_change::ApChange;
+use cairo_casm::casm;
+use cairo_sierra::program::StatementIdx;
 use test_log::test;
 
 use crate::invocations::test_utils::{

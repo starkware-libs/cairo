@@ -1,20 +1,22 @@
 use std::sync::Arc;
 use std::vec;
 
-use db_utils::define_short_id;
-use defs::ids::{
+use cairo_db_utils::define_short_id;
+use cairo_defs::ids::{
     GenericFunctionId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
     LanguageElementId, ModuleId,
 };
-use diagnostics::{skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption};
-use diagnostics_proc_macros::DebugWithDb;
+use cairo_diagnostics::{
+    skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
+};
+use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_syntax::node::ast::{self, Item, MaybeImplBody, OptionReturnTypeClause};
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::ids::SyntaxStablePtrId;
+use cairo_syntax::node::TypedSyntaxNode;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::{extract_matches, try_extract_matches, OptionHelper};
 use itertools::izip;
-use syntax::node::ast::{self, Item, MaybeImplBody, OptionReturnTypeClause};
-use syntax::node::db::SyntaxGroup;
-use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::TypedSyntaxNode;
-use utils::ordered_hash_map::OrderedHashMap;
-use utils::{extract_matches, try_extract_matches, OptionHelper};
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
@@ -148,7 +150,7 @@ pub fn impl_semantic_definition_diagnostics(
 }
 
 /// An helper function to report diagnostics in priv_impl_definition_data.
-fn report_invalid_in_impl<Terminal: syntax::node::Terminal>(
+fn report_invalid_in_impl<Terminal: cairo_syntax::node::Terminal>(
     syntax_db: &dyn SyntaxGroup,
     diagnostics: &mut SemanticDiagnostics,
     kw_terminal: Terminal,

@@ -1,9 +1,9 @@
 //! Statement generators. Add statements to BlockScope while respecting variable liveness and
 //! ownership of OwnedVariable.
 
+use cairo_semantic::{ConcreteEnumId, ConcreteVariant};
 use itertools::chain;
 use num_bigint::BigInt;
-use semantic::{ConcreteEnumId, ConcreteVariant};
 
 use super::{BlockEndInfo, BlockScope, LivingVar};
 use crate::lower::context::LoweringContext;
@@ -20,7 +20,7 @@ use crate::{
 /// Generator for [StatementLiteral].
 pub struct Literal {
     pub value: BigInt,
-    pub ty: semantic::TypeId,
+    pub ty: cairo_semantic::TypeId,
 }
 impl Literal {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
@@ -37,13 +37,13 @@ impl Literal {
 /// Generator for [StatementCall].
 pub struct Call {
     /// Called function.
-    pub function: semantic::FunctionId,
+    pub function: cairo_semantic::FunctionId,
     /// Inputs to function.
     pub inputs: Vec<LivingVar>,
     /// Types for `ref` parameters of the function. An output variable will be introduced for each.
-    pub ref_tys: Vec<semantic::TypeId>,
+    pub ref_tys: Vec<cairo_semantic::TypeId>,
     /// Types for the returns of the function. An output variable will be introduced for each.
-    pub ret_tys: Vec<semantic::TypeId>,
+    pub ret_tys: Vec<cairo_semantic::TypeId>,
 }
 impl Call {
     /// Adds a call statement to the scope.
@@ -126,7 +126,7 @@ impl CallBlock {
 
 /// Generator for [StatementMatchExtern].
 pub struct MatchExtern {
-    pub function: semantic::FunctionId,
+    pub function: cairo_semantic::FunctionId,
     pub inputs: Vec<LivingVar>,
     /// The arms of the match. Order must be identical to the order in the definition of the enum.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
@@ -208,9 +208,9 @@ impl EnumConstruct {
         let input = scope.living_variables.use_var(ctx, self.input).var_id();
         let output = scope.living_variables.introduce_new_var(
             ctx,
-            ctx.db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
-                self.variant.concrete_enum_id,
-            ))),
+            ctx.db.intern_type(cairo_semantic::TypeLongId::Concrete(
+                cairo_semantic::ConcreteTypeId::Enum(self.variant.concrete_enum_id),
+            )),
         );
         scope.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
             variant: self.variant,
@@ -254,7 +254,7 @@ impl MatchEnum {
 /// Generator for [StatementStructDestructure].
 pub struct StructDestructure {
     pub input: LivingVar,
-    pub tys: Vec<semantic::TypeId>,
+    pub tys: Vec<cairo_semantic::TypeId>,
 }
 impl StructDestructure {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> Vec<LivingVar> {
@@ -275,7 +275,7 @@ impl StructDestructure {
 /// Generator for [StatementStructDestructure] as member access.
 pub struct StructMemberAccess {
     pub input: LivingVar,
-    pub member_tys: Vec<semantic::TypeId>,
+    pub member_tys: Vec<cairo_semantic::TypeId>,
     pub member_idx: usize,
 }
 impl StructMemberAccess {
@@ -289,7 +289,7 @@ impl StructMemberAccess {
 /// Generator for [StatementStructConstruct].
 pub struct StructConstruct {
     pub inputs: Vec<LivingVar>,
-    pub ty: semantic::TypeId,
+    pub ty: cairo_semantic::TypeId,
 }
 impl StructConstruct {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {

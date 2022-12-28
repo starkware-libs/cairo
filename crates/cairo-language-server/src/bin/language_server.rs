@@ -1,4 +1,4 @@
-use languageserver::{Backend, RootDatabase, State};
+use cairo_language_server::{Backend, RootDatabase, State};
 use tower_lsp::{LspService, Server};
 
 #[tokio::main]

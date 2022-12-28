@@ -4,7 +4,7 @@ mod test;
 
 use std::collections::HashMap;
 
-use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId};
+use cairo_sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId};
 
 use crate::replace_ids::SierraIdReplacer;
 
@@ -20,7 +20,7 @@ pub struct CanonicalReplacer {
 /// The first type_id is 0, the second type id is 1, etc.
 impl CanonicalReplacer {
     /// Builds a replacer from a program.
-    pub fn from_program(program: &sierra::program::Program) -> Self {
+    pub fn from_program(program: &cairo_sierra::program::Program) -> Self {
         let mut type_ids = HashMap::default();
 
         for type_declaration in &program.type_declarations {
@@ -47,16 +47,22 @@ impl CanonicalReplacer {
 impl SierraIdReplacer for CanonicalReplacer {
     fn replace_libfunc_id(
         &self,
-        id: &sierra::ids::ConcreteLibFuncId,
-    ) -> sierra::ids::ConcreteLibFuncId {
+        id: &cairo_sierra::ids::ConcreteLibFuncId,
+    ) -> cairo_sierra::ids::ConcreteLibFuncId {
         self.libfunc_ids.get(id).expect("Unexpected libfunc id.").clone()
     }
 
-    fn replace_type_id(&self, id: &sierra::ids::ConcreteTypeId) -> sierra::ids::ConcreteTypeId {
+    fn replace_type_id(
+        &self,
+        id: &cairo_sierra::ids::ConcreteTypeId,
+    ) -> cairo_sierra::ids::ConcreteTypeId {
         self.type_ids.get(id).expect("Unexpected type id.").clone()
     }
 
-    fn replace_function_id(&self, id: &sierra::ids::FunctionId) -> sierra::ids::FunctionId {
+    fn replace_function_id(
+        &self,
+        id: &cairo_sierra::ids::FunctionId,
+    ) -> cairo_sierra::ids::FunctionId {
         self.function_ids.get(id).expect("Unexpected type id.").clone()
     }
 }

@@ -1,11 +1,11 @@
 use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
 use smol_str::SmolStr;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::kind::SyntaxKind;
-use syntax::node::SyntaxNode;
-use syntax_codegen::cairo_spec::get_spec;
-use syntax_codegen::spec::{Member, Node, NodeKind};
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::kind::SyntaxKind;
+use cairo_syntax::node::SyntaxNode;
+use cairo_syntax_codegen::cairo_spec::get_spec;
+use cairo_syntax_codegen::spec::{Member, Node, NodeKind};
 
 pub fn print_tree(
     db: &dyn SyntaxGroup,
@@ -83,7 +83,7 @@ impl<'a> Printer<'a> {
         let extra_head_indent = if is_last { "└── " } else { "├── " };
         let green_node = syntax_node.green_node(self.db);
         match green_node.details {
-            syntax::node::green::GreenNodeDetails::Token(text) => {
+            cairo_syntax::node::green::GreenNodeDetails::Token(text) => {
                 if under_top_level {
                     self.print_token_node(
                         field_description,
@@ -94,7 +94,7 @@ impl<'a> Printer<'a> {
                     )
                 }
             }
-            syntax::node::green::GreenNodeDetails::Node { .. } => {
+            cairo_syntax::node::green::GreenNodeDetails::Node { .. } => {
                 self.print_internal_node(
                     field_description,
                     indent,

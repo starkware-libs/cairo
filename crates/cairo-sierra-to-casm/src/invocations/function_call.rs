@@ -1,9 +1,9 @@
 use std::collections::VecDeque;
 
-use casm::casm;
-use casm::operand::{CellRef, Register};
-use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
-use sierra::extensions::ConcreteLibFunc;
+use cairo_casm::casm;
+use cairo_casm::operand::{CellRef, Register};
+use cairo_sierra::extensions::function_call::FunctionCallConcreteLibFunc;
+use cairo_sierra::extensions::ConcreteLibFunc;
 
 use super::{
     check_references_on_stack, CompiledInvocation, CompiledInvocationBuilder, InvocationError,

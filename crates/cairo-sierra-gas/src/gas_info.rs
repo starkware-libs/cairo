@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::ids::FunctionId;
-use sierra::program::StatementIdx;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::ids::FunctionId;
+use cairo_sierra::program::StatementIdx;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 /// Gas information for a Sierra program.
 #[derive(Debug, Eq, PartialEq)]

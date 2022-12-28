@@ -1,15 +1,15 @@
-use debug::DebugWithDb;
+use cairo_debug::DebugWithDb;
+use cairo_lowering::db::LoweringGroup;
+use cairo_semantic::test_utils::setup_test_function;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use lowering::db::LoweringGroup;
 use pretty_assertions::assert_eq;
-use semantic::test_utils::setup_test_function;
-use utils::ordered_hash_map::OrderedHashMap;
 
 use super::find_local_variables;
 use crate::function_generator_test_utils::test_function_generator;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
-test_utils::test_file_test!(
+cairo_test_utils::test_file_test!(
     local_variables,
     [
         "src/local_variables_test_data/block",
@@ -42,7 +42,7 @@ fn check_find_local_variables(
 
     let lowered_function = &*db.free_function_lowered(test_function.function_id).unwrap();
 
-    let lowered_formatter = lowering::fmt::LoweredFormatter { db, lowered: lowered_function };
+    let lowered_formatter = cairo_lowering::fmt::LoweredFormatter { db, lowered: lowered_function };
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
     let local_variables_str = find_local_variables(db, lowered_function)
@@ -56,7 +56,7 @@ fn check_find_local_variables(
     ])
 }
 
-test_utils::test_file_test!(
+cairo_test_utils::test_file_test!(
     local_variables_e2e_test,
     ["src/local_variables_test_data/e2e",],
     SierraGenDatabaseForTesting,

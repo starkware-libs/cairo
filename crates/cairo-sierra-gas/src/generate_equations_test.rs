@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::ids::ConcreteLibFuncId;
+use cairo_sierra::program::StatementIdx;
 use indoc::indoc;
-use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::ids::ConcreteLibFuncId;
-use sierra::program::StatementIdx;
 use test_case::test_case;
 
 use super::generate_equations;
@@ -102,7 +102,7 @@ fn generate(
     costs: HashMap<ConcreteLibFuncId, Vec<CostExpr>>,
 ) -> Result<Vec<CostExpr>, CostError> {
     Ok(generate_equations(
-        &sierra::ProgramParser::new().parse(code).unwrap(),
+        &cairo_sierra::ProgramParser::new().parse(code).unwrap(),
         |_, _idx, libfunc_id| {
             costs
                 .get(libfunc_id)

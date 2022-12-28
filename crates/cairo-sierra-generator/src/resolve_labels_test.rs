@@ -1,6 +1,6 @@
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
-use sierra::ids::ConcreteLibFuncId;
+use cairo_sierra::ids::ConcreteLibFuncId;
 use test_log::test;
 
 use super::resolve_labels;

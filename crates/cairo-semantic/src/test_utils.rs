@@ -1,17 +1,19 @@
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
-use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
-use defs::plugin::MacroPlugin;
-use diagnostics::{Diagnostics, DiagnosticsBuilder};
-use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
-use filesystem::ids::{CrateId, CrateLongId, Directory};
-use parser::db::ParserDatabase;
+use cairo_db_utils::Upcast;
+use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
+use cairo_defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
+use cairo_defs::plugin::MacroPlugin;
+use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder};
+use cairo_filesystem::db::{
+    init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+};
+use cairo_filesystem::ids::{CrateId, CrateLongId, Directory};
+use cairo_parser::db::ParserDatabase;
+use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::{extract_matches, OptionFrom};
 use pretty_assertions::assert_eq;
-use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use utils::ordered_hash_map::OrderedHashMap;
-use utils::{extract_matches, OptionFrom};
 
 use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use crate::{semantic, SemanticDiagnostic};
@@ -252,7 +254,12 @@ pub fn test_function_diagnostics(
 #[macro_export]
 macro_rules! semantic_test {
     ($test_name:ident, $filenames:expr, $func:ident) => {
-        test_utils::test_file_test!($test_name, $filenames, SemanticDatabaseForTesting, $func);
+        cairo_test_utils::test_file_test!(
+            $test_name,
+            $filenames,
+            SemanticDatabaseForTesting,
+            $func
+        );
     };
 }
 

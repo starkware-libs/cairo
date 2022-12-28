@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use ap_change_info::ApChangeInfo;
+use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
+use cairo_sierra::extensions::ConcreteType;
+use cairo_sierra::ids::{ConcreteTypeId, FunctionId};
+use cairo_sierra::program::{Program, StatementIdx};
+use cairo_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use generate_equations::{Effects, Var};
-use sierra::extensions::core::{CoreLibFunc, CoreType};
-use sierra::extensions::ConcreteType;
-use sierra::ids::{ConcreteTypeId, FunctionId};
-use sierra::program::{Program, StatementIdx};
-use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
 pub mod ap_change_info;
@@ -71,11 +71,11 @@ pub fn calc_ap_changes(program: &Program) -> Result<ApChangeInfo, ApChangeError>
             })
             .collect::<Result<Vec<_>, _>>()
     })?;
-    let solution = solver::try_solve_equations(equations)
+    let solution = cairo_eq_solver::try_solve_equations(equations)
         .ok_or(ApChangeError::SolvingApChangeEquationFailed)?;
 
     let mut variable_values = HashMap::<StatementIdx, usize>::default();
-    let mut function_ap_change = HashMap::<sierra::ids::FunctionId, usize>::default();
+    let mut function_ap_change = HashMap::<cairo_sierra::ids::FunctionId, usize>::default();
     for (var, value) in solution {
         match var {
             Var::LibFuncImplicitApChangeVariable(idx) => {

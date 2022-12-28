@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use semantic::plugin::SemanticPlugin;
+use cairo_semantic::plugin::SemanticPlugin;
 
 use crate::derive::DerivePlugin;
 use crate::panicable::PanicablePlugin;

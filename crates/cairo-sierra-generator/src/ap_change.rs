@@ -2,10 +2,10 @@
 #[path = "ap_change_test.rs"]
 mod test;
 
-use defs::ids::FreeFunctionId;
-use diagnostics::Maybe;
-use sierra::extensions::lib_func::SierraApChange;
-use sierra::program::GenStatement;
+use cairo_defs::ids::FreeFunctionId;
+use cairo_diagnostics::Maybe;
+use cairo_sierra::extensions::lib_func::SierraApChange;
+use cairo_sierra::program::GenStatement;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -16,19 +16,19 @@ pub fn contains_cycle(db: &dyn SierraGenGroup, function_id: FreeFunctionId) -> M
     let lowered_function = &*db.free_function_lowered(function_id)?;
     for (_, block) in &lowered_function.blocks {
         for statement in &block.statements {
-            if let lowering::Statement::Call(statement_call) = statement {
+            if let cairo_lowering::Statement::Call(statement_call) = statement {
                 let concrete = db.lookup_intern_function(statement_call.function).function;
                 match concrete.generic_function {
-                    defs::ids::GenericFunctionId::Free(free_function_id) => {
+                    cairo_defs::ids::GenericFunctionId::Free(free_function_id) => {
                         if db.contains_cycle(free_function_id)? {
                             return Ok(true);
                         }
                     }
-                    defs::ids::GenericFunctionId::Extern(_) => {}
-                    defs::ids::GenericFunctionId::TraitFunction(_) => {
+                    cairo_defs::ids::GenericFunctionId::Extern(_) => {}
+                    cairo_defs::ids::GenericFunctionId::TraitFunction(_) => {
                         panic!("Trait function should be replaced with concrete functions.")
                     }
-                    defs::ids::GenericFunctionId::ImplFunction(_) => todo!(),
+                    cairo_defs::ids::GenericFunctionId::ImplFunction(_) => todo!(),
                 }
             }
         }

@@ -1,10 +1,10 @@
-use debug::DebugWithDb;
-use defs::ids::{LanguageElementId, ModuleId};
-use diagnostics::Maybe;
+use cairo_debug::DebugWithDb;
+use cairo_defs::ids::{LanguageElementId, ModuleId};
+use cairo_diagnostics::Maybe;
 use smol_str::SmolStr;
-use syntax::node::ast::OptionAttributeArgs;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_syntax::node::ast::OptionAttributeArgs;
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::db::SemanticGroup;
 

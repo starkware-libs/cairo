@@ -1,6 +1,6 @@
-use lowering::db::LoweringGroup;
-use semantic::test_utils::setup_test_function;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_lowering::db::LoweringGroup;
+use cairo_semantic::test_utils::setup_test_function;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_sierra_ids;

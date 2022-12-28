@@ -1,9 +1,9 @@
 use itertools::zip_eq;
-use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::ids::ConcreteLibFuncId;
-use sierra::program::{Program, StatementIdx};
-use utils::collection_arithmetics::{add_maps, sub_maps};
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::ids::ConcreteLibFuncId;
+use cairo_sierra::program::{Program, StatementIdx};
+use cairo_utils::collection_arithmetics::{add_maps, sub_maps};
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use super::CostError;
 use crate::core_libfunc_cost_expr::CostExprMap;
@@ -41,10 +41,10 @@ pub fn generate_equations<
     // expression).
     for idx in statement_topological_ordering {
         match &program.get_statement(&idx).unwrap() {
-            sierra::program::Statement::Return(_) => {
+            cairo_sierra::program::Statement::Return(_) => {
                 generator.set_or_add_constraint(&idx, CostExprMap::default());
             }
-            sierra::program::Statement::Invocation(invocation) => {
+            cairo_sierra::program::Statement::Invocation(invocation) => {
                 let libfunc_cost = get_cost(&mut generator, &idx, &invocation.libfunc_id);
                 for (branch, branch_cost) in zip_eq(&invocation.branches, libfunc_cost) {
                     let next_future_cost =
@@ -132,7 +132,7 @@ fn calculate_reverse_topological_ordering(
     }
     visited[idx.0] = true;
     match program.get_statement(idx).unwrap() {
-        sierra::program::Statement::Invocation(invocation) => {
+        cairo_sierra::program::Statement::Invocation(invocation) => {
             for branch in &invocation.branches {
                 calculate_reverse_topological_ordering(
                     program,
@@ -142,7 +142,7 @@ fn calculate_reverse_topological_ordering(
                 )?;
             }
         }
-        sierra::program::Statement::Return(_) => {}
+        cairo_sierra::program::Statement::Return(_) => {}
     }
     // Adding element to ordering after visiting all children - therefore we have reverse
     // topological ordering.

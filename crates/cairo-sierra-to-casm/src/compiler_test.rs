@@ -1,6 +1,6 @@
 use indoc::indoc;
 use pretty_assertions;
-use sierra::ProgramParser;
+use cairo_sierra::ProgramParser;
 use test_case::test_case;
 
 use crate::compiler::compile;

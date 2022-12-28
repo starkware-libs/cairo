@@ -1,10 +1,10 @@
-use defs::plugin::{MacroPlugin, PluginGeneratedFile, PluginResult};
-use diagnostics::{format_diagnostics, DiagnosticLocation};
-use parser::parser_test;
-use parser::test_utils::create_virtual_file;
-use parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
-use syntax::node::TypedSyntaxNode;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_defs::plugin::{MacroPlugin, PluginGeneratedFile, PluginResult};
+use cairo_diagnostics::{format_diagnostics, DiagnosticLocation};
+use cairo_parser::parser_test;
+use cairo_parser::test_utils::create_virtual_file;
+use cairo_parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
+use cairo_syntax::node::TypedSyntaxNode;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::plugin::StarkNetPlugin;
 
@@ -36,7 +36,7 @@ pub fn test_expand_contract(
             Some(PluginGeneratedFile { content, .. }) => content,
             None => continue,
         };
-        generated_items.push(formatter::format_string(db, content));
+        generated_items.push(cairo_formatter::format_string(db, content));
     }
 
     OrderedHashMap::from([

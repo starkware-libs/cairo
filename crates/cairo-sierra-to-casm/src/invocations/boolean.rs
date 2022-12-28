@@ -1,7 +1,7 @@
-use casm::casm;
-use casm::operand::{ap_cell_ref, DerefOrImmediate};
-use sierra::extensions::boolean::BoolConcreteLibFunc;
-use sierra::extensions::felt::FeltBinaryOperator;
+use cairo_casm::casm;
+use cairo_casm::operand::{ap_cell_ref, DerefOrImmediate};
+use cairo_sierra::extensions::boolean::BoolConcreteLibFunc;
+use cairo_sierra::extensions::felt::FeltBinaryOperator;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};

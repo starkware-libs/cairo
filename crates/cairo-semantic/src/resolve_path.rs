@@ -4,19 +4,19 @@ mod test;
 
 use std::iter::Peekable;
 
-use defs::ids::{
+use cairo_defs::ids::{
     GenericFunctionId, GenericParamId, GenericTypeId, ImplId, LanguageElementId, ModuleFileId,
     ModuleId, ModuleItemId, TraitId, TypeAliasId,
 };
-use diagnostics::Maybe;
-use diagnostics_proc_macros::DebugWithDb;
-use filesystem::ids::CrateLongId;
+use cairo_diagnostics::Maybe;
+use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_filesystem::ids::CrateLongId;
+use cairo_syntax::node::helpers::PathSegmentEx;
+use cairo_syntax::node::ids::SyntaxStablePtrId;
+use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use smol_str::SmolStr;
-use syntax::node::helpers::PathSegmentEx;
-use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::{ast, Terminal, TypedSyntaxNode};
-use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
@@ -102,7 +102,7 @@ impl ResolvedLookback {
     pub fn mark_concrete(
         &mut self,
         db: &dyn SemanticGroup,
-        segment: &syntax::node::ast::PathSegment,
+        segment: &cairo_syntax::node::ast::PathSegment,
         resolved_item: ResolvedConcreteItem,
     ) -> ResolvedConcreteItem {
         let identifier = segment.identifier_ast(db.upcast());
@@ -118,7 +118,7 @@ impl ResolvedLookback {
     pub fn mark_generic(
         &mut self,
         db: &dyn SemanticGroup,
-        segment: &syntax::node::ast::PathSegment,
+        segment: &cairo_syntax::node::ast::PathSegment,
         resolved_item: ResolvedGenericItem,
     ) -> ResolvedGenericItem {
         let identifier = segment.identifier_ast(db.upcast());
@@ -173,7 +173,7 @@ impl<'db> Resolver<'db> {
         while segments.peek().is_some() {
             let segment = segments.next().unwrap();
             let (identifier, generic_args) = match segment {
-                syntax::node::ast::PathSegment::WithGenericArgs(segment) => {
+                cairo_syntax::node::ast::PathSegment::WithGenericArgs(segment) => {
                     let mut generic_args = vec![];
                     for generic_arg_syntax in
                         segment.generic_args(syntax_db).generic_args(syntax_db).elements(syntax_db)
@@ -198,7 +198,9 @@ impl<'db> Resolver<'db> {
                     }
                     (segment.ident(syntax_db), Some(generic_args))
                 }
-                syntax::node::ast::PathSegment::Simple(segment) => (segment.ident(syntax_db), None),
+                cairo_syntax::node::ast::PathSegment::Simple(segment) => {
+                    (segment.ident(syntax_db), None)
+                }
             };
 
             // If this is not the last segment, set the expected type to
@@ -228,7 +230,7 @@ impl<'db> Resolver<'db> {
         }
         let syntax_db = self.db.upcast();
         Ok(match segments.peek().unwrap() {
-            syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
+            cairo_syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 let identifier = generic_segment.ident(syntax_db);
                 // Identifier with generic args cannot be a local item.
                 if let Some(module_id) = self.determine_base_module(&identifier) {
@@ -239,7 +241,7 @@ impl<'db> Resolver<'db> {
                         .report(&generic_segment.generic_args(syntax_db), UnexpectedGenericArgs));
                 }
             }
-            syntax::node::ast::PathSegment::Simple(simple_segment) => {
+            cairo_syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(syntax_db);
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
                     self.lookback.mark_concrete(self.db, segments.next().unwrap(), local_item)
@@ -279,12 +281,12 @@ impl<'db> Resolver<'db> {
         while segments.peek().is_some() {
             let segment = segments.next().unwrap();
             let identifier = match segment {
-                syntax::node::ast::PathSegment::WithGenericArgs(segment) => {
+                cairo_syntax::node::ast::PathSegment::WithGenericArgs(segment) => {
                     return Err(
                         diagnostics.report(&segment.generic_args(syntax_db), UnexpectedGenericArgs)
                     );
                 }
-                syntax::node::ast::PathSegment::Simple(segment) => segment.ident(syntax_db),
+                cairo_syntax::node::ast::PathSegment::Simple(segment) => segment.ident(syntax_db),
             };
 
             // If this is not the last segment, set the expected type to
@@ -308,11 +310,11 @@ impl<'db> Resolver<'db> {
         }
         let syntax_db = self.db.upcast();
         Ok(match segments.peek().unwrap() {
-            syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
+            cairo_syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 return Err(diagnostics
                     .report(&generic_segment.generic_args(syntax_db), UnexpectedGenericArgs));
             }
-            syntax::node::ast::PathSegment::Simple(simple_segment) => {
+            cairo_syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(syntax_db);
                 if let Some(module_id) = self.determine_base_module(&identifier) {
                     // This item lies inside a module.
@@ -415,7 +417,7 @@ impl<'db> Resolver<'db> {
     fn specialize_generic_module_item(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        identifier: &syntax::node::ast::TerminalIdentifier,
+        identifier: &cairo_syntax::node::ast::TerminalIdentifier,
         generic_item: ResolvedGenericItem,
         generic_args: Option<Vec<GenericArgumentId>>,
     ) -> Maybe<ResolvedConcreteItem> {

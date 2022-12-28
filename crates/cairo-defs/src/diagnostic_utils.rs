@@ -1,7 +1,7 @@
-use diagnostics::DiagnosticLocation;
-use filesystem::span::TextSpan;
-use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::TypedSyntaxNode;
+use cairo_diagnostics::DiagnosticLocation;
+use cairo_filesystem::span::TextSpan;
+use cairo_syntax::node::ids::SyntaxStablePtrId;
+use cairo_syntax::node::TypedSyntaxNode;
 
 use crate::db::DefsGroup;
 use crate::ids::ModuleFileId;

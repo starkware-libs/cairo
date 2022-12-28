@@ -1,18 +1,18 @@
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
-use defs::ids::ModuleId;
-use defs::plugin::MacroPlugin;
-use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
-use filesystem::ids::{CrateLongId, Directory, FileLongId};
+use cairo_db_utils::Upcast;
+use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
+use cairo_defs::ids::ModuleId;
+use cairo_defs::plugin::MacroPlugin;
+use cairo_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
+use cairo_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;
 use itertools::zip_eq;
-use parser::db::ParserDatabase;
+use cairo_parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
-use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
-use semantic::plugin::SemanticPlugin;
-use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use cairo_semantic::plugin::SemanticPlugin;
+use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use test_case::test_case;
 
 use crate::derive::DerivePlugin;

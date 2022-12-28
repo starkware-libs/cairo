@@ -2,7 +2,7 @@
 #[path = "resolve_labels_test.rs"]
 mod test;
 
-use sierra::program;
+use cairo_sierra::program;
 
 use crate::next_statement_index_fetch::NextStatementIndexFetch;
 use crate::pre_sierra;

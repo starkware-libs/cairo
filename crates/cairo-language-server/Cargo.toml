@@ -5,7 +5,7 @@ edition.workspace = true
 
 [[bin]]
 name = "cairo-language-server"
-path = "src/bin/languageserver.rs"
+path = "src/bin/language_server.rs"
 
 [dependencies]
 cairo-db-utils = { path = "../cairo-db-utils" }

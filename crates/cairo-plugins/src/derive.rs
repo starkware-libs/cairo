@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use defs::plugin::{
+use cairo_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
-use syntax::node::ast::AttributeList;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
+use cairo_syntax::node::ast::AttributeList;
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 #[derive(Debug)]
 pub struct DerivePlugin {}

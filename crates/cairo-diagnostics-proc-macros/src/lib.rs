@@ -35,7 +35,7 @@ fn emit_struct_debug(name: syn::Ident, db: TokenStream2, strct: syn::DataStruct)
     let (pattern, field_prints) = emit_fields_debug(db.clone(), name.to_string(), strct.fields);
     let crt = debug_crate();
     quote! {
-        impl<'a, T: ?Sized + db_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
+        impl<'a, T: ?Sized + cairo_db_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, other_db: &T) -> std::fmt::Result {
                 use #crt::debug::DebugWithDb;
                 use #crt::debug::helper::Fallback;
@@ -63,7 +63,7 @@ fn emit_enum_debug(name: syn::Ident, db: TokenStream2, enm: syn::DataEnum) -> To
     }
     let crt = debug_crate();
     quote! {
-        impl<'a, T: ?Sized + db_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
+        impl<'a, T: ?Sized + cairo_db_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, other_db: &T) -> std::fmt::Result {
                 use #crt::debug::DebugWithDb;
                 use #crt::debug::helper::Fallback;
@@ -144,6 +144,6 @@ fn emit_fields_debug(
 /// crate, it needs to be referred to as `crate` and no `debug`.
 fn debug_crate() -> syn::Ident {
     let crate_name = std::env::var("CARGO_PKG_NAME").unwrap();
-    let res = if crate_name == "debug" { "crate" } else { "debug" };
+    let res = if crate_name == "cairo-debug" { "crate" } else { "cairo_debug" };
     syn::Ident::new(res, Span::call_site())
 }

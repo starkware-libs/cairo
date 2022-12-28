@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
-use diagnostics::{Diagnostics, Maybe, ToMaybe};
-use diagnostics_proc_macros::DebugWithDb;
-use utils::extract_matches;
+use cairo_defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
+use cairo_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_utils::extract_matches;
 
 use super::generics::semantic_generic_params;
 use crate::corelib::get_core_generic_function_id;

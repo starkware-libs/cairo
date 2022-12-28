@@ -1,10 +1,10 @@
-use defs::diagnostic_utils::StableLocation;
-use defs::ids::ModuleFileId;
-use diagnostics::{
+use cairo_defs::diagnostic_utils::StableLocation;
+use cairo_defs::ids::ModuleFileId;
+use cairo_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
 };
-use semantic::db::SemanticGroup;
-use syntax::node::ids::SyntaxStablePtrId;
+use cairo_semantic::db::SemanticGroup;
+use cairo_syntax::node::ids::SyntaxStablePtrId;
 
 pub struct LoweringDiagnostics {
     pub diagnostics: DiagnosticsBuilder<LoweringDiagnostic>,

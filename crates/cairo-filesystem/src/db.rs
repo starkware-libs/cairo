@@ -7,8 +7,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use project::ProjectConfig;
+use cairo_db_utils::Upcast;
+use cairo_project::ProjectConfig;
 
 use crate::detect::detect_corelib;
 use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};

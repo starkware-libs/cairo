@@ -1,10 +1,10 @@
 use num_bigint::{BigInt, ToBigInt};
 use num_traits::ToPrimitive;
-use sierra::ids::{
+use cairo_sierra::ids::{
     ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, UserTypeId,
     VarId,
 };
-use sierra::program::{
+use cairo_sierra::program::{
     BranchInfo, BranchTarget, ConcreteLibFuncLongId, ConcreteTypeLongId, Function,
     FunctionSignature, GenericArg, Invocation, LibFuncDeclaration, Param, Program, Statement,
     StatementIdx, TypeDeclaration,

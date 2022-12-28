@@ -1,9 +1,9 @@
-use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
-use diagnostics::{Maybe, ToOption};
-use filesystem::ids::CrateLongId;
+use cairo_defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
+use cairo_diagnostics::{Maybe, ToOption};
+use cairo_filesystem::ids::CrateLongId;
+use cairo_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
+use cairo_utils::{extract_matches, try_extract_matches, OptionFrom};
 use smol_str::SmolStr;
-use syntax::node::ast::{self, BinaryOperator, UnaryOperator};
-use utils::{extract_matches, try_extract_matches, OptionFrom};
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;

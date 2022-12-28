@@ -2,13 +2,13 @@
 #[path = "lexer_test.rs"]
 mod test;
 
-use filesystem::ids::FileId;
-use filesystem::span::TextOffset;
+use cairo_filesystem::ids::FileId;
+use cairo_filesystem::span::TextOffset;
 use smol_str::SmolStr;
-use syntax::node::ast::{TokenNewline, TokenSingleLineComment, TokenWhitespace, TriviumGreen};
-use syntax::node::db::SyntaxGroup;
-use syntax::node::kind::SyntaxKind;
-use syntax::node::Token;
+use cairo_syntax::node::ast::{TokenNewline, TokenSingleLineComment, TokenWhitespace, TriviumGreen};
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::kind::SyntaxKind;
+use cairo_syntax::node::Token;
 
 pub struct Lexer<'a> {
     db: &'a dyn SyntaxGroup,

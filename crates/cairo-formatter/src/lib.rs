@@ -5,11 +5,11 @@ pub mod node_properties;
 
 use std::sync::Arc;
 
-use diagnostics::DiagnosticsBuilder;
-use filesystem::ids::{FileLongId, VirtualFile};
-use parser::parser::Parser;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_diagnostics::DiagnosticsBuilder;
+use cairo_filesystem::ids::{FileLongId, VirtualFile};
+use cairo_parser::parser::Parser;
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 use crate::formatter::Formatter;
 

@@ -1,18 +1,18 @@
 use std::sync::Arc;
 use std::vec;
 
-use defs::plugin::{
+use cairo_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use genco::prelude::*;
 use itertools::join;
-use semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
-use syntax::node::ast::{
+use cairo_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
+use cairo_syntax::node::ast::{
     ItemFreeFunction, MaybeModuleBody, Modifier, OptionReturnTypeClause, Param,
 };
-use syntax::node::db::SyntaxGroup;
-use syntax::node::helpers::GetIdentifier;
-use syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::helpers::GetIdentifier;
+use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::contract::starknet_keccak;
 
@@ -144,12 +144,12 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> S
         let generated_submodule = quote! {
             mod $name {
                 fn read() -> felt {
-                    starknet::storage_read_syscall(
-                        starknet::storage_address_const::<$(address.clone())>())
+                    cairo_starknet::storage_read_syscall(
+                        cairo_starknet::storage_address_const::<$(address.clone())>())
                 }
                 fn write(value: felt) -> Result::<(), felt> {
-                    starknet::storage_write_syscall(
-                        starknet::storage_address_const::<$address>(), value)
+                    cairo_starknet::storage_write_syscall(
+                        cairo_starknet::storage_address_const::<$address>(), value)
                 }
             }
         };

@@ -1,5 +1,5 @@
-use defs::diagnostic_utils::StableLocation;
-use diagnostics::{DiagnosticEntry, DiagnosticLocation};
+use cairo_defs::diagnostic_utils::StableLocation;
+use cairo_diagnostics::{DiagnosticEntry, DiagnosticLocation};
 
 use crate::db::SierraGenGroup;
 

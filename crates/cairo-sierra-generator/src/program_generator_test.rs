@@ -1,11 +1,11 @@
-use defs::db::DefsGroup;
-use defs::ids::ModuleItemId;
+use cairo_defs::db::DefsGroup;
+use cairo_defs::ids::ModuleItemId;
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 use test_log::test;
-use utils::try_extract_matches;
+use cairo_utils::try_extract_matches;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_sierra_ids_in_program;

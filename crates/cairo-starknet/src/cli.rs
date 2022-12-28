@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use clap::Parser;
-use starknet::contract_class::compile_path;
+use cairo_starknet::contract_class::compile_path;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.

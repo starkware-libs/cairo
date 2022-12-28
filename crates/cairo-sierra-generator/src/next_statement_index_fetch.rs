@@ -1,5 +1,5 @@
-use sierra::program::GenBranchTarget;
-use utils::unordered_hash_map::UnorderedHashMap;
+use cairo_sierra::program::GenBranchTarget;
+use cairo_utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::pre_sierra::{LabelId, Statement};
 

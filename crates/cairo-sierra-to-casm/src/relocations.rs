@@ -1,8 +1,8 @@
-use casm::instructions::{
+use cairo_casm::instructions::{
     CallInstruction, Instruction, InstructionBody, JnzInstruction, JumpInstruction,
 };
-use casm::operand::DerefOrImmediate;
-use sierra::program::StatementIdx;
+use cairo_casm::operand::DerefOrImmediate;
+use cairo_sierra::program::StatementIdx;
 
 type CodeOffset = usize;
 

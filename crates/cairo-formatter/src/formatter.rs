@@ -2,9 +2,9 @@ use std::fmt;
 
 use itertools::Itertools;
 use smol_str::SmolStr;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
-use utils::extract_matches;
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_utils::extract_matches;
 
 use crate::FormatterConfig;
 
@@ -541,7 +541,7 @@ impl<'a> Formatter<'a> {
         self.format_trivia(trailing_trivia, allowed_newlines);
     }
     /// Appends a trivia node (if needed) to the result.
-    fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, mut allowed_newlines: usize) {
+    fn format_trivia(&mut self, trivia: cairo_syntax::node::ast::Trivia, mut allowed_newlines: usize) {
         for trivium in trivia.elements(self.db) {
             match trivium {
                 ast::Trivium::SingleLineComment(_) => {

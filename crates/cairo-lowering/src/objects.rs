@@ -5,7 +5,7 @@
 
 use id_arena::Id;
 use num_bigint::BigInt;
-use semantic::{ConcreteEnumId, ConcreteVariant};
+use cairo_semantic::{ConcreteEnumId, ConcreteVariant};
 
 pub type BlockId = Id<Block>;
 pub type VariableId = Id<Variable>;
@@ -53,7 +53,7 @@ pub struct Variable {
     /// Can the type be (trivially) duplicated.
     pub duplicatable: bool,
     /// Semantic type of the variable.
-    pub ty: semantic::TypeId,
+    pub ty: cairo_semantic::TypeId,
 }
 
 /// Lowered statement.
@@ -107,7 +107,7 @@ impl Statement {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementLiteral {
     /// The type of the literal.
-    pub ty: semantic::TypeId,
+    pub ty: cairo_semantic::TypeId,
     /// The value of the literal.
     pub value: BigInt,
     /// The variable to bind the value to.
@@ -118,7 +118,7 @@ pub struct StatementLiteral {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementCall {
     /// A function to "call".
-    pub function: semantic::FunctionId,
+    pub function: cairo_semantic::FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
     /// New variables to be introduced into the current scope from the function outputs.
@@ -141,7 +141,7 @@ pub struct StatementCallBlock {
 pub struct StatementMatchExtern {
     // TODO(spapini): ConcreteExternFunctionId once it exists.
     /// A concrete external function to call.
-    pub function: semantic::FunctionId,
+    pub function: cairo_semantic::FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
     /// Match arms. All blocks should have the same rets.

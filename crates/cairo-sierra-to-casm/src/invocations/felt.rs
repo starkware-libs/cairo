@@ -1,6 +1,6 @@
-use casm::operand::DerefOrImmediate;
+use cairo_casm::operand::DerefOrImmediate;
 use num_bigint::BigInt;
-use sierra::extensions::felt::{
+use cairo_sierra::extensions::felt::{
     FeltBinaryOpConcreteLibFunc, FeltBinaryOperationConcreteLibFunc, FeltBinaryOperator,
     FeltConcrete, FeltOperationWithConstConcreteLibFunc, FeltUnaryOpConcreteLibFunc,
     FeltUnaryOperationConcreteLibFunc, FeltUnaryOperator,

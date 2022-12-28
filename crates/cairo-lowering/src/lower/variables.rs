@@ -1,4 +1,4 @@
-use utils::ordered_hash_set::OrderedHashSet;
+use cairo_utils::ordered_hash_set::OrderedHashSet;
 
 use super::context::LoweringContext;
 use crate::{Variable, VariableId};
@@ -55,7 +55,7 @@ impl LivingVariables {
     pub fn introduce_new_var(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        ty: semantic::TypeId,
+        ty: cairo_semantic::TypeId,
     ) -> LivingVar {
         let ty_info = ctx.db.type_info(ctx.lookup_context.clone(), ty).unwrap_or_default();
         let var_id = ctx.variables.alloc(Variable {

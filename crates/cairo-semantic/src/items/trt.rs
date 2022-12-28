@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
-use db_utils::define_short_id;
-use defs::ids::{
+use cairo_db_utils::define_short_id;
+use cairo_defs::ids::{
     GenericFunctionId, GenericParamId, LanguageElementId, TraitFunctionId, TraitFunctionLongId,
     TraitId,
 };
-use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
-use diagnostics_proc_macros::DebugWithDb;
+use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
+use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_syntax::node::{ast, TypedSyntaxNode};
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
-use syntax::node::{ast, TypedSyntaxNode};
-use utils::ordered_hash_map::OrderedHashMap;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::generics::semantic_generic_params;

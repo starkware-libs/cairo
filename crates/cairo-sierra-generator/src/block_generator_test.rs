@@ -1,7 +1,7 @@
-use diagnostics::DiagnosticsBuilder;
-use lowering::lower::lower;
-use semantic::test_utils::setup_test_function;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_diagnostics::DiagnosticsBuilder;
+use cairo_lowering::lower::lower;
+use cairo_semantic::test_utils::setup_test_function;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use super::generate_block_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -9,7 +9,7 @@ use crate::replace_ids::replace_sierra_ids;
 use crate::test_utils::SierraGenDatabaseForTesting;
 use crate::SierraGeneratorDiagnostic;
 
-test_utils::test_file_test!(
+cairo_test_utils::test_file_test!(
     lowering_test,
     [
         "src/block_generator_test_data/early_return",

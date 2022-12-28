@@ -1,12 +1,12 @@
-use casm::ap_change::{ApChange, ApplyApChange};
-use casm::instructions::Instruction;
-use casm::operand::{CellRef, DerefOrImmediate, Register};
-use casm::{casm, casm_extend};
-use sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
-use sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
-use sierra::extensions::mem::MemConcreteLibFunc;
-use sierra::ids::ConcreteTypeId;
-use utils::casts::usize_as_i16;
+use cairo_casm::ap_change::{ApChange, ApplyApChange};
+use cairo_casm::instructions::Instruction;
+use cairo_casm::operand::{CellRef, DerefOrImmediate, Register};
+use cairo_casm::{casm, casm_extend};
+use cairo_sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
+use cairo_sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
+use cairo_sierra::extensions::mem::MemConcreteLibFunc;
+use cairo_sierra::ids::ConcreteTypeId;
+use cairo_utils::casts::usize_as_i16;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::environment::frame_state;

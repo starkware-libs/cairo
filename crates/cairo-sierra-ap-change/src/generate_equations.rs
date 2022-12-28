@@ -1,9 +1,9 @@
 use core::fmt;
 
+use cairo_eq_solver::Expr;
+use cairo_sierra::ids::{ConcreteLibFuncId, FunctionId};
+use cairo_sierra::program::{Program, StatementIdx};
 use itertools::zip_eq;
-use sierra::ids::{ConcreteLibFuncId, FunctionId};
-use sierra::program::{Program, StatementIdx};
-use solver::Expr;
 
 use crate::{ApChange, ApChangeError};
 
@@ -67,7 +67,7 @@ pub fn generate_equations<
     for idx in (0..program.statements.len()).map(StatementIdx) {
         let base_info = generator.get_info(&idx)?;
         match &program.get_statement(&idx).unwrap() {
-            sierra::program::Statement::Return(_) => {
+            cairo_sierra::program::Statement::Return(_) => {
                 generator.set_or_add_constraint(
                     &idx,
                     StatementInfo {
@@ -79,7 +79,7 @@ pub fn generate_equations<
                     },
                 )?;
             }
-            sierra::program::Statement::Invocation(invocation) => {
+            cairo_sierra::program::Statement::Invocation(invocation) => {
                 let libfunc_effects = get_effects(&invocation.libfunc_id)?;
                 if invocation.branches.len() != libfunc_effects.len() {
                     return Err(ApChangeError::IllegalInvocation(idx));

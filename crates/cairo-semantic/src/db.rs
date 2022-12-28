@@ -1,22 +1,22 @@
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use defs::db::{DefsGroup, GeneratedFileInfo};
-use defs::diagnostic_utils::StableLocation;
-use defs::ids::{
+use cairo_db_utils::Upcast;
+use cairo_defs::db::{DefsGroup, GeneratedFileInfo};
+use cairo_defs::diagnostic_utils::StableLocation;
+use cairo_defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
     GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
     StructId, TraitFunctionId, TraitId, TypeAliasId, UseId, VariantId,
 };
-use defs::plugin::MacroPlugin;
-use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use filesystem::db::{AsFilesGroupMut, FilesGroup};
-use filesystem::ids::{FileId, FileLongId};
-use parser::db::ParserGroup;
+use cairo_defs::plugin::MacroPlugin;
+use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_filesystem::db::{AsFilesGroupMut, FilesGroup};
+use cairo_filesystem::ids::{FileId, FileLongId};
+use cairo_parser::db::ParserGroup;
+use cairo_syntax::node::ast;
+use cairo_syntax::node::stable_ptr::SyntaxStablePtr;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
-use syntax::node::ast;
-use syntax::node::stable_ptr::SyntaxStablePtr;
-use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;

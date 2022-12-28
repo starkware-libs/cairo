@@ -2,7 +2,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 use num_bigint::BigInt;
-use utils::extract_matches;
+use cairo_utils::extract_matches;
 
 use crate::ap_change::ApplyApChange;
 use crate::deref_or_immediate;

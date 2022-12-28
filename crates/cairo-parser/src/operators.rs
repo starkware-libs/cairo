@@ -1,4 +1,4 @@
-use syntax::node::kind::SyntaxKind;
+use cairo_syntax::node::kind::SyntaxKind;
 
 pub fn get_unary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
     if [SyntaxKind::TerminalNot, SyntaxKind::TerminalMinus].contains(&kind) {

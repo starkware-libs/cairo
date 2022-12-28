@@ -6,23 +6,23 @@ use std::sync::{Arc, Mutex};
 use anyhow::{bail, Context};
 use clap::Parser;
 use colored::Colorize;
-use compiler::db::RootDatabase;
-use compiler::diagnostics::check_and_eprint_diagnostics;
-use compiler::project::setup_project;
-use debug::DebugWithDb;
-use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleItemId};
-use diagnostics::ToOption;
-use filesystem::ids::CrateId;
+use cairo_compiler::db::RootDatabase;
+use cairo_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_compiler::project::setup_project;
+use cairo_debug::DebugWithDb;
+use cairo_defs::ids::{FreeFunctionId, GenericFunctionId, ModuleItemId};
+use cairo_diagnostics::ToOption;
+use cairo_filesystem::ids::CrateId;
 use itertools::Itertools;
 use num_bigint::BigInt;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use runner::{RunResultValue, SierraCasmRunner};
-use semantic::db::SemanticGroup;
-use semantic::plugin::SemanticPlugin;
-use semantic::{ConcreteFunction, FunctionLongId};
-use sierra_generator::db::SierraGenGroup;
-use sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use starknet::plugin::StarkNetPlugin;
+use cairo_runner::{RunResultValue, SierraCasmRunner};
+use cairo_semantic::db::SemanticGroup;
+use cairo_semantic::plugin::SemanticPlugin;
+use cairo_semantic::{ConcreteFunction, FunctionLongId};
+use cairo_sierra_generator::db::SierraGenGroup;
+use cairo_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_starknet::plugin::StarkNetPlugin;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -156,7 +156,7 @@ struct TestsSummary {
 /// Runs the tests and process the results for a summary.
 fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
-    sierra_program: sierra::program::Program,
+    sierra_program: cairo_sierra::program::Program,
     available_gas: Option<usize>,
 ) -> anyhow::Result<TestsSummary> {
     println!("running {} tests", named_tests.len());

@@ -1,8 +1,8 @@
-use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::extensions::core::CoreConcreteLibFunc;
-use sierra::program::StatementIdx;
-use utils::collection_arithmetics::{add_maps, sub_maps};
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_sierra::extensions::core::CoreConcreteLibFunc;
+use cairo_sierra::program::StatementIdx;
+use cairo_utils::collection_arithmetics::{add_maps, sub_maps};
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations};
 use crate::cost_expr::{CostExpr, Var};
@@ -26,7 +26,7 @@ impl CostOperations for Ops<'_> {
         Self::CostType::from_iter([(token_type, CostExpr::from_const(value))])
     }
 
-    fn function_cost(&mut self, function: &sierra::program::Function) -> Self::CostType {
+    fn function_cost(&mut self, function: &cairo_sierra::program::Function) -> Self::CostType {
         self.statement_future_cost.get_future_cost(&function.entry_point).clone()
     }
 

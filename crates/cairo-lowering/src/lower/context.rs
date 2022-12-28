@@ -1,10 +1,10 @@
-use diagnostics::{DiagnosticAdded, Maybe};
+use cairo_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_semantic::expr::fmt::ExprFormatter;
+use cairo_semantic::items::enm::SemanticEnumEx;
+use cairo_semantic::items::imp::ImplLookupContext;
+use cairo_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
-use semantic::expr::fmt::ExprFormatter;
-use semantic::items::enm::SemanticEnumEx;
-use semantic::items::imp::ImplLookupContext;
-use utils::unordered_hash_map::UnorderedHashMap;
 
 use super::lowered_expr_from_block_result;
 use super::scope::{generators, BlockScope, BlockScopeEnd};
@@ -19,9 +19,9 @@ use crate::objects::{Block, Variable};
 pub struct LoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Semantic model for current function definition.
-    pub function_def: &'db semantic::FreeFunctionDefinition,
+    pub function_def: &'db cairo_semantic::FreeFunctionDefinition,
     // Semantic signature for current function.
-    pub signature: semantic::Signature,
+    pub signature: cairo_semantic::Signature,
     /// Whether the current function may panic.
     pub may_panic: bool,
     /// Current emitted diagnostics.
@@ -32,11 +32,11 @@ pub struct LoweringContext<'db> {
     pub blocks: Arena<Block>,
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
-    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
+    pub semantic_defs: UnorderedHashMap<cairo_semantic::VarId, cairo_semantic::Variable>,
     // TODO(spapini): Document. (excluding implicits).
-    pub ref_params: &'db [semantic::VarId],
+    pub ref_params: &'db [cairo_semantic::VarId],
     // The available implicits in this function.
-    pub implicits: &'db [semantic::TypeId],
+    pub implicits: &'db [cairo_semantic::TypeId],
     // Lookup context for impls.
     pub lookup_context: ImplLookupContext,
     // Expression formatter of the free function.
@@ -67,22 +67,22 @@ impl LoweredExpr {
                     .map(|expr| expr.var(ctx, scope))
                     .collect::<Result<Vec<_>, _>>()?;
                 let tys = inputs.iter().map(|var| ctx.variables[var.var_id()].ty).collect();
-                let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
+                let ty = ctx.db.intern_type(cairo_semantic::TypeLongId::Tuple(tys));
                 Ok(generators::StructConstruct { inputs, ty }.add(ctx, scope))
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
         }
     }
-    pub fn ty(&self, ctx: &mut LoweringContext<'_>) -> semantic::TypeId {
+    pub fn ty(&self, ctx: &mut LoweringContext<'_>) -> cairo_semantic::TypeId {
         match self {
             LoweredExpr::AtVariable(var) => ctx.variables[var.var_id()].ty,
-            LoweredExpr::Tuple(exprs) => ctx.db.intern_type(semantic::TypeLongId::Tuple(
+            LoweredExpr::Tuple(exprs) => ctx.db.intern_type(cairo_semantic::TypeLongId::Tuple(
                 exprs.iter().map(|expr| expr.ty(ctx)).collect(),
             )),
             LoweredExpr::ExternEnum(extern_enum) => {
-                ctx.db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
-                    extern_enum.concrete_enum_id,
-                )))
+                ctx.db.intern_type(cairo_semantic::TypeLongId::Concrete(
+                    cairo_semantic::ConcreteTypeId::Enum(extern_enum.concrete_enum_id),
+                ))
             }
         }
     }
@@ -91,12 +91,12 @@ impl LoweredExpr {
 /// Lazy expression value of an extern call returning an enum.
 #[derive(Debug)]
 pub struct LoweredExprExternEnum {
-    pub function: semantic::FunctionId,
-    pub concrete_enum_id: semantic::ConcreteEnumId,
+    pub function: cairo_semantic::FunctionId,
+    pub concrete_enum_id: cairo_semantic::ConcreteEnumId,
     pub inputs: Vec<LivingVar>,
-    pub ref_args: Vec<semantic::VarId>,
+    pub ref_args: Vec<cairo_semantic::VarId>,
     /// The implicits used/changed by the function.
-    pub implicits: Vec<semantic::TypeId>,
+    pub implicits: Vec<cairo_semantic::TypeId>,
 }
 impl LoweredExprExternEnum {
     pub fn var(

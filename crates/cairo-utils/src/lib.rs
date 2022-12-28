@@ -67,7 +67,7 @@ impl<T, E> ResultHelper<E> for Result<T, E> {
 /// reference.
 /// Example:
 /// ```
-/// use utils::borrow_as_box;
+/// use cairo_utils::borrow_as_box;
 /// let mut x = 5;
 /// borrow_as_box(&mut x, |mut x: Box<usize>| {
 ///     *x += 1;

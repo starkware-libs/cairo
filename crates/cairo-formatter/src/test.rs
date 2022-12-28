@@ -1,10 +1,10 @@
 use std::fs;
 
-use db_utils::Upcast;
-use filesystem::db::{FilesDatabase, FilesGroup};
-use parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
+use cairo_db_utils::Upcast;
+use cairo_filesystem::db::{FilesDatabase, FilesGroup};
+use cairo_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
 use pretty_assertions::assert_eq;
-use syntax::node::db::SyntaxDatabase;
+use cairo_syntax::node::db::SyntaxDatabase;
 use test_case::test_case;
 
 use crate::{get_formatted_file, FormatterConfig};

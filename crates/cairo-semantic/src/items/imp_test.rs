@@ -1,8 +1,8 @@
-use defs::db::DefsGroup;
-use defs::ids::ModuleItemId;
+use cairo_defs::db::DefsGroup;
+use cairo_defs::ids::ModuleItemId;
 use pretty_assertions::assert_eq;
 use test_log::test;
-use utils::extract_matches;
+use cairo_utils::extract_matches;
 
 use crate::db::SemanticGroup;
 use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};

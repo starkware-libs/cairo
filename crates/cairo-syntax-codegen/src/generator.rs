@@ -195,7 +195,7 @@ fn generate_ast_code() -> rust::Tokens {
         use std::ops::Deref;
 
         use smol_str::SmolStr;
-        use utils::extract_matches;
+        use cairo_utils::extract_matches;
 
         use super::element_list::ElementList;
         use super::green::GreenNodeDetails;

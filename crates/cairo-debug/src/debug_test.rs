@@ -1,10 +1,10 @@
 use std::fmt::Debug;
 
-use db_utils::{define_short_id, Upcast};
-use diagnostics_proc_macros::DebugWithDb;
+use cairo_db_utils::{define_short_id, Upcast};
+use cairo_diagnostics_proc_macros::DebugWithDb;
 use test_log::test;
 
-use crate::debug;
+use crate::debug as cairo_debug;
 use crate::debug::DebugWithDb;
 
 // Test database query group.

@@ -1,10 +1,10 @@
 use std::fs;
 use std::sync::Arc;
 
-use filesystem::db::FilesGroup;
-use filesystem::ids::{FileId, FileLongId, VirtualFile};
+use cairo_filesystem::db::FilesGroup;
+use cairo_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use smol_str::SmolStr;
-use utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 
@@ -41,6 +41,6 @@ pub fn create_virtual_file(
 #[macro_export]
 macro_rules! parser_test {
     ($test_name:ident, $filenames:expr, $func:ident) => {
-        test_utils::test_file_test!($test_name, $filenames, SimpleParserDatabase, $func);
+        cairo_test_utils::test_file_test!($test_name, $filenames, SimpleParserDatabase, $func);
     };
 }

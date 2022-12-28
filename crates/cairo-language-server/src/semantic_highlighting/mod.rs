@@ -1,10 +1,10 @@
-use filesystem::span::TextOffset;
-use syntax::node::ast::{self};
-use syntax::node::db::SyntaxGroup;
-use syntax::node::kind::SyntaxKind;
-use syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_filesystem::span::TextOffset;
+use cairo_syntax::node::ast::{self};
+use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::kind::SyntaxKind;
+use cairo_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use tower_lsp::lsp_types::*;
-use utils::unordered_hash_map::UnorderedHashMap;
+use cairo_utils::unordered_hash_map::UnorderedHashMap;
 
 use self::encoder::{EncodedToken, TokenEncoder};
 use self::token_kind::SemanticTokenKind;
@@ -31,7 +31,7 @@ impl SemanticTokensTraverser {
     ) {
         let green_node = node.green_node(db);
         match green_node.details {
-            syntax::node::green::GreenNodeDetails::Token(text) => {
+            cairo_syntax::node::green::GreenNodeDetails::Token(text) => {
                 if green_node.kind == SyntaxKind::TokenNewline {
                     self.encoder.next_line();
                     return;
@@ -55,7 +55,7 @@ impl SemanticTokensTraverser {
                     self.encoder.skip(width);
                 }
             }
-            syntax::node::green::GreenNodeDetails::Node { .. } => {
+            cairo_syntax::node::green::GreenNodeDetails::Node { .. } => {
                 let children = node.children(db);
                 match green_node.kind {
                     SyntaxKind::Param => {

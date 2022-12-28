@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
-use defs::plugin::MacroPlugin;
-use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
-use lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
-use parser::db::ParserDatabase;
-use plugins::get_default_plugins;
-use semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
-use semantic::plugin::SemanticPlugin;
-use sierra_generator::db::SierraGenDatabase;
-use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_db_utils::Upcast;
+use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
+use cairo_defs::plugin::MacroPlugin;
+use cairo_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
+use cairo_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
+use cairo_parser::db::ParserDatabase;
+use cairo_plugins::get_default_plugins;
+use cairo_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use cairo_semantic::plugin::SemanticPlugin;
+use cairo_sierra_generator::db::SierraGenDatabase;
+use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 #[salsa::database(
     DefsDatabase,
@@ -58,17 +58,17 @@ impl Upcast<dyn SyntaxGroup> for RootDatabase {
     }
 }
 impl Upcast<dyn DefsGroup> for RootDatabase {
-    fn upcast(&self) -> &(dyn defs::db::DefsGroup + 'static) {
+    fn upcast(&self) -> &(dyn cairo_defs::db::DefsGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn SemanticGroup> for RootDatabase {
-    fn upcast(&self) -> &(dyn semantic::db::SemanticGroup + 'static) {
+    fn upcast(&self) -> &(dyn cairo_semantic::db::SemanticGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn LoweringGroup> for RootDatabase {
-    fn upcast(&self) -> &(dyn lowering::db::LoweringGroup + 'static) {
+    fn upcast(&self) -> &(dyn cairo_lowering::db::LoweringGroup + 'static) {
         self
     }
 }

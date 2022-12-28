@@ -1,10 +1,10 @@
-use debug::DebugWithDb;
-use defs::ids::{MemberId, StructId, VarId};
-use diagnostics::DiagnosticAdded;
-use diagnostics_proc_macros::DebugWithDb;
+use cairo_debug::DebugWithDb;
+use cairo_defs::ids::{MemberId, StructId, VarId};
+use cairo_diagnostics::DiagnosticAdded;
+use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_syntax::node::ast::{self};
 use id_arena::Id;
 use num_bigint::BigInt;
-use syntax::node::ast::{self};
 
 use super::fmt::ExprFormatter;
 use super::pattern::Pattern;

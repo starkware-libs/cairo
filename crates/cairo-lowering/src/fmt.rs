@@ -1,5 +1,5 @@
-use debug::DebugWithDb;
-use semantic::ConcreteVariant;
+use cairo_debug::DebugWithDb;
+use cairo_semantic::ConcreteVariant;
 
 use crate::db::LoweringGroup;
 use crate::lower::Lowered;

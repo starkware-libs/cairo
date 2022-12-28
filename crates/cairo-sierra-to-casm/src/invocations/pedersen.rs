@@ -2,10 +2,10 @@
 #[path = "pedersen_test.rs"]
 mod test;
 
-use casm::builder::CasmBuilder;
-use casm::casm_build_extend;
-use casm::operand::ResOperand;
-use sierra::extensions::pedersen::PedersenConcreteLibFunc;
+use cairo_casm::builder::CasmBuilder;
+use cairo_casm::casm_build_extend;
+use cairo_casm::operand::ResOperand;
+use cairo_sierra::extensions::pedersen::PedersenConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 

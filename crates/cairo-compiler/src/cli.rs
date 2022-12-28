@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use clap::Parser;
-use compiler::{compile_cairo_project_at_path, CompilerConfig};
-use utils::logging::init_logging;
+use cairo_compiler::{compile_cairo_project_at_path, CompilerConfig};
+use cairo_utils::logging::init_logging;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.

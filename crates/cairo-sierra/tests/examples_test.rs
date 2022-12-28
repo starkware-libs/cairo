@@ -3,18 +3,18 @@ use std::fs;
 use std::path::PathBuf;
 
 use num_bigint::ToBigInt;
-use sierra::extensions::core::{CoreLibFunc, CoreType};
-use sierra::program::{Program, StatementIdx};
-use sierra::program_registry::ProgramRegistry;
-use sierra::simulation::value::CoreValue;
-use sierra::simulation::{self};
+use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
+use cairo_sierra::program::{Program, StatementIdx};
+use cairo_sierra::program_registry::ProgramRegistry;
+use cairo_sierra::simulation::value::CoreValue;
+use cairo_sierra::simulation::{self};
 use test_case::test_case;
 
 /// Returns a parsed example program from the example directory.
 fn get_example_program(name: &str) -> Program {
     let path: PathBuf =
         [env!("CARGO_MANIFEST_DIR"), "examples", &format!("{name}.sierra")].into_iter().collect();
-    sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
+    cairo_sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
 }
 
 #[test_case("fib_jumps")]

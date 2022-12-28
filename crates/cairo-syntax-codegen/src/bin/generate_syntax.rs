@@ -1,5 +1,5 @@
-use syntax_codegen::generator::{ensure_file_content, get_codes, project_root};
-use utils::logging::init_logging;
+use cairo_syntax_codegen::generator::{ensure_file_content, get_codes, project_root};
+use cairo_utils::logging::init_logging;
 
 fn main() {
     init_logging(log::LevelFilter::Info);
