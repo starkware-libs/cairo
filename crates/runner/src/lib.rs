@@ -82,19 +82,18 @@ impl SierraCasmRunner {
     /// Runs the vm starting from a function. Function may have implicits, but no other ref params.
     /// The cost of the function is deducted from available_gas before the execution begins.
     pub fn run_function(
-        mut self,
+        &self,
         name_suffix: &str,
         args: &[BigInt],
         available_gas: Option<usize>,
     ) -> Result<RunResult, RunnerError> {
-        // Extracting instructions before since `self` becomes borrowed later.
-        let instructions = self.casm_program.instructions;
-        self.casm_program.instructions = vec![];
         let func = self.find_function(name_suffix)?;
         let initial_gas = self.get_initial_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
-        let (cells, ap) =
-            casm::run::run_function(chain!(entry_code, instructions).collect(), builtins)?;
+        let (cells, ap) = casm::run::run_function(
+            chain!(entry_code.iter(), self.casm_program.instructions.iter()),
+            builtins,
+        )?;
         let mut results_data = self.get_results_data(func, &cells, ap)?;
         // Handling implicits.
         let mut gas_counter = None;
