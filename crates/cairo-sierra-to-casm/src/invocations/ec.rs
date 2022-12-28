@@ -22,6 +22,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         EcConcreteLibFunc::CreatePoint(_) => build_ec_point_try_create(builder),
+        EcConcreteLibFunc::CreatePointAtInfinity(_) => build_ec_create_inf_point(builder),
         EcConcreteLibFunc::InitState(_) => build_ec_init_state(builder),
     }
 }
@@ -155,6 +156,21 @@ fn build_ec_point_try_create(
         casm_builder,
         [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(failure_handle))],
     ))
+}
+
+/// Handles instruction for creating the EC point at infinity.
+fn build_ec_create_inf_point(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let mut casm_builder = CasmBuilder::default();
+
+    casm_build_extend! {casm_builder,
+        const zero = BigInt::from(0);
+        tempvar x = zero;
+        tempvar y = zero;
+    };
+
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[x, y]], None)]))
 }
 
 /// Handles instruction for initializing an EC state from an EC point.
