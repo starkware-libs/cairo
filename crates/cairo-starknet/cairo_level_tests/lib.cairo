@@ -61,9 +61,7 @@ fn unpack_no_results(mut retdata: Array::<felt>) {
 #[available_gas(20000)]
 fn test_wrapper_valid_args() {
     assert(
-        unpack_single_result(
-            __generated__TestContract::__external::test(single_element_arr(1))
-        ) == 3,
+        unpack_single_result(TestContract::__external::test(single_element_arr(1))) == 3,
         'Wrong result'
     );
 }
@@ -73,9 +71,7 @@ fn test_wrapper_valid_args() {
 #[should_panic]
 fn test_wrapper_valid_args_out_of_gas() {
     assert(
-        unpack_single_result(
-            __generated__TestContract::__external::test(single_element_arr(1))
-        ) == 3,
+        unpack_single_result(TestContract::__external::test(single_element_arr(1))) == 3,
         'Wrong result'
     );
 }
@@ -84,9 +80,7 @@ fn test_wrapper_valid_args_out_of_gas() {
 #[available_gas(20000)]
 fn read_first_value() {
     assert(
-        unpack_single_result(
-            __generated__TestContract::__external::get_value(array_new::<felt>())
-        ) == 0,
+        unpack_single_result(TestContract::__external::get_value(array_new::<felt>())) == 0,
         'Wrong result'
     );
 }
@@ -94,11 +88,9 @@ fn read_first_value() {
 #[test]
 #[available_gas(20000)]
 fn write_read_value() {
-    unpack_no_results(__generated__TestContract::__external::set_value(single_element_arr(4)));
+    unpack_no_results(TestContract::__external::set_value(single_element_arr(4)));
     assert(
-        unpack_single_result(
-            __generated__TestContract::__external::get_value(array_new::<felt>())
-        ) == 4,
+        unpack_single_result(TestContract::__external::get_value(array_new::<felt>())) == 4,
         'Wrong result'
     );
 }
