@@ -156,6 +156,8 @@ fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: sierra::program::Program,
 ) -> anyhow::Result<TestsSummary> {
+    let runner =
+        SierraCasmRunner::new(sierra_program, true).with_context(|| "Failed setting up runner.")?;
     println!("running {} tests", named_tests.len());
     let wrapped_summary = Mutex::new(Ok(TestsSummary {
         passed: vec![],
@@ -169,8 +171,6 @@ fn run_tests(
             if test.ignored {
                 return Ok((name, TestStatus::Ignore));
             }
-            let runner = SierraCasmRunner::new(sierra_program.clone(), true)
-                .with_context(|| "Failed setting up runner.")?;
             let result = runner
                 .run_function(name.as_str(), &[], test.available_gas)
                 .with_context(|| "Failed to run the function.")?;

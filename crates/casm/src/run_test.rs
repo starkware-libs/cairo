@@ -89,7 +89,7 @@ use crate::{casm, deref};
 )]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
     assert_eq!(
-        run_function_return_values(function.instructions, vec![], n_returns)
+        run_function_return_values(function.instructions.iter(), vec![], n_returns)
             .expect("Running code failed."),
         expected.iter().copied().map(BigInt::from).collect_vec()
     );
@@ -104,7 +104,8 @@ fn test_allocate_segment() {
             [ap - 1] = [[&deref!([ap])]];
             ret;
         }
-        .instructions,
+        .instructions
+        .iter(),
         vec![],
     )
     .expect("Running code failed.");
