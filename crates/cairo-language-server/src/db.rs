@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_defs::plugin::MacroPlugin;
 use cairo_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
@@ -9,6 +8,7 @@ use cairo_parser::db::ParserDatabase;
 use cairo_plugins::get_default_plugins;
 use cairo_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_utils::Upcast;
 
 #[salsa::database(
     LoweringDatabase,

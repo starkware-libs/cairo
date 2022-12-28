@@ -4,10 +4,10 @@ mod test;
 
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_filesystem::db::FilesGroup;
 use cairo_filesystem::ids::FileId;
 use cairo_filesystem::span::TextSpan;
+use cairo_utils::Upcast;
 use itertools::Itertools;
 
 use crate::location_marks::get_location_marks;

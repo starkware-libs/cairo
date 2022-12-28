@@ -1,4 +1,4 @@
-use cairo_db_utils::define_short_id;
+use cairo_utils::define_short_id;
 
 use super::db::SyntaxGroup;
 use super::green::GreenNode;

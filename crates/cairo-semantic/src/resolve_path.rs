@@ -9,8 +9,8 @@ use cairo_defs::ids::{
     ModuleId, ModuleItemId, TraitId, TypeAliasId,
 };
 use cairo_diagnostics::Maybe;
-use cairo_diagnostics_proc_macros::DebugWithDb;
 use cairo_filesystem::ids::CrateLongId;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::helpers::PathSegmentEx;
 use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};

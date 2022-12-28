@@ -1,5 +1,5 @@
-use cairo_db_utils::Upcast;
 use cairo_filesystem::db::FilesGroup;
+use cairo_utils::Upcast;
 
 use super::green::GreenNode;
 use super::ids::{GreenId, SyntaxStablePtrId};

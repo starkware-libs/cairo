@@ -2,16 +2,18 @@
 name = "cairo-semantic"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo semantic model."
 
 [features]
 testing = []
 
 [dependencies]
-cairo-db-utils = { path = "../cairo-db-utils" }
 cairo-defs = { path = "../cairo-defs" }
 cairo-debug = { path = "../cairo-debug" }
 cairo-diagnostics = { path = "../cairo-diagnostics" }
-cairo-diagnostics-proc-macros = { path = "../cairo-diagnostics-proc-macros" }
+cairo-proc-macros = { path = "../cairo-proc-macros" }
 cairo-filesystem = { path = "../cairo-filesystem" }
 id-arena.workspace = true
 itertools.workspace = true

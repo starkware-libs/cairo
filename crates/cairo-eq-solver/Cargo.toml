@@ -2,6 +2,9 @@
 name = "cairo-eq-solver"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Equation solving for Sierra generation."
 
 [dependencies]
 good_lp.workspace = true

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_db_utils::define_short_id;
+use cairo_utils::define_short_id;
 use path_clean::PathClean;
 use smol_str::SmolStr;
 
