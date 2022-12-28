@@ -414,35 +414,27 @@ fn build_u128_eq(
         [a, b] = [b, a];
     }
     let diff = match a {
-        DerefOrImmediate::Immediate(_) => {
-            let [big_int_a, big_int_b] = match [a, b] {
-                [
-                    DerefOrImmediate::Immediate(big_int_a),
-                    DerefOrImmediate::Immediate(big_int_b),
-                ] => [big_int_a, big_int_b],
-                _ => {
-                    panic!("a, b should be of type DerefOrImmediate::Immediate.");
+        DerefOrImmediate::Immediate(big_int_a) => {
+            let big_int_b = match b {
+                DerefOrImmediate::Immediate(big_int_b) => big_int_b,
+                DerefOrImmediate::Deref(_) => {
+                    panic!("a & b should have been switched.");
                 }
             };
+
             let diff = big_int_a - big_int_b;
 
             casm_build_extend! {casm_builder,
-                // This line is needed because a tempvar does not accept (only) an immediate in the rhs.
+                // This line is needed because a tempvar does not accept (only) an immediate in the
+                // rhs.
                 const _diff = diff;
 
                 tempvar diff = _diff;
             };
             diff
         }
-        DerefOrImmediate::Deref(_) => {
-            let a = match a {
-                DerefOrImmediate::Deref(cell_ref_a) => {
-                    casm_builder.add_var(ResOperand::Deref(cell_ref_a))
-                }
-                _ => {
-                    panic!("a should be of type DerefOrImmediate::Deref.");
-                }
-            };
+        DerefOrImmediate::Deref(cell_ref_a) => {
+            let a = casm_builder.add_var(ResOperand::Deref(cell_ref_a));
             let b = match b {
                 DerefOrImmediate::Deref(cell_ref_b) => {
                     casm_builder.add_var(ResOperand::Deref(cell_ref_b))
