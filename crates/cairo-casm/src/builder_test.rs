@@ -191,3 +191,49 @@ fn test_calculation_loop() {
         "}
     );
 }
+
+#[test]
+fn test_call_ret() {
+    let mut builder = CasmBuilder::default();
+    casm_build_extend! {builder,
+        const one = 1;
+        const ten = 10;
+        tempvar a = one;
+        tempvar n = ten;
+        tempvar b = one;
+        call FIB;
+        jump FT;
+        FIB:
+        tempvar new_a = b;
+        tempvar new_n = n - one;
+        tempvar new_b = a + b;
+        jump REC_CALL if n != 0;
+        rescope {};
+        jump FIB_END;
+        REC_CALL:
+        call FIB;
+        FIB_END:
+        ret;
+        FT:
+    };
+    let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
+        builder.build(["Fallthrough"]);
+    assert!(awaiting_relocations.is_empty());
+    assert_eq!(
+        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
+        indoc! {"
+            [ap + 0] = 1, ap++;
+            [ap + 0] = 10, ap++;
+            [ap + 0] = 1, ap++;
+            call rel 4;
+            jmp rel 13;
+            [ap + 0] = [fp + -3], ap++;
+            [fp + -4] = [ap + 0] + 1, ap++;
+            [ap + 0] = [fp + -5] + [fp + -3], ap++;
+            jmp rel 4 if [fp + -4] != 0;
+            jmp rel 4;
+            call rel -8;
+            ret;
+        "}
+    );
+}
