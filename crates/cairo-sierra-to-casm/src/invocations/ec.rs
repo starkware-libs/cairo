@@ -22,6 +22,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         EcConcreteLibfunc::CreatePoint(_) => build_ec_point_try_create(builder),
+        EcConcreteLibfunc::InitState(_) => build_ec_init_state(builder),
         EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
     }
 }
@@ -87,4 +88,36 @@ fn build_ec_point_unwrap(
     let y = casm_builder.add_var(ResOperand::Deref(y.to_deref()?));
 
     Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[x], &[y]], None)]))
+}
+
+/// Handles instruction for initializing an EC state.
+fn build_ec_init_state(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let mut casm_builder = CasmBuilder::default();
+
+    // Sample a random point on the curve.
+    casm_build_extend! {casm_builder,
+        tempvar random_x;
+        tempvar random_y;
+        hint RandomEcPoint {} into { x: random_x, y: random_y };
+        // Assert the random point is on the curve.
+        tempvar y2;
+        tempvar expected_y2;
+    }
+    verify_ec_point(&mut casm_builder, random_x, random_y, y2, expected_y2);
+    casm_build_extend! {casm_builder,
+        assert y2 = expected_y2;
+        // Create a pointer to the random EC point to return as part of the state.
+        tempvar random_ptr;
+        hint AllocSegment {} into {dst: random_ptr};
+        assert random_x = random_ptr[0];
+        assert random_y = random_ptr[1];
+    };
+
+    // The third entry in the EC state is a pointer to the sampled random EC point.
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[random_x, random_y, random_ptr]], None)],
+    ))
 }
