@@ -98,14 +98,14 @@ drop<Unit>([4]) -> ()
 store_local<felt>([1], [0]) -> ([0])
 enum_match<core::bool>([5]) { label1([6]) label2([7]) }
 label1:
-drop<Unit>([6]) -> ()
 branch_align() -> ()
+drop<Unit>([6]) -> ()
 function_call<user@test::revoke_ap>() -> ([8])
 rename<felt>([8]) -> ([2])
 jump() { label3() }
 label2:
-drop<Unit>([7]) -> ()
 branch_align() -> ()
+drop<Unit>([7]) -> ()
 felt_const<1>() -> ([9])
 store_temp<felt>([9]) -> ([2])
 label3:
