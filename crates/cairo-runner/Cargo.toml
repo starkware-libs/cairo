@@ -2,6 +2,9 @@
 name = "cairo-runner"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Basic cairo runner."
 
 [dependencies]
 anyhow.workspace = true

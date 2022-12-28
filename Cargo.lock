@@ -239,7 +239,6 @@ name = "cairo-compiler"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cairo-db-utils",
  "cairo-defs",
  "cairo-diagnostics",
  "cairo-filesystem",
@@ -260,18 +259,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-db-utils"
-version = "0.1.0"
-dependencies = [
- "test-log",
-]
-
-[[package]]
 name = "cairo-debug"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
- "cairo-diagnostics-proc-macros",
+ "cairo-proc-macros",
+ "cairo-utils",
  "env_logger",
  "salsa",
  "test-log",
@@ -281,7 +273,6 @@ dependencies = [
 name = "cairo-defs"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-diagnostics",
  "cairo-filesystem",
@@ -302,24 +293,15 @@ dependencies = [
 name = "cairo-diagnostics"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
- "cairo-diagnostics-proc-macros",
  "cairo-filesystem",
+ "cairo-proc-macros",
+ "cairo-utils",
  "env_logger",
  "indoc",
  "itertools",
  "pretty_assertions",
  "salsa",
  "test-log",
-]
-
-[[package]]
-name = "cairo-diagnostics-proc-macros"
-version = "0.1.0"
-dependencies = [
- "cairo-debug",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -339,9 +321,9 @@ dependencies = [
 name = "cairo-filesystem"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-project",
+ "cairo-utils",
  "env_logger",
  "path-clean",
  "salsa",
@@ -354,7 +336,6 @@ name = "cairo-formatter"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cairo-db-utils",
  "cairo-diagnostics",
  "cairo-filesystem",
  "cairo-parser",
@@ -376,7 +357,6 @@ dependencies = [
 name = "cairo-language-server"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
@@ -401,14 +381,13 @@ dependencies = [
 name = "cairo-lowering"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
- "cairo-diagnostics-proc-macros",
  "cairo-filesystem",
  "cairo-parser",
  "cairo-plugins",
+ "cairo-proc-macros",
  "cairo-semantic",
  "cairo-syntax",
  "cairo-test-utils",
@@ -430,7 +409,6 @@ dependencies = [
 name = "cairo-parser"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-diagnostics",
  "cairo-filesystem",
  "cairo-syntax",
@@ -452,7 +430,6 @@ dependencies = [
 name = "cairo-plugins"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
@@ -467,6 +444,15 @@ dependencies = [
  "salsa",
  "smol_str",
  "test-case",
+]
+
+[[package]]
+name = "cairo-proc-macros"
+version = "0.1.0"
+dependencies = [
+ "cairo-debug",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -535,14 +521,13 @@ name = "cairo-semantic"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
- "cairo-db-utils",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
- "cairo-diagnostics-proc-macros",
  "cairo-filesystem",
  "cairo-parser",
  "cairo-plugins",
+ "cairo-proc-macros",
  "cairo-syntax",
  "cairo-test-utils",
  "cairo-utils",
@@ -621,15 +606,14 @@ dependencies = [
 name = "cairo-sierra-generator"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
- "cairo-diagnostics-proc-macros",
  "cairo-filesystem",
  "cairo-lowering",
  "cairo-parser",
  "cairo-plugins",
+ "cairo-proc-macros",
  "cairo-semantic",
  "cairo-sierra",
  "cairo-syntax",
@@ -717,7 +701,6 @@ dependencies = [
 name = "cairo-syntax"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-filesystem",
  "cairo-utils",

@@ -2,9 +2,11 @@
 name = "cairo-defs"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Handling of definitions of language items in Cairo."
 
 [dependencies]
-cairo-db-utils = { path = "../cairo-db-utils" }
 cairo-debug = { path = "../cairo-debug" }
 cairo-diagnostics = { path = "../cairo-diagnostics" }
 cairo-filesystem = { path = "../cairo-filesystem" }

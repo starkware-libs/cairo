@@ -2,13 +2,15 @@
 name = "cairo-parser"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo parser."
 
 [features]
 fix_parser_tests = ["cairo-utils/testing"]
 
 [dependencies]
 colored.workspace = true
-cairo-db-utils = { path = "../cairo-db-utils" }
 cairo-diagnostics = { path = "../cairo-diagnostics" }
 cairo-filesystem = { path = "../cairo-filesystem" }
 itertools.workspace = true

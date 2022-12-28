@@ -21,7 +21,7 @@ impl TryFrom<SmolStr> for LiteralLongId {
     }
 }
 
-use cairo_db_utils::define_short_id;
+use cairo_utils::define_short_id;
 
 use crate::db::SemanticGroup;
 

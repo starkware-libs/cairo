@@ -1,7 +1,7 @@
-use cairo_db_utils::Upcast;
 use cairo_syntax::node::ast::{ItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia};
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::{SyntaxNode, Terminal, Token, TypedSyntaxNode};
+use cairo_utils::Upcast;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use test_log::test;

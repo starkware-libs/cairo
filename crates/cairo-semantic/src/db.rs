@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::db::{DefsGroup, GeneratedFileInfo};
 use cairo_defs::diagnostic_utils::StableLocation;
 use cairo_defs::ids::{
@@ -16,6 +15,7 @@ use cairo_parser::db::ParserGroup;
 use cairo_syntax::node::ast;
 use cairo_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::Upcast;
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;

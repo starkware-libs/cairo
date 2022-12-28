@@ -21,14 +21,13 @@
 //
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
-use cairo_db_utils::define_short_id;
 use cairo_debug::debug::DebugWithDb;
 use cairo_filesystem::ids::{CrateId, FileId};
 use cairo_syntax::node::helpers::{GetIdentifier, NameGreen};
 use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_utils::OptionFrom;
+use cairo_utils::{define_short_id, OptionFrom};
 use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
@@ -68,7 +67,7 @@ macro_rules! define_language_element_id {
                     terminal_green.identifier(syntax_db)
                 }
             }
-            impl<T: ?Sized + cairo_db_utils::Upcast<dyn DefsGroup + 'static>> cairo_debug::DebugWithDb<T>
+            impl<T: ?Sized + cairo_utils::Upcast<dyn DefsGroup + 'static>> cairo_debug::DebugWithDb<T>
                 for $long_id
             {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
@@ -148,7 +147,7 @@ macro_rules! define_language_element_id_as_enum {
         pub enum $enum_name {
             $($variant($variant_ty),)*
         }
-        impl<T: ?Sized + cairo_db_utils::Upcast<dyn DefsGroup + 'static>> cairo_debug::DebugWithDb<T>
+        impl<T: ?Sized + cairo_utils::Upcast<dyn DefsGroup + 'static>> cairo_debug::DebugWithDb<T>
             for $enum_name
         {
             fn fmt(

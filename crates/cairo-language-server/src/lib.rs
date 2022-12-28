@@ -7,7 +7,6 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_debug::DebugWithDb;
 use cairo_defs::db::DefsGroup;
 use cairo_defs::ids::{
@@ -34,7 +33,7 @@ use cairo_syntax::node::kind::SyntaxKind;
 use cairo_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_utils::ordered_hash_set::OrderedHashSet;
-use cairo_utils::OptionHelper;
+use cairo_utils::{OptionHelper, Upcast};
 pub use db::RootDatabase;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;

@@ -1,8 +1,7 @@
-use cairo_db_utils::define_short_id;
 use cairo_defs::ids::FreeFunctionId;
 use cairo_sierra::ids::ConcreteTypeId;
 use cairo_sierra::program;
-use cairo_utils::write_comma_separated;
+use cairo_utils::{define_short_id, write_comma_separated};
 
 use crate::db::SierraGenGroup;
 

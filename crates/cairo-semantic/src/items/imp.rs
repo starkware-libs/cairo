@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use std::vec;
 
-use cairo_db_utils::define_short_id;
 use cairo_defs::ids::{
     GenericFunctionId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
     LanguageElementId, ModuleId,
@@ -9,13 +8,13 @@ use cairo_defs::ids::{
 use cairo_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
 };
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::ast::{self, Item, MaybeImplBody, OptionReturnTypeClause};
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_syntax::node::TypedSyntaxNode;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
-use cairo_utils::{extract_matches, try_extract_matches, OptionHelper};
+use cairo_utils::{define_short_id, extract_matches, try_extract_matches, OptionHelper};
 use itertools::izip;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};

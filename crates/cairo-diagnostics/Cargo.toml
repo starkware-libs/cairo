@@ -2,15 +2,18 @@
 name = "cairo-diagnostics"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Diagnostic utilities."
 
 [dependencies]
-cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-utils = { path = "../cairo-utils" }
 cairo-filesystem = { path = "../cairo-filesystem" }
 itertools.workspace = true
 salsa.workspace = true
 
 [dev-dependencies]
-cairo-diagnostics-proc-macros = { path = "../cairo-diagnostics-proc-macros" }
+cairo-proc-macros = { path = "../cairo-proc-macros" }
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true

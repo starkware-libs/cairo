@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
 use cairo_defs::plugin::MacroPlugin;
@@ -12,7 +11,7 @@ use cairo_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_parser::db::ParserDatabase;
 use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
-use cairo_utils::{extract_matches, OptionFrom};
+use cairo_utils::{extract_matches, OptionFrom, Upcast};
 use pretty_assertions::assert_eq;
 
 use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};

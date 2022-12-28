@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::ids::{EnumId, GenericParamId, LanguageElementId, VariantId, VariantLongId};
 use cairo_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::Upcast;
 use itertools::enumerate;
 use smol_str::SmolStr;
 

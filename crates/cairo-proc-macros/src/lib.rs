@@ -35,7 +35,7 @@ fn emit_struct_debug(name: syn::Ident, db: TokenStream2, strct: syn::DataStruct)
     let (pattern, field_prints) = emit_fields_debug(db.clone(), name.to_string(), strct.fields);
     let crt = debug_crate();
     quote! {
-        impl<'a, T: ?Sized + cairo_db_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
+        impl<'a, T: ?Sized + cairo_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, other_db: &T) -> std::fmt::Result {
                 use #crt::debug::DebugWithDb;
                 use #crt::debug::helper::Fallback;
@@ -63,7 +63,7 @@ fn emit_enum_debug(name: syn::Ident, db: TokenStream2, enm: syn::DataEnum) -> To
     }
     let crt = debug_crate();
     quote! {
-        impl<'a, T: ?Sized + cairo_db_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
+        impl<'a, T: ?Sized + cairo_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, other_db: &T) -> std::fmt::Result {
                 use #crt::debug::DebugWithDb;
                 use #crt::debug::helper::Fallback;

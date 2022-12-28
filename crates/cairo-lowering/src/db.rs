@@ -1,12 +1,12 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::ids::{FreeFunctionId, ModuleId, ModuleItemId};
 use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_filesystem::ids::FileId;
 use cairo_semantic::db::SemanticGroup;
 use cairo_semantic::TypeId;
+use cairo_utils::Upcast;
 
 use crate::diagnostic::LoweringDiagnostic;
 use crate::lower::{lower, Lowered};

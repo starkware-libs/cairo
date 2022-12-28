@@ -2,6 +2,9 @@
 name = "cairo-starknet"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Starknet capabilities and utilities on top of Cairo."
 
 [dependencies]
 anyhow.workspace = true

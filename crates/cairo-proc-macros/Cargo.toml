@@ -1,7 +1,10 @@
 [package]
-name = "cairo-diagnostics-proc-macros"
+name = "cairo-proc-macros"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Procedural macros."
 
 [lib]
 proc-macro = true
@@ -10,6 +13,7 @@ proc-macro = true
 normal = ["cairo-debug"]
 
 [dependencies]
+# This is used only for docs.
 cairo-debug = { path = "../cairo-debug" }
 quote.workspace = true
 syn.workspace = true

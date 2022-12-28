@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
 use cairo_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_utils::extract_matches;
 
 use super::generics::semantic_generic_params;

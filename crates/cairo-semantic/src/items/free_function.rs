@@ -1,13 +1,12 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::ids::{FreeFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
 use cairo_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::ast;
-use cairo_utils::try_extract_matches;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_utils::{try_extract_matches, Upcast};
 use id_arena::Arena;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};

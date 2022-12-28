@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_defs::ids::ModuleId;
 use cairo_defs::plugin::MacroPlugin;
@@ -13,6 +12,7 @@ use cairo_semantic::test_utils::setup_test_crate;
 use cairo_sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
 use cairo_sierra::program;
 use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_utils::Upcast;
 use salsa::{InternId, InternKey};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};

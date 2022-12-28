@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
-use cairo_db_utils::{define_short_id, Upcast};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
+use cairo_utils::{define_short_id, Upcast};
 use test_log::test;
 
 use crate::debug as cairo_debug;

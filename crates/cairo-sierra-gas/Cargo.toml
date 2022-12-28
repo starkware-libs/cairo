@@ -2,6 +2,9 @@
 name = "cairo-sierra-gas"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Sierra gas computation."
 
 [dependencies]
 itertools.workspace = true

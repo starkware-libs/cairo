@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_defs::ids::ModuleId;
 use cairo_defs::plugin::MacroPlugin;
@@ -12,6 +11,7 @@ use cairo_parser::db::ParserDatabase;
 use cairo_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_semantic::plugin::SemanticPlugin;
 use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_utils::Upcast;
 use indoc::indoc;
 use itertools::zip_eq;
 use pretty_assertions::assert_eq;

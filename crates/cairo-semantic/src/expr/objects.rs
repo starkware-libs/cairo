@@ -1,7 +1,7 @@
 use cairo_debug::DebugWithDb;
 use cairo_defs::ids::{MemberId, StructId, VarId};
 use cairo_diagnostics::DiagnosticAdded;
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::ast::{self};
 use id_arena::Id;
 use num_bigint::BigInt;

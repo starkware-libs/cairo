@@ -2,6 +2,9 @@
 name = "cairo-project"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo project specification. For example, crates and flags used for compilation."
 
 [dependencies]
 serde.workspace = true

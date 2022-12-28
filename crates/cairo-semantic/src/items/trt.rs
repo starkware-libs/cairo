@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use cairo_db_utils::define_short_id;
 use cairo_defs::ids::{
     GenericFunctionId, GenericParamId, LanguageElementId, TraitFunctionId, TraitFunctionLongId,
     TraitId,
 };
 use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::{ast, TypedSyntaxNode};
+use cairo_utils::define_short_id;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 

@@ -2,6 +2,9 @@
 name = "cairo-casm"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo assembly encoding."
 
 [dependencies]
 cairo-rs.workspace = true

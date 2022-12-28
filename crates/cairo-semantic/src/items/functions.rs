@@ -1,10 +1,9 @@
-use cairo_db_utils::define_short_id;
 use cairo_debug::DebugWithDb;
 use cairo_defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, ParamLongId};
 use cairo_diagnostics::{skip_diagnostic, Maybe};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_utils::try_extract_matches;
+use cairo_utils::{define_short_id, try_extract_matches};
 use smol_str::SmolStr;
 
 use super::modifiers;

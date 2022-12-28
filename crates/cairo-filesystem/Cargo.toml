@@ -2,9 +2,12 @@
 name = "cairo-filesystem"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Virtual filesystem for the compiler."
 
 [dependencies]
-cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-utils = { path = "../cairo-utils" }
 cairo-debug = { path = "../cairo-debug" }
 path-clean.workspace = true
 cairo-project = { path = "../cairo-project" }

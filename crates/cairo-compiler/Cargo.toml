@@ -2,13 +2,15 @@
 name = "cairo-compiler"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo compiler."
 
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
 cairo-diagnostics = { path = "../cairo-diagnostics" }
 cairo-defs = { path = "../cairo-defs" }
-cairo-db-utils = { path = "../cairo-db-utils" }
 cairo-filesystem = { path = "../cairo-filesystem" }
 log.workspace = true
 cairo-lowering = { path = "../cairo-lowering" }
