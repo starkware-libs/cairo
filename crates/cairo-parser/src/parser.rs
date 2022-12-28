@@ -122,7 +122,7 @@ impl<'a> Parser<'a> {
 
     // ------------------------------- Top level items -------------------------------
 
-    /// Returns a GreenId of a node with an Item.* kind (see [syntax::node::ast::Item]).
+    /// Returns a GreenId of a node with an Item.* kind (see [cairo_syntax::node::ast::Item]).
     /// If can't parse as a top level item, keeps skipping tokens until it can.
     /// Returns None only when it reaches EOF.
     pub fn try_parse_top_level_item(&mut self) -> Option<ItemGreen> {
@@ -425,7 +425,8 @@ impl<'a> Parser<'a> {
         ItemTrait::new_green(self.db, attributes, trait_kw, name, generic_params, body)
     }
 
-    /// Returns a GreenId of a node with a TraitItem.* kind (see [syntax::node::ast::TraitItem]).
+    /// Returns a GreenId of a node with a TraitItem.* kind (see
+    /// [cairo_syntax::node::ast::TraitItem]).
     pub fn try_parse_trait_item(&mut self) -> Option<TraitItemGreen> {
         let attributes = self.parse_attribute_list();
 
@@ -476,13 +477,13 @@ impl<'a> Parser<'a> {
 
     // ------------------------------- Expressions -------------------------------
 
-    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or None if
-    /// an expression can't be parsed.
+    /// Returns a GreenId of a node with an Expr.* kind (see [cairo_syntax::node::ast::Expr]) or
+    /// None if an expression can't be parsed.
     fn try_parse_expr(&mut self) -> Option<ExprGreen> {
         self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow)
     }
-    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or a node
-    /// with kind ExprMissing if an expression can't be parsed.
+    /// Returns a GreenId of a node with an Expr.* kind (see [cairo_syntax::node::ast::Expr]) or a
+    /// node with kind ExprMissing if an expression can't be parsed.
     pub fn parse_expr(&mut self) -> ExprGreen {
         match self.try_parse_expr() {
             Some(green) => green,
@@ -526,8 +527,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or None if
-    /// such an expression can't be parsed.
+    /// Returns a GreenId of a node with an Expr.* kind (see [cairo_syntax::node::ast::Expr]) or
+    /// None if such an expression can't be parsed.
     ///
     /// Parsing will be limited by:
     /// `parent_precedence` - parsing of boolean operators limited to this.
@@ -567,8 +568,8 @@ impl<'a> Parser<'a> {
         }
         Some(expr)
     }
-    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]), excluding
-    /// ExprBlock, or ExprMissing if such an expression can't be parsed.
+    /// Returns a GreenId of a node with an Expr.* kind (see [cairo_syntax::node::ast::Expr]),
+    /// excluding ExprBlock, or ExprMissing if such an expression can't be parsed.
     ///
     /// `lbrace_allowed` - See [LbraceAllowed].
     fn parse_expr_limited(
@@ -809,8 +810,8 @@ impl<'a> Parser<'a> {
         Some(MatchArm::new_green(self.db, pattern, arrow, expr))
     }
 
-    /// Returns a GreenId of a node with some Pattern kind (see [syntax::node::ast::Pattern]) or
-    /// None if a pattern can't be parsed.
+    /// Returns a GreenId of a node with some Pattern kind (see [cairo_syntax::node::ast::Pattern])
+    /// or None if a pattern can't be parsed.
     fn try_parse_pattern(&mut self) -> Option<PatternGreen> {
         let modifier_list = self.parse_modifier_list();
         if !modifier_list.is_empty() {
@@ -873,7 +874,7 @@ impl<'a> Parser<'a> {
             _ => return None,
         })
     }
-    /// Returns a GreenId of a node with some Pattern kind (see [syntax::node::ast::Pattern]).
+    /// Returns a GreenId of a node with some Pattern kind (see [cairo_syntax::node::ast::Pattern]).
     fn parse_pattern(&mut self) -> PatternGreen {
         // If not found, return a missing underscore pattern.
         self.try_parse_pattern().unwrap_or_else(|| {
@@ -901,8 +902,8 @@ impl<'a> Parser<'a> {
 
     // ------------------------------- Statements -------------------------------
 
-    /// Returns a GreenId of a node with a Statement.* kind (see [syntax::node::ast::Statement]) or
-    /// None if a statement can't be parsed.
+    /// Returns a GreenId of a node with a Statement.* kind (see
+    /// [cairo_syntax::node::ast::Statement]) or None if a statement can't be parsed.
     pub fn try_parse_statement(&mut self) -> Option<StatementGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalLet => {
@@ -1059,8 +1060,8 @@ impl<'a> Parser<'a> {
         ))
     }
 
-    /// Returns a GreenId of a node with some ParamName kind (see [syntax::node::ast::ParamName]) or
-    /// None if a param name can't be parsed.
+    /// Returns a GreenId of a node with some ParamName kind (see
+    /// [cairo_syntax::node::ast::ParamName]) or None if a param name can't be parsed.
     fn try_parse_param_name(&mut self) -> Option<ParamNameGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalUnderscore => Some(self.take::<TerminalUnderscore>().into()),

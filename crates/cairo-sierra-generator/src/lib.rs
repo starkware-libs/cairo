@@ -1,4 +1,4 @@
-//! Lowering from the semantic model down to Sierra. See [semantic] and  [sierra]
+//! Lowering from the semantic model down to Sierra. See [cairo_semantic] and  [cairo_sierra]
 
 mod ap_change;
 mod block_generator;

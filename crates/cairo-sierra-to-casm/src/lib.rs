@@ -1,4 +1,4 @@
-//! CASM backend. Compiles from Sierra down to CASM. See [sierra] and [casm]
+//! CASM backend. Compiles from Sierra down to CASM. See [cairo_sierra] and [cairo_casm]
 
 pub mod annotations;
 pub mod compiler;
