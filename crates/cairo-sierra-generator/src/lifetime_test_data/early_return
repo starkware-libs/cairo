@@ -1,0 +1,153 @@
+//! > Test early return
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt) -> felt {
+    if x == 0 {
+        return 0;
+    }
+    x
+}
+
+//! > module_code
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v1: core::felt) <- 0u
+Drops: v0
+End:
+  Return(v1)
+
+blk1:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+Drops: v2
+End:
+  Callsite()
+
+blk2 (root):
+Inputs: v0: core::felt
+Statements:
+  () <- match core::felt_jump_nz(v0) {
+    () => blk0,
+    (v2) => blk1,
+  }
+Drops:
+End:
+  Callsite(v0)
+
+//! > last_use
+v0: [(Id { idx: 2 }, 1)]
+v1: [(Id { idx: 0 }, 1)]
+
+//! > drops
+BeginningOfBlock(Id { idx: 1 }): v2
+BeginningOfBlock(Id { idx: 0 }): v0
+
+//! > ==========================================================================
+
+//! > Test return inside block
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt, y: felt) -> felt {
+    {
+        return y;
+    }
+    x + 1
+}
+
+//! > module_code
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+Drops: v0, v1
+End:
+  Return(v1)
+
+blk1 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  () <- blk0()
+Drops:
+End:
+  Unreachable
+
+//! > last_use
+v1: [(Id { idx: 0 }, 0)]
+
+//! > drops
+BeginningOfBlock(Id { idx: 1 }): v0
+
+//! > ==========================================================================
+
+//! > Test return in all branches
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt, y: felt) -> felt {
+    if x == 0 {
+        return 1;
+    } else {
+        return 2;
+    }
+    x + y
+}
+
+//! > module_code
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+Drops: v0, v1
+End:
+  Return(v2)
+
+blk1:
+Inputs: v3: core::NonZero::<core::felt>
+Statements:
+  (v4: core::felt) <- 2u
+Drops: v3, v0, v1
+End:
+  Return(v4)
+
+blk2 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  () <- match core::felt_jump_nz(v0) {
+    () => blk0,
+    (v3) => blk1,
+  }
+Drops:
+End:
+  Unreachable
+
+//! > last_use
+v2: [(Id { idx: 0 }, 1)]
+v4: [(Id { idx: 1 }, 1)]
+v0: [(Id { idx: 2 }, 0)]
+
+//! > drops
+BeginningOfBlock(Id { idx: 1 }): v3
+BeginningOfBlock(Id { idx: 2 }): v1

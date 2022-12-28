@@ -52,9 +52,9 @@ enum_match<core::option::Option::<core::integer::u128>>([10]) { 20([14]) 23([15]
 branch_align() -> ();
 store_temp<u128>([14]) -> ([16]);
 jump() { 31() };
+branch_align() -> ();
 drop<u128>([3]) -> ();
 drop<u128>([2]) -> ();
-branch_align() -> ();
 enum_init<core::option::Option::<core::integer::u128>, 1>([15]) -> ([17]);
 store_temp<RangeCheck>([9]) -> ([18]);
 store_temp<core::option::Option::<core::integer::u128>>([17]) -> ([17]);
@@ -69,9 +69,9 @@ enum_match<core::option::Option::<core::integer::u128>>([22]) { 37([26]) 40([27]
 branch_align() -> ();
 store_temp<u128>([26]) -> ([28]);
 jump() { 48() };
+branch_align() -> ();
 drop<u128>([2]) -> ();
 drop<u128>([16]) -> ();
-branch_align() -> ();
 enum_init<core::option::Option::<core::integer::u128>, 1>([27]) -> ([29]);
 store_temp<RangeCheck>([21]) -> ([30]);
 store_temp<core::option::Option::<core::integer::u128>>([29]) -> ([29]);
