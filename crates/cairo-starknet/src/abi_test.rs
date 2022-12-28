@@ -1,9 +1,9 @@
 use cairo_defs::db::DefsGroup;
 use cairo_defs::ids::ModuleItemId;
-use indoc::indoc;
-use pretty_assertions::assert_eq;
 use cairo_semantic::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 use cairo_utils::extract_matches;
+use indoc::indoc;
+use pretty_assertions::assert_eq;
 
 use crate::abi::Contract;
 

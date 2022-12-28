@@ -1,7 +1,7 @@
-use smol_str::SmolStr;
 use cairo_syntax::node::ast::Modifier;
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::Terminal;
+use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind::RedundantModifier;
 use crate::diagnostic::SemanticDiagnostics;

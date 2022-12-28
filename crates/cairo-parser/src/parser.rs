@@ -1365,7 +1365,9 @@ impl<'a> Parser<'a> {
     /// None.
     /// Note that this function should not be called for 'TerminalIdentifier' -
     /// try_parse_identifier() should be used instead.
-    fn try_parse_token<Terminal: cairo_syntax::node::Terminal>(&mut self) -> Option<Terminal::Green> {
+    fn try_parse_token<Terminal: cairo_syntax::node::Terminal>(
+        &mut self,
+    ) -> Option<Terminal::Green> {
         if Terminal::KIND == self.peek().kind { Some(self.take::<Terminal>()) } else { None }
     }
 

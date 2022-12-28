@@ -3,10 +3,10 @@ use std::collections::HashMap;
 use std::iter;
 
 use cairo_casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
-use itertools::zip_eq;
 use cairo_sierra::edit_state::{put_results, take_args};
 use cairo_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_sierra::program::{BranchInfo, Function, StatementIdx};
+use itertools::zip_eq;
 use thiserror::Error;
 
 use crate::environment::ap_tracking::update_ap_tracking;

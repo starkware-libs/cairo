@@ -1,9 +1,9 @@
-use colored::{ColoredString, Colorize};
-use smol_str::SmolStr;
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::green::GreenNodeDetails;
 use cairo_syntax::node::kind::SyntaxKind;
 use cairo_syntax::node::SyntaxNode;
+use colored::{ColoredString, Colorize};
+use smol_str::SmolStr;
 
 struct ColoredPrinter<'a> {
     db: &'a dyn SyntaxGroup,

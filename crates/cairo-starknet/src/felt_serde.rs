@@ -1,5 +1,3 @@
-use num_bigint::{BigInt, ToBigInt};
-use num_traits::ToPrimitive;
 use cairo_sierra::ids::{
     ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, UserTypeId,
     VarId,
@@ -9,6 +7,8 @@ use cairo_sierra::program::{
     FunctionSignature, GenericArg, Invocation, LibFuncDeclaration, Param, Program, Statement,
     StatementIdx, TypeDeclaration,
 };
+use num_bigint::{BigInt, ToBigInt};
+use num_traits::ToPrimitive;
 use thiserror::Error;
 
 use crate::casm_contract_class::BigIntAsHex;

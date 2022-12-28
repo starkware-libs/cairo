@@ -3,8 +3,8 @@ use std::fs;
 use cairo_db_utils::Upcast;
 use cairo_filesystem::db::{FilesDatabase, FilesGroup};
 use cairo_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
-use pretty_assertions::assert_eq;
 use cairo_syntax::node::db::SyntaxDatabase;
+use pretty_assertions::assert_eq;
 use test_case::test_case;
 
 use crate::{get_formatted_file, FormatterConfig};

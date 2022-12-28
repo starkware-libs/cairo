@@ -1,4 +1,3 @@
-use pretty_assertions::assert_eq;
 use cairo_semantic::corelib::get_core_ty_by_name;
 use cairo_semantic::GenericArgumentId;
 use cairo_sierra::extensions::lib_func::{
@@ -8,6 +7,7 @@ use cairo_sierra::extensions::lib_func::{
 use cairo_sierra::extensions::OutputVarReferenceInfo;
 use cairo_sierra::ids::ConcreteLibFuncId;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
+use pretty_assertions::assert_eq;
 
 use super::LocalVariables;
 use crate::db::SierraGenGroup;

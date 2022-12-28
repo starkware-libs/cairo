@@ -1,6 +1,6 @@
+use cairo_sierra::ProgramParser;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use cairo_sierra::ProgramParser;
 
 use super::CanonicalReplacer;
 use crate::replace_ids::SierraIdReplacer;

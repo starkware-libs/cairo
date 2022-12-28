@@ -1,11 +1,11 @@
-use colored::{ColoredString, Colorize};
-use itertools::zip_eq;
-use smol_str::SmolStr;
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::kind::SyntaxKind;
 use cairo_syntax::node::SyntaxNode;
 use cairo_syntax_codegen::cairo_spec::get_spec;
 use cairo_syntax_codegen::spec::{Member, Node, NodeKind};
+use colored::{ColoredString, Colorize};
+use itertools::zip_eq;
+use smol_str::SmolStr;
 
 pub fn print_tree(
     db: &dyn SyntaxGroup,

@@ -4,11 +4,13 @@ mod test;
 
 use cairo_filesystem::ids::FileId;
 use cairo_filesystem::span::TextOffset;
-use smol_str::SmolStr;
-use cairo_syntax::node::ast::{TokenNewline, TokenSingleLineComment, TokenWhitespace, TriviumGreen};
+use cairo_syntax::node::ast::{
+    TokenNewline, TokenSingleLineComment, TokenWhitespace, TriviumGreen,
+};
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::kind::SyntaxKind;
 use cairo_syntax::node::Token;
+use smol_str::SmolStr;
 
 pub struct Lexer<'a> {
     db: &'a dyn SyntaxGroup,

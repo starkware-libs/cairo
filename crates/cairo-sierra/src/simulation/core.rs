@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use cairo_utils::extract_matches;
 use num_bigint::{BigInt, ToBigInt};
 use num_traits::{ToPrimitive, Zero};
-use cairo_utils::extract_matches;
 
 use super::value::CoreValue;
 use super::LibFuncSimulationError;

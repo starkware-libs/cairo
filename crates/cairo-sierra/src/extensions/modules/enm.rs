@@ -17,9 +17,9 @@
 
 use std::cmp;
 
+use cairo_utils::try_extract_matches;
 use num_bigint::ToBigInt;
 use num_traits::Signed;
-use cairo_utils::try_extract_matches;
 
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{

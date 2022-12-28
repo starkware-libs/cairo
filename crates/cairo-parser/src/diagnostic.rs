@@ -2,8 +2,8 @@ use cairo_diagnostics::DiagnosticEntry;
 use cairo_filesystem::db::FilesGroup;
 use cairo_filesystem::ids::FileId;
 use cairo_filesystem::span::TextSpan;
-use smol_str::SmolStr;
 use cairo_syntax::node::kind::SyntaxKind;
+use smol_str::SmolStr;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParserDiagnostic {

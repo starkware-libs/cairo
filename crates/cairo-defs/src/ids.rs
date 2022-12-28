@@ -24,12 +24,12 @@
 use cairo_db_utils::define_short_id;
 use cairo_debug::debug::DebugWithDb;
 use cairo_filesystem::ids::{CrateId, FileId};
-use smol_str::SmolStr;
 use cairo_syntax::node::helpers::{GetIdentifier, NameGreen};
 use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_utils::OptionFrom;
+use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
 

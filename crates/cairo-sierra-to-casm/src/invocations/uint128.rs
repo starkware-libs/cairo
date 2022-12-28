@@ -1,8 +1,10 @@
 use cairo_casm::builder::CasmBuilder;
 use cairo_casm::casm_build_extend;
 use cairo_casm::operand::{CellRef, ResOperand};
+use cairo_sierra::extensions::uint128::{
+    IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc,
+};
 use num_bigint::BigInt;
-use cairo_sierra::extensions::uint128::{IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc};
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;

@@ -15,16 +15,18 @@ pub fn semantic_generic_params(
 
     match generic_args {
         cairo_syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
-        cairo_syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
-            .generic_params(syntax_db)
-            .elements(syntax_db)
-            .iter()
-            .map(|param_syntax| {
-                db.intern_generic_param(GenericParamLongId(
-                    module_file_id,
-                    param_syntax.stable_ptr(),
-                ))
-            })
-            .collect(),
+        cairo_syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => {
+            syntax
+                .generic_params(syntax_db)
+                .elements(syntax_db)
+                .iter()
+                .map(|param_syntax| {
+                    db.intern_generic_param(GenericParamLongId(
+                        module_file_id,
+                        param_syntax.stable_ptr(),
+                    ))
+                })
+                .collect()
+        }
     }
 }

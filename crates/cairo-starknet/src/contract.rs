@@ -1,9 +1,11 @@
 use anyhow::Context;
-use cairo_defs::ids::{FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId, TraitId};
+use cairo_defs::ids::{
+    FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId, TraitId,
+};
 use cairo_diagnostics::ToOption;
 use cairo_filesystem::ids::CrateId;
-use num_bigint::BigUint;
 use cairo_semantic::db::SemanticGroup;
+use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
 
 use crate::plugin::{ABI_TRAIT, CONTRACT_ATTR, EXTERNAL_MODULE};

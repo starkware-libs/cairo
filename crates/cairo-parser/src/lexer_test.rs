@@ -1,8 +1,8 @@
 use cairo_filesystem::ids::FileId;
-use salsa::{InternId, InternKey};
 use cairo_syntax::node::ast::{TokenSingleLineComment, TokenWhitespace};
 use cairo_syntax::node::kind::SyntaxKind;
 use cairo_syntax::node::Token;
+use salsa::{InternId, InternKey};
 use test_log::test;
 
 use super::Lexer;

@@ -5,14 +5,14 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 use anyhow::{bail, Result};
-use clap::Parser;
-use colored::Colorize;
-use diffy::{create_patch, PatchFormatter};
 use cairo_filesystem::db::FilesGroup;
 use cairo_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_formatter::{get_formatted_file, FormatterConfig};
 use cairo_parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 use cairo_utils::logging::init_logging;
+use clap::Parser;
+use colored::Colorize;
+use diffy::{create_patch, PatchFormatter};
 
 #[derive(Debug)]
 enum Input<'a> {

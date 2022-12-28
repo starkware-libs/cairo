@@ -1,9 +1,9 @@
-use itertools::zip_eq;
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_sierra::ids::ConcreteLibFuncId;
 use cairo_sierra::program::{Program, StatementIdx};
 use cairo_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
+use itertools::zip_eq;
 
 use super::CostError;
 use crate::core_libfunc_cost_expr::CostExprMap;

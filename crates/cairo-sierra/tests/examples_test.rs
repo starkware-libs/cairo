@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-use num_bigint::ToBigInt;
 use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
 use cairo_sierra::program::{Program, StatementIdx};
 use cairo_sierra::program_registry::ProgramRegistry;
 use cairo_sierra::simulation::value::CoreValue;
 use cairo_sierra::simulation::{self};
+use num_bigint::ToBigInt;
 use test_case::test_case;
 
 /// Returns a parsed example program from the example directory.

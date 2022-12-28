@@ -4,12 +4,6 @@ mod test;
 
 use std::collections::HashMap;
 
-use convert_case::{Case, Casing};
-use num_bigint::BigUint;
-use num_integer::Integer;
-use num_traits::{Num, Signed};
-use serde::ser::Serializer;
-use serde::{Deserialize, Deserializer, Serialize};
 use cairo_sierra::extensions::gas::GasBuiltinType;
 use cairo_sierra::extensions::modules::starknet::syscalls::SystemType;
 use cairo_sierra::extensions::pedersen::PedersenType;
@@ -20,6 +14,12 @@ use cairo_sierra_ap_change::{calc_ap_changes, ApChangeError};
 use cairo_sierra_gas::{calc_gas_info, CostError};
 use cairo_sierra_to_casm::compiler::CompilationError;
 use cairo_sierra_to_casm::metadata::Metadata;
+use convert_case::{Case, Casing};
+use num_bigint::BigUint;
+use num_integer::Integer;
+use num_traits::{Num, Signed};
+use serde::ser::Serializer;
+use serde::{Deserialize, Deserializer, Serialize};
 use thiserror::Error;
 
 use crate::contract_class::{ContractClass, ContractEntryPoint};

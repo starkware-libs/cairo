@@ -5,14 +5,14 @@ use cairo_db_utils::Upcast;
 use cairo_diagnostics::{skip_diagnostic, Maybe, ToMaybe};
 use cairo_filesystem::db::FilesGroup;
 use cairo_filesystem::ids::{CrateId, Directory, FileId, FileLongId, VirtualFile};
-use itertools::chain;
 use cairo_parser::db::ParserGroup;
-use smol_str::SmolStr;
 use cairo_syntax::node::ast::MaybeModuleBody;
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::helpers::GetIdentifier;
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
+use itertools::chain;
+use smol_str::SmolStr;
 
 use crate::ids::*;
 use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic};

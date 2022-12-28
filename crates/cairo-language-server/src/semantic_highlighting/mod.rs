@@ -3,8 +3,8 @@ use cairo_syntax::node::ast::{self};
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::kind::SyntaxKind;
 use cairo_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use tower_lsp::lsp_types::*;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
+use tower_lsp::lsp_types::*;
 
 use self::encoder::{EncodedToken, TokenEncoder};
 use self::token_kind::SemanticTokenKind;

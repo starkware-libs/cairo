@@ -1,8 +1,8 @@
 use cairo_filesystem::db::FilesGroup;
+use cairo_semantic::test_utils::{setup_test_crate, SemanticDatabaseForTesting};
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
-use cairo_semantic::test_utils::{setup_test_crate, SemanticDatabaseForTesting};
 
 use crate::contract::{find_contracts, get_external_functions, starknet_keccak};
 

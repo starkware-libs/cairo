@@ -1,5 +1,5 @@
-use test_case::test_case;
 use cairo_test_utils::compare_contents_or_fix_with_path;
+use test_case::test_case;
 
 use crate::casm_contract_class::CasmContractClass;
 use crate::test_utils::{get_example_file_path, get_test_contract};

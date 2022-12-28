@@ -1,6 +1,6 @@
-use num_bigint::BigInt;
 use cairo_sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
 use cairo_sierra::extensions::starknet::StarkNetConcreteLibFunc;
+use num_bigint::BigInt;
 
 use self::interoperability::{build_call_contract, build_contract_address_const};
 use super::{CompiledInvocation, CompiledInvocationBuilder};

@@ -1,10 +1,10 @@
 use cairo_casm::builder::CasmBuilder;
 use cairo_casm::casm_build_extend;
 use cairo_casm::operand::{DerefOrImmediate, ResOperand};
-use num_bigint::BigInt;
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_sierra::extensions::felt::FeltBinaryOperator;
 use cairo_sierra::extensions::gas::GasConcreteLibFunc;
+use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;

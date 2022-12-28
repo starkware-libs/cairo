@@ -7,7 +7,6 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-pub use db::RootDatabase;
 use cairo_db_utils::Upcast;
 use cairo_debug::DebugWithDb;
 use cairo_defs::db::DefsGroup;
@@ -30,18 +29,19 @@ use cairo_semantic::db::SemanticGroup;
 use cairo_semantic::items::free_function::SemanticExprLookup;
 use cairo_semantic::resolve_path::ResolvedGenericItem;
 use cairo_semantic::SemanticDiagnostic;
-use semantic_highlighting::token_kind::SemanticTokenKind;
-use semantic_highlighting::SemanticTokensTraverser;
-use serde_json::Value;
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::kind::SyntaxKind;
 use cairo_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_utils::ordered_hash_set::OrderedHashSet;
+use cairo_utils::OptionHelper;
+pub use db::RootDatabase;
+use semantic_highlighting::token_kind::SemanticTokenKind;
+use semantic_highlighting::SemanticTokensTraverser;
+use serde_json::Value;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
-use cairo_utils::ordered_hash_set::OrderedHashSet;
-use cairo_utils::OptionHelper;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 

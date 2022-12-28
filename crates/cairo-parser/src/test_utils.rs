@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use cairo_filesystem::db::FilesGroup;
 use cairo_filesystem::ids::{FileId, FileLongId, VirtualFile};
-use smol_str::SmolStr;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
+use smol_str::SmolStr;
 
 use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 

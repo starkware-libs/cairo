@@ -5,10 +5,10 @@ use cairo_defs::ids::ModuleId;
 use cairo_defs::plugin::{
     DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginGeneratedFile, PluginResult,
 };
-use indoc::indoc;
-use pretty_assertions::assert_eq;
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::{ast, Terminal};
+use indoc::indoc;
+use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;

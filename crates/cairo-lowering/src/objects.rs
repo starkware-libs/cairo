@@ -3,9 +3,9 @@
 //! assigned once. It is also normal form: each function argument is a variable, rather than a
 //! compound expression.
 
+use cairo_semantic::{ConcreteEnumId, ConcreteVariant};
 use id_arena::Id;
 use num_bigint::BigInt;
-use cairo_semantic::{ConcreteEnumId, ConcreteVariant};
 
 pub type BlockId = Id<Block>;
 pub type VariableId = Id<Variable>;

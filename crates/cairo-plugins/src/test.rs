@@ -4,15 +4,17 @@ use cairo_db_utils::Upcast;
 use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_defs::ids::ModuleId;
 use cairo_defs::plugin::MacroPlugin;
-use cairo_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
+use cairo_filesystem::db::{
+    init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+};
 use cairo_filesystem::ids::{CrateLongId, Directory, FileLongId};
-use indoc::indoc;
-use itertools::zip_eq;
 use cairo_parser::db::ParserDatabase;
-use pretty_assertions::assert_eq;
 use cairo_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_semantic::plugin::SemanticPlugin;
 use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use indoc::indoc;
+use itertools::zip_eq;
+use pretty_assertions::assert_eq;
 use test_case::test_case;
 
 use crate::derive::DerivePlugin;

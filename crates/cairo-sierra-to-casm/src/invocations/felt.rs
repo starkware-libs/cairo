@@ -1,10 +1,10 @@
 use cairo_casm::operand::DerefOrImmediate;
-use num_bigint::BigInt;
 use cairo_sierra::extensions::felt::{
     FeltBinaryOpConcreteLibFunc, FeltBinaryOperationConcreteLibFunc, FeltBinaryOperator,
     FeltConcrete, FeltOperationWithConstConcreteLibFunc, FeltUnaryOpConcreteLibFunc,
     FeltUnaryOperationConcreteLibFunc, FeltUnaryOperator,
 };
+use num_bigint::BigInt;
 
 use super::misc::build_jump_nz;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};

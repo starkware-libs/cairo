@@ -2,8 +2,8 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::Context;
-use clap::Parser;
 use cairo_starknet::contract_class::compile_path;
+use clap::Parser;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.

@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use itertools::chain;
 use cairo_utils::collection_arithmetics::HasZero;
+use itertools::chain;
 
 #[cfg(test)]
 #[path = "expr_test.rs"]

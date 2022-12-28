@@ -24,7 +24,9 @@ macro_rules! define_short_id {
             }
         }
         // Impl transparent DebugWithDb.
-        impl<T: ?Sized + cairo_db_utils::Upcast<dyn $db + 'static>> cairo_debug::DebugWithDb<T> for $short_id {
+        impl<T: ?Sized + cairo_db_utils::Upcast<dyn $db + 'static>> cairo_debug::DebugWithDb<T>
+            for $short_id
+        {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
                 use std::fmt::Debug;
 

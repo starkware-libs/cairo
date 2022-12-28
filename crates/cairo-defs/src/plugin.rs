@@ -2,10 +2,10 @@ use std::any::Any;
 use std::ops::Deref;
 use std::sync::Arc;
 
-use smol_str::SmolStr;
 use cairo_syntax::node::ast;
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::ids::SyntaxStablePtrId;
+use smol_str::SmolStr;
 
 /// A trait for arbitrary data that a macro generates along with a generated file.
 pub trait GeneratedFileAuxData: std::fmt::Debug + Sync + Send {

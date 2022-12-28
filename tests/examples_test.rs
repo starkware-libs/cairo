@@ -5,14 +5,14 @@ use cairo_compiler::db::RootDatabase;
 use cairo_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_compiler::project::setup_project;
 use cairo_filesystem::ids::CrateId;
-use num_bigint::BigInt;
 use cairo_runner::{RunResultValue, SierraCasmRunner};
 use cairo_sierra_generator::db::SierraGenGroup;
 use cairo_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_sierra_to_casm::test_utils::build_metadata;
-use test_case::test_case;
 use cairo_test_utils::compare_contents_or_fix_with_path;
 use cairo_utils::extract_matches;
+use num_bigint::BigInt;
+use test_case::test_case;
 
 /// Setups the cairo lowering to sierra db for the matching example.
 fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {

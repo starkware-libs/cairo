@@ -1,11 +1,11 @@
 use std::fs;
 
-use clap::Parser;
 use cairo_sierra::ProgramParser;
 use cairo_sierra_ap_change::calc_ap_changes;
 use cairo_sierra_gas::calc_gas_info;
 use cairo_sierra_to_casm::metadata::Metadata;
 use cairo_utils::logging::init_logging;
+use clap::Parser;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.

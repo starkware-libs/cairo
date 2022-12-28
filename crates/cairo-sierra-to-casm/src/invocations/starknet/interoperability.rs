@@ -1,8 +1,8 @@
 use cairo_casm::builder::CasmBuilder;
 use cairo_casm::casm_build_extend;
 use cairo_casm::operand::ResOperand;
-use num_bigint::BigInt;
 use cairo_sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
+use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;

@@ -1,9 +1,9 @@
 use std::fs;
 
 use anyhow::Context;
-use clap::Parser;
 use cairo_starknet::casm_contract_class::CasmContractClass;
 use cairo_starknet::contract_class::ContractClass;
+use clap::Parser;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.

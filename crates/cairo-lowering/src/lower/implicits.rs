@@ -2,9 +2,9 @@ use std::collections::HashSet;
 
 use cairo_defs::ids::{FreeFunctionId, GenericFunctionId};
 use cairo_diagnostics::Maybe;
-use itertools::Itertools;
 use cairo_semantic::TypeId;
 use cairo_utils::strongly_connected_components::{compute_scc, GraphNode};
+use itertools::Itertools;
 
 use crate::db::{LoweringGroup, SCCRepresentative};
 
@@ -135,7 +135,10 @@ impl<'a> GraphNode for FreeFunctionNode<'a> {
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
-pub fn function_may_panic(db: &dyn LoweringGroup, function: cairo_semantic::FunctionId) -> Maybe<bool> {
+pub fn function_may_panic(
+    db: &dyn LoweringGroup,
+    function: cairo_semantic::FunctionId,
+) -> Maybe<bool> {
     match db.lookup_intern_function(function).function.generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_may_panic(free_function),
         GenericFunctionId::Extern(extern_function) => {

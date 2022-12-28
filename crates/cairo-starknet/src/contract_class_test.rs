@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
+use cairo_test_utils::compare_contents_or_fix_with_path;
 use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
-use cairo_test_utils::compare_contents_or_fix_with_path;
 
 use crate::abi;
 use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};

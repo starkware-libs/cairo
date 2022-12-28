@@ -6,10 +6,10 @@ use cairo_defs::ids::{ModuleId, ModuleItemId};
 use cairo_diagnostics::ToOption;
 use cairo_filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
 use cairo_filesystem::ids::{CrateLongId, Directory, FileLongId};
+use cairo_utils::extract_matches;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
-use cairo_utils::extract_matches;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;

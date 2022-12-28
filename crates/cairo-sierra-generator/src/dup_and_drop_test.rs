@@ -1,7 +1,7 @@
 use cairo_sierra::ids::VarId;
 use cairo_sierra::program;
-use test_log::test;
 use cairo_utils::ordered_hash_set::OrderedHashSet;
+use test_log::test;
 
 use super::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::pre_sierra;

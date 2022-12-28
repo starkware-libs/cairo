@@ -1,8 +1,8 @@
 use cairo_casm::ap_change::ApChange;
 use cairo_casm::casm;
+use cairo_sierra::program::StatementIdx;
 use num_bigint::BigInt;
 use pretty_assertions::assert_eq;
-use cairo_sierra::program::StatementIdx;
 use test_log::test;
 
 use crate::invocations::test_utils::{
