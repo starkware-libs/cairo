@@ -73,6 +73,7 @@ mod __generated__HelloStarknet {
                 },
             };
             if array_len::<felt>(data) != 0_u128 {
+                starknet::use_system_implicit();
                 let mut err_data = array_new::<felt>();
                 array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
@@ -92,6 +93,7 @@ mod __generated__HelloStarknet {
                 },
             }
             if array_len::<felt>(data) != 0_u128 {
+                starknet::use_system_implicit();
                 let mut err_data = array_new::<felt>();
                 array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
