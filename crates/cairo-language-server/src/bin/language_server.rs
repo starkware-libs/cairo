@@ -12,10 +12,13 @@ async fn main() {
     let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
     let db = get_starknet_database();
-    let (service, socket) = LspService::new(|client| Backend {
+
+    let (service, socket) = LspService::build(|client| Backend {
         client,
         db_mutex: db.into(),
         state_mutex: State::default().into(),
-    });
+    })
+    .custom_method("vfs/provide", Backend::vfs_provide)
+    .finish();
     Server::new(stdin, stdout, socket).serve(service).await;
 }
