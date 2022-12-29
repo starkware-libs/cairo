@@ -19,14 +19,13 @@ cairo_test_utils::test_file_test!(
         simple: "simple",
         struct_: "struct",
     },
-    check_find_local_variables,
-    SierraGenDatabaseForTesting
+    check_find_local_variables
 );
 
 fn check_find_local_variables(
-    db: &mut SierraGenDatabaseForTesting,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut SierraGenDatabaseForTesting::default();
     // Parse code and create semantic model.
     let test_function = setup_test_function(
         db,
@@ -60,6 +59,5 @@ cairo_test_utils::test_file_test!(
     e2e,
     "src/local_variables_test_data",
     {e2e: "e2e"},
-    test_function_generator,
-    SierraGenDatabaseForTesting
+    test_function_generator
 );

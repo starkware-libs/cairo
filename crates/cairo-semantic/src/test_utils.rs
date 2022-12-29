@@ -219,9 +219,9 @@ pub fn setup_test_block(
 }
 
 pub fn test_expr_diagnostics(
-    db: &mut (dyn SemanticGroup + 'static),
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut SemanticDatabaseForTesting::default();
     OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_expr(
@@ -235,9 +235,9 @@ pub fn test_expr_diagnostics(
 }
 
 pub fn test_function_diagnostics(
-    db: &mut (dyn SemanticGroup + 'static),
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut SemanticDatabaseForTesting::default();
     OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_function(
@@ -248,19 +248,6 @@ pub fn test_function_diagnostics(
         )
         .get_diagnostics(),
     )])
-}
-
-#[macro_export]
-macro_rules! semantic_test {
-    ($suite:ident, $base_dir:expr, { $($test_name:ident : $test_file:expr),* $(,)? }, $func:ident) => {
-        cairo_test_utils::test_file_test!(
-            $suite,
-            $base_dir,
-            { $($test_name : $test_file,)* },
-            $func,
-            SemanticDatabaseForTesting
-        );
-    };
 }
 
 /// Gets the diagnostics for all the modules (including nested) in the given crate.

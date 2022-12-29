@@ -5,7 +5,6 @@ use cairo_utils::ordered_hash_map::OrderedHashMap;
 use test_case::test_case;
 
 use crate::colored_printer::print_colored;
-use crate::parser_test;
 use crate::printer::{print_partial_tree, print_tree};
 use crate::test_utils::{create_virtual_file, get_diagnostics, read_file};
 use crate::utils::{
@@ -251,11 +250,10 @@ pub fn fix_parser_tests() {
 /// - expected_tree - the printed syntax tree of the given cairo_code, ignoring the irrelevant
 ///   kinds.
 pub fn test_partial_parser_tree(
-    db: &mut SimpleParserDatabase,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     // TODO(yuval): allow pointing to a code in another file.
-
+    let db = &SimpleParserDatabase::default();
     let file_id = create_virtual_file(db, "dummy_file.cairo", &inputs["cairo_code"]);
     let (syntax_root, diagnostics) =
         get_syntax_root_and_diagnostics(db, file_id, &inputs["cairo_code"]);
@@ -270,7 +268,7 @@ pub fn test_partial_parser_tree(
     ])
 }
 
-parser_test!(
+cairo_test_utils::test_file_test!(
     diagnostic,
     "src/parser_test_data",
     {
@@ -288,7 +286,7 @@ parser_test!(
     get_diagnostics
 );
 
-parser_test!(
+cairo_test_utils::test_file_test!(
     partial_parser_tree,
     "src/parser_test_data",
     {

@@ -1,6 +1,5 @@
 use cairo_defs::plugin::{MacroPlugin, PluginGeneratedFile, PluginResult};
 use cairo_diagnostics::{format_diagnostics, DiagnosticLocation};
-use cairo_parser::parser_test;
 use cairo_parser::test_utils::create_virtual_file;
 use cairo_parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
 use cairo_syntax::node::TypedSyntaxNode;
@@ -9,9 +8,9 @@ use cairo_utils::ordered_hash_map::OrderedHashMap;
 use crate::plugin::StarkNetPlugin;
 
 pub fn test_expand_contract(
-    db: &mut SimpleParserDatabase,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut SimpleParserDatabase::default();
     let cairo_code = &inputs["cairo_code"];
     let file_id = create_virtual_file(db, "dummy_file.cairo", cairo_code);
 
@@ -49,7 +48,7 @@ pub fn test_expand_contract(
     ])
 }
 
-parser_test!(
+cairo_test_utils::test_file_test!(
     expand_contract,
     "src/plugin_test_data",
     {

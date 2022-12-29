@@ -17,14 +17,13 @@ cairo_test_utils::test_file_test!(
         struct_: "struct",
         match_: "match",
     },
-    check_variable_lifetime,
-    SierraGenDatabaseForTesting
+    check_variable_lifetime
 );
 
 fn check_variable_lifetime(
-    db: &mut SierraGenDatabaseForTesting,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut SierraGenDatabaseForTesting::default();
     // Parse code and create semantic model.
     let test_function = setup_test_function(
         db,

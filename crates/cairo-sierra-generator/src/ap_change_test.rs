@@ -11,14 +11,11 @@ cairo_test_utils::test_file_test!(
     ap_change,
     "src/ap_change_test_data",
     {tests: "tests"},
-    contains_cycles_test,
-    SierraGenDatabaseForTesting
+    contains_cycles_test
 );
 
-fn contains_cycles_test(
-    db: &mut SierraGenDatabaseForTesting,
-    inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+fn contains_cycles_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+    let db = &mut SierraGenDatabaseForTesting::default();
     // Parse code and create semantic model.
     let test_module = setup_test_module(db, inputs["module_code"].as_str()).unwrap();
 

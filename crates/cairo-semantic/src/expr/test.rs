@@ -11,13 +11,13 @@ use test_case::test_case;
 use crate::corelib::{core_felt_ty, get_core_ty_by_name, unit_ty};
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
+use crate::semantic;
 use crate::test_utils::{
     setup_test_expr, setup_test_function, setup_test_module, test_function_diagnostics,
     SemanticDatabaseForTesting, TestModule,
 };
-use crate::{semantic, semantic_test};
 
-semantic_test!(
+cairo_test_utils::test_file_test!(
     expr_diagnostics,
     "src/expr/test_data",
     {

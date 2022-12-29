@@ -13,10 +13,8 @@ pub fn read_file(filename: &str) -> String {
         .unwrap_or_else(|_| panic!("Something went wrong reading file {}", filename))
 }
 
-pub fn get_diagnostics(
-    db: &mut SimpleParserDatabase,
-    inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+pub fn get_diagnostics(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+    let db = &SimpleParserDatabase::default();
     let code = &inputs["cairo_code"];
 
     let file_id = create_virtual_file(db, "dummy_file.cairo", code);
@@ -36,17 +34,4 @@ pub fn create_virtual_file(
         name: file_name.into(),
         content: Arc::new(content.into()),
     }))
-}
-
-#[macro_export]
-macro_rules! parser_test {
-    ($suite:ident, $base_dir:expr, { $($test_name:ident : $test_file:expr),* $(,)? }, $func:ident) => {
-        cairo_test_utils::test_file_test!(
-            $suite,
-            $base_dir,
-            { $($test_name : $test_file,)* },
-            $func,
-            SimpleParserDatabase
-        );
-    };
 }
