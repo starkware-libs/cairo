@@ -2,6 +2,7 @@ use cairo_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_semantic::expr::fmt::ExprFormatter;
 use cairo_semantic::items::enm::SemanticEnumEx;
 use cairo_semantic::items::imp::ImplLookupContext;
+use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
@@ -97,6 +98,7 @@ pub struct LoweredExprExternEnum {
     pub ref_args: Vec<cairo_semantic::VarId>,
     /// The implicits used/changed by the function.
     pub implicits: Vec<cairo_semantic::TypeId>,
+    pub stable_ptr: SyntaxStablePtrId,
 }
 impl LoweredExprExternEnum {
     pub fn var(
@@ -106,7 +108,10 @@ impl LoweredExprExternEnum {
     ) -> Result<LivingVar, LoweringFlowError> {
         let function_id = self.function;
 
-        let concrete_variants = ctx.db.concrete_enum_variants(self.concrete_enum_id).unwrap();
+        let concrete_variants = ctx
+            .db
+            .concrete_enum_variants(self.concrete_enum_id)
+            .map_err(LoweringFlowError::Failed)?;
         let (blocks, mut finalized_merger) =
             BlockFlowMerger::with(ctx, scope, &self.ref_args, |ctx, merger| {
                 let block_opts = concrete_variants.clone().into_iter().map(|concrete_variant| {
