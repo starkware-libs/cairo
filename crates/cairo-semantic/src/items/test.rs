@@ -1,5 +1,3 @@
-use pretty_assertions::assert_eq;
-
 use crate::semantic_test;
 use crate::test_utils::{test_function_diagnostics, SemanticDatabaseForTesting};
 
