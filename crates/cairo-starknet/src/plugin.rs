@@ -1,10 +1,19 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::vec;
 
 use cairo_defs::plugin::{
-    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
+    DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginDiagnostic,
+    PluginGeneratedFile, PluginResult,
 };
-use cairo_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
+use cairo_diagnostics::DiagnosticEntry;
+use cairo_semantic::db::SemanticGroup;
+use cairo_semantic::patcher::{ModifiedNode, PatchBuilder, Patches, RewriteNode};
+use cairo_semantic::plugin::{
+    AsDynGeneratedFileAuxData, AsDynMacroPlugin, DiagnosticMapper, DynDiagnosticMapper,
+    PluginMappedDiagnostic, SemanticPlugin, TrivialMapper,
+};
+use cairo_semantic::SemanticDiagnostic;
 use cairo_syntax::node::ast::{
     ItemFreeFunction, MaybeModuleBody, Modifier, OptionReturnTypeClause, Param,
 };
@@ -22,6 +31,39 @@ const VIEW_ATTR: &str = "view";
 pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
+
+// TODO(yg): this is taken from Ilya's PR.
+/// The diagnostics remapper of the pluging.
+#[derive(Debug, PartialEq, Eq)]
+pub struct DiagnosticRemapper {
+    patches: Patches,
+}
+impl GeneratedFileAuxData for DiagnosticRemapper {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool {
+        if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
+    }
+}
+impl AsDynGeneratedFileAuxData for DiagnosticRemapper {
+    fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
+        self
+    }
+}
+impl DiagnosticMapper for DiagnosticRemapper {
+    fn map_diag(
+        &self,
+        db: &(dyn SemanticGroup + 'static),
+        diag: &dyn std::any::Any,
+    ) -> Option<PluginMappedDiagnostic> {
+        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
+        let span = self
+            .patches
+            .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
+        Some(PluginMappedDiagnostic { span, message: diag.format(db) })
+    }
+}
 
 #[cfg(test)]
 #[path = "plugin_test.rs"]
@@ -71,12 +113,12 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         }
     };
 
-    let contract_name = module_ast.name(db).text(db).to_string();
-    let mut generated_external_functions = rust::Tokens::new();
+    let contract_name = RewriteNode::Copied(module_ast.name(db).token(db).as_syntax_node());
+    let mut generated_external_functions = Vec::new();
 
     let mut storage_code = "".to_string();
-    let mut original_items = rust::Tokens::new();
-    let mut external_declarations = rust::Tokens::new();
+    let mut original_items = Vec::new();
+    let mut external_declarations = Vec::new();
     for item in body.items(db).elements(db) {
         match &item {
             ast::Item::FreeFunction(item_function)
@@ -84,50 +126,71 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                     matches!(attr.attr(db).text(db).as_str(), EXTERNAL_ATTR | VIEW_ATTR)
                 }) =>
             {
-                {
-                    // TODO(yuval): change to item_function.declaration
-                    let declaration = item_function.declaration(db).as_syntax_node().get_text(db);
-                    external_declarations.append(quote! {$declaration;});
+                // TODO(yg): why is this not formatted well? Also - remove leading and trailing
+                // trivia.
+                external_declarations
+                    .push(RewriteNode::Copied(item_function.declaration(db).as_syntax_node()));
 
-                    generated_external_functions
-                        .append(generate_entry_point_wrapper(db, item_function));
-                }
+                generated_external_functions.push(generate_entry_point_wrapper(db, item_function));
             }
             ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == "Storage" => {
                 storage_code = handle_storage_struct(db, item_struct.clone());
             }
             _ => {}
         };
-        let orig_text = item.as_syntax_node().get_text(db);
-        original_items.append(quote! {$orig_text})
+        // TODO(ygggg): item includes the leading and trailing trivia... Remove them. Add a function
+        // that removes the leading and trailing trivia for all nodes?
+        original_items.push(RewriteNode::Copied(item.as_syntax_node()));
     }
 
-    let generated_contract_mod: rust::Tokens = quote! {
-        #[$GENERATED_CONTRACT_ATTR]
-        mod $contract_name {
-            $original_items
+    let generated_contract_mod = RewriteNode::new_interpolate_patched(
+        formatdoc!(
+            "
+            #[{GENERATED_CONTRACT_ATTR}]
+            mod $contract_name$ {{
+            $original_items$
 
-            // TODO(yuval): consider adding and impl of __abi and use it from the wrappers, instead
-            // of the original functions (they can be removed).
-            trait $ABI_TRAIT {
-                $external_declarations
-            }
+                trait {ABI_TRAIT} {{
+                    $external_declarations$
+                }}
 
-            mod $EXTERNAL_MODULE {
-                $generated_external_functions
-            }
-        }
-    };
+                mod {EXTERNAL_MODULE} {{
+                    $generated_external_functions$
+                }}
+            }}
+        "
+        )
+        .as_str(),
+        HashMap::from([
+            ("contract_name".to_string(), contract_name),
+            (
+                "original_items".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: original_items }),
+            ),
+            (
+                "external_declarations".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: external_declarations }),
+            ),
+            (
+                "generated_external_functions".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: generated_external_functions }),
+            ),
+        ]),
+    );
 
-    let contract_code =
-        format!("{}\n{}", storage_code, generated_contract_mod.to_string().unwrap());
+    let mut builder = PatchBuilder::new(db);
+    builder.add_modified(generated_contract_mod);
+    // TODO(ygg): add storage
+    // let contract_code =
+    //     format!("{}\n{}", storage_code, generated_contract_mod.to_string().unwrap());
 
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
-            // TODO(ilya): Remove formatting once the plugin output is readable.
-            content: cairo_formatter::format_string(db, contract_code),
-            aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
+            content: builder.code,
+            aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(DiagnosticRemapper {
+                patches: builder.patches,
+            })),
         }),
         diagnostics: vec![],
         remove_original_item: true,
@@ -161,7 +224,7 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> S
 }
 
 /// Generates Cairo code for an entry point wrapper.
-fn generate_entry_point_wrapper(db: &dyn SyntaxGroup, function: &ItemFreeFunction) -> String {
+fn generate_entry_point_wrapper(db: &dyn SyntaxGroup, function: &ItemFreeFunction) -> RewriteNode {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
     let params = sig.parameters(db).elements(db);
@@ -181,27 +244,30 @@ fn generate_entry_point_wrapper(db: &dyn SyntaxGroup, function: &ItemFreeFunctio
         arg_names.push(arg_name.clone());
         let mut_modifier = if is_ref { "mut " } else { "" };
         // TODO(yuval): use panicable version of deserializations when supported.
+        // TODO(yg): can the formatdoc! be removed?
         let arg_definition = formatdoc!(
-            "
-        let {mut_modifier}{arg_name} = match {deser_func}(data) {{
-        Option::Some(x) => x,
-        Option::None(()) => {{
-            let mut err_data = array_new::<felt>();
-            array_append::<felt>(err_data, {input_data_short_err});
-            panic(err_data)
-        }},
-        }};"
+            "let {mut_modifier}{arg_name} = match {deser_func}(data) {{
+                Option::Some(x) => x,
+                Option::None(()) => {{
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, {input_data_short_err});
+                    panic(err_data)
+                }},
+            }};"
         );
         arg_definitions.push(arg_definition);
 
         if is_ref {
-            ref_appends.push(format!("{ser_func}(arr, {arg_name});"));
+            ref_appends.push(RewriteNode::Text(format!("{ser_func}(arr, {arg_name});")));
         }
     }
     let arg_names_str = arg_names.join(", ");
 
-    let function_name = declaration.name(db).text(db).to_string();
-    let wrapped_name = format!("super::{function_name}");
+    let function_name = RewriteNode::Copied(declaration.name(db).as_syntax_node());
+    let wrapped_name = RewriteNode::new_interpolate_patched(
+        "super::$function_name$",
+        HashMap::from([("function_name".to_string(), function_name.clone())]),
+    );
     let (let_res, append_res) = match sig.ret_ty(db) {
         OptionReturnTypeClause::Empty(_) => ("", "".to_string()),
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
@@ -216,33 +282,44 @@ fn generate_entry_point_wrapper(db: &dyn SyntaxGroup, function: &ItemFreeFunctio
     // let mut builder = PatchBuilder::new(db);
     // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
     let arg_definitions = arg_definitions.join("\n");
-    let ref_appends = ref_appends.join("\n");
-    formatdoc!(
-        "fn {function_name}(mut data: Array::<felt>) -> Array::<felt> {{
-        match get_gas() {{
-            Option::Some(_) => {{}},
-            Option::None(_) => {{
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, {oog_err});
-                panic(err_data);
-            }},
-        }}
+    RewriteNode::new_interpolate_patched(
+        formatdoc!(
+            "fn $function_name$(mut data: Array::<felt>) -> Array::<felt> {{
+                        match get_gas() {{
+                            Option::Some(_) => {{
+                            }},
+                            Option::None(_) => {{
+                                let mut err_data = array_new::<felt>();
+                                array_append::<felt>(err_data, {oog_err});
+                                panic(err_data);
+                            }},
+                        }}
 
-        {arg_definitions}
-        if array_len::<felt>(data) != 0_u128 {{
-            // Force the inclusion of `System` in the list of implicits.
-            starknet::use_system_implicit();
+                        {arg_definitions}
+                        if array_len::<felt>(data) != 0_u128 {{
+                            // Force the inclusion of `System` in the list of implicits.
+                            starknet::use_system_implicit();
 
-            let mut err_data = array_new::<felt>();
-            array_append::<felt>(err_data, {input_data_long_err});
-            panic(err_data);
-        }}
-        {let_res} {wrapped_name}({arg_names_str});
-        let mut arr = array_new::<felt>();
-        {ref_appends}
-        {append_res}
-        arr
-    }}"
+                            let mut err_data = array_new::<felt>();
+                            array_append::<felt>(err_data, {input_data_long_err});
+                            panic(err_data);
+                        }}
+                        {let_res} $wrapped_name$({arg_names_str});
+                        let mut arr = array_new::<felt>();
+                        $ref_appends$
+                        {append_res}
+                        arr
+            }}"
+        )
+        .as_str(),
+        HashMap::from([
+            ("function_name".to_string(), function_name),
+            ("wrapped_name".to_string(), wrapped_name),
+            (
+                "ref_appends".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: ref_appends }),
+            ),
+        ]),
     )
 }
 
