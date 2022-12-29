@@ -1,10 +1,15 @@
 use std::fmt::Display;
+use std::fs;
+use clap::Parser;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use sierra::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
 use sierra::extensions::ConcreteLibFunc;
 use sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use sierra::ProgramParser;
+use sierra_ap_change::calc_ap_changes;
+use sierra_gas::calc_gas_info;
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
@@ -212,4 +217,34 @@ pub fn compile(
                 .collect(),
         },
     })
+}
+
+/// Command line args parser.
+/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+#[derive(Parser, Debug)]
+#[clap(version, verbatim_doc_comment)]
+pub struct Args {
+    /// The file to compile
+    pub file: String,
+    pub output: String,
+}
+
+pub fn compile_at_path(args: Args) -> Result<CairoProgram, CompilationError> {
+    let sierra_code = fs::read_to_string(args.file).expect("Could not read file!");
+    let program = ProgramParser::new().parse(&sierra_code).unwrap();
+
+    let gas_info = calc_gas_info(&program).expect("Failed calculating gas variables.");
+
+    let gas_usage_check = true;
+    let cairo_program = compile(
+        &program,
+        &Metadata {
+            ap_change_info: calc_ap_changes(&program).expect("Failed calculating ap changes."),
+            gas_info,
+        },
+        gas_usage_check,
+    )?;
+
+    fs::write(args.output, format!("{}", cairo_program)).expect("Failed to write output.");
+    Ok(cairo_program)
 }

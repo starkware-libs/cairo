@@ -4,7 +4,6 @@ use crate::references::{
     ReferenceValue, ReferenceExpression, CellExpression,
 };
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use sierra_ap_change::core_libfunc_ap_change;
 
 pub fn build_roll(
     builder: CompiledInvocationBuilder<'_>,
