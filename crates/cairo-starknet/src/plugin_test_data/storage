@@ -13,6 +13,16 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
+#[generated_contract]
+mod TestContract {
+    struct Storage { storage_var: felt, }
+
+    trait __abi {
+    }
+
+    mod __external {
+    }
+}
 mod storage_var {
     fn read() -> felt {
         starknet::storage_read_syscall(
@@ -24,14 +34,6 @@ mod storage_var {
             starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>(),
             value
         )
-    }
-}
-#[generated_contract]
-mod TestContract {
-    struct Storage { storage_var: felt, }
-    trait __abi {
-    }
-    mod __external {
     }
 }
 
