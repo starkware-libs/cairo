@@ -60,7 +60,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
                 }
                 IntOperator::OverflowingMul => todo!(),
                 IntOperator::DivMod => vec![ApChange::Known(7)],
-                IntOperator::WideMul => vec![ApChange::Known(20)],
+                IntOperator::WideMul => vec![ApChange::Known(17)],
             },
             Uint128Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
             Uint128Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
