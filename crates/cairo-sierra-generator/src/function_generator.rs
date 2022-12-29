@@ -71,7 +71,8 @@ fn get_function_code(
 ) -> Maybe<Arc<pre_sierra::Function>> {
     let signature = db.free_function_declaration_signature(function_id)?;
     let lowered_function = &*db.free_function_lowered(function_id)?;
-    let block = &lowered_function.blocks[lowered_function.root?];
+    let block_id = lowered_function.root?;
+    let block = &lowered_function.blocks[block_id];
 
     // Find the local variables.
     let local_variables = find_local_variables(db, lowered_function)?;
@@ -106,7 +107,7 @@ fn get_function_code(
 
     let prolog_size = statements.len();
     // Generate the function's body.
-    let body_statements = generate_block_code(&mut context, block)?;
+    let body_statements = generate_block_code(&mut context, block_id, block)?;
     statements.extend(body_statements);
 
     // Generate the return statement if necessary.
