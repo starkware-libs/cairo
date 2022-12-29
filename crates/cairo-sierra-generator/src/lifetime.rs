@@ -12,7 +12,7 @@ use cairo_utils::unordered_hash_set::UnorderedHashSet;
 pub type StatementLocation = (BlockId, usize);
 
 /// Represents the location where a drop statement for a variable should be added.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum DropLocation {
     BeginningOfBlock(BlockId),
     PostStatement(StatementLocation),
@@ -29,16 +29,16 @@ pub struct VariableLifetimeResult {
     /// StatementLocation may point to a nonexisting statement after the end of the block -
     /// this means that the last use was in `block.end`.
     last_use: OrderedHashMap<VariableId, Vec<StatementLocation>>,
-    /// A map from [VariableId] to the statements where it should be dropped.
-    drops: OrderedHashMap<VariableId, Vec<DropLocation>>,
+    /// A map from [DropLocation] to the list of variables that should be dropped at this location.
+    drops: OrderedHashMap<DropLocation, Vec<VariableId>>,
 }
 impl VariableLifetimeResult {
     /// Registers where a drop statement should appear.
     fn add_drop(&mut self, var_id: VariableId, drop_location: DropLocation) {
-        if let Some(drop_locations) = self.drops.get_mut(&var_id) {
-            drop_locations.push(drop_location);
+        if let Some(vars) = self.drops.get_mut(&drop_location) {
+            vars.push(var_id);
         } else {
-            self.drops.insert(var_id, vec![drop_location]);
+            self.drops.insert(drop_location, vec![var_id]);
         }
     }
 }

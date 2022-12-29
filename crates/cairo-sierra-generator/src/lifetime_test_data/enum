@@ -118,10 +118,8 @@ v15: [(Id { idx: 5 }, 0)]
 v0: [(Id { idx: 6 }, 0)]
 
 //! > drops
-v21: [PostStatement((Id { idx: 6 }, 0))]
-v6: [PostStatement((Id { idx: 0 }, 1))]
-v4: [BeginningOfBlock(Id { idx: 3 })]
-v16: [PostStatement((Id { idx: 5 }, 0))]
-v17: [PostStatement((Id { idx: 5 }, 0))]
-v2: [BeginningOfBlock(Id { idx: 3 })]
-v1: [BeginningOfBlock(Id { idx: 3 }), BeginningOfBlock(Id { idx: 5 })]
+PostStatement((Id { idx: 6 }, 0)): v21
+PostStatement((Id { idx: 0 }, 1)): v6
+BeginningOfBlock(Id { idx: 3 }): v4, v2, v1
+PostStatement((Id { idx: 5 }, 0)): v16, v17
+BeginningOfBlock(Id { idx: 5 }): v1
