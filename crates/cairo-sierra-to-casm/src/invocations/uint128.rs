@@ -10,10 +10,6 @@ use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError
 use crate::invocations::get_non_fallthrough_statement_id;
 use crate::references::{CellExpression, ReferenceExpression};
 
-#[cfg(test)]
-#[path = "uint128_test.rs"]
-mod test;
-
 /// Builds instructions for Sierra u128 operations.
 pub fn build(
     libfunc: &Uint128Concrete,
