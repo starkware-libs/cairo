@@ -6,7 +6,6 @@ use cairo_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_sierra_to_casm::test_utils::build_metadata;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use pretty_assertions::assert_eq;
 
 cairo_test_utils::test_file_test!(
     uint128_e2e,

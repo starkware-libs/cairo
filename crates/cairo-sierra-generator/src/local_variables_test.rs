@@ -3,7 +3,6 @@ use cairo_lowering::db::LoweringGroup;
 use cairo_semantic::test_utils::setup_test_function;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use pretty_assertions::assert_eq;
 
 use super::find_local_variables;
 use crate::function_generator_test_utils::test_function_generator;

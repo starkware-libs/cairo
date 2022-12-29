@@ -3,7 +3,6 @@ use cairo_lowering::db::LoweringGroup;
 use cairo_semantic::test_utils::setup_test_module;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use pretty_assertions::assert_eq;
 
 use crate::db::SierraGenGroup;
 use crate::test_utils::SierraGenDatabaseForTesting;
