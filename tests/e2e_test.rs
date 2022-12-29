@@ -15,6 +15,7 @@ cairo_test_utils::test_file_test!(
         box_: "box",
         nullable: "nullable",
         u128: "u128",
+        bool: "bool",
     },
     run_small_e2e_test
 );
