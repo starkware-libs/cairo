@@ -65,6 +65,7 @@ mod HelloStarknet {
                     panic(err_data);
                 },
             }
+
             let __arg_amount = match serde::deserialize_felt(data) {
                 Option::Some(x) => x,
                 Option::None(()) => {
@@ -74,13 +75,16 @@ mod HelloStarknet {
                 },
             };
             if array_len::<felt>(data) != 0_u128 {
+                // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
+
                 let mut err_data = array_new::<felt>();
                 array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             super::increase_balance(__arg_amount);
             let mut arr = array_new::<felt>();
+
             arr
         }
         fn get_balance(mut data: Array::<felt>) -> Array::<felt> {
@@ -93,14 +97,18 @@ mod HelloStarknet {
                     panic(err_data);
                 },
             }
+
             if array_len::<felt>(data) != 0_u128 {
+                // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
+
                 let mut err_data = array_new::<felt>();
                 array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             let res = super::get_balance();
             let mut arr = array_new::<felt>();
+
             serde::serialize_felt(arr, res)
             arr
         }

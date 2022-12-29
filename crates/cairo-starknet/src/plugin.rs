@@ -12,7 +12,7 @@ use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::helpers::GetIdentifier;
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use genco::prelude::*;
-use itertools::join;
+use indoc::formatdoc;
 
 use crate::contract::starknet_keccak;
 
@@ -89,12 +89,8 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                     let declaration = item_function.declaration(db).as_syntax_node().get_text(db);
                     external_declarations.append(quote! {$declaration;});
 
-                    // TODO(ilya): propagate the diagnostics in case of failure.
-                    if let Some(generated_function) =
-                        generate_entry_point_wrapper(db, item_function)
-                    {
-                        generated_external_functions.append(generated_function);
-                    }
+                    generated_external_functions
+                        .append(generate_entry_point_wrapper(db, item_function));
                 }
             }
             ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == "Storage" => {
@@ -165,17 +161,14 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> S
 }
 
 /// Generates Cairo code for an entry point wrapper.
-fn generate_entry_point_wrapper(
-    db: &dyn SyntaxGroup,
-    function: &ItemFreeFunction,
-) -> Option<rust::Tokens> {
+fn generate_entry_point_wrapper(db: &dyn SyntaxGroup, function: &ItemFreeFunction) -> String {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
     let params = sig.parameters(db).elements(db);
 
     let mut arg_names = Vec::new();
-    let mut arg_definitions = quote! {};
-    let mut ref_appends = quote! {};
+    let mut arg_definitions = Vec::new();
+    let mut ref_appends = Vec::new();
     let input_data_short_err = "'Input too short for arguments'";
     for param in params {
         let arg_name = format!("__arg_{}", param.name(db).identifier(db));
@@ -188,22 +181,24 @@ fn generate_entry_point_wrapper(
         arg_names.push(arg_name.clone());
         let mut_modifier = if is_ref { "mut " } else { "" };
         // TODO(yuval): use panicable version of deserializations when supported.
-        arg_definitions.append(
-            quote! {let $mut_modifier$(arg_name.clone()) = match $deser_func(data) {
-                Option::Some(x) => x,
-                Option::None(()) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, $input_data_short_err);
-                    panic(err_data)
-                },
-            };},
+        let arg_definition = formatdoc!(
+            "
+        let {mut_modifier}{arg_name} = match {deser_func}(data) {{
+        Option::Some(x) => x,
+        Option::None(()) => {{
+            let mut err_data = array_new::<felt>();
+            array_append::<felt>(err_data, {input_data_short_err});
+            panic(err_data)
+        }},
+        }};"
         );
+        arg_definitions.push(arg_definition);
 
         if is_ref {
-            ref_appends.append(quote! {$ser_func(arr, $arg_name);});
+            ref_appends.push(format!("{ser_func}(arr, {arg_name});"));
         }
     }
-    let param_names_tokens = join(arg_names.into_iter(), ", ");
+    let arg_names_str = arg_names.join(", ");
 
     let function_name = declaration.name(db).text(db).to_string();
     let wrapped_name = format!("super::{function_name}");
@@ -217,34 +212,38 @@ fn generate_entry_point_wrapper(
 
     let oog_err = "'Out of gas'";
     let input_data_long_err = "'Input too long for arguments'";
-    Some(quote! {
-        fn $function_name(mut data: Array::<felt>) -> Array::<felt> {
-            // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
-            match get_gas() {
-                Option::Some(_) => {},
-                Option::None(_) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, $oog_err);
-                    panic(err_data);
-                },
-            }
 
-            $arg_definitions
-            if array_len::<felt>(data) != 0_u128 {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
+    // let mut builder = PatchBuilder::new(db);
+    // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
+    let arg_definitions = arg_definitions.join("\n");
+    let ref_appends = ref_appends.join("\n");
+    formatdoc!(
+        "fn {function_name}(mut data: Array::<felt>) -> Array::<felt> {{
+        match get_gas() {{
+            Option::Some(_) => {{}},
+            Option::None(_) => {{
                 let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, $input_data_long_err);
+                array_append::<felt>(err_data, {oog_err});
                 panic(err_data);
-            }
-            $let_res $wrapped_name($param_names_tokens);
-            let mut arr = array_new::<felt>();
-            $ref_appends
-            $append_res
-            arr
-        }
-    })
+            }},
+        }}
+
+        {arg_definitions}
+        if array_len::<felt>(data) != 0_u128 {{
+            // Force the inclusion of `System` in the list of implicits.
+            starknet::use_system_implicit();
+
+            let mut err_data = array_new::<felt>();
+            array_append::<felt>(err_data, {input_data_long_err});
+            panic(err_data);
+        }}
+        {let_res} {wrapped_name}({arg_names_str});
+        let mut arr = array_new::<felt>();
+        {ref_appends}
+        {append_res}
+        arr
+    }}"
+    )
 }
 
 /// Checks if the parameter is defined as a ref parameter.
