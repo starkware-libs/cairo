@@ -60,6 +60,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Bitwise(_) => vec![ops.const_cost(5)],
         Bool(BoolConcreteLibFunc::And(_)) => vec![ops.const_cost(0)],
         Bool(BoolConcreteLibFunc::Not(_)) => vec![ops.const_cost(1)],
+        Bool(BoolConcreteLibFunc::Xor(_)) => vec![ops.const_cost(3)],
         Ec(EcConcreteLibFunc::CreatePoint(_)) => vec![ops.const_cost(3), ops.const_cost(3)],
         Gas(GetGas(_)) => {
             vec![
