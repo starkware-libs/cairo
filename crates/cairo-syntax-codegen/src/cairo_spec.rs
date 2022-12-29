@@ -342,6 +342,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("semicolon", "TerminalSemicolon")
         )
     .add_struct(StructBuilder::new("ItemExternType")
+        .node("attributes" ,"AttributeList")
         .node("extern_kw", "TerminalExtern")
         .node("type_kw", "TerminalType")
         .key_node("name", "TerminalIdentifier")

@@ -7078,13 +7078,15 @@ pub struct ItemExternType {
     children: Vec<SyntaxNode>,
 }
 impl ItemExternType {
-    pub const INDEX_EXTERN_KW: usize = 0;
-    pub const INDEX_TYPE_KW: usize = 1;
-    pub const INDEX_NAME: usize = 2;
-    pub const INDEX_GENERIC_PARAMS: usize = 3;
-    pub const INDEX_SEMICOLON: usize = 4;
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_EXTERN_KW: usize = 1;
+    pub const INDEX_TYPE_KW: usize = 2;
+    pub const INDEX_NAME: usize = 3;
+    pub const INDEX_GENERIC_PARAMS: usize = 4;
+    pub const INDEX_SEMICOLON: usize = 5;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
         extern_kw: TerminalExternGreen,
         type_kw: TerminalTypeGreen,
         name: TerminalIdentifierGreen,
@@ -7092,7 +7094,7 @@ impl ItemExternType {
         semicolon: TerminalSemicolonGreen,
     ) -> ItemExternTypeGreen {
         let children: Vec<GreenId> =
-            vec![extern_kw.0, type_kw.0, name.0, generic_params.0, semicolon.0];
+            vec![attributes.0, extern_kw.0, type_kw.0, name.0, generic_params.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemExternTypeGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemExternType,
@@ -7101,20 +7103,23 @@ impl ItemExternType {
     }
 }
 impl ItemExternType {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn extern_kw(&self, db: &dyn SyntaxGroup) -> TerminalExtern {
-        TerminalExtern::from_syntax_node(db, self.children[0].clone())
+        TerminalExtern::from_syntax_node(db, self.children[1].clone())
     }
     pub fn type_kw(&self, db: &dyn SyntaxGroup) -> TerminalType {
-        TerminalType::from_syntax_node(db, self.children[1].clone())
+        TerminalType::from_syntax_node(db, self.children[2].clone())
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[5].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7143,6 +7148,7 @@ impl TypedSyntaxNode for ItemExternType {
             kind: SyntaxKind::ItemExternType,
             details: GreenNodeDetails::Node {
                 children: vec![
+                    AttributeList::missing(db).0,
                     TerminalExtern::missing(db).0,
                     TerminalType::missing(db).0,
                     TerminalIdentifier::missing(db).0,
