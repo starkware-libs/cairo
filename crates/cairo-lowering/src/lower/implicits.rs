@@ -123,7 +123,7 @@ impl<'a> GraphNode for FreeFunctionNode<'a> {
     fn get_neighbors(&self) -> Vec<Self> {
         self.db
             .free_function_definition_direct_free_function_callees(self.free_function_id)
-            .unwrap()
+            .unwrap_or_default()
             .into_iter()
             .map(|free_function_id| FreeFunctionNode { free_function_id, db: self.db })
             .collect()

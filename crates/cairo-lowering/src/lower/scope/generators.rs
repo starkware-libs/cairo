@@ -61,7 +61,7 @@ impl Call {
         let implicit_outputs = ctx
             .db
             .function_all_implicits(self.function)
-            .unwrap()
+            .unwrap_or_default()
             .into_iter()
             .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
             .collect();
@@ -151,10 +151,16 @@ impl MatchExtern {
                 .function
                 .try_get_extern_function_id(ctx.db.upcast())
                 .expect("Expected an extern function");
-            let num_implicits =
-                ctx.db.extern_function_declaration_implicits(extern_function_id).unwrap().len();
-            let num_refs =
-                ctx.db.extern_function_declaration_refs(extern_function_id).unwrap().len();
+            let num_implicits = ctx
+                .db
+                .extern_function_declaration_implicits(extern_function_id)
+                .unwrap_or_default()
+                .len();
+            let num_refs = ctx
+                .db
+                .extern_function_declaration_refs(extern_function_id)
+                .unwrap_or_default()
+                .len();
             let total_extra_inputs = num_implicits + num_refs;
             itertools::assert_equal(
                 variant_facade_types.into_iter(),
