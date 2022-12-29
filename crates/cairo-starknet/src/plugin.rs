@@ -8,10 +8,10 @@ use cairo_defs::plugin::{
 };
 use cairo_diagnostics::DiagnosticEntry;
 use cairo_semantic::db::SemanticGroup;
-use cairo_semantic::patcher::{ModifiedNode, PatchBuilder, RewriteNode};
+use cairo_semantic::patcher::{ModifiedNode, PatchBuilder, Patches, RewriteNode};
 use cairo_semantic::plugin::{
     AsDynGeneratedFileAuxData, AsDynMacroPlugin, DiagnosticMapper, DynDiagnosticMapper,
-    PluginMappedDiagnostic, SemanticPlugin, TrivialMapper,
+    PluginMappedDiagnostic, SemanticPlugin,
 };
 use cairo_semantic::SemanticDiagnostic;
 use cairo_syntax::node::ast::{
@@ -20,9 +20,7 @@ use cairo_syntax::node::ast::{
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use genco::prelude::*;
 use indoc::formatdoc;
-use itertools::join;
 
 use crate::contract::starknet_keccak;
 
@@ -34,9 +32,7 @@ pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
 
-use cairo_semantic::patcher::Patches;
-
-/// The diagnostics remapper of the pluging.
+/// The diagnostics remapper of the plugin.
 #[derive(Debug, PartialEq, Eq)]
 pub struct DiagnosticRemapper {
     patches: Patches,
@@ -274,23 +270,28 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     };
     let mut diagnostics = vec![];
 
-    let contract_name = module_ast.name(db).text(db).to_string();
-    let mut generated_external_functions = rust::Tokens::new();
+    let mut generated_external_functions = Vec::new();
 
-    let mut storage_code = "".to_string();
-    let mut original_items = rust::Tokens::new();
-    let mut external_declarations = rust::Tokens::new();
+    let mut storage_code = RewriteNode::Text("".to_string());
+    let mut original_items = Vec::new();
+    let mut abi_functions = Vec::new();
     for item in body.items(db).elements(db) {
         match &item {
             ast::Item::FreeFunction(item_function)
                 if item_function.has_attr(db, EXTERNAL_ATTR)
                     || item_function.has_attr(db, VIEW_ATTR) =>
             {
-                let declaration = item_function.declaration(db).as_syntax_node().get_text(db);
-                external_declarations.append(quote! {$declaration;});
+                // TODO(yuval): keep track of whether the function is external/view.
+                abi_functions.push(RewriteNode::Modified(ModifiedNode {
+                    children: vec![
+                        RewriteNode::Copied(item_function.declaration(db).as_syntax_node()),
+                        RewriteNode::Text(";".to_string()),
+                    ],
+                }));
+
                 match generate_entry_point_wrapper(db, item_function) {
                     Ok(generated_function) => {
-                        generated_external_functions.append(generated_function);
+                        generated_external_functions.push(generated_function);
                     }
                     Err(entry_point_diagnostics) => {
                         diagnostics.extend(entry_point_diagnostics);
@@ -302,36 +303,57 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             }
             _ => {}
         };
-        let orig_text = item.as_syntax_node().get_text(db);
-        original_items.append(quote! {$orig_text})
+        original_items.push(RewriteNode::Copied(item.as_syntax_node()));
     }
 
-    let generated_contract_mod: rust::Tokens = quote! {
-        #[$GENERATED_CONTRACT_ATTR]
-        mod $contract_name {
-            $original_items
+    let generated_contract_mod = RewriteNode::interpolate_patched(
+        formatdoc!(
+            "
+            #[{GENERATED_CONTRACT_ATTR}]
+            mod $contract_name$ {{
+                $original_items$
+                trait {ABI_TRAIT} {{
+                    $abi_functions$
+                }}
 
-            // TODO(yuval): consider adding and impl of __abi and use it from the wrappers, instead
-            // of the original functions (they can be removed).
-            trait $ABI_TRAIT {
-                $external_declarations
-            }
+                mod {EXTERNAL_MODULE} {{
+                    $generated_external_functions$
+                }}
+            }}
+        "
+        )
+        .as_str(),
+        HashMap::from([
+            (
+                "contract_name".to_string(),
+                RewriteNode::Copied(module_ast.name(db).as_syntax_node()),
+            ),
+            (
+                "original_items".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: original_items }),
+            ),
+            (
+                "abi_functions".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: abi_functions }),
+            ),
+            (
+                "generated_external_functions".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: generated_external_functions }),
+            ),
+        ]),
+    );
 
-            mod $EXTERNAL_MODULE {
-                $generated_external_functions
-            }
-        }
-    };
-
-    let contract_code =
-        format!("{}\n{}", storage_code, generated_contract_mod.to_string().unwrap());
+    let mut builder = PatchBuilder::new(db);
+    builder.add_modified(generated_contract_mod);
+    builder.add_modified(storage_code);
 
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
-            // TODO(ilya): Remove formatting once the plugin output is readable.
-            content: cairo_formatter::format_string(db, contract_code),
-            aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
+            content: cairo_formatter::format_string(db, builder.code),
+            aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(DiagnosticRemapper {
+                patches: builder.patches,
+            })),
         }),
         diagnostics,
         remove_original_item: true,
@@ -339,29 +361,37 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 }
 
 /// Generate getters and setters for the variables in the storage struct.
-fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> String {
-    let mut code_tokens = rust::Tokens::new();
+fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> RewriteNode {
+    let mut members_code = Vec::new();
 
     for member in struct_ast.members(db).elements(db) {
         let name = member.name(db).text(db).to_string();
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
 
-        let generated_submodule = quote! {
-            mod $name {
-                fn read() -> felt {
-                    starknet::storage_read_syscall(
-                        starknet::storage_address_const::<$(address.clone())>())
-                }
-                fn write(value: felt) -> Result::<(), felt> {
-                    starknet::storage_write_syscall(
-                        starknet::storage_address_const::<$address>(), value)
-                }
-            }
-        };
+        let generated_submodule = RewriteNode::interpolate_patched(
+            formatdoc!(
+                "
+                mod $name$ {{
+                    fn read() -> felt {{
+                        starknet::storage_read_syscall(
+                            starknet::storage_address_const::<{address}>())
+                    }}
+                    fn write(value: felt) -> Result::<(), felt> {{
+                        starknet::storage_write_syscall(
+                            starknet::storage_address_const::<{address}>(), value)
+                    }}
+                }}"
+            )
+            .as_str(),
+            HashMap::from([(
+                "name".to_string(),
+                RewriteNode::Copied(member.name(db).as_syntax_node()),
+            )]),
+        );
 
-        code_tokens.append(generated_submodule)
+        members_code.push(generated_submodule)
     }
-    code_tokens.to_string().unwrap()
+    RewriteNode::Modified(ModifiedNode { children: members_code })
 }
 
 /// Returns the serde functions for a type.
@@ -382,14 +412,14 @@ fn get_type_serde_funcs(name: &str) -> Option<(&str, &str)> {
 fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
     function: &ItemFreeFunction,
-) -> Result<rust::Tokens, Vec<PluginDiagnostic>> {
+) -> Result<RewriteNode, Vec<PluginDiagnostic>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
     let params = sig.parameters(db).elements(db);
     let mut diagnostics = vec![];
     let mut arg_names = Vec::new();
-    let mut arg_definitions = quote! {};
-    let mut ref_appends = quote! {};
+    let mut arg_definitions = Vec::new();
+    let mut ref_appends = Vec::new();
     let input_data_short_err = "'Input too short for arguments'";
     for param in params {
         let arg_name = format!("__arg_{}", param.name(db).identifier(db));
@@ -407,25 +437,29 @@ fn generate_entry_point_wrapper(
         arg_names.push(arg_name.clone());
         let mut_modifier = if is_ref { "mut " } else { "" };
         // TODO(yuval): use panicable version of deserializations when supported.
-        arg_definitions.append(
-            quote! {let $mut_modifier$(arg_name.clone()) = match $deser_func(data) {
+        let arg_definition = formatdoc!(
+            "let {mut_modifier}{arg_name} = match {deser_func}(data) {{
                 Option::Some(x) => x,
-                Option::None(()) => {
+                Option::None(()) => {{
                     let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, $input_data_short_err);
+                    array_append::<felt>(err_data, {input_data_short_err});
                     panic(err_data)
-                },
-            };},
+                }},
+            }};"
         );
+        arg_definitions.push(arg_definition);
 
         if is_ref {
-            ref_appends.append(quote! {$ser_func(arr, $arg_name);});
+            ref_appends.push(RewriteNode::Text(format!("{ser_func}(arr, {arg_name});")));
         }
     }
-    let param_names_tokens = join(arg_names.into_iter(), ", ");
+    let arg_names_str = arg_names.join(", ");
 
-    let function_name = declaration.name(db).text(db).to_string();
-    let wrapped_name = format!("super::{function_name}");
+    let function_name = RewriteNode::Copied(declaration.name(db).as_syntax_node());
+    let wrapped_name = RewriteNode::interpolate_patched(
+        "super::$function_name$",
+        HashMap::from([("function_name".to_string(), function_name.clone())]),
+    );
     let (let_res, append_res) = match sig.ret_ty(db) {
         OptionReturnTypeClause::Empty(_) => ("", "".to_string()),
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
@@ -449,34 +483,49 @@ fn generate_entry_point_wrapper(
 
     let oog_err = "'Out of gas'";
     let input_data_long_err = "'Input too long for arguments'";
-    Ok(quote! {
-        fn $function_name(mut data: Array::<felt>) -> Array::<felt> {
-            // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
-            match get_gas() {
-                Option::Some(_) => {},
-                Option::None(_) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, $oog_err);
-                    panic(err_data);
-                },
-            }
 
-            $arg_definitions
-            if array_len::<felt>(data) != 0_u128 {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
+    // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
+    let arg_definitions = arg_definitions.join("\n");
+    Ok(RewriteNode::interpolate_patched(
+        formatdoc!(
+            "fn $function_name$(mut data: Array::<felt>) -> Array::<felt> {{
+                        match get_gas() {{
+                            Option::Some(_) => {{
+                            }},
+                            Option::None(_) => {{
+                                let mut err_data = array_new::<felt>();
+                                array_append::<felt>(err_data, {oog_err});
+                                panic(err_data);
+                            }},
+                        }}
 
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, $input_data_long_err);
-                panic(err_data);
-            }
-            $let_res $wrapped_name($param_names_tokens);
-            let mut arr = array_new::<felt>();
-            $ref_appends
-            $append_res
-            arr
-        }
-    })
+                        {arg_definitions}
+                        if array_len::<felt>(data) != 0_u128 {{
+                            // Force the inclusion of `System` in the list of implicits.
+                            starknet::use_system_implicit();
+
+                            let mut err_data = array_new::<felt>();
+                            array_append::<felt>(err_data, {input_data_long_err});
+                            panic(err_data);
+                        }}
+                        {let_res} $wrapped_name$({arg_names_str});
+                        let mut arr = array_new::<felt>();
+                        $ref_appends$
+                        {append_res}
+                        arr
+            }}"
+        )
+        .as_str(),
+        HashMap::from([
+            ("function_name".to_string(), function_name),
+            ("wrapped_name".to_string(), wrapped_name),
+            (
+                "ref_appends".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: ref_appends }),
+            ),
+            ("nothing".to_string(), RewriteNode::Text("".to_string())),
+        ]),
+    ))
 }
 
 /// Checks if the parameter is defined as a ref parameter.
