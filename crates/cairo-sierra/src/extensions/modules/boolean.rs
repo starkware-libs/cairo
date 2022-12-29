@@ -11,6 +11,7 @@ define_libfunc_hierarchy! {
     pub enum BoolLibFunc {
         And(BoolAndLibFunc),
         Not(BoolNotLibFunc),
+        Xor(BoolXorLibFunc),
     }, BoolConcreteLibFunc
 }
 
@@ -56,5 +57,19 @@ impl NoGenericArgsGenericLibFunc for BoolNotLibFunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         boolean_libfunc_signature(context, false, true)
+    }
+}
+
+/// LibFunc for boolean XOR.
+#[derive(Default)]
+pub struct BoolXorLibFunc {}
+impl NoGenericArgsGenericLibFunc for BoolXorLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("bool_xor_impl");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        boolean_libfunc_signature(context, false, false)
     }
 }

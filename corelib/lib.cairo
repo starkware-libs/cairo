@@ -33,12 +33,13 @@ fn bool_not(mut a: bool) -> bool implicits() nopanic {
     a
 }
 
-// TODO(orizi): Change to extern when added.
-fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => b,
-        bool::True(x) => bool_not(b),
-    }
+// TODO: Once we can differentiate between the value-bool and the branch-bool, do:
+// extern fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic;
+// (this will also require renaming the libfunc from "bool_xor_impl" back to "bool_xor").
+extern fn bool_xor_impl(ref a: bool, b: bool) implicits() nopanic;
+fn bool_xor(mut a: bool, b: bool) -> bool implicits() nopanic {
+    bool_xor_impl(a, b);
+    a
 }
 
 // TODO(orizi): Change to extern when added.
