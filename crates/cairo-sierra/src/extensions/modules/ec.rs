@@ -1,4 +1,5 @@
 use super::felt::FeltType;
+use super::non_zero::NonZeroType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
@@ -57,7 +58,10 @@ impl NoGenericArgsGenericLibFunc for EcCreatePointLibFunc {
             branch_signatures: vec![
                 BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: context.get_concrete_type(EcPointType::id(), &[])?,
+                        ty: context.get_wrapped_concrete_type(
+                            NonZeroType::id(),
+                            context.get_concrete_type(EcPointType::id(), &[])?,
+                        )?,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
