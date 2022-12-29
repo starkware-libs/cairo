@@ -7,6 +7,7 @@ use cairo_utils::unordered_hash_map::UnorderedHashMap;
 use crate::db::SierraGenGroup;
 use crate::diagnostic::SierraGeneratorDiagnosticKind;
 use crate::id_allocator::IdAllocator;
+use crate::lifetime::VariableLifetimeResult;
 use crate::{pre_sierra, SierraGeneratorDiagnostic};
 
 /// Context for the methods that generate Sierra instructions for an expression.
@@ -15,6 +16,9 @@ pub struct ExprGeneratorContext<'a> {
     lowered: &'a cairo_lowering::lower::Lowered,
     function_id: FreeFunctionId,
     module_file_id: ModuleFileId,
+    // TODO(lior): Remove `allow(dead_code)` once this field is used.
+    #[allow(dead_code)]
+    lifetime: &'a VariableLifetimeResult,
     diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
@@ -26,6 +30,7 @@ impl<'a> ExprGeneratorContext<'a> {
         db: &'a dyn SierraGenGroup,
         lowered: &'a cairo_lowering::lower::Lowered,
         function_id: FreeFunctionId,
+        lifetime: &'a VariableLifetimeResult,
         diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     ) -> Self {
         ExprGeneratorContext {
@@ -33,6 +38,7 @@ impl<'a> ExprGeneratorContext<'a> {
             lowered,
             function_id,
             module_file_id: function_id.module_file(db.upcast()),
+            lifetime,
             diagnostics,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
