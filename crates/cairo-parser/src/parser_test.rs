@@ -2,7 +2,6 @@
 use std::fmt::Write;
 
 use cairo_utils::ordered_hash_map::OrderedHashMap;
-use pretty_assertions::assert_eq;
 use test_case::test_case;
 
 use crate::colored_printer::print_colored;
