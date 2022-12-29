@@ -28,9 +28,9 @@ pub struct VariableLifetimeResult {
     ///
     /// StatementLocation may point to a nonexisting statement after the end of the block -
     /// this means that the last use was in `block.end`.
-    last_use: OrderedHashMap<VariableId, Vec<StatementLocation>>,
+    pub last_use: OrderedHashMap<VariableId, Vec<StatementLocation>>,
     /// A map from [DropLocation] to the list of variables that should be dropped at this location.
-    drops: OrderedHashMap<DropLocation, Vec<VariableId>>,
+    pub drops: OrderedHashMap<DropLocation, Vec<VariableId>>,
 }
 impl VariableLifetimeResult {
     /// Registers where a drop statement should appear.
