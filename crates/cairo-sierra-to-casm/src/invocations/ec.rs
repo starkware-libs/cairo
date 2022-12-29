@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use cairo_casm::builder::CasmBuilder;
+use cairo_casm::builder::{CasmBuilder, Var};
 use cairo_casm::casm_build_extend;
 use cairo_casm::operand::ResOperand;
 use cairo_sierra::extensions::ec::EcConcreteLibFunc;
@@ -25,6 +25,25 @@ pub fn build(
     }
 }
 
+/// Extends the CASM builder to include computation of `y^2` and `x^3 + x + BETA` for the given
+/// pair (x, y). Populates the two "output vars" with the computed LHS and RHS of the EC equation.
+fn verify_ec_point(
+    casm_builder: &mut CasmBuilder,
+    x: Var,
+    y: Var,
+    computed_lhs: Var,
+    computed_rhs: Var,
+) {
+    casm_build_extend! {casm_builder,
+        const beta = (get_beta());
+        assert computed_lhs = y * y;
+        tempvar x2 = x * x;
+        tempvar x3 = x2 * x;
+        tempvar alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
+        assert computed_rhs = x3 + alpha_x_plus_beta;
+    };
+}
+
 /// Handles instruction for creating an EC point.
 fn build_ec_point_try_create(
     builder: CompiledInvocationBuilder<'_>,
@@ -39,16 +58,15 @@ fn build_ec_point_try_create(
 
     // Assert (x,y) is on the curve.
     casm_build_extend! {casm_builder,
-        const beta = (get_beta());
-        tempvar y2 = y * y;
-        tempvar x2 = x * x;
-        tempvar x3 = x2 * x;
-        tempvar alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
-        tempvar expected_y2 = x3 + alpha_x_plus_beta;
-        tempvar diff;
-        assert y2 = diff + expected_y2;
+        tempvar y2;
+        tempvar expected_y2;
+    };
+    verify_ec_point(&mut casm_builder, x, y, y2, expected_y2);
+    casm_build_extend! {casm_builder,
+        tempvar diff = y2 - expected_y2;
         jump NotOnCurve if diff != 0;
     };
+
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
