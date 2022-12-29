@@ -27,8 +27,8 @@ members = [
     "crates/syntax",
     "crates/syntax_codegen",
     "crates/test_runner",
+    "crates/cairo_python_bindings",
     "tests",
-    "cairo_python_bindings",
 ]
 
 [workspace.package]
