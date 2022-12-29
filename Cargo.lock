@@ -734,6 +734,7 @@ dependencies = [
  "cairo-defs",
  "cairo-diagnostics",
  "cairo-filesystem",
+ "cairo-plugins",
  "cairo-project",
  "cairo-rs",
  "cairo-runner",

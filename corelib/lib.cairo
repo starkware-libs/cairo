@@ -219,4 +219,5 @@ use hash::Pedersen;
 mod starknet;
 use starknet::System;
 
+#[cfg(test)]
 mod test;
