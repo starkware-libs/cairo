@@ -166,6 +166,7 @@ impl HintProcessor for CairoHintProcessor {
             Hint::EnterScope => todo!(),
             Hint::ExitScope => todo!(),
             Hint::DictSquashHints { .. } => todo!(),
+            Hint::RandomEcPoint { .. } => todo!(),
             Hint::SystemCall { system } => {
                 let starknet_exec_scope =
                     match exec_scopes.get_mut_ref::<StarknetExecScope>("starknet_exec_scope") {

@@ -1,8 +1,8 @@
 use cairo_casm::ap_change::{ApChange, ApplyApChange};
 use cairo_casm::instructions::Instruction;
-use cairo_casm::operand::{CellRef, DerefOrImmediate, Register};
+use cairo_casm::operand::{CellRef, Register};
 use cairo_casm::{casm, casm_extend};
-use cairo_sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
+use cairo_sierra::extensions::felt::FeltBinaryOperator;
 use cairo_sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
 use cairo_sierra::extensions::mem::MemConcreteLibFunc;
 use cairo_sierra::ids::ConcreteTypeId;
@@ -10,7 +10,7 @@ use cairo_utils::casts::usize_as_i16;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::environment::frame_state;
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, UnaryOpExpression};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra memory operations.
 pub fn build(
@@ -72,14 +72,6 @@ fn get_store_instructions(
                 operand = [[&dst]]
             ),
             CellExpression::Immediate(operand) => add_instruction!(ctx, dst = operand),
-            CellExpression::UnaryOp(UnaryOpExpression { op, a }) => match op {
-                FeltUnaryOperator::Neg => match a {
-                    DerefOrImmediate::Deref(cell_ref) => {
-                        add_instruction!(ctx, dst = cell_ref * (-1))
-                    }
-                    DerefOrImmediate::Immediate(imm) => add_instruction!(ctx, dst = (-imm)),
-                },
-            },
             CellExpression::BinOp(BinOpExpression { op, a, b }) => match op {
                 FeltBinaryOperator::Add => add_instruction!(ctx, dst = a + b),
                 FeltBinaryOperator::Mul => add_instruction!(ctx, dst = a * b),

@@ -583,8 +583,7 @@ fn module_semantic_diagnostics(
     module_id: ModuleId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    let module_data = db.module_data(module_id)?;
-    for (module_file_id, plugin_diag) in module_data.plugin_diagnostics {
+    for (module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)? {
         diagnostics.add(SemanticDiagnostic {
             stable_location: StableLocation::new(module_file_id, plugin_diag.stable_ptr),
             kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
@@ -650,7 +649,7 @@ fn module_semantic_diagnostics(
     Ok(map_diagnostics(
         db.elongate(),
         module_id,
-        &module_data.generated_file_info,
+        &db.module_generated_file_info(module_id)?,
         diagnostics.build(),
     )
     .1)
