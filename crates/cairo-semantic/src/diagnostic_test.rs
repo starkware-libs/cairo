@@ -25,12 +25,13 @@ use crate::test_utils::{
 use crate::{semantic_test, SemanticDiagnostic};
 
 semantic_test!(
-    diagnostics_tests,
-    [
-        "src/diagnostic_test_data/tests",
-        "src/diagnostic_test_data/not_found",
-        "src/diagnostic_test_data/missing"
-    ],
+    diagnostics,
+    "src/diagnostic_test_data",
+    {
+        tests: "tests",
+        not_found: "not_found",
+        missing: "missing",
+    },
     test_expr_diagnostics
 );
 

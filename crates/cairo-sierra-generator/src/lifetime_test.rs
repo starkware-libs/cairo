@@ -9,15 +9,16 @@ use crate::test_utils::SierraGenDatabaseForTesting;
 
 cairo_test_utils::test_file_test!(
     variable_lifetime,
-    [
-        "src/lifetime_test_data/block",
-        "src/lifetime_test_data/enum",
-        "src/lifetime_test_data/simple",
-        "src/lifetime_test_data/struct",
-        "src/lifetime_test_data/match",
-    ],
-    SierraGenDatabaseForTesting,
-    check_variable_lifetime
+    "src/lifetime_test_data",
+    {
+        block: "block",
+        enum_: "enum",
+        simple: "simple",
+        struct_: "struct",
+        match_: "match",
+    },
+    check_variable_lifetime,
+    SierraGenDatabaseForTesting
 );
 
 fn check_variable_lifetime(
