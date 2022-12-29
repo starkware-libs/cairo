@@ -9,53 +9,35 @@ use compiler::{
     compile_cairo_project_at_path as compile_cairo_to_sierra_at_path,
     CompilerConfig,
 };
-use sierra_to_casm::compiler::{
-    compile_at_path as compile_sierra_to_casm_at_path,
-    Args
-};
+use sierra_to_casm::compiler::compile_at_path as compile_sierra_to_casm_at_path;
 
 #[pyfunction]
-fn multiply(a: isize, b: isize) -> PyResult<isize> {
-    println!("RUST IS multiplying! WAT?!");
-    Ok(a * b)
-}
-
-#[pyfunction]
-fn call_cairo_to_sierra_compiler(input_path: &str, output_path: &str) -> PyResult<()> {
-    println!("RUST IS calling compiler cairo => sierra for path: {input_path}/{output_path}");
-    // match compile_cairo_project_at_path(Path::new(path), CompilerConfig::default()) {
-    //     Ok(_) => (),
-    //     Err(e) => return Err(PyErr::new::<RuntimeError, _>(format!("{e}"))),
-    // }
+fn call_cairo_to_sierra_compiler(input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
     let sierra_program = compile_cairo_to_sierra_at_path(Path::new(input_path), CompilerConfig::default())
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
-    fs::write(output_path, format!("{}", sierra_program)).expect("Failed to write output.");
-    // TODO write to output
-    Ok(())
+    let sierra_program_contents = format!("{}", sierra_program);
+    if let Some(path) = output_path {
+        fs::write(path, sierra_program_contents).map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
+        return Ok(None);
+    }
+    Ok(Some(sierra_program_contents))
 }
 
 #[pyfunction]
-fn call_sierra_to_casm_compiler(input_path: &str, output_path: &str) -> PyResult<()> {
-    println!("RUST IS calling compiler sierra => casm for path: {input_path}/{output_path}");
-    compile_sierra_to_casm_at_path(Args{file: input_path.to_owned(), output: output_path.to_owned()})
+fn call_sierra_to_casm_compiler(input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
+    let cairo_program = compile_sierra_to_casm_at_path(input_path)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
-    Ok(())
+    let cairo_program_contents = format!("{}", cairo_program);
+    if let Some(path) = output_path {
+        fs::write(path, cairo_program_contents).map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
+        return Ok(None);
+    }
+    Ok(Some(cairo_program_contents))
 }
 
 #[pymodule]
 fn cairo_python_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_wrapped(wrap_pyfunction!(multiply))?;
     m.add_wrapped(wrap_pyfunction!(call_cairo_to_sierra_compiler))?;
     m.add_wrapped(wrap_pyfunction!(call_sierra_to_casm_compiler))?;
     Ok(())
-}
-
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
 }

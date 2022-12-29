@@ -229,8 +229,8 @@ pub struct Args {
     pub output: String,
 }
 
-pub fn compile_at_path(args: Args) -> Result<CairoProgram, CompilationError> {
-    let sierra_code = fs::read_to_string(args.file).expect("Could not read file!");
+pub fn compile_at_path(path: &str) -> Result<CairoProgram, CompilationError> {
+    let sierra_code = fs::read_to_string(path).expect("Could not read file!");
     let program = ProgramParser::new().parse(&sierra_code).unwrap();
 
     let gas_info = calc_gas_info(&program).expect("Failed calculating gas variables.");
@@ -245,6 +245,5 @@ pub fn compile_at_path(args: Args) -> Result<CairoProgram, CompilationError> {
         gas_usage_check,
     )?;
 
-    fs::write(args.output, format!("{}", cairo_program)).expect("Failed to write output.");
     Ok(cairo_program)
 }
