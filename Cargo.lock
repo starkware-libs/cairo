@@ -357,6 +357,7 @@ dependencies = [
 name = "cairo-language-server"
 version = "0.1.0"
 dependencies = [
+ "cairo-compiler",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
@@ -367,10 +368,12 @@ dependencies = [
  "cairo-plugins",
  "cairo-project",
  "cairo-semantic",
+ "cairo-starknet",
  "cairo-syntax",
  "cairo-utils",
  "lsp-types",
  "salsa",
+ "serde",
  "serde_json",
  "test-log",
  "tokio",
