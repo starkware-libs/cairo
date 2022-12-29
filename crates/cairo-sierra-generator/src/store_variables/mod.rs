@@ -26,6 +26,14 @@ use crate::utils::{
 /// space.
 pub type LocalVariables = OrderedHashMap<cairo_sierra::ids::VarId, cairo_sierra::ids::VarId>;
 
+/// Information about a libfunc, required by the `store_variables` module.
+pub struct LibFuncInfo {
+    pub signature: LibFuncSignature,
+    /// `true` if the libfunc is `drop()`.
+    // TODO(lior): Consider removing this field after moving the dup mechanism before this phase.
+    pub is_drop: bool,
+}
+
 /// Automatically adds store_temp() statements to the given list of [pre_sierra::Statement].
 /// For example, a deferred reference (e.g., `[ap] + [fp - 3]`) needs to be stored as a temporary
 /// or local variable before being included in additional computation.
@@ -41,7 +49,7 @@ pub fn add_store_statements<GetLibFuncSignature>(
     local_variables: LocalVariables,
 ) -> Vec<pre_sierra::Statement>
 where
-    GetLibFuncSignature: Fn(ConcreteLibFuncId) -> LibFuncSignature,
+    GetLibFuncSignature: Fn(ConcreteLibFuncId) -> LibFuncInfo,
 {
     let mut handler = AddStoreVariableStatements::new(db, local_variables);
     // Go over the statements, restarting whenever we see a branch or a label.
@@ -81,16 +89,17 @@ impl<'a> AddStoreVariableStatements<'a> {
 
     /// Handles a single statement, including adding required store statements and the statement
     /// itself.
-    fn handle_statement<GetLibFuncSignature>(
+    fn handle_statement<GetLibFuncInfo>(
         &mut self,
         statement: pre_sierra::Statement,
-        get_lib_func_signature: &GetLibFuncSignature,
+        get_lib_func_signature: &GetLibFuncInfo,
     ) where
-        GetLibFuncSignature: Fn(ConcreteLibFuncId) -> LibFuncSignature,
+        GetLibFuncInfo: Fn(ConcreteLibFuncId) -> LibFuncInfo,
     {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                let signature = get_lib_func_signature(invocation.libfunc_id.clone());
+                let libfunc_info = get_lib_func_signature(invocation.libfunc_id.clone());
+                let signature = libfunc_info.signature;
                 self.prepare_libfunc_arguments(&invocation.args, &signature.param_signatures);
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
