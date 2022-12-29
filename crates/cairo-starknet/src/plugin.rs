@@ -9,7 +9,7 @@ use cairo_syntax::node::ast::{
     ItemFreeFunction, MaybeModuleBody, Modifier, OptionReturnTypeClause, Param,
 };
 use cairo_syntax::node::db::SyntaxGroup;
-use cairo_syntax::node::helpers::GetIdentifier;
+use cairo_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use genco::prelude::*;
 use itertools::join;
@@ -51,8 +51,7 @@ impl SemanticPlugin for StarkNetPlugin {}
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
 fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
-    let attrs = module_ast.attributes(db).elements(db);
-    if !attrs.iter().any(|attr| attr.attr(db).text(db) == CONTRACT_ATTR) {
+    if !module_ast.has_attr(db, CONTRACT_ATTR) {
         // TODO(ilya): diagnostic
         return PluginResult::default();
     }
@@ -80,12 +79,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     for item in body.items(db).elements(db) {
         match &item {
             ast::Item::FreeFunction(item_function)
-                if item_function.attributes(db).elements(db).iter().any(|attr| {
-                    matches!(attr.attr(db).text(db).as_str(), EXTERNAL_ATTR | VIEW_ATTR)
-                }) =>
+                if item_function.has_attr(db, EXTERNAL_ATTR)
+                    || item_function.has_attr(db, VIEW_ATTR) =>
             {
                 {
-                    // TODO(yuval): change to item_function.declaration
                     let declaration = item_function.declaration(db).as_syntax_node().get_text(db);
                     external_declarations.append(quote! {$declaration;});
 

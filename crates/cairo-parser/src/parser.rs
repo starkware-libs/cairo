@@ -287,6 +287,7 @@ impl<'a> Parser<'a> {
                 // If the next token is not type, assume it is missing.
                 ItemExternType::new_green(
                     self.db,
+                    attributes,
                     extern_kw,
                     type_kw,
                     name,

@@ -357,6 +357,7 @@
     │   │       ├── statements (kind: StatementList) []
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #4 (kind: ItemExternType)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'S'
