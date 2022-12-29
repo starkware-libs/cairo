@@ -6,7 +6,7 @@ test_function_lowering
 //! > function
 fn foo(a: felt) -> felt {
     return a + a * a;
-    5;6;7;
+    5;6;7
 }
 
 //! > function_name
@@ -15,16 +15,12 @@ foo
 //! > module_code
 
 //! > semantic_diagnostics
-error: Unexpected return type. Expected: "core::felt", found: "()".
- --> lib.cairo:1:25
-fn foo(a: felt) -> felt {
-                        ^
 
 //! > lowering_diagnostics
 error: Unreachable code
  --> lib.cairo:3:5
-    5;6;7;
-    ^****^
+    5;6;7
+    ^**^
 
 //! > lowering_format
 blk0 (root):

@@ -14,6 +14,7 @@ convert_case.workspace = true
 cairo-defs = { path = "../cairo-defs" }
 cairo-diagnostics = { path = "../cairo-diagnostics" }
 cairo-filesystem = { path = "../cairo-filesystem" }
+cairo-formatter = { path = "../cairo-formatter" }
 genco.workspace = true
 itertools.workspace = true
 log.workspace = true
@@ -40,7 +41,6 @@ cairo-parser = { path = "../cairo-parser" }
 [dev-dependencies]
 cairo-diagnostics = { path = "../cairo-diagnostics" }
 env_logger.workspace = true
-cairo-formatter = { path = "../cairo-formatter" }
 indoc.workspace = true
 pretty_assertions.workspace = true
 cairo-semantic = { path = "../cairo-semantic", features = ["testing"] }

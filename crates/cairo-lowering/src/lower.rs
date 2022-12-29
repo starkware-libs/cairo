@@ -1,6 +1,6 @@
 use cairo_debug::DebugWithDb;
 use cairo_defs::ids::{FreeFunctionId, LanguageElementId};
-use cairo_diagnostics::{skip_diagnostic, Diagnostics, Maybe, ToMaybe};
+use cairo_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_semantic::corelib::{
     core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
     get_enum_concrete_variant, get_panic_ty, jump_nz_nonzero_variant, jump_nz_zero_variant,
@@ -54,6 +54,9 @@ pub struct Lowered {
 /// Lowers a semantic free function.
 pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<Lowered> {
     log::trace!("Lowering a free function.");
+    let is_empty_semantic_diagnostics =
+        db.free_function_declaration_diagnostics(free_function_id).is_empty()
+            && db.free_function_definition_diagnostics(free_function_id).is_empty();
     let function_def = db.free_function_definition(free_function_id)?;
     let generic_params = db.free_function_declaration_generic_params(free_function_id)?;
     let signature = db.free_function_declaration_signature(free_function_id)?;
@@ -94,33 +97,37 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
         expr_formatter: ExprFormatter { db: db.upcast(), free_function_id },
     };
 
-    // TODO(spapini): Build semantic_defs in semantic model.
-    for semantic_var in input_semantic_vars {
-        ctx.semantic_defs.insert(semantic_var.id(), semantic_var);
-    }
+    let root = if is_empty_semantic_diagnostics {
+        // TODO(spapini): Build semantic_defs in semantic model.
+        for semantic_var in input_semantic_vars {
+            ctx.semantic_defs.insert(semantic_var.id(), semantic_var);
+        }
 
-    // Fetch body block expr.
-    let semantic_block =
-        extract_matches!(&function_def.exprs[function_def.body], cairo_semantic::Expr::Block);
-    // Lower block to a BlockSealed.
-    let (block_sealed_opt, mut merger_finalized) =
-        BlockFlowMerger::with_root(&mut ctx, &ref_params, |ctx, merger| {
-            merger.run_in_subscope(ctx, input_var_tys, |ctx, scope, variables| {
-                let mut variables_iter = variables.into_iter();
-                for ty in implicits_ref {
-                    let var = variables_iter.next().to_maybe()?;
-                    scope.put_implicit(*ty, var);
-                }
+        // Fetch body block expr.
+        let semantic_block =
+            extract_matches!(&function_def.exprs[function_def.body], cairo_semantic::Expr::Block);
+        // Lower block to a BlockSealed.
+        let (block_sealed_opt, mut merger_finalized) =
+            BlockFlowMerger::with_root(&mut ctx, &ref_params, |ctx, merger| {
+                merger.run_in_subscope(ctx, input_var_tys, |ctx, scope, variables| {
+                    let mut variables_iter = variables.into_iter();
+                    for ty in implicits_ref {
+                        let var = variables_iter.next().to_maybe()?;
+                        scope.put_implicit(*ty, var);
+                    }
 
-                // Initialize implicits and params.
-                for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables_iter) {
-                    scope.put_semantic_variable(semantic_var_id, var);
-                }
-                lower_block(ctx, scope, semantic_block, true)
-            })
-        });
-    let root = block_sealed_opt
-        .map(|block_sealed| merger_finalized.finalize_block(&mut ctx, block_sealed).block);
+                    // Initialize implicits and params.
+                    for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables_iter) {
+                        scope.put_semantic_variable(semantic_var_id, var);
+                    }
+                    lower_block(ctx, scope, semantic_block, true)
+                })
+            });
+        block_sealed_opt
+            .map(|block_sealed| merger_finalized.finalize_block(&mut ctx, block_sealed).block)
+    } else {
+        Err(DiagnosticAdded)
+    };
     Ok(Lowered {
         diagnostics: ctx.diagnostics.build(),
         root,

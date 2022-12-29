@@ -40,7 +40,7 @@ pub fn test_expand_contract(
         if !remove_original_item {
             generated_items.push(item.as_syntax_node().get_text(db));
         }
-        generated_items.push(cairo_formatter::format_string(db, content));
+        generated_items.push(content);
     }
 
     OrderedHashMap::from([

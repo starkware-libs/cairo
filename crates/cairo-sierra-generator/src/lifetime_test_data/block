@@ -60,5 +60,5 @@ v3: [(Id { idx: 1 }, 2)]
 v0: [(Id { idx: 2 }, 0)]
 
 //! > drops
-v5: [PostStatement((Id { idx: 1 }, 3))]
-v4: [PostStatement((Id { idx: 1 }, 2))]
+PostStatement((Id { idx: 1 }, 3)): v5
+PostStatement((Id { idx: 1 }, 2)): v4
