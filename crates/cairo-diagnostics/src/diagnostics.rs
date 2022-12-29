@@ -71,18 +71,21 @@ impl<T> ToOption<T> for Maybe<T> {
 /// A builder for Diagnostics, accumulating multiple diagnostic entries.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticsBuilder<TEntry: DiagnosticEntry> {
+    pub count: usize,
     pub leaves: Vec<TEntry>,
     pub subtrees: Vec<Diagnostics<TEntry>>,
 }
 impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
     pub fn new() -> Self {
-        Self { leaves: Default::default(), subtrees: Default::default() }
+        Self { leaves: Default::default(), subtrees: Default::default(), count: 0 }
     }
     pub fn add(&mut self, diagnostic: TEntry) -> DiagnosticAdded {
         self.leaves.push(diagnostic);
+        self.count += 1;
         DiagnosticAdded::default()
     }
     pub fn extend(&mut self, diagnostics: Diagnostics<TEntry>) {
+        self.count += diagnostics.len();
         self.subtrees.push(diagnostics);
     }
     pub fn build(self) -> Diagnostics<TEntry> {
@@ -116,6 +119,14 @@ pub struct Diagnostics<TEntry: DiagnosticEntry>(pub Arc<DiagnosticsBuilder<TEntr
 impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     pub fn new() -> Self {
         Self(DiagnosticsBuilder::default().into())
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.count
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.count == 0
     }
 
     pub fn format(&self, db: &TEntry::DbType) -> String {

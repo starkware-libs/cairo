@@ -129,7 +129,8 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
-            content: contract_code,
+            // TODO(ilya): Remove formatting once the plugin output is readable.
+            content: cairo_formatter::format_string(db, contract_code),
             aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
         }),
         diagnostics: vec![],

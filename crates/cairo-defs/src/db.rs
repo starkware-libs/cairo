@@ -194,7 +194,7 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
 /// Appends all the modules under the given module, including nested modules.
 fn collect_modules_under(db: &dyn DefsGroup, modules: &mut Vec<ModuleId>, module_id: ModuleId) {
     modules.push(module_id);
-    for submodule_module_id in db.module_submodules_ids(module_id).unwrap().into_iter() {
+    for submodule_module_id in db.module_submodules_ids(module_id).unwrap_or_default().into_iter() {
         collect_modules_under(db, modules, ModuleId::Submodule(submodule_module_id));
     }
 }
