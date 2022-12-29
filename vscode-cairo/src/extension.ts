@@ -79,12 +79,29 @@ function setupLanguageServer(
     }
 
     let clientOptions: LanguageClientOptions = {
-        documentSelector: [{ scheme: 'file', language: 'cairo' }],
+        documentSelector: [
+            { scheme: 'file', language: 'cairo' },
+            { scheme: 'vfs', language: 'cairo' }],
     };
 
     var client: LanguageClient = new LanguageClient(
         'cairoLanguageServer', 'Cairo Language Server', serverOptions, clientOptions);
     client.registerFeature(new SemanticTokensFeature(client));
+    client.onReady().then(() => {
+        const myProvider = new (class implements vscode.TextDocumentContentProvider {
+            async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+                const res: any = await client.sendRequest("vfs/provide", { uri: uri.toString() });
+                return res.content;
+            }
+            onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+            onDidChange = this.onDidChangeEmitter.event;
+        })();
+        client.onNotification('vfs/update', (param) => {
+            myProvider.onDidChangeEmitter.fire(param.uri)
+
+        });
+        vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
+    });
     client.start();
 }
 

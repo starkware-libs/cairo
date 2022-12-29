@@ -36,12 +36,18 @@ use cairo_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_utils::ordered_hash_set::OrderedHashSet;
 use cairo_utils::{try_extract_matches, OptionHelper, Upcast};
+use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
+use vfs::{
+    ProvideVirtualFileRequest, ProvideVirtualFileResponse, UpdateVirtualFile,
+    UpdateVirtualFileParams,
+};
+pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 
@@ -72,17 +78,33 @@ impl Backend {
     }
     /// Gets a FileId from a URI.
     fn file(&self, db: &RootDatabase, uri: Url) -> FileId {
-        let path = uri.to_file_path().expect("Only file URIs are supported.");
-        FileId::new(db, path)
+        match uri.scheme() {
+            "file" => {
+                let path = uri.to_file_path().unwrap();
+                FileId::new(db, path)
+            }
+            "vfs" => {
+                let id = uri.host_str().unwrap().parse::<usize>().unwrap();
+                FileId::from_intern_id(id.into())
+            }
+            _ => panic!(),
+        }
     }
+
     async fn get_uri(&self, file_id: FileId) -> Url {
         let db = self.db().await;
-        let _virtual_file = match db.lookup_intern_file(file_id) {
+        let virtual_file = match db.lookup_intern_file(file_id) {
             FileLongId::OnDisk(path) => return Url::from_file_path(path).unwrap(),
             FileLongId::Virtual(virtual_file) => virtual_file,
         };
-        let uri = Url::parse(format!("vfs://{:?}", file_id).as_str()).unwrap();
-        // TODO(spapini): Add a virtual file on the client.
+        let uri = Url::parse(
+            format!("vfs://{}/{}.cairo", file_id.as_intern_id().as_usize(), virtual_file.name)
+                .as_str(),
+        )
+        .unwrap();
+        self.client
+            .send_notification::<UpdateVirtualFile>(UpdateVirtualFileParams { uri: uri.clone() })
+            .await;
         uri
     }
 
@@ -164,6 +186,15 @@ impl Backend {
                 ..Diagnostic::default()
             });
         }
+    }
+
+    pub async fn vfs_provide(
+        &self,
+        params: ProvideVirtualFileRequest,
+    ) -> Result<ProvideVirtualFileResponse> {
+        let db = self.db().await;
+        let file_id = self.file(&db, params.uri);
+        Ok(ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) })
     }
 }
 
@@ -352,6 +383,7 @@ impl LanguageServer for Backend {
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let db = self.db().await;
         let file_uri = params.text_document_position_params.text_document.uri;
+        eprintln!("Hover {}", file_uri);
         let file = self.file(&db, file_uri);
         let position = params.text_document_position_params.position;
         let Some((node, lookup_items)) = get_node_and_lookup_items(&*db, file, position) else {return Ok(None)};
