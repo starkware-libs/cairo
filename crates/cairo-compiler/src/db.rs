@@ -26,20 +26,18 @@ pub struct RootDatabase {
 }
 impl salsa::Database for RootDatabase {}
 impl RootDatabase {
-    pub fn new(extra_plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
+    pub fn new(plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_lowering_group(&mut res);
-        // TODO(spapini): Consider taking from config.
-        let mut plugins = get_default_plugins();
-        plugins.extend(extra_plugins.into_iter());
         res.set_semantic_plugins(plugins);
         res
     }
 }
 impl Default for RootDatabase {
     fn default() -> Self {
-        Self::new(vec![])
+        // TODO(spapini): Consider taking from config.
+        Self::new(get_default_plugins())
     }
 }
 impl AsFilesGroupMut for RootDatabase {

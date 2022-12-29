@@ -19,6 +19,7 @@ cairo-diagnostics = { path = "../cairo-diagnostics" }
 cairo-filesystem = { path = "../cairo-filesystem" }
 itertools.workspace = true
 num-bigint.workspace = true
+cairo-plugins = { path = "../cairo-plugins" }
 cairo-project = { path = "../cairo-project" }
 rayon.workspace = true
 cairo-runner = { path = "../cairo-runner" }
