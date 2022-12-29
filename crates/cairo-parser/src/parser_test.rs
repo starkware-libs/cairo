@@ -271,41 +271,36 @@ pub fn test_partial_parser_tree(
 }
 
 parser_test!(
-    diagnostic_tests,
-    [
-        "src/parser_test_data/module_diagnostics",
-        "src/parser_test_data/exprs",
-        "src/parser_test_data/fn",
-        "src/parser_test_data/if",
-        "src/parser_test_data/match",
-        "src/parser_test_data/pattern",
-        "src/parser_test_data/question_mark",
-        "src/parser_test_data/semicolon",
-        "src/parser_test_data/reserved_identifier",
-        "src/parser_test_data/underscore_not_supported",
-    ],
+    diagnostic,
+    "src/parser_test_data",
+    {
+        module_diagnostics: "module_diagnostics",
+        exprs: "exprs",
+        fn_: "fn",
+        if_: "if",
+        match_: "match",
+        pattern: "pattern",
+        question_mark: "question_mark",
+        semicolon: "semicolon",
+        reserved_identifier: "reserved_identifier",
+        underscore_not_supported: "underscore_not_supported",
+    },
     get_diagnostics
 );
 
 parser_test!(
-    item_free_function,
-    ["src/parser_test_data/item_free_function"],
+    partial_parser_tree,
+    "src/parser_test_data",
+    {
+        item_free_function: "item_free_function",
+        function_signature: "function_signature",
+        function_call: "function_call",
+        not_isnt_a_binary_operator: "not_isnt_a_binary_operator",
+        item_trait: "item_trait",
+        let_statement: "let_statement",
+        if_else: "if_else",
+        literal: "literal",
+        module: "module",
+    },
     test_partial_parser_tree
 );
-parser_test!(
-    function_signature,
-    ["src/parser_test_data/function_signature"],
-    test_partial_parser_tree
-);
-parser_test!(function_call, ["src/parser_test_data/function_call"], test_partial_parser_tree);
-parser_test!(
-    not_isnt_a_binary_operator,
-    ["src/parser_test_data/not_isnt_a_binary_operator"],
-    test_partial_parser_tree
-);
-parser_test!(item_trait, ["src/parser_test_data/item_trait"], test_partial_parser_tree);
-parser_test!(let_statement, ["src/parser_test_data/let_statement"], test_partial_parser_tree);
-parser_test!(if_else, ["src/parser_test_data/if_else"], test_partial_parser_tree);
-
-parser_test!(literal, ["src/parser_test_data/literal"], test_partial_parser_tree);
-parser_test!(module, ["src/parser_test_data/module"], test_partial_parser_tree);

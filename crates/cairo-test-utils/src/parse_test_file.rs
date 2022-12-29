@@ -177,56 +177,66 @@ impl TestBuilder {
 /// ```ignore
 /// #[macro_export]
 /// macro_rules! parser_test {
-///     ($test_name:ident, $filenames:expr, $func:ident) => {
-///         cairo_test_utils::test_file_test!($test_name, $filenames, ParserDatabaseForTesting, $func);
+///     ($suite:ident, $base_dir:expr, { $($test_name:ident : $test_file:expr),* $(,)? }, $func:ident) => {
+///         cairo_test_utils::test_file_test!(
+///             $suite,
+///             $base_dir,
+///             { $($test_name : $test_file,)* },
+///             $func,
+///             SimpleParserDatabase
+///         );
 ///     };
 /// }
 /// ```
 ///
 /// Then, the call to the macro looks like:
 /// ```ignore
-/// parser_test!(unique_test_name, [<test_file1>, <test_file2], test_to_upper);
+/// parser_test!(
+///     test_suite_name,
+///     "path/to/test/dir",
+///     {
+///         test_name1: "test_file1",
+///         test_name2: "test_file2",
+///     },
+///     test_to_upper
+/// );
 /// ```
 #[macro_export]
 macro_rules! test_file_test {
-    ($test_name:ident, $filenames:expr, $db_type:ty, $func:ident) => {
-        #[test_log::test]
-        fn $test_name() -> Result<(), std::io::Error> {
-            let base_dir = env!("CARGO_MANIFEST_DIR");
-            let runner = |attributes: &_| $func(&mut <$db_type>::default(), attributes);
-            for filename in $filenames {
+    ($suite:ident, $base_dir:expr, { $($test_name:ident : $test_file:expr),* $(,)? }, $func:ident, $db_type:ty) => {
+        mod $suite {
+            use super::*;
+        $(
+            #[test_log::test]
+            fn $test_name() -> Result<(), std::io::Error> {
+                let path: std::path::PathBuf = [env!("CARGO_MANIFEST_DIR"), $base_dir, $test_file].iter().collect();
                 cairo_test_utils::parse_test_file::run_test_file(
-                    base_dir,
-                    filename,
+                    path.as_path(),
                     stringify!($func),
-                    runner,
-                )?;
+                    |attributes: &_| $func(&mut <$db_type>::default(), attributes),
+                )
             }
-            Ok(())
+        )*
         }
     };
 }
 
-/// Runs a test file `filename` placed relatively to `base_dir` named `test_func_name` by running
-/// `runner` on it.
+/// Runs a test based on file at `path` named `test_func_name` by running `runner` on it.
 /// May fix the test file if `CAIRO_FIX_TESTS` is set to true.
 pub fn run_test_file<
     Runner: Fn(&OrderedHashMap<String, String>) -> OrderedHashMap<String, String>,
 >(
-    base_dir: &str,
-    filename: &str,
+    path: &Path,
     test_func_name: &str,
     runner: Runner,
 ) -> Result<(), std::io::Error> {
     let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
-    let path: std::path::PathBuf = [base_dir, filename].iter().collect();
-    let tests = parse_test_file(path.as_path())?;
+    let tests = parse_test_file(path)?;
     let mut new_tests = OrderedHashMap::<String, Test>::default();
     for (test_name, test) in tests {
-        log::debug!(r#"Running test: {test_func_name}::{filename}::"{test_name}""#);
         let outputs = runner(&test.attributes);
         let line_num = test.line_num;
-        let full_filename = std::fs::canonicalize(path.as_path())?;
+        let full_filename = std::fs::canonicalize(path)?;
         let full_filename_str = full_filename.to_str().unwrap();
 
         let get_attr = |key: &str| {
@@ -258,7 +268,7 @@ pub fn run_test_file<
         }
     }
     if is_fix_mode {
-        dump_to_test_file(new_tests, filename)?;
+        dump_to_test_file(new_tests, path.to_str().unwrap())?;
     }
     Ok(())
 }

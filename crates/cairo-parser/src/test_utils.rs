@@ -40,7 +40,13 @@ pub fn create_virtual_file(
 
 #[macro_export]
 macro_rules! parser_test {
-    ($test_name:ident, $filenames:expr, $func:ident) => {
-        cairo_test_utils::test_file_test!($test_name, $filenames, SimpleParserDatabase, $func);
+    ($suite:ident, $base_dir:expr, { $($test_name:ident : $test_file:expr),* $(,)? }, $func:ident) => {
+        cairo_test_utils::test_file_test!(
+            $suite,
+            $base_dir,
+            { $($test_name : $test_file,)* },
+            $func,
+            SimpleParserDatabase
+        );
     };
 }

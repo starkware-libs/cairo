@@ -9,9 +9,10 @@ use crate::test_utils::SierraGenDatabaseForTesting;
 
 cairo_test_utils::test_file_test!(
     ap_change,
-    ["src/ap_change_test_data/tests",],
-    SierraGenDatabaseForTesting,
-    contains_cycles_test
+    "src/ap_change_test_data",
+    {tests: "tests"},
+    contains_cycles_test,
+    SierraGenDatabaseForTesting
 );
 
 fn contains_cycles_test(

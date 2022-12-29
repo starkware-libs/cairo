@@ -8,24 +8,15 @@ use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 cairo_test_utils::test_file_test!(
-    uint128_e2e,
-    ["e2e_test_data/libfuncs/uint128",],
-    RootDatabase,
-    run_small_e2e_test
-);
-
-cairo_test_utils::test_file_test!(
-    nullable_e2e,
-    ["e2e_test_data/libfuncs/nullable",],
-    RootDatabase,
-    run_small_e2e_test
-);
-
-cairo_test_utils::test_file_test!(
-    array_e2e,
-    ["e2e_test_data/libfuncs/array",],
-    RootDatabase,
-    run_small_e2e_test
+    libfunc_e2e,
+    "e2e_test_data/libfuncs",
+    {
+        array: "array",
+        nullable: "nullable",
+        u128: "uint128",
+    },
+    run_small_e2e_test,
+    RootDatabase
 );
 
 fn run_small_e2e_test(

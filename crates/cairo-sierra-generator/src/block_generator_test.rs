@@ -11,15 +11,16 @@ use crate::test_utils::SierraGenDatabaseForTesting;
 use crate::SierraGeneratorDiagnostic;
 
 cairo_test_utils::test_file_test!(
-    lowering_test,
-    [
-        "src/block_generator_test_data/early_return",
-        "src/block_generator_test_data/function_call",
-        "src/block_generator_test_data/literals",
-        "src/block_generator_test_data/match"
-    ],
-    SierraGenDatabaseForTesting,
-    block_generator_test
+    block_generator,
+    "src/block_generator_test_data",
+    {
+        function_call: "function_call",
+        literals: "literals",
+        match_: "match",
+        early_return: "early_return",
+    },
+    block_generator_test,
+    SierraGenDatabaseForTesting
 );
 
 fn block_generator_test(

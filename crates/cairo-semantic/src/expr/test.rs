@@ -18,20 +18,21 @@ use crate::test_utils::{
 use crate::{semantic, semantic_test};
 
 semantic_test!(
-    expr_diagnostics_tests,
-    [
-        "src/expr/test_data/assignment",
-        "src/expr/test_data/enum",
-        "src/expr/test_data/error_propagate",
-        "src/expr/test_data/generics",
-        "src/expr/test_data/if",
-        "src/expr/test_data/let_statement",
-        "src/expr/test_data/literal",
-        "src/expr/test_data/match",
-        "src/expr/test_data/operators",
-        "src/expr/test_data/pattern",
-        "src/expr/test_data/return",
-    ],
+    expr_diagnostics,
+    "src/expr/test_data",
+    {
+        assignment: "assignment",
+        enum_: "enum",
+        error_propagate: "error_propagate",
+        generics: "generics",
+        if_: "if",
+        let_statement: "let_statement",
+        literal: "literal",
+        match_: "match",
+        operators: "operators",
+        pattern: "pattern",
+        return_: "return",
+    },
     test_function_diagnostics
 );
 
