@@ -32,6 +32,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibFunc) -> Vec<ApChange> {
         CoreConcreteLibFunc::Bool(libfunc) => match libfunc {
             BoolConcreteLibFunc::And(_) => vec![ApChange::Known(0)],
             BoolConcreteLibFunc::Not(_) => vec![ApChange::Known(1)],
+            BoolConcreteLibFunc::Xor(_) => vec![ApChange::Known(3)],
         },
         CoreConcreteLibFunc::Box(_) => vec![ApChange::Known(0)],
         CoreConcreteLibFunc::BuiltinCost(_) => vec![
