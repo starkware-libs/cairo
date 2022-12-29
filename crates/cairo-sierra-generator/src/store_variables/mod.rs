@@ -26,6 +26,14 @@ use crate::utils::{
 /// space.
 pub type LocalVariables = OrderedHashMap<cairo_sierra::ids::VarId, cairo_sierra::ids::VarId>;
 
+/// Information about a libfunc, required by the `store_variables` module.
+pub struct LibFuncInfo {
+    pub signature: LibFuncSignature,
+    /// `true` if the libfunc is `drop()`.
+    // TODO(lior): Consider removing this field after moving the dup mechanism before this phase.
+    pub is_drop: bool,
+}
+
 /// Automatically adds store_temp() statements to the given list of [pre_sierra::Statement].
 /// For example, a deferred reference (e.g., `[ap] + [fp - 3]`) needs to be stored as a temporary
 /// or local variable before being included in additional computation.
@@ -41,7 +49,7 @@ pub fn add_store_statements<GetLibFuncSignature>(
     local_variables: LocalVariables,
 ) -> Vec<pre_sierra::Statement>
 where
-    GetLibFuncSignature: Fn(ConcreteLibFuncId) -> LibFuncSignature,
+    GetLibFuncSignature: Fn(ConcreteLibFuncId) -> LibFuncInfo,
 {
     let mut handler = AddStoreVariableStatements::new(db, local_variables);
     // Go over the statements, restarting whenever we see a branch or a label.
@@ -81,17 +89,22 @@ impl<'a> AddStoreVariableStatements<'a> {
 
     /// Handles a single statement, including adding required store statements and the statement
     /// itself.
-    fn handle_statement<GetLibFuncSignature>(
+    fn handle_statement<GetLibFuncInfo>(
         &mut self,
         statement: pre_sierra::Statement,
-        get_lib_func_signature: &GetLibFuncSignature,
+        get_lib_func_signature: &GetLibFuncInfo,
     ) where
-        GetLibFuncSignature: Fn(ConcreteLibFuncId) -> LibFuncSignature,
+        GetLibFuncInfo: Fn(ConcreteLibFuncId) -> LibFuncInfo,
     {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                let signature = get_lib_func_signature(invocation.libfunc_id.clone());
-                self.prepare_libfunc_arguments(&invocation.args, &signature.param_signatures);
+                let libfunc_info = get_lib_func_signature(invocation.libfunc_id.clone());
+                let signature = libfunc_info.signature;
+                self.prepare_libfunc_arguments(
+                    &invocation.args,
+                    &signature.param_signatures,
+                    libfunc_info.is_drop,
+                );
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
@@ -168,6 +181,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         &mut self,
         args: &[cairo_sierra::ids::VarId],
         param_signatures: &[ParamSignature],
+        is_drop: bool,
     ) {
         for (arg, param_signature) in zip_eq(args, param_signatures) {
             self.prepare_libfunc_argument(
@@ -175,6 +189,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 param_signature.allow_deferred,
                 param_signature.allow_add_const,
                 param_signature.allow_const,
+                is_drop,
             );
         }
     }
@@ -188,6 +203,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         allow_deferred: bool,
         allow_add_const: bool,
         allow_const: bool,
+        is_drop: bool,
     ) -> bool {
         if let Some(deferred_info) = self.state().deferred_variables.get(arg).cloned() {
             match deferred_info.kind {
@@ -208,14 +224,14 @@ impl<'a> AddStoreVariableStatements<'a> {
                 }
             };
             // In this case, the deferred value can be used directly by the libfunc and does not
-            // require a store statement. If its type is not duplicatable, we remove it
-            // from the deferred_variables map to ensure it won't be stored later.
-            if !self
+            // require a store statement. If its type is not duplicatable, or the libfunc is `drop`,
+            // we remove it from the deferred_variables map to ensure it won't be stored later.
+            let duplicatable = self
                 .db
                 .get_type_info(deferred_info.ty)
                 .expect("All types should be valid at this point.")
-                .duplicatable
-            {
+                .duplicatable;
+            if is_drop || !duplicatable {
                 self.state().deferred_variables.swap_remove(arg);
             }
         }
@@ -258,7 +274,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // `prepare_libfunc_argument`.
                 // `should_rename` should be set to `true` if the variable was copied onto the
                 // stack.
-                self.prepare_libfunc_argument(var, false, false, true)
+                self.prepare_libfunc_argument(var, false, false, true, false)
             } else {
                 // Check if this is part of the prefix. If it is, rename instead of adding
                 // `store_temp`.

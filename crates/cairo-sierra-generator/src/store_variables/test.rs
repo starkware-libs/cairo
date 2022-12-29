@@ -9,7 +9,7 @@ use cairo_sierra::ids::ConcreteLibFuncId;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use pretty_assertions::assert_eq;
 
-use super::LocalVariables;
+use super::{LibFuncInfo, LocalVariables};
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::replace_ids::replace_sierra_ids;
@@ -217,7 +217,7 @@ fn test_add_store_statements(
     add_store_statements(
         db,
         statements,
-        &(|libfunc| get_lib_func_signature(db, libfunc)),
+        &(|libfunc| LibFuncInfo { signature: get_lib_func_signature(db, libfunc), is_drop: false }),
         local_variables,
     )
     .iter()

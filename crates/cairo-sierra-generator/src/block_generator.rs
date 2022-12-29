@@ -8,9 +8,10 @@ use cairo_sierra::program;
 use itertools::{chain, enumerate, zip_eq};
 
 use crate::expr_generator_context::ExprGeneratorContext;
+use crate::lifetime::DropLocation;
 use crate::pre_sierra;
 use crate::utils::{
-    branch_align_libfunc_id, const_libfunc_id_by_type, enum_init_libfunc_id,
+    branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, enum_init_libfunc_id,
     get_concrete_libfunc_id, jump_libfunc_id, jump_statement, match_enum_libfunc_id,
     return_statement, simple_statement, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
@@ -19,13 +20,31 @@ use crate::utils::{
 /// Returns a list of Sierra statements.
 pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
+    block_id: cairo_lowering::BlockId,
     block: &cairo_lowering::Block,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
+    let drops = context.get_drops();
+
+    // TODO(lior): Add pre-block drops.
+
     // Process the statements.
     let mut statements: Vec<pre_sierra::Statement> = vec![];
-    for statement in &block.statements {
+    for (i, statement) in block.statements.iter().enumerate() {
         statements.extend(generate_statement_code(context, statement)?);
+        if let Some(vars) = drops.get(&DropLocation::PostStatement((block_id, i))) {
+            for lowering_var in vars {
+                let sierra_var = context.get_sierra_variable(*lowering_var);
+                let ty = context.get_variable_sierra_type(*lowering_var)?;
+                statements.push(simple_statement(
+                    drop_libfunc_id(context.get_db(), ty),
+                    &[sierra_var],
+                    &[],
+                ));
+            }
+        }
     }
+
+    // TODO(lior): Add post-block drops.
     Ok(statements)
 }
 
@@ -37,10 +56,12 @@ pub fn generate_block_code(
 /// the next instruction (true) or not (false).
 pub fn generate_block_code_and_push_values(
     context: &mut ExprGeneratorContext<'_>,
-    block: &cairo_lowering::Block,
+    block_id: cairo_lowering::BlockId,
     binds: &[cairo_lowering::VariableId],
 ) -> Maybe<(Vec<pre_sierra::Statement>, bool)> {
-    let mut statements = generate_block_code(context, block)?;
+    let block = context.get_lowered_block(block_id);
+
+    let mut statements = generate_block_code(context, block_id, block)?;
     match &block.end {
         cairo_lowering::BlockEnd::Callsite(inner_outputs) => {
             let mut push_values = Vec::<pre_sierra::PushValue>::new();
@@ -240,10 +261,8 @@ fn generate_statement_match_extern_code(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        // TODO(lior): Try to avoid the following clone().
-        let lowered_block = context.get_lowered_block(*block_id);
         let (code, is_reachable) =
-            generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?;
+            generate_block_code_and_push_values(context, *block_id, &statement.outputs)?;
         statements.extend(code);
 
         if is_reachable {
@@ -265,9 +284,8 @@ fn generate_statement_call_block_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &cairo_lowering::StatementCallBlock,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
-    let lowered_block = context.get_lowered_block(statement.block);
     // TODO(lior): Rename instead of using PushValues.
-    Ok(generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?.0)
+    Ok(generate_block_code_and_push_values(context, statement.block, &statement.outputs)?.0)
 }
 
 /// Generates Sierra code for [cairo_lowering::StatementEnumConstruct].
@@ -356,9 +374,8 @@ fn generate_statement_match_enum(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let lowered_block = context.get_lowered_block(*arm);
         let (code, is_reachable) =
-            generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?;
+            generate_block_code_and_push_values(context, *arm, &statement.outputs)?;
         statements.extend(code);
 
         if is_reachable {

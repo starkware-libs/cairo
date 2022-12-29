@@ -2,11 +2,13 @@ use cairo_defs::diagnostic_utils::StableLocation;
 use cairo_defs::ids::{FreeFunctionId, LanguageElementId, ModuleFileId};
 use cairo_diagnostics::{DiagnosticsBuilder, Maybe};
 use cairo_syntax::node::ids::SyntaxStablePtrId;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::diagnostic::SierraGeneratorDiagnosticKind;
 use crate::id_allocator::IdAllocator;
+use crate::lifetime::{DropLocation, VariableLifetimeResult};
 use crate::{pre_sierra, SierraGeneratorDiagnostic};
 
 /// Context for the methods that generate Sierra instructions for an expression.
@@ -15,6 +17,9 @@ pub struct ExprGeneratorContext<'a> {
     lowered: &'a cairo_lowering::lower::Lowered,
     function_id: FreeFunctionId,
     module_file_id: ModuleFileId,
+    // TODO(lior): Remove `allow(dead_code)` once this field is used.
+    #[allow(dead_code)]
+    lifetime: &'a VariableLifetimeResult,
     diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
@@ -26,6 +31,7 @@ impl<'a> ExprGeneratorContext<'a> {
         db: &'a dyn SierraGenGroup,
         lowered: &'a cairo_lowering::lower::Lowered,
         function_id: FreeFunctionId,
+        lifetime: &'a VariableLifetimeResult,
         diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     ) -> Self {
         ExprGeneratorContext {
@@ -33,6 +39,7 @@ impl<'a> ExprGeneratorContext<'a> {
             lowered,
             function_id,
             module_file_id: function_id.module_file(db.upcast()),
+            lifetime,
             diagnostics,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
@@ -111,5 +118,10 @@ impl<'a> ExprGeneratorContext<'a> {
         block_id: cairo_lowering::BlockId,
     ) -> &'a cairo_lowering::Block {
         &self.lowered.blocks[block_id]
+    }
+
+    /// Returns the places where variables should be dropped. See [VariableLifetimeResult::drops].
+    pub fn get_drops(&self) -> &'a OrderedHashMap<DropLocation, Vec<cairo_lowering::VariableId>> {
+        &self.lifetime.drops
     }
 }

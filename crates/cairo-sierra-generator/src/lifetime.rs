@@ -28,9 +28,9 @@ pub struct VariableLifetimeResult {
     ///
     /// StatementLocation may point to a nonexisting statement after the end of the block -
     /// this means that the last use was in `block.end`.
-    last_use: OrderedHashMap<VariableId, Vec<StatementLocation>>,
+    pub last_use: OrderedHashMap<VariableId, Vec<StatementLocation>>,
     /// A map from [DropLocation] to the list of variables that should be dropped at this location.
-    drops: OrderedHashMap<DropLocation, Vec<VariableId>>,
+    pub drops: OrderedHashMap<DropLocation, Vec<VariableId>>,
 }
 impl VariableLifetimeResult {
     /// Registers where a drop statement should appear.
@@ -45,8 +45,6 @@ impl VariableLifetimeResult {
 
 /// Given the lowering of a function, returns lifetime information for all the variables.
 /// See [VariableLifetimeResult].
-// TODO(lior): Remove the following `allow(dead_code)` once this function is used.
-#[allow(dead_code)]
 pub fn find_variable_lifetime(lowered_function: &Lowered) -> Maybe<VariableLifetimeResult> {
     let mut res = VariableLifetimeResult::default();
     inner_find_variable_lifetime(
