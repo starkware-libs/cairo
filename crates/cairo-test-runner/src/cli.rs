@@ -1,5 +1,6 @@
 //! Compiles and runs a Cairo program.
 
+use std::collections::HashSet;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -11,6 +12,9 @@ use cairo_debug::DebugWithDb;
 use cairo_defs::ids::{FreeFunctionId, GenericFunctionId, ModuleItemId};
 use cairo_diagnostics::ToOption;
 use cairo_filesystem::ids::CrateId;
+use cairo_plugins::config::ConfigPlugin;
+use cairo_plugins::derive::DerivePlugin;
+use cairo_plugins::panicable::PanicablePlugin;
 use cairo_runner::{RunResultValue, SierraCasmRunner};
 use cairo_semantic::db::SemanticGroup;
 use cairo_semantic::plugin::SemanticPlugin;
@@ -49,11 +53,16 @@ enum TestStatus {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let mut extra_plugins: Vec<Arc<dyn SemanticPlugin>> = vec![];
+    // TODO(orizi): Use `get_default_plugins` and just update the config plugin.
+    let mut plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
+        Arc::new(DerivePlugin {}),
+        Arc::new(PanicablePlugin {}),
+        Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
+    ];
     if args.starknet {
-        extra_plugins.push(Arc::new(StarkNetPlugin {}));
+        plugins.push(Arc::new(StarkNetPlugin {}));
     }
-    let mut db_val = RootDatabase::new(extra_plugins);
+    let mut db_val = RootDatabase::new(plugins);
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
