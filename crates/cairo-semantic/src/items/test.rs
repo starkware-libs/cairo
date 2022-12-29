@@ -1,7 +1,6 @@
-use crate::semantic_test;
-use crate::test_utils::{test_function_diagnostics, SemanticDatabaseForTesting};
+use crate::test_utils::test_function_diagnostics;
 
-semantic_test!(
+cairo_test_utils::test_file_test!(
     diagnostics,
     "src/items/tests",
     {

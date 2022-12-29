@@ -22,9 +22,9 @@ use crate::test_utils::{
     get_crate_semantic_diagnostics, setup_test_crate, test_expr_diagnostics,
     SemanticDatabaseForTesting,
 };
-use crate::{semantic_test, SemanticDiagnostic};
+use crate::SemanticDiagnostic;
 
-semantic_test!(
+cairo_test_utils::test_file_test!(
     diagnostics,
     "src/diagnostic_test_data",
     {

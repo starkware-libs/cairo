@@ -25,14 +25,13 @@ cairo_test_utils::test_file_test!(
         tests :"tests",
         tuple :"tuple",
     },
-    test_function_lowering,
-    LoweringDatabaseForTesting
+    test_function_lowering
 );
 
 fn test_function_lowering(
-    db: &mut LoweringDatabaseForTesting,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut LoweringDatabaseForTesting::default();
     db.set_semantic_plugins(get_default_plugins());
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
