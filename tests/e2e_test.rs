@@ -13,7 +13,7 @@ cairo_test_utils::test_file_test!(
     {
         array: "array",
         nullable: "nullable",
-        u128: "uint128",
+        u128: "u128",
     },
     run_small_e2e_test
 );
