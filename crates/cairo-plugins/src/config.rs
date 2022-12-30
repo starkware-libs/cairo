@@ -34,7 +34,7 @@ impl MacroPlugin for ConfigPlugin {
                 if let ast::OptionAttributeArgs::AttributeArgs(args) = attr.args(db) {
                     if !self
                         .configs
-                        .contains(args.arg_list(db).as_syntax_node().get_text(db).trim())
+                        .contains(&args.arg_list(db).as_syntax_node().get_text_no_trivia(db))
                     {
                         return PluginResult {
                             code: None,
