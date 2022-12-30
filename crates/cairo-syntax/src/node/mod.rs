@@ -1,6 +1,7 @@
 use core::hash::Hash;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::sync::Arc;
 use std::vec;
 
@@ -173,24 +174,7 @@ impl SyntaxNode {
     /// Returns all the text under the syntax node.
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text(self, db: &dyn SyntaxGroup) -> String {
-        let mut buffer = String::default();
-        self.append_text(db, &mut buffer);
-        buffer
-    }
-
-    /// Helper for `get_text` to allocate only a single string.
-    fn append_text(self, db: &dyn SyntaxGroup, buffer: &mut String) {
-        let node = self.green_node(db);
-        match node.details {
-            green::GreenNodeDetails::Token(text) => {
-                buffer.push_str(text.as_str());
-            }
-            green::GreenNodeDetails::Node { .. } => {
-                for child in self.children(db) {
-                    child.append_text(db, buffer);
-                }
-            }
-        }
+        format!("{}", NodeTextFormatter { node: &self, db })
     }
 }
 pub struct SyntaxNodeChildIterator<'db> {
@@ -274,4 +258,26 @@ pub trait Terminal: TypedSyntaxNode {
     ) -> <Self as TypedSyntaxNode>::Green;
     /// Returns the text of the token of this terminal (excluding the trivia).
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
+}
+
+/// Wrapper for formatting the text of syntax nodes.
+pub struct NodeTextFormatter<'a> {
+    /// The node to format.
+    pub node: &'a SyntaxNode,
+    /// The syntax db.
+    pub db: &'a dyn SyntaxGroup,
+}
+impl<'a> Display for NodeTextFormatter<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let node = self.node.green_node(self.db);
+        match node.details {
+            green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
+            green::GreenNodeDetails::Node { .. } => {
+                for child in self.node.children(self.db) {
+                    write!(f, "{}", NodeTextFormatter { node: &child, db: self.db })?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
