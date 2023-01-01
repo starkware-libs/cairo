@@ -1,5 +1,6 @@
 use cairo_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_sierra::extensions::boolean::BoolConcreteLibfunc;
+use cairo_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
 };
@@ -81,9 +82,16 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Array(ArrayConcreteLibfunc::Len(_)) => vec![ops.const_cost(0)],
         Uint128(libfunc) => integer_libfunc_cost(ops, libfunc),
         Felt(libfunc) => felt_libfunc_cost(ops, libfunc),
-        Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) | Box(_) => {
+        Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) => {
             vec![ops.const_cost(0)]
         }
+        Box(libfunc) => match libfunc {
+            BoxConcreteLibfunc::Into(_) => {
+                // TODO(lior): Fix to sizeof(T) once sizes != 1 are supported.
+                vec![ops.const_cost(1)]
+            }
+            BoxConcreteLibfunc::Unbox(_) => vec![ops.const_cost(0)],
+        },
         Mem(StoreLocal(_) | AllocLocal(_) | StoreTemp(_) | AlignTemps(_) | FinalizeLocals(_))
         | UnconditionalJump(_) => vec![ops.const_cost(1)],
         Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.const_cost(1)],
