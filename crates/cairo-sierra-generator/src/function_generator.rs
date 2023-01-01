@@ -77,7 +77,7 @@ fn get_function_code(
     let local_variables = find_local_variables(db, lowered_function)?;
 
     // Get lifetime information.
-    let lifetime = find_variable_lifetime(lowered_function)?;
+    let lifetime = find_variable_lifetime(lowered_function, &local_variables)?;
 
     let mut context =
         ExprGeneratorContext::new(db, lowered_function, function_id, &lifetime, diagnostics);
