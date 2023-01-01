@@ -198,16 +198,22 @@ fn test_call_ret() {
     casm_build_extend! {builder,
         const one = 1;
         const ten = 10;
+        const fib10 = 89;
+        const fib11 = 144;
         tempvar a = one;
         tempvar n = ten;
         tempvar b = one;
         call FIB;
+        let res_a = returned[2];
+        let res_b = returned[0];
+        assert res_a = fib10;
+        assert res_b = fib11;
         jump FT;
         FIB:
         tempvar new_a = b;
         tempvar new_n = n - one;
         tempvar new_b = a + b;
-        jump REC_CALL if n != 0;
+        jump REC_CALL if new_n != 0;
         rescope {};
         jump FIB_END;
         REC_CALL:
@@ -225,12 +231,14 @@ fn test_call_ret() {
             [ap + 0] = 1, ap++;
             [ap + 0] = 10, ap++;
             [ap + 0] = 1, ap++;
-            call rel 4;
+            call rel 8;
+            [ap + -3] = 89;
+            [ap + -1] = 144;
             jmp rel 13;
             [ap + 0] = [fp + -3], ap++;
             [fp + -4] = [ap + 0] + 1, ap++;
             [ap + 0] = [fp + -5] + [fp + -3], ap++;
-            jmp rel 4 if [fp + -4] != 0;
+            jmp rel 4 if [ap + -2] != 0;
             jmp rel 4;
             call rel -8;
             ret;
