@@ -21,11 +21,9 @@ type felt = felt;
 type Box<felt> = Box<felt>;
 
 libfunc into_box<felt> = into_box<felt>;
-libfunc store_temp<Box<felt>> = store_temp<Box<felt>>;
 libfunc rename<Box<felt>> = rename<Box<felt>>;
 
 into_box<felt>([0]) -> ([1]);
-store_temp<Box<felt>>([1]) -> ([1]);
 rename<Box<felt>>([1]) -> ([2]);
 return([2]);
 

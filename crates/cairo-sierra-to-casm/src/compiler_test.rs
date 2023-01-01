@@ -99,12 +99,13 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 // box_and_back:
                 %{ memory[ap + 0] = segments.add() %}
                 [fp + -3] = [[ap + 0] + 0], ap++;
+                [ap + 0] = [ap + -1], ap++;
                 [ap + 0] = [[ap + -1] + 0], ap++;
                 ret;
 
                 // box_and_back_wrapper:
                 [ap + 0] = [fp + -3], ap++;
-                call rel -4;
+                call rel -5;
                 ret;
             "};
             "good_flow")]
