@@ -5,6 +5,7 @@ use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 use super::find_variable_lifetime;
+use crate::local_variables::find_local_variables;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 cairo_test_utils::test_file_test!(
@@ -14,6 +15,7 @@ cairo_test_utils::test_file_test!(
         block: "block",
         early_return: "early_return",
         enum_: "enum",
+        locals: "locals",
         simple: "simple",
         struct_: "struct",
         match_: "match",
@@ -43,7 +45,8 @@ fn check_variable_lifetime(
     let lowered_formatter = cairo_lowering::fmt::LoweredFormatter { db, lowered: lowered_function };
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
-    let find_variable_lifetime_res = find_variable_lifetime(lowered_function)
+    let local_variables = find_local_variables(db, lowered_function).unwrap();
+    let find_variable_lifetime_res = find_variable_lifetime(lowered_function, &local_variables)
         .expect("find_variable_lifetime failed unexpectedly");
     let last_use_str = find_variable_lifetime_res
         .last_use

@@ -2,6 +2,7 @@ use cairo_diagnostics::DiagnosticsBuilder;
 use cairo_lowering::lower::lower;
 use cairo_semantic::test_utils::setup_test_function;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::ordered_hash_set::OrderedHashSet;
 
 use super::generate_block_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -50,8 +51,8 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
 
     // Generate (pre-)Sierra statements.
     let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
-    let lifetime =
-        find_variable_lifetime(&lowered).expect("Failed to retrieve lifetime information.");
+    let lifetime = find_variable_lifetime(&lowered, &OrderedHashSet::default())
+        .expect("Failed to retrieve lifetime information.");
     let mut expr_generator_context = ExprGeneratorContext::new(
         db,
         &lowered,
