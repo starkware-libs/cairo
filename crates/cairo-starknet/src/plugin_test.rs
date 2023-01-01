@@ -55,7 +55,8 @@ cairo_test_utils::test_file_test!(
         diagnostics: "diagnostics",
         contract: "contract",
         storage: "storage",
-        hello_starknet: "hello_starknet"
+        hello_starknet: "hello_starknet",
+        dispatcher: "dispatcher",
     },
     test_expand_contract
 );
