@@ -9,7 +9,7 @@ use crate::db::SierraGenGroup;
 /// A wrapper over the [SierraGenGroup] salsa database, that provides the
 /// [SignatureSpecializationContext] functionality.
 /// In particular, it can be used when calling
-/// [specialize_signature_by_id](cairo_sierra::extensions::lib_func::GenericLibFuncEx::specialize_signature_by_id).
+/// [specialize_signature_by_id](cairo_sierra::extensions::lib_func::GenericLibfuncEx::specialize_signature_by_id).
 pub struct SierraSignatureSpecializationContext<'a>(pub &'a dyn SierraGenGroup);
 
 impl TypeSpecializationContext for SierraSignatureSpecializationContext<'_> {

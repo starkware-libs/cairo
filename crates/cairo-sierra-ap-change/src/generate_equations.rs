@@ -1,7 +1,7 @@
 use core::fmt;
 
 use cairo_eq_solver::Expr;
-use cairo_sierra::ids::{ConcreteLibFuncId, FunctionId};
+use cairo_sierra::ids::{ConcreteLibfuncId, FunctionId};
 use cairo_sierra::program::{Program, StatementIdx};
 use itertools::zip_eq;
 
@@ -11,14 +11,14 @@ use crate::{ApChange, ApChangeError};
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Var {
     /// Variables supplied for a libfunc at statement id (e.g. branch_align).
-    LibFuncImplicitApChangeVariable(StatementIdx),
+    LibfuncImplicitApChangeVariable(StatementIdx),
     /// Variable marking on a statement's past ap change (any route from function start to it).
     FunctionApChange(FunctionId),
 }
 impl fmt::Display for Var {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Var::LibFuncImplicitApChangeVariable(idx) => {
+            Var::LibfuncImplicitApChangeVariable(idx) => {
                 write!(f, "libfunc@{idx}")
             }
             Var::FunctionApChange(id) => write!(f, "function@{id}"),
@@ -48,7 +48,7 @@ struct StatementInfo {
 /// Generates a set of equations from a program, and a function to extract cost expressions from a
 /// library function id.
 pub fn generate_equations<
-    GetApChange: Fn(&ConcreteLibFuncId) -> Result<Vec<Effects>, ApChangeError>,
+    GetApChange: Fn(&ConcreteLibfuncId) -> Result<Vec<Effects>, ApChangeError>,
 >(
     program: &Program,
     get_effects: GetApChange,
@@ -89,7 +89,7 @@ pub fn generate_equations<
                         ApChange::Unknown => None,
                         ApChange::Known(x) => Some(Expr::from_const(x as i32)),
                         ApChange::FromMetadata => {
-                            Some(Expr::from_var(Var::LibFuncImplicitApChangeVariable(idx)))
+                            Some(Expr::from_var(Var::LibfuncImplicitApChangeVariable(idx)))
                         }
                         ApChange::FunctionCall(func_id) => Some(
                             Expr::from_var(Var::FunctionApChange(func_id)) + Expr::from_const(2),

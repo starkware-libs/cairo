@@ -1,16 +1,16 @@
-use cairo_sierra::extensions::strct::StructConcreteLibFunc;
-use cairo_sierra::extensions::ConcreteLibFunc;
+use cairo_sierra::extensions::strct::StructConcreteLibfunc;
+use cairo_sierra::extensions::ConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra struct operations.
 pub fn build(
-    libfunc: &StructConcreteLibFunc,
+    libfunc: &StructConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        StructConcreteLibFunc::Construct(_) => {
+        StructConcreteLibfunc::Construct(_) => {
             let cells = builder
                 .refs
                 .iter()
@@ -19,7 +19,7 @@ pub fn build(
                 .collect();
             Ok(builder.build_only_reference_changes([ReferenceExpression { cells }].into_iter()))
         }
-        StructConcreteLibFunc::Deconstruct(libfunc) => {
+        StructConcreteLibfunc::Deconstruct(libfunc) => {
             let struct_type = &libfunc.param_signatures()[0].ty;
             let cells = &builder.try_get_refs::<1>()?[0].cells;
             if cells.len() != builder.program_info.type_sizes[struct_type] as usize {

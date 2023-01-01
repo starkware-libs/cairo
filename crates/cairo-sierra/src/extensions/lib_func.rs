@@ -1,7 +1,7 @@
 use super::args_as_single_type;
 use super::error::{ExtensionError, SpecializationError};
 use super::type_specialization_context::TypeSpecializationContext;
-use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
 /// Trait for the specialization of libfunc signatures.
@@ -77,18 +77,18 @@ pub trait SpecializationContext: SignatureSpecializationContext {
 }
 
 /// Trait for implementing a libfunc specialization generator.
-pub trait GenericLibFunc: Sized {
-    type Concrete: ConcreteLibFunc;
+pub trait GenericLibfunc: Sized {
+    type Concrete: ConcreteLibfunc;
 
     /// Instantiates the libfunc by id.
-    fn by_id(id: &GenericLibFuncId) -> Option<Self>;
+    fn by_id(id: &GenericLibfuncId) -> Option<Self>;
 
     /// Creates the specialization of the libfunc's signature with the template arguments.
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError>;
+    ) -> Result<LibfuncSignature, SpecializationError>;
 
     /// Creates the specialization with the template arguments.
     fn specialize(
@@ -98,33 +98,33 @@ pub trait GenericLibFunc: Sized {
     ) -> Result<Self::Concrete, SpecializationError>;
 }
 
-/// Trait for introducing helper methods on GenericLibFunc.
-pub trait GenericLibFuncEx: GenericLibFunc {
+/// Trait for introducing helper methods on [GenericLibfunc].
+pub trait GenericLibfuncEx: GenericLibfunc {
     fn specialize_signature_by_id(
         context: &dyn SignatureSpecializationContext,
-        libfunc_id: &GenericLibFuncId,
+        libfunc_id: &GenericLibfuncId,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, ExtensionError>;
+    ) -> Result<LibfuncSignature, ExtensionError>;
 
     fn specialize_by_id(
         context: &dyn SpecializationContext,
-        libfunc_id: &GenericLibFuncId,
+        libfunc_id: &GenericLibfuncId,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, ExtensionError>;
 }
-impl<TGenericLibFunc: GenericLibFunc> GenericLibFuncEx for TGenericLibFunc {
+impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
     fn specialize_signature_by_id(
         context: &dyn SignatureSpecializationContext,
-        libfunc_id: &GenericLibFuncId,
+        libfunc_id: &GenericLibfuncId,
         generic_args: &[GenericArg],
-    ) -> Result<LibFuncSignature, ExtensionError> {
+    ) -> Result<LibfuncSignature, ExtensionError> {
         Self::by_id(libfunc_id)
-            .ok_or_else(move || ExtensionError::LibFuncSpecialization {
+            .ok_or_else(move || ExtensionError::LibfuncSpecialization {
                 libfunc_id: libfunc_id.clone(),
                 error: SpecializationError::UnsupportedId,
             })?
             .specialize_signature(context, generic_args)
-            .map_err(move |error| ExtensionError::LibFuncSpecialization {
+            .map_err(move |error| ExtensionError::LibfuncSpecialization {
                 libfunc_id: libfunc_id.clone(),
                 error,
             })
@@ -132,16 +132,16 @@ impl<TGenericLibFunc: GenericLibFunc> GenericLibFuncEx for TGenericLibFunc {
 
     fn specialize_by_id(
         context: &dyn SpecializationContext,
-        libfunc_id: &GenericLibFuncId,
+        libfunc_id: &GenericLibfuncId,
         generic_args: &[GenericArg],
-    ) -> Result<TGenericLibFunc::Concrete, ExtensionError> {
+    ) -> Result<TGenericLibfunc::Concrete, ExtensionError> {
         Self::by_id(libfunc_id)
-            .ok_or_else(move || ExtensionError::LibFuncSpecialization {
+            .ok_or_else(move || ExtensionError::LibfuncSpecialization {
                 libfunc_id: libfunc_id.clone(),
                 error: SpecializationError::UnsupportedId,
             })?
             .specialize(context, generic_args)
-            .map_err(move |error| ExtensionError::LibFuncSpecialization {
+            .map_err(move |error| ExtensionError::LibfuncSpecialization {
                 libfunc_id: libfunc_id.clone(),
                 error,
             })
@@ -149,16 +149,16 @@ impl<TGenericLibFunc: GenericLibFunc> GenericLibFuncEx for TGenericLibFunc {
 }
 
 /// Trait for implementing a specialization generator with a simple id.
-pub trait NamedLibFunc: Default {
-    type Concrete: ConcreteLibFunc;
-    const ID: GenericLibFuncId;
+pub trait NamedLibfunc: Default {
+    type Concrete: ConcreteLibfunc;
+    const ID: GenericLibfuncId;
 
     /// Creates the specialization of the libfunc's signature with the template arguments.
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError>;
+    ) -> Result<LibfuncSignature, SpecializationError>;
 
     /// Creates the specialization with the template arguments.
     fn specialize(
@@ -167,10 +167,10 @@ pub trait NamedLibFunc: Default {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError>;
 }
-impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
-    type Concrete = <Self as NamedLibFunc>::Concrete;
+impl<TNamedLibfunc: NamedLibfunc> GenericLibfunc for TNamedLibfunc {
+    type Concrete = <Self as NamedLibfunc>::Concrete;
 
-    fn by_id(id: &GenericLibFuncId) -> Option<Self> {
+    fn by_id(id: &GenericLibfuncId) -> Option<Self> {
         if &Self::ID == id { Some(Self::default()) } else { None }
     }
 
@@ -178,7 +178,7 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         self.specialize_signature(context, args)
     }
 
@@ -192,25 +192,25 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
 }
 
 /// Trait for implementing a specialization generator not holding anything more than a signature.
-pub trait SignatureOnlyGenericLibFunc: Default {
-    const ID: GenericLibFuncId;
+pub trait SignatureOnlyGenericLibfunc: Default {
+    const ID: GenericLibfuncId;
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError>;
+    ) -> Result<LibfuncSignature, SpecializationError>;
 }
 
-impl<T: SignatureOnlyGenericLibFunc> NamedLibFunc for T {
-    type Concrete = SignatureOnlyConcreteLibFunc;
-    const ID: GenericLibFuncId = <Self as SignatureOnlyGenericLibFunc>::ID;
+impl<T: SignatureOnlyGenericLibfunc> NamedLibfunc for T {
+    type Concrete = SignatureOnlyConcreteLibfunc;
+    const ID: GenericLibfuncId = <Self as SignatureOnlyGenericLibfunc>::ID;
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         self.specialize_signature(context, args)
     }
 
@@ -219,7 +219,7 @@ impl<T: SignatureOnlyGenericLibFunc> NamedLibFunc for T {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
+        Ok(SignatureOnlyConcreteLibfunc {
             signature: self.specialize_signature(context.upcast(), args)?,
         })
     }
@@ -227,29 +227,29 @@ impl<T: SignatureOnlyGenericLibFunc> NamedLibFunc for T {
 
 /// Trait for implementing a specialization generator expecting a single generic param type, and
 /// creating a concrete libfunc containing that type as well.
-pub trait SignatureAndTypeGenericLibFunc: Default {
-    const ID: GenericLibFuncId;
+pub trait SignatureAndTypeGenericLibfunc: Default {
+    const ID: GenericLibfuncId;
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
-    ) -> Result<LibFuncSignature, SpecializationError>;
+    ) -> Result<LibfuncSignature, SpecializationError>;
 }
 
-/// Wrapper to prevent implementation collisions for `NamedLibFunc`.
+/// Wrapper to prevent implementation collisions for [NamedLibfunc].
 #[derive(Default)]
-pub struct WrapSignatureAndTypeGenericLibFunc<T: SignatureAndTypeGenericLibFunc>(T);
+pub struct WrapSignatureAndTypeGenericLibfunc<T: SignatureAndTypeGenericLibfunc>(T);
 
-impl<T: SignatureAndTypeGenericLibFunc> NamedLibFunc for WrapSignatureAndTypeGenericLibFunc<T> {
-    type Concrete = SignatureAndTypeConcreteLibFunc;
-    const ID: GenericLibFuncId = <T as SignatureAndTypeGenericLibFunc>::ID;
+impl<T: SignatureAndTypeGenericLibfunc> NamedLibfunc for WrapSignatureAndTypeGenericLibfunc<T> {
+    type Concrete = SignatureAndTypeConcreteLibfunc;
+    const ID: GenericLibfuncId = <T as SignatureAndTypeGenericLibfunc>::ID;
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         self.0.specialize_signature(context, args_as_single_type(args)?)
     }
 
@@ -259,7 +259,7 @@ impl<T: SignatureAndTypeGenericLibFunc> NamedLibFunc for WrapSignatureAndTypeGen
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        Ok(SignatureAndTypeConcreteLibFunc {
+        Ok(SignatureAndTypeConcreteLibfunc {
             ty: ty.clone(),
             signature: self.0.specialize_signature(context.upcast(), ty)?,
         })
@@ -267,22 +267,22 @@ impl<T: SignatureAndTypeGenericLibFunc> NamedLibFunc for WrapSignatureAndTypeGen
 }
 
 /// Trait for implementing a specialization generator with no generic arguments.
-pub trait NoGenericArgsGenericLibFunc: Default {
-    const ID: GenericLibFuncId;
+pub trait NoGenericArgsGenericLibfunc: Default {
+    const ID: GenericLibfuncId;
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError>;
+    ) -> Result<LibfuncSignature, SpecializationError>;
 }
-impl<T: NoGenericArgsGenericLibFunc> SignatureOnlyGenericLibFunc for T {
-    const ID: GenericLibFuncId = <Self as NoGenericArgsGenericLibFunc>::ID;
+impl<T: NoGenericArgsGenericLibfunc> SignatureOnlyGenericLibfunc for T {
+    const ID: GenericLibfuncId = <Self as NoGenericArgsGenericLibfunc>::ID;
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         if args.is_empty() {
             self.specialize_signature(context)
         } else {
@@ -382,7 +382,7 @@ pub enum SierraApChange {
     NotImplemented,
 }
 /// Trait for a specialized library function.
-pub trait ConcreteLibFunc {
+pub trait ConcreteLibfunc {
     /// The parameter types and other information for the parameters for calling a library
     /// function.
     fn param_signatures(&self) -> &[ParamSignature];
@@ -403,7 +403,7 @@ pub trait ConcreteLibFunc {
 }
 
 /// Represents the signature of a library function.
-pub struct LibFuncSignature {
+pub struct LibfuncSignature {
     /// The parameter types and other information for the parameters for calling a library
     /// function.
     pub param_signatures: Vec<ParamSignature>,
@@ -413,7 +413,7 @@ pub struct LibFuncSignature {
     /// The index of the fallthrough branch of the library function if any.
     pub fallthrough: Option<usize>,
 }
-impl LibFuncSignature {
+impl LibfuncSignature {
     /// Creates a non branch signature.
     pub fn new_non_branch(
         input_types: Vec<ConcreteTypeId>,
@@ -427,13 +427,13 @@ impl LibFuncSignature {
         )
     }
 
-    /// Same as [LibFuncSignature::new_non_branch], except that more complicated [ParamSignature]
+    /// Same as [LibfuncSignature::new_non_branch], except that more complicated [ParamSignature]
     /// are supported.
     pub fn new_non_branch_ex(
         param_signatures: Vec<ParamSignature>,
         output_info: Vec<OutputVarInfo>,
         ap_change: SierraApChange,
-    ) -> LibFuncSignature {
+    ) -> LibfuncSignature {
         Self {
             param_signatures,
             branch_signatures: vec![BranchSignature { vars: output_info, ap_change }],
@@ -442,14 +442,14 @@ impl LibFuncSignature {
     }
 }
 
-/// Trait for implementing a ConcreteLibFunc that returns a reference to the full signature of the
+/// Trait for implementing a [ConcreteLibfunc] that returns a reference to the full signature of the
 /// library function.
-pub trait SignatureBasedConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature;
+pub trait SignatureBasedConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature;
 }
 
-impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibFunc
-    for TSignatureBasedConcreteLibFunc
+impl<TSignatureBasedConcreteLibfunc: SignatureBasedConcreteLibfunc> ConcreteLibfunc
+    for TSignatureBasedConcreteLibfunc
 {
     fn param_signatures(&self) -> &[ParamSignature] {
         &self.signature().param_signatures
@@ -462,37 +462,37 @@ impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibF
     }
 }
 
-/// Struct providing a ConcreteLibFunc only with a signature and a type.
-pub struct SignatureAndTypeConcreteLibFunc {
+/// Struct providing a [ConcreteLibfunc] only with a signature and a type.
+pub struct SignatureAndTypeConcreteLibfunc {
     pub ty: ConcreteTypeId,
-    pub signature: LibFuncSignature,
+    pub signature: LibfuncSignature,
 }
-impl SignatureBasedConcreteLibFunc for SignatureAndTypeConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
+impl SignatureBasedConcreteLibfunc for SignatureAndTypeConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }
 }
 
-/// Struct providing a ConcreteLibFunc only with a signature - should not be implemented for
+/// Struct providing a [ConcreteLibfunc] only with a signature - should not be implemented for
 /// concrete libfuncs that require any extra data.
-pub struct SignatureOnlyConcreteLibFunc {
-    pub signature: LibFuncSignature,
+pub struct SignatureOnlyConcreteLibfunc {
+    pub signature: LibfuncSignature,
 }
-impl SignatureBasedConcreteLibFunc for SignatureOnlyConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
+impl SignatureBasedConcreteLibfunc for SignatureOnlyConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }
 }
 
 /// Forms a concrete library function type from an enum of library calls.
-/// The new enum implements ConcreteLibFunc.
-/// All the variant types must also implement ConcreteLibFunc.
+/// The new enum implements [ConcreteLibfunc].
+/// All the variant types must also implement [ConcreteLibfunc].
 /// Usage example:
 /// ```ignore
 /// define_concrete_libfunc_hierarchy! {
-///     pub enum MyLibFunc {
-///       LF0(LibFunc0),
-///       LF1(LibFunc1),
+///     pub enum MyLibfunc {
+///       LF0(Libfunc0),
+///       LF1(Libfunc1),
 ///     }
 /// }
 /// ```
@@ -503,7 +503,7 @@ macro_rules! define_concrete_libfunc_hierarchy {
         pub enum $name {
             $($variant_name ($variant),)*
         }
-        impl $crate::extensions::ConcreteLibFunc for $name {
+        impl $crate::extensions::ConcreteLibfunc for $name {
             $crate::extensions::lib_func::concrete_method_impl! {
                 fn param_signatures(&self) -> &[$crate::extensions::lib_func::ParamSignature] {
                     $($variant_name => $variant,)*
@@ -539,15 +539,15 @@ macro_rules! concrete_method_impl {
 pub(crate) use concrete_method_impl;
 
 /// Forms a libfunc type from an enum of libfuncs.
-/// The new enum implements GenericLibFunc.
-/// All the variant types must also implement GenericLibFunc.
+/// The new enum implements [GenericLibfunc].
+/// All the variant types must also implement [GenericLibfunc].
 /// Usage example:
 /// ```ignore
 /// define_libfunc_hierarchy! {
-///     pub enum MyLibFunc {
-///       LF0(LibFunc0),
-///       LF1(LibFunc1),
-///     }, MyLibFuncConcrete
+///     pub enum MyLibfunc {
+///       LF0(Libfunc0),
+///       LF1(Libfunc1),
+///     }, MyLibfuncConcrete
 /// }
 /// ```
 #[macro_export]
@@ -559,9 +559,9 @@ macro_rules! define_libfunc_hierarchy {
             $($variant_name ($variant)),*
         }
 
-        impl $crate::extensions::GenericLibFunc for $name {
+        impl $crate::extensions::GenericLibfunc for $name {
             type Concrete = $concrete_name;
-            fn by_id(id: &$crate::ids::GenericLibFuncId) -> Option<Self> {
+            fn by_id(id: &$crate::ids::GenericLibfuncId) -> Option<Self> {
                 $(
                     if let Some(res) = <$variant>::by_id(id){
                         return Some(Self::$variant_name(res));
@@ -574,13 +574,13 @@ macro_rules! define_libfunc_hierarchy {
                     context: &dyn $crate::extensions::lib_func::SignatureSpecializationContext,
                     args: &[$crate::program::GenericArg],
             ) -> Result<
-                    $crate::extensions::lib_func::LibFuncSignature,
+                    $crate::extensions::lib_func::LibfuncSignature,
                     $crate::extensions::SpecializationError
                 >{
                 match self {
                     $(
                         Self::$variant_name(value) => {
-                            <$variant as $crate::extensions::GenericLibFunc>::specialize_signature(
+                            <$variant as $crate::extensions::GenericLibfunc>::specialize_signature(
                                 value, context, args,
                             )
                         }
@@ -596,7 +596,7 @@ macro_rules! define_libfunc_hierarchy {
                     $(
                         Self::$variant_name(value) => {
                             Ok(Self::Concrete::$variant_name(
-                                <$variant as $crate::extensions::GenericLibFunc>::specialize(
+                                <$variant as $crate::extensions::GenericLibfunc>::specialize(
                                     value, context, args,
                                 )?
                                 .into(),
@@ -609,7 +609,7 @@ macro_rules! define_libfunc_hierarchy {
 
         $crate::define_concrete_libfunc_hierarchy! {
             pub enum $concrete_name {
-                $($variant_name (<$variant as $crate::extensions::GenericLibFunc> ::Concrete),)*
+                $($variant_name (<$variant as $crate::extensions::GenericLibfunc> ::Concrete),)*
             }
         }
     }

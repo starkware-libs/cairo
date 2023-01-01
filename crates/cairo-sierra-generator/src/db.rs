@@ -23,8 +23,8 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::interned]
     fn intern_concrete_lib_func(
         &self,
-        id: cairo_sierra::program::ConcreteLibFuncLongId,
-    ) -> cairo_sierra::ids::ConcreteLibFuncId;
+        id: cairo_sierra::program::ConcreteLibfuncLongId,
+    ) -> cairo_sierra::ids::ConcreteLibfuncId;
 
     #[salsa::interned]
     fn intern_concrete_type(

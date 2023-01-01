@@ -6,8 +6,8 @@ mod state;
 #[cfg(test)]
 mod test;
 
-use cairo_sierra::extensions::lib_func::{LibFuncSignature, ParamSignature, SierraApChange};
-use cairo_sierra::ids::ConcreteLibFuncId;
+use cairo_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, SierraApChange};
+use cairo_sierra::ids::ConcreteLibfuncId;
 use cairo_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use cairo_utils::extract_matches;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
@@ -27,8 +27,8 @@ use crate::utils::{
 pub type LocalVariables = OrderedHashMap<cairo_sierra::ids::VarId, cairo_sierra::ids::VarId>;
 
 /// Information about a libfunc, required by the `store_variables` module.
-pub struct LibFuncInfo {
-    pub signature: LibFuncSignature,
+pub struct LibfuncInfo {
+    pub signature: LibfuncSignature,
     /// `true` if the libfunc is `drop()`.
     // TODO(lior): Consider removing this field after moving the dup mechanism before this phase.
     pub is_drop: bool,
@@ -42,14 +42,14 @@ pub struct LibFuncInfo {
 ///
 /// `local_variables` is a map from variables that should be stored as local to their allocated
 /// space.
-pub fn add_store_statements<GetLibFuncSignature>(
+pub fn add_store_statements<GetLibfuncSignature>(
     db: &dyn SierraGenGroup,
     statements: Vec<pre_sierra::Statement>,
-    get_lib_func_signature: &GetLibFuncSignature,
+    get_lib_func_signature: &GetLibfuncSignature,
     local_variables: LocalVariables,
 ) -> Vec<pre_sierra::Statement>
 where
-    GetLibFuncSignature: Fn(ConcreteLibFuncId) -> LibFuncInfo,
+    GetLibfuncSignature: Fn(ConcreteLibfuncId) -> LibfuncInfo,
 {
     let mut handler = AddStoreVariableStatements::new(db, local_variables);
     // Go over the statements, restarting whenever we see a branch or a label.
@@ -89,12 +89,12 @@ impl<'a> AddStoreVariableStatements<'a> {
 
     /// Handles a single statement, including adding required store statements and the statement
     /// itself.
-    fn handle_statement<GetLibFuncInfo>(
+    fn handle_statement<GetLibfuncInfo>(
         &mut self,
         statement: pre_sierra::Statement,
-        get_lib_func_signature: &GetLibFuncInfo,
+        get_lib_func_signature: &GetLibfuncInfo,
     ) where
-        GetLibFuncInfo: Fn(ConcreteLibFuncId) -> LibFuncInfo,
+        GetLibfuncInfo: Fn(ConcreteLibfuncId) -> LibfuncInfo,
     {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {

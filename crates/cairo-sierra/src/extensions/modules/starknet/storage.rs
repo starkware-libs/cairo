@@ -1,16 +1,16 @@
 use super::syscalls::SystemType;
-use crate::extensions::consts::{ConstGenLibFunc, WrapConstGenLibFunc};
+use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 
 /// Type for StarkNet storage address, a value in the range [0, 2 ** 251 - 256).
 #[derive(Default)]
@@ -23,30 +23,30 @@ impl NoGenericArgsGenericType for StorageAddressType {
     const SIZE: i16 = 1;
 }
 
-/// LibFunc for creating a constant storage address.
+/// Libfunc for creating a constant storage address.
 #[derive(Default)]
-pub struct StorageAddressConstLibFuncWrapped {}
-impl ConstGenLibFunc for StorageAddressConstLibFuncWrapped {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("storage_address_const");
+pub struct StorageAddressConstLibfuncWrapped {}
+impl ConstGenLibfunc for StorageAddressConstLibfuncWrapped {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_address_const");
     const GENERIC_TYPE_ID: GenericTypeId = <StorageAddressType as NoGenericArgsGenericType>::ID;
 }
 
-pub type StorageAddressConstLibFunc = WrapConstGenLibFunc<StorageAddressConstLibFuncWrapped>;
+pub type StorageAddressConstLibfunc = WrapConstGenLibfunc<StorageAddressConstLibfuncWrapped>;
 
-/// LibFunc for a storage read system call.
+/// Libfunc for a storage read system call.
 #[derive(Default)]
-pub struct StorageReadLibFunc {}
-impl NoGenericArgsGenericLibFunc for StorageReadLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("storage_read_syscall");
+pub struct StorageReadLibfunc {}
+impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_read_syscall");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        Ok(LibFuncSignature::new_non_branch_ex(
+        Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature {
                     ty: system_ty.clone(),
@@ -73,21 +73,21 @@ impl NoGenericArgsGenericLibFunc for StorageReadLibFunc {
     }
 }
 
-/// LibFunc for a storage write system call.
+/// Libfunc for a storage write system call.
 #[derive(Default)]
-pub struct StorageWriteLibFunc {}
-impl NoGenericArgsGenericLibFunc for StorageWriteLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("storage_write_syscall");
+pub struct StorageWriteLibfunc {}
+impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_write_syscall");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        Ok(LibFuncSignature {
+        Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
                 ParamSignature::new(gas_builtin_ty.clone()),

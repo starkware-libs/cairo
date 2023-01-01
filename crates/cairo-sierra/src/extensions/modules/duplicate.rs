@@ -1,29 +1,29 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibFunc,
+    LibfuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibfunc,
     SignatureSpecializationContext,
 };
 use crate::extensions::{args_as_single_type, OutputVarReferenceInfo, SpecializationError};
-use crate::ids::GenericLibFuncId;
+use crate::ids::GenericLibfuncId;
 use crate::program::GenericArg;
 
-/// LibFunc for duplicating an object.
+/// Libfunc for duplicating an object.
 #[derive(Default)]
-pub struct DupLibFunc {}
-impl SignatureOnlyGenericLibFunc for DupLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("dup");
+pub struct DupLibfunc {}
+impl SignatureOnlyGenericLibfunc for DupLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("dup");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         generic_args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(generic_args)?;
         let info = context.get_type_info(ty.clone())?;
         if !info.duplicatable {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
-        Ok(LibFuncSignature::new_non_branch(
+        Ok(LibfuncSignature::new_non_branch(
             vec![ty.clone()],
             vec![
                 OutputVarInfo {

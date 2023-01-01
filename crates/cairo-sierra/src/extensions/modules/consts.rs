@@ -1,40 +1,40 @@
 use num_bigint::BigInt;
 
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
+    DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
-    NamedLibFunc, OutputVarReferenceInfo, SignatureBasedConcreteLibFunc, SpecializationError,
+    NamedLibfunc, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Trait for implementing a library function that returns a const of a given type.
-pub trait ConstGenLibFunc: Default {
+pub trait ConstGenLibfunc: Default {
     /// The library function id.
-    const ID: GenericLibFuncId;
+    const ID: GenericLibfuncId;
     /// The id of the generic type to implement the library functions for.
     const GENERIC_TYPE_ID: GenericTypeId;
 }
 
-/// Wrapper to prevent implementation collisions for `NamedLibFunc`.
+/// Wrapper to prevent implementation collisions for `NamedLibfunc`.
 #[derive(Default)]
-pub struct WrapConstGenLibFunc<T: ConstGenLibFunc>(T);
+pub struct WrapConstGenLibfunc<T: ConstGenLibfunc>(T);
 
-impl<T: ConstGenLibFunc> NamedLibFunc for WrapConstGenLibFunc<T> {
-    const ID: GenericLibFuncId = <T as ConstGenLibFunc>::ID;
-    type Concrete = SignatureAndConstConcreteLibFunc;
+impl<T: ConstGenLibfunc> NamedLibfunc for WrapConstGenLibfunc<T> {
+    const ID: GenericLibfuncId = <T as ConstGenLibfunc>::ID;
+    type Concrete = SignatureAndConstConcreteLibfunc;
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         _args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
-                ty: context.get_concrete_type(<T as ConstGenLibFunc>::GENERIC_TYPE_ID, &[])?,
+                ty: context.get_concrete_type(<T as ConstGenLibfunc>::GENERIC_TYPE_ID, &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
             }],
             SierraApChange::Known { new_vars_only: true },
@@ -47,9 +47,9 @@ impl<T: ConstGenLibFunc> NamedLibFunc for WrapConstGenLibFunc<T> {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
-            [GenericArg::Value(c)] => Ok(SignatureAndConstConcreteLibFunc {
+            [GenericArg::Value(c)] => Ok(SignatureAndConstConcreteLibfunc {
                 c: c.clone(),
-                signature: <Self as NamedLibFunc>::specialize_signature(
+                signature: <Self as NamedLibfunc>::specialize_signature(
                     self,
                     context.upcast(),
                     args,
@@ -60,13 +60,13 @@ impl<T: ConstGenLibFunc> NamedLibFunc for WrapConstGenLibFunc<T> {
     }
 }
 
-/// Struct providing a ConcreteLibFunc signature and a const.
-pub struct SignatureAndConstConcreteLibFunc {
+/// Struct providing a ConcreteLibfunc signature and a const.
+pub struct SignatureAndConstConcreteLibfunc {
     pub c: BigInt,
-    pub signature: LibFuncSignature,
+    pub signature: LibfuncSignature,
 }
-impl SignatureBasedConcreteLibFunc for SignatureAndConstConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
+impl SignatureBasedConcreteLibfunc for SignatureAndConstConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }
 }

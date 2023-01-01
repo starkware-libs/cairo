@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
-use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
+use cairo_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_sierra::program::{Program, StatementIdx};
 use cairo_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
@@ -33,7 +33,7 @@ pub enum CostError {
 
 /// Calculates gas information for a given program.
 pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
-    let registry = ProgramRegistry::<CoreType, CoreLibFunc>::new(program)?;
+    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     let equations = generate_equations::generate_equations(
         program,
         |statement_future_cost, idx, libfunc_id| {
@@ -61,7 +61,7 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
             }
         }
         for (var, value) in solution {
-            if let Var::LibFuncImplicitGasVariable(idx, var_token_type) = var {
+            if let Var::LibfuncImplicitGasVariable(idx, var_token_type) = var {
                 assert_eq!(
                     token_type, var_token_type,
                     "Unexpected variable of type {var_token_type:?} while handling {token_type:?}."

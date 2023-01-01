@@ -3,7 +3,7 @@ use std::str::FromStr;
 use cairo_casm::builder::{CasmBuilder, Var};
 use cairo_casm::casm_build_extend;
 use cairo_casm::operand::ResOperand;
-use cairo_sierra::extensions::ec::EcConcreteLibFunc;
+use cairo_sierra::extensions::ec::EcConcreteLibfunc;
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -17,11 +17,11 @@ fn get_beta() -> BigInt {
 
 /// Builds instructions for Sierra EC operations.
 pub fn build(
-    libfunc: &EcConcreteLibFunc,
+    libfunc: &EcConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        EcConcreteLibFunc::CreatePoint(_) => build_ec_point_try_create(builder),
+        EcConcreteLibfunc::CreatePoint(_) => build_ec_point_try_create(builder),
     }
 }
 

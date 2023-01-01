@@ -66,9 +66,9 @@ macro_rules! define_identity {
     };
 }
 
-define_identity!("The identity of a generic library function", GenericLibFuncId);
+define_identity!("The identity of a generic library function", GenericLibfuncId);
 
-define_identity!("The identity of a concrete library function.", ConcreteLibFuncId);
+define_identity!("The identity of a concrete library function.", ConcreteLibfuncId);
 
 define_identity!("The identity of a user function.", FunctionId);
 

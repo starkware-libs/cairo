@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
 use cairo_casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use cairo_sierra::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
-use cairo_sierra::extensions::ConcreteLibFunc;
+use cairo_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_sierra::extensions::ConcreteLibfunc;
 use cairo_sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
 use cairo_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
@@ -35,7 +35,7 @@ pub enum CompilationError {
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
     #[error("#{statement_idx}: Invocation mismatched to libfunc")]
-    LibFuncInvocationMismatch { statement_idx: StatementIdx },
+    LibfuncInvocationMismatch { statement_idx: StatementIdx },
 }
 
 /// The casm program representation.
@@ -71,7 +71,7 @@ pub struct CairoProgramDebugInfo {
 pub fn check_basic_structure(
     statement_idx: StatementIdx,
     invocation: &Invocation,
-    libfunc: &CoreConcreteLibFunc,
+    libfunc: &CoreConcreteLibfunc,
 ) -> Result<(), CompilationError> {
     if invocation.args.len() != libfunc.param_signatures().len()
         || !itertools::equal(
@@ -85,7 +85,7 @@ pub fn check_basic_structure(
             None => false,
         }
     {
-        Err(CompilationError::LibFuncInvocationMismatch { statement_idx })
+        Err(CompilationError::LibfuncInvocationMismatch { statement_idx })
     } else {
         Ok(())
     }
@@ -102,7 +102,7 @@ pub fn compile(
     // Maps statement_idx to program_offset.
     let mut statement_offsets = Vec::with_capacity(program.statements.len());
 
-    let registry = ProgramRegistry::<CoreType, CoreLibFunc>::with_ap_change(
+    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::with_ap_change(
         program,
         metadata.ap_change_info.function_ap_change.clone(),
     )

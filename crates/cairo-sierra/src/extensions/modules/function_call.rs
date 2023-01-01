@@ -1,28 +1,28 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SignatureBasedConcreteLibFunc, SignatureSpecializationContext,
+    LibfuncSignature, OutputVarInfo, SignatureBasedConcreteLibfunc, SignatureSpecializationContext,
     SpecializationContext,
 };
-use crate::extensions::{NamedLibFunc, OutputVarReferenceInfo, SpecializationError};
-use crate::ids::GenericLibFuncId;
+use crate::extensions::{NamedLibfunc, OutputVarReferenceInfo, SpecializationError};
+use crate::ids::GenericLibfuncId;
 use crate::program::{Function, GenericArg};
 
-/// LibFunc used to call user functions.
+/// Libfunc used to call user functions.
 #[derive(Default)]
-pub struct FunctionCallLibFunc {}
-impl NamedLibFunc for FunctionCallLibFunc {
-    type Concrete = FunctionCallConcreteLibFunc;
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("function_call");
+pub struct FunctionCallLibfunc {}
+impl NamedLibfunc for FunctionCallLibfunc {
+    type Concrete = FunctionCallConcreteLibfunc;
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("function_call");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         match args {
             [GenericArg::UserFunc(function_id)] => {
                 let signature = context.get_function_signature(function_id)?;
                 let ap_change = context.get_function_ap_change(function_id)?;
-                Ok(LibFuncSignature::new_non_branch(
+                Ok(LibfuncSignature::new_non_branch(
                     signature.param_types.clone(),
                     signature
                         .ret_types
@@ -55,12 +55,12 @@ impl NamedLibFunc for FunctionCallLibFunc {
     }
 }
 
-pub struct FunctionCallConcreteLibFunc {
+pub struct FunctionCallConcreteLibfunc {
     pub function: Function,
-    pub signature: LibFuncSignature,
+    pub signature: LibfuncSignature,
 }
-impl SignatureBasedConcreteLibFunc for FunctionCallConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
+impl SignatureBasedConcreteLibfunc for FunctionCallConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }
 }
