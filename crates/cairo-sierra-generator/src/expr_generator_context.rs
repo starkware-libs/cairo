@@ -1,6 +1,9 @@
 use cairo_defs::diagnostic_utils::StableLocation;
 use cairo_defs::ids::{FreeFunctionId, LanguageElementId, ModuleFileId};
 use cairo_diagnostics::{DiagnosticsBuilder, Maybe};
+use cairo_sierra::extensions::uninitialized::UninitializedType;
+use cairo_sierra::extensions::NamedType;
+use cairo_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
@@ -8,7 +11,7 @@ use cairo_utils::unordered_hash_map::UnorderedHashMap;
 use crate::db::SierraGenGroup;
 use crate::diagnostic::SierraGeneratorDiagnosticKind;
 use crate::id_allocator::IdAllocator;
-use crate::lifetime::{DropLocation, VariableLifetimeResult};
+use crate::lifetime::{DropLocation, SierraGenVar, VariableLifetimeResult};
 use crate::{pre_sierra, SierraGeneratorDiagnostic};
 
 /// Context for the methods that generate Sierra instructions for an expression.
@@ -23,7 +26,7 @@ pub struct ExprGeneratorContext<'a> {
     diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    variables: UnorderedHashMap<cairo_lowering::VariableId, cairo_sierra::ids::VarId>,
+    variables: UnorderedHashMap<SierraGenVar, cairo_sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -61,8 +64,9 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Allocates a new Sierra variable on the first call (for each variable).
     pub fn get_sierra_variable(
         &mut self,
-        var: cairo_lowering::VariableId,
+        var: impl Into<SierraGenVar>,
     ) -> cairo_sierra::ids::VarId {
+        let var: SierraGenVar = var.into();
         if let Some(sierra_var) = self.variables.get(&var) {
             return sierra_var.clone();
         }
@@ -107,9 +111,21 @@ impl<'a> ExprGeneratorContext<'a> {
     /// [cairo_lowering::VariableId].
     pub fn get_variable_sierra_type(
         &self,
-        var: cairo_lowering::VariableId,
+        var: impl Into<SierraGenVar>,
     ) -> Maybe<cairo_sierra::ids::ConcreteTypeId> {
-        self.db.get_concrete_type_id(self.lowered.variables[var].ty)
+        Ok(match var.into() {
+            SierraGenVar::LoweringVar(lowering_var) => {
+                self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?
+            }
+            SierraGenVar::UninitializedLocal(lowering_var) => {
+                let inner_type =
+                    self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?;
+                self.db.intern_concrete_type(ConcreteTypeLongId {
+                    generic_id: UninitializedType::ID,
+                    generic_args: vec![GenericArg::Type(inner_type)],
+                })
+            }
+        })
     }
 
     /// Returns the block ([cairo_lowering::Block]) associated with [cairo_lowering::BlockId].
