@@ -45,33 +45,37 @@ impl VariableLifetimeResult {
 /// Given the lowering of a function, returns lifetime information for all the variables.
 /// See [VariableLifetimeResult].
 pub fn find_variable_lifetime(lowered_function: &Lowered) -> Maybe<VariableLifetimeResult> {
-    let mut res = VariableLifetimeResult::default();
-    inner_find_variable_lifetime(
-        lowered_function,
-        lowered_function.root?,
-        &mut VariableLifetimeState::default(),
-        &mut res,
-    );
-    Ok(res)
+    let mut context =
+        VariableLifetimeContext { lowered_function, res: VariableLifetimeResult::default() };
+    let mut state = VariableLifetimeState::default();
+    let root_block_id = lowered_function.root?;
+    inner_find_variable_lifetime(&mut context, root_block_id, &mut state);
+
+    Ok(context.res)
+}
+
+/// Context information for [inner_find_variable_lifetime] and its helper functions.
+struct VariableLifetimeContext<'a> {
+    lowered_function: &'a Lowered,
+    res: VariableLifetimeResult,
 }
 
 /// Helper function for [find_variable_lifetime].
 fn inner_find_variable_lifetime(
-    lowered_function: &Lowered,
+    context: &mut VariableLifetimeContext<'_>,
     block_id: BlockId,
     state: &mut VariableLifetimeState,
-    res: &mut VariableLifetimeResult,
 ) {
-    let block = &lowered_function.blocks[block_id];
+    let block = &context.lowered_function.blocks[block_id];
 
     // Go over the block in reverse order, starting from handling the block end.
     match &block.end {
         cairo_lowering::BlockEnd::Callsite(vars) => {
-            state.use_variables(vars, (block_id, block.statements.len()), res);
+            state.use_variables(context, vars, (block_id, block.statements.len()));
         }
         cairo_lowering::BlockEnd::Return(vars) => {
             state.clear();
-            state.use_variables(vars, (block_id, block.statements.len()), res);
+            state.use_variables(context, vars, (block_id, block.statements.len()));
         }
         cairo_lowering::BlockEnd::Unreachable => {}
     }
@@ -81,9 +85,9 @@ fn inner_find_variable_lifetime(
 
         // Add the new variables from the statement's output.
         state.handle_new_variables(
+            context,
             &statement.outputs(),
             DropLocation::PostStatement(statement_location),
-            res,
         );
 
         match statement {
@@ -93,31 +97,26 @@ fn inner_find_variable_lifetime(
             | cairo_lowering::Statement::StructDestructure(_)
             | cairo_lowering::Statement::EnumConstruct(_) => {}
             cairo_lowering::Statement::CallBlock(statement_call_block) => {
-                inner_find_variable_lifetime(
-                    lowered_function,
-                    statement_call_block.block,
-                    state,
-                    res,
-                );
+                inner_find_variable_lifetime(context, statement_call_block.block, state);
             }
             cairo_lowering::Statement::MatchExtern(statement_match_extern) => {
                 let arm_blocks: Vec<_> =
                     statement_match_extern.arms.iter().map(|(_, block_id)| *block_id).collect();
-                handle_match(lowered_function, &arm_blocks, state, res);
+                handle_match(context, &arm_blocks, state);
             }
             cairo_lowering::Statement::MatchEnum(statement_match_enum) => {
                 let arm_blocks: Vec<_> =
                     statement_match_enum.arms.iter().map(|(_, block_id)| *block_id).collect();
-                handle_match(lowered_function, &arm_blocks, state, res);
+                handle_match(context, &arm_blocks, state);
             }
         }
 
         // Mark the input variables as required.
-        state.use_variables(&statement.inputs(), statement_location, res);
+        state.use_variables(context, &statement.inputs(), statement_location);
     }
 
     // Handle the block's inputs.
-    state.handle_new_variables(&block.inputs, DropLocation::BeginningOfBlock(block_id), res);
+    state.handle_new_variables(context, &block.inputs, DropLocation::BeginningOfBlock(block_id));
 }
 
 /// Handles a match statement ([cairo_lowering::Statement::MatchExtern] and
@@ -126,10 +125,9 @@ fn inner_find_variable_lifetime(
 /// * Updates the state with the used variables of all the branches.
 /// * Adds drop statements for variables which are last-used in only part of the branches.
 fn handle_match(
-    lowered_function: &Lowered,
+    context: &mut VariableLifetimeContext<'_>,
     arm_blocks: &[BlockId],
     state: &mut VariableLifetimeState,
-    res: &mut VariableLifetimeResult,
 ) {
     // A map from sub-blocks to the set of new last-used variables.
     let mut block_to_used_vars = OrderedHashMap::<BlockId, OrderedHashSet<VariableId>>::default();
@@ -137,7 +135,7 @@ fn handle_match(
     for block_id in arm_blocks {
         let mut state_clone = state.clone();
 
-        inner_find_variable_lifetime(lowered_function, *block_id, &mut state_clone, res);
+        inner_find_variable_lifetime(context, *block_id, &mut state_clone);
         assert!(
             block_to_used_vars.insert(*block_id, state_clone.used_variables).is_none(),
             "Using the same block for multiple arms is not supported."
@@ -155,7 +153,7 @@ fn handle_match(
     for (block_id, used_variables) in block_to_used_vars {
         let drop_location = DropLocation::BeginningOfBlock(block_id);
         for var_id in &all_used_variables - &used_variables {
-            res.add_drop(var_id, drop_location);
+            context.res.add_drop(var_id, drop_location);
         }
     }
 
@@ -191,14 +189,14 @@ impl VariableLifetimeState {
     /// 2. Returned by a branching libfunc (called once per branch).
     fn handle_new_variables(
         &mut self,
+        context: &mut VariableLifetimeContext<'_>,
         var_ids: &[VariableId],
         drop_location: DropLocation,
-        res: &mut VariableLifetimeResult,
     ) {
         for var_id in var_ids {
             if !self.used_variables.contains(var_id) {
                 // The variable will not be used, drop it.
-                res.add_drop(*var_id, drop_location);
+                context.res.add_drop(*var_id, drop_location);
             } else {
                 // When a variable is defined and used in one match branch, we don't need to drop
                 // it in the other branch (unlike the cases where it is defined before the match).
@@ -211,17 +209,17 @@ impl VariableLifetimeState {
     /// Mark the given `args` as required.
     fn use_variables(
         &mut self,
+        context: &mut VariableLifetimeContext<'_>,
         var_ids: &[VariableId],
         statement_location: StatementLocation,
-        res: &mut VariableLifetimeResult,
     ) {
         for var_id in var_ids {
             if self.used_variables.insert(*var_id) {
                 // This is the last use of the variable.
-                if let Some(statement_locations) = res.last_use.get_mut(var_id) {
+                if let Some(statement_locations) = context.res.last_use.get_mut(var_id) {
                     statement_locations.push(statement_location);
                 } else {
-                    res.last_use.insert(*var_id, vec![statement_location]);
+                    context.res.last_use.insert(*var_id, vec![statement_location]);
                 }
             }
         }
