@@ -76,7 +76,7 @@ fn build_builtin_get_gas(
     let mut total_requested_count = casm_builder
         .add_var(ResOperand::Immediate(BigInt::from((requested_steps - refund_steps) * STEP_COST)));
     for _ in 0..optimized_out_writes {
-        casm_builder.alloc_var();
+        casm_builder.alloc_var(false);
     }
     if optimized_out_writes > free_incrementing_instruction_count {
         casm_builder.add_ap((optimized_out_writes - free_incrementing_instruction_count) as usize);
