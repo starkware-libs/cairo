@@ -57,3 +57,88 @@ FunctionSignature
     │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │   └── signature (kind: FunctionSignature) <ignored>
     └── body (kind: ExprBlock) <ignored>
+
+//! > ==========================================================================
+
+//! > Invalid tokens in return type.
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+fn foo() -> Aaaaa  Bbb + Cc  {
+}
+
+//! > top_level_kind
+ItemFreeFunction
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: '{'.
+ --> dummy_file.cairo:1:20
+fn foo() -> Aaaaa  Bbb + Cc  {
+                   ^******^
+
+//! > expected_tree
+└── Top level kind: ItemFreeFunction
+    ├── attributes (kind: AttributeList) []
+    ├── declaration (kind: FunctionDeclaration)
+    │   ├── function_kw (kind: TokenFunction): 'fn'
+    │   ├── name (kind: TokenIdentifier): 'foo'
+    │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │   └── signature (kind: FunctionSignature)
+    │       ├── lparen (kind: TokenLParen): '('
+    │       ├── parameters (kind: ParamList) []
+    │       ├── rparen (kind: TokenRParen): ')'
+    │       ├── ret_ty (kind: ReturnTypeClause)
+    │       │   ├── arrow (kind: TokenArrow): '->'
+    │       │   └── ty (kind: ExprPath)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'Aaaaa'
+    │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    └── body (kind: ExprBlock)
+        ├── lbrace (kind: TokenLBrace): '{'
+        ├── statements (kind: StatementList) []
+        └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Missing left brace
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+
+//! > top_level_kind
+ItemFreeFunction
+
+//! > ignored_kinds
+FunctionDeclaration
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: '{'.
+ --> dummy_file.cairo:1:20
+fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
+                   ^*******^
+
+//! > expected_tree
+└── Top level kind: ItemFreeFunction
+    ├── attributes (kind: AttributeList) []
+    ├── declaration (kind: FunctionDeclaration) <ignored>
+    └── body (kind: ExprBlock)
+        ├── lbrace: Missing
+        ├── statements (kind: StatementList)
+        │   └── child #0 (kind: StatementLet)
+        │       ├── let_kw (kind: TokenLet): 'let'
+        │       ├── pattern (kind: ExprPath)
+        │       │   └── item #0 (kind: PathSegmentSimple)
+        │       │       └── ident (kind: TokenIdentifier): 'x'
+        │       ├── type_clause (kind: OptionTypeClauseEmpty) []
+        │       ├── eq (kind: TokenEq): '='
+        │       ├── rhs (kind: TokenLiteralNumber): '0'
+        │       └── semicolon (kind: TokenSemicolon): ';'
+        └── rbrace (kind: TokenRBrace): '}'
