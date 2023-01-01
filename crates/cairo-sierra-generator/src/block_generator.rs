@@ -10,7 +10,7 @@ use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
 
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::lifetime::DropLocation;
+use crate::lifetime::{DropLocation, SierraGenVar};
 use crate::pre_sierra;
 use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, enum_init_libfunc_id,
@@ -56,15 +56,15 @@ pub fn generate_block_code(
 /// argument (computed by [find_variable_lifetime](crate::lifetime::find_variable_lifetime)).
 fn add_drop_statements(
     context: &mut ExprGeneratorContext<'_>,
-    drops: &OrderedHashMap<DropLocation, Vec<lowering::VariableId>>,
+    drops: &OrderedHashMap<DropLocation, Vec<SierraGenVar>>,
     drop_location: &DropLocation,
     statements: &mut Vec<pre_sierra::Statement>,
 ) -> Maybe<()> {
     let Some(vars) = drops.get(drop_location)  else { return Ok(()) };
 
-    for lowering_var in vars {
-        let sierra_var = context.get_sierra_variable(*lowering_var);
-        let ty = context.get_variable_sierra_type(*lowering_var)?;
+    for sierra_gen_var in vars {
+        let sierra_var = context.get_sierra_variable(*sierra_gen_var);
+        let ty = context.get_variable_sierra_type(*sierra_gen_var)?;
         statements.push(simple_statement(
             drop_libfunc_id(context.get_db(), ty),
             &[sierra_var],

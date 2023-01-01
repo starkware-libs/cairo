@@ -2,6 +2,8 @@
 #[path = "lifetime_test.rs"]
 mod test;
 
+use std::fmt::Debug;
+
 use cairo_diagnostics::Maybe;
 use cairo_lowering::lower::Lowered;
 use cairo_lowering::{BlockId, VariableId};
@@ -17,7 +19,7 @@ pub enum DropLocation {
     PostStatement(StatementLocation),
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub enum SierraGenVar {
     LoweringVar(VariableId),
     UninitializedLocal(VariableId),
@@ -26,6 +28,15 @@ pub enum SierraGenVar {
 impl From<VariableId> for SierraGenVar {
     fn from(var: VariableId) -> Self {
         SierraGenVar::LoweringVar(var)
+    }
+}
+
+impl Debug for SierraGenVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::LoweringVar(var) => write!(f, "v{}", var.index()),
+            Self::UninitializedLocal(var) => write!(f, "UninitializedLocal(v{})", var.index()),
+        }
     }
 }
 
@@ -41,11 +52,11 @@ pub struct VariableLifetimeResult {
     /// this means that the last use was in `block.end`.
     pub last_use: OrderedHashMap<VariableId, Vec<StatementLocation>>,
     /// A map from [DropLocation] to the list of variables that should be dropped at this location.
-    pub drops: OrderedHashMap<DropLocation, Vec<VariableId>>,
+    pub drops: OrderedHashMap<DropLocation, Vec<SierraGenVar>>,
 }
 impl VariableLifetimeResult {
     /// Registers where a drop statement should appear.
-    fn add_drop(&mut self, var_id: VariableId, drop_location: DropLocation) {
+    fn add_drop(&mut self, var_id: SierraGenVar, drop_location: DropLocation) {
         if let Some(vars) = self.drops.get_mut(&drop_location) {
             vars.push(var_id);
         } else {
@@ -142,7 +153,7 @@ fn handle_match(
     state: &mut VariableLifetimeState,
 ) {
     // A map from sub-blocks to the set of new last-used variables.
-    let mut block_to_used_vars = OrderedHashMap::<BlockId, OrderedHashSet<VariableId>>::default();
+    let mut block_to_used_vars = OrderedHashMap::<BlockId, OrderedHashSet<SierraGenVar>>::default();
 
     for block_id in arm_blocks {
         let mut state_clone = state.clone();
@@ -155,7 +166,7 @@ fn handle_match(
     }
 
     // Collect all the new used variables, from all the arms.
-    let mut all_used_variables = OrderedHashSet::<VariableId>::default();
+    let mut all_used_variables = OrderedHashSet::<SierraGenVar>::default();
     for (_block_id, used_variables) in block_to_used_vars.iter() {
         all_used_variables.extend(used_variables.clone());
     }
@@ -176,7 +187,7 @@ fn handle_match(
 #[derive(Clone, Debug)]
 struct VariableLifetimeState {
     /// A set of all the variables used after the current processed statement.
-    used_variables: OrderedHashSet<VariableId>,
+    used_variables: OrderedHashSet<SierraGenVar>,
 }
 impl VariableLifetimeState {
     fn default() -> Self {
@@ -186,7 +197,7 @@ impl VariableLifetimeState {
     /// Marks the given set of variables as used.
     ///
     /// Called with the new used variables of sub-blocks of a match statement.
-    fn extend_with_used_variables(&mut self, vars: OrderedHashSet<VariableId>) {
+    fn extend_with_used_variables(&mut self, vars: OrderedHashSet<SierraGenVar>) {
         self.used_variables.extend(vars);
     }
 
@@ -206,14 +217,15 @@ impl VariableLifetimeState {
         drop_location: DropLocation,
     ) {
         for var_id in var_ids {
-            if !self.used_variables.contains(var_id) {
+            let sierra_gen_var = SierraGenVar::LoweringVar(*var_id);
+            if !self.used_variables.contains(&sierra_gen_var) {
                 // The variable will not be used, drop it.
-                context.res.add_drop(*var_id, drop_location);
+                context.res.add_drop(sierra_gen_var, drop_location);
             } else {
                 // When a variable is defined and used in one match branch, we don't need to drop
                 // it in the other branch (unlike the cases where it is defined before the match).
                 // Therefore, we remove it from `used_variables`.
-                self.used_variables.swap_remove(var_id);
+                self.used_variables.swap_remove(&sierra_gen_var);
             }
         }
     }
@@ -226,7 +238,8 @@ impl VariableLifetimeState {
         statement_location: StatementLocation,
     ) {
         for var_id in var_ids {
-            if self.used_variables.insert(*var_id) {
+            let sierra_gen_var = SierraGenVar::LoweringVar(*var_id);
+            if self.used_variables.insert(sierra_gen_var) {
                 // This is the last use of the variable.
                 if let Some(statement_locations) = context.res.last_use.get_mut(var_id) {
                     statement_locations.push(statement_location);

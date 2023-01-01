@@ -137,7 +137,7 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Returns the places where variables should be dropped. See [VariableLifetimeResult::drops].
-    pub fn get_drops(&self) -> &'a OrderedHashMap<DropLocation, Vec<cairo_lowering::VariableId>> {
+    pub fn get_drops(&self) -> &'a OrderedHashMap<DropLocation, Vec<SierraGenVar>> {
         &self.lifetime.drops
     }
 }
