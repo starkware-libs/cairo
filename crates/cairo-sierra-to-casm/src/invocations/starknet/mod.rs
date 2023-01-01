@@ -35,7 +35,7 @@ fn build_storage_address_const(
     builder: CompiledInvocationBuilder<'_>,
     libfunc: &SignatureAndConstConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let addr_bound = (BigInt::from(1) << 251) - 256;
+    let addr_bound = BigInt::from(1) << 251;
     if libfunc.c >= addr_bound {
         return Err(InvocationError::InvalidGenericArg);
     }
