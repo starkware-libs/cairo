@@ -23,7 +23,7 @@ trait IContract {
     fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
 }
 mod IContractDispatcher {
-    fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
+        fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
         let calldata = array_new::<felt>();
         // TODO(ilya): Encode calldata.
         let ret_data = match starknet::call_contract_syscall(
