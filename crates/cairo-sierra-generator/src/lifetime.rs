@@ -7,7 +7,6 @@ use cairo_lowering::lower::Lowered;
 use cairo_lowering::{BlockId, VariableId};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use cairo_utils::ordered_hash_set::OrderedHashSet;
-use cairo_utils::unordered_hash_set::UnorderedHashSet;
 
 pub type StatementLocation = (BlockId, usize);
 
@@ -129,69 +128,52 @@ fn handle_match(
     res: &mut VariableLifetimeResult,
 ) {
     // A map from sub-blocks to the set of new last-used variables.
-    let mut block_to_new_used_vars =
-        OrderedHashMap::<BlockId, OrderedHashSet<VariableId>>::default();
+    let mut block_to_used_vars = OrderedHashMap::<BlockId, OrderedHashSet<VariableId>>::default();
 
     for block_id in arm_blocks {
-        let mut state_clone = state.clone_for_subblock();
+        let mut state_clone = state.clone();
 
         inner_find_variable_lifetime(lowered_function, *block_id, &mut state_clone, res);
         assert!(
-            block_to_new_used_vars.insert(*block_id, state_clone.new_used_variables).is_none(),
+            block_to_used_vars.insert(*block_id, state_clone.used_variables).is_none(),
             "Using the same block for multiple arms is not supported."
         );
     }
 
     // Collect all the new used variables, from all the arms.
-    let mut all_new_used_variables = OrderedHashSet::<VariableId>::default();
-    for (_block_id, new_used_variables) in block_to_new_used_vars.iter() {
-        all_new_used_variables.extend(new_used_variables.clone());
+    let mut all_used_variables = OrderedHashSet::<VariableId>::default();
+    for (_block_id, used_variables) in block_to_used_vars.iter() {
+        all_used_variables.extend(used_variables.clone());
     }
 
     // If a variable was last-used in one arm but not in others, it should be dropped
     // in the other arms.
-    for (block_id, new_used_variables) in block_to_new_used_vars {
+    for (block_id, used_variables) in block_to_used_vars {
         let drop_location = DropLocation::BeginningOfBlock(block_id);
-        for var_id in &all_new_used_variables - &new_used_variables {
+        for var_id in &all_used_variables - &used_variables {
             res.add_drop(var_id, drop_location);
         }
     }
 
-    state.extend_with_used_variables(all_new_used_variables);
+    state.extend_with_used_variables(all_used_variables);
 }
 
 /// Helper struct with the state maintained by [inner_find_variable_lifetime].
 #[derive(Clone, Debug)]
 struct VariableLifetimeState {
     /// A set of all the variables used after the current processed statement.
-    used_variables: UnorderedHashSet<VariableId>,
-    /// A subset of used_variables with the variables that were added by the current block.
-    new_used_variables: OrderedHashSet<VariableId>,
+    used_variables: OrderedHashSet<VariableId>,
 }
 impl VariableLifetimeState {
     fn default() -> Self {
-        Self {
-            used_variables: UnorderedHashSet::default(),
-            new_used_variables: OrderedHashSet::default(),
-        }
-    }
-
-    /// Returns a clone of the state for a sub-block of a match statement.
-    /// In particular, `new_used_variables` is not cloned, and variables added in the sub-block
-    /// should later be registered to the parent state by [Self::extend_with_used_variables].
-    fn clone_for_subblock(&self) -> Self {
-        Self {
-            used_variables: self.used_variables.clone(),
-            new_used_variables: OrderedHashSet::default(),
-        }
+        Self { used_variables: OrderedHashSet::default() }
     }
 
     /// Marks the given set of variables as used.
     ///
     /// Called with the new used variables of sub-blocks of a match statement.
     fn extend_with_used_variables(&mut self, vars: OrderedHashSet<VariableId>) {
-        self.used_variables.extend(vars.clone());
-        self.new_used_variables.extend(vars);
+        self.used_variables.extend(vars);
     }
 
     /// Handles new variables in the following cases:
@@ -211,8 +193,8 @@ impl VariableLifetimeState {
             } else {
                 // When a variable is defined and used in one match branch, we don't need to drop
                 // it in the other branch (unlike the cases where it is defined before the match).
-                // Therefore, we remove it from new_used_variables.
-                self.new_used_variables.swap_remove(var_id);
+                // Therefore, we remove it from `used_variables`.
+                self.used_variables.swap_remove(var_id);
             }
         }
     }
@@ -232,7 +214,6 @@ impl VariableLifetimeState {
                 } else {
                     res.last_use.insert(*var_id, vec![statement_location]);
                 }
-                self.new_used_variables.insert(*var_id);
             }
         }
     }
