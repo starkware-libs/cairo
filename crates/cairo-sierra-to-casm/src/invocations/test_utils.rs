@@ -68,12 +68,6 @@ macro_rules! ref_expr_extend {
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
-    ($cells:ident, & $a:ident $($op:tt $offset:expr)? $(, $tok:tt)*) => {
-        $cells.push($crate::references::CellExpression::IntoSingleCellRef(
-            cairo_casm::deref!([$a $($op $offset)?])
-        ));
-        $crate::ref_expr_extend!($cells $(, $tok)*)
-    };
     ($cells:ident, $a:expr $(, $tok:tt)*) => {
         cells.push(
             $crate::references::CellExpression::Immediate(num_bigint::BigInt::from($a))
