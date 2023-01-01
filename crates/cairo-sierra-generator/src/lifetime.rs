@@ -17,6 +17,18 @@ pub enum DropLocation {
     PostStatement(StatementLocation),
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum SierraGenVar {
+    LoweringVar(VariableId),
+    UninitializedLocal(VariableId),
+}
+
+impl From<VariableId> for SierraGenVar {
+    fn from(var: VariableId) -> Self {
+        SierraGenVar::LoweringVar(var)
+    }
+}
+
 /// Information returned by [find_variable_lifetime] regarding the lifetime of variables.
 #[derive(Default)]
 pub struct VariableLifetimeResult {
@@ -45,10 +57,8 @@ impl VariableLifetimeResult {
 /// Given the lowering of a function, returns lifetime information for all the variables.
 /// See [VariableLifetimeResult].
 pub fn find_variable_lifetime(lowered_function: &Lowered) -> Maybe<VariableLifetimeResult> {
-    let mut context = VariableLifetimeContext {
-        lowered_function,
-        res: VariableLifetimeResult::default(),
-    };
+    let mut context =
+        VariableLifetimeContext { lowered_function, res: VariableLifetimeResult::default() };
     let mut state = VariableLifetimeState::default();
     let root_block_id = lowered_function.root?;
     inner_find_variable_lifetime(&mut context, root_block_id, &mut state);
@@ -64,7 +74,7 @@ struct VariableLifetimeContext<'a> {
 
 /// Helper function for [find_variable_lifetime].
 fn inner_find_variable_lifetime(
-    context: &mut VariableLifetimeContext,
+    context: &mut VariableLifetimeContext<'_>,
     block_id: BlockId,
     state: &mut VariableLifetimeState,
 ) {
@@ -127,7 +137,7 @@ fn inner_find_variable_lifetime(
 /// * Updates the state with the used variables of all the branches.
 /// * Adds drop statements for variables which are last-used in only part of the branches.
 fn handle_match(
-    context: &mut VariableLifetimeContext,
+    context: &mut VariableLifetimeContext<'_>,
     arm_blocks: &[BlockId],
     state: &mut VariableLifetimeState,
 ) {
@@ -191,7 +201,7 @@ impl VariableLifetimeState {
     /// 2. Returned by a branching libfunc (called once per branch).
     fn handle_new_variables(
         &mut self,
-        context: &mut VariableLifetimeContext,
+        context: &mut VariableLifetimeContext<'_>,
         var_ids: &[VariableId],
         drop_location: DropLocation,
     ) {
@@ -211,7 +221,7 @@ impl VariableLifetimeState {
     /// Mark the given `args` as required.
     fn use_variables(
         &mut self,
-        context: &mut VariableLifetimeContext,
+        context: &mut VariableLifetimeContext<'_>,
         var_ids: &[VariableId],
         statement_location: StatementLocation,
     ) {

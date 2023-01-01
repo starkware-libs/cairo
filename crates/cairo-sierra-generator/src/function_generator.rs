@@ -20,7 +20,7 @@ use crate::block_generator::{generate_block_code, generate_return_code};
 use crate::db::SierraGenGroup;
 use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::lifetime::find_variable_lifetime;
+use crate::lifetime::{find_variable_lifetime, SierraGenVar};
 use crate::local_variables::find_local_variables;
 use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -168,7 +168,8 @@ fn allocate_local_variables(
         OrderedHashMap::<cairo_sierra::ids::VarId, cairo_sierra::ids::VarId>::default();
     for lowering_var_id in local_variables.iter() {
         let sierra_var_id = context.get_sierra_variable(*lowering_var_id);
-        let uninitialized_local_var_id = context.allocate_sierra_variable();
+        let uninitialized_local_var_id =
+            context.get_sierra_variable(SierraGenVar::UninitializedLocal(*lowering_var_id));
         statements.push(simple_statement(
             alloc_local_libfunc_id(
                 context.get_db(),
