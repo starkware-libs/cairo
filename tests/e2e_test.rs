@@ -12,6 +12,7 @@ cairo_test_utils::test_file_test!(
     "e2e_test_data/libfuncs",
     {
         array: "array",
+        box_: "box",
         nullable: "nullable",
         u128: "u128",
     },
