@@ -101,7 +101,7 @@ fn read_first_value() {
 }
 
 #[test]
-#[available_gas(20000)]
+#[available_gas(30000)]
 fn write_read_value() {
     assert_empty(TestContract::__external::set_value(single_element_arr(4)));
     let mut retdata = TestContract::__external::get_value(array_new::<felt>());
