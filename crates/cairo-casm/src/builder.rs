@@ -474,6 +474,17 @@ impl CasmBuilder {
         self.statements.push(Statement::Final(instruction));
         self.reachable = false;
     }
+
+    /// Adds a variable referencing a variable returned from a function. returned_index_var is the
+    /// index of the returned var from the end of the returned vars list (zero-indexed), i.e.
+    /// the last returned var index is 0.
+    pub fn get_returned_var(&mut self, returned_var_idx: i16) -> Var {
+        self.add_var(ResOperand::Deref(CellRef {
+            offset: returned_var_idx - 1,
+            register: Register::AP,
+        }))
+    }
+
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
     fn get_value(&self, var: Var, adjust_ap: bool) -> ResOperand {
         if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
@@ -682,6 +693,20 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, call $target:ident; $($tok:tt)*) => {
         $builder.call(std::stringify!($target).to_owned());
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, let ($($var_name:ident),*) = call $target:ident; $($tok:tt)*) => {
+        $builder.call(std::stringify!($target).to_owned());
+        let mut __var_count = 0;
+        $(
+            let _ignore = stringify!($var_name);
+            __var_count += 1;
+        )*
+        let mut __var_index = -__var_count;
+        $(
+            __var_index += 1;
+            let $var_name = $builder.get_returned_var(__var_index);
+        )*
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, ret; $($tok:tt)*) => {
