@@ -17,6 +17,18 @@ pub enum DropLocation {
     PostStatement(StatementLocation),
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum SierraGenVar {
+    LoweringVar(VariableId),
+    UninitializedLocal(VariableId),
+}
+
+impl From<VariableId> for SierraGenVar {
+    fn from(var: VariableId) -> Self {
+        SierraGenVar::LoweringVar(var)
+    }
+}
+
 /// Information returned by [find_variable_lifetime] regarding the lifetime of variables.
 #[derive(Default)]
 pub struct VariableLifetimeResult {
