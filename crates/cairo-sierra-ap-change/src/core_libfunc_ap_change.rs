@@ -115,7 +115,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
             StarkNetConcreteLibfunc::CallContract(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
-            StarkNetConcreteLibfunc::StorageRead(_) => vec![ApChange::Known(2)],
+            StarkNetConcreteLibfunc::StorageRead(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             StarkNetConcreteLibfunc::StorageWrite(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }

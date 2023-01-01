@@ -13,6 +13,7 @@ use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use num_bigint::BigInt;
+use num_traits::identities::Zero;
 
 use crate::hints::Hint;
 use crate::instructions::Instruction;
@@ -189,16 +190,19 @@ impl HintProcessor for CairoHintProcessor {
                     _ => panic!("Illegal argument for system pointer."),
                 };
                 let (selector_sign, selector) =
-                    get_double_deref_val(cell, &base_offset)?.to_bytes_le();
+                    get_double_deref_val(cell, &base_offset)?.to_bytes_be();
                 assert_eq!(selector_sign, num_bigint::Sign::Plus, "Illegal selector.");
-                if selector == "storage_write".as_bytes() {
+                if selector == "StorageWrite".as_bytes() {
                     let gas_counter = get_double_deref_val(cell, &(base_offset.clone() + 1))?;
                     const WRITE_GAS_SIM_COST: usize = 1000;
-                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 4))?;
-                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 5))?;
-                    if gas_counter >= WRITE_GAS_SIM_COST.into() {
-                        let addr = get_double_deref_val(cell, &(base_offset.clone() + 2))?;
-                        let value = get_double_deref_val(cell, &(base_offset + 3))?;
+                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 5))?;
+                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 6))?;
+                    let addr_domain = get_double_deref_val(cell, &(base_offset.clone() + 2))?;
+
+                    // Only address_domain 0 is currently supported.
+                    if addr_domain.is_zero() && gas_counter >= WRITE_GAS_SIM_COST.into() {
+                        let addr = get_double_deref_val(cell, &(base_offset.clone() + 3))?;
+                        let value = get_double_deref_val(cell, &(base_offset + 4))?;
                         starknet_exec_scope.storage.insert(addr, value);
                         vm.insert_value(
                             &gas_counter_updated_ptr,
@@ -209,15 +213,31 @@ impl HintProcessor for CairoHintProcessor {
                         vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
                         vm.insert_value(&revert_reason_ptr, BigInt::from(1))?;
                     }
-                } else if selector == "storage_read".as_bytes() {
-                    let addr = get_double_deref_val(cell, &(base_offset.clone() + 1))?;
-                    let value = starknet_exec_scope
-                        .storage
-                        .get(&addr)
-                        .cloned()
-                        .unwrap_or_else(|| BigInt::from(0));
-                    let result_ptr = get_ptr(cell, &(base_offset + 2))?;
-                    vm.insert_value(&result_ptr, value)?;
+                } else if selector == "StorageRead".as_bytes() {
+                    let gas_counter = get_double_deref_val(cell, &(base_offset.clone() + 1))?;
+                    const READ_GAS_SIM_COST: usize = 100;
+                    let addr_domain = get_double_deref_val(cell, &(base_offset.clone() + 2))?;
+                    let addr = get_double_deref_val(cell, &(base_offset.clone() + 3))?;
+
+                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 4))?;
+                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 5))?;
+
+                    // Only address_domain 0 is currently supported.
+                    if addr_domain.is_zero() && gas_counter >= READ_GAS_SIM_COST.into() {
+                        let value = starknet_exec_scope
+                            .storage
+                            .get(&addr)
+                            .cloned()
+                            .unwrap_or_else(|| BigInt::from(0));
+                        let result_ptr = get_ptr(cell, &(base_offset + 6))?;
+
+                        vm.insert_value(&gas_counter_updated_ptr, gas_counter - READ_GAS_SIM_COST)?;
+                        vm.insert_value(&revert_reason_ptr, BigInt::from(0))?;
+                        vm.insert_value(&result_ptr, value)?;
+                    } else {
+                        vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
+                        vm.insert_value(&revert_reason_ptr, BigInt::from(1))?;
+                    }
                 } else if selector == "call_contract".as_bytes() {
                     todo!()
                 } else {
