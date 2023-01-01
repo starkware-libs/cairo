@@ -13,7 +13,7 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
         StarkNetConcreteLibfunc::CallContract(_) => vec![ops.const_cost(50), ops.const_cost(50)],
         StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ops.const_cost(0)],
         // TODO(Ilya): Consider adding a `CostTokenType::StorageRead` or make storage read a branch.
-        StarkNetConcreteLibfunc::StorageRead(_) => vec![ops.const_cost(50)],
+        StarkNetConcreteLibfunc::StorageRead(_) => vec![ops.const_cost(50), ops.const_cost(50)],
         // TODO(yuval): Revisit the real cost.
         StarkNetConcreteLibfunc::StorageWrite(_) => vec![ops.const_cost(50), ops.const_cost(50)],
         StarkNetConcreteLibfunc::StorageAddressConst(_) => vec![ops.const_cost(0)],
