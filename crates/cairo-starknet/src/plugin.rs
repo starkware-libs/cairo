@@ -184,13 +184,11 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
         }
     }
 
-    let mut builder = PatchBuilder::new(db);
-
     let dispatcher_name = format!("{}Dispatcher", trait_ast.name(db).text(db));
-    builder.interpolate_patched(
+    let dispatcher_code = RewriteNode::interpolate_patched(
         &formatdoc!(
             "mod {dispatcher_name} {{
-            $body$
+                $body$
             }}",
         ),
         HashMap::from([(
@@ -198,6 +196,8 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
             RewriteNode::Modified(ModifiedNode { children: functions }),
         )]),
     );
+    let mut builder = PatchBuilder::new(db);
+    builder.add_modified(dispatcher_code);
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: dispatcher_name.into(),

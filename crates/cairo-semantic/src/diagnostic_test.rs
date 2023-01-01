@@ -103,17 +103,17 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                         .children
                         .remove(0);
                 }
-                builder.interpolate_patched(
+                builder.add_modified(RewriteNode::interpolate_patched(
                     indoc! {"
                         mod inner_mod {{
                             extern type NewType;
                             // Comment 1.
-                            // Comment 2.
+                            // Comment $$.
                             $func$
                         }}
                     "},
                     [("func".to_string(), new_func)].into(),
-                );
+                ));
 
                 PluginResult {
                     code: Some(PluginGeneratedFile {
