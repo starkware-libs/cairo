@@ -1,7 +1,7 @@
 use cairo_casm::builder::CasmBuilder;
 use cairo_casm::casm_build_extend;
 use cairo_casm::operand::ResOperand;
-use cairo_sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
+use cairo_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -67,7 +67,7 @@ pub fn build_call_contract(
 /// Handles the storage_address_const libfunc.
 pub fn build_contract_address_const(
     builder: CompiledInvocationBuilder<'_>,
-    libfunc: &SignatureAndConstConcreteLibFunc,
+    libfunc: &SignatureAndConstConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound = BigInt::from(1) << 251;
     if libfunc.c >= addr_bound {

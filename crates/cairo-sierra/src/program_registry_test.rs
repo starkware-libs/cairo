@@ -1,7 +1,7 @@
 use indoc::indoc;
 use test_log::test;
 
-use crate::extensions::core::{CoreLibFunc, CoreType};
+use crate::extensions::core::{CoreLibfunc, CoreType};
 use crate::program::{ConcreteTypeLongId, TypeDeclaration};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 use crate::ProgramParser;
@@ -9,7 +9,7 @@ use crate::ProgramParser;
 #[test]
 fn basic_insertion() {
     assert_eq!(
-        ProgramRegistry::<CoreType, CoreLibFunc>::new(
+        ProgramRegistry::<CoreType, CoreLibfunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
                     type u128 = u128;
@@ -30,7 +30,7 @@ fn basic_insertion() {
 #[test]
 fn function_id_double_declaration() {
     assert_eq!(
-        ProgramRegistry::<CoreType, CoreLibFunc>::new(
+        ProgramRegistry::<CoreType, CoreLibfunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
                     used_id@1(a: int, gb: GasBuiltin) -> (GasBuiltin);
@@ -46,7 +46,7 @@ fn function_id_double_declaration() {
 #[test]
 fn type_id_double_declaration() {
     assert_eq!(
-        ProgramRegistry::<CoreType, CoreLibFunc>::new(
+        ProgramRegistry::<CoreType, CoreLibfunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
                     type used_id = u128;
@@ -62,7 +62,7 @@ fn type_id_double_declaration() {
 #[test]
 fn concrete_type_double_declaration() {
     assert_eq!(
-        ProgramRegistry::<CoreType, CoreLibFunc>::new(
+        ProgramRegistry::<CoreType, CoreLibfunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
                     type int1 = u128;
@@ -81,7 +81,7 @@ fn concrete_type_double_declaration() {
 #[test]
 fn libfunc_id_double_declaration() {
     assert_eq!(
-        ProgramRegistry::<CoreType, CoreLibFunc>::new(
+        ProgramRegistry::<CoreType, CoreLibfunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
                     type u128 = u128;
@@ -92,6 +92,6 @@ fn libfunc_id_double_declaration() {
                 .unwrap()
         )
         .map(|_| ()),
-        Err(Box::new(ProgramRegistryError::LibFuncConcreteIdAlreadyExists("used_id".into())))
+        Err(Box::new(ProgramRegistryError::LibfuncConcreteIdAlreadyExists("used_id".into())))
     );
 }

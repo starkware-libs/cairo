@@ -181,7 +181,7 @@ fn inner_find_local_variables(
 fn handle_match(
     db: &dyn SierraGenGroup,
     lowered_function: &Lowered,
-    concrete_function_id: cairo_sierra::ids::ConcreteLibFuncId,
+    concrete_function_id: cairo_sierra::ids::ConcreteLibfuncId,
     arm_blocks: &[BlockId],
     statement: &cairo_lowering::Statement,
     state: &mut LocalVariablesState,
@@ -233,7 +233,7 @@ fn handle_function_call(
     db: &dyn SierraGenGroup,
     state: &mut LocalVariablesState,
     known_ap_change: &mut bool,
-    concrete_function_id: cairo_sierra::ids::ConcreteLibFuncId,
+    concrete_function_id: cairo_sierra::ids::ConcreteLibfuncId,
     inputs: &[cairo_lowering::VariableId],
     outputs: &[cairo_lowering::VariableId],
 ) {

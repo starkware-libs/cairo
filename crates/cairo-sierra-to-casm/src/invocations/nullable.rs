@@ -1,5 +1,5 @@
-use cairo_sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
-use cairo_sierra::extensions::nullable::NullableConcreteLibFunc;
+use cairo_sierra::extensions::lib_func::SignatureAndTypeConcreteLibfunc;
+use cairo_sierra::extensions::nullable::NullableConcreteLibfunc;
 
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -8,13 +8,13 @@ use crate::references::{CellExpression, ReferenceExpression};
 
 /// Builds Casm instructions for Nullable operations.
 pub fn build(
-    libfunc: &NullableConcreteLibFunc,
+    libfunc: &NullableConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        NullableConcreteLibFunc::Null(_) => build_nullable_null(builder),
-        NullableConcreteLibFunc::IntoNullable(_) => build_identity(builder),
-        NullableConcreteLibFunc::FromNullable(libfunc) => {
+        NullableConcreteLibfunc::Null(_) => build_nullable_null(builder),
+        NullableConcreteLibfunc::IntoNullable(_) => build_identity(builder),
+        NullableConcreteLibfunc::FromNullable(libfunc) => {
             build_nullable_from_nullable(builder, libfunc)
         }
     }
@@ -33,7 +33,7 @@ fn build_nullable_null(
 /// Builds Casm instructions for the `null()` libfunc.
 fn build_nullable_from_nullable(
     builder: CompiledInvocationBuilder<'_>,
-    libfunc: &SignatureAndTypeConcreteLibFunc,
+    libfunc: &SignatureAndTypeConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
     // Check that the size of the inner type is nonzero and the argument is a simple deref
     // expression.

@@ -1,26 +1,26 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, ParamSignature, SierraApChange, SignatureOnlyGenericLibFunc,
+    LibfuncSignature, ParamSignature, SierraApChange, SignatureOnlyGenericLibfunc,
     SignatureSpecializationContext,
 };
 use crate::extensions::{args_as_single_type, SpecializationError};
-use crate::ids::GenericLibFuncId;
+use crate::ids::GenericLibfuncId;
 use crate::program::GenericArg;
 
-/// LibFunc for ignoring a plain old data object.
+/// Libfunc for ignoring a plain old data object.
 #[derive(Default)]
-pub struct DropLibFunc {}
-impl SignatureOnlyGenericLibFunc for DropLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("drop");
+pub struct DropLibfunc {}
+impl SignatureOnlyGenericLibfunc for DropLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("drop");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         generic_args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(generic_args)?;
         let info = context.get_type_info(ty.clone())?;
         if info.droppable {
-            Ok(LibFuncSignature::new_non_branch_ex(
+            Ok(LibfuncSignature::new_non_branch_ex(
                 vec![ParamSignature {
                     ty,
                     allow_deferred: true,

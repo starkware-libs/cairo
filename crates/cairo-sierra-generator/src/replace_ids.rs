@@ -40,8 +40,8 @@ pub trait SierraIdReplacer {
     // Replaces libfunc_ids
     fn replace_libfunc_id(
         &self,
-        id: &cairo_sierra::ids::ConcreteLibFuncId,
-    ) -> cairo_sierra::ids::ConcreteLibFuncId;
+        id: &cairo_sierra::ids::ConcreteLibfuncId,
+    ) -> cairo_sierra::ids::ConcreteLibfuncId;
 
     // Replace type_ids
     fn replace_type_id(
@@ -64,7 +64,7 @@ pub trait SierraIdReplacer {
                 program::GenericArg::UserFunc(id) => {
                     *id = self.replace_function_id(id);
                 }
-                program::GenericArg::LibFunc(id) => {
+                program::GenericArg::Libfunc(id) => {
                     *id = self.replace_libfunc_id(id);
                 }
                 program::GenericArg::Value(_) | program::GenericArg::UserType(_) => {}
@@ -73,9 +73,9 @@ pub trait SierraIdReplacer {
     }
 }
 
-/// Replaces `cairo_sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId}` with a dummy ids
+/// Replaces `cairo_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId}` with a dummy ids
 /// whose debug string is the string representing the expanded information about the id.
-/// For LibFuncs and Types - that would be recursively opening their generic arguments, for
+/// For Libfuncs and Types - that would be recursively opening their generic arguments, for
 /// functions - that would be getting their original name. For example, while the original debug
 /// string may be `[6]`, the resulting debug string may be:
 ///  - For libfuncs: `felt_const<2>` or `unbox<Box<Box<felt>>>`.
@@ -87,8 +87,8 @@ pub struct DebugReplacer<'a> {
 impl SierraIdReplacer for DebugReplacer<'_> {
     fn replace_libfunc_id(
         &self,
-        id: &cairo_sierra::ids::ConcreteLibFuncId,
-    ) -> cairo_sierra::ids::ConcreteLibFuncId {
+        id: &cairo_sierra::ids::ConcreteLibfuncId,
+    ) -> cairo_sierra::ids::ConcreteLibfuncId {
         let mut long_id = self.db.lookup_intern_concrete_lib_func(id.clone());
         self.replace_generic_args(&mut long_id.generic_args);
         long_id.to_string().into()
@@ -151,9 +151,9 @@ pub fn replace_sierra_ids(
     }
 }
 
-/// Replaces `cairo_sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId}` with a dummy ids
+/// Replaces `cairo_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId}` with a dummy ids
 /// whose debug string is the string representing the expanded information about the id.
-/// For LibFuncs and Types - that would be recursively opening their generic arguments, for
+/// For Libfuncs and Types - that would be recursively opening their generic arguments, for
 /// functions - that would be getting their original name. For example, while the original debug
 /// string may be `[6]`, the resulting debug string may be:
 ///  - For libfuncs: `felt_const<2>` or `unbox<Box<Box<felt>>>`.

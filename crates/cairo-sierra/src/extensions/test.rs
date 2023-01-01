@@ -2,7 +2,7 @@ use bimap::BiMap;
 use num_bigint::BigInt;
 use test_case::test_case;
 
-use super::core::{CoreLibFunc, CoreType};
+use super::core::{CoreLibfunc, CoreType};
 use super::lib_func::{SierraApChange, SignatureSpecializationContext, SpecializationContext};
 use super::types::TypeInfo;
 use super::SpecializationError::{
@@ -10,7 +10,7 @@ use super::SpecializationError::{
     WrongNumberOfGenericArgs,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
-use crate::extensions::{GenericLibFunc, GenericType};
+use crate::extensions::{GenericLibfunc, GenericType};
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, Function, FunctionSignature, GenericArg, StatementIdx};
 use crate::test_utils::build_bijective_mapping;
@@ -290,7 +290,7 @@ fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
 ) -> Result<(), SpecializationError> {
-    CoreLibFunc::by_id(&id.into())
+    CoreLibfunc::by_id(&id.into())
         .ok_or(UnsupportedId)?
         .specialize(&MockSpecializationContext::new(), &generic_args)
         .map(|_| ())

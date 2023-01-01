@@ -5,17 +5,17 @@ use test_case::test_case;
 use super::value::CoreValue::{
     self, Array, GasBuiltin, NonZero, RangeCheck, Uint128, Uninitialized,
 };
-use super::LibFuncSimulationError::{
+use super::LibfuncSimulationError::{
     self, FunctionSimulationError, MemoryLayoutMismatch, WrongNumberOfArgs,
 };
 use super::{core, SimulationError};
-use crate::extensions::core::CoreLibFunc;
+use crate::extensions::core::CoreLibfunc;
 use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::GenericLibFunc;
+use crate::extensions::GenericLibfunc;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, Function, FunctionSignature, GenericArg, StatementIdx};
 use crate::test_utils::build_bijective_mapping;
@@ -109,9 +109,9 @@ fn simulate(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<CoreValue>,
-) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
+) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     core::simulate(
-        &CoreLibFunc::by_id(&id.into())
+        &CoreLibfunc::by_id(&id.into())
             .unwrap()
             .specialize(&MockSpecializationContext::new(), &generic_args)
             .unwrap(),
@@ -159,7 +159,7 @@ fn simulate_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<CoreValue>,
-) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
+) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     simulate(id, generic_args, inputs)
 }
 
@@ -198,7 +198,7 @@ fn simulate_none_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<CoreValue>,
-) -> Result<Vec<CoreValue>, LibFuncSimulationError> {
+) -> Result<Vec<CoreValue>, LibfuncSimulationError> {
     simulate(id, generic_args, inputs).map(|(outputs, chosen_branch)| {
         assert_eq!(chosen_branch, 0);
         outputs
@@ -244,6 +244,6 @@ fn simulate_error(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<CoreValue>,
-) -> LibFuncSimulationError {
+) -> LibfuncSimulationError {
     simulate(id, generic_args, inputs).err().unwrap()
 }

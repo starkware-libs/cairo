@@ -1,4 +1,4 @@
-use cairo_sierra::ids::ConcreteLibFuncId;
+use cairo_sierra::ids::ConcreteLibfuncId;
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
 use test_log::test;
@@ -16,7 +16,7 @@ fn label(id: usize) -> pre_sierra::Statement {
 
 fn jump(id: usize) -> pre_sierra::Statement {
     jump_statement(
-        ConcreteLibFuncId::from_string("jump"),
+        ConcreteLibfuncId::from_string("jump"),
         pre_sierra::LabelId::from_intern_id(InternId::from(id)),
     )
 }
@@ -26,14 +26,14 @@ fn test_resolve_labels() {
     let statements: Vec<pre_sierra::Statement> = vec![
         label(7),
         label(5),
-        simple_statement(ConcreteLibFuncId::from_string("Instruction0"), &[], &[]),
-        simple_statement(ConcreteLibFuncId::from_string("Instruction1"), &[], &[]),
+        simple_statement(ConcreteLibfuncId::from_string("Instruction0"), &[], &[]),
+        simple_statement(ConcreteLibfuncId::from_string("Instruction1"), &[], &[]),
         jump(8),
         jump(7),
         label(0),
         jump(7),
         jump(5),
-        simple_statement(ConcreteLibFuncId::from_string("Instruction2"), &[], &[]),
+        simple_statement(ConcreteLibfuncId::from_string("Instruction2"), &[], &[]),
         jump(0),
         label(8),
         jump(8),

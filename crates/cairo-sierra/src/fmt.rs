@@ -3,12 +3,12 @@ use std::fmt;
 use cairo_utils::write_comma_separated;
 
 use crate::ids::{
-    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, UserTypeId,
+    ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
     VarId,
 };
 use crate::program::{
-    ConcreteLibFuncLongId, ConcreteTypeLongId, Function, GenBranchInfo, GenBranchTarget,
-    GenInvocation, GenStatement, GenericArg, LibFuncDeclaration, Param, Program, StatementIdx,
+    ConcreteLibfuncLongId, ConcreteTypeLongId, Function, GenBranchInfo, GenBranchTarget,
+    GenInvocation, GenStatement, GenericArg, LibfuncDeclaration, Param, Program, StatementIdx,
     TypeDeclaration,
 };
 
@@ -46,13 +46,13 @@ impl fmt::Display for ConcreteTypeLongId {
     }
 }
 
-impl fmt::Display for LibFuncDeclaration {
+impl fmt::Display for LibfuncDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "libfunc {} = {}", self.id, self.long_id)
     }
 }
 
-impl fmt::Display for ConcreteLibFuncLongId {
+impl fmt::Display for ConcreteLibfuncLongId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.generic_id)?;
         write_template_args(f, &self.generic_args)
@@ -88,8 +88,8 @@ macro_rules! display_identity {
     };
 }
 
-display_identity!(GenericLibFuncId);
-display_identity!(ConcreteLibFuncId);
+display_identity!(GenericLibfuncId);
+display_identity!(ConcreteLibfuncId);
 display_identity!(FunctionId);
 display_identity!(UserTypeId);
 display_identity!(VarId);
@@ -103,7 +103,7 @@ impl fmt::Display for GenericArg {
             GenericArg::UserType(id) => write!(f, "ut@{id}"),
             GenericArg::Value(v) => write!(f, "{v}"),
             GenericArg::UserFunc(id) => write!(f, "user@{id}"),
-            GenericArg::LibFunc(id) => write!(f, "lib@{id}"),
+            GenericArg::Libfunc(id) => write!(f, "lib@{id}"),
         }
     }
 }

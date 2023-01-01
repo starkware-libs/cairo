@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
+use cairo_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_sierra::program::{Program, StatementIdx};
 use cairo_sierra::program_registry::ProgramRegistry;
 use cairo_sierra::simulation::value::CoreValue;
@@ -28,7 +28,7 @@ fn parse(name: &str) {
 #[test_case("fib_no_gas")]
 #[test_case("fib_recursive")]
 fn create_registry(name: &str) {
-    ProgramRegistry::<CoreType, CoreLibFunc>::new(&get_example_program(name)).unwrap();
+    ProgramRegistry::<CoreType, CoreLibfunc>::new(&get_example_program(name)).unwrap();
 }
 
 #[test_case((1000, 0), (1011, 1); "0 => 1")]

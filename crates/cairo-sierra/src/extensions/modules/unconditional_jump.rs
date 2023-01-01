@@ -1,19 +1,19 @@
 use crate::extensions::lib_func::{
-    BranchSignature, LibFuncSignature, SierraApChange, SignatureSpecializationContext,
+    BranchSignature, LibfuncSignature, SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::{NoGenericArgsGenericLibFunc, SpecializationError};
-use crate::ids::GenericLibFuncId;
+use crate::extensions::{NoGenericArgsGenericLibfunc, SpecializationError};
+use crate::ids::GenericLibfuncId;
 
 #[derive(Default)]
-pub struct UnconditionalJumpLibFunc {}
-impl NoGenericArgsGenericLibFunc for UnconditionalJumpLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("jump");
+pub struct UnconditionalJumpLibfunc {}
+impl NoGenericArgsGenericLibfunc for UnconditionalJumpLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("jump");
 
     fn specialize_signature(
         &self,
         _context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature {
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature {
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],

@@ -9,8 +9,8 @@ pub mod types;
 
 pub use self::error::{ExtensionError, SpecializationError};
 pub use self::lib_func::{
-    ConcreteLibFunc, GenericLibFunc, GenericLibFuncEx, NamedLibFunc, NoGenericArgsGenericLibFunc,
-    OutputVarReferenceInfo, SignatureBasedConcreteLibFunc,
+    ConcreteLibfunc, GenericLibfunc, GenericLibfuncEx, NamedLibfunc, NoGenericArgsGenericLibfunc,
+    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
 };
 pub use self::modules::*;
 pub use self::types::{

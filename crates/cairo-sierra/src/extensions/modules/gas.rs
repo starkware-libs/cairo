@@ -2,14 +2,14 @@
 use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 
 /// Type for gas actions.
 #[derive(Default)]
@@ -23,25 +23,25 @@ impl NoGenericArgsGenericType for GasBuiltinType {
 }
 
 define_libfunc_hierarchy! {
-    pub enum GasLibFunc {
-        GetGas(GetGasLibFunc),
-        RefundGas(RefundGasLibFunc),
-    }, GasConcreteLibFunc
+    pub enum GasLibfunc {
+        GetGas(GetGasLibfunc),
+        RefundGas(RefundGasLibfunc),
+    }, GasConcreteLibfunc
 }
 
-/// LibFunc for getting gas branch.
+/// Libfunc for getting gas branch.
 #[derive(Default)]
-pub struct GetGasLibFunc {}
-impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("get_gas");
+pub struct GetGasLibfunc {}
+impl NoGenericArgsGenericLibfunc for GetGasLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("get_gas");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        Ok(LibFuncSignature {
+        Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature {
                     ty: range_check_type.clone(),
@@ -90,18 +90,18 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
     }
 }
 
-/// LibFunc for returning unused gas.
+/// Libfunc for returning unused gas.
 #[derive(Default)]
-pub struct RefundGasLibFunc {}
-impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("refund_gas");
+pub struct RefundGasLibfunc {}
+impl NoGenericArgsGenericLibfunc for RefundGasLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("refund_gas");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
-        Ok(LibFuncSignature::new_non_branch(
+        Ok(LibfuncSignature::new_non_branch(
             vec![gas_builtin_type.clone()],
             vec![OutputVarInfo {
                 ty: gas_builtin_type,

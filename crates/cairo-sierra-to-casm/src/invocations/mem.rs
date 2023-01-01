@@ -3,8 +3,8 @@ use cairo_casm::instructions::Instruction;
 use cairo_casm::operand::{CellRef, Register};
 use cairo_casm::{casm, casm_extend};
 use cairo_sierra::extensions::felt::FeltBinaryOperator;
-use cairo_sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
-use cairo_sierra::extensions::mem::MemConcreteLibFunc;
+use cairo_sierra::extensions::lib_func::SignatureAndTypeConcreteLibfunc;
+use cairo_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_sierra::ids::ConcreteTypeId;
 use cairo_utils::casts::usize_as_i16;
 
@@ -14,22 +14,22 @@ use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra memory operations.
 pub fn build(
-    libfunc: &MemConcreteLibFunc,
+    libfunc: &MemConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        MemConcreteLibFunc::StoreTemp(SignatureAndTypeConcreteLibFunc { ty, .. }) => {
+        MemConcreteLibfunc::StoreTemp(SignatureAndTypeConcreteLibfunc { ty, .. }) => {
             build_store_temp(builder, ty)
         }
-        MemConcreteLibFunc::Rename(_) => misc::build_identity(builder),
-        MemConcreteLibFunc::FinalizeLocals(_) => build_finalize_locals(builder),
-        MemConcreteLibFunc::AllocLocal(SignatureAndTypeConcreteLibFunc { ty, .. }) => {
+        MemConcreteLibfunc::Rename(_) => misc::build_identity(builder),
+        MemConcreteLibfunc::FinalizeLocals(_) => build_finalize_locals(builder),
+        MemConcreteLibfunc::AllocLocal(SignatureAndTypeConcreteLibfunc { ty, .. }) => {
             build_alloc_local(builder, ty)
         }
-        MemConcreteLibFunc::StoreLocal(SignatureAndTypeConcreteLibFunc { ty, .. }) => {
+        MemConcreteLibfunc::StoreLocal(SignatureAndTypeConcreteLibfunc { ty, .. }) => {
             build_store_local(builder, ty)
         }
-        MemConcreteLibFunc::AlignTemps(_) => {
+        MemConcreteLibfunc::AlignTemps(_) => {
             Err(InvocationError::NotImplemented(builder.invocation.clone()))
         }
     }

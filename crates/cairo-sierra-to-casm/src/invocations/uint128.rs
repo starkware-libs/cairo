@@ -2,7 +2,7 @@ use cairo_casm::builder::CasmBuilder;
 use cairo_casm::casm_build_extend;
 use cairo_casm::operand::{CellRef, ResOperand};
 use cairo_sierra::extensions::uint128::{
-    IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc,
+    IntOperator, Uint128Concrete, Uint128OperationConcreteLibfunc,
 };
 use num_bigint::BigInt;
 
@@ -16,7 +16,7 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc { operator, .. }) => {
+        Uint128Concrete::Operation(Uint128OperationConcreteLibfunc { operator, .. }) => {
             build_u128_op(builder, *operator)
         }
         Uint128Concrete::JumpNotZero(_) => misc::build_jump_nz(builder),

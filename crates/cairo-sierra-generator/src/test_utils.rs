@@ -9,7 +9,7 @@ use cairo_parser::db::ParserDatabase;
 use cairo_plugins::get_default_plugins;
 use cairo_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_semantic::test_utils::setup_test_crate;
-use cairo_sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
+use cairo_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_sierra::program;
 use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_utils::Upcast;
@@ -119,9 +119,9 @@ pub fn dummy_simple_statement(
     )
 }
 
-fn dummy_concrete_lib_func_id(db: &dyn SierraGenGroup, name: &str) -> ConcreteLibFuncId {
-    db.intern_concrete_lib_func(program::ConcreteLibFuncLongId {
-        generic_id: GenericLibFuncId::from_string(name),
+fn dummy_concrete_lib_func_id(db: &dyn SierraGenGroup, name: &str) -> ConcreteLibfuncId {
+    db.intern_concrete_lib_func(program::ConcreteLibfuncLongId {
+        generic_id: GenericLibfuncId::from_string(name),
         generic_args: vec![],
     })
 }

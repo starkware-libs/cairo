@@ -4,7 +4,7 @@ mod test;
 
 use std::collections::HashMap;
 
-use cairo_sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId};
+use cairo_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 
 use crate::replace_ids::SierraIdReplacer;
 
@@ -12,7 +12,7 @@ use crate::replace_ids::SierraIdReplacer;
 pub struct CanonicalReplacer {
     type_ids: HashMap<ConcreteTypeId, ConcreteTypeId>,
     function_ids: HashMap<FunctionId, FunctionId>,
-    libfunc_ids: HashMap<ConcreteLibFuncId, ConcreteLibFuncId>,
+    libfunc_ids: HashMap<ConcreteLibfuncId, ConcreteLibfuncId>,
 }
 
 /// A replacer that replace the Ids in the program with canonical onces.
@@ -36,7 +36,7 @@ impl CanonicalReplacer {
 
         let mut libfunc_ids = HashMap::default();
         for libfunc_declaration in &program.libfunc_declarations {
-            let new_id = ConcreteLibFuncId::from_usize(libfunc_ids.len());
+            let new_id = ConcreteLibfuncId::from_usize(libfunc_ids.len());
             libfunc_ids.insert(libfunc_declaration.id.clone(), new_id.clone());
         }
 
@@ -47,8 +47,8 @@ impl CanonicalReplacer {
 impl SierraIdReplacer for CanonicalReplacer {
     fn replace_libfunc_id(
         &self,
-        id: &cairo_sierra::ids::ConcreteLibFuncId,
-    ) -> cairo_sierra::ids::ConcreteLibFuncId {
+        id: &cairo_sierra::ids::ConcreteLibfuncId,
+    ) -> cairo_sierra::ids::ConcreteLibfuncId {
         self.libfunc_ids.get(id).expect("Unexpected libfunc id.").clone()
     }
 

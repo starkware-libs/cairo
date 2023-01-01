@@ -56,9 +56,7 @@ fn check_variable_lifetime(
         .map(|(location, vars)| {
             format!(
                 "{location:?}: {}",
-                vars.iter()
-                    .map(|var_id| format!("{:?}", var_id.debug(&lowered_formatter)))
-                    .join(", ")
+                vars.iter().map(|var_id| format!("{:?}", var_id)).join(", ")
             )
         })
         .join("\n");

@@ -2,7 +2,7 @@ use cairo_casm::builder::CasmBuilder;
 use cairo_casm::casm_build_extend;
 use cairo_casm::operand::ResOperand;
 use cairo_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
+    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
 };
 use num_bigint::BigInt;
 
@@ -12,11 +12,11 @@ use crate::invocations::get_non_fallthrough_statement_id;
 
 /// Builds instructions for Sierra gas operations.
 pub fn build(
-    libfunc: &BuiltinCostConcreteLibFunc,
+    libfunc: &BuiltinCostConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        BuiltinCostConcreteLibFunc::BuiltinGetGas(_) => build_builtin_get_gas(builder),
+        BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => build_builtin_get_gas(builder),
     }
 }
 
@@ -55,7 +55,7 @@ fn build_builtin_get_gas(
         .map(|(_, requested_count)| if requested_count == 1 { 2 } else { 3 })
         .sum();
     let optimized_out_writes =
-        (BuiltinCostGetGasLibFunc::cost_computation_max_steps() as i64) - initial_writes;
+        (BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i64) - initial_writes;
 
     let requested_steps = variable_values[&(builder.idx, CostTokenType::Step)];
     // The number of instructions that we may choose to add `ap++` to, not already taken by the
@@ -71,7 +71,7 @@ fn build_builtin_get_gas(
     };
     assert!(
         refund_steps >= 0,
-        "Internal compiler error: BuiltinCostGetGasLibFunc::max_cost() is wrong."
+        "Internal compiler error: BuiltinCostGetGasLibfunc::max_cost() is wrong."
     );
     let mut total_requested_count = casm_builder
         .add_var(ResOperand::Immediate(BigInt::from((requested_steps - refund_steps) * STEP_COST)));

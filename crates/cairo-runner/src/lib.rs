@@ -4,7 +4,7 @@ use cairo_casm::instructions::Instruction;
 use cairo_casm::{casm, casm_extend};
 use cairo_rs::vm::errors::vm_errors::VirtualMachineError;
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
-use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
+use cairo_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_sierra::extensions::ConcreteType;
 use cairo_sierra::program::{Function, GenericArg};
 use cairo_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
@@ -63,7 +63,7 @@ pub struct SierraCasmRunner {
     /// Metadata for the Sierra program.
     metadata: Metadata,
     /// Program registry for the Sierra program.
-    sierra_program_registry: ProgramRegistry<CoreType, CoreLibFunc>,
+    sierra_program_registry: ProgramRegistry<CoreType, CoreLibfunc>,
     /// The casm program matching the Sierra code.
     casm_program: CairoProgram,
 }
@@ -74,7 +74,7 @@ impl SierraCasmRunner {
     ) -> Result<Self, RunnerError> {
         let metadata = create_metadata(&sierra_program, calc_gas)?;
         let sierra_program_registry =
-            ProgramRegistry::<CoreType, CoreLibFunc>::new(&sierra_program)?;
+            ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)?;
         let casm_program =
             cairo_sierra_to_casm::compiler::compile(&sierra_program, &metadata, calc_gas)?;
         Ok(Self { sierra_program, metadata, sierra_program_registry, casm_program })

@@ -1,6 +1,6 @@
 use cairo_casm::casm;
 use cairo_casm::operand::{ap_cell_ref, DerefOrImmediate};
-use cairo_sierra::extensions::boolean::BoolConcreteLibFunc;
+use cairo_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_sierra::extensions::felt::FeltBinaryOperator;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -8,12 +8,12 @@ use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra bool operations.
 pub fn build(
-    libfunc: &BoolConcreteLibFunc,
+    libfunc: &BoolConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        BoolConcreteLibFunc::And(_) => build_bool_and(builder),
-        BoolConcreteLibFunc::Not(_) => build_bool_not(builder),
+        BoolConcreteLibfunc::And(_) => build_bool_and(builder),
+        BoolConcreteLibfunc::Not(_) => build_bool_not(builder),
     }
 }
 

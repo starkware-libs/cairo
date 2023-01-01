@@ -1,7 +1,7 @@
 use cairo_casm::operand::DerefOrImmediate;
 use cairo_sierra::extensions::felt::{
-    FeltBinaryOpConcreteLibFunc, FeltBinaryOperationConcreteLibFunc, FeltBinaryOperator,
-    FeltConcrete, FeltOperationWithConstConcreteLibFunc,
+    FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
+    FeltConcrete, FeltOperationWithConstConcreteLibfunc,
 };
 use num_bigint::BigInt;
 
@@ -19,11 +19,11 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Binary(
-            FeltBinaryOpConcreteLibFunc { operator, .. },
+        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibfunc::Binary(
+            FeltBinaryOpConcreteLibfunc { operator, .. },
         )) => build_felt_op(builder, *operator),
-        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Const(
-            FeltOperationWithConstConcreteLibFunc { operator, c, .. },
+        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibfunc::Const(
+            FeltOperationWithConstConcreteLibfunc { operator, c, .. },
         )) => build_felt_op_with_const(builder, *operator, c.clone()),
         FeltConcrete::JumpNotZero(_) => build_jump_nz(builder),
         FeltConcrete::Const(libfunc) => Ok(builder.build_only_reference_changes(
