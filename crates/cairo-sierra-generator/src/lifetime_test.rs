@@ -12,6 +12,7 @@ cairo_test_utils::test_file_test!(
     "src/lifetime_test_data",
     {
         block: "block",
+        early_return: "early_return",
         enum_: "enum",
         simple: "simple",
         struct_: "struct",
