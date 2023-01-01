@@ -3,7 +3,7 @@ use cairo_casm::casm_build_extend;
 use cairo_casm::operand::{DerefOrImmediate, ResOperand};
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_sierra::extensions::felt::FeltBinaryOperator;
-use cairo_sierra::extensions::gas::GasConcreteLibFunc;
+use cairo_sierra::extensions::gas::GasConcreteLibfunc;
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -14,12 +14,12 @@ pub const STEP_COST: i64 = 100;
 
 /// Builds instructions for Sierra gas operations.
 pub fn build(
-    libfunc: &GasConcreteLibFunc,
+    libfunc: &GasConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        GasConcreteLibFunc::GetGas(_) => build_get_gas(builder),
-        GasConcreteLibFunc::RefundGas(_) => build_refund_gas(builder),
+        GasConcreteLibfunc::GetGas(_) => build_get_gas(builder),
+        GasConcreteLibfunc::RefundGas(_) => build_refund_gas(builder),
     }
 }
 

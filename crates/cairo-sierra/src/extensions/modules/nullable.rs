@@ -1,9 +1,9 @@
 use super::boxing::BoxType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureAndTypeGenericLibFunc, SignatureOnlyGenericLibFunc,
-    SignatureSpecializationContext, WrapSignatureAndTypeGenericLibFunc,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureAndTypeGenericLibfunc, SignatureOnlyGenericLibfunc,
+    SignatureSpecializationContext, WrapSignatureAndTypeGenericLibfunc,
 };
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
@@ -11,7 +11,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// A type that holds a possibly-null pointer to an object.
@@ -49,26 +49,26 @@ impl ConcreteType for NullableConcreteType {
 }
 
 define_libfunc_hierarchy! {
-    pub enum NullableLibFunc {
-        Null(NullLibFunc),
-        IntoNullable(IntoNullableLibFunc),
-        FromNullable(FromNullableLibFunc),
-    }, NullableConcreteLibFunc
+    pub enum NullableLibfunc {
+        Null(NullLibfunc),
+        IntoNullable(IntoNullableLibfunc),
+        FromNullable(FromNullableLibfunc),
+    }, NullableConcreteLibfunc
 }
 
-/// LibFunc for creating a null object of type `Nullable<T>`.
+/// Libfunc for creating a null object of type `Nullable<T>`.
 #[derive(Default)]
-pub struct NullLibFunc {}
-impl SignatureOnlyGenericLibFunc for NullLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("null");
+pub struct NullLibfunc {}
+impl SignatureOnlyGenericLibfunc for NullLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("null");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        Ok(LibFuncSignature::new_non_branch(
+        Ok(LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(NullableType::id(), ty)?,
@@ -79,18 +79,18 @@ impl SignatureOnlyGenericLibFunc for NullLibFunc {
     }
 }
 
-/// LibFunc for converting `Box<T>` to `Nullable<T>`.
+/// Libfunc for converting `Box<T>` to `Nullable<T>`.
 #[derive(Default)]
-pub struct IntoNullableLibFuncWrapped {}
-impl SignatureAndTypeGenericLibFunc for IntoNullableLibFuncWrapped {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("into_nullable");
+pub struct IntoNullableLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for IntoNullableLibfuncWrapped {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("into_nullable");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch_ex(
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature {
                 ty: context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?,
                 allow_deferred: true,
@@ -105,20 +105,20 @@ impl SignatureAndTypeGenericLibFunc for IntoNullableLibFuncWrapped {
         ))
     }
 }
-pub type IntoNullableLibFunc = WrapSignatureAndTypeGenericLibFunc<IntoNullableLibFuncWrapped>;
+pub type IntoNullableLibfunc = WrapSignatureAndTypeGenericLibfunc<IntoNullableLibfuncWrapped>;
 
-/// LibFunc for converting `Nullable<T>` to either `Box<T>` or nothing (in the case of `null`).
+/// Libfunc for converting `Nullable<T>` to either `Box<T>` or nothing (in the case of `null`).
 #[derive(Default)]
-pub struct FromNullableLibFuncWrapped {}
-impl SignatureAndTypeGenericLibFunc for FromNullableLibFuncWrapped {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("from_nullable");
+pub struct FromNullableLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for FromNullableLibfuncWrapped {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("from_nullable");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature {
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(
                 context.get_wrapped_concrete_type(NullableType::id(), ty.clone())?,
             )],
@@ -141,4 +141,4 @@ impl SignatureAndTypeGenericLibFunc for FromNullableLibFuncWrapped {
         })
     }
 }
-pub type FromNullableLibFunc = WrapSignatureAndTypeGenericLibFunc<FromNullableLibFuncWrapped>;
+pub type FromNullableLibfunc = WrapSignatureAndTypeGenericLibfunc<FromNullableLibfuncWrapped>;

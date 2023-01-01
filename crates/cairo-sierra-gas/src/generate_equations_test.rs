@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
-use cairo_sierra::ids::ConcreteLibFuncId;
+use cairo_sierra::ids::ConcreteLibfuncId;
 use cairo_sierra::program::StatementIdx;
 use indoc::indoc;
 use test_case::test_case;
@@ -18,7 +18,7 @@ fn future_statement_cost(idx: usize) -> CostExpr {
 
 /// Returns a cost expression for a libfunc variable.
 fn libfunc_cost(idx: usize) -> CostExpr {
-    CostExpr::from_var(Var::LibFuncImplicitGasVariable(StatementIdx(idx), CostTokenType::Step))
+    CostExpr::from_var(Var::LibfuncImplicitGasVariable(StatementIdx(idx), CostTokenType::Step))
 }
 
 #[test_case(indoc! {"
@@ -99,7 +99,7 @@ fn libfunc_cost(idx: usize) -> CostExpr {
             "handle bad jump target")]
 fn generate(
     code: &str,
-    costs: HashMap<ConcreteLibFuncId, Vec<CostExpr>>,
+    costs: HashMap<ConcreteLibfuncId, Vec<CostExpr>>,
 ) -> Result<Vec<CostExpr>, CostError> {
     Ok(generate_equations(
         &cairo_sierra::ProgramParser::new().parse(code).unwrap(),

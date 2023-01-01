@@ -7,9 +7,9 @@ use std::sync::Arc;
 
 use cairo_defs::ids::{FreeFunctionId, GenericFunctionId};
 use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_sierra::extensions::core::CoreLibFunc;
-use cairo_sierra::extensions::GenericLibFuncEx;
-use cairo_sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
+use cairo_sierra::extensions::core::CoreLibfunc;
+use cairo_sierra::extensions::GenericLibfuncEx;
+use cairo_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_sierra::program::Param;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use cairo_utils::ordered_hash_set::OrderedHashSet;
@@ -24,7 +24,7 @@ use crate::lifetime::find_variable_lifetime;
 use crate::local_variables::find_local_variables;
 use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::store_variables::{add_store_statements, LibFuncInfo, LocalVariables};
+use crate::store_variables::{add_store_statements, LibfuncInfo, LocalVariables};
 use crate::utils::{
     alloc_local_libfunc_id, drop_libfunc_id, dup_libfunc_id, finalize_locals_libfunc_id,
     get_libfunc_signature, simple_statement,
@@ -118,14 +118,14 @@ fn get_function_code(
         cairo_lowering::BlockEnd::Unreachable => {}
     };
 
-    let drop_id = GenericLibFuncId::from_string("drop");
+    let drop_id = GenericLibfuncId::from_string("drop");
     let statements = add_store_statements(
         context.get_db(),
         statements,
-        &|concrete_lib_func_id: ConcreteLibFuncId| -> LibFuncInfo {
+        &|concrete_lib_func_id: ConcreteLibfuncId| -> LibfuncInfo {
             let libfunc_generic_id =
                 db.lookup_intern_concrete_lib_func(concrete_lib_func_id.clone()).generic_id;
-            LibFuncInfo {
+            LibfuncInfo {
                 signature: get_libfunc_signature(context.get_db(), concrete_lib_func_id),
                 is_drop: libfunc_generic_id == drop_id,
             }
@@ -252,7 +252,7 @@ fn get_var_types(
         match statement {
             Statement::Sierra(cairo_sierra::program::GenStatement::Invocation(invocation)) => {
                 let long_id = db.lookup_intern_concrete_lib_func(invocation.libfunc_id.clone());
-                let signature = CoreLibFunc::specialize_signature_by_id(
+                let signature = CoreLibfunc::specialize_signature_by_id(
                     &SierraSignatureSpecializationContext(db),
                     &long_id.generic_id,
                     &long_id.generic_args,

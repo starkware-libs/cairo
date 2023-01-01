@@ -1,17 +1,17 @@
-use cairo_sierra::extensions::boxing::BoxConcreteLibFunc;
-use cairo_sierra::extensions::ConcreteLibFunc;
+use cairo_sierra::extensions::boxing::BoxConcreteLibfunc;
+use cairo_sierra::extensions::ConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra box operations.
 pub fn build(
-    libfunc: &BoxConcreteLibFunc,
+    libfunc: &BoxConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        BoxConcreteLibFunc::Into(_) => build_into_box(builder),
-        BoxConcreteLibFunc::Unbox(_) => build_unbox(builder),
+        BoxConcreteLibfunc::Into(_) => build_into_box(builder),
+        BoxConcreteLibfunc::Unbox(_) => build_unbox(builder),
     }
 }
 

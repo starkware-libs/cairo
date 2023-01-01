@@ -2,14 +2,14 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 pub mod storage;
 use storage::{
-    StorageAddressConstLibFunc, StorageAddressType, StorageReadLibFunc, StorageWriteLibFunc,
+    StorageAddressConstLibfunc, StorageAddressType, StorageReadLibfunc, StorageWriteLibfunc,
 };
 
 pub mod syscalls;
 use syscalls::SystemType;
 
 pub mod interoperability;
-use interoperability::{CallContractLibFunc, ContractAddressConstLibFunc, ContractAddressType};
+use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
 
 define_type_hierarchy! {
     pub enum StarkNetType {
@@ -20,11 +20,11 @@ define_type_hierarchy! {
 }
 
 define_libfunc_hierarchy! {
-    pub enum StarkNetLibFunc {
-         CallContract(CallContractLibFunc),
-         ContractAddressConst(ContractAddressConstLibFunc),
-         StorageRead(StorageReadLibFunc),
-         StorageWrite(StorageWriteLibFunc),
-         StorageAddressConst(StorageAddressConstLibFunc),
-    }, StarkNetConcreteLibFunc
+    pub enum StarkNetLibfunc {
+         CallContract(CallContractLibfunc),
+         ContractAddressConst(ContractAddressConstLibfunc),
+         StorageRead(StorageReadLibfunc),
+         StorageWrite(StorageWriteLibfunc),
+         StorageAddressConst(StorageAddressConstLibfunc),
+    }, StarkNetConcreteLibfunc
 }

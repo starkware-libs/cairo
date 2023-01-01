@@ -9,7 +9,7 @@ grammar;
 
 pub Program: Program = {
     <type_declarations:TypeDeclaration*>
-    <libfunc_declarations:LibFuncDeclaration*>
+    <libfunc_declarations:LibfuncDeclaration*>
     <statements:Statement*>
     <funcs:Function*>
     => Program{type_declarations, libfunc_declarations, statements, funcs},
@@ -25,15 +25,15 @@ pub ConcreteTypeLongId: ConcreteTypeLongId = {
     <generic_id:GenericTypeId> => ConcreteTypeLongId{generic_id, generic_args: vec![]},
 }
 
-LibFuncDeclaration: LibFuncDeclaration = {
-    "libfunc" <id:ConcreteLibFuncId> "=" <long_id:ConcreteLibFuncLongId> ";"
-    => LibFuncDeclaration{id, long_id},
+LibfuncDeclaration: LibfuncDeclaration = {
+    "libfunc" <id:ConcreteLibfuncId> "=" <long_id:ConcreteLibfuncLongId> ";"
+    => LibfuncDeclaration{id, long_id},
 }
 
-pub ConcreteLibFuncLongId: ConcreteLibFuncLongId = {
-    <generic_id:GenericLibFuncId> "<" <generic_args:GenericArgs> ">"
-    => ConcreteLibFuncLongId{generic_id, generic_args},
-    <generic_id:GenericLibFuncId> => ConcreteLibFuncLongId{generic_id, generic_args: vec![]},
+pub ConcreteLibfuncLongId: ConcreteLibfuncLongId = {
+    <generic_id:GenericLibfuncId> "<" <generic_args:GenericArgs> ">"
+    => ConcreteLibfuncLongId{generic_id, generic_args},
+    <generic_id:GenericLibfuncId> => ConcreteLibfuncLongId{generic_id, generic_args: vec![]},
 }
 
 Function: Function = {
@@ -47,14 +47,14 @@ Param: Param = {
 }
 Params = Comma<Param>;
 
-GenericLibFuncId: GenericLibFuncId = {
-    <id:PathLabel> => GenericLibFuncId::from_string(id),
-    "[" <id:UnsignedInt> "]" => GenericLibFuncId::new(id),
+GenericLibfuncId: GenericLibfuncId = {
+    <id:PathLabel> => GenericLibfuncId::from_string(id),
+    "[" <id:UnsignedInt> "]" => GenericLibfuncId::new(id),
 }
 
-ConcreteLibFuncId: ConcreteLibFuncId = {
-    <id:ConcreteLabel> => ConcreteLibFuncId::from_string(id),
-    "[" <id:UnsignedInt> "]" => ConcreteLibFuncId::new(id),
+ConcreteLibfuncId: ConcreteLibfuncId = {
+    <id:ConcreteLabel> => ConcreteLibfuncId::from_string(id),
+    "[" <id:UnsignedInt> "]" => ConcreteLibfuncId::new(id),
 }
 
 FunctionId: FunctionId = {
@@ -93,7 +93,7 @@ GenericArg: GenericArg = {
     <v:BigInt> => GenericArg::Value(v),
     "user@" <id:FunctionId> => GenericArg::UserFunc(id),
     "ut@" <id:UserTypeId> => GenericArg::UserType(id),
-    "lib@" <id:ConcreteLibFuncId> => GenericArg::LibFunc(id),
+    "lib@" <id:ConcreteLibfuncId> => GenericArg::Libfunc(id),
 }
 GenericArgs = Comma<GenericArg>;
 
@@ -103,13 +103,13 @@ Statement: Statement = {
 }
 
 Invocation: Invocation = {
-    <libfunc_id:ConcreteLibFuncId> "(" <args:VarIds> ")" "->" "(" <results:VarIds> ")" ";" =>
+    <libfunc_id:ConcreteLibfuncId> "(" <args:VarIds> ")" "->" "(" <results:VarIds> ")" ";" =>
         Invocation{
             libfunc_id,
             args,
             branches: vec![BranchInfo{ target: BranchTarget::Fallthrough , results }]
         },
-    <libfunc_id:ConcreteLibFuncId> "(" <args:VarIds> ")" "{" <branches:BranchInfo*> "}" ";" =>
+    <libfunc_id:ConcreteLibfuncId> "(" <args:VarIds> ")" "{" <branches:BranchInfo*> "}" ";" =>
         Invocation{libfunc_id, args, branches},
 }
 

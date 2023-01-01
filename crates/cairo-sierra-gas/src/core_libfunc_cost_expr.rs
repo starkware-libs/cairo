@@ -1,5 +1,5 @@
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
-use cairo_sierra::extensions::core::CoreConcreteLibFunc;
+use cairo_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_sierra::program::StatementIdx;
 use cairo_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
@@ -33,7 +33,7 @@ impl CostOperations for Ops<'_> {
     fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
         Self::CostType::from_iter([(
             token_type,
-            CostExpr::from_var(Var::LibFuncImplicitGasVariable(self.idx, token_type)),
+            CostExpr::from_var(Var::LibfuncImplicitGasVariable(self.idx, token_type)),
         )])
     }
 
@@ -50,7 +50,7 @@ impl CostOperations for Ops<'_> {
 pub fn core_libfunc_cost_expr(
     statement_future_cost: &mut dyn StatementFutureCost,
     idx: &StatementIdx,
-    libfunc: &CoreConcreteLibFunc,
+    libfunc: &CoreConcreteLibfunc,
 ) -> Vec<CostExprMap> {
     core_libfunc_cost_base(&mut Ops { statement_future_cost, idx: *idx }, libfunc)
 }

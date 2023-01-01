@@ -1,5 +1,5 @@
-use cairo_sierra::extensions::consts::SignatureAndConstConcreteLibFunc;
-use cairo_sierra::extensions::starknet::StarkNetConcreteLibFunc;
+use cairo_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
+use cairo_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use num_bigint::BigInt;
 
 use self::interoperability::{build_call_contract, build_contract_address_const};
@@ -14,17 +14,17 @@ mod interoperability;
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
-    libfunc: &StarkNetConcreteLibFunc,
+    libfunc: &StarkNetConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        StarkNetConcreteLibFunc::CallContract(_) => build_call_contract(builder),
-        StarkNetConcreteLibFunc::ContractAddressConst(libfunc) => {
+        StarkNetConcreteLibfunc::CallContract(_) => build_call_contract(builder),
+        StarkNetConcreteLibfunc::ContractAddressConst(libfunc) => {
             build_contract_address_const(builder, libfunc)
         }
-        StarkNetConcreteLibFunc::StorageRead(_) => build_storage_read(builder),
-        StarkNetConcreteLibFunc::StorageWrite(_) => build_storage_write(builder),
-        StarkNetConcreteLibFunc::StorageAddressConst(libfunc) => {
+        StarkNetConcreteLibfunc::StorageRead(_) => build_storage_read(builder),
+        StarkNetConcreteLibfunc::StorageWrite(_) => build_storage_write(builder),
+        StarkNetConcreteLibfunc::StorageAddressConst(libfunc) => {
             build_storage_address_const(builder, libfunc)
         }
     }
@@ -33,7 +33,7 @@ pub fn build(
 /// Handles the storage_address_const libfunc.
 fn build_storage_address_const(
     builder: CompiledInvocationBuilder<'_>,
-    libfunc: &SignatureAndConstConcreteLibFunc,
+    libfunc: &SignatureAndConstConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound = (BigInt::from(1) << 251) - 256;
     if libfunc.c >= addr_bound {

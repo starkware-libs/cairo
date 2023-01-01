@@ -252,7 +252,7 @@ fn generate_statement_match_extern_code(
     // Generate a label for the end of the match.
     let (end_label, end_label_id) = context.new_label();
 
-    // Get the [ConcreteLibFuncId].
+    // Get the [ConcreteLibfuncId].
     let (_function_long_id, libfunc_id) =
         get_concrete_libfunc_id(context.get_db(), statement.function);
 

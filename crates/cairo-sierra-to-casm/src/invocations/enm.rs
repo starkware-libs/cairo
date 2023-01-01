@@ -1,7 +1,7 @@
 use cairo_casm::operand::CellRef;
 use cairo_casm::{casm, casm_extend};
-use cairo_sierra::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
-use cairo_sierra::extensions::ConcreteLibFunc;
+use cairo_sierra::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
+use cairo_sierra::extensions::ConcreteLibfunc;
 use cairo_sierra::ids::ConcreteTypeId;
 use cairo_sierra::program::{BranchInfo, BranchTarget, StatementIdx};
 use cairo_utils::try_extract_matches;
@@ -17,14 +17,14 @@ use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra enum operations.
 pub fn build(
-    libfunc: &EnumConcreteLibFunc,
+    libfunc: &EnumConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        EnumConcreteLibFunc::Init(EnumInitConcreteLibFunc { index, num_variants, .. }) => {
+        EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, num_variants, .. }) => {
             build_enum_init(builder, *index, *num_variants)
         }
-        EnumConcreteLibFunc::Match(_) => build_enum_match(builder),
+        EnumConcreteLibfunc::Match(_) => build_enum_match(builder),
     }
 }
 

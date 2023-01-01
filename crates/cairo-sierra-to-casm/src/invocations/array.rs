@@ -1,7 +1,7 @@
 use cairo_casm::builder::CasmBuilder;
 use cairo_casm::casm_build_extend;
 use cairo_casm::operand::{DerefOrImmediate, ResOperand};
-use cairo_sierra::extensions::array::ArrayConcreteLibFunc;
+use cairo_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_sierra::extensions::felt::FeltBinaryOperator;
 use cairo_sierra::ids::ConcreteTypeId;
 
@@ -11,15 +11,15 @@ use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
-    libfunc: &ArrayConcreteLibFunc,
+    libfunc: &ArrayConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        ArrayConcreteLibFunc::New(_) => build_array_new(builder),
-        ArrayConcreteLibFunc::Append(_) => build_array_append(builder),
-        ArrayConcreteLibFunc::PopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
-        ArrayConcreteLibFunc::At(libfunc) => build_array_at(&libfunc.ty, builder),
-        ArrayConcreteLibFunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::New(_) => build_array_new(builder),
+        ArrayConcreteLibfunc::Append(_) => build_array_append(builder),
+        ArrayConcreteLibfunc::PopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::At(libfunc) => build_array_at(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
     }
 }
 
