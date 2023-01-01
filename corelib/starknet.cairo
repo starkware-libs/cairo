@@ -10,6 +10,8 @@ fn use_system_implicit() implicits(System) {
 extern fn storage_address_const<address>() -> StorageAddress nopanic;
 
 // Only address_domain 0 is currently supported.
+// This parameter is going to be used to access address spaces with different
+// data availability guarantees.
 extern fn storage_read_syscall(
     address_domain: felt, address: StorageAddress,
 ) -> Result::<felt, felt> implicits(GasBuiltin, System) nopanic;
