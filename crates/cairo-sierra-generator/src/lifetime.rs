@@ -100,14 +100,14 @@ fn inner_find_variable_lifetime(
 
     // Go over the block in reverse order, starting from handling the block end.
     match &block.end {
-        cairo_lowering::BlockEnd::Callsite(vars) => {
+        cairo_lowering::FlatBlockEnd::Callsite(vars) => {
             state.use_variables(context, vars, (block_id, block.statements.len()));
         }
-        cairo_lowering::BlockEnd::Return(vars) => {
+        cairo_lowering::FlatBlockEnd::Return(vars) => {
             state.clear();
             state.use_variables(context, vars, (block_id, block.statements.len()));
         }
-        cairo_lowering::BlockEnd::Unreachable => {}
+        cairo_lowering::FlatBlockEnd::Unreachable => {}
     }
 
     for (idx, statement) in block.statements.iter().enumerate().rev() {
