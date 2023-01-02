@@ -1,7 +1,7 @@
 use cairo_utils::ordered_hash_set::OrderedHashSet;
 
 use super::context::LoweringContext;
-use crate::{Variable, VariableId};
+use crate::VariableId;
 
 /// Wrapper around VariableId, guaranteeing that the variable exists inside some [LivingVariables]
 /// struct. Thus, it does not implement copy nor clone.
@@ -57,13 +57,7 @@ impl LivingVariables {
         ctx: &mut LoweringContext<'_>,
         ty: cairo_semantic::TypeId,
     ) -> LivingVar {
-        let ty_info = ctx.db.type_info(ctx.lookup_context.clone(), ty).unwrap_or_default();
-        let var_id = ctx.variables.alloc(Variable {
-            duplicatable: ty_info.duplicatable,
-            droppable: ty_info.droppable,
-            ty,
-            ref_indices: Default::default(),
-        });
+        let var_id = ctx.new_var(ty);
         self.introduce_var(UsableVariable(var_id))
     }
 
