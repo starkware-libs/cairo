@@ -334,11 +334,11 @@
     "0x1",
     "0x1",
     "0x8f26e0f086cc2787",
-    "0x21800215547cb7cd",
+    "0x5c47619c058d3b1b",
     "0x13862ed316aec3c6",
     "0x1",
     "0x3",
-    "0x132c1e288fcd26df",
+    "0x4218fe5864e5505d",
     "0x94700eff4bc4fff8",
     "0xdd9d9fc20319c2ab",
     "0x2",
@@ -364,11 +364,11 @@
     "0x1",
     "0x1",
     "0x1019fc7928c89c74",
-    "0x41e60264b9c89b42",
+    "0x38f77e3d85bd70c8",
     "0x13862ed316aec3c6",
     "0x1",
     "0x3",
-    "0x59946bc9ecac937e",
+    "0x9b934bf674122974",
     "0x947390ff4bc812b5",
     "0xdd9d9fc20319c2ab",
     "0x2",
@@ -2028,7 +2028,7 @@
     "0x1",
     "0x7",
     "0x0",
-    "0x21800215547cb7cd",
+    "0x5c47619c058d3b1b",
     "0x2",
     "0x6",
     "0x7",
@@ -2169,7 +2169,7 @@
     "0x1",
     "0x15",
     "0x0",
-    "0x41e60264b9c89b42",
+    "0x38f77e3d85bd70c8",
     "0x3",
     "0x13",
     "0x14",
@@ -2338,7 +2338,7 @@
     "0x1",
     "0x6",
     "0x0",
-    "0x21800215547cb7cd",
+    "0x5c47619c058d3b1b",
     "0x2",
     "0x5",
     "0x6",
@@ -3145,7 +3145,7 @@
     "0x0",
     "0x34a42c11f822cb6e",
     "0x110",
-    "0x132c1e288fcd26df",
+    "0x4218fe5864e5505d",
     "0x2",
     "0x73b9292e27823975",
     "0xa81e2cdaf6921adc",
@@ -3159,7 +3159,7 @@
     "0x1",
     "0xa81e2cdaf6921adc",
     "0x114",
-    "0x59946bc9ecac937e",
+    "0x9b934bf674122974",
     "0x3",
     "0x73b9292e27823975",
     "0xa81e2cdaf6921adc",
@@ -3274,10 +3274,6 @@
         "array_pop_front<felt>"
       ],
       [
-        2413931690905614285,
-        "function_call<user@hello_starknet::hello_starknet::balance::read>"
-      ],
-      [
         2785814028946806345,
         "rename<GasBuiltin>"
       ],
@@ -3290,16 +3286,16 @@
         "store_temp<core::PanicResult::<core::felt>>"
       ],
       [
+        4104888388073386184,
+        "function_call<user@hello_starknet::hello_starknet::HelloStarknet::balance::write>"
+      ],
+      [
         4351586621465067030,
         "felt_const<0>"
       ],
       [
         4611715306201585493,
         "get_gas"
-      ],
-      [
-        4748485488745683778,
-        "function_call<user@hello_starknet::hello_starknet::balance::write>"
       ],
       [
         4910844232026769822,
@@ -3344,6 +3340,10 @@
       [
         6318534592060038018,
         "store_temp<core::option::Option::<core::felt>>"
+      ],
+      [
+        6649390697571760923,
+        "function_call<user@hello_starknet::hello_starknet::HelloStarknet::balance::read>"
       ],
       [
         6888485821176052388,
@@ -3524,16 +3524,12 @@
         "core::serde::deserialize_felt"
       ],
       [
-        1381512345256011487,
-        "hello_starknet::hello_starknet::balance::read"
-      ],
-      [
         3362148137771961142,
         "hello_starknet::hello_starknet::HelloStarknet::get_balance"
       ],
       [
-        6454902680932094846,
-        "hello_starknet::hello_starknet::balance::write"
+        4762836261547626589,
+        "hello_starknet::hello_starknet::HelloStarknet::balance::read"
       ],
       [
         6580728026897068945,
@@ -3554,6 +3550,10 @@
       [
         9575016065006210357,
         "hello_starknet::hello_starknet::HelloStarknet::__external::get_balance"
+      ],
+      [
+        11210387419336681844,
+        "hello_starknet::hello_starknet::HelloStarknet::balance::write"
       ],
       [
         14488085933457395572,
