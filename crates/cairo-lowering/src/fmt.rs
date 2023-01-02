@@ -1,5 +1,6 @@
 use cairo_debug::DebugWithDb;
 use cairo_semantic::ConcreteVariant;
+use itertools::chain;
 
 use crate::db::LoweringGroup;
 use crate::lower::Lowered;
@@ -74,11 +75,15 @@ impl DebugWithDb<LoweredFormatter<'_>> for BlockEnd {
         let outputs = match &self {
             BlockEnd::Callsite(outputs) => {
                 write!(f, "  Callsite(")?;
-                outputs
+                outputs.clone()
             }
-            BlockEnd::Return(outputs) => {
+            BlockEnd::Return { refs, returns } => {
                 write!(f, "  Return(")?;
-                outputs
+                chain!(refs, returns).copied().collect()
+            }
+            BlockEnd::Panic { refs, data } => {
+                write!(f, "  Panic(")?;
+                chain!(refs, [data]).copied().collect()
             }
             BlockEnd::Unreachable => {
                 return write!(f, "  Unreachable");

@@ -30,7 +30,7 @@ use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::LoweringContextBuilder;
 use crate::objects::{BlockId, Variable};
 
-mod context;
+pub mod context;
 mod external;
 pub mod implicits;
 mod lower_if;
@@ -223,8 +223,8 @@ pub fn lower_statement(
         }) => {
             log::trace!("Lowering a return statement.");
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
-            let return_vars = get_full_return_vars(ctx, scope, lowered_expr)?;
-            return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(return_vars)));
+            let (refs, returns) = get_full_return_vars(ctx, scope, lowered_expr)?;
+            return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return { refs, returns }));
         }
     }
     Ok(())
@@ -236,7 +236,7 @@ fn get_full_return_vars(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     value_expr: LoweredExpr,
-) -> Result<Vec<LivingVar>, StatementLoweringFlowError> {
+) -> Result<(Vec<LivingVar>, Vec<LivingVar>), StatementLoweringFlowError> {
     let lowered_expr = maybe_wrap_with_panic(ctx, value_expr, scope)?;
     let value_vars = match lowered_expr {
         LoweredExpr::Tuple(tys) if tys.is_empty() => vec![],
@@ -274,7 +274,7 @@ fn get_plain_full_return_vars(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     value_vars: Vec<LivingVar>,
-) -> Result<Vec<LivingVar>, LoweringFlowError> {
+) -> Result<(Vec<LivingVar>, Vec<LivingVar>), LoweringFlowError> {
     let implicit_vars = ctx
         .implicits
         .iter()
@@ -295,7 +295,7 @@ fn get_plain_full_return_vars(
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(chain!(implicit_vars, ref_vars, value_vars).collect())
+    Ok((chain!(implicit_vars, ref_vars).collect(), value_vars))
 }
 
 // TODO(spapini): Separate match pattern from non-match (single) patterns in the semantic
@@ -583,8 +583,8 @@ fn lower_panic(
     );
     let value_var =
         generators::EnumConstruct { input: data_var, variant: func_err_variant }.add(ctx, scope);
-    let res = get_plain_full_return_vars(ctx, scope, vec![value_var])?;
-    Err(LoweringFlowError::Return(res))
+    let (refs, returns) = get_plain_full_return_vars(ctx, scope, vec![value_var])?;
+    Err(LoweringFlowError::Return { refs, returns })
 }
 
 /// Lowers an expression of type [cairo_semantic::ExprMatch].
@@ -1047,7 +1047,7 @@ fn lower_error_propagate(
                             variant: func_err_variant.clone(),
                         }
                         .add(ctx, subscope);
-                        let res = if panic_error {
+                        let (refs, returns) = if panic_error {
                             get_plain_full_return_vars(ctx, subscope, vec![value_var])
                                 .ok()
                                 .to_maybe()?
@@ -1056,7 +1056,7 @@ fn lower_error_propagate(
                                 .ok()
                                 .to_maybe()?
                         };
-                        Ok(BlockScopeEnd::Return(res))
+                        Ok(BlockScopeEnd::Return { refs, returns })
                     })
                     .map_err(LoweringFlowError::Failed)?,
             ])
@@ -1130,7 +1130,7 @@ fn lower_optimized_extern_error_propagate(
                                 variant: func_err_variant.clone(),
                             }
                             .add(ctx, subscope);
-                            let res = if panic_error {
+                            let (refs, returns) = if panic_error {
                                 get_plain_full_return_vars(ctx, subscope, vec![value_var])
                                     .ok()
                                     .to_maybe()?
@@ -1143,7 +1143,7 @@ fn lower_optimized_extern_error_propagate(
                                 .ok()
                                 .to_maybe()?
                             };
-                            Ok(BlockScopeEnd::Return(res))
+                            Ok(BlockScopeEnd::Return { refs, returns })
                         })
                         .map_err(LoweringFlowError::Failed)?
                 },
