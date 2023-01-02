@@ -5,10 +5,8 @@ use cairo_semantic::corelib::{
     core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
     get_enum_concrete_variant, get_panic_ty, jump_nz_nonzero_variant, jump_nz_zero_variant,
 };
-use cairo_semantic::expr::fmt::ExprFormatter;
 use cairo_semantic::items::enm::SemanticEnumEx;
-use cairo_semantic::items::imp::ImplLookupContext;
-use cairo_semantic::{ConcreteTypeId, GenericArgumentId, Mutability, TypeLongId, VarId};
+use cairo_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
 use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_utils::{extract_matches, try_extract_matches};
@@ -26,8 +24,9 @@ use self::lower_if::lower_expr_if;
 use self::scope::{generators, BlockFlowMerger, BlockMergerFinalized};
 use self::variables::LivingVar;
 use crate::db::LoweringGroup;
+use crate::diagnostic::LoweringDiagnostic;
 use crate::diagnostic::LoweringDiagnosticKind::*;
-use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
+use crate::lower::context::LoweringContextBuilder;
 use crate::objects::{Block, BlockId, Variable};
 
 mod context;
@@ -57,61 +56,36 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
     let is_empty_semantic_diagnostics =
         db.free_function_declaration_diagnostics(free_function_id).is_empty()
             && db.free_function_definition_diagnostics(free_function_id).is_empty();
-    let function_def = db.free_function_definition(free_function_id)?;
-    let generic_params = db.free_function_declaration_generic_params(free_function_id)?;
-    let signature = db.free_function_declaration_signature(free_function_id)?;
-
-    let implicits = db.free_function_all_implicits_vec(free_function_id)?;
     // Params.
-    let ref_params = signature
-        .params
-        .iter()
-        .filter(|param| param.mutability == Mutability::Reference)
-        .map(|param| VarId::Param(param.id))
-        .collect_vec();
+
+    let lowering_builder = LoweringContextBuilder::new(db, free_function_id)?;
+    let mut ctx = lowering_builder.ctx()?;
+
     let input_semantic_vars: Vec<cairo_semantic::Variable> =
-        signature.params.iter().cloned().map(cairo_semantic::Variable::Param).collect();
+        ctx.signature.params.iter().cloned().map(cairo_semantic::Variable::Param).collect();
+    // TODO(spapini): Build semantic_defs in semantic model.
     let (input_semantic_var_ids, input_var_tys): (Vec<_>, Vec<_>) = input_semantic_vars
         .iter()
         .map(|semantic_var| (semantic_var.id(), semantic_var.ty()))
         .unzip();
-    let input_var_tys = chain!(implicits.clone(), input_var_tys).collect();
-
-    let implicits_ref = &implicits;
-    let mut ctx = LoweringContext {
-        db,
-        function_def: &function_def,
-        signature,
-        may_panic: db.free_function_may_panic(free_function_id)?,
-        diagnostics: LoweringDiagnostics::new(free_function_id.module_file(db.upcast())),
-        variables: Arena::default(),
-        blocks: Arena::default(),
-        semantic_defs: UnorderedHashMap::default(),
-        ref_params: &ref_params,
-        implicits: implicits_ref,
-        lookup_context: ImplLookupContext {
-            module_id: free_function_id.parent_module(db.upcast()),
-            extra_modules: vec![],
-            generic_params,
-        },
-        expr_formatter: ExprFormatter { db: db.upcast(), free_function_id },
-    };
+    for semantic_var in input_semantic_vars {
+        ctx.semantic_defs.insert(semantic_var.id(), semantic_var);
+    }
+    let input_var_tys = chain!(ctx.implicits.iter().copied(), input_var_tys).collect();
+    let ref_params = ctx.ref_params;
 
     let root = if is_empty_semantic_diagnostics {
-        // TODO(spapini): Build semantic_defs in semantic model.
-        for semantic_var in input_semantic_vars {
-            ctx.semantic_defs.insert(semantic_var.id(), semantic_var);
-        }
-
         // Fetch body block expr.
-        let semantic_block =
-            extract_matches!(&function_def.exprs[function_def.body], cairo_semantic::Expr::Block);
+        let semantic_block = extract_matches!(
+            &ctx.function_def.exprs[ctx.function_def.body],
+            cairo_semantic::Expr::Block
+        );
         // Lower block to a BlockSealed.
         let (block_sealed_opt, mut merger_finalized) =
-            BlockFlowMerger::with_root(&mut ctx, &ref_params, |ctx, merger| {
+            BlockFlowMerger::with_root(&mut ctx, ref_params, |ctx, merger| {
                 merger.run_in_subscope(ctx, input_var_tys, |ctx, scope, variables| {
                     let mut variables_iter = variables.into_iter();
-                    for ty in implicits_ref {
+                    for ty in ctx.implicits {
                         let var = variables_iter.next().to_maybe()?;
                         scope.put_implicit(*ty, var);
                     }
