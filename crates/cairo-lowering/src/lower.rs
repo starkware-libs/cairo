@@ -88,12 +88,12 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
                     let mut variables_iter = variables.into_iter();
                     for ty in ctx.implicits {
                         let var = variables_iter.next().to_maybe()?;
-                        scope.put_implicit(*ty, var);
+                        scope.put_implicit(ctx, *ty, var);
                     }
 
                     // Initialize implicits and params.
                     for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables_iter) {
-                        scope.put_semantic_variable(semantic_var_id, var);
+                        scope.put_semantic_variable(ctx, semantic_var_id, var);
                     }
                     lower_block(ctx, scope, semantic_block, true)
                 })
@@ -321,7 +321,7 @@ fn lower_single_pattern(
             let sem_var = cairo_semantic::Variable::Local(sem_var.clone());
             // Deposit the owned variable in the semantic variables store.
             let var = lowered_expr.var(ctx, scope)?;
-            scope.put_semantic_variable(sem_var.id(), var);
+            scope.put_semantic_variable(ctx, sem_var.id(), var);
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
@@ -438,7 +438,7 @@ fn lower_expr_block(
         end_info: finalized_merger.end_info.clone(),
     })
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger)
+    lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
 /// Lowers an expression of type [cairo_semantic::ExprFunctionCall].
@@ -527,11 +527,11 @@ fn lower_expr_function_call(
 
     // Rebind the implicits.
     for (implicit_type, implicit_output) in zip_eq(callee_implicit_types, implicit_outputs) {
-        scope.put_implicit(implicit_type, implicit_output);
+        scope.put_implicit(ctx, implicit_type, implicit_output);
     }
     // Rebind the ref variables.
     for (semantic_var_id, output_var) in zip_eq(&expr.ref_args, ref_outputs) {
-        scope.put_semantic_variable(*semantic_var_id, output_var);
+        scope.put_semantic_variable(ctx, *semantic_var_id, output_var);
     }
 
     if may_panic {
@@ -668,7 +668,7 @@ fn lower_expr_match(
         end_info: finalized_merger.end_info.clone(),
     })
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger)
+    lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
 /// Lowers a match expression on a LoweredExpr::ExternEnum lowered expression.
@@ -719,7 +719,12 @@ fn lower_optimized_extern_match(
                         }
 
                         // Bind the arm inputs to implicits and semantic variables.
-                        match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
+                        match_extern_arm_ref_args_bind(
+                            ctx,
+                            &mut arm_inputs,
+                            &extern_enum,
+                            subscope,
+                        );
 
                         let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs);
                         match lower_single_pattern(
@@ -754,7 +759,7 @@ fn lower_optimized_extern_match(
         end_info: finalized_merger.end_info.clone(),
     }
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger)
+    lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
 /// Lowers an expression of type [cairo_semantic::ExprMatch] where the matched expression is a felt.
@@ -826,7 +831,7 @@ fn lower_expr_match_felt(
         end_info: finalized_merger.end_info.clone(),
     })
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger)
+    lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
 /// Extracts concrete enum and variants from a match expression. Assumes it is indeed a concrete
@@ -1068,7 +1073,7 @@ fn lower_error_propagate(
         end_info: finalized_merger.end_info.clone(),
     })
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger)
+    lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
 /// Lowers an error propagation expression on a LoweredExpr::ExternEnum lowered expression.
@@ -1093,7 +1098,12 @@ fn lower_optimized_extern_error_propagate(
                         match_extern_variant_arm_input_types(ctx, ok_variant.ty, &extern_enum);
                     merger
                         .run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
-                            match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
+                            match_extern_arm_ref_args_bind(
+                                ctx,
+                                &mut arm_inputs,
+                                &extern_enum,
+                                subscope,
+                            );
 
                             let variant_expr = extern_facade_expr(ctx, ok_variant.ty, arm_inputs);
                             Ok(BlockScopeEnd::Callsite(Some(
@@ -1107,7 +1117,12 @@ fn lower_optimized_extern_error_propagate(
                         match_extern_variant_arm_input_types(ctx, err_variant.ty, &extern_enum);
                     merger
                         .run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
-                            match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
+                            match_extern_arm_ref_args_bind(
+                                ctx,
+                                &mut arm_inputs,
+                                &extern_enum,
+                                subscope,
+                            );
                             let variant_expr = extern_facade_expr(ctx, err_variant.ty, arm_inputs);
                             let input = variant_expr.var(ctx, subscope).ok().to_maybe()?;
                             let value_var = generators::EnumConstruct {
@@ -1146,7 +1161,7 @@ fn lower_optimized_extern_error_propagate(
         end_info: finalized_merger.end_info.clone(),
     }
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger)
+    lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
 /// Returns the input types for an extern match variant arm.
@@ -1163,6 +1178,7 @@ fn match_extern_variant_arm_input_types(
 
 /// Binds input references and implicits when matching on extern functions.
 fn match_extern_arm_ref_args_bind(
+    ctx: &mut LoweringContext<'_>,
     arm_inputs: &mut Vec<LivingVar>,
     extern_enum: &LoweredExprExternEnum,
     subscope: &mut BlockScope,
@@ -1170,12 +1186,12 @@ fn match_extern_arm_ref_args_bind(
     let implicit_outputs: Vec<_> = arm_inputs.drain(0..extern_enum.implicits.len()).collect();
     // Bind the implicits.
     for (ty, output_var) in zip_eq(&extern_enum.implicits, implicit_outputs) {
-        subscope.put_implicit(*ty, output_var);
+        subscope.put_implicit(ctx, *ty, output_var);
     }
     let ref_outputs: Vec<_> = arm_inputs.drain(0..extern_enum.ref_args.len()).collect();
     // Bind the ref variables.
     for (semantic_var_id, output_var) in zip_eq(&extern_enum.ref_args, ref_outputs) {
-        subscope.put_semantic_variable(*semantic_var_id, output_var);
+        subscope.put_semantic_variable(ctx, *semantic_var_id, output_var);
     }
 }
 
@@ -1191,7 +1207,7 @@ fn lower_expr_assignment(
     );
     scope.try_ensure_semantic_variable(ctx, expr.var);
     let var = lower_expr(ctx, scope, expr.rhs)?.var(ctx, scope)?;
-    scope.put_semantic_variable(expr.var, var);
+    scope.put_semantic_variable(ctx, expr.var, var);
     Ok(LoweredExpr::Tuple(vec![]))
 }
 
@@ -1229,6 +1245,7 @@ fn take_semantic_var(
 /// Binds the semantic variables from the call
 /// Returns the proper flow error if needed.
 fn lowered_expr_from_block_result(
+    ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     block_result: generators::CallBlockResult,
     finalized_merger: BlockMergerFinalized,
@@ -1238,23 +1255,23 @@ fn lowered_expr_from_block_result(
             let mut pushes_iter = pushes.into_iter();
             for implicit_type in finalized_merger.outer_implicit_info.pushes {
                 let var = pushes_iter.next().unwrap();
-                scope.put_implicit(implicit_type, var);
+                scope.put_implicit(ctx, implicit_type, var);
                 scope.mark_implicit_changed(implicit_type);
             }
             for (semantic_var_id, var) in
                 zip_eq(finalized_merger.outer_var_info.pushes, pushes_iter)
             {
-                scope.put_semantic_variable(semantic_var_id, var);
+                scope.put_semantic_variable(ctx, semantic_var_id, var);
             }
 
             // Bring back the unused implicits.
             for (ty, implicit_var) in finalized_merger.outer_implicit_info.unchanged {
-                scope.put_implicit(ty, implicit_var);
+                scope.put_implicit(ctx, ty, implicit_var);
             }
 
             // Bring back the untouched semantic vars.
             for (semantic_var_id, var) in finalized_merger.outer_var_info.bring_back {
-                scope.put_semantic_variable(semantic_var_id, var);
+                scope.put_semantic_variable(ctx, semantic_var_id, var);
             }
 
             Ok(match maybe_output {

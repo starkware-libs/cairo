@@ -101,7 +101,11 @@ fn format_var_with_ty(
     ctx: &LoweredFormatter<'_>,
 ) -> std::fmt::Result {
     var_id.fmt(f, ctx)?;
-    write!(f, ": {}", ctx.lowered.variables[var_id].ty.format(ctx.db.upcast()))
+    let var = &ctx.lowered.variables[var_id];
+    for ref_index in var.ref_indices.iter() {
+        write!(f, "[r{}]", ref_index)?;
+    }
+    write!(f, ": {}", var.ty.format(ctx.db.upcast()))
 }
 
 impl DebugWithDb<LoweredFormatter<'_>> for BlockId {

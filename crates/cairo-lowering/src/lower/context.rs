@@ -209,11 +209,11 @@ impl LoweredExprExternEnum {
 
                         // Bind implicits.
                         for (ty, output_var) in zip_eq(&self.implicits, implicit_outputs) {
-                            subscope.put_implicit(*ty, output_var);
+                            subscope.put_implicit(ctx, *ty, output_var);
                         }
                         // Bind the ref variables.
                         for (semantic_var_id, output_var) in zip_eq(&self.ref_args, ref_outputs) {
-                            subscope.put_semantic_variable(*semantic_var_id, output_var);
+                            subscope.put_semantic_variable(ctx, *semantic_var_id, output_var);
                         }
 
                         Ok(result)
@@ -235,7 +235,8 @@ impl LoweredExprExternEnum {
             end_info: finalized_merger.end_info.clone(),
         }
         .add(ctx, scope);
-        lowered_expr_from_block_result(scope, call_block_result, finalized_merger)?.var(ctx, scope)
+        lowered_expr_from_block_result(ctx, scope, call_block_result, finalized_merger)?
+            .var(ctx, scope)
     }
 }
 
