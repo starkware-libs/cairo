@@ -67,9 +67,15 @@ impl VariableLifetimeResult {
 
 /// Given the lowering of a function, returns lifetime information for all the variables.
 /// See [VariableLifetimeResult].
-pub fn find_variable_lifetime(lowered_function: &Lowered) -> Maybe<VariableLifetimeResult> {
-    let mut context =
-        VariableLifetimeContext { lowered_function, res: VariableLifetimeResult::default() };
+pub fn find_variable_lifetime(
+    lowered_function: &Lowered,
+    local_vars: &OrderedHashSet<VariableId>,
+) -> Maybe<VariableLifetimeResult> {
+    let mut context = VariableLifetimeContext {
+        lowered_function,
+        local_vars,
+        res: VariableLifetimeResult::default(),
+    };
     let mut state = VariableLifetimeState::default();
     let root_block_id = lowered_function.root?;
     inner_find_variable_lifetime(&mut context, root_block_id, &mut state);
@@ -80,6 +86,7 @@ pub fn find_variable_lifetime(lowered_function: &Lowered) -> Maybe<VariableLifet
 /// Context information for [inner_find_variable_lifetime] and its helper functions.
 struct VariableLifetimeContext<'a> {
     lowered_function: &'a Lowered,
+    local_vars: &'a OrderedHashSet<VariableId>,
     res: VariableLifetimeResult,
 }
 
@@ -226,6 +233,12 @@ impl VariableLifetimeState {
                 // it in the other branch (unlike the cases where it is defined before the match).
                 // Therefore, we remove it from `used_variables`.
                 self.used_variables.swap_remove(&sierra_gen_var);
+            }
+
+            if context.local_vars.contains(var_id) {
+                // When a local variable is defined, the corresponding uninitialized variable is
+                // used (by the `store_local` libfunc).
+                self.used_variables.insert(SierraGenVar::UninitializedLocal(*var_id));
             }
         }
     }
