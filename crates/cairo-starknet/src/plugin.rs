@@ -373,12 +373,35 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> R
                 "
                 mod $name$ {{
                     fn read() -> felt {{
-                        starknet::storage_read_syscall(
-                            starknet::storage_address_const::<{address}>())
+                        // Only address_domain 0 is currently supported.
+                        let address_domain = 0;
+                        match starknet::storage_read_syscall(
+                            address_domain,
+                            starknet::storage_address_const::<{address}>(),
+                        ) {{
+                            Result::Ok(x) => x,
+                            Result::Err(revert_reason) => {{
+                                let mut err_data = array_new::<felt>();
+                                array_append::<felt>(err_data, revert_reason);
+                                panic(err_data)
+                            }},
+                        }}
                     }}
-                    fn write(value: felt) -> Result::<(), felt> {{
-                        starknet::storage_write_syscall(
-                            starknet::storage_address_const::<{address}>(), value)
+                    fn write(value: felt) {{
+                        // Only address_domain 0 is currently supported.
+                        let address_domain = 0;
+                        match starknet::storage_write_syscall(
+                            address_domain,
+                            starknet::storage_address_const::<{address}>(),
+                            value,
+                        ) {{
+                            Result::Ok(()) => {{}},
+                            Result::Err(revert_reason) => {{
+                                let mut err_data = array_new::<felt>();
+                                array_append::<felt>(err_data, revert_reason);
+                                panic(err_data)
+                            }},
+                        }}
                     }}
                 }}"
             )

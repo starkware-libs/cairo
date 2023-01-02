@@ -105,15 +105,36 @@ mod HelloStarknet {
 }
 mod balance {
     fn read() -> felt {
-        starknet::storage_read_syscall(
-            starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-        )
-    }
-    fn write(value: felt) -> Result::<(), felt> {
-        starknet::storage_write_syscall(
+        // Only address_domain 0 is currently supported.
+        let address_domain = 0;
+        match starknet::storage_read_syscall(
+            address_domain,
             starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>(),
-            value
-        )
+        ) {
+            Result::Ok(x) => x,
+            Result::Err(revert_reason) => {
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, revert_reason);
+                panic(err_data)
+            },
+        }
+    }
+    fn write(value: felt) {
+        // Only address_domain 0 is currently supported.
+        let address_domain = 0;
+        match starknet::storage_write_syscall(
+            address_domain,
+            starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>(),
+            value,
+        ) {
+            Result::Ok(()) => {
+            },
+            Result::Err(revert_reason) => {
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, revert_reason);
+                panic(err_data)
+            },
+        }
     }
 }
 

@@ -57,11 +57,11 @@ pub fn check_diagnostics(
                 }
             }
 
-            let diag = db.module_sierra_diagnostics(*module_id);
-            if !diag.get_all().is_empty() {
-                found_diagnostics = true;
-                on_diagnostic(diag.format(db));
-            }
+            // let diag = db.module_sierra_diagnostics(*module_id);
+            // if !diag.get_all().is_empty() {
+            //     found_diagnostics = true;
+            //     on_diagnostic(diag.format(db));
+            // }
         }
     }
     found_diagnostics
