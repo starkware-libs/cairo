@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use cairo_casm::instructions::Instruction;
 use cairo_casm::{casm, casm_extend};
-use cairo_rs::vm::errors::vm_errors::VirtualMachineError;
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_sierra::extensions::ConcreteType;
@@ -14,6 +13,7 @@ use cairo_sierra_gas::gas_info::GasInfo;
 use cairo_sierra_to_casm::compiler::{CairoProgram, CompilationError};
 use cairo_sierra_to_casm::metadata::Metadata;
 use cairo_utils::extract_matches;
+use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use itertools::chain;
 use num_bigint::BigInt;
 use thiserror::Error;
