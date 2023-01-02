@@ -8,7 +8,7 @@ description = ""
 
 [dev-dependencies]
 assert_matches.workspace = true
-cairo-rs.workspace = true
+cairo-vm.workspace = true
 cairo-casm = { path = "../crates/cairo-casm" }
 cairo-compiler = { path = "../crates/cairo-compiler" }
 cairo-defs = { path = "../crates/cairo-defs" }

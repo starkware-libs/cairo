@@ -33,12 +33,15 @@ mod TestContract {
     #[external]
     fn set_something(ref arg: felt, num: felt) {
     }
+
+
     trait __abi {
     fn get_something(
         ref arg: felt, num: felt
         ) -> felt; fn set_something(
         ref arg: felt, num: felt
     ); }
+
     mod __external {
         fn get_something(mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
@@ -50,6 +53,7 @@ mod TestContract {
                     panic(err_data);
                 },
             }
+
             let mut __arg_arg = match serde::deserialize_felt(data) {
                 Option::Some(x) => x,
                 Option::None(()) => {
@@ -68,6 +72,7 @@ mod TestContract {
             };
             if array_len::<felt>(data) != 0_u128 {
                 starknet::use_system_implicit();
+
                 let mut err_data = array_new::<felt>();
                 array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
@@ -88,6 +93,7 @@ mod TestContract {
                     panic(err_data);
                 },
             }
+
             let mut __arg_arg = match serde::deserialize_felt(data) {
                 Option::Some(x) => x,
                 Option::None(()) => {
@@ -106,6 +112,7 @@ mod TestContract {
             };
             if array_len::<felt>(data) != 0_u128 {
                 starknet::use_system_implicit();
+
                 let mut err_data = array_new::<felt>();
                 array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);

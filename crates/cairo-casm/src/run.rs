@@ -1,17 +1,17 @@
 use std::any::Any;
 use std::collections::HashMap;
 
-use cairo_rs::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
-use cairo_rs::serde::deserialize_program::{
+use cairo_utils::extract_matches;
+use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
+use cairo_vm::serde::deserialize_program::{
     ApTracking, FlowTrackingData, HintParams, ReferenceManager,
 };
-use cairo_rs::types::exec_scope::ExecutionScopes;
-use cairo_rs::types::program::Program;
-use cairo_rs::types::relocatable::{MaybeRelocatable, Relocatable};
-use cairo_rs::vm::errors::vm_errors::VirtualMachineError;
-use cairo_rs::vm::runners::cairo_runner::CairoRunner;
-use cairo_rs::vm::vm_core::VirtualMachine;
-use cairo_utils::extract_matches;
+use cairo_vm::types::exec_scope::ExecutionScopes;
+use cairo_vm::types::program::Program;
+use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
+use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
+use cairo_vm::vm::runners::cairo_runner::CairoRunner;
+use cairo_vm::vm::vm_core::VirtualMachine;
 use num_bigint::BigInt;
 
 use crate::hints::Hint;
@@ -91,7 +91,7 @@ struct StarknetExecScope {
 impl HintProcessor for CairoHintProcessor {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
-        &self,
+        &mut self,
         vm: &mut VirtualMachine,
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
@@ -251,7 +251,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
         .map(MaybeRelocatable::from)
         .collect();
 
-    let hint_processor = CairoHintProcessor::new(instructions);
+    let mut hint_processor = CairoHintProcessor::new(instructions);
 
     let program = Program {
         builtins,
@@ -274,10 +274,10 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 
-    runner.run_until_pc(end, &mut vm, &hint_processor)?;
+    runner.run_until_pc(end, &mut vm, &mut hint_processor)?;
     // TODO(alont) Remove this hack once the VM no longer squashes Nones at the end of segments.
     vm.insert_value(&vm.get_ap().add_int_mod(&1.into(), &get_prime())?, BigInt::from(0))?;
-    runner.end_run(true, false, &mut vm, &hint_processor).map_err(Box::new)?;
+    runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
     Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
 }
