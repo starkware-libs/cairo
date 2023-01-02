@@ -520,7 +520,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 5})
+test::foo: OrderedHashMap({Step: 6})
 
 //! > sierra_code
 type u128 = u128;
