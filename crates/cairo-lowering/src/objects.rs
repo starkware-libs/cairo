@@ -4,10 +4,12 @@
 //! compound expression.
 
 use cairo_semantic::{ConcreteEnumId, ConcreteVariant};
+use cairo_utils::ordered_hash_set::OrderedHashSet;
 use id_arena::Id;
 use num_bigint::BigInt;
+pub mod blocks;
+pub use blocks::BlockId;
 
-pub type BlockId = Id<Block>;
 pub type VariableId = Id<Variable>;
 
 /// A block of statements. Each block gets inputs and outputs, and is composed of
@@ -52,6 +54,10 @@ pub struct Variable {
     pub droppable: bool,
     /// Can the type be (trivially) duplicated.
     pub duplicatable: bool,
+    /// If this variable is a used as a reference variable (including implicits) of the current
+    /// function, what are the indices of said reference variables?
+    /// Note that a lowered variable might be assigned to multiple reference variables.
+    pub ref_indices: OrderedHashSet<usize>,
     /// Semantic type of the variable.
     pub ty: cairo_semantic::TypeId,
 }

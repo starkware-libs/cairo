@@ -56,9 +56,19 @@ impl BlockScope {
     // was pulled, so that we remember to push it later.
     pub fn put_semantic_variable(
         &mut self,
+        ctx: &mut LoweringContext<'_>,
         semantic_var_id: cairo_semantic::VarId,
         var: LivingVar,
     ) {
+        if let Some((implicit_index, _)) = ctx
+            .ref_params
+            .iter()
+            .enumerate()
+            .find(|(_, ref_semantic_var_id)| **ref_semantic_var_id == semantic_var_id)
+        {
+            ctx.variables[var.var_id()].ref_indices.insert(ctx.implicits.len() + implicit_index);
+        }
+
         self.semantic_variables.put(semantic_var_id, var);
     }
 
@@ -103,7 +113,20 @@ impl BlockScope {
     }
 
     /// Puts an implicit variable and its owned lowered variable into the current scope.
-    pub fn put_implicit(&mut self, ty: cairo_semantic::TypeId, var: LivingVar) {
+    pub fn put_implicit(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        ty: cairo_semantic::TypeId,
+        var: LivingVar,
+    ) {
+        let (implicit_index, _) = ctx
+            .implicits
+            .iter()
+            .enumerate()
+            .find(|(_, imp_ty)| **imp_ty == ty)
+            .expect("Unknown implicit.");
+        ctx.variables[var.var_id()].ref_indices.insert(implicit_index);
+
         self.implicits.insert(ty, var);
     }
 
@@ -422,7 +445,7 @@ impl BlockFlowMerger {
                 .collect();
             let mut block_scope = BlockScope { merger, living_variables, ..BlockScope::default() };
             for (ty, living_var) in implicit_vars.into_iter() {
-                block_scope.put_implicit(ty, living_var);
+                block_scope.put_implicit(ctx, ty, living_var);
             }
 
             // Set inputs.
