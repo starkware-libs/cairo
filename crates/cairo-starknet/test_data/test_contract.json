@@ -329,11 +329,11 @@
     "0x1",
     "0x1",
     "0x8f26e0f086cc2787",
-    "0x1817a340140bd13b",
+    "0x161cb8f5a90f1ec5",
     "0x13862ed316aec3c6",
     "0x1",
     "0x3",
-    "0x1b3e89ae4559484d",
+    "0x253646d1241f703f",
     "0xf93bac73abde77df",
     "0xdd9d9fc20319c2ab",
     "0x2",
@@ -369,11 +369,11 @@
     "0x1",
     "0x1",
     "0x1019fc7928c89c74",
-    "0xda819ad0c3ff3ee8",
+    "0x7c0b66f97d94213a",
     "0x13862ed316aec3c6",
     "0x1",
     "0x3",
-    "0x8796ffe9ef524444",
+    "0x5321223df47fae5e",
     "0x6e3f08889c24dfe8",
     "0xa159ac87b7eaf0ce",
     "0x1",
@@ -2346,7 +2346,7 @@
     "0x1",
     "0x9",
     "0x0",
-    "0x1817a340140bd13b",
+    "0x161cb8f5a90f1ec5",
     "0x2",
     "0x8",
     "0x9",
@@ -2505,7 +2505,7 @@
     "0x1",
     "0x19",
     "0x0",
-    "0xda819ad0c3ff3ee8",
+    "0x7c0b66f97d94213a",
     "0x3",
     "0x17",
     "0x18",
@@ -3404,7 +3404,7 @@
     "0x0",
     "0x34a42c11f822cb6e",
     "0x12e",
-    "0x1b3e89ae4559484d",
+    "0x253646d1241f703f",
     "0x2",
     "0x73b9292e27823975",
     "0xa81e2cdaf6921adc",
@@ -3418,7 +3418,7 @@
     "0x1",
     "0xa81e2cdaf6921adc",
     "0x132",
-    "0x8796ffe9ef524444",
+    "0x5321223df47fae5e",
     "0x3",
     "0x73b9292e27823975",
     "0xa81e2cdaf6921adc",
@@ -3531,8 +3531,8 @@
         "array_len<felt>"
       ],
       [
-        1736035676984168763,
-        "function_call<user@test_contract::test_contract::my_storage_var::read>"
+        1593351733425151685,
+        "function_call<user@test_contract::test_contract::TestContract::my_storage_var::read>"
       ],
       [
         1901508621325806494,
@@ -3659,6 +3659,10 @@
         "storage_write_syscall"
       ],
       [
+        8938351107186630970,
+        "function_call<user@test_contract::test_contract::TestContract::my_storage_var::write>"
+      ],
+      [
         9224840045131170222,
         "store_temp<core::bool>"
       ],
@@ -3739,10 +3743,6 @@
         "drop<Array<felt>>"
       ],
       [
-        15745035993696124648,
-        "function_call<user@test_contract::test_contract::my_storage_var::write>"
-      ],
-      [
         15909273028998514584,
         "enum_init<core::bool, 0>"
       ],
@@ -3801,8 +3801,8 @@
         "core::serde::deserialize_felt"
       ],
       [
-        1963157869160908877,
-        "test_contract::test_contract::my_storage_var::read"
+        2681408492213858367,
+        "test_contract::test_contract::TestContract::my_storage_var::read"
       ],
       [
         3930257060658713911,
@@ -3811,6 +3811,10 @@
       [
         5755811285662139206,
         "test_contract::test_contract::TestContract::empty"
+      ],
+      [
+        5990106628869828190,
+        "test_contract::test_contract::TestContract::my_storage_var::write"
       ],
       [
         6262191985281949397,
@@ -3827,10 +3831,6 @@
       [
         9125686713590962028,
         "core::integer::u128_ne"
-      ],
-      [
-        9770277821834478660,
-        "test_contract::test_contract::my_storage_var::write"
       ],
       [
         14488085933457395572,

@@ -36,6 +36,7 @@ mod TestContract {
     fn set_something(ref arg: felt, num: felt) {
     }
 
+
     trait __abi {
     fn get_something(
         ref arg: felt, num: felt

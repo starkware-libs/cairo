@@ -13,8 +13,8 @@ mod TestContract {
 
     #[external]
     fn test(ref arg: felt, arg1: felt, arg2: felt) -> felt {
-        let x = super::my_storage_var::read();
-        super::my_storage_var::write(x + 1);
+        let x = my_storage_var::read();
+        my_storage_var::write(x + 1);
         x + internal_func()
     }
 

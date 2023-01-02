@@ -17,44 +17,44 @@ mod TestContract {
 mod TestContract {
     struct Storage { storage_var: felt, }
 
+    mod storage_var {
+        fn read() -> felt {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            match starknet::storage_read_syscall(
+                address_domain,
+                starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>(),
+            ) {
+                Result::Ok(x) => x,
+                Result::Err(revert_reason) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, revert_reason);
+                    panic(err_data)
+                },
+            }
+        }
+        fn write(value: felt) {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            match starknet::storage_write_syscall(
+                address_domain,
+                starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>(),
+                value,
+            ) {
+                Result::Ok(()) => {
+                },
+                Result::Err(revert_reason) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, revert_reason);
+                    panic(err_data)
+                },
+            }
+        }
+    }
     trait __abi {
     }
 
     mod __external {
-    }
-}
-mod storage_var {
-    fn read() -> felt {
-        // Only address_domain 0 is currently supported.
-        let address_domain = 0;
-        match starknet::storage_read_syscall(
-            address_domain,
-            starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>(),
-        ) {
-            Result::Ok(x) => x,
-            Result::Err(revert_reason) => {
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, revert_reason);
-                panic(err_data)
-            },
-        }
-    }
-    fn write(value: felt) {
-        // Only address_domain 0 is currently supported.
-        let address_domain = 0;
-        match starknet::storage_write_syscall(
-            address_domain,
-            starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>(),
-            value,
-        ) {
-            Result::Ok(()) => {
-            },
-            Result::Err(revert_reason) => {
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, revert_reason);
-                panic(err_data)
-            },
-        }
     }
 }
 

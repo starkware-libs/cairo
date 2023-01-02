@@ -18,12 +18,12 @@ mod TestContract {
 
     #[external]
     fn set_value(a: felt) {
-        super::value::write(a);
+        value::write(a);
     }
 
     #[view]
     fn get_value() -> felt {
-        super::value::read()
+        value::read()
     }
 }
 
