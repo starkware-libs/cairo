@@ -1,7 +1,11 @@
+use std::sync::Arc;
+
+use cairo_defs::ids::{FreeFunctionId, LanguageElementId};
 use cairo_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_semantic::expr::fmt::ExprFormatter;
 use cairo_semantic::items::enm::SemanticEnumEx;
 use cairo_semantic::items::imp::ImplLookupContext;
+use cairo_semantic::{Mutability, VarId};
 use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
@@ -16,13 +20,65 @@ use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::lower::scope::BlockFlowMerger;
 use crate::objects::{Block, Variable};
 
+pub struct LoweringInfo<'db> {
+    pub db: &'db dyn LoweringGroup,
+    pub free_function_id: FreeFunctionId,
+    pub function_def: Arc<cairo_semantic::FreeFunctionDefinition>,
+    /// Semantic signature for current function.
+    pub signature: cairo_semantic::Signature,
+    // TODO(spapini): Document. (excluding implicits).
+    pub ref_params: Vec<cairo_semantic::VarId>,
+    /// The available implicits in this function.
+    pub implicits: Vec<cairo_semantic::TypeId>,
+}
+impl<'db> LoweringInfo<'db> {
+    pub fn new(db: &'db dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<Self> {
+        let function_def = db.free_function_definition(free_function_id)?;
+        let signature = db.free_function_declaration_signature(free_function_id)?;
+        let implicits = db.free_function_all_implicits_vec(free_function_id)?;
+        let ref_params = signature
+            .params
+            .iter()
+            .filter(|param| param.mutability == Mutability::Reference)
+            .map(|param| VarId::Param(param.id))
+            .collect();
+        Ok(LoweringInfo { db, free_function_id, function_def, signature, ref_params, implicits })
+    }
+    pub fn ctx<'a: 'db>(&'a self) -> Maybe<LoweringContext<'db>> {
+        let generic_params =
+            self.db.free_function_declaration_generic_params(self.free_function_id)?;
+        Ok(LoweringContext {
+            db: self.db,
+            function_def: &self.function_def,
+            signature: &self.signature,
+            may_panic: self.db.free_function_may_panic(self.free_function_id)?,
+            diagnostics: LoweringDiagnostics::new(
+                self.free_function_id.module_file(self.db.upcast()),
+            ),
+            variables: Arena::default(),
+            blocks: Arena::default(),
+            semantic_defs: UnorderedHashMap::default(),
+            ref_params: &self.ref_params,
+            implicits: &self.implicits,
+            lookup_context: ImplLookupContext {
+                module_id: self.free_function_id.parent_module(self.db.upcast()),
+                extra_modules: vec![],
+                generic_params,
+            },
+            expr_formatter: ExprFormatter {
+                db: self.db.upcast(),
+                free_function_id: self.free_function_id,
+            },
+        })
+    }
+}
 /// Context for the lowering phase of a free function.
 pub struct LoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Semantic model for current function definition.
     pub function_def: &'db cairo_semantic::FreeFunctionDefinition,
     // Semantic signature for current function.
-    pub signature: cairo_semantic::Signature,
+    pub signature: &'db cairo_semantic::Signature,
     /// Whether the current function may panic.
     pub may_panic: bool,
     /// Current emitted diagnostics.
