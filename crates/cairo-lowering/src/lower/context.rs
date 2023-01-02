@@ -14,11 +14,12 @@ use itertools::{chain, zip_eq};
 use super::lowered_expr_from_block_result;
 use super::scope::{generators, BlockScope, BlockScopeEnd};
 use super::variables::LivingVar;
+use crate::blocks::Blocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::lower::scope::BlockFlowMerger;
-use crate::objects::{Block, Variable};
+use crate::objects::Variable;
 
 pub struct LoweringInfo<'db> {
     pub db: &'db dyn LoweringGroup,
@@ -56,7 +57,7 @@ impl<'db> LoweringInfo<'db> {
                 self.free_function_id.module_file(self.db.upcast()),
             ),
             variables: Arena::default(),
-            blocks: Arena::default(),
+            blocks: Blocks::default(),
             semantic_defs: UnorderedHashMap::default(),
             ref_params: &self.ref_params,
             implicits: &self.implicits,
@@ -86,7 +87,7 @@ pub struct LoweringContext<'db> {
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
-    pub blocks: Arena<Block>,
+    pub blocks: Blocks,
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
     pub semantic_defs: UnorderedHashMap<cairo_semantic::VarId, cairo_semantic::Variable>,

@@ -110,7 +110,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for BlockId {
         f: &mut std::fmt::Formatter<'_>,
         _lowered: &LoweredFormatter<'_>,
     ) -> std::fmt::Result {
-        write!(f, "blk{:?}", self.index())
+        write!(f, "blk{:?}", self.0)
     }
 }
 
