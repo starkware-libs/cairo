@@ -41,7 +41,9 @@ pub enum BlockEnd {
     /// This block returns to the call-site, outputting variables to the call-site.
     Callsite(Vec<VariableId>),
     /// This block ends with a `return` statement, exiting the function.
-    Return(Vec<VariableId>),
+    Return { refs: Vec<VariableId>, returns: Vec<VariableId> },
+    /// This block ends with a `panic` statement, exiting the function.
+    Panic { refs: Vec<VariableId>, data: VariableId },
     /// The last statement ended the flow (e.g., match will all arms ending in return),
     /// and the end of this block is unreachable.
     Unreachable,

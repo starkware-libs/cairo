@@ -43,7 +43,7 @@ pub enum BlockScopeEnd {
     /// expression).
     Callsite(Option<LivingVar>),
     /// Return from the function. The value is a vector of the vars to be returned (not dropped).
-    Return(Vec<LivingVar>),
+    Return { refs: Vec<LivingVar>, returns: Vec<LivingVar> },
     /// The end of the block is unreachable.
     Unreachable,
 }
@@ -147,12 +147,14 @@ impl BlockScope {
             BlockScopeEnd::Callsite(maybe_output) => BlockSealedEnd::Callsite(
                 maybe_output.map(|var| self.living_variables.take_var(var)),
             ),
-            BlockScopeEnd::Return(returns) => {
+            BlockScopeEnd::Return { refs, returns } => {
                 let mut drops = Vec::new();
+                let refs =
+                    refs.into_iter().map(|var| self.living_variables.take_var(var)).collect();
                 let returns =
                     returns.into_iter().map(|var| self.living_variables.take_var(var)).collect();
                 self.append_all_living_stack(&mut drops);
-                BlockSealedEnd::Return { returns, drops }
+                BlockSealedEnd::Return { refs, returns, drops }
             }
             BlockScopeEnd::Unreachable => BlockSealedEnd::Unreachable,
         };
@@ -209,7 +211,7 @@ pub enum BlockSealedEnd {
     /// expression).
     Callsite(Option<UsableVariable>),
     /// Return from the function.
-    Return { returns: Vec<UsableVariable>, drops: Vec<VariableId> },
+    Return { refs: Vec<UsableVariable>, returns: Vec<UsableVariable>, drops: Vec<VariableId> },
     /// The end of the block is unreachable.
     Unreachable,
 }
@@ -307,8 +309,11 @@ impl BlockSealed {
                     drops,
                 )
             }
-            BlockSealedEnd::Return { returns, drops } => (
-                BlockEnd::Return(returns.iter().map(UsableVariable::var_id).collect()),
+            BlockSealedEnd::Return { refs, returns, drops } => (
+                BlockEnd::Return {
+                    refs: refs.iter().map(UsableVariable::var_id).collect(),
+                    returns: returns.iter().map(UsableVariable::var_id).collect(),
+                },
                 BlockEndInfo::End,
                 drops,
             ),
