@@ -41,7 +41,7 @@ license-file = "LICENSE"
 anyhow = "1.0.66"
 assert_matches = "1.5"
 bimap = "0.6.2"
-cairo-rs = { git = "https://github.com/lambdaclass/cairo-rs", rev="42dadd1" }
+cairo-vm = "0.1.0"
 chrono = "0.4.23"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"

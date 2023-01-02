@@ -7,7 +7,7 @@ license-file.workspace = true
 description = "Cairo assembly encoding."
 
 [dependencies]
-cairo-rs.workspace = true
+cairo-vm.workspace = true
 thiserror.workspace = true
 num-bigint.workspace = true
 cairo-utils = { path = "../cairo-utils" }
