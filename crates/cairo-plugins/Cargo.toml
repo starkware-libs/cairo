@@ -22,6 +22,9 @@ cairo-utils = { path = "../cairo-utils" }
 
 [dev-dependencies]
 cairo-debug = { path = "../cairo-debug" }
-indoc.workspace = true
+cairo-test-utils = { path = "../cairo-test-utils" }
 cairo-parser = { path = "../cairo-parser" }
+env_logger.workspace = true
+indoc.workspace = true
 test-case.workspace = true
+test-log.workspace = true
