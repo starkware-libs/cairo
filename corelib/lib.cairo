@@ -7,13 +7,10 @@ enum bool { False: (), True: (), }
 impl BoolCopy of Copy::<bool>;
 impl BoolDrop of Drop::<bool>;
 
-// TODO(dorimedini): Once we can differentiate between the value-bool and the branch-bool, just do:
-// extern fn bool_and(a: bool, b: bool) -> bool implicits() nopanic;
-// (this will also require renaming the libfunc from "bool_and_impl" back to "bool_and").
-extern fn bool_and_impl(ref a: bool, b: bool) implicits() nopanic;
-fn bool_and(mut a: bool, b: bool) -> bool implicits() nopanic {
-    bool_and_impl(a, b);
-    a
+extern fn bool_and_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+fn bool_and(a: bool, b: bool) -> bool implicits() nopanic {
+    let (r,) = bool_and_impl(a, b);
+    r
 }
 
 // TODO(orizi): Change to extern when added.
@@ -24,22 +21,16 @@ fn bool_or(a: bool, b: bool) -> bool implicits() nopanic {
     }
 }
 
-// TODO(dorimedini): Once we can differentiate between the value-bool and the branch-bool, just do:
-// extern fn bool_not(a: bool) -> bool implicits() nopanic;
-// (this will also require renaming the libfunc from "bool_not_impl" back to "bool_not").
-extern fn bool_not_impl(ref a: bool) implicits() nopanic;
-fn bool_not(mut a: bool) -> bool implicits() nopanic {
-    bool_not_impl(a);
-    a
+extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;
+fn bool_not(a: bool) -> bool implicits() nopanic {
+    let (r,) = bool_not_impl(a);
+    r
 }
 
-// TODO: Once we can differentiate between the value-bool and the branch-bool, do:
-// extern fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic;
-// (this will also require renaming the libfunc from "bool_xor_impl" back to "bool_xor").
-extern fn bool_xor_impl(ref a: bool, b: bool) implicits() nopanic;
-fn bool_xor(mut a: bool, b: bool) -> bool implicits() nopanic {
-    bool_xor_impl(a, b);
-    a
+extern fn bool_xor_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
+    let (r,) = bool_xor_impl(a, b);
+    r
 }
 
 // TODO(orizi): Change to extern when added.
