@@ -19,6 +19,9 @@ pub mod generators;
 // create an instance of BlockScope.
 #[derive(Default)]
 pub struct BlockScope {
+    /// The variable ids bound to the ref variables (including implicits) at the beginning of the
+    /// block.
+    current_refs: Vec<VariableId>,
     /// Variables given as inputs to the block, including implicits. Relevant for function blocks /
     /// match arm blocks, etc...
     inputs: Vec<VariableId>,
@@ -159,6 +162,7 @@ impl BlockScope {
             BlockScopeEnd::Unreachable => BlockSealedEnd::Unreachable,
         };
         let sealed = BlockSealed {
+            current_refs: self.current_refs,
             inputs: self.inputs,
             living_variables: self.living_variables,
             semantic_variables: self.semantic_variables,
@@ -189,6 +193,9 @@ impl BlockScope {
 /// A block that was sealed after adding all the statements, just before determining the final
 /// inputs.
 pub struct BlockSealed {
+    /// The variable ids bound to the ref variables (including implicits) at the beginning of the
+    /// block.
+    pub current_refs: Vec<VariableId>,
     /// The inputs to the block, including implicits.
     inputs: Vec<VariableId>,
     /// The living variables at the end of the block.
@@ -322,7 +329,13 @@ impl BlockSealed {
             }
         };
 
-        let block = ctx.blocks.alloc(StructuredBlock { inputs, statements, drops, end });
+        let block = ctx.blocks.alloc(StructuredBlock {
+            current_refs: self.current_refs,
+            inputs,
+            statements,
+            drops,
+            end,
+        });
         BlockFinalized { block, end_info }
     }
 }

@@ -22,6 +22,9 @@ pub type VariableId = Id<Variable>;
 /// the output variables, it is guaranteed that no other variable is alive.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StructuredBlock {
+    /// The variable ids bound to the ref variables (including implicits) at the beginning of the
+    /// block.
+    pub current_refs: Vec<VariableId>,
     /// Input variables to the block, including implicits.
     pub inputs: Vec<VariableId>,
     /// Statements sequence running one after the other in the block, in a linear flow.
