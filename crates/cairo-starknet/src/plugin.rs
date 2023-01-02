@@ -312,6 +312,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             #[{GENERATED_CONTRACT_ATTR}]
             mod $contract_name$ {{
                 $original_items$
+                $storage_code$
                 trait {ABI_TRAIT} {{
                     $abi_functions$
                 }}
@@ -332,6 +333,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 "original_items".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: original_items }),
             ),
+            ("storage_code".to_string(), storage_code),
             (
                 "abi_functions".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: abi_functions }),
@@ -345,7 +347,6 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(generated_contract_mod);
-    builder.add_modified(storage_code);
 
     PluginResult {
         code: Some(PluginGeneratedFile {
