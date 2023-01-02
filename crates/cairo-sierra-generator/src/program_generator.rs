@@ -1,8 +1,8 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
-use cairo_defs::ids::{FreeFunctionId, ModuleId};
-use cairo_diagnostics::{skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
+use cairo_defs::ids::FreeFunctionId;
+use cairo_diagnostics::{skip_diagnostic, Maybe, ToMaybe};
 use cairo_filesystem::ids::CrateId;
 use cairo_sierra::extensions::core::CoreLibfunc;
 use cairo_sierra::extensions::lib_func::SierraApChange;
@@ -19,23 +19,10 @@ use crate::pre_sierra::{self};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::utils::{revoke_ap_tracking_libfunc_id, simple_statement};
-use crate::SierraGeneratorDiagnostic;
 
 #[cfg(test)]
 #[path = "program_generator_test.rs"]
 mod test;
-
-/// Query implementation of [crate::db::SierraGenGroup::module_sierra_diagnostics].
-pub fn module_sierra_diagnostics(
-    db: &dyn SierraGenGroup,
-    module_id: ModuleId,
-) -> Diagnostics<SierraGeneratorDiagnostic> {
-    let mut diagnostics = DiagnosticsBuilder::new();
-    for free_function_id in db.module_free_functions_ids(module_id).unwrap_or_default() {
-        diagnostics.extend(db.free_function_sierra_diagnostics(free_function_id))
-    }
-    diagnostics.build()
-}
 
 /// Generates the list of [cairo_sierra::program::LibfuncDeclaration] for the given list of
 /// [ConcreteLibfuncId].

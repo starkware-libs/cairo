@@ -22,7 +22,6 @@ pub fn test_function_generator(
 
     // Verify that there are no diagnostics.
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id);
-    let sierra_gen_diagnostics = db.free_function_sierra_diagnostics(test_function.function_id);
 
     // Compile the function.
     let function = db.free_function_sierra(test_function.function_id);
@@ -40,7 +39,6 @@ pub fn test_function_generator(
             "lowering_diagnostics".into(),
             lowering_diagnostics.map_or("".into(), |diagnostics| diagnostics.format(db)),
         ),
-        ("sierra_gen_diagnostics".into(), sierra_gen_diagnostics.format(db)),
         ("sierra_code".into(), sierra_code),
     ])
 }
