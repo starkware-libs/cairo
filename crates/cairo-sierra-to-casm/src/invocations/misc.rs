@@ -7,8 +7,7 @@ use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
     InvocationError,
 };
-use crate::references::{CellExpression, ReferenceExpression};
-use crate::relocations::{Relocation, RelocationEntry};
+use crate::references::CellExpression;
 
 /// Handles a revoke ap tracking instruction.
 pub fn build_revoke_ap_tracking(
@@ -45,20 +44,15 @@ pub fn build_jump_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let value = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
-
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
-
-    Ok(builder.build(
-        casm! { jmp rel 0 if value != 0; }.instructions,
-        vec![RelocationEntry {
-            instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(target_statement_id),
-        }],
-        [
-            vec![].into_iter(),
-            vec![ReferenceExpression::from_cell(CellExpression::Deref(value))].into_iter(),
-        ]
-        .into_iter(),
+    let mut casm_builder = CasmBuilder::default();
+    let value = casm_builder.add_var(ResOperand::Deref(value));
+    casm_build_extend! {casm_builder,
+        jump Target if value != 0;
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[], None), ("Target", &[&[value]], Some(target_statement_id))],
     ))
 }
 
@@ -70,15 +64,11 @@ pub fn build_jump(
         [BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => statement_id,
         _ => panic!("malformed invocation"),
     };
-
-    Ok(builder.build(
-        casm! { jmp rel 0; }.instructions,
-        vec![RelocationEntry {
-            instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(*target_statement_id),
-        }],
-        [vec![].into_iter()].into_iter(),
-    ))
+    let mut casm_builder = CasmBuilder::default();
+    casm_build_extend! {casm_builder,
+        jump Target;
+    };
+    Ok(builder.build_from_casm_builder(casm_builder, [("Target", &[], Some(*target_statement_id))]))
 }
 
 /// Handles an operations that does no changes to the reference expressions.
