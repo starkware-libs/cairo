@@ -10,6 +10,7 @@ description = "Cairo assembly encoding."
 cairo-vm.workspace = true
 thiserror.workspace = true
 num-bigint.workspace = true
+num-traits.workspace = true
 cairo-utils = { path = "../cairo-utils" }
 indoc.workspace = true
 
