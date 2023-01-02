@@ -14,7 +14,7 @@ use crate::extensions::{
 use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
-/// Type for StarkNet storage address, a value in the range [0, 2 ** 250).
+/// Type for StarkNet storage address, a value in the range [1, 2 ** 250 - 256).
 #[derive(Default)]
 pub struct ContractAddressType {}
 impl NoGenericArgsGenericType for ContractAddressType {
