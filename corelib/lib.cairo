@@ -135,6 +135,15 @@ use array::array_pop_front;
 use array::array_at;
 use array::array_len;
 
+// Dictionary.
+mod dict;
+use dict::DictFeltTo;
+use dict::SquashedDictFeltTo;
+use dict::dict_felt_to_new;
+use dict::dict_felt_to_write;
+use dict::dict_felt_to_read;
+use dict::dict_felt_to_squash;
+
 // Result.
 mod result;
 use result::Result;

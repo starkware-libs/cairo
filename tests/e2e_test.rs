@@ -13,6 +13,7 @@ cairo_test_utils::test_file_test!(
     {
         array: "array",
         box_: "box",
+        dict_felt_to: "dict_felt_to",
         nullable: "nullable",
         u128: "u128",
         bool: "bool",
