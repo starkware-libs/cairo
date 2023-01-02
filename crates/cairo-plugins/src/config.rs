@@ -21,8 +21,7 @@ impl MacroPlugin for ConfigPlugin {
             ast::Item::Use(ast_node) => ast_node.attributes(db),
             ast::Item::FreeFunction(ast_node) => ast_node.attributes(db),
             ast::Item::ExternFunction(ast_node) => ast_node.attributes(db),
-            // TODO(orizi): Add attributes to extern types as well.
-            ast::Item::ExternType(_) => return PluginResult::default(),
+            ast::Item::ExternType(ast_node) => ast_node.attributes(db),
             ast::Item::Trait(ast_node) => ast_node.attributes(db),
             ast::Item::Impl(ast_node) => ast_node.attributes(db),
             ast::Item::Struct(ast_node) => ast_node.attributes(db),
