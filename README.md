@@ -16,7 +16,7 @@
 <div align="center">
 <br />
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/starkware-libs/cairo/CI?style=flat-square&logo=github)
+[![GitHub Workflow Status](https://github.com/starkware-libs/cairo/actions/workflows/ci.yml/badge.svg)](https://github.com/starkware-libs/cairo/actions/workflows/ci.yml)
 [![Project license](https://img.shields.io/github/license/starkware-libs/cairo.svg?style=flat-square)](LICENSE)
 [![Pull Requests welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square)](https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
 
@@ -25,10 +25,12 @@
 <details open="open">
 <summary>Table of Contents</summary>
 
+- [Report a Bug](#report-a-bug)
+- [Request a Feature](#request-a-feature)
 - [About](#about)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [Compile and running Cairo files](#compile-and-running-cairo-files)
+  - [Compiling and running Cairo files](#compiling-and-running-cairo-files)
   - [Development](#development)
     - [Install the language server](#install-the-language-server)
 - [Roadmap](#roadmap)
