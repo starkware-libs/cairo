@@ -23,11 +23,12 @@ use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::lower_if::lower_expr_if;
 use self::scope::{generators, BlockFlowMerger, BlockMergerFinalized};
 use self::variables::LivingVar;
+use crate::blocks::Blocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::LoweringContextBuilder;
-use crate::objects::{Block, BlockId, Variable};
+use crate::objects::{BlockId, Variable};
 
 mod context;
 mod external;
@@ -47,7 +48,7 @@ pub struct Lowered {
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
-    pub blocks: Arena<Block>,
+    pub blocks: Blocks,
 }
 
 /// Lowers a semantic free function.

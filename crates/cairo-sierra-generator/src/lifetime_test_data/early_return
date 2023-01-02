@@ -44,12 +44,12 @@ End:
   Callsite(v0)
 
 //! > last_use
-v0: [(Id { idx: 2 }, 1)]
-v1: [(Id { idx: 0 }, 1)]
+v0: [(BlockId(2), 1)]
+v1: [(BlockId(0), 1)]
 
 //! > drops
-BeginningOfBlock(Id { idx: 1 }): v2
-BeginningOfBlock(Id { idx: 0 }): v0
+BeginningOfBlock(BlockId(1)): v2
+BeginningOfBlock(BlockId(0)): v0
 
 //! > ==========================================================================
 
@@ -88,10 +88,10 @@ End:
   Unreachable
 
 //! > last_use
-v1: [(Id { idx: 0 }, 0)]
+v1: [(BlockId(0), 0)]
 
 //! > drops
-BeginningOfBlock(Id { idx: 1 }): v0
+BeginningOfBlock(BlockId(1)): v0
 
 //! > ==========================================================================
 
@@ -144,10 +144,10 @@ End:
   Unreachable
 
 //! > last_use
-v2: [(Id { idx: 0 }, 1)]
-v4: [(Id { idx: 1 }, 1)]
-v0: [(Id { idx: 2 }, 0)]
+v2: [(BlockId(0), 1)]
+v4: [(BlockId(1), 1)]
+v0: [(BlockId(2), 0)]
 
 //! > drops
-BeginningOfBlock(Id { idx: 1 }): v3
-BeginningOfBlock(Id { idx: 2 }): v1
+BeginningOfBlock(BlockId(1)): v3
+BeginningOfBlock(BlockId(2)): v1

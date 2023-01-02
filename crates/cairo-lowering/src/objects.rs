@@ -6,8 +6,9 @@
 use cairo_semantic::{ConcreteEnumId, ConcreteVariant};
 use id_arena::Id;
 use num_bigint::BigInt;
+pub mod blocks;
+pub use blocks::BlockId;
 
-pub type BlockId = Id<Block>;
 pub type VariableId = Id<Variable>;
 
 /// A block of statements. Each block gets inputs and outputs, and is composed of
