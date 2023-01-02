@@ -100,8 +100,6 @@ pub fn setup_db_and_get_crate_id(
     db.module_lowering_diagnostics(module_id)
         .unwrap()
         .expect_with_db(db, "Unexpected lowering diagnostics.");
-    db.module_sierra_diagnostics(module_id)
-        .expect_with_db(db, "Unexpected Sierra generation diagnostics.");
     (db_val, crate_id)
 }
 

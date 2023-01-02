@@ -5,7 +5,6 @@ use cairo_filesystem::ids::FileLongId;
 use cairo_lowering::db::LoweringGroup;
 use cairo_parser::db::ParserGroup;
 use cairo_semantic::db::SemanticGroup;
-use cairo_sierra_generator::db::SierraGenGroup;
 
 use crate::db::RootDatabase;
 
@@ -55,12 +54,6 @@ pub fn check_diagnostics(
                     found_diagnostics = true;
                     on_diagnostic(diag.format(db));
                 }
-            }
-
-            let diag = db.module_sierra_diagnostics(*module_id);
-            if !diag.get_all().is_empty() {
-                found_diagnostics = true;
-                on_diagnostic(diag.format(db));
             }
         }
     }

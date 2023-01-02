@@ -6,7 +6,7 @@ use std::collections::hash_map::Entry;
 use std::sync::Arc;
 
 use cairo_defs::ids::{FreeFunctionId, GenericFunctionId};
-use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_diagnostics::Maybe;
 use cairo_sierra::extensions::core::CoreLibfunc;
 use cairo_sierra::extensions::GenericLibfuncEx;
 use cairo_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
@@ -29,11 +29,9 @@ use crate::utils::{
     alloc_local_libfunc_id, drop_libfunc_id, dup_libfunc_id, finalize_locals_libfunc_id,
     get_libfunc_signature, simple_statement,
 };
-use crate::SierraGeneratorDiagnostic;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SierraFreeFunctionData {
-    pub diagnostics: Diagnostics<SierraGeneratorDiagnostic>,
     pub function: Maybe<Arc<pre_sierra::Function>>,
 }
 
@@ -42,17 +40,8 @@ pub fn priv_free_function_sierra_data(
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
 ) -> SierraFreeFunctionData {
-    let mut diagnostics = DiagnosticsBuilder::new();
-    let function = get_function_code(&mut diagnostics, db, function_id);
-    SierraFreeFunctionData { diagnostics: diagnostics.build(), function }
-}
-
-/// Query implementation of [SierraGenGroup::free_function_sierra_diagnostics].
-pub fn free_function_sierra_diagnostics(
-    db: &dyn SierraGenGroup,
-    function_id: FreeFunctionId,
-) -> Diagnostics<SierraGeneratorDiagnostic> {
-    db.priv_free_function_sierra_data(function_id).diagnostics
+    let function = get_function_code(db, function_id);
+    SierraFreeFunctionData { function }
 }
 
 /// Query implementation of [SierraGenGroup::free_function_sierra].
@@ -64,7 +53,6 @@ pub fn free_function_sierra(
 }
 
 fn get_function_code(
-    diagnostics: &mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
@@ -79,8 +67,7 @@ fn get_function_code(
     // Get lifetime information.
     let lifetime = find_variable_lifetime(lowered_function, &local_variables)?;
 
-    let mut context =
-        ExprGeneratorContext::new(db, lowered_function, function_id, &lifetime, diagnostics);
+    let mut context = ExprGeneratorContext::new(db, lowered_function, function_id, &lifetime);
 
     // Generate a label for the function's body.
     let (label, label_id) = context.new_label();
