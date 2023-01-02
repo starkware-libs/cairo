@@ -36,7 +36,8 @@ mod balance {
         )
     }
 }
-mod __generated__HelloStarknet {
+#[generated_contract]
+mod HelloStarknet {
     struct Storage { balance: felt, }
 
     // Increases the balance by the given amount.

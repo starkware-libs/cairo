@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::ids::{GenericParamId, LanguageElementId, MemberId, MemberLongId, StructId};
 use cairo_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::Upcast;
 use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
@@ -76,13 +76,14 @@ pub fn struct_resolved_lookback(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_semantic_data].
 pub fn priv_struct_semantic_data(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<StructData> {
-    // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
-    // selector.
     let module_file_id = struct_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let module_data = db.module_data(module_file_id.0)?;
-    let struct_ast = module_data.structs.get(&struct_id).to_maybe()?;
+    let module_structs = db.module_structs(module_file_id.0)?;
+    let struct_ast = module_structs.get(&struct_id).to_maybe()?;
     let syntax_db = db.upcast();
 
     // Generic params.

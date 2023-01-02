@@ -1,19 +1,19 @@
 //! Cairo language server. Implements the LSP protocol over stdin/out.
 
-mod db;
 mod semantic_highlighting;
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
+use cairo_compiler::db::RootDatabase;
+use cairo_compiler::project::setup_project;
 use cairo_debug::DebugWithDb;
 use cairo_defs::db::DefsGroup;
 use cairo_defs::ids::{
     EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionId,
-    FreeFunctionLongId, ImplLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleItemId,
-    StructLongId, TraitLongId, UseLongId,
+    FreeFunctionLongId, ImplLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
+    ModuleItemId, StructLongId, TraitLongId, UseLongId,
 };
 use cairo_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
 use cairo_filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
@@ -30,18 +30,21 @@ use cairo_semantic::items::free_function::SemanticExprLookup;
 use cairo_semantic::resolve_path::ResolvedGenericItem;
 use cairo_semantic::SemanticDiagnostic;
 use cairo_syntax::node::db::SyntaxGroup;
+use cairo_syntax::node::helpers::GetIdentifier;
 use cairo_syntax::node::kind::SyntaxKind;
 use cairo_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_utils::ordered_hash_set::OrderedHashSet;
-use cairo_utils::OptionHelper;
-pub use db::RootDatabase;
+use cairo_utils::{try_extract_matches, OptionHelper, Upcast};
+use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
+use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
+pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 
@@ -72,16 +75,42 @@ impl Backend {
     }
     /// Gets a FileId from a URI.
     fn file(&self, db: &RootDatabase, uri: Url) -> FileId {
-        let path = uri.to_file_path().expect("Only file URIs are supported.");
-        FileId::new(db, path)
+        match uri.scheme() {
+            "file" => {
+                let path = uri.to_file_path().unwrap();
+                FileId::new(db, path)
+            }
+            "vfs" => {
+                let id = uri.host_str().unwrap().parse::<usize>().unwrap();
+                FileId::from_intern_id(id.into())
+            }
+            _ => panic!(),
+        }
     }
+
+    fn get_uri(&self, db: &RootDatabase, file_id: FileId) -> Url {
+        let virtual_file = match db.lookup_intern_file(file_id) {
+            FileLongId::OnDisk(path) => return Url::from_file_path(path).unwrap(),
+            FileLongId::Virtual(virtual_file) => virtual_file,
+        };
+        let uri = Url::parse(
+            format!("vfs://{}/{}.cairo", file_id.as_intern_id().as_usize(), virtual_file.name)
+                .as_str(),
+        )
+        .unwrap();
+        uri
+    }
+
+    // TODO(spapini): Consider managing vfs in a different way, using the
+    // client.send_notification::<UpdateVirtualFile> call.
+
     // Refresh diagnostics and send diffs to client.
     async fn refresh_diagnostics(&self) {
-        let db = self.db().await;
         let mut state = self.state_mutex.lock().await;
 
         // Get all files. Try to go over open files first.
         let mut files_set: OrderedHashSet<_> = state.open_files.iter().copied().collect();
+        let db = self.db().await;
         for crate_id in db.crates() {
             for module_id in db.crate_modules(crate_id).iter() {
                 for file_id in db.module_files(*module_id).unwrap_or_default() {
@@ -92,11 +121,7 @@ impl Backend {
 
         // Get all diagnostics.
         for file_id in files_set.iter().copied() {
-            let uri = if let FileLongId::OnDisk(path) = db.lookup_intern_file(file_id) {
-                Url::from_file_path(path).unwrap()
-            } else {
-                continue;
-            };
+            let uri = self.get_uri(&db, file_id);
             let new_file_diagnostics = FileDiagnostics {
                 parser: db.file_syntax_diagnostics(file_id),
                 semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
@@ -124,11 +149,7 @@ impl Backend {
                 continue;
             }
             state.file_diagnostics.remove(&file_id);
-            let uri = if let FileLongId::OnDisk(path) = db.lookup_intern_file(file_id) {
-                Url::from_file_path(path).unwrap()
-            } else {
-                continue;
-            };
+            let uri = self.get_uri(&db, file_id);
             self.client.publish_diagnostics(uri, Vec::new(), None).await;
         }
     }
@@ -155,6 +176,15 @@ impl Backend {
                 ..Diagnostic::default()
             });
         }
+    }
+
+    pub async fn vfs_provide(
+        &self,
+        params: ProvideVirtualFileRequest,
+    ) -> Result<ProvideVirtualFileResponse> {
+        let db = self.db().await;
+        let file_id = self.file(&db, params.uri);
+        Ok(ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) })
     }
 }
 
@@ -343,6 +373,7 @@ impl LanguageServer for Backend {
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let db = self.db().await;
         let file_uri = params.text_document_position_params.text_document.uri;
+        eprintln!("Hover {}", file_uri);
         let file = self.file(&db, file_uri);
         let position = params.text_document_position_params.position;
         let Some((node, lookup_items)) = get_node_and_lookup_items(&*db, file, position) else {return Ok(None)};
@@ -424,11 +455,7 @@ impl LanguageServer for Backend {
                 return Ok(None);
             };
 
-            let uri = if let FileLongId::OnDisk(path) = db.lookup_intern_file(file) {
-                Url::from_file_path(path).unwrap()
-            } else {
-                return Ok(None);
-            };
+            let uri = self.get_uri(&db, file);
             let syntax = if let Ok(syntax) = db.file_syntax(file) {
                 syntax
             } else {
@@ -540,21 +567,10 @@ fn get_node_and_lookup_items(
         .lookup_offset(syntax_db, line_offset.add(position.character as usize));
 
     // Find module.
-    let modules: Vec<_> = db.file_modules(file).into_iter().flatten().collect();
-    if modules.len() != 1 {
-        eprintln!("Hover failed. Expected a single module for this file.");
-        return None;
-    }
-    let module_id = modules[0];
-    let file_index = FileIndex(
-        db.module_files(module_id)
-            .unwrap()
-            .into_iter()
-            .enumerate()
-            .find(|(_, current_file)| *current_file == file)
-            .unwrap()
-            .0,
-    );
+    let module_id = find_node_module(db, file, node.clone()).on_none(|| {
+        eprintln!("Hover failed. Failed to find module.");
+    })?;
+    let file_index = FileIndex(0);
     let module_file_id = ModuleFileId(module_id, file_index);
 
     // Find containing function.
@@ -570,6 +586,37 @@ fn get_node_and_lookup_items(
             None => return Some((node, res)),
         }
     }
+}
+
+fn find_node_module(
+    db: &(dyn SemanticGroup + 'static),
+    main_file: FileId,
+    mut node: SyntaxNode,
+) -> Option<ModuleId> {
+    let modules: Vec<_> = db.file_modules(main_file).into_iter().flatten().collect();
+    let mut module = *modules.first()?;
+    let syntax_db = db.upcast();
+
+    let mut inner_module_names = vec![];
+    while let Some(parent) = node.parent() {
+        node = parent;
+        if node.kind(syntax_db) == SyntaxKind::ItemModule {
+            inner_module_names.push(
+                ast::ItemModule::from_syntax_node(syntax_db, node.clone())
+                    .stable_ptr()
+                    .name_green(syntax_db)
+                    .identifier(syntax_db),
+            );
+        }
+    }
+    for name in inner_module_names.into_iter().rev() {
+        let submodule = try_extract_matches!(
+            db.module_item_by_name(module, name).ok()??,
+            ModuleItemId::Submodule
+        )?;
+        module = ModuleId::Submodule(submodule);
+    }
+    Some(module)
 }
 
 /// If the node is an identifier, retrieves a hover hint for it.
@@ -636,12 +683,17 @@ fn is_expr(kind: SyntaxKind) -> bool {
 }
 
 /// Tries to detect the crate root the config that contains a cairo file, and add it to the system.
-fn detect_crate_for(db: &mut tokio::sync::MutexGuard<'_, RootDatabase>, path: &str) {
-    let mut path = PathBuf::from(path);
+fn detect_crate_for(db: &mut tokio::sync::MutexGuard<'_, RootDatabase>, file_path: &str) {
+    let mut path = PathBuf::from(file_path);
     for _ in 0..MAX_CRATE_DETECTION_DEPTH {
         path.pop();
         if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
             db.with_project_config(config);
+            return;
         };
+    }
+    // Fallback to a single file.
+    if let Err(err) = setup_project(&mut **db, PathBuf::from(file_path).as_path()) {
+        eprintln!("Error loading file {} as a single crate: {}", file_path, err);
     }
 }

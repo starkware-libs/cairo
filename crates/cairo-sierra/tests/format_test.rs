@@ -14,10 +14,10 @@ fn format_test() {
                 type  ConcreteTypeId = TypeId<arg1, 4>;
                 type [123] = TypeId<[12],  4>;
                 type [4]= Enum<ut@core::option ::Option:: <core::felt>, [3],[2]>;
-                libfunc CalleeId = LibFuncId ;
+                libfunc CalleeId = LibfuncId ;
                 // Additional comment.
-                libfunc OtherCalleeId = LibFuncId <arg, 4>;
-                libfunc [5642] = LibFuncId<[22 ], 4>;
+                libfunc OtherCalleeId = LibfuncId <arg, 4>;
+                libfunc [5642] = LibfuncId<[22 ], 4>;
                 libfunc CallFunction = Call<user@Function>;
                 libfunc LibDependent = LibDependent<lib@[124]>;
                 callee() -> ();
@@ -43,9 +43,9 @@ fn format_test() {
             type [123] = TypeId<[12], 4>;
             type [4] = Enum<ut@core::option::Option::<core::felt>, [3], [2]>;
 
-            libfunc CalleeId = LibFuncId;
-            libfunc OtherCalleeId = LibFuncId<arg, 4>;
-            libfunc [5642] = LibFuncId<[22], 4>;
+            libfunc CalleeId = LibfuncId;
+            libfunc OtherCalleeId = LibfuncId<arg, 4>;
+            libfunc [5642] = LibfuncId<[22], 4>;
             libfunc CallFunction = Call<user@Function>;
             libfunc LibDependent = LibDependent<lib@[124]>;
 

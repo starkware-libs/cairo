@@ -1,28 +1,16 @@
-use pretty_assertions::assert_eq;
+use crate::test_utils::test_function_diagnostics;
 
-use crate::semantic_test;
-use crate::test_utils::{test_function_diagnostics, SemanticDatabaseForTesting};
-
-semantic_test!(enum_diagnostics_tests, ["src/items/tests/enum"], test_function_diagnostics);
-semantic_test!(
-    extern_func_diagnostics_tests,
-    ["src/items/tests/extern_func"],
-    test_function_diagnostics
-);
-semantic_test!(
-    free_function_diagnostics_tests,
-    ["src/items/tests/free_function"],
-    test_function_diagnostics
-);
-semantic_test!(
-    panicable_diagnostics_tests,
-    ["src/items/tests/panicable"],
-    test_function_diagnostics
-);
-semantic_test!(struct_diagnostics_tests, ["src/items/tests/struct"], test_function_diagnostics);
-semantic_test!(trait_diagnostics_tests, ["src/items/tests/trait"], test_function_diagnostics);
-semantic_test!(
-    type_alias_diagnostics_tests,
-    ["src/items/tests/type_alias"],
+cairo_test_utils::test_file_test!(
+    diagnostics,
+    "src/items/tests",
+    {
+        enum_: "enum",
+        extern_func: "extern_func",
+        free_function: "free_function",
+        panicable: "panicable",
+        struct_: "struct",
+        trait_: "trait",
+        type_alias: "type_alias",
+    },
     test_function_diagnostics
 );

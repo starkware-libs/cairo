@@ -4,14 +4,14 @@ use super::gas::GasBuiltinType;
 use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 
 /// Represents different type of costs.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -62,15 +62,15 @@ impl NoGenericArgsGenericType for BuiltinCostsType {
 }
 
 define_libfunc_hierarchy! {
-    pub enum BuiltinCostLibFunc {
-        BuiltinGetGas(BuiltinCostGetGasLibFunc),
-    }, BuiltinCostConcreteLibFunc
+    pub enum BuiltinCostLibfunc {
+        BuiltinGetGas(BuiltinCostGetGasLibfunc),
+    }, BuiltinCostConcreteLibfunc
 }
 
-/// LibFunc for getting gas to be used by a builtin.
+/// Libfunc for getting gas to be used by a builtin.
 #[derive(Default)]
-pub struct BuiltinCostGetGasLibFunc {}
-impl BuiltinCostGetGasLibFunc {
+pub struct BuiltinCostGetGasLibfunc {}
+impl BuiltinCostGetGasLibfunc {
     /// Returns the maximal number of steps required for the computation of the requested cost.
     /// The number of steps is also the change in `ap` (every step includes `ap++`).
     pub fn cost_computation_max_steps() -> usize {
@@ -78,17 +78,17 @@ impl BuiltinCostGetGasLibFunc {
     }
 }
 
-impl NoGenericArgsGenericLibFunc for BuiltinCostGetGasLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("get_gas_all");
+impl NoGenericArgsGenericLibfunc for BuiltinCostGetGasLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("get_gas_all");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let builtin_costs_type = context.get_concrete_type(BuiltinCostsType::id(), &[])?;
-        Ok(LibFuncSignature {
+        Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature {
                     ty: range_check_type.clone(),

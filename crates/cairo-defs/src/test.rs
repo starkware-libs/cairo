@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_debug::debug::DebugWithDb;
 use cairo_filesystem::db::{
     init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
@@ -9,7 +8,7 @@ use cairo_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_parser::db::ParserDatabase;
 use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_utils::extract_matches;
+use cairo_utils::{extract_matches, try_extract_matches, Upcast};
 use indoc::indoc;
 
 use crate::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
@@ -22,12 +21,19 @@ use crate::plugin::{
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
-    plugin: Arc<DummyPlugin>,
+    plugins: Vec<Arc<dyn MacroPlugin>>,
 }
 impl salsa::Database for DatabaseForTesting {}
 impl Default for DatabaseForTesting {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default(), plugin: Arc::new(DummyPlugin {}) };
+        let mut res = Self {
+            storage: Default::default(),
+            plugins: vec![
+                Arc::new(FooToBarPlugin {}),
+                Arc::new(RemoveOrigPlugin {}),
+                Arc::new(DummyPlugin {}),
+            ],
+        };
         init_files_group(&mut res);
         res
     }
@@ -54,7 +60,7 @@ impl Upcast<dyn SyntaxGroup> for DatabaseForTesting {
 }
 impl HasMacroPlugins for DatabaseForTesting {
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
-        vec![self.plugin.clone()]
+        self.plugins.clone()
     }
 }
 
@@ -142,12 +148,10 @@ fn test_submodules() {
 
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
-    let submodule_id = ModuleId::Submodule(
-        *db.module_data(module_id).unwrap().submodules.iter().next().unwrap().0,
-    );
-    let subsubmodule_id = ModuleId::Submodule(
-        *db.module_data(submodule_id).unwrap().submodules.iter().next().unwrap().0,
-    );
+    let submodule_id =
+        ModuleId::Submodule(*db.module_submodules_ids(module_id).unwrap().first().unwrap());
+    let subsubmodule_id =
+        ModuleId::Submodule(*db.module_submodules_ids(submodule_id).unwrap().first().unwrap());
 
     db.module_item_by_name(subsubmodule_id, "foo".into())
         .unwrap()
@@ -166,9 +170,6 @@ fn test_submodules() {
 }
 
 #[derive(Debug)]
-struct DummyPlugin {}
-
-#[derive(Debug)]
 struct DummyAuxData;
 impl GeneratedFileAuxData for DummyAuxData {
     fn as_any(&self) -> &dyn std::any::Any {
@@ -180,33 +181,40 @@ impl GeneratedFileAuxData for DummyAuxData {
     }
 }
 
+#[derive(Debug)]
+struct DummyPlugin {}
 impl MacroPlugin for DummyPlugin {
-    fn generate_code(
-        &self,
-        db: &dyn SyntaxGroup,
-        item_ast: cairo_syntax::node::ast::Item,
-    ) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
-            ast::Item::Struct(struct_ast) => PluginResult {
-                code: Some(PluginGeneratedFile {
-                    name: "virt".into(),
-                    content: format!("fn foo(x:{}){{}}", struct_ast.name(db).text(db)),
-                    aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
-                }),
-                diagnostics: vec![],
-            },
-            ast::Item::FreeFunction(item) => PluginResult {
+            ast::Item::Struct(struct_ast) => {
+                let remove_original_item = struct_ast
+                    .attributes(db)
+                    .elements(db)
+                    .iter()
+                    .any(|attr| attr.attr(db).text(db) == "remove_original");
+                PluginResult {
+                    code: Some(PluginGeneratedFile {
+                        name: "virt".into(),
+                        content: format!("fn f(x:{}){{}}", struct_ast.name(db).text(db)),
+                        aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
+                    }),
+                    diagnostics: vec![],
+                    remove_original_item,
+                }
+            }
+            ast::Item::FreeFunction(free_function_ast) => PluginResult {
                 code: Some(PluginGeneratedFile {
                     name: "virt2".into(),
                     content: "extern type B;".into(),
                     aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
                 }),
                 diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: item.stable_ptr().untyped(),
+                    stable_ptr: free_function_ast.stable_ptr().untyped(),
                     message: "bla".into(),
                 }],
+                remove_original_item: false,
             },
-            _ => PluginResult { code: None, diagnostics: vec![] },
+            _ => PluginResult::default(),
         }
     }
 }
@@ -226,11 +234,218 @@ fn test_plugin() {
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
 
+    // Verify the original struct still exists.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "A".into()).unwrap().debug(db)),
+        "Some(StructId(test::A))"
+    );
+
+    // Verify the expected items were generated.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "f".into()).unwrap().debug(db)),
+        "Some(FreeFunctionId(test::f))"
+    );
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "B".into()).unwrap().debug(db)),
+        "Some(ExternTypeId(test::B))"
+    );
+}
+
+#[test]
+fn test_plugin_remove_original() {
+    let mut db_val = DatabaseForTesting::default();
+    let db = &mut db_val;
+
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
+    let root = Directory("src".into());
+    db.set_crate_root(crate_id, Some(root));
+
+    // Main module file.
+    set_file_content(db, "src/lib.cairo", "#[remove_original] struct A{}");
+
+    // Find submodules.
+    let module_id = ModuleId::CrateRoot(crate_id);
+
+    // Verify the original struct was removed.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "A".into()).unwrap().debug(db)),
+        "None"
+    );
+
+    // Verify the expected items were generated.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "f".into()).unwrap().debug(db)),
+        "Some(FreeFunctionId(test::f))"
+    );
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "B".into()).unwrap().debug(db)),
+        "Some(ExternTypeId(test::B))"
+    );
+}
+
+/// If the original item is a function that is marked with #[remove_orig], only removes it, without
+/// generating any new code.
+#[derive(Debug)]
+struct RemoveOrigPlugin {}
+impl MacroPlugin for RemoveOrigPlugin {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+        let Some(free_function_ast) = try_extract_matches!(item_ast, ast::Item::FreeFunction) else { return PluginResult::default(); };
+        if !free_function_ast
+            .attributes(db)
+            .elements(db)
+            .iter()
+            .any(|attr| attr.attr(db).text(db) == "remove_orig")
+        {
+            return PluginResult::default();
+        }
+        PluginResult { code: None, diagnostics: vec![], remove_original_item: true }
+    }
+}
+
+/// Changes a function 'foo' to 'bar' if annotated with #[foo_to_bar]. Doesn't remove the original
+/// item.
+#[derive(Debug)]
+struct FooToBarPlugin {}
+impl MacroPlugin for FooToBarPlugin {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+        let Some(free_function_ast) = try_extract_matches!(item_ast, ast::Item::FreeFunction) else { return PluginResult::default(); };
+        if free_function_ast.declaration(db).name(db).text(db) != "foo" {
+            return PluginResult::default();
+        }
+        if !free_function_ast
+            .attributes(db)
+            .elements(db)
+            .iter()
+            .any(|attr| attr.attr(db).text(db) == "foo_to_bar")
+        {
+            return PluginResult::default();
+        }
+
+        PluginResult {
+            code: Some(PluginGeneratedFile {
+                name: "virt".into(),
+                content: "fn bar() {}".to_string(),
+                aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
+            }),
+            diagnostics: vec![],
+            remove_original_item: false,
+        }
+    }
+}
+
+#[test]
+fn test_foo_to_bar() {
+    let mut db_val = DatabaseForTesting::default();
+    let db = &mut db_val;
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
+    let root = Directory("src".into());
+    db.set_crate_root(crate_id, Some(root));
+
+    // Main module file.
+    set_file_content(db, "src/lib.cairo", "#[foo_to_bar] fn foo() {}");
+
+    // Find submodules.
+    let module_id = ModuleId::CrateRoot(crate_id);
+
+    // Verify the original function remained.
     assert_eq!(
         format!("{:?}", db.module_item_by_name(module_id, "foo".into()).unwrap().debug(db)),
         "Some(FreeFunctionId(test::foo))"
     );
 
+    // Verify the expected item was generated.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "bar".into()).unwrap().debug(db)),
+        "Some(FreeFunctionId(test::bar))"
+    );
+}
+
+// Verify that if the first plugin removed the original item, the second item doesn't act on the
+// original item.
+#[test]
+fn test_first_plugin_removes() {
+    let mut db_val = DatabaseForTesting::default();
+    let db = &mut db_val;
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
+    let root = Directory("src".into());
+    db.set_crate_root(crate_id, Some(root));
+
+    // Main module file.
+    set_file_content(db, "src/lib.cairo", "#[remove_orig] fn foo() {}");
+
+    // Find submodules.
+    let module_id = ModuleId::CrateRoot(crate_id);
+
+    // Verify the original function was removed.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).unwrap().debug(db)),
+        "None"
+    );
+    // Verify no 'B' was generated by DummyPlugin.
+    // Note RemoveOrigPlugin is before DummyPlugin in the plugins order. RemoveOrigPlugin already
+    // acted on 'foo', so DummyPlugin shouldn't.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "B".into()).unwrap().debug(db)),
+        "None"
+    );
+}
+
+// Verify that if the first plugin generates new code, the later plugins don't act on the original
+// item.
+#[test]
+fn test_first_plugin_generates() {
+    let mut db_val = DatabaseForTesting::default();
+    let db = &mut db_val;
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
+    let root = Directory("src".into());
+    db.set_crate_root(crate_id, Some(root));
+
+    // Main module file.
+    set_file_content(db, "src/lib.cairo", "#[foo_to_bar] #[remove_orig] fn foo() {}");
+
+    // Find submodules.
+    let module_id = ModuleId::CrateRoot(crate_id);
+
+    // Verify 'bar' was generated by FooToBarPlugin.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "bar".into()).unwrap().debug(db)),
+        "Some(FreeFunctionId(test::bar))"
+    );
+    // Verify the original function remained.
+    // Note RemoveOrigPlugin is after FooToBarPlugin in the plugins order. FooToBarPlugin already
+    // acted on the original 'foo' and thus RemoveOrigPlugin shouldn't act on it.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).unwrap().debug(db)),
+        "Some(FreeFunctionId(test::foo))"
+    );
+}
+
+// Verify that the later plugins do act on items generated by earlier plugins.
+#[test]
+fn test_plugin_chain() {
+    let mut db_val = DatabaseForTesting::default();
+    let db = &mut db_val;
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
+    let root = Directory("src".into());
+    db.set_crate_root(crate_id, Some(root));
+
+    // Main module file.
+    set_file_content(db, "src/lib.cairo", "#[foo_to_bar] fn foo() {}");
+
+    // Find submodules.
+    let module_id = ModuleId::CrateRoot(crate_id);
+
+    // Verify the original function remained.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).unwrap().debug(db)),
+        "Some(FreeFunctionId(test::foo))"
+    );
+    // Verify 'bar' was generated by FooToBarPlugin.
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(module_id, "bar".into()).unwrap().debug(db)),
+        "Some(FreeFunctionId(test::bar))"
+    );
+    // Verify 'B' were generated by DummyPlugin.
     assert_eq!(
         format!("{:?}", db.module_item_by_name(module_id, "B".into()).unwrap().debug(db)),
         "Some(ExternTypeId(test::B))"

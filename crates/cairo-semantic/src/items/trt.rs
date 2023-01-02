@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use cairo_db_utils::define_short_id;
 use cairo_defs::ids::{
     GenericFunctionId, GenericParamId, LanguageElementId, TraitFunctionId, TraitFunctionLongId,
     TraitId,
 };
 use cairo_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::{ast, TypedSyntaxNode};
+use cairo_utils::define_short_id;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
@@ -90,14 +90,14 @@ pub fn trait_functions(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_data].
 pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<TraitData> {
-    // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
-    // selector.
-
     let syntax_db = db.upcast();
     let module_file_id = trait_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let trait_ast = module_data.traits.get(&trait_id).to_maybe()?;
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
+    let module_traits = db.module_traits(module_file_id.0)?;
+    let trait_ast = module_traits.get(&trait_id).to_maybe()?;
 
     // Generic params.
     let generic_params = semantic_generic_params(
@@ -209,6 +209,16 @@ pub fn priv_trait_function_data(
         &signature,
         &signature_syntax,
     );
+    // Validate trait function body is empty.
+    if matches!(function_syntax.body(syntax_db), ast::MaybeTraitFunctionBody::Some(_)) {
+        diagnostics.report(
+            &function_syntax.body(syntax_db),
+            crate::diagnostic::SemanticDiagnosticKind::TraitFunctionWithBody {
+                trait_id,
+                function_id: trait_function_id,
+            },
+        );
+    }
 
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);

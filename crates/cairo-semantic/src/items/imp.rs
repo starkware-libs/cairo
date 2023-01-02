@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use std::vec;
 
-use cairo_db_utils::define_short_id;
 use cairo_defs::ids::{
     GenericFunctionId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
     LanguageElementId, ModuleId,
@@ -9,13 +8,13 @@ use cairo_defs::ids::{
 use cairo_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
 };
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::ast::{self, Item, MaybeImplBody, OptionReturnTypeClause};
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_syntax::node::TypedSyntaxNode;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
-use cairo_utils::{extract_matches, try_extract_matches, OptionHelper};
+use cairo_utils::{define_short_id, extract_matches, try_extract_matches, OptionHelper};
 use itertools::izip;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
@@ -82,18 +81,37 @@ pub fn impl_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<ConcreteTrai
     db.priv_impl_declaration_data(impl_id)?.concrete_trait
 }
 
+// TODO(ilya): Remove `allow` once when enable impl.
+#[allow(unreachable_code)]
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_declaration_data].
 pub fn priv_impl_declaration_data(
     db: &dyn SemanticGroup,
     impl_id: ImplId,
 ) -> Maybe<ImplDeclarationData> {
-    // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
-    // selector.
     let module_file_id = impl_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let impl_ast = module_data.impls.get(&impl_id).to_maybe()?;
+
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
+    let module_impls = db.module_impls(module_file_id.0)?;
     let syntax_db = db.upcast();
+    let impl_ast = module_impls.get(&impl_id).to_maybe()?;
+
+    // TODO(ilya): Enable impl logic.
+    if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
+        let resolved_lookback = Arc::new(ResolvedLookback::default());
+        let diag_added = diagnostics
+            .report_by_ptr(body.lbrace(syntax_db).stable_ptr().untyped(), ImplBodyIsNotSupported);
+
+        return Ok(ImplDeclarationData {
+            diagnostics: diagnostics.build(),
+            generic_params: vec![],
+            concrete_trait: Err(diag_added),
+            attributes: vec![],
+            resolved_lookback,
+        });
+    }
 
     // Generic params.
     let generic_params = semantic_generic_params(
@@ -105,6 +123,7 @@ pub fn priv_impl_declaration_data(
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
+    // TODO(ilya): Fix panic due to loop for `impl a of a'.
     let concrete_trait = resolver
         .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
         .and_then(|option_concrete_path| {
@@ -172,8 +191,8 @@ pub fn priv_impl_definition_data(
     let declaration_data = db.priv_impl_declaration_data(impl_id)?;
     let concrete_trait = declaration_data.concrete_trait?;
 
-    let module_data = db.module_data(module_file_id.0)?;
-    let impl_ast = module_data.impls.get(&impl_id).to_maybe()?;
+    let module_impls = db.module_impls(module_file_id.0)?;
+    let impl_ast = module_impls.get(&impl_id).to_maybe()?;
     let syntax_db = db.upcast();
 
     let lookup_context = ImplLookupContext {
@@ -322,7 +341,7 @@ pub fn find_impls_at_module(
     concrete_trait_id: ConcreteTraitId,
 ) -> Maybe<Vec<ConcreteImplId>> {
     let mut res = Vec::new();
-    let impls = db.module_data(module_id)?.impls;
+    let impls = db.module_impls(module_id)?;
     // TODO(spapini): Index better.
     for impl_id in impls.keys().copied() {
         let Ok(imp_data)= db.priv_impl_declaration_data(impl_id) else {continue};
@@ -362,11 +381,11 @@ pub fn find_impls_at_context(
             res.extend(imps);
         }
     }
-    for submodule in db.module_submodules(lookup_context.module_id)? {
-        res.extend(find_impls_at_module(db, submodule, concrete_trait_id)?);
+    for submodule in db.module_submodules_ids(lookup_context.module_id)? {
+        res.extend(find_impls_at_module(db, ModuleId::Submodule(submodule), concrete_trait_id)?);
     }
-    for use_id in db.module_data(lookup_context.module_id)?.uses.keys() {
-        if let Ok(ResolvedGenericItem::Module(submodule)) = db.use_resolved_item(*use_id) {
+    for use_id in db.module_uses_ids(lookup_context.module_id)? {
+        if let Ok(ResolvedGenericItem::Module(submodule)) = db.use_resolved_item(use_id) {
             res.extend(find_impls_at_module(db, submodule, concrete_trait_id)?);
         }
     }

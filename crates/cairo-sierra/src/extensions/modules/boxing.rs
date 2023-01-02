@@ -1,7 +1,7 @@
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
-    SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
+    DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
+    SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
 };
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
@@ -9,7 +9,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type wrapping a value.
@@ -33,48 +33,48 @@ impl GenericTypeArgGenericType for BoxTypeWrapped {
 pub type BoxType = GenericTypeArgGenericTypeWrapper<BoxTypeWrapped>;
 
 define_libfunc_hierarchy! {
-    pub enum BoxLibFunc {
-        Into(IntoBoxLibFunc),
-        Unbox(UnboxLibFunc),
-    }, BoxConcreteLibFunc
+    pub enum BoxLibfunc {
+        Into(IntoBoxLibfunc),
+        Unbox(UnboxLibfunc),
+    }, BoxConcreteLibfunc
 }
 
-/// LibFunc for wrapping an object of type T into a box.
+/// Libfunc for wrapping an object of type T into a box.
 #[derive(Default)]
-pub struct IntoBoxLibFunc {}
-impl SignatureOnlyGenericLibFunc for IntoBoxLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("into_box");
+pub struct IntoBoxLibfunc {}
+impl SignatureOnlyGenericLibfunc for IntoBoxLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("into_box");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        Ok(LibFuncSignature::new_non_branch(
+        Ok(LibfuncSignature::new_non_branch(
             vec![ty.clone()],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
     }
 }
 
-/// LibFunc for unboxing a `Box<T>` back into a T.
+/// Libfunc for unboxing a `Box<T>` back into a T.
 #[derive(Default)]
-pub struct UnboxLibFunc {}
-impl SignatureOnlyGenericLibFunc for UnboxLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("unbox");
+pub struct UnboxLibfunc {}
+impl SignatureOnlyGenericLibfunc for UnboxLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("unbox");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        Ok(LibFuncSignature::new_non_branch(
+        Ok(LibfuncSignature::new_non_branch(
             vec![context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?],
             vec![OutputVarInfo {
                 ty,

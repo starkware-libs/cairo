@@ -1,13 +1,13 @@
 use super::uint128::Uint128Type;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
 };
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 
 /// Type representing the Bitwise builtin.
 #[derive(Default)]
@@ -20,20 +20,20 @@ impl NoGenericArgsGenericType for BitwiseType {
     const SIZE: i16 = 1;
 }
 
-/// LibFunc for computing the Bitwise (and,or,xor) of two u128s.
+/// Libfunc for computing the Bitwise (and,or,xor) of two u128s.
 /// Returns 3 u128s (and the updated builtin pointer).
 #[derive(Default)]
-pub struct BitwiseLibFunc {}
-impl NoGenericArgsGenericLibFunc for BitwiseLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("bitwise");
+pub struct BitwiseLibfunc {}
+impl NoGenericArgsGenericLibfunc for BitwiseLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("bitwise");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let bitwise_ty = context.get_concrete_type(BitwiseType::id(), &[])?;
         let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-        Ok(LibFuncSignature::new_non_branch_ex(
+        Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature {
                     ty: bitwise_ty.clone(),

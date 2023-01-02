@@ -6,33 +6,21 @@ use cairo_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_sierra_to_casm::test_utils::build_metadata;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use pretty_assertions::assert_eq;
 
 cairo_test_utils::test_file_test!(
-    uint128_e2e,
-    ["e2e_test_data/libfuncs/uint128",],
-    RootDatabase,
+    libfunc_e2e,
+    "e2e_test_data/libfuncs",
+    {
+        array: "array",
+        box_: "box",
+        nullable: "nullable",
+        u128: "u128",
+    },
     run_small_e2e_test
 );
 
-cairo_test_utils::test_file_test!(
-    nullable_e2e,
-    ["e2e_test_data/libfuncs/nullable",],
-    RootDatabase,
-    run_small_e2e_test
-);
-
-cairo_test_utils::test_file_test!(
-    array_e2e,
-    ["e2e_test_data/libfuncs/array",],
-    RootDatabase,
-    run_small_e2e_test
-);
-
-fn run_small_e2e_test(
-    db: &mut RootDatabase,
-    inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+fn run_small_e2e_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+    let db = &mut RootDatabase::default();
     // Parse code and create semantic model.
     let test_module = setup_test_module(db, inputs["cairo"].as_str()).unwrap();
     assert!(!check_and_eprint_diagnostics(db));

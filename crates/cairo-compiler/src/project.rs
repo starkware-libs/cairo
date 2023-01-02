@@ -2,13 +2,11 @@ use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::Arc;
 
-use cairo_defs::db::DefsGroup;
 use cairo_defs::ids::ModuleId;
-use cairo_filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
+use cairo_filesystem::db::FilesGroupEx;
 use cairo_filesystem::ids::{CrateId, CrateLongId, Directory};
 pub use cairo_project::*;
-
-use crate::db::RootDatabase;
+use cairo_semantic::db::SemanticGroup;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ProjectError {
@@ -24,7 +22,10 @@ pub enum ProjectError {
 
 /// Setup to 'db' to compile the file at the given path.
 /// Returns the id of the generated crate.
-fn setup_single_file_project(db: &mut RootDatabase, path: &Path) -> Result<CrateId, ProjectError> {
+fn setup_single_file_project(
+    db: &mut dyn SemanticGroup,
+    path: &Path,
+) -> Result<CrateId, ProjectError> {
     match path.extension().and_then(OsStr::to_str) {
         Some("cairo") => (),
         _ => {
@@ -59,7 +60,10 @@ fn setup_single_file_project(db: &mut RootDatabase, path: &Path) -> Result<Crate
 /// Setup the 'db' to compile the project in the given path.
 /// The path can be either a directory with cairo project file or a .cairo file.
 /// Returns the ids of the project crates.
-pub fn setup_project(db: &mut RootDatabase, path: &Path) -> Result<Vec<CrateId>, ProjectError> {
+pub fn setup_project(
+    db: &mut dyn SemanticGroup,
+    path: &Path,
+) -> Result<Vec<CrateId>, ProjectError> {
     if path.is_dir() {
         match ProjectConfig::from_directory(path) {
             Ok(config) => {
@@ -75,7 +79,7 @@ pub fn setup_project(db: &mut RootDatabase, path: &Path) -> Result<Vec<CrateId>,
 }
 
 pub fn get_main_crate_ids_from_project(
-    db: &mut RootDatabase,
+    db: &mut dyn SemanticGroup,
     config: &ProjectConfig,
 ) -> Vec<CrateId> {
     config

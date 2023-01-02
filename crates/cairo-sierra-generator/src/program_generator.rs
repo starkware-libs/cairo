@@ -4,10 +4,10 @@ use std::sync::Arc;
 use cairo_defs::ids::{FreeFunctionId, ModuleId};
 use cairo_diagnostics::{skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_filesystem::ids::CrateId;
-use cairo_sierra::extensions::core::CoreLibFunc;
+use cairo_sierra::extensions::core::CoreLibfunc;
 use cairo_sierra::extensions::lib_func::SierraApChange;
-use cairo_sierra::extensions::GenericLibFuncEx;
-use cairo_sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
+use cairo_sierra::extensions::GenericLibfuncEx;
+use cairo_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
 use cairo_sierra::program;
 use cairo_utils::ordered_hash_set::OrderedHashSet;
 use cairo_utils::try_extract_matches;
@@ -31,31 +31,31 @@ pub fn module_sierra_diagnostics(
     module_id: ModuleId,
 ) -> Diagnostics<SierraGeneratorDiagnostic> {
     let mut diagnostics = DiagnosticsBuilder::new();
-    for free_function_id in db.module_data(module_id).unwrap_or_default().free_functions.keys() {
-        diagnostics.extend(db.free_function_sierra_diagnostics(*free_function_id))
+    for free_function_id in db.module_free_functions_ids(module_id).unwrap_or_default() {
+        diagnostics.extend(db.free_function_sierra_diagnostics(free_function_id))
     }
     diagnostics.build()
 }
 
-/// Generates the list of [cairo_sierra::program::LibFuncDeclaration] for the given list of
-/// [ConcreteLibFuncId].
+/// Generates the list of [cairo_sierra::program::LibfuncDeclaration] for the given list of
+/// [ConcreteLibfuncId].
 fn generate_libfunc_declarations<'a>(
     db: &dyn SierraGenGroup,
-    libfuncs: impl Iterator<Item = &'a ConcreteLibFuncId>,
-) -> Vec<program::LibFuncDeclaration> {
+    libfuncs: impl Iterator<Item = &'a ConcreteLibfuncId>,
+) -> Vec<program::LibfuncDeclaration> {
     libfuncs
         .into_iter()
-        .map(|libfunc_id| program::LibFuncDeclaration {
+        .map(|libfunc_id| program::LibfuncDeclaration {
             id: libfunc_id.clone(),
             long_id: db.lookup_intern_concrete_lib_func(libfunc_id.clone()),
         })
         .collect()
 }
 
-/// Collects the set of all [ConcreteLibFuncId] used in the given list of [pre_sierra::Statement].
+/// Collects the set of all [ConcreteLibfuncId] used in the given list of [pre_sierra::Statement].
 fn collect_used_libfuncs(
     statements: &[pre_sierra::Statement],
-) -> OrderedHashSet<ConcreteLibFuncId> {
+) -> OrderedHashSet<ConcreteLibfuncId> {
     statements
         .iter()
         .filter_map(|statement| match statement {
@@ -107,16 +107,16 @@ fn generate_type_declarations_helper(
 }
 
 /// Collects the set of all [ConcreteTypeId] that are used in the given list of
-/// [program::LibFuncDeclaration].
+/// [program::LibfuncDeclaration].
 fn collect_used_types(
     db: &dyn SierraGenGroup,
-    libfunc_declarations: &[program::LibFuncDeclaration],
+    libfunc_declarations: &[program::LibfuncDeclaration],
 ) -> OrderedHashSet<ConcreteTypeId> {
     libfunc_declarations
         .iter()
         .flat_map(|libfunc| {
             // TODO(orizi): replace expect() with a diagnostic (unless this can never happen).
-            let signature = CoreLibFunc::specialize_signature_by_id(
+            let signature = CoreLibfunc::specialize_signature_by_id(
                 &SierraSignatureSpecializationContext(db),
                 &libfunc.long_id.generic_id,
                 &libfunc.long_id.generic_args,
@@ -228,7 +228,7 @@ pub fn get_sierra_program(
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {
-            for (free_func_id, _) in db.module_data(*module_id)?.free_functions {
+            for (free_func_id, _) in db.module_free_functions(*module_id)? {
                 requested_function_ids.push(free_func_id)
             }
         }

@@ -1021,6 +1021,7 @@
     │   │           └── trailing_trivia (kind: Trivia)
     │   │               └── child #0 (kind: TokenNewline).
     │   ├── child #4 (kind: ItemExternType)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── extern_kw (kind: TerminalExtern)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TokenNewline).

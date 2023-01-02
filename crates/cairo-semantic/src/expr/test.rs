@@ -11,27 +11,28 @@ use test_case::test_case;
 use crate::corelib::{core_felt_ty, get_core_ty_by_name, unit_ty};
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
+use crate::semantic;
 use crate::test_utils::{
     setup_test_expr, setup_test_function, setup_test_module, test_function_diagnostics,
     SemanticDatabaseForTesting, TestModule,
 };
-use crate::{semantic, semantic_test};
 
-semantic_test!(
-    expr_diagnostics_tests,
-    [
-        "src/expr/test_data/assignment",
-        "src/expr/test_data/enum",
-        "src/expr/test_data/error_propagate",
-        "src/expr/test_data/generics",
-        "src/expr/test_data/if",
-        "src/expr/test_data/let_statement",
-        "src/expr/test_data/literal",
-        "src/expr/test_data/match",
-        "src/expr/test_data/operators",
-        "src/expr/test_data/pattern",
-        "src/expr/test_data/return",
-    ],
+cairo_test_utils::test_file_test!(
+    expr_diagnostics,
+    "src/expr/test_data",
+    {
+        assignment: "assignment",
+        enum_: "enum",
+        error_propagate: "error_propagate",
+        generics: "generics",
+        if_: "if",
+        let_statement: "let_statement",
+        literal: "literal",
+        match_: "match",
+        operators: "operators",
+        pattern: "pattern",
+        return_: "return",
+    },
     test_function_diagnostics
 );
 

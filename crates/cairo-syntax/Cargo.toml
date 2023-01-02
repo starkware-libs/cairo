@@ -2,9 +2,11 @@
 name = "cairo-syntax"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo syntax representation."
 
 [dependencies]
-cairo-db-utils = { path = "../cairo-db-utils" }
 cairo-debug = { path = "../cairo-debug" }
 cairo-filesystem = { path = "../cairo-filesystem" }
 salsa.workspace = true

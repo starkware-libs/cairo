@@ -2,6 +2,9 @@
 name = "cairo-test-utils"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Utilities for writing tests in the Cairo compiler project."
 
 [dependencies]
 cairo-utils = { path = "../cairo-utils" }

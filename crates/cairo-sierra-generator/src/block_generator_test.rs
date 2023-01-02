@@ -2,29 +2,29 @@ use cairo_diagnostics::DiagnosticsBuilder;
 use cairo_lowering::lower::lower;
 use cairo_semantic::test_utils::setup_test_function;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::ordered_hash_set::OrderedHashSet;
 
 use super::generate_block_code;
 use crate::expr_generator_context::ExprGeneratorContext;
+use crate::lifetime::find_variable_lifetime;
 use crate::replace_ids::replace_sierra_ids;
 use crate::test_utils::SierraGenDatabaseForTesting;
 use crate::SierraGeneratorDiagnostic;
 
 cairo_test_utils::test_file_test!(
-    lowering_test,
-    [
-        "src/block_generator_test_data/early_return",
-        "src/block_generator_test_data/function_call",
-        "src/block_generator_test_data/literals",
-        "src/block_generator_test_data/match"
-    ],
-    SierraGenDatabaseForTesting,
+    block_generator,
+    "src/block_generator_test_data",
+    {
+        function_call: "function_call",
+        literals: "literals",
+        match_: "match",
+        early_return: "early_return",
+    },
     block_generator_test
 );
 
-fn block_generator_test(
-    db: &mut SierraGenDatabaseForTesting,
-    inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+    let db = &mut SierraGenDatabaseForTesting::default();
     // Parse code and create semantic model.
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -46,13 +46,21 @@ fn block_generator_test(
         ]);
     }
 
-    let block = &lowered.blocks[lowered.root.unwrap()];
+    let block_id = lowered.root.unwrap();
+    let block = &lowered.blocks[block_id];
 
     // Generate (pre-)Sierra statements.
     let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
-    let mut expr_generator_context =
-        ExprGeneratorContext::new(db, &lowered, test_function.function_id, &mut diagnostics);
-    let statements_opt = generate_block_code(&mut expr_generator_context, block);
+    let lifetime = find_variable_lifetime(&lowered, &OrderedHashSet::default())
+        .expect("Failed to retrieve lifetime information.");
+    let mut expr_generator_context = ExprGeneratorContext::new(
+        db,
+        &lowered,
+        test_function.function_id,
+        &lifetime,
+        &mut diagnostics,
+    );
+    let statements_opt = generate_block_code(&mut expr_generator_context, block_id, block);
     let expected_sierra_code = statements_opt.map_or("None".into(), |statements| {
         statements
             .iter()

@@ -3,22 +3,19 @@ use cairo_lowering::db::LoweringGroup;
 use cairo_semantic::test_utils::setup_test_module;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use pretty_assertions::assert_eq;
 
 use crate::db::SierraGenGroup;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 cairo_test_utils::test_file_test!(
     ap_change,
-    ["src/ap_change_test_data/tests",],
-    SierraGenDatabaseForTesting,
+    "src/ap_change_test_data",
+    {tests: "tests"},
     contains_cycles_test
 );
 
-fn contains_cycles_test(
-    db: &mut SierraGenDatabaseForTesting,
-    inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+fn contains_cycles_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+    let db = &mut SierraGenDatabaseForTesting::default();
     // Parse code and create semantic model.
     let test_module = setup_test_module(db, inputs["module_code"].as_str()).unwrap();
 
@@ -27,9 +24,8 @@ fn contains_cycles_test(
         .expect_with_db(db, "Unexpected diagnostics.");
 
     let result = db
-        .module_data(test_module.module_id)
+        .module_free_functions(test_module.module_id)
         .unwrap()
-        .free_functions
         .iter()
         .map(|(function_id, _)| {
             let name = db.lookup_intern_free_function(*function_id).name(db);

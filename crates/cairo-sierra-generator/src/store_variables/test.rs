@@ -1,15 +1,15 @@
 use cairo_semantic::corelib::get_core_ty_by_name;
 use cairo_semantic::GenericArgumentId;
 use cairo_sierra::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange,
 };
 use cairo_sierra::extensions::OutputVarReferenceInfo;
-use cairo_sierra::ids::ConcreteLibFuncId;
+use cairo_sierra::ids::ConcreteLibfuncId;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use pretty_assertions::assert_eq;
 
-use super::LocalVariables;
+use super::{LibfuncInfo, LocalVariables};
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::replace_ids::replace_sierra_ids;
@@ -21,7 +21,7 @@ use crate::test_utils::{
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
 /// All libfuncs inputs and outputs are felts, since [dummy_push_values] is currently with felts.
-fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -> LibFuncSignature {
+fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
     let libfunc_long_id = db.lookup_intern_concrete_lib_func(libfunc);
     let felt_ty = db.get_concrete_type_id(db.core_felt_ty()).expect("Can't find core::felt.");
     let array_ty = db
@@ -38,7 +38,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                 ty: felt_ty.clone(),
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }];
-            LibFuncSignature {
+            LibfuncSignature {
                 param_signatures: vec![
                     ParamSignature::new(felt_ty.clone()),
                     ParamSignature::new(felt_ty),
@@ -50,7 +50,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                 fallthrough: Some(0),
             }
         }
-        "felt_add3" => LibFuncSignature {
+        "felt_add3" => LibfuncSignature {
             param_signatures: vec![ParamSignature {
                 ty: felt_ty.clone(),
                 allow_deferred: false,
@@ -68,7 +68,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             }],
             fallthrough: Some(0),
         },
-        "array_append" => LibFuncSignature {
+        "array_append" => LibfuncSignature {
             param_signatures: vec![
                 ParamSignature {
                     ty: array_ty.clone(),
@@ -89,7 +89,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             }],
             fallthrough: Some(0),
         },
-        "nope" => LibFuncSignature {
+        "nope" => LibfuncSignature {
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],
@@ -97,7 +97,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             }],
             fallthrough: Some(0),
         },
-        "revoke_ap" => LibFuncSignature {
+        "revoke_ap" => LibfuncSignature {
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],
@@ -112,7 +112,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(idx) },
                 })
                 .collect();
-            LibFuncSignature {
+            LibfuncSignature {
                 param_signatures: vec![],
                 branch_signatures: vec![BranchSignature {
                     vars,
@@ -121,7 +121,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                 fallthrough: Some(0),
             }
         }
-        "jump" => LibFuncSignature {
+        "jump" => LibfuncSignature {
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],
@@ -129,7 +129,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             }],
             fallthrough: None,
         },
-        "branch" => LibFuncSignature {
+        "branch" => LibfuncSignature {
             param_signatures: vec![],
             branch_signatures: vec![
                 BranchSignature {
@@ -143,7 +143,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             ],
             fallthrough: Some(1),
         },
-        "branch_with_param" => LibFuncSignature {
+        "branch_with_param" => LibfuncSignature {
             param_signatures: vec![ParamSignature::new(felt_ty)],
             branch_signatures: vec![
                 BranchSignature {
@@ -157,7 +157,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             ],
             fallthrough: Some(1),
         },
-        "store_temp<felt>" => LibFuncSignature {
+        "store_temp<felt>" => LibfuncSignature {
             param_signatures: vec![ParamSignature {
                 ty: felt_ty.clone(),
                 allow_deferred: true,
@@ -173,7 +173,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             }],
             fallthrough: Some(0),
         },
-        "temp_not_on_top" => LibFuncSignature::new_non_branch(
+        "temp_not_on_top" => LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
                 ty: felt_ty,
@@ -182,7 +182,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             }],
             SierraApChange::Known { new_vars_only: false },
         ),
-        "dup" => LibFuncSignature::new_non_branch_ex(
+        "dup" => LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature {
                 ty: felt_ty.clone(),
                 allow_deferred: true,
@@ -217,7 +217,7 @@ fn test_add_store_statements(
     add_store_statements(
         db,
         statements,
-        &(|libfunc| get_lib_func_signature(db, libfunc)),
+        &(|libfunc| LibfuncInfo { signature: get_lib_func_signature(db, libfunc), is_drop: false }),
         local_variables,
     )
     .iter()

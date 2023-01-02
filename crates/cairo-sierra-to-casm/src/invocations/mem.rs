@@ -1,35 +1,35 @@
 use cairo_casm::ap_change::{ApChange, ApplyApChange};
 use cairo_casm::instructions::Instruction;
-use cairo_casm::operand::{CellRef, DerefOrImmediate, Register};
+use cairo_casm::operand::{CellRef, Register};
 use cairo_casm::{casm, casm_extend};
-use cairo_sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
-use cairo_sierra::extensions::lib_func::SignatureAndTypeConcreteLibFunc;
-use cairo_sierra::extensions::mem::MemConcreteLibFunc;
+use cairo_sierra::extensions::felt::FeltBinaryOperator;
+use cairo_sierra::extensions::lib_func::SignatureAndTypeConcreteLibfunc;
+use cairo_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_sierra::ids::ConcreteTypeId;
 use cairo_utils::casts::usize_as_i16;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::environment::frame_state;
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, UnaryOpExpression};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra memory operations.
 pub fn build(
-    libfunc: &MemConcreteLibFunc,
+    libfunc: &MemConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        MemConcreteLibFunc::StoreTemp(SignatureAndTypeConcreteLibFunc { ty, .. }) => {
+        MemConcreteLibfunc::StoreTemp(SignatureAndTypeConcreteLibfunc { ty, .. }) => {
             build_store_temp(builder, ty)
         }
-        MemConcreteLibFunc::Rename(_) => misc::build_identity(builder),
-        MemConcreteLibFunc::FinalizeLocals(_) => build_finalize_locals(builder),
-        MemConcreteLibFunc::AllocLocal(SignatureAndTypeConcreteLibFunc { ty, .. }) => {
+        MemConcreteLibfunc::Rename(_) => misc::build_identity(builder),
+        MemConcreteLibfunc::FinalizeLocals(_) => build_finalize_locals(builder),
+        MemConcreteLibfunc::AllocLocal(SignatureAndTypeConcreteLibfunc { ty, .. }) => {
             build_alloc_local(builder, ty)
         }
-        MemConcreteLibFunc::StoreLocal(SignatureAndTypeConcreteLibFunc { ty, .. }) => {
+        MemConcreteLibfunc::StoreLocal(SignatureAndTypeConcreteLibfunc { ty, .. }) => {
             build_store_local(builder, ty)
         }
-        MemConcreteLibFunc::AlignTemps(_) => {
+        MemConcreteLibfunc::AlignTemps(_) => {
             Err(InvocationError::NotImplemented(builder.invocation.clone()))
         }
     }
@@ -66,20 +66,7 @@ fn get_store_instructions(
             CellExpression::DoubleDeref(operand, offset) => {
                 add_instruction!(ctx, dst = [[&operand] + offset])
             }
-            CellExpression::IntoSingleCellRef(operand) => add_instruction!(
-                ctx,
-                %{ memory dst = segments.add() %}
-                operand = [[&dst]]
-            ),
             CellExpression::Immediate(operand) => add_instruction!(ctx, dst = operand),
-            CellExpression::UnaryOp(UnaryOpExpression { op, a }) => match op {
-                FeltUnaryOperator::Neg => match a {
-                    DerefOrImmediate::Deref(cell_ref) => {
-                        add_instruction!(ctx, dst = cell_ref * (-1))
-                    }
-                    DerefOrImmediate::Immediate(imm) => add_instruction!(ctx, dst = (-imm)),
-                },
-            },
             CellExpression::BinOp(BinOpExpression { op, a, b }) => match op {
                 FeltBinaryOperator::Add => add_instruction!(ctx, dst = a + b),
                 FeltBinaryOperator::Mul => add_instruction!(ctx, dst = a * b),

@@ -1,6 +1,6 @@
 use cairo_debug::DebugWithDb;
 use cairo_defs::ids::{FreeFunctionId, LanguageElementId};
-use cairo_diagnostics::{skip_diagnostic, Diagnostics, Maybe, ToMaybe};
+use cairo_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_semantic::corelib::{
     core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
     get_enum_concrete_variant, get_panic_ty, jump_nz_nonzero_variant, jump_nz_zero_variant,
@@ -54,6 +54,9 @@ pub struct Lowered {
 /// Lowers a semantic free function.
 pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<Lowered> {
     log::trace!("Lowering a free function.");
+    let is_empty_semantic_diagnostics =
+        db.free_function_declaration_diagnostics(free_function_id).is_empty()
+            && db.free_function_definition_diagnostics(free_function_id).is_empty();
     let function_def = db.free_function_definition(free_function_id)?;
     let generic_params = db.free_function_declaration_generic_params(free_function_id)?;
     let signature = db.free_function_declaration_signature(free_function_id)?;
@@ -94,33 +97,37 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
         expr_formatter: ExprFormatter { db: db.upcast(), free_function_id },
     };
 
-    // TODO(spapini): Build semantic_defs in semantic model.
-    for semantic_var in input_semantic_vars {
-        ctx.semantic_defs.insert(semantic_var.id(), semantic_var);
-    }
+    let root = if is_empty_semantic_diagnostics {
+        // TODO(spapini): Build semantic_defs in semantic model.
+        for semantic_var in input_semantic_vars {
+            ctx.semantic_defs.insert(semantic_var.id(), semantic_var);
+        }
 
-    // Fetch body block expr.
-    let semantic_block =
-        extract_matches!(&function_def.exprs[function_def.body], cairo_semantic::Expr::Block);
-    // Lower block to a BlockSealed.
-    let (block_sealed_opt, mut merger_finalized) =
-        BlockFlowMerger::with_root(&mut ctx, &ref_params, |ctx, merger| {
-            merger.run_in_subscope(ctx, input_var_tys, |ctx, scope, variables| {
-                let mut variables_iter = variables.into_iter();
-                for ty in implicits_ref {
-                    let var = variables_iter.next().to_maybe()?;
-                    scope.put_implicit(*ty, var);
-                }
+        // Fetch body block expr.
+        let semantic_block =
+            extract_matches!(&function_def.exprs[function_def.body], cairo_semantic::Expr::Block);
+        // Lower block to a BlockSealed.
+        let (block_sealed_opt, mut merger_finalized) =
+            BlockFlowMerger::with_root(&mut ctx, &ref_params, |ctx, merger| {
+                merger.run_in_subscope(ctx, input_var_tys, |ctx, scope, variables| {
+                    let mut variables_iter = variables.into_iter();
+                    for ty in implicits_ref {
+                        let var = variables_iter.next().to_maybe()?;
+                        scope.put_implicit(*ty, var);
+                    }
 
-                // Initialize implicits and params.
-                for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables_iter) {
-                    scope.put_semantic_variable(semantic_var_id, var);
-                }
-                lower_block(ctx, scope, semantic_block, true)
-            })
-        });
-    let root = block_sealed_opt
-        .map(|block_sealed| merger_finalized.finalize_block(&mut ctx, block_sealed).block);
+                    // Initialize implicits and params.
+                    for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables_iter) {
+                        scope.put_semantic_variable(semantic_var_id, var);
+                    }
+                    lower_block(ctx, scope, semantic_block, true)
+                })
+            });
+        block_sealed_opt
+            .map(|block_sealed| merger_finalized.finalize_block(&mut ctx, block_sealed).block)
+    } else {
+        Err(DiagnosticAdded)
+    };
     Ok(Lowered {
         diagnostics: ctx.diagnostics.build(),
         root,
@@ -344,7 +351,7 @@ fn lower_single_pattern(
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
         cairo_semantic::Pattern::Struct(strct) => {
-            let members = ctx.db.struct_members(strct.id).unwrap();
+            let members = ctx.db.struct_members(strct.id).map_err(LoweringFlowError::Failed)?;
             let mut required_members = UnorderedHashMap::from_iter(
                 strct.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
             );
@@ -510,6 +517,7 @@ fn lower_expr_function_call(
                 inputs,
                 ref_args: expr.ref_args.clone(),
                 implicits: callee_implicit_types,
+                stable_ptr: expr.stable_ptr.untyped(),
             };
 
             if let Ok(refs) = ctx.db.extern_function_declaration_refs(extern_function_id) {
@@ -637,13 +645,23 @@ fn lower_expr_match(
 
                     // Create a scope for the arm block.
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, arm_inputs| {
-                        // TODO(spapini): Convert to a diagnostic.
-                        let enum_pattern =
-                            extract_matches!(&arm.pattern, cairo_semantic::Pattern::EnumVariant);
-                        // TODO(spapini): Convert to a diagnostic.
-                        assert_eq!(&enum_pattern.variant, concrete_variant, "Wrong variant");
-
+                        // TODO(spapini): Make a better diagnostic.
+                        let enum_pattern = try_extract_matches!(
+                            &arm.pattern,
+                            cairo_semantic::Pattern::EnumVariant
+                        )
+                        .ok_or_else(|| {
+                            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArm)
+                        })?;
+                        // TODO(spapini): Make a better diagnostic.
+                        if &enum_pattern.variant != concrete_variant {
+                            return Err(ctx
+                                .diagnostics
+                                .report(expr.stable_ptr.untyped(), UnsupportedMatchArm));
+                        }
+                        // This assert is ok.
                         assert_eq!(arm_inputs.len(), 1);
+
                         let variant_expr =
                             LoweredExpr::AtVariable(arm_inputs.into_iter().next().unwrap());
                         match lower_single_pattern(
@@ -686,7 +704,10 @@ fn lower_optimized_extern_match(
     match_arms: &[cairo_semantic::MatchArm],
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Started lowering of an optimized extern match.");
-    let concrete_variants = ctx.db.concrete_enum_variants(extern_enum.concrete_enum_id).unwrap();
+    let concrete_variants = ctx
+        .db
+        .concrete_enum_variants(extern_enum.concrete_enum_id)
+        .map_err(LoweringFlowError::Failed)?;
     if match_arms.len() != concrete_variants.len() {
         return Err(LoweringFlowError::Failed(skip_diagnostic()));
     }
@@ -707,11 +728,20 @@ fn lower_optimized_extern_match(
 
                     // Create a scope for the arm block.
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
-                        // TODO(spapini): Convert to a diagnostic.
-                        let enum_pattern =
-                            extract_matches!(&arm.pattern, cairo_semantic::Pattern::EnumVariant);
-                        // TODO(spapini): Convert to a diagnostic.
-                        assert_eq!(&enum_pattern.variant, concrete_variant, "Wrong variant");
+                        // TODO(spapini): Make a better diagnostic.
+                        let enum_pattern = try_extract_matches!(
+                            &arm.pattern,
+                            cairo_semantic::Pattern::EnumVariant
+                        )
+                        .ok_or_else(|| {
+                            ctx.diagnostics.report(extern_enum.stable_ptr, UnsupportedMatchArm)
+                        })?;
+                        // TODO(spapini): Make a better diagnostic.
+                        if &enum_pattern.variant != concrete_variant {
+                            return Err(ctx
+                                .diagnostics
+                                .report(extern_enum.stable_ptr, UnsupportedMatchArm));
+                        }
 
                         // Bind the arm inputs to implicits and semantic variables.
                         match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
@@ -854,7 +884,11 @@ fn extract_concrete_enum(
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    assert_eq!(expr.arms.len(), concrete_variants.len(), "Wrong number of arms.");
+    if expr.arms.len() != concrete_variants.len() {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
+        ));
+    }
     Ok((concrete_enum_id, concrete_variants))
 }
 

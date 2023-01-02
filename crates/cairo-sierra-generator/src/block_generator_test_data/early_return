@@ -30,6 +30,7 @@ PushValues([2]: felt) -> ([3])
 return([3])
 label0:
 branch_align() -> ()
+drop<NonZero<felt>>([1]) -> ()
 PushValues() -> ()
 label1:
 felt_const<2>() -> ([4])

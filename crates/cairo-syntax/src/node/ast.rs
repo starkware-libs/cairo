@@ -7078,13 +7078,15 @@ pub struct ItemExternType {
     children: Vec<SyntaxNode>,
 }
 impl ItemExternType {
-    pub const INDEX_EXTERN_KW: usize = 0;
-    pub const INDEX_TYPE_KW: usize = 1;
-    pub const INDEX_NAME: usize = 2;
-    pub const INDEX_GENERIC_PARAMS: usize = 3;
-    pub const INDEX_SEMICOLON: usize = 4;
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_EXTERN_KW: usize = 1;
+    pub const INDEX_TYPE_KW: usize = 2;
+    pub const INDEX_NAME: usize = 3;
+    pub const INDEX_GENERIC_PARAMS: usize = 4;
+    pub const INDEX_SEMICOLON: usize = 5;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
         extern_kw: TerminalExternGreen,
         type_kw: TerminalTypeGreen,
         name: TerminalIdentifierGreen,
@@ -7092,7 +7094,7 @@ impl ItemExternType {
         semicolon: TerminalSemicolonGreen,
     ) -> ItemExternTypeGreen {
         let children: Vec<GreenId> =
-            vec![extern_kw.0, type_kw.0, name.0, generic_params.0, semicolon.0];
+            vec![attributes.0, extern_kw.0, type_kw.0, name.0, generic_params.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemExternTypeGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemExternType,
@@ -7101,20 +7103,23 @@ impl ItemExternType {
     }
 }
 impl ItemExternType {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn extern_kw(&self, db: &dyn SyntaxGroup) -> TerminalExtern {
-        TerminalExtern::from_syntax_node(db, self.children[0].clone())
+        TerminalExtern::from_syntax_node(db, self.children[1].clone())
     }
     pub fn type_kw(&self, db: &dyn SyntaxGroup) -> TerminalType {
-        TerminalType::from_syntax_node(db, self.children[1].clone())
+        TerminalType::from_syntax_node(db, self.children[2].clone())
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[5].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7143,6 +7148,7 @@ impl TypedSyntaxNode for ItemExternType {
             kind: SyntaxKind::ItemExternType,
             details: GreenNodeDetails::Node {
                 children: vec![
+                    AttributeList::missing(db).0,
                     TerminalExtern::missing(db).0,
                     TerminalType::missing(db).0,
                     TerminalIdentifier::missing(db).0,
@@ -7537,14 +7543,14 @@ pub struct TraitItemFunction {
 impl TraitItemFunction {
     pub const INDEX_ATTRIBUTES: usize = 0;
     pub const INDEX_DECLARATION: usize = 1;
-    pub const INDEX_SEMICOLON: usize = 2;
+    pub const INDEX_BODY: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
         declaration: FunctionDeclarationGreen,
-        semicolon: TerminalSemicolonGreen,
+        body: MaybeTraitFunctionBodyGreen,
     ) -> TraitItemFunctionGreen {
-        let children: Vec<GreenId> = vec![attributes.0, declaration.0, semicolon.0];
+        let children: Vec<GreenId> = vec![attributes.0, declaration.0, body.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         TraitItemFunctionGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::TraitItemFunction,
@@ -7559,8 +7565,8 @@ impl TraitItemFunction {
     pub fn declaration(&self, db: &dyn SyntaxGroup) -> FunctionDeclaration {
         FunctionDeclaration::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
+    pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeTraitFunctionBody {
+        MaybeTraitFunctionBody::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7591,7 +7597,7 @@ impl TypedSyntaxNode for TraitItemFunction {
                 children: vec![
                     AttributeList::missing(db).0,
                     FunctionDeclaration::missing(db).0,
-                    TerminalSemicolon::missing(db).0,
+                    MaybeTraitFunctionBody::missing(db).0,
                 ],
                 width: 0,
             },
@@ -7617,6 +7623,75 @@ impl TypedSyntaxNode for TraitItemFunction {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TraitItemFunctionPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MaybeTraitFunctionBody {
+    Some(ExprBlock),
+    None(TerminalSemicolon),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MaybeTraitFunctionBodyPtr(pub SyntaxStablePtrId);
+impl MaybeTraitFunctionBodyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<ExprBlockPtr> for MaybeTraitFunctionBodyPtr {
+    fn from(value: ExprBlockPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonPtr> for MaybeTraitFunctionBodyPtr {
+    fn from(value: TerminalSemicolonPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprBlockGreen> for MaybeTraitFunctionBodyGreen {
+    fn from(value: ExprBlockGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonGreen> for MaybeTraitFunctionBodyGreen {
+    fn from(value: TerminalSemicolonGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MaybeTraitFunctionBodyGreen(pub GreenId);
+impl TypedSyntaxNode for MaybeTraitFunctionBody {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = MaybeTraitFunctionBodyPtr;
+    type Green = MaybeTraitFunctionBodyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ExprBlock => {
+                MaybeTraitFunctionBody::Some(ExprBlock::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalSemicolon => {
+                MaybeTraitFunctionBody::None(TerminalSemicolon::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "MaybeTraitFunctionBody"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            MaybeTraitFunctionBody::Some(x) => x.as_syntax_node(),
+            MaybeTraitFunctionBody::None(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MaybeTraitFunctionBodyPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

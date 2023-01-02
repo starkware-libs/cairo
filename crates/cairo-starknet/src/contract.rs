@@ -8,7 +8,7 @@ use cairo_semantic::db::SemanticGroup;
 use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
 
-use crate::plugin::{ABI_TRAIT, CONTRACT_ATTR, EXTERNAL_MODULE};
+use crate::plugin::{ABI_TRAIT, EXTERNAL_MODULE, GENERATED_CONTRACT_ATTR};
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -44,17 +44,15 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
     for crate_id in crate_ids {
         let modules = db.crate_modules(*crate_id);
         for module_id in modules.iter() {
-            let Ok(submodules) = db.module_submodules(*module_id) else {
+            let Ok(submodules) = db.module_submodules_ids(*module_id) else {
                 continue;
             };
 
-            for module_id in submodules {
-                if let ModuleId::Submodule(submodule_id) = module_id {
-                    if let Ok(attrs) = db.module_attributes(module_id) {
-                        if attrs.iter().any(|attr| attr.id == CONTRACT_ATTR) {
-                            contracts.push(ContractDeclaration { submodule_id });
-                        };
-                    }
+            for submodule_id in submodules {
+                if let Ok(attrs) = db.module_attributes(ModuleId::Submodule(submodule_id)) {
+                    if attrs.iter().any(|attr| attr.id == GENERATED_CONTRACT_ATTR) {
+                        contracts.push(ContractDeclaration { submodule_id });
+                    };
                 }
             }
         }
@@ -76,10 +74,10 @@ pub fn get_external_functions(
         .get(EXTERNAL_MODULE)
     {
         Some(ModuleItemId::Submodule(external_module_id)) => Ok(db
-            .module_free_functions(ModuleId::Submodule(*external_module_id))
+            .module_free_functions_ids(ModuleId::Submodule(*external_module_id))
             .to_option()
-            .with_context(|| "Failed to get module items.")?),
-        _ => anyhow::bail!("Failed to get the entry points module."),
+            .with_context(|| "Failed to get external module functions.")?),
+        _ => anyhow::bail!("Failed to get the external module."),
     }
 }
 
@@ -108,21 +106,17 @@ fn get_generated_contract_module(
 ) -> anyhow::Result<ModuleId> {
     let parent_module_id = contract.submodule_id.parent_module(db.upcast());
     let contract_name = contract.submodule_id.name(db.upcast());
-    let generated_module_name = format!("__generated__{contract_name}");
 
     match db
         .module_items(parent_module_id)
         .to_option()
         .with_context(|| "Failed to get root module items.")?
         .items
-        .get(generated_module_name.as_str())
+        .get(contract_name.as_str())
     {
         Some(ModuleItemId::Submodule(generated_module_id)) => {
             Ok(ModuleId::Submodule(*generated_module_id))
         }
-        _ => anyhow::bail!(format!(
-            "Failed to get generated module {}.",
-            generated_module_name.clone()
-        )),
+        _ => anyhow::bail!(format!("Failed to get generated module {}.", contract_name.clone())),
     }
 }

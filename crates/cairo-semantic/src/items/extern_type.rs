@@ -1,6 +1,6 @@
 use cairo_defs::ids::{ExternTypeId, GenericParamId, LanguageElementId};
 use cairo_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
@@ -45,8 +45,8 @@ pub fn priv_extern_type_declaration_data(
 ) -> Maybe<ExternTypeDeclarationData> {
     let module_file_id = extern_type_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let type_syntax = module_data.extern_types.get(&extern_type_id).to_maybe()?;
+    let module_extern_types = db.module_extern_types(module_file_id.0)?;
+    let type_syntax = module_extern_types.get(&extern_type_id).to_maybe()?;
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,

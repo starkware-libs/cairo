@@ -23,14 +23,6 @@ extern fn u128_overflow_sub(
     a: u128, b: u128
 ) -> Result::<u128, u128> implicits(RangeCheck) nopanic;
 
-// TODO(orizi): This is a helper for `u128_wide_mul` - remove when becomes extern.
-fn u128_known_u64_mul(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
-    match u128s_from_felt(u128_to_felt(a) * u128_to_felt(b)) {
-        U128sFromFeltResult::Narrow(x) => x,
-        U128sFromFeltResult::Wide((_, x)) => x,
-    }
-}
-
 fn u128_wrapping_add(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
     match u128_overflow_add(a, b) {
         Result::Ok(x) => x,

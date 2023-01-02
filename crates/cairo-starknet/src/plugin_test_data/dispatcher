@@ -1,0 +1,71 @@
+//! > Test expansion of a dispatcher.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[abi]
+trait IContract {
+    fn get_something(arg: felt, num: felt) -> felt;
+
+    fn empty();
+
+    fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
+}
+
+//! > generated_cairo_code
+#[abi]
+trait IContract {
+    fn get_something(arg: felt, num: felt) -> felt;
+
+    fn empty();
+
+    fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
+}
+mod IContractDispatcher {
+        fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
+        let calldata = array_new::<felt>();
+        // TODO(ilya): Encode calldata.
+        let ret_data = match starknet::call_contract_syscall(
+                contract_address, calldata) {
+            Result::Ok(ret_data) => ret_data,
+            Result::Err((reason, _ret_data)) => {
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, 'call_contract_syscall failed');
+                array_append::<felt>(err_data, reason);
+                // TODO(ilya): Handle ret_data.
+                panic(err_data)
+            }
+        };
+        // TODO(ilya): Decode ret_data and return it.
+    }
+
+    fn empty(contract_address: ContractAddress, ) {
+        let calldata = array_new::<felt>();
+        // TODO(ilya): Encode calldata.
+        let ret_data = match starknet::call_contract_syscall(
+                contract_address, calldata) {
+            Result::Ok(ret_data) => ret_data,
+            Result::Err((reason, _ret_data)) => {
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, 'call_contract_syscall failed');
+                array_append::<felt>(err_data, reason);
+                // TODO(ilya): Handle ret_data.
+                panic(err_data)
+            }
+        };
+        // TODO(ilya): Decode ret_data and return it.
+    }
+
+}
+
+//! > expected_diagnostics
+error: `ref` parameters are not supported in the ABI of a contract.
+ --> dummy_file.cairo:7:16
+    fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
+               ^*^
+
+error: `ref` parameters are not supported in the ABI of a contract.
+ --> dummy_file.cairo:7:32
+    fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
+                               ^*^

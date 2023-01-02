@@ -1,5 +1,4 @@
 use std::path::Path;
-use std::sync::Arc;
 
 use anyhow::Context;
 use cairo_compiler::db::RootDatabase;
@@ -7,16 +6,12 @@ use cairo_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_compiler::project::setup_project;
 use cairo_defs::ids::{FreeFunctionId, GenericFunctionId};
 use cairo_diagnostics::ToOption;
-use cairo_lowering::db::LoweringGroup;
-use cairo_plugins::get_default_plugins;
-use cairo_semantic::corelib::get_core_ty_by_name;
 use cairo_semantic::db::SemanticGroup;
 use cairo_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_sierra::{self};
 use cairo_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_sierra_generator::db::SierraGenGroup;
 use cairo_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
-use itertools::Itertools;
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -24,8 +19,8 @@ use thiserror::Error;
 use crate::abi::{self, Contract};
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
 use crate::contract::{find_contracts, get_abi, get_external_functions, starknet_keccak};
+use crate::db::get_starknet_database;
 use crate::felt_serde::sierra_to_felts;
-use crate::plugin::StarkNetPlugin;
 
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
@@ -68,22 +63,10 @@ pub struct ContractEntryPoint {
 // Compile the contract given by path.
 // If `replace_ids` is true, replaces sierra ids with human readable ones.
 pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractClass> {
-    let mut db_val = RootDatabase::default();
+    let mut db_val = get_starknet_database();
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&path))?;
-
-    // Override implicit precedence for compatibility with the StarkNet OS.
-    db.set_implicit_precedence(Arc::new(
-        ["Pedersen", "RangeCheck", "Bitwise", "GasBuiltin", "System"]
-            .iter()
-            .map(|name| get_core_ty_by_name(db, name.into(), vec![]))
-            .collect_vec(),
-    ));
-
-    let mut plugins = get_default_plugins();
-    plugins.push(Arc::new(StarkNetPlugin {}));
-    db.set_semantic_plugins(plugins);
 
     if check_and_eprint_diagnostics(db) {
         anyhow::bail!("Failed to compile: {}", path.display());

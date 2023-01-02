@@ -1,6 +1,5 @@
 use cairo_defs::plugin::{MacroPlugin, PluginGeneratedFile, PluginResult};
 use cairo_diagnostics::{format_diagnostics, DiagnosticLocation};
-use cairo_parser::parser_test;
 use cairo_parser::test_utils::create_virtual_file;
 use cairo_parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
 use cairo_syntax::node::TypedSyntaxNode;
@@ -9,9 +8,9 @@ use cairo_utils::ordered_hash_map::OrderedHashMap;
 use crate::plugin::StarkNetPlugin;
 
 pub fn test_expand_contract(
-    db: &mut SimpleParserDatabase,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut SimpleParserDatabase::default();
     let cairo_code = &inputs["cairo_code"];
     let file_id = create_virtual_file(db, "dummy_file.cairo", cairo_code);
 
@@ -22,7 +21,8 @@ pub fn test_expand_contract(
     let mut generated_items: Vec<String> = Vec::new();
     let mut diagnostic_items: Vec<String> = Vec::new();
     for item in syntax_file.items(db).elements(db).into_iter() {
-        let PluginResult { code, diagnostics } = plugin.generate_code(db, item);
+        let PluginResult { code, diagnostics, remove_original_item } =
+            plugin.generate_code(db, item.clone());
 
         diagnostic_items.extend(diagnostics.iter().map(|diag| {
             let syntax_node = file_syntax_node.lookup_ptr(db, diag.stable_ptr);
@@ -36,7 +36,10 @@ pub fn test_expand_contract(
             Some(PluginGeneratedFile { content, .. }) => content,
             None => continue,
         };
-        generated_items.push(cairo_formatter::format_string(db, content));
+        if !remove_original_item {
+            generated_items.push(item.as_syntax_node().get_text(db));
+        }
+        generated_items.push(content);
     }
 
     OrderedHashMap::from([
@@ -45,11 +48,15 @@ pub fn test_expand_contract(
     ])
 }
 
-parser_test!(test_diagnostics, ["src/plugin_test_data/diagnostics",], test_expand_contract);
-parser_test!(test_wrapper_expansion, ["src/plugin_test_data/contract",], test_expand_contract);
-parser_test!(test_storage_expansion, ["src/plugin_test_data/storage",], test_expand_contract);
-parser_test!(
-    test_hello_starknet_expansion,
-    ["src/plugin_test_data/hello_starknet",],
+cairo_test_utils::test_file_test!(
+    expand_contract,
+    "src/plugin_test_data",
+    {
+        diagnostics: "diagnostics",
+        contract: "contract",
+        storage: "storage",
+        hello_starknet: "hello_starknet",
+        dispatcher: "dispatcher",
+    },
     test_expand_contract
 );

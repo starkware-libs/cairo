@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use cairo_sierra::extensions::core::{CoreLibFunc, CoreType, CoreTypeConcrete};
+use cairo_sierra::extensions::core::{CoreLibfunc, CoreType, CoreTypeConcrete};
 use cairo_sierra::extensions::starknet::StarkNetTypeConcrete;
 use cairo_sierra::extensions::types::InfoAndTypeConcreteType;
 use cairo_sierra::ids::ConcreteTypeId;
@@ -12,7 +12,7 @@ pub type TypeSizeMap = HashMap<ConcreteTypeId, i16>;
 /// Returns a mapping for the sizes of all types for the given program.
 pub fn get_type_size_map(
     program: &Program,
-    registry: &ProgramRegistry<CoreType, CoreLibFunc>,
+    registry: &ProgramRegistry<CoreType, CoreLibfunc>,
 ) -> Option<TypeSizeMap> {
     let mut type_sizes = TypeSizeMap::new();
     for declaration in &program.type_declarations {

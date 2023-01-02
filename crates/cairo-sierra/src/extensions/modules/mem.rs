@@ -1,41 +1,41 @@
 use super::uninitialized::UninitializedType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureAndTypeGenericLibFunc, SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
-    WrapSignatureAndTypeGenericLibFunc,
+    LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureAndTypeGenericLibfunc, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
+    WrapSignatureAndTypeGenericLibfunc,
 };
 use crate::extensions::{
-    args_as_single_type, NamedType, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo,
+    args_as_single_type, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericLibFuncId};
+use crate::ids::{ConcreteTypeId, GenericLibfuncId};
 use crate::program::GenericArg;
 
 define_libfunc_hierarchy! {
-    pub enum MemLibFunc {
-        StoreTemp(StoreTempLibFunc),
-        AlignTemps(AlignTempsLibFunc),
-        StoreLocal(StoreLocalLibFunc),
-        FinalizeLocals(FinalizeLocalsLibFunc),
-        AllocLocal(AllocLocalLibFunc),
-        Rename(RenameLibFunc),
-    }, MemConcreteLibFunc
+    pub enum MemLibfunc {
+        StoreTemp(StoreTempLibfunc),
+        AlignTemps(AlignTempsLibfunc),
+        StoreLocal(StoreLocalLibfunc),
+        FinalizeLocals(FinalizeLocalsLibfunc),
+        AllocLocal(AllocLocalLibfunc),
+        Rename(RenameLibfunc),
+    }, MemConcreteLibfunc
 }
 
-/// LibFunc for storing a value into temporary memory.
+/// Libfunc for storing a value into temporary memory.
 #[derive(Default)]
-pub struct StoreTempLibFuncWrapped {}
-impl SignatureAndTypeGenericLibFunc for StoreTempLibFuncWrapped {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("store_temp");
+pub struct StoreTempLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("store_temp");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         context.as_type_specialization_context().get_type_info(ty.clone())?;
-        Ok(LibFuncSignature::new_non_branch_ex(
+        Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature {
                 ty: ty.clone(),
                 allow_deferred: true,
@@ -50,38 +50,38 @@ impl SignatureAndTypeGenericLibFunc for StoreTempLibFuncWrapped {
         ))
     }
 }
-pub type StoreTempLibFunc = WrapSignatureAndTypeGenericLibFunc<StoreTempLibFuncWrapped>;
+pub type StoreTempLibfunc = WrapSignatureAndTypeGenericLibfunc<StoreTempLibfuncWrapped>;
 
-/// LibFunc for aligning the temporary buffer for flow control merge.
+/// Libfunc for aligning the temporary buffer for flow control merge.
 #[derive(Default)]
-pub struct AlignTempsLibFuncWrapped {}
-impl SignatureAndTypeGenericLibFunc for AlignTempsLibFuncWrapped {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("align_temps");
+pub struct AlignTempsLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for AlignTempsLibfuncWrapped {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("align_temps");
 
     fn specialize_signature(
         &self,
         _context: &dyn SignatureSpecializationContext,
         _ty: ConcreteTypeId,
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::NotImplemented))
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch(vec![], vec![], SierraApChange::NotImplemented))
     }
 }
-pub type AlignTempsLibFunc = WrapSignatureAndTypeGenericLibFunc<AlignTempsLibFuncWrapped>;
+pub type AlignTempsLibfunc = WrapSignatureAndTypeGenericLibfunc<AlignTempsLibfuncWrapped>;
 
-/// LibFunc for storing a value into local memory.
+/// Libfunc for storing a value into local memory.
 #[derive(Default)]
-pub struct StoreLocalLibFuncWrapped {}
-impl SignatureAndTypeGenericLibFunc for StoreLocalLibFuncWrapped {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("store_local");
+pub struct StoreLocalLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for StoreLocalLibfuncWrapped {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("store_local");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let uninitialized_type =
             context.get_wrapped_concrete_type(UninitializedType::id(), ty.clone())?;
-        Ok(LibFuncSignature::new_non_branch_ex(
+        Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(uninitialized_type),
                 ParamSignature {
@@ -96,19 +96,19 @@ impl SignatureAndTypeGenericLibFunc for StoreLocalLibFuncWrapped {
         ))
     }
 }
-pub type StoreLocalLibFunc = WrapSignatureAndTypeGenericLibFunc<StoreLocalLibFuncWrapped>;
+pub type StoreLocalLibfunc = WrapSignatureAndTypeGenericLibfunc<StoreLocalLibfuncWrapped>;
 
-/// LibFunc for finalizing the locals for current function.
+/// Libfunc for finalizing the locals for current function.
 #[derive(Default)]
-pub struct FinalizeLocalsLibFunc {}
-impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("finalize_locals");
+pub struct FinalizeLocalsLibfunc {}
+impl NoGenericArgsGenericLibfunc for FinalizeLocalsLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("finalize_locals");
 
     fn specialize_signature(
         &self,
         _context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch(
             vec![],
             vec![],
             SierraApChange::Known { new_vars_only: false },
@@ -116,18 +116,18 @@ impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
     }
 }
 
-/// LibFunc for allocating locals for later stores.
+/// Libfunc for allocating locals for later stores.
 #[derive(Default)]
-pub struct AllocLocalLibFuncWrapped {}
-impl SignatureAndTypeGenericLibFunc for AllocLocalLibFuncWrapped {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("alloc_local");
+pub struct AllocLocalLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for AllocLocalLibfuncWrapped {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("alloc_local");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(UninitializedType::id(), ty)?,
@@ -137,21 +137,21 @@ impl SignatureAndTypeGenericLibFunc for AllocLocalLibFuncWrapped {
         ))
     }
 }
-pub type AllocLocalLibFunc = WrapSignatureAndTypeGenericLibFunc<AllocLocalLibFuncWrapped>;
+pub type AllocLocalLibfunc = WrapSignatureAndTypeGenericLibfunc<AllocLocalLibfuncWrapped>;
 
-/// LibFunc for renaming an identifier - used to align identities for flow control merge.
+/// Libfunc for renaming an identifier - used to align identities for flow control merge.
 #[derive(Default)]
-pub struct RenameLibFunc {}
-impl SignatureOnlyGenericLibFunc for RenameLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("rename");
+pub struct RenameLibfunc {}
+impl SignatureOnlyGenericLibfunc for RenameLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("rename");
 
     fn specialize_signature(
         &self,
         _context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        Ok(LibFuncSignature::new_non_branch(
+        Ok(LibfuncSignature::new_non_branch(
             vec![ty.clone()],
             vec![OutputVarInfo {
                 ty,

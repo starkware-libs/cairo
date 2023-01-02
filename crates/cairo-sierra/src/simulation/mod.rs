@@ -5,7 +5,7 @@ use thiserror::Error;
 
 use self::value::CoreValue;
 use crate::edit_state::{put_results, take_args, EditStateError};
-use crate::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
+use crate::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use crate::ids::{FunctionId, VarId};
 use crate::program::{Program, Statement, StatementIdx};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
@@ -17,7 +17,7 @@ pub mod value;
 
 /// Error occurring while simulating a libfunc.
 #[derive(Error, Debug, Eq, PartialEq)]
-pub enum LibFuncSimulationError {
+pub enum LibfuncSimulationError {
     #[error("Expected different number of arguments")]
     WrongNumberOfArgs,
     #[error("Expected a different type of an argument")]
@@ -38,7 +38,7 @@ pub enum SimulationError {
     #[error("error from editing a variable state")]
     EditStateError(EditStateError, StatementIdx),
     #[error("error from simulating a libfunc")]
-    LibFuncSimulationError(LibFuncSimulationError, StatementIdx),
+    LibfuncSimulationError(LibfuncSimulationError, StatementIdx),
     #[error("jumped out of bounds during simulation")]
     StatementOutOfBounds(StatementIdx),
     #[error("unexpected number of arguments to function")]
@@ -66,7 +66,7 @@ pub fn run(
 struct SimulationContext<'a> {
     pub program: &'a Program,
     pub statement_gas_info: &'a HashMap<StatementIdx, i64>,
-    pub registry: &'a ProgramRegistry<CoreType, CoreLibFunc>,
+    pub registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
 }
 impl SimulationContext<'_> {
     /// Simulates the run of a function, even recursively.
@@ -137,7 +137,7 @@ impl SimulationContext<'_> {
     fn simulate_libfunc(
         &self,
         idx: &StatementIdx,
-        libfunc: &CoreConcreteLibFunc,
+        libfunc: &CoreConcreteLibfunc,
         inputs: Vec<CoreValue>,
         current_statement_id: StatementIdx,
     ) -> Result<(Vec<CoreValue>, usize), SimulationError> {
@@ -147,13 +147,13 @@ impl SimulationContext<'_> {
             || self.statement_gas_info.get(idx).copied(),
             |function_id, inputs| {
                 self.simulate_function(function_id, inputs).map_err(|error| {
-                    LibFuncSimulationError::FunctionSimulationError(
+                    LibfuncSimulationError::FunctionSimulationError(
                         function_id.clone(),
                         Box::new(error),
                     )
                 })
             },
         )
-        .map_err(|error| SimulationError::LibFuncSimulationError(error, current_statement_id))
+        .map_err(|error| SimulationError::LibfuncSimulationError(error, current_statement_id))
     }
 }

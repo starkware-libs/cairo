@@ -1,17 +1,20 @@
-use cairo_sierra::extensions::boxing::BoxConcreteLibFunc;
-use cairo_sierra::extensions::ConcreteLibFunc;
+use cairo_casm::builder::CasmBuilder;
+use cairo_casm::casm_build_extend;
+use cairo_casm::operand::ResOperand;
+use cairo_sierra::extensions::boxing::BoxConcreteLibfunc;
+use cairo_sierra::extensions::ConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra box operations.
 pub fn build(
-    libfunc: &BoxConcreteLibFunc,
+    libfunc: &BoxConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        BoxConcreteLibFunc::Into(_) => build_into_box(builder),
-        BoxConcreteLibFunc::Unbox(_) => build_unbox(builder),
+        BoxConcreteLibfunc::Into(_) => build_into_box(builder),
+        BoxConcreteLibfunc::Unbox(_) => build_unbox(builder),
     }
 }
 
@@ -27,9 +30,15 @@ fn build_into_box(
     }
 
     let operand = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
-    Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::IntoSingleCellRef(operand))].into_iter(),
-    ))
+
+    let mut casm_builder = CasmBuilder::default();
+    let operand_var = casm_builder.add_var(ResOperand::Deref(operand));
+    casm_build_extend!(casm_builder,
+        tempvar addr;
+        hint AllocSegment {} into {dst: addr};
+        assert operand_var = addr[0];
+    );
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[addr]], None)]))
 }
 
 /// Handles instruction for unboxing a box.

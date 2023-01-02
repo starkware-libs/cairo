@@ -2,6 +2,9 @@
 name = "cairo-sierra-ap-change"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Sierra AP change computation."
 
 [dependencies]
 itertools.workspace = true

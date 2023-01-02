@@ -6,29 +6,28 @@ use num_bigint::{BigInt, ToBigInt};
 use num_traits::{ToPrimitive, Zero};
 
 use super::value::CoreValue;
-use super::LibFuncSimulationError;
-use crate::extensions::array::ArrayConcreteLibFunc;
-use crate::extensions::boolean::BoolConcreteLibFunc;
-use crate::extensions::core::CoreConcreteLibFunc::{
+use super::LibfuncSimulationError;
+use crate::extensions::array::ArrayConcreteLibfunc;
+use crate::extensions::boolean::BoolConcreteLibfunc;
+use crate::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt, FunctionCall,
     Gas, Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
-use crate::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
-use crate::extensions::ec::EcConcreteLibFunc::CreatePoint;
-use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
+use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
+use crate::extensions::ec::EcConcreteLibfunc::CreatePoint;
+use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt::{
-    FeltBinaryOpConcreteLibFunc, FeltBinaryOperationConcreteLibFunc, FeltBinaryOperator,
-    FeltConcrete, FeltConstConcreteLibFunc, FeltOperationWithConstConcreteLibFunc,
-    FeltUnaryOpConcreteLibFunc, FeltUnaryOperationConcreteLibFunc, FeltUnaryOperator,
+    FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
+    FeltConcrete, FeltConstConcreteLibfunc, FeltOperationWithConstConcreteLibfunc,
 };
-use crate::extensions::function_call::FunctionCallConcreteLibFunc;
-use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
-use crate::extensions::mem::MemConcreteLibFunc::{
+use crate::extensions::function_call::FunctionCallConcreteLibfunc;
+use crate::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
+use crate::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
-use crate::extensions::strct::StructConcreteLibFunc;
+use crate::extensions::strct::StructConcreteLibfunc;
 use crate::extensions::uint128::{
-    IntOperator, Uint128Concrete, Uint128ConstConcreteLibFunc, Uint128OperationConcreteLibFunc,
+    IntOperator, Uint128Concrete, Uint128ConstConcreteLibfunc, Uint128OperationConcreteLibfunc,
 };
 use crate::ids::FunctionId;
 
@@ -47,13 +46,13 @@ fn get_beta() -> BigInt {
 /// for the case where the extensions need to use it.
 pub fn simulate<
     GetStatementGasInfo: Fn() -> Option<i64>,
-    SimulateFunction: Fn(&FunctionId, Vec<CoreValue>) -> Result<Vec<CoreValue>, LibFuncSimulationError>,
+    SimulateFunction: Fn(&FunctionId, Vec<CoreValue>) -> Result<Vec<CoreValue>, LibfuncSimulationError>,
 >(
-    libfunc: &CoreConcreteLibFunc,
+    libfunc: &CoreConcreteLibfunc,
     inputs: Vec<CoreValue>,
     get_statement_gas_info: GetStatementGasInfo,
     simulate_function: SimulateFunction,
-) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
+) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
         Bitwise(_) => match &inputs[..] {
             [CoreValue::Uint128(a), CoreValue::Uint128(b)] => Ok((
@@ -64,16 +63,16 @@ pub fn simulate<
                 ],
                 0,
             )),
-            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Drop(_) => match &inputs[..] {
             [_] => Ok((vec![], 0)),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Dup(_) => match &inputs[..] {
             [value] => Ok((vec![value.clone(), value.clone()], 0)),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Ec(CreatePoint(_)) => match &inputs[..] {
             [CoreValue::Felt(x), CoreValue::Felt(y)] => {
@@ -90,19 +89,19 @@ pub fn simulate<
                     Ok((vec![], 1))
                 }
             }
-            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        FunctionCall(FunctionCallConcreteLibFunc { function, .. }) => {
+        FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
         Gas(GetGas(_)) => {
             let count = get_statement_gas_info()
-                .ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
+                .ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
             let gas_counter = match &inputs[..] {
                 [CoreValue::RangeCheck, CoreValue::GasBuiltin(value)] => Ok(value),
-                [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+                [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }?;
             if *gas_counter >= count {
                 // Have enough gas - return reduced counter and jump to success branch.
@@ -114,36 +113,36 @@ pub fn simulate<
         }
         Gas(RefundGas(_)) => {
             let count = get_statement_gas_info()
-                .ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
+                .ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
             let gas_counter = match &inputs[..] {
                 [CoreValue::GasBuiltin(value)] => Ok(value),
-                [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+                [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }?;
             Ok((vec![CoreValue::GasBuiltin(gas_counter + count)], 0))
         }
         BranchAlign(_) => {
-            get_statement_gas_info().ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
+            get_statement_gas_info().ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
             Ok((vec![], 0))
         }
-        Array(ArrayConcreteLibFunc::New(_)) => {
+        Array(ArrayConcreteLibfunc::New(_)) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Array(vec![])], 0))
             } else {
-                Err(LibFuncSimulationError::WrongNumberOfArgs)
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        Array(ArrayConcreteLibFunc::Append(_)) => match &inputs[..] {
+        Array(ArrayConcreteLibfunc::Append(_)) => match &inputs[..] {
             [CoreValue::Array(_), _] => {
                 let mut iter = inputs.into_iter();
                 let mut arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
                 arr.push(iter.next().unwrap());
                 Ok((vec![CoreValue::Array(arr)], 0))
             }
-            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Array(ArrayConcreteLibFunc::PopFront(_)) => match &inputs[..] {
+        Array(ArrayConcreteLibfunc::PopFront(_)) => match &inputs[..] {
             [CoreValue::Array(_)] => {
                 let mut iter = inputs.into_iter();
                 let mut arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
@@ -154,10 +153,10 @@ pub fn simulate<
                     Ok((vec![CoreValue::Array(arr), front], 0))
                 }
             }
-            [_] => Err(LibFuncSimulationError::WrongArgType),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Array(ArrayConcreteLibFunc::At(_)) => match &inputs[..] {
+        Array(ArrayConcreteLibfunc::At(_)) => match &inputs[..] {
             [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint128(_)] => {
                 let mut iter = inputs.into_iter();
                 iter.next(); // Ignore range check.
@@ -170,83 +169,83 @@ pub fn simulate<
                     None => Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr)], 1)),
                 }
             }
-            [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Array(ArrayConcreteLibFunc::Len(_)) => match &inputs[..] {
+        Array(ArrayConcreteLibfunc::Len(_)) => match &inputs[..] {
             [CoreValue::Array(_)] => {
                 let arr = extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Array);
                 let len = arr.len();
                 Ok((vec![CoreValue::Array(arr), CoreValue::Uint128(len as u128)], 0))
             }
-            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint128(libfunc) => simulate_integer_libfunc(libfunc, &inputs),
         Bool(libfunc) => simulate_bool_libfunc(libfunc, &inputs),
         Felt(libfunc) => simulate_felt_libfunc(libfunc, &inputs),
         UnwrapNonZero(_) => match &inputs[..] {
             [CoreValue::NonZero(value)] => Ok((vec![*value.clone()], 0)),
-            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Mem(Rename(_) | StoreTemp(_)) | CoreConcreteLibFunc::Box(_) => {
+        Mem(Rename(_) | StoreTemp(_)) | CoreConcreteLibfunc::Box(_) => {
             if inputs.len() == 1 {
                 Ok((inputs, 0))
             } else {
-                Err(LibFuncSimulationError::WrongNumberOfArgs)
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
         Mem(AlignTemps(_)) | Mem(FinalizeLocals(_)) | UnconditionalJump(_) | ApTracking(_) => {
             if inputs.is_empty() {
                 Ok((inputs, 0))
             } else {
-                Err(LibFuncSimulationError::WrongNumberOfArgs)
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
         Mem(StoreLocal(_)) => match &inputs[..] {
             [CoreValue::Uninitialized, other] => Ok((vec![other.clone()], 0)),
-            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Mem(AllocLocal(_)) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uninitialized], 0))
             } else {
-                Err(LibFuncSimulationError::WrongNumberOfArgs)
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        Enum(EnumConcreteLibFunc::Init(EnumInitConcreteLibFunc { index, .. })) => {
+        Enum(EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, .. })) => {
             match &inputs[..] {
                 [input] => {
                     // We don't verify here that the input type matches the signature.
                     Ok((vec![CoreValue::Enum { value: Box::new(input.clone()), index: *index }], 0))
                 }
-                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        Enum(EnumConcreteLibFunc::Match(_)) => match &inputs[..] {
+        Enum(EnumConcreteLibfunc::Match(_)) => match &inputs[..] {
             [CoreValue::Enum { value, index }] => Ok((vec![*value.clone()], *index)),
-            [_] => Err(LibFuncSimulationError::WrongArgType),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Struct(StructConcreteLibFunc::Construct(_)) => Ok((vec![CoreValue::Struct(inputs)], 0)),
-        Struct(StructConcreteLibFunc::Deconstruct(_)) => match &inputs[..] {
+        Struct(StructConcreteLibfunc::Construct(_)) => Ok((vec![CoreValue::Struct(inputs)], 0)),
+        Struct(StructConcreteLibfunc::Deconstruct(_)) => match &inputs[..] {
             [CoreValue::Struct(_)] => {
                 // Extracting the values instead of cloning them, as the match is on a reference.
                 Ok((extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Struct), 0))
             }
-            [_] => Err(LibFuncSimulationError::WrongArgType),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        CoreConcreteLibFunc::DictFeltTo(DictFeltToConcreteLibFunc::New(_)) => {
+        CoreConcreteLibfunc::DictFeltTo(DictFeltToConcreteLibfunc::New(_)) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Dict(HashMap::new())], 0))
             } else {
-                Err(LibFuncSimulationError::WrongNumberOfArgs)
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        CoreConcreteLibFunc::DictFeltTo(DictFeltToConcreteLibFunc::Read(_)) => {
+        CoreConcreteLibfunc::DictFeltTo(DictFeltToConcreteLibfunc::Read(_)) => {
             match &inputs[..] {
                 [CoreValue::Dict(map), CoreValue::Felt(key)] => {
                     // Returns 0 as a defualt value.
@@ -254,11 +253,11 @@ pub fn simulate<
                     // found.
                     Ok((vec![map.get(key).map_or(CoreValue::Felt(0.into()), |x| x.clone())], 0))
                 }
-                [_, _] => Err(LibFuncSimulationError::WrongArgType),
-                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+                [_, _] => Err(LibfuncSimulationError::WrongArgType),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        CoreConcreteLibFunc::DictFeltTo(DictFeltToConcreteLibFunc::Write(_)) => match &inputs[..] {
+        CoreConcreteLibfunc::DictFeltTo(DictFeltToConcreteLibfunc::Write(_)) => match &inputs[..] {
             [CoreValue::Dict(_), CoreValue::Felt(_), _] => {
                 let mut iter = inputs.into_iter();
                 let mut dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
@@ -266,10 +265,10 @@ pub fn simulate<
                 dict.insert(key, iter.next().unwrap());
                 Ok((vec![CoreValue::Dict(dict)], 0))
             }
-            [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        CoreConcreteLibFunc::DictFeltTo(DictFeltToConcreteLibFunc::Squash(_)) => {
+        CoreConcreteLibfunc::DictFeltTo(DictFeltToConcreteLibfunc::Squash(_)) => {
             match &inputs[..] {
                 [CoreValue::RangeCheck, CoreValue::Dict(_)] => {
                     let mut iter = inputs.into_iter();
@@ -278,20 +277,20 @@ pub fn simulate<
                     let dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
                     Ok((vec![CoreValue::RangeCheck, CoreValue::Dict(dict)], 0))
                 }
-                [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+                [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        CoreConcreteLibFunc::Pedersen(_) => {
+        CoreConcreteLibfunc::Pedersen(_) => {
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }
-        CoreConcreteLibFunc::BuiltinCost(_) => {
+        CoreConcreteLibfunc::BuiltinCost(_) => {
             todo!("Simulation of the builtin cost functionality is not implemented yet.")
         }
-        CoreConcreteLibFunc::StarkNet(_) => {
+        CoreConcreteLibfunc::StarkNet(_) => {
             unimplemented!("Simulation of the StarkNet functionalities is not implemented yet.")
         }
-        CoreConcreteLibFunc::Nullable(_) => {
+        CoreConcreteLibfunc::Nullable(_) => {
             unimplemented!("Simulation of nullable is not implemented yet.")
         }
     }
@@ -299,11 +298,11 @@ pub fn simulate<
 
 /// Simulate boolean library functions.
 fn simulate_bool_libfunc(
-    libfunc: &BoolConcreteLibFunc,
+    libfunc: &BoolConcreteLibfunc,
     inputs: &[CoreValue],
-) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
+) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        BoolConcreteLibFunc::And(_) => match inputs {
+        BoolConcreteLibfunc::And(_) => match inputs {
             [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
                 // The variant index defines the true/false "value". Index zero is false.
                 Ok((
@@ -314,10 +313,10 @@ fn simulate_bool_libfunc(
                     0,
                 ))
             }
-            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        BoolConcreteLibFunc::Not(_) => match inputs {
+        BoolConcreteLibfunc::Not(_) => match inputs {
             [CoreValue::Enum { index, .. }] => {
                 // The variant index defines the true/false "value". Index zero is false.
                 Ok((
@@ -328,8 +327,8 @@ fn simulate_bool_libfunc(
                     0,
                 ))
             }
-            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
     }
 }
@@ -338,13 +337,13 @@ fn simulate_bool_libfunc(
 fn simulate_integer_libfunc(
     libfunc: &Uint128Concrete,
     inputs: &[CoreValue],
-) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
+) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint128Concrete::Const(Uint128ConstConcreteLibFunc { c, .. }) => {
+        Uint128Concrete::Const(Uint128ConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint128(*c)], 0))
             } else {
-                Err(LibFuncSimulationError::WrongNumberOfArgs)
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
         Uint128Concrete::FromFelt(_) => match inputs {
@@ -352,17 +351,17 @@ fn simulate_integer_libfunc(
                 Ok(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint128(value)], 0),
                 Err(_) => (vec![CoreValue::RangeCheck], 1),
             }),
-            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint128Concrete::ToFelt(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(value)] => {
                 Ok((vec![CoreValue::Felt(value.to_bigint().unwrap())], 0))
             }
-            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc { operator, .. }) => {
+        Uint128Concrete::Operation(Uint128OperationConcreteLibfunc { operator, .. }) => {
             match (inputs, operator) {
                 (
                     [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)],
@@ -378,7 +377,7 @@ fn simulate_integer_libfunc(
                             0,
                         ))
                     } else {
-                        Err(LibFuncSimulationError::MemoryLayoutMismatch)
+                        Err(LibfuncSimulationError::MemoryLayoutMismatch)
                     }
                 }
                 (
@@ -415,8 +414,8 @@ fn simulate_integer_libfunc(
                         usize::from(overflow),
                     ))
                 }
-                ([_, _, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+                ([_, _, _], _) => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
         Uint128Concrete::JumpNotZero(_) => {
@@ -430,8 +429,8 @@ fn simulate_integer_libfunc(
                     // given value.
                     Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Uint128(*value)))], 1))
                 }
-                [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+                [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
         Uint128Concrete::LessThan(_) => match inputs {
@@ -440,8 +439,8 @@ fn simulate_integer_libfunc(
                 // "True" branch (branch 1) is the case a < b.
                 Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
             }
-            [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint128Concrete::Equal(_) => match inputs {
             [CoreValue::Uint128(a), CoreValue::Uint128(b)] => {
@@ -449,8 +448,8 @@ fn simulate_integer_libfunc(
                 // "True" branch (branch 1) is the case a == b.
                 Ok((vec![], usize::from(a == b)))
             }
-            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint128Concrete::LessThanOrEqual(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(a), CoreValue::Uint128(b)] => {
@@ -458,8 +457,8 @@ fn simulate_integer_libfunc(
                 // "True" branch (branch 1) is the case a <= b.
                 Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))
             }
-            [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
     }
 }
@@ -468,25 +467,17 @@ fn simulate_integer_libfunc(
 fn simulate_felt_libfunc(
     libfunc: &FeltConcrete,
     inputs: &[CoreValue],
-) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
+) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        FeltConcrete::Const(FeltConstConcreteLibFunc { c, .. }) => {
+        FeltConcrete::Const(FeltConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Felt(c.to_bigint().unwrap())], 0))
             } else {
-                Err(LibFuncSimulationError::WrongNumberOfArgs)
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        FeltConcrete::UnaryOperation(FeltUnaryOperationConcreteLibFunc::Unary(
-            FeltUnaryOpConcreteLibFunc { operator, .. },
-        )) => match (inputs, operator) {
-            ([CoreValue::Felt(val)], FeltUnaryOperator::Neg) => {
-                Ok((vec![CoreValue::Felt(-val)], 0))
-            }
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
-        },
-        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Binary(
-            FeltBinaryOpConcreteLibFunc { operator, .. },
+        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibfunc::Binary(
+            FeltBinaryOpConcreteLibfunc { operator, .. },
         )) => match (inputs, operator) {
             (
                 [CoreValue::Felt(lhs), CoreValue::Felt(rhs)],
@@ -504,14 +495,14 @@ fn simulate_felt_libfunc(
                 if let CoreValue::Felt(_rhs) = *non_zero.clone() {
                     todo!("Support felt_div operation.")
                 } else {
-                    Err(LibFuncSimulationError::MemoryLayoutMismatch)
+                    Err(LibfuncSimulationError::MemoryLayoutMismatch)
                 }
             }
-            ([_, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            ([_, _], _) => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Const(
-            FeltOperationWithConstConcreteLibFunc { operator, c, .. },
+        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibfunc::Const(
+            FeltOperationWithConstConcreteLibfunc { operator, c, .. },
         )) => match inputs {
             [CoreValue::Felt(value)] => Ok((
                 vec![CoreValue::Felt(match operator {
@@ -522,8 +513,8 @@ fn simulate_felt_libfunc(
                 })],
                 0,
             )),
-            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         FeltConcrete::JumpNotZero(_) => {
             match inputs {
@@ -536,8 +527,8 @@ fn simulate_felt_libfunc(
                     // given value.
                     Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Felt(value.clone())))], 1))
                 }
-                [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+                [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
     }

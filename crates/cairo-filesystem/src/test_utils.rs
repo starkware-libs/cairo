@@ -1,4 +1,4 @@
-use cairo_db_utils::Upcast;
+use cairo_utils::Upcast;
 
 use crate::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 

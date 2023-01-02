@@ -2,39 +2,39 @@ use std::marker::PhantomData;
 
 use super::non_zero::NonZeroType;
 use crate::extensions::lib_func::{
-    BranchSignature, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
 };
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo, SpecializationError,
+    NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 
 /// Trait for implementing a JumpNotZero library function for a type.
 pub trait JumpNotZeroTraits: Default {
     /// The jump not zero library function id.
-    const JUMP_NOT_ZERO: GenericLibFuncId;
+    const JUMP_NOT_ZERO: GenericLibfuncId;
     /// The id of the generic type to implement the library functions for.
     const GENERIC_TYPE_ID: GenericTypeId;
 }
 
-/// LibFunc for jump non-zero on some value, and returning a non-zero wrapped value in case of
+/// Libfunc for jump non-zero on some value, and returning a non-zero wrapped value in case of
 /// success.
 #[derive(Default)]
-pub struct JumpNotZeroLibFunc<TJumpNotZeroTraits: JumpNotZeroTraits> {
+pub struct JumpNotZeroLibfunc<TJumpNotZeroTraits: JumpNotZeroTraits> {
     _phantom: PhantomData<TJumpNotZeroTraits>,
 }
-impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
-    for JumpNotZeroLibFunc<TJumpNotZeroTraits>
+impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibfunc
+    for JumpNotZeroLibfunc<TJumpNotZeroTraits>
 {
-    const ID: GenericLibFuncId = TJumpNotZeroTraits::JUMP_NOT_ZERO;
+    const ID: GenericLibfuncId = TJumpNotZeroTraits::JUMP_NOT_ZERO;
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(TJumpNotZeroTraits::GENERIC_TYPE_ID, &[])?;
-        Ok(LibFuncSignature {
+        Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(ty.clone())],
             branch_signatures: vec![
                 // Zero.

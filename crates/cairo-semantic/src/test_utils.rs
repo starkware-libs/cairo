@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
 use cairo_defs::plugin::MacroPlugin;
@@ -12,7 +11,7 @@ use cairo_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_parser::db::ParserDatabase;
 use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
-use cairo_utils::{extract_matches, OptionFrom};
+use cairo_utils::{extract_matches, OptionFrom, Upcast};
 use pretty_assertions::assert_eq;
 
 use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
@@ -220,9 +219,9 @@ pub fn setup_test_block(
 }
 
 pub fn test_expr_diagnostics(
-    db: &mut (dyn SemanticGroup + 'static),
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut SemanticDatabaseForTesting::default();
     OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_expr(
@@ -236,9 +235,9 @@ pub fn test_expr_diagnostics(
 }
 
 pub fn test_function_diagnostics(
-    db: &mut (dyn SemanticGroup + 'static),
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut SemanticDatabaseForTesting::default();
     OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_function(
@@ -249,18 +248,6 @@ pub fn test_function_diagnostics(
         )
         .get_diagnostics(),
     )])
-}
-
-#[macro_export]
-macro_rules! semantic_test {
-    ($test_name:ident, $filenames:expr, $func:ident) => {
-        cairo_test_utils::test_file_test!(
-            $test_name,
-            $filenames,
-            SemanticDatabaseForTesting,
-            $func
-        );
-    };
 }
 
 /// Gets the diagnostics for all the modules (including nested) in the given crate.

@@ -5,7 +5,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId};
+use crate::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use crate::program::{GenericArg, Program, Statement};
 
 #[cfg(test)]
@@ -21,10 +21,10 @@ pub struct DebugInfo {
     )]
     pub type_names: HashMap<ConcreteTypeId, SmolStr>,
     #[serde(
-        serialize_with = "serialize_map::<ConcreteLibFuncId, _>",
-        deserialize_with = "deserialize_map::<ConcreteLibFuncId, _>"
+        serialize_with = "serialize_map::<ConcreteLibfuncId, _>",
+        deserialize_with = "deserialize_map::<ConcreteLibfuncId, _>"
     )]
-    pub libfunc_names: HashMap<ConcreteLibFuncId, SmolStr>,
+    pub libfunc_names: HashMap<ConcreteLibfuncId, SmolStr>,
     #[serde(
         serialize_with = "serialize_map::<FunctionId, _>",
         deserialize_with = "deserialize_map::<FunctionId, _>"
@@ -49,7 +49,7 @@ impl DebugInfo {
                     decl.id
                         .debug_name
                         .clone()
-                        .map(|name| (ConcreteLibFuncId::new(decl.id.id), name))
+                        .map(|name| (ConcreteLibfuncId::new(decl.id.id), name))
                 })
                 .collect(),
             user_func_names: program
@@ -99,7 +99,7 @@ impl DebugInfo {
         for generic_arg in generic_args {
             match generic_arg {
                 GenericArg::Type(id) => self.try_replace_type_id(id),
-                GenericArg::LibFunc(id) => self.try_replace_libfunc_id(id),
+                GenericArg::Libfunc(id) => self.try_replace_libfunc_id(id),
                 GenericArg::UserFunc(id) => self.try_replace_function_id(id),
                 GenericArg::Value(_) | GenericArg::UserType(_) => {}
             }
@@ -114,7 +114,7 @@ impl DebugInfo {
     }
 
     /// Replaces the debug name of an id if exists in the matching map.
-    fn try_replace_libfunc_id(&self, id: &mut ConcreteLibFuncId) {
+    fn try_replace_libfunc_id(&self, id: &mut ConcreteLibfuncId) {
         if let Some(name) = self.libfunc_names.get(id).cloned() {
             let _ = id.debug_name.insert(name);
         }
@@ -145,7 +145,7 @@ impl IdAsHashKey for ConcreteTypeId {
         Self::new(id)
     }
 }
-impl IdAsHashKey for ConcreteLibFuncId {
+impl IdAsHashKey for ConcreteLibfuncId {
     fn get(&self) -> u64 {
         self.id
     }

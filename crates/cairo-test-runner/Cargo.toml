@@ -2,6 +2,9 @@
 name = "cairo-test-runner"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo tests runner. Used to run tests written in Cairo."
 
 [dependencies]
 anyhow.workspace = true
@@ -16,6 +19,7 @@ cairo-diagnostics = { path = "../cairo-diagnostics" }
 cairo-filesystem = { path = "../cairo-filesystem" }
 itertools.workspace = true
 num-bigint.workspace = true
+cairo-plugins = { path = "../cairo-plugins" }
 cairo-project = { path = "../cairo-project" }
 rayon.workspace = true
 cairo-runner = { path = "../cairo-runner" }
