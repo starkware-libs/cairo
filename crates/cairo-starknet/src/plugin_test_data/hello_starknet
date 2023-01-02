@@ -11,14 +11,14 @@ mod HelloStarknet {
     // Increases the balance by the given amount.
     #[external]
     fn increase_balance(amount: felt) {
-        let res = super::balance::read();
-        super::balance::write(res + amount);
+        let res = balance::read();
+        balance::write(res + amount);
     }
 
     // Returns the current balance.
     #[view]
     fn get_balance() -> felt {
-        super::balance::read()
+        balance::read()
     }
 }
 
@@ -30,16 +30,29 @@ mod HelloStarknet {
     // Increases the balance by the given amount.
     #[external]
     fn increase_balance(amount: felt) {
-        let res = super::balance::read();
-        super::balance::write(res + amount);
+        let res = balance::read();
+        balance::write(res + amount);
     }
 
     // Returns the current balance.
     #[view]
     fn get_balance() -> felt {
-        super::balance::read()
+        balance::read()
     }
 
+    mod balance {
+        fn read() -> felt {
+            starknet::storage_read_syscall(
+                starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            )
+        }
+        fn write(value: felt) -> Result::<(), felt> {
+            starknet::storage_write_syscall(
+                starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>(),
+                value
+            )
+        }
+    }
     trait __abi {
     fn increase_balance(amount: felt); fn get_balance() -> felt; }
 
@@ -101,19 +114,6 @@ mod HelloStarknet {
             serde::serialize_felt(arr, res)
             arr
         }
-    }
-}
-mod balance {
-    fn read() -> felt {
-        starknet::storage_read_syscall(
-            starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
-        )
-    }
-    fn write(value: felt) -> Result::<(), felt> {
-        starknet::storage_write_syscall(
-            starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>(),
-            value
-        )
     }
 }
 
