@@ -18,12 +18,12 @@ use crate::utils::{
     return_statement, simple_statement, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
-/// Generates Sierra code that computes a given [lowering::Block].
+/// Generates Sierra code that computes a given [lowering::FlatBlock].
 /// Returns a list of Sierra statements.
 pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
-    block: &lowering::Block,
+    block: &lowering::FlatBlock,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     let drops = context.get_drops();
@@ -75,7 +75,7 @@ fn add_drop_statements(
     Ok(())
 }
 
-/// Generates Sierra code that computes a given [lowering::Block].
+/// Generates Sierra code that computes a given [lowering::FlatBlock].
 /// Pushes the values "returned" by the block on the top of the stack, and binds them to
 /// the given `binds` variables.
 ///
@@ -90,7 +90,7 @@ pub fn generate_block_code_and_push_values(
 
     let mut statements = generate_block_code(context, block_id, block)?;
     match &block.end {
-        lowering::BlockEnd::Callsite(inner_outputs) => {
+        lowering::FlatBlockEnd::Callsite(inner_outputs) => {
             let mut push_values = Vec::<pre_sierra::PushValue>::new();
             for (output, inner_output) in zip_eq(binds, inner_outputs) {
                 let ty = context.get_variable_sierra_type(*inner_output)?;
@@ -109,11 +109,11 @@ pub fn generate_block_code_and_push_values(
             statements.push(pre_sierra::Statement::PushValues(push_values));
             Ok((statements, true))
         }
-        lowering::BlockEnd::Return(returned_variables) => {
+        lowering::FlatBlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(context, returned_variables)?);
             Ok((statements, false))
         }
-        lowering::BlockEnd::Unreachable => Ok((statements, false)),
+        lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),
     }
 }
 

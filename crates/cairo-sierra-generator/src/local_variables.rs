@@ -166,10 +166,11 @@ fn inner_find_local_variables(
     // TODO(lior): Handle block.drops.
 
     match &block.end {
-        cairo_lowering::BlockEnd::Callsite(vars) | cairo_lowering::BlockEnd::Return(vars) => {
+        cairo_lowering::FlatBlockEnd::Callsite(vars)
+        | cairo_lowering::FlatBlockEnd::Return(vars) => {
             state.use_variables(vars, res);
         }
-        cairo_lowering::BlockEnd::Unreachable => {}
+        cairo_lowering::FlatBlockEnd::Unreachable => {}
     }
     Ok(known_ap_change)
 }
@@ -206,7 +207,7 @@ fn handle_match(
             inner_find_local_variables(db, lowered_function, *block_id, state_clone, res)?;
 
         // Update reachable_branches and reachable_branches_known_ap_change.
-        if let cairo_lowering::BlockEnd::Callsite(_) = lowered_function.blocks[*block_id].end {
+        if let cairo_lowering::FlatBlockEnd::Callsite(_) = lowered_function.blocks[*block_id].end {
             reachable_branches += 1;
             if !inner_known_ap_change {
                 reachable_branches_known_ap_change = false;

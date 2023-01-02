@@ -6,6 +6,7 @@
 use cairo_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_utils::ordered_hash_set::OrderedHashSet;
 use id_arena::Id;
+use itertools::chain;
 use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
@@ -20,7 +21,7 @@ pub type VariableId = Id<Variable>;
 /// A block contains the list of variables to be dropped at its end. Other than these variables and
 /// the output variables, it is guaranteed that no other variable is alive.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Block {
+pub struct StructuredBlock {
     /// Input variables to the block, including implicits.
     pub inputs: Vec<VariableId>,
     /// Statements sequence running one after the other in the block, in a linear flow.
@@ -32,12 +33,44 @@ pub struct Block {
     /// not explicitly dropped by statements.
     pub drops: Vec<VariableId>,
     /// Describes how this block ends: returns to the caller or exits the function.
-    pub end: BlockEnd,
+    pub end: StructuredBlockEnd,
 }
 
-/// Describes what happens to the program flow at the end of a block.
+/// Describes what happens to the program flow at the end of a [`StructuredBlock`].
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum BlockEnd {
+pub enum StructuredBlockEnd {
+    /// This block returns to the call-site, outputting variables to the call-site.
+    Callsite(Vec<VariableId>),
+    /// This block ends with a `return` statement, exiting the function.
+    Return { refs: Vec<VariableId>, returns: Vec<VariableId> },
+    /// This block ends with a `panic` statement, exiting the function.
+    Panic { refs: Vec<VariableId>, data: VariableId },
+    /// The last statement ended the flow (e.g., match will all arms ending in return),
+    /// and the end of this block is unreachable.
+    Unreachable,
+}
+
+/// A block of statements. Unlike [`StructuredBlock`], this has no reference information,
+/// and no panic ending.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FlatBlock {
+    /// Input variables to the block, including implicits.
+    pub inputs: Vec<VariableId>,
+    /// Statements sequence running one after the other in the block, in a linear flow.
+    /// Note: Inner blocks might end with a `return`, which will exit the function in the middle.
+    /// Note: Match is a possible statement, which means it has control flow logic inside, but
+    /// after its execution is completed, the flow returns to the following statement of the block.
+    pub statements: Vec<Statement>,
+    /// Which variables are needed to be dropped at the end of this block. Note that these are
+    /// not explicitly dropped by statements.
+    pub drops: Vec<VariableId>,
+    /// Describes how this block ends: returns to the caller or exits the function.
+    pub end: FlatBlockEnd,
+}
+
+/// Describes what happens to the program flow at the end of a [`FlatBlock`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FlatBlockEnd {
     /// This block returns to the call-site, outputting variables to the call-site.
     Callsite(Vec<VariableId>),
     /// This block ends with a `return` statement, exiting the function.
@@ -45,6 +78,34 @@ pub enum BlockEnd {
     /// The last statement ended the flow (e.g., match will all arms ending in return),
     /// and the end of this block is unreachable.
     Unreachable,
+}
+
+impl TryFrom<StructuredBlock> for FlatBlock {
+    type Error = ();
+
+    fn try_from(value: StructuredBlock) -> Result<Self, Self::Error> {
+        Ok(FlatBlock {
+            inputs: value.inputs,
+            statements: value.statements,
+            drops: value.drops,
+            end: value.end.try_into()?,
+        })
+    }
+}
+
+impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
+    type Error = ();
+
+    fn try_from(value: StructuredBlockEnd) -> Result<Self, Self::Error> {
+        Ok(match value {
+            StructuredBlockEnd::Callsite(vars) => FlatBlockEnd::Callsite(vars),
+            StructuredBlockEnd::Return { refs, returns } => {
+                FlatBlockEnd::Return(chain!(refs.iter(), returns.iter()).copied().collect())
+            }
+            StructuredBlockEnd::Panic { .. } => return Err(()),
+            StructuredBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
+        })
+    }
 }
 
 /// Lowered variable representation.
