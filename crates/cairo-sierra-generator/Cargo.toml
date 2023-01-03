@@ -10,23 +10,23 @@ description = "Sierra code generation from lowered Cairo representation."
 testing = []
 
 [dependencies]
-cairo-debug = { path = "../cairo-debug" }
-cairo-defs = { path = "../cairo-defs" }
-cairo-diagnostics = { path = "../cairo-diagnostics" }
-cairo-proc-macros = { path = "../cairo-proc-macros" }
-cairo-filesystem = { path = "../cairo-filesystem" }
+cairo-debug = { path = "../cairo-debug", version = "0.1.0" }
+cairo-defs = { path = "../cairo-defs", version = "0.1.0" }
+cairo-diagnostics = { path = "../cairo-diagnostics", version = "0.1.0" }
+cairo-proc-macros = { path = "../cairo-proc-macros", version = "0.1.0" }
+cairo-filesystem = { path = "../cairo-filesystem", version = "0.1.0" }
 id-arena.workspace = true
 itertools.workspace = true
-cairo-lowering = { path = "../cairo-lowering" }
+cairo-lowering = { path = "../cairo-lowering", version = "0.1.0" }
 num-bigint.workspace = true
-cairo-parser = { path = "../cairo-parser" }
-cairo-plugins = { path = "../cairo-plugins" }
+cairo-parser = { path = "../cairo-parser", version = "0.1.0" }
+cairo-plugins = { path = "../cairo-plugins", version = "0.1.0" }
 salsa.workspace = true
-cairo-semantic = { path = "../cairo-semantic" }
-cairo-sierra = { path = "../cairo-sierra" }
+cairo-semantic = { path = "../cairo-semantic", version = "0.1.0" }
+cairo-sierra = { path = "../cairo-sierra", version = "0.1.0" }
 smol_str.workspace = true
-cairo-syntax = { path = "../cairo-syntax" }
-cairo-utils = { path = "../cairo-utils" }
+cairo-syntax = { path = "../cairo-syntax", version = "0.1.0" }
+cairo-utils = { path = "../cairo-utils", version = "0.1.0" }
 
 [dev-dependencies]
 env_logger.workspace = true
@@ -35,5 +35,5 @@ log.workspace = true
 pretty_assertions.workspace = true
 cairo-semantic = { path = "../cairo-semantic", features = ["testing"] }
 test-case.workspace = true
-cairo-test-utils = { path = "../cairo-test-utils" }
+cairo-test-utils = { path = "../cairo-test-utils", version = "0.1.0" }
 test-log.workspace = true

@@ -9,29 +9,29 @@ description = "Cairo tests runner. Used to run tests written in Cairo."
 [dependencies]
 anyhow.workspace = true
 cairo-vm.workspace = true
-cairo-casm = { path = "../cairo-casm" }
+cairo-casm = { path = "../cairo-casm", version = "0.1.0" }
 clap.workspace = true
 colored.workspace = true
-cairo-compiler = { path = "../cairo-compiler" }
-cairo-debug = { path = "../cairo-debug" }
-cairo-defs = { path = "../cairo-defs" }
-cairo-diagnostics = { path = "../cairo-diagnostics" }
-cairo-filesystem = { path = "../cairo-filesystem" }
+cairo-compiler = { path = "../cairo-compiler", version = "0.1.0" }
+cairo-debug = { path = "../cairo-debug", version = "0.1.0" }
+cairo-defs = { path = "../cairo-defs", version = "0.1.0" }
+cairo-diagnostics = { path = "../cairo-diagnostics", version = "0.1.0" }
+cairo-filesystem = { path = "../cairo-filesystem", version = "0.1.0" }
 itertools.workspace = true
 num-bigint.workspace = true
-cairo-plugins = { path = "../cairo-plugins" }
-cairo-project = { path = "../cairo-project" }
+cairo-plugins = { path = "../cairo-plugins", version = "0.1.0" }
+cairo-project = { path = "../cairo-project", version = "0.1.0" }
 rayon.workspace = true
-cairo-runner = { path = "../cairo-runner" }
+cairo-runner = { path = "../cairo-runner", version = "0.1.0" }
 salsa.workspace = true
-cairo-semantic = { path = "../cairo-semantic" }
-cairo-sierra = { path = "../cairo-sierra" }
-cairo-sierra-generator = { path = "../cairo-sierra-generator" }
-cairo-sierra-to-casm = { path = "../cairo-sierra-to-casm" }
-cairo-starknet = { path = "../cairo-starknet" }
-cairo-syntax = { path = "../cairo-syntax" }
+cairo-semantic = { path = "../cairo-semantic", version = "0.1.0" }
+cairo-sierra = { path = "../cairo-sierra", version = "0.1.0" }
+cairo-sierra-generator = { path = "../cairo-sierra-generator", version = "0.1.0" }
+cairo-sierra-to-casm = { path = "../cairo-sierra-to-casm", version = "0.1.0" }
+cairo-starknet = { path = "../cairo-starknet", version = "0.1.0" }
+cairo-syntax = { path = "../cairo-syntax", version = "0.1.0" }
 thiserror.workspace = true
-cairo-utils = { path = "../cairo-utils" }
+cairo-utils = { path = "../cairo-utils", version = "0.1.0" }
 
 [[bin]]
 name = "cairo-test"
