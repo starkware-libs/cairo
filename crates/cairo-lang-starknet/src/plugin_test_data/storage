@@ -8,24 +8,26 @@ test_expand_contract
 #[contract]
 mod TestContract {
     struct Storage {
-        storage_var: felt,
+        var_felt: felt,
+        var_u128: u128,
+        var_bool: bool,
     }
 }
 
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
-    struct Storage { storage_var: felt, }
+    struct Storage { var_felt: felt, var_u128: u128, var_bool: bool, }
 
-    mod storage_var {
+    mod var_felt {
         fn read() -> felt {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
             match starknet::storage_read_syscall(
                 address_domain,
-                starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>(),
+                starknet::storage_address_const::<0x10a7472546cff66beb36d7b4e019221087eee8337c7bfc1dc1aac20a10c024d>(),
             ) {
-                Result::Ok(x) => x,
+                Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
                     let mut err_data = array_new::<felt>();
                     array_append::<felt>(err_data, revert_reason);
@@ -38,9 +40,84 @@ mod TestContract {
             let address_domain = 0;
             match starknet::storage_write_syscall(
                 address_domain,
-                starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>(),
+                starknet::storage_address_const::<0x10a7472546cff66beb36d7b4e019221087eee8337c7bfc1dc1aac20a10c024d>(),
                 value,
             ) {
+                Result::Ok(()) => {
+                },
+                Result::Err(revert_reason) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, revert_reason);
+                    panic(err_data)
+                },
+            }
+        }
+    }
+    mod var_u128 {
+        fn read() -> u128 {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            match starknet::storage_read_syscall(
+                address_domain,
+                starknet::storage_address_const::<0x1ba472df0f88c033d4e0c12eb95fd291de570db0f2df241297c6ebf905889a>(),
+            ) {
+                Result::Ok(value) => u128_from_felt(value),
+                Result::Err(revert_reason) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, revert_reason);
+                    panic(err_data)
+                },
+            }
+        }
+        fn write(value: u128) {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            match starknet::storage_write_syscall(
+                address_domain,
+                starknet::storage_address_const::<0x1ba472df0f88c033d4e0c12eb95fd291de570db0f2df241297c6ebf905889a>(),
+                u128_to_felt(value),
+            ) {
+                Result::Ok(()) => {
+                },
+                Result::Err(revert_reason) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, revert_reason);
+                    panic(err_data)
+                },
+            }
+        }
+    }
+    mod var_bool {
+        fn read() -> bool {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            match starknet::storage_read_syscall(
+                address_domain,
+                starknet::storage_address_const::<0x379caae8ce359ad2da9b1cd83d4df406d959c199192b9c9e787595a50e0db27>(),
+            ) {
+                Result::Ok(value) => if value == 0 {
+                    false
+                } else {
+                    true
+                },
+                Result::Err(revert_reason) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, revert_reason);
+                    panic(err_data)
+                },
+            }
+        }
+        fn write(value: bool) {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+                match starknet::storage_write_syscall(
+                address_domain,
+                starknet::storage_address_const::<0x379caae8ce359ad2da9b1cd83d4df406d959c199192b9c9e787595a50e0db27>(),
+                if value {
+                    0
+                } else {
+                    1
+            },) {
                 Result::Ok(()) => {
                 },
                 Result::Err(revert_reason) => {

@@ -299,7 +299,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 }
             }
             ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == "Storage" => {
-                storage_code = handle_storage_struct(db, item_struct.clone());
+                let (storage_code_rewrite, storage_diagnostics) =
+                    handle_storage_struct(db, item_struct.clone());
+                storage_code = storage_code_rewrite;
+                diagnostics.extend(storage_diagnostics);
             }
             _ => {}
         };
@@ -362,60 +365,93 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 }
 
 /// Generate getters and setters for the variables in the storage struct.
-fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> RewriteNode {
+fn handle_storage_struct(
+    db: &dyn SyntaxGroup,
+    struct_ast: ast::ItemStruct,
+) -> (RewriteNode, Vec<PluginDiagnostic>) {
     let mut members_code = Vec::new();
+    let mut diagnostics = vec![];
 
     for member in struct_ast.members(db).elements(db) {
-        let name = member.name(db).text(db).to_string();
+        let name = member.name(db).text(db);
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
+        let type_ast = member.type_clause(db).ty(db);
+        let type_name = type_ast.as_syntax_node().get_text(db);
+        let type_name = type_name.trim();
 
-        let generated_submodule = RewriteNode::interpolate_patched(
-            formatdoc!(
-                "
-                mod $name$ {{
-                    fn read() -> felt {{
-                        // Only address_domain 0 is currently supported.
-                        let address_domain = 0;
-                        match starknet::storage_read_syscall(
-                            address_domain,
-                            starknet::storage_address_const::<{address}>(),
-                        ) {{
-                            Result::Ok(x) => x,
-                            Result::Err(revert_reason) => {{
-                                let mut err_data = array_new::<felt>();
-                                array_append::<felt>(err_data, revert_reason);
-                                panic(err_data)
-                            }},
-                        }}
-                    }}
-                    fn write(value: felt) {{
-                        // Only address_domain 0 is currently supported.
-                        let address_domain = 0;
-                        match starknet::storage_write_syscall(
-                            address_domain,
-                            starknet::storage_address_const::<{address}>(),
-                            value,
-                        ) {{
-                            Result::Ok(()) => {{}},
-                            Result::Err(revert_reason) => {{
-                                let mut err_data = array_new::<felt>();
-                                array_append::<felt>(err_data, revert_reason);
-                                panic(err_data)
-                            }},
-                        }}
-                    }}
-                }}"
-            )
-            .as_str(),
-            HashMap::from([(
-                "name".to_string(),
-                RewriteNode::Copied(member.name(db).as_syntax_node()),
-            )]),
-        );
-
-        members_code.push(generated_submodule)
+        if type_name.starts_with("Map<") && type_name.ends_with('>') {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: type_ast.stable_ptr().untyped(),
+                message: "Mapping storage vars are not yet supported.".to_string(),
+            });
+            continue;
+        }
+        match handle_simple_storage_var(type_name, &address) {
+            Some(code) => members_code.push(RewriteNode::interpolate_patched(
+                code.as_str(),
+                HashMap::from([
+                    (
+                        "storage_var_name".to_string(),
+                        RewriteNode::Copied(member.name(db).as_syntax_node()),
+                    ),
+                    ("type_name".to_string(), RewriteNode::Copied(type_ast.as_syntax_node())),
+                ]),
+            )),
+            None => diagnostics.push(PluginDiagnostic {
+                stable_ptr: type_ast.stable_ptr().untyped(),
+                message: "Unsupported type for storage var.".to_string(),
+            }),
+        }
     }
-    RewriteNode::Modified(ModifiedNode { children: members_code })
+    (RewriteNode::Modified(ModifiedNode { children: members_code }), diagnostics)
+}
+
+/// Generate getters and setters skeleton for a non-mapping member in the storage struct.
+fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
+    let (convert_to, convert_from) = match type_name {
+        "felt" => ("value", "value"),
+        "bool" => ("if value == 0 { false } else { true }", "if value { 0 } else { 1 }"),
+        "u128" => ("u128_from_felt(value)", "u128_to_felt(value)"),
+        _ => {
+            return None;
+        }
+    };
+    Some(formatdoc!(
+        "
+        mod $storage_var_name$ {{
+            fn read() -> $type_name$ {{
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0;
+                match starknet::storage_read_syscall(
+                    address_domain,
+                    starknet::storage_address_const::<{address}>(),
+                ) {{
+                    Result::Ok(value) => {convert_to},
+                    Result::Err(revert_reason) => {{
+                        let mut err_data = array_new::<felt>();
+                        array_append::<felt>(err_data, revert_reason);
+                        panic(err_data)
+                    }},
+                }}
+            }}
+            fn write(value: $type_name$) {{
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0;
+                match starknet::storage_write_syscall(
+                    address_domain,
+                    starknet::storage_address_const::<{address}>(),
+                    {convert_from},
+                ) {{
+                    Result::Ok(()) => {{}},
+                    Result::Err(revert_reason) => {{
+                        let mut err_data = array_new::<felt>();
+                        array_append::<felt>(err_data, revert_reason);
+                        panic(err_data)
+                    }},
+                }}
+            }}
+        }}"
+    ))
 }
 
 /// Returns the serde functions for a type.
