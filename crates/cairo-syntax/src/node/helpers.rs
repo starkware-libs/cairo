@@ -14,6 +14,7 @@ use crate::node::green::GreenNodeDetails;
 pub trait GetIdentifier {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr;
 }
+// TODO(ilya): add test.
 impl GetIdentifier for ast::ExprPathGreen {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
@@ -22,7 +23,13 @@ impl GetIdentifier for ast::ExprPathGreen {
             _ => panic!("Unexpected token"),
         };
         assert_eq!(children.len() & 1, 1, "Expected an odd number of elements in the path.");
-        ast::TerminalIdentifierGreen(*children.last().unwrap()).identifier(db)
+        let segment_green = ast::PathSegmentGreen(*children.last().unwrap());
+        let children = match db.lookup_intern_green(segment_green.0).details {
+            GreenNodeDetails::Node { children, width: _ } => children,
+            _ => panic!("Unexpected token"),
+        };
+        let identifier = ast::TerminalIdentifierGreen(children[0]);
+        identifier.identifier(db)
     }
 }
 impl GetIdentifier for ast::TerminalIdentifierGreen {

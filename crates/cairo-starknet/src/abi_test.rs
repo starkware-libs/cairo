@@ -1,5 +1,5 @@
-use cairo_defs::db::DefsGroup;
 use cairo_defs::ids::ModuleItemId;
+use cairo_semantic::db::SemanticGroup;
 use cairo_semantic::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 use cairo_utils::extract_matches;
 use indoc::indoc;

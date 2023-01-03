@@ -405,6 +405,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 // TODO(spapini): Support nested diagnostics.
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
+            SemanticDiagnosticKind::NameDefinedMultipleTimes { name } => {
+                format!("The name `{name}` is defined multiple times.")
+            }
         }
     }
 
@@ -606,6 +609,9 @@ pub enum SemanticDiagnosticKind {
     WrappedPluginDiagnostic {
         diagnostic: PluginMappedDiagnostic,
         original_diag: Box<SemanticDiagnostic>,
+    },
+    NameDefinedMultipleTimes {
+        name: SmolStr,
     },
 }
 
