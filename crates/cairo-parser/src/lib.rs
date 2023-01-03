@@ -1,5 +1,6 @@
 //! Cairo parser.
-
+//!
+//! This crate is responsible for parsing Cairo code.
 pub mod colored_printer;
 pub mod db;
 pub mod diagnostic;

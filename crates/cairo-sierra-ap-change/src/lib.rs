@@ -1,3 +1,4 @@
+//! Sierra AP change computation.
 use std::collections::HashMap;
 
 use ap_change_info::ApChangeInfo;

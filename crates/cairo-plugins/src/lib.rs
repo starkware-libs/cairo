@@ -1,3 +1,4 @@
+//! Cairo core plugin implementations.
 use std::collections::HashSet;
 use std::sync::Arc;
 
