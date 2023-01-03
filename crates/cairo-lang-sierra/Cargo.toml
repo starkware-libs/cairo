@@ -1,0 +1,34 @@
+[package]
+name = "cairo-lang-sierra"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Sierra representation."
+build = "src/build.rs" # LALRPOP preprocessing
+
+[build-dependencies]
+lalrpop = "0.19.8"
+regex = "1"
+
+[dependencies]
+const-fnv1a-hash.workspace = true
+convert_case.workspace = true
+derivative.workspace = true
+itertools.workspace = true
+lalrpop-util.workspace = true
+thiserror.workspace = true
+num-bigint.workspace = true
+num-traits.workspace = true
+salsa.workspace = true
+serde.workspace = true
+smol_str.workspace = true
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+
+[dev-dependencies]
+assert_matches.workspace = true
+bimap.workspace = true
+env_logger.workspace = true
+indoc.workspace = true
+test-case.workspace = true
+test-log.workspace = true

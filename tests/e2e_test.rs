@@ -1,13 +1,13 @@
-use cairo_compiler::db::RootDatabase;
-use cairo_compiler::diagnostics::check_and_eprint_diagnostics;
-use cairo_semantic::test_utils::setup_test_module;
-use cairo_sierra_generator::db::SierraGenGroup;
-use cairo_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_sierra_to_casm::test_utils::build_metadata;
-use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_sierra_to_casm::test_utils::build_metadata;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
-cairo_test_utils::test_file_test!(
+cairo_lang_test_utils::test_file_test!(
     libfunc_e2e,
     "e2e_test_data/libfuncs",
     {
@@ -42,7 +42,7 @@ fn run_small_e2e_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap
         .join("\n");
 
     // Compile to casm.
-    let casm = cairo_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
+    let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
         .unwrap()
         .to_string();
 

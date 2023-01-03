@@ -219,10 +219,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
 
 [[package]]
-name = "cairo-casm"
+name = "cairo-lang-casm"
 version = "0.1.0"
 dependencies = [
- "cairo-utils",
+ "cairo-lang-utils",
  "cairo-vm",
  "env_logger",
  "indoc",
@@ -236,22 +236,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-compiler"
+name = "cairo-lang-compiler"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cairo-defs",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-lowering",
- "cairo-parser",
- "cairo-plugins",
- "cairo-project",
- "cairo-semantic",
- "cairo-sierra",
- "cairo-sierra-generator",
- "cairo-syntax",
- "cairo-utils",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-lowering",
+ "cairo-lang-parser",
+ "cairo-lang-plugins",
+ "cairo-lang-project",
+ "cairo-lang-semantic",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-generator",
+ "cairo-lang-syntax",
+ "cairo-lang-utils",
  "clap 4.0.26",
  "log",
  "salsa",
@@ -260,26 +260,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-debug"
+name = "cairo-lang-debug"
 version = "0.1.0"
 dependencies = [
- "cairo-proc-macros",
- "cairo-utils",
+ "cairo-lang-proc-macros",
+ "cairo-lang-utils",
  "env_logger",
  "salsa",
  "test-log",
 ]
 
 [[package]]
-name = "cairo-defs"
+name = "cairo-lang-defs"
 version = "0.1.0"
 dependencies = [
- "cairo-debug",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-parser",
- "cairo-syntax",
- "cairo-utils",
+ "cairo-lang-debug",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-parser",
+ "cairo-lang-syntax",
+ "cairo-lang-utils",
  "indexmap",
  "indoc",
  "itertools",
@@ -291,12 +291,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-diagnostics"
+name = "cairo-lang-diagnostics"
 version = "0.1.0"
 dependencies = [
- "cairo-filesystem",
- "cairo-proc-macros",
- "cairo-utils",
+ "cairo-lang-filesystem",
+ "cairo-lang-proc-macros",
+ "cairo-lang-utils",
  "env_logger",
  "indoc",
  "itertools",
@@ -306,10 +306,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-eq-solver"
+name = "cairo-lang-eq-solver"
 version = "0.1.0"
 dependencies = [
- "cairo-utils",
+ "cairo-lang-utils",
  "env_logger",
  "good_lp",
  "indoc",
@@ -319,12 +319,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-filesystem"
+name = "cairo-lang-filesystem"
 version = "0.1.0"
 dependencies = [
- "cairo-debug",
- "cairo-project",
- "cairo-utils",
+ "cairo-lang-debug",
+ "cairo-lang-project",
+ "cairo-lang-utils",
  "env_logger",
  "path-clean",
  "salsa",
@@ -333,15 +333,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-formatter"
+name = "cairo-lang-formatter"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-parser",
- "cairo-syntax",
- "cairo-utils",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-parser",
+ "cairo-lang-syntax",
+ "cairo-lang-utils",
  "clap 4.0.26",
  "colored",
  "diffy",
@@ -355,23 +355,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-language-server"
+name = "cairo-lang-language-server"
 version = "0.1.0"
 dependencies = [
- "cairo-compiler",
- "cairo-debug",
- "cairo-defs",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-formatter",
- "cairo-lowering",
- "cairo-parser",
- "cairo-plugins",
- "cairo-project",
- "cairo-semantic",
- "cairo-starknet",
- "cairo-syntax",
- "cairo-utils",
+ "cairo-lang-compiler",
+ "cairo-lang-debug",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-formatter",
+ "cairo-lang-lowering",
+ "cairo-lang-parser",
+ "cairo-lang-plugins",
+ "cairo-lang-project",
+ "cairo-lang-semantic",
+ "cairo-lang-starknet",
+ "cairo-lang-syntax",
+ "cairo-lang-utils",
  "lsp-types",
  "salsa",
  "serde",
@@ -382,20 +382,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-lowering"
+name = "cairo-lang-lowering"
 version = "0.1.0"
 dependencies = [
- "cairo-debug",
- "cairo-defs",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-parser",
- "cairo-plugins",
- "cairo-proc-macros",
- "cairo-semantic",
- "cairo-syntax",
- "cairo-test-utils",
- "cairo-utils",
+ "cairo-lang-debug",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-parser",
+ "cairo-lang-plugins",
+ "cairo-lang-proc-macros",
+ "cairo-lang-semantic",
+ "cairo-lang-syntax",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
  "env_logger",
  "id-arena",
  "indoc",
@@ -410,15 +410,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-parser"
+name = "cairo-lang-parser"
 version = "0.1.0"
 dependencies = [
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-syntax",
- "cairo-syntax-codegen",
- "cairo-test-utils",
- "cairo-utils",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-syntax",
+ "cairo-lang-syntax-codegen",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
  "colored",
  "env_logger",
  "itertools",
@@ -431,18 +431,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-plugins"
+name = "cairo-lang-plugins"
 version = "0.1.0"
 dependencies = [
- "cairo-debug",
- "cairo-defs",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-parser",
- "cairo-semantic",
- "cairo-syntax",
- "cairo-test-utils",
- "cairo-utils",
+ "cairo-lang-debug",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-parser",
+ "cairo-lang-semantic",
+ "cairo-lang-syntax",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
  "env_logger",
  "indoc",
  "itertools",
@@ -454,16 +454,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-proc-macros"
+name = "cairo-lang-proc-macros"
 version = "0.1.0"
 dependencies = [
- "cairo-debug",
+ "cairo-lang-debug",
  "quote",
  "syn",
 ]
 
 [[package]]
-name = "cairo-project"
+name = "cairo-lang-project"
 version = "0.1.0"
 dependencies = [
  "indoc",
@@ -475,19 +475,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-runner"
+name = "cairo-lang-runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cairo-casm",
- "cairo-compiler",
- "cairo-diagnostics",
- "cairo-sierra",
- "cairo-sierra-ap-change",
- "cairo-sierra-gas",
- "cairo-sierra-generator",
- "cairo-sierra-to-casm",
- "cairo-utils",
+ "cairo-lang-casm",
+ "cairo-lang-compiler",
+ "cairo-lang-diagnostics",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-ap-change",
+ "cairo-lang-sierra-gas",
+ "cairo-lang-sierra-generator",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-utils",
  "cairo-vm",
  "clap 4.0.26",
  "itertools",
@@ -497,20 +497,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-semantic"
+name = "cairo-lang-semantic"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
- "cairo-debug",
- "cairo-defs",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-parser",
- "cairo-plugins",
- "cairo-proc-macros",
- "cairo-syntax",
- "cairo-test-utils",
- "cairo-utils",
+ "cairo-lang-debug",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-parser",
+ "cairo-lang-plugins",
+ "cairo-lang-proc-macros",
+ "cairo-lang-syntax",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
  "env_logger",
  "id-arena",
  "indoc",
@@ -527,12 +527,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-sierra"
+name = "cairo-lang-sierra"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
  "bimap",
- "cairo-utils",
+ "cairo-lang-utils",
  "const-fnv1a-hash",
  "convert_case",
  "derivative",
@@ -553,12 +553,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-sierra-ap-change"
+name = "cairo-lang-sierra-ap-change"
 version = "0.1.0"
 dependencies = [
- "cairo-eq-solver",
- "cairo-sierra",
- "cairo-utils",
+ "cairo-lang-eq-solver",
+ "cairo-lang-sierra",
+ "cairo-lang-utils",
  "env_logger",
  "indoc",
  "itertools",
@@ -568,12 +568,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-sierra-gas"
+name = "cairo-lang-sierra-gas"
 version = "0.1.0"
 dependencies = [
- "cairo-eq-solver",
- "cairo-sierra",
- "cairo-utils",
+ "cairo-lang-eq-solver",
+ "cairo-lang-sierra",
+ "cairo-lang-utils",
  "env_logger",
  "indoc",
  "itertools",
@@ -583,22 +583,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-sierra-generator"
+name = "cairo-lang-sierra-generator"
 version = "0.1.0"
 dependencies = [
- "cairo-debug",
- "cairo-defs",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-lowering",
- "cairo-parser",
- "cairo-plugins",
- "cairo-proc-macros",
- "cairo-semantic",
- "cairo-sierra",
- "cairo-syntax",
- "cairo-test-utils",
- "cairo-utils",
+ "cairo-lang-debug",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-lowering",
+ "cairo-lang-parser",
+ "cairo-lang-plugins",
+ "cairo-lang-proc-macros",
+ "cairo-lang-semantic",
+ "cairo-lang-sierra",
+ "cairo-lang-syntax",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
  "env_logger",
  "id-arena",
  "indoc",
@@ -613,15 +613,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-sierra-to-casm"
+name = "cairo-lang-sierra-to-casm"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
- "cairo-casm",
- "cairo-sierra",
- "cairo-sierra-ap-change",
- "cairo-sierra-gas",
- "cairo-utils",
+ "cairo-lang-casm",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-ap-change",
+ "cairo-lang-sierra-gas",
+ "cairo-lang-utils",
  "clap 4.0.26",
  "env_logger",
  "indoc",
@@ -636,27 +636,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-starknet"
+name = "cairo-lang-starknet"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cairo-compiler",
- "cairo-defs",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-formatter",
- "cairo-lowering",
- "cairo-parser",
- "cairo-plugins",
- "cairo-semantic",
- "cairo-sierra",
- "cairo-sierra-ap-change",
- "cairo-sierra-gas",
- "cairo-sierra-generator",
- "cairo-sierra-to-casm",
- "cairo-syntax",
- "cairo-test-utils",
- "cairo-utils",
+ "cairo-lang-compiler",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-formatter",
+ "cairo-lang-lowering",
+ "cairo-lang-parser",
+ "cairo-lang-plugins",
+ "cairo-lang-semantic",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-ap-change",
+ "cairo-lang-sierra-gas",
+ "cairo-lang-sierra-generator",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-syntax",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
  "clap 4.0.26",
  "convert_case",
  "env_logger",
@@ -678,12 +678,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-syntax"
+name = "cairo-lang-syntax"
 version = "0.1.0"
 dependencies = [
- "cairo-debug",
- "cairo-filesystem",
- "cairo-utils",
+ "cairo-lang-debug",
+ "cairo-lang-filesystem",
+ "cairo-lang-utils",
  "env_logger",
  "pretty_assertions",
  "salsa",
@@ -692,10 +692,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-syntax-codegen"
+name = "cairo-lang-syntax-codegen"
 version = "0.1.0"
 dependencies = [
- "cairo-utils",
+ "cairo-lang-utils",
  "env_logger",
  "genco",
  "log",
@@ -704,26 +704,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-test-runner"
+name = "cairo-lang-test-runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cairo-casm",
- "cairo-compiler",
- "cairo-debug",
- "cairo-defs",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-plugins",
- "cairo-project",
- "cairo-runner",
- "cairo-semantic",
- "cairo-sierra",
- "cairo-sierra-generator",
- "cairo-sierra-to-casm",
- "cairo-starknet",
- "cairo-syntax",
- "cairo-utils",
+ "cairo-lang-casm",
+ "cairo-lang-compiler",
+ "cairo-lang-debug",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-plugins",
+ "cairo-lang-project",
+ "cairo-lang-runner",
+ "cairo-lang-semantic",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-generator",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-starknet",
+ "cairo-lang-syntax",
+ "cairo-lang-utils",
  "cairo-vm",
  "clap 4.0.26",
  "colored",
@@ -735,10 +735,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-test-utils"
+name = "cairo-lang-test-utils"
 version = "0.1.0"
 dependencies = [
- "cairo-utils",
+ "cairo-lang-utils",
  "env_logger",
  "log",
  "pretty_assertions",
@@ -746,7 +746,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-utils"
+name = "cairo-lang-utils"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -2510,22 +2510,22 @@ name = "tests"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
- "cairo-casm",
- "cairo-compiler",
- "cairo-defs",
- "cairo-diagnostics",
- "cairo-filesystem",
- "cairo-parser",
- "cairo-plugins",
- "cairo-runner",
- "cairo-semantic",
- "cairo-sierra",
- "cairo-sierra-gas",
- "cairo-sierra-generator",
- "cairo-sierra-to-casm",
- "cairo-syntax",
- "cairo-test-utils",
- "cairo-utils",
+ "cairo-lang-casm",
+ "cairo-lang-compiler",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-parser",
+ "cairo-lang-plugins",
+ "cairo-lang-runner",
+ "cairo-lang-semantic",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-gas",
+ "cairo-lang-sierra-generator",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-syntax",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
  "cairo-vm",
  "env_logger",
  "itertools",
