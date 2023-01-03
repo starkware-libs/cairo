@@ -35,6 +35,7 @@ impl NoGenericArgsGenericType for EcPointType {
 define_libfunc_hierarchy! {
     pub enum EcLibfunc {
         CreatePoint(EcCreatePointLibfunc),
+        UnwrapPoint(EcUnwrapPointLibfunc),
     }, EcConcreteLibfunc
 }
 
@@ -69,5 +70,33 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// Libfunc for unwrapping the x,y values of an EC point.
+#[derive(Default)]
+pub struct EcUnwrapPointLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_point_unwrap");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![context.get_concrete_type(EcPointType::id(), &[])?],
+            vec![
+                OutputVarInfo {
+                    ty: felt_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+                OutputVarInfo {
+                    ty: felt_ty,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 }
