@@ -1,0 +1,16 @@
+//! > Test ignoring of test config in the test config.
+
+//! > test_function_name
+test_expand_plugin
+
+//! > cairo_code
+#[cfg(test)]
+mod Ignored {
+}
+
+mod NotIgnored {
+}
+
+//! > generated_cairo_code
+
+//! > expected_diagnostics
