@@ -1,4 +1,4 @@
-use cairo_sierra::extensions::cheatcodes::CheatcodesConcreteLibFunc;
+use cairo_lang_sierra::extensions::cheatcodes::CheatcodesConcreteLibFunc;
 
 use self::roll::build_roll;
 
