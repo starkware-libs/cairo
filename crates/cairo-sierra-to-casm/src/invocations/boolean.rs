@@ -4,7 +4,7 @@ use cairo_casm::{casm, casm_build_extend};
 use cairo_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_sierra::extensions::felt::FeltBinaryOperator;
 
-use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra bool operations.
@@ -16,6 +16,7 @@ pub fn build(
         BoolConcreteLibfunc::And(_) => build_bool_and(builder),
         BoolConcreteLibfunc::Not(_) => build_bool_not(builder),
         BoolConcreteLibfunc::Xor(_) => build_bool_xor(builder),
+        BoolConcreteLibfunc::Equal(_) => misc::build_cell_eq(builder),
     }
 }
 

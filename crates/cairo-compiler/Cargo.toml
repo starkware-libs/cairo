@@ -9,21 +9,21 @@ description = "Cairo compiler."
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
-cairo-diagnostics = { path = "../cairo-diagnostics" }
-cairo-defs = { path = "../cairo-defs" }
-cairo-filesystem = { path = "../cairo-filesystem" }
+cairo-diagnostics = { path = "../cairo-diagnostics", version = "0.1.0" }
+cairo-defs = { path = "../cairo-defs", version = "0.1.0" }
+cairo-filesystem = { path = "../cairo-filesystem", version = "0.1.0" }
 log.workspace = true
-cairo-lowering = { path = "../cairo-lowering" }
-cairo-semantic = { path = "../cairo-semantic" }
-cairo-sierra = { path = "../cairo-sierra" }
-cairo-sierra-generator = { path = "../cairo-sierra-generator" }
-cairo-syntax = { path = "../cairo-syntax" }
-cairo-parser = { path = "../cairo-parser" }
-cairo-plugins = { path = "../cairo-plugins" }
-cairo-project = { path = "../cairo-project" }
+cairo-lowering = { path = "../cairo-lowering", version = "0.1.0" }
+cairo-semantic = { path = "../cairo-semantic", version = "0.1.0" }
+cairo-sierra = { path = "../cairo-sierra", version = "0.1.0" }
+cairo-sierra-generator = { path = "../cairo-sierra-generator", version = "0.1.0" }
+cairo-syntax = { path = "../cairo-syntax", version = "0.1.0" }
+cairo-parser = { path = "../cairo-parser", version = "0.1.0" }
+cairo-plugins = { path = "../cairo-plugins", version = "0.1.0" }
+cairo-project = { path = "../cairo-project", version = "0.1.0" }
 salsa.workspace = true
 thiserror.workspace = true
-cairo-utils = { path = "../cairo-utils" }
+cairo-utils = { path = "../cairo-utils", version = "0.1.0" }
 
 [dev-dependencies]
 test-log.workspace = true

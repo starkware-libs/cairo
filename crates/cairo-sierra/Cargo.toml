@@ -23,7 +23,7 @@ num-traits.workspace = true
 salsa.workspace = true
 serde.workspace = true
 smol_str.workspace = true
-cairo-utils = { path = "../cairo-utils" }
+cairo-utils = { path = "../cairo-utils", version = "0.1.0" }
 
 [dev-dependencies]
 assert_matches.workspace = true

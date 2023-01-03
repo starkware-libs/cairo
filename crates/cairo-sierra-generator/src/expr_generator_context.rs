@@ -108,11 +108,11 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    /// Returns the block ([cairo_lowering::Block]) associated with [cairo_lowering::BlockId].
+    /// Returns the block ([cairo_lowering::FlatBlock]) associated with [cairo_lowering::BlockId].
     pub fn get_lowered_block(
         &self,
         block_id: cairo_lowering::BlockId,
-    ) -> &'a cairo_lowering::Block {
+    ) -> &'a cairo_lowering::FlatBlock {
         &self.lowered.blocks[block_id]
     }
 

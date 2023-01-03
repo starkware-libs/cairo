@@ -8,10 +8,10 @@ description = "Sierra AP change computation."
 
 [dependencies]
 itertools.workspace = true
-cairo-sierra = { path = "../cairo-sierra" }
-cairo-eq-solver = { path = "../cairo-eq-solver" }
+cairo-sierra = { path = "../cairo-sierra", version = "0.1.0" }
+cairo-eq-solver = { path = "../cairo-eq-solver", version = "0.1.0" }
 thiserror.workspace = true
-cairo-utils = { path = "../cairo-utils" }
+cairo-utils = { path = "../cairo-utils", version = "0.1.0" }
 
 [dev-dependencies]
 env_logger.workspace = true

@@ -474,6 +474,7 @@ impl CasmBuilder {
         self.statements.push(Statement::Final(instruction));
         self.reachable = false;
     }
+
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
     fn get_value(&self, var: Var, adjust_ap: bool) -> ResOperand {
         if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
@@ -680,8 +681,18 @@ macro_rules! casm_build_extend {
         $builder.jump_nz($condition, std::stringify!($target).to_owned());
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, call $target:ident; $($tok:tt)*) => {
+    ($builder:ident, let ($($var_name:ident),*) = call $target:ident; $($tok:tt)*) => {
         $builder.call(std::stringify!($target).to_owned());
+
+        let __var_count = {0i16 $(+ (stringify!($var_name), 1i16).1)*};
+        let mut __var_index = 0;
+        $(
+            let $var_name = $builder.add_var($crate::operand::ResOperand::Deref($crate::operand::CellRef {
+                offset: __var_index - __var_count,
+                register: $crate::operand::Register::AP,
+            }));
+            __var_index += 1;
+        )*
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, ret; $($tok:tt)*) => {

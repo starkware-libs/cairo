@@ -1,8 +1,8 @@
 use super::get_bool_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
-    SignatureSpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::GenericLibfuncId;
@@ -12,6 +12,7 @@ define_libfunc_hierarchy! {
         And(BoolAndLibfunc),
         Not(BoolNotLibfunc),
         Xor(BoolXorLibfunc),
+        Equal(BoolEqualLibfunc),
     }, BoolConcreteLibfunc
 }
 
@@ -71,5 +72,46 @@ impl NoGenericArgsGenericLibfunc for BoolXorLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         boolean_libfunc_signature(context, false, false)
+    }
+}
+
+/// Libfunc for boolean equality.
+#[derive(Default)]
+pub struct BoolEqualLibfunc {}
+impl NoGenericArgsGenericLibfunc for BoolEqualLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("bool_eq");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let bool_type = get_bool_type(context)?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature {
+                    ty: bool_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: false,
+                    allow_const: true,
+                },
+                ParamSignature {
+                    ty: bool_type,
+                    allow_deferred: false,
+                    allow_add_const: false,
+                    allow_const: true,
+                },
+            ],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
     }
 }

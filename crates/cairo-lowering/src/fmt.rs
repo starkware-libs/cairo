@@ -1,13 +1,16 @@
 use cairo_debug::DebugWithDb;
 use cairo_semantic::ConcreteVariant;
+use itertools::chain;
 
 use crate::db::LoweringGroup;
 use crate::lower::Lowered;
 use crate::objects::{
-    Block, BlockEnd, BlockId, Statement, StatementCall, StatementCallBlock, StatementLiteral,
-    StatementMatchExtern, StatementStructDestructure, VariableId,
+    BlockId, Statement, StatementCall, StatementCallBlock, StatementLiteral, StatementMatchExtern,
+    StatementStructDestructure, StructuredBlock, StructuredBlockEnd, VariableId,
 };
-use crate::{StatementEnumConstruct, StatementMatchEnum, StatementStructConstruct};
+use crate::{
+    FlatBlock, FlatBlockEnd, StatementEnumConstruct, StatementMatchEnum, StatementStructConstruct,
+};
 
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
@@ -32,7 +35,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for Lowered {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for Block {
+impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "Inputs:")?;
         let mut inputs = self.inputs.iter().peekable();
@@ -69,18 +72,85 @@ impl DebugWithDb<LoweredFormatter<'_>> for Block {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for BlockEnd {
+impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs = match &self {
-            BlockEnd::Callsite(outputs) => {
+            StructuredBlockEnd::Callsite(outputs) => {
+                write!(f, "  Callsite(")?;
+                outputs.clone()
+            }
+            StructuredBlockEnd::Return { refs, returns } => {
+                write!(f, "  Return(")?;
+                chain!(refs, returns).copied().collect()
+            }
+            StructuredBlockEnd::Panic { refs, data } => {
+                write!(f, "  Panic(")?;
+                chain!(refs, [data]).copied().collect()
+            }
+            StructuredBlockEnd::Unreachable => {
+                return write!(f, "  Unreachable");
+            }
+        };
+        let mut outputs = outputs.iter().peekable();
+        while let Some(var) = outputs.next() {
+            var.fmt(f, ctx)?;
+            if outputs.peek().is_some() {
+                write!(f, ", ")?;
+            }
+        }
+        write!(f, ")")
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "Inputs:")?;
+        let mut inputs = self.inputs.iter().peekable();
+        while let Some(var) = inputs.next() {
+            write!(f, " ")?;
+            format_var_with_ty(*var, f, ctx)?;
+            if inputs.peek().is_some() {
+                write!(f, ",")?;
+            }
+        }
+
+        writeln!(f, "\nStatements:")?;
+        for stmt in &self.statements {
+            write!(f, "  ")?;
+            stmt.fmt(f, ctx)?;
+            writeln!(f)?;
+        }
+
+        write!(f, "Drops:")?;
+        let mut drops = self.drops.iter().peekable();
+        if drops.peek().is_some() {
+            write!(f, " ")?;
+        }
+        while let Some(var) = drops.next() {
+            var.fmt(f, ctx)?;
+            if drops.peek().is_some() {
+                write!(f, ", ")?;
+            }
+        }
+
+        writeln!(f, "\nEnd:")?;
+        self.end.fmt(f, ctx)?;
+        writeln!(f)
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        let outputs = match &self {
+            FlatBlockEnd::Callsite(outputs) => {
                 write!(f, "  Callsite(")?;
                 outputs
             }
-            BlockEnd::Return(outputs) => {
+            FlatBlockEnd::Return(returns) => {
                 write!(f, "  Return(")?;
-                outputs
+                returns
             }
-            BlockEnd::Unreachable => {
+            FlatBlockEnd::Unreachable => {
                 return write!(f, "  Unreachable");
             }
         };

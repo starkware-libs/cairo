@@ -98,11 +98,11 @@ fn get_function_code(
 
     // Generate the return statement if necessary.
     match &block.end {
-        cairo_lowering::BlockEnd::Callsite(returned_variables)
-        | cairo_lowering::BlockEnd::Return(returned_variables) => {
+        cairo_lowering::FlatBlockEnd::Callsite(returned_variables)
+        | cairo_lowering::FlatBlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(&mut context, returned_variables)?);
         }
-        cairo_lowering::BlockEnd::Unreachable => {}
+        cairo_lowering::FlatBlockEnd::Unreachable => {}
     };
 
     let drop_id = GenericLibfuncId::from_string("drop");

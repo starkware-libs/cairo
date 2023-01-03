@@ -441,13 +441,16 @@ dependencies = [
  "cairo-parser",
  "cairo-semantic",
  "cairo-syntax",
+ "cairo-test-utils",
  "cairo-utils",
+ "env_logger",
  "indoc",
  "itertools",
  "pretty_assertions",
  "salsa",
  "smol_str",
  "test-case",
+ "test-log",
 ]
 
 [[package]]

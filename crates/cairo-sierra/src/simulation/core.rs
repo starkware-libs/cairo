@@ -14,7 +14,7 @@ use crate::extensions::core::CoreConcreteLibfunc::{
     Gas, Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
-use crate::extensions::ec::EcConcreteLibfunc::CreatePoint;
+use crate::extensions::ec::EcConcreteLibfunc::{CreatePoint, UnwrapPoint};
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt::{
     FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
@@ -78,18 +78,19 @@ pub fn simulate<
             [CoreValue::Felt(x), CoreValue::Felt(y)] => {
                 // If the point is on the curve use the fallthrough branch and return the point.
                 if y * y == x * x * x + x + get_beta() {
-                    Ok((
-                        vec![CoreValue::Struct(vec![
-                            CoreValue::Felt(x.clone()),
-                            CoreValue::Felt(y.clone()),
-                        ])],
-                        0,
-                    ))
+                    Ok((vec![CoreValue::EcPoint(x.clone(), y.clone())], 0))
                 } else {
                     Ok((vec![], 1))
                 }
             }
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Ec(UnwrapPoint(_)) => match &inputs[..] {
+            [CoreValue::EcPoint(x, y)] => {
+                Ok((vec![CoreValue::Felt(x.clone()), CoreValue::Felt(y.clone())], 0))
+            }
+            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
@@ -340,6 +341,14 @@ fn simulate_bool_libfunc(
                     }],
                     0,
                 ))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        BoolConcreteLibfunc::Equal(_) => match inputs {
+            [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
+                // The variant index defines the true/false "value". Index zero is false.
+                Ok((vec![], usize::from(*a_index == *b_index)))
             }
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),

@@ -14,6 +14,6 @@ normal = ["cairo-debug"]
 
 [dependencies]
 # This is used only for docs.
-cairo-debug = { path = "../cairo-debug" }
+cairo-debug = { path = "../cairo-debug", version = "0.1.0" }
 quote.workspace = true
 syn.workspace = true

@@ -1,12 +1,13 @@
-use cairo_casm::casm;
+use cairo_casm::builder::CasmBuilder;
+use cairo_casm::operand::ResOperand;
+use cairo_casm::{casm, casm_build_extend};
 use cairo_sierra::program::{BranchInfo, BranchTarget};
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
     InvocationError,
 };
-use crate::references::{CellExpression, ReferenceExpression};
-use crate::relocations::{Relocation, RelocationEntry};
+use crate::references::CellExpression;
 
 /// Handles a revoke ap tracking instruction.
 pub fn build_revoke_ap_tracking(
@@ -43,20 +44,15 @@ pub fn build_jump_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let value = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
-
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
-
-    Ok(builder.build(
-        casm! { jmp rel 0 if value != 0; }.instructions,
-        vec![RelocationEntry {
-            instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(target_statement_id),
-        }],
-        [
-            vec![].into_iter(),
-            vec![ReferenceExpression::from_cell(CellExpression::Deref(value))].into_iter(),
-        ]
-        .into_iter(),
+    let mut casm_builder = CasmBuilder::default();
+    let value = casm_builder.add_var(ResOperand::Deref(value));
+    casm_build_extend! {casm_builder,
+        jump Target if value != 0;
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[], None), ("Target", &[&[value]], Some(target_statement_id))],
     ))
 }
 
@@ -68,15 +64,11 @@ pub fn build_jump(
         [BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => statement_id,
         _ => panic!("malformed invocation"),
     };
-
-    Ok(builder.build(
-        casm! { jmp rel 0; }.instructions,
-        vec![RelocationEntry {
-            instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(*target_statement_id),
-        }],
-        [vec![].into_iter()].into_iter(),
-    ))
+    let mut casm_builder = CasmBuilder::default();
+    casm_build_extend! {casm_builder,
+        jump Target;
+    };
+    Ok(builder.build_from_casm_builder(casm_builder, [("Target", &[], Some(*target_statement_id))]))
 }
 
 /// Handles an operations that does no changes to the reference expressions.
@@ -102,5 +94,63 @@ pub fn build_branch_align(
         if ap_fix > 0 { casm! {ap += ap_fix;}.instructions } else { vec![] },
         vec![],
         [vec![].into_iter()].into_iter(),
+    ))
+}
+
+// Handle single cell equality check, for types that have a single representation.
+pub fn build_cell_eq(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let mut casm_builder = CasmBuilder::default();
+    let [expr_a, expr_b] = builder.try_get_refs()?;
+    let a = expr_a.try_unpack_single()?;
+    let b = expr_b.try_unpack_single()?;
+
+    // The target line to jump to if a != b.
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
+
+    let (a, b) = match (a, b) {
+        (CellExpression::Deref(cell_expr_a), CellExpression::Deref(cell_expr_b)) => {
+            (ResOperand::Deref(*cell_expr_a), ResOperand::Deref(*cell_expr_b))
+        }
+        (CellExpression::Deref(cell_expr_a), CellExpression::Immediate(big_int_b)) => {
+            (ResOperand::Deref(*cell_expr_a), ResOperand::Immediate(big_int_b.clone()))
+        }
+        // The casm line 'tempvar diff = a - b;' won't work if a is an immediate.
+        // So if a is an immediate and b is a deref: switch them.
+        // If a, b are both immediates, alternative cairo code will be used.
+        (CellExpression::Immediate(big_int_a), CellExpression::Deref(cell_expr_b)) => {
+            (ResOperand::Deref(*cell_expr_b), ResOperand::Immediate(big_int_a.clone()))
+        }
+        (CellExpression::Immediate(big_int_a), CellExpression::Immediate(big_int_b)) => {
+            casm_build_extend! {casm_builder,
+                const difference = big_int_a - big_int_b;
+                tempvar diff = difference;
+                // diff = a - b => (diff == 0) <==> (a == b)
+                jump NotEqual if diff != 0;
+                jump Equal;
+            NotEqual:
+            };
+            return Ok(builder.build_from_casm_builder(
+                casm_builder,
+                [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
+            ));
+        }
+        _ => {
+            return Err(InvocationError::InvalidReferenceExpressionForArgument);
+        }
+    };
+
+    let (a, b) = (casm_builder.add_var(a), casm_builder.add_var(b));
+    casm_build_extend! {casm_builder,
+        // diff = a - b => (diff == 0) <==> (a == b)
+        tempvar diff = a - b;
+        jump NotEqual if diff != 0;
+        jump Equal;
+    NotEqual:
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
     ))
 }

@@ -62,7 +62,9 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Bool(BoolConcreteLibfunc::And(_)) => vec![ops.const_cost(0)],
         Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.const_cost(1)],
+        Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.const_cost(2), ops.const_cost(2)],
         Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(3), ops.const_cost(3)],
+        Ec(EcConcreteLibfunc::UnwrapPoint(_)) => vec![ops.const_cost(0)],
         Gas(GetGas(_)) => {
             vec![
                 ops.sub(ops.const_cost(3), ops.statement_var_cost(CostTokenType::Step)),
@@ -174,7 +176,7 @@ fn integer_libfunc_cost<Ops: CostOperations>(
             vec![ops.const_cost(4), ops.const_cost(3)]
         }
         Uint128Concrete::Equal(_) => {
-            vec![ops.const_cost(1), ops.const_cost(1)]
+            vec![ops.const_cost(2), ops.const_cost(2)]
         }
         Uint128Concrete::LessThanOrEqual(_) => {
             vec![ops.const_cost(3), ops.const_cost(4)]

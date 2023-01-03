@@ -5,6 +5,7 @@ use num_bigint::BigInt;
 /// The logical value of a variable for Sierra simulation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CoreValue {
+    EcPoint(BigInt, BigInt),
     // TODO(orizi): Use actual felt object.
     Felt(BigInt),
     GasBuiltin(i64),
