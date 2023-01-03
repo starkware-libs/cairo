@@ -20,10 +20,12 @@ pub enum CostTokenType {
     Step,
     /// One invocation of the pedersen hash function.
     Pedersen,
+    /// One invocation of the bitwise builtin.
+    Bitwise,
 }
 impl CostTokenType {
     pub fn iter() -> std::slice::Iter<'static, Self> {
-        [CostTokenType::Step, CostTokenType::Pedersen].iter()
+        [CostTokenType::Step, CostTokenType::Pedersen, CostTokenType::Bitwise].iter()
     }
 
     /// Returns the name of the token type, in snake_case.
@@ -31,6 +33,7 @@ impl CostTokenType {
         match self {
             CostTokenType::Step => "step",
             CostTokenType::Pedersen => "pedersen",
+            CostTokenType::Bitwise => "bitwise",
         }
         .into()
     }
@@ -43,6 +46,7 @@ impl CostTokenType {
         match self {
             CostTokenType::Step => panic!("offset_in_builtin_costs is not supported for 'Step'."),
             CostTokenType::Pedersen => 0,
+            CostTokenType::Bitwise => 1,
         }
     }
 }
