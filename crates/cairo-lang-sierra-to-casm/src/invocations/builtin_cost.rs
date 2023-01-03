@@ -1,6 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
-use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::ResOperand;
+use cairo_lang_casm::operand::{CellRef, Register, ResOperand};
+use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
 };
@@ -9,6 +9,8 @@ use num_bigint::BigInt;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::gas::STEP_COST;
 use crate::invocations::get_non_fallthrough_statement_id;
+use crate::references::{CellExpression, ReferenceExpression};
+use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra gas operations.
 pub fn build(
@@ -17,6 +19,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => build_builtin_get_gas(builder),
+        BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => build_get_builtin_costs(builder),
     }
 }
 
@@ -125,5 +128,35 @@ fn build_builtin_get_gas(
             ("Fallthrough", &[&[range_check], &[updated_gas]], None),
             ("Failure", &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
         ],
+    ))
+}
+
+/// Handles the get gas invocation.
+fn build_get_builtin_costs(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let code = casm! {
+        // The relocation table will point the `call` to the end of the program where there will
+        // be a `ret` instruction.
+        call rel 0;
+        // After calling an empty function, `[ap - 1]` contains the current `pc`.
+        // Using the relocations below, the immediate value (`1`) will be changed so that it will
+        // compute a pointer to the second cell after the end of the program, which will contain
+        // the pointer to the builtin cost array.
+        [ap] = [ap - 1] + 1, ap++;
+    };
+    let relocations = vec![
+        RelocationEntry { instruction_idx: 0, relocation: Relocation::EndOfProgram },
+        RelocationEntry { instruction_idx: 1, relocation: Relocation::EndOfProgram },
+    ];
+    Ok(builder.build(
+        code.instructions,
+        relocations,
+        [vec![ReferenceExpression::from_cell(CellExpression::DoubleDeref(
+            CellRef { register: Register::AP, offset: -1 },
+            0,
+        ))]
+        .into_iter()]
+        .into_iter(),
     ))
 }
