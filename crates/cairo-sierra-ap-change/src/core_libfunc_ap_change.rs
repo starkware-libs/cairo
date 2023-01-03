@@ -45,6 +45,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
             ApChange::Known(BuiltinCostGetGasLibfunc::cost_computation_max_steps() + 3),
         ],
         CoreConcreteLibfunc::Ec(libfunc) => match libfunc {
+            EcConcreteLibfunc::AddToState(_) => vec![ApChange::Known(10)],
             EcConcreteLibfunc::CreatePoint(_) => vec![ApChange::Known(6), ApChange::Known(6)],
             EcConcreteLibfunc::InitState(_) => vec![ApChange::Known(8)],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ApChange::Known(0)],

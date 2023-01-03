@@ -14,7 +14,7 @@ use crate::extensions::core::CoreConcreteLibfunc::{
     Gas, Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
-use crate::extensions::ec::EcConcreteLibfunc::{CreatePoint, InitState, UnwrapPoint};
+use crate::extensions::ec::EcConcreteLibfunc::{AddToState, CreatePoint, InitState, UnwrapPoint};
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt::{
     FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
@@ -74,6 +74,7 @@ pub fn simulate<
             [value] => Ok((vec![value.clone(), value.clone()], 0)),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Ec(AddToState(_)) => todo!(),
         Ec(CreatePoint(_)) => match &inputs[..] {
             [CoreValue::Felt(x), CoreValue::Felt(y)] => {
                 // If the point is on the curve use the fallthrough branch and return the point.
