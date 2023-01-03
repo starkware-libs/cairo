@@ -13,6 +13,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         array: "array",
         box_: "box",
+        builtin_costs: "builtin_costs",
         dict_felt_to: "dict_felt_to",
         nullable: "nullable",
         u128: "u128",
