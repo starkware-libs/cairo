@@ -9,6 +9,9 @@ use cairo_lang_utils::extract_matches;
 /// Interface for modifying syntax nodes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RewriteNode {
+    /// A rewrite node that represents a trimmed copy of a syntax node:
+    /// one with the leading and trailing trivia excluded.
+    Trimmed(SyntaxNode),
     Copied(SyntaxNode),
     Modified(ModifiedNode),
     Text(String),
@@ -24,9 +27,12 @@ impl RewriteNode {
         match self {
             RewriteNode::Copied(syntax_node) => {
                 *self = RewriteNode::Modified(ModifiedNode {
-                    children: syntax_node.children(db).map(RewriteNode::from).collect(),
+                    children: syntax_node.children(db).map(RewriteNode::Copied).collect(),
                 });
                 extract_matches!(self, RewriteNode::Modified)
+            }
+            RewriteNode::Trimmed(_) => {
+                panic!("Not supported.")
             }
             RewriteNode::Modified(modified) => modified,
             RewriteNode::Text(_) => {
@@ -149,6 +155,7 @@ impl<'a> PatchBuilder<'a> {
     pub fn add_modified(&mut self, node: RewriteNode) {
         match node {
             RewriteNode::Copied(node) => self.add_node(node),
+            RewriteNode::Trimmed(node) => self.add_trimmed_node(node),
             RewriteNode::Modified(modified) => {
                 for child in modified.children {
                     self.add_modified(child)
@@ -166,5 +173,23 @@ impl<'a> PatchBuilder<'a> {
             origin_span: node.span(self.db),
         });
         self.code += node.get_text(self.db).as_str();
+    }
+
+    pub fn add_trimmed_node(&mut self, node: SyntaxNode) {
+        let orig_span = node.span(self.db);
+        let start = TextOffset(self.code.len());
+        self.patches.patches.push(Patch {
+            span: TextSpan { start, end: start.add(orig_span.end - orig_span.start) },
+            origin_span: node.span(self.db),
+        });
+        let orig_trimmed_span = node.span_without_trivia(self.db);
+
+        let trimmed_left_offset = orig_trimmed_span.start - orig_span.start;
+        let trimmed_right_offset = orig_trimmed_span.end - orig_span.start;
+        self.code += &node.get_text(self.db).as_str()[trimmed_left_offset..trimmed_right_offset];
+        self.patches.patches.push(Patch {
+            span: TextSpan { start, end: start.add(orig_span.end - orig_span.start) },
+            origin_span: orig_trimmed_span,
+        });
     }
 }
