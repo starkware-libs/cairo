@@ -1,3 +1,7 @@
+//! Cairo compiler.
+//!
+//! This crate is responsible for compiling a Cairo project into a Sierra program.
+//! It is the main entry point for the compiler.
 use std::path::Path;
 use std::sync::Arc;
 
@@ -17,6 +21,7 @@ pub mod db;
 pub mod diagnostics;
 pub mod project;
 
+/// Configuration for the compiler.
 pub struct CompilerConfig {
     pub on_diagnostic: Option<Box<dyn FnMut(String)>>,
 
@@ -24,6 +29,7 @@ pub struct CompilerConfig {
     pub replace_ids: bool,
 }
 
+/// The default compiler configuration.
 impl Default for CompilerConfig {
     fn default() -> Self {
         CompilerConfig { on_diagnostic: Some(Box::new(eprint_diagnostic)), replace_ids: false }
@@ -32,6 +38,16 @@ impl Default for CompilerConfig {
 
 pub type SierraProgram = Arc<Program>;
 
+/// Compiles a Cairo project at the given path.
+/// The project must be a valid Cairo project:
+/// Either a standalone `.cairo` file (a single crate), or a directory with a `cairo_project.toml`
+/// file.
+/// # Arguments
+/// * `path` - The path to the project.
+/// * `compiler_config` - The compiler configuration.
+/// # Returns
+/// * `Ok(SierraProgram)` - The compiled program.
+/// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig,
@@ -41,6 +57,14 @@ pub fn compile_cairo_project_at_path(
     compile_prepared_db(db, main_crate_ids, compiler_config)
 }
 
+/// Compiles a Cairo project.
+/// The project must be a valid Cairo project.
+/// # Arguments
+/// * `project_config` - The project configuration.
+/// * `compiler_config` - The compiler configuration.
+/// # Returns
+/// * `Ok(SierraProgram)` - The compiled program.
+/// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile(
     project_config: ProjectConfig,
     compiler_config: CompilerConfig,

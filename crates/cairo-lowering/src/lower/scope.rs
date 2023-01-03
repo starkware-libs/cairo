@@ -39,10 +39,10 @@ pub struct BlockScope {
 
 /// Represents how a block ends.
 pub enum BlockScopeEnd {
-    /// Return to callsite with an optional expression (e.g. a block that might end with a tail
+    /// Returns to callsite with an optional expression (e.g. a block that might end with a tail
     /// expression).
     Callsite(Option<LivingVar>),
-    /// Return from the function. The value is a vector of the vars to be returned (not dropped).
+    /// Returns from the function. The value is a vector of the vars to be returned (not dropped).
     Return { refs: Vec<LivingVar>, returns: Vec<LivingVar> },
     /// The end of the block is unreachable.
     Unreachable,
@@ -207,10 +207,10 @@ pub struct BlockSealed {
 
 /// Represents how a block ends. See [BlockScopeEnd].
 pub enum BlockSealedEnd {
-    /// Return to callsite with an optional expression (e.g. a block that might end with a tail
+    /// Returns to callsite with an optional expression (e.g. a block that might end with a tail
     /// expression).
     Callsite(Option<UsableVariable>),
-    /// Return from the function.
+    /// Returns from the function.
     Return { refs: Vec<UsableVariable>, returns: Vec<UsableVariable>, drops: Vec<VariableId> },
     /// The end of the block is unreachable.
     Unreachable,

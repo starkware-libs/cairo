@@ -1,3 +1,6 @@
+//! Cairo lowering.
+//!
+//! This crate is responsible for handling the lowering phase.
 pub mod db;
 pub mod diagnostic;
 pub mod fmt;

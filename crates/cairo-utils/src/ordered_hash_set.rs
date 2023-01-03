@@ -10,7 +10,7 @@ pub struct OrderedHashSet<Key: Hash + Eq>(IndexSet<Key>);
 pub type Iter<'a, Key> = indexmap::set::Iter<'a, Key>;
 
 impl<Key: Hash + Eq> OrderedHashSet<Key> {
-    /// Return an iterator over the values of the set, in their order.
+    /// Returns an iterator over the values of the set, in their order.
     pub fn iter(&self) -> Iter<'_, Key> {
         self.0.iter()
     }
@@ -27,7 +27,7 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
         self.0.extend(iter)
     }
 
-    /// Return true if an equivalent to value exists in the set.
+    /// Returns true if an equivalent to value exists in the set.
     pub fn contains<Q: ?Sized + Hash + Equivalent<Key>>(&self, value: &Q) -> bool {
         self.0.contains(value)
     }

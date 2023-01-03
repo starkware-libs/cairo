@@ -1,3 +1,4 @@
+//! Equation solving for Sierra generation.
 pub mod expr;
 
 use std::collections::hash_map::Entry;
@@ -9,6 +10,11 @@ pub use expr::Expr;
 use good_lp::{default_solver, variable, variables, Expression, Solution, SolverModel};
 
 /// Solving a set of equations and returning the values of the symbols contained in them.
+/// # Arguments
+/// * `equations` - The equations to solve.
+/// # Returns
+/// * `Some(HashMap<Var, i64>)` - The solutions to the equations.
+/// * `None` - The equations are unsolvable.
 pub fn try_solve_equations<Var: Clone + Debug + PartialEq + Eq + Hash>(
     equations: Vec<Expr<Var>>,
 ) -> Option<HashMap<Var, i64>> {

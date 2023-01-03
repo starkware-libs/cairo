@@ -1,5 +1,6 @@
 //! Cairo formatter.
-
+//!
+//! This crate is responsible for formatting Cairo code.
 pub mod formatter;
 pub mod node_properties;
 
@@ -16,6 +17,13 @@ use crate::formatter::Formatter;
 #[cfg(test)]
 mod test;
 
+/// Returns the formatted syntax tree as a string.
+/// # Arguments
+/// * `db` - The syntax group.
+/// * `syntax_root` - The syntax root.
+/// * `config` - The formatter configuration.
+/// # Returns
+/// * `String` - The formatted file.
 pub fn get_formatted_file(
     db: &dyn SyntaxGroup,
     syntax_root: &SyntaxNode,
@@ -26,7 +34,12 @@ pub fn get_formatted_file(
     formatter.get_result()
 }
 
-/// formats Cairo code given as a string.
+/// Formats Cairo code given as a string.
+/// # Arguments
+/// * `db` - The syntax group.
+/// * `content` - The code to format.
+/// # Returns
+/// * `String` - The formatted code.
 pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
     let virtual_file = db.upcast().intern_file(FileLongId::Virtual(VirtualFile {
         parent: None,

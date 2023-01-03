@@ -104,7 +104,7 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
     })
 }
 
-/// Return the entry points given their IDs.
+/// Returns the entry points given their IDs.
 fn get_entry_points(
     db: &mut RootDatabase,
     external_functions: &[FreeFunctionId],

@@ -1,4 +1,6 @@
-//! Cairo language server. Implements the LSP protocol over stdin/out.
+//! Cairo language server.
+//!
+//! Implements the LSP protocol over stdin/out.
 
 mod semantic_highlighting;
 

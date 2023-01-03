@@ -31,13 +31,13 @@ use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 pub trait CostOperations {
     type CostType: Clone;
 
-    /// Get a cost from a constant value (of type [CostTokenType::Step]).
+    /// Gets a cost from a constant value (of type [CostTokenType::Step]).
     fn const_cost(&self, value: i32) -> Self::CostType;
-    /// Get a cost from a constant value of the given token type.
+    /// Gets a cost from a constant value of the given token type.
     fn const_cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType;
-    /// Get a cost for the content of a function.
+    /// Gets a cost for the content of a function.
     fn function_cost(&mut self, function: &Function) -> Self::CostType;
-    /// Get a cost for a variable for the current statement.
+    /// Gets a cost for a variable for the current statement.
     fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType;
     /// Adds costs.
     fn add(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType;
