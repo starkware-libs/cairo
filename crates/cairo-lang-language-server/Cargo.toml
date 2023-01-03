@@ -1,0 +1,37 @@
+[package]
+name = "cairo-lang-language-server"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo language server."
+
+[[bin]]
+name = "cairo-language-server"
+path = "src/bin/language_server.rs"
+
+[dependencies]
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "0.1.0" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "0.1.0" }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "0.1.0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "0.1.0" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "0.1.0" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "0.1.0" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "0.1.0" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "0.1.0" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "0.1.0" }
+cairo-lang-project = { path = "../cairo-lang-project", version = "0.1.0" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "0.1.0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "0.1.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "0.1.0" }
+tokio.workspace = true
+tower-lsp.workspace = true
+lsp.workspace = true
+serde_json.workspace = true
+salsa.workspace = true
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+serde = { version = "1.0.34", features = ["derive"] }
+
+[dev-dependencies]
+test-log.workspace = true
+

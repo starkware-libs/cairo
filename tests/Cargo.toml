@@ -9,27 +9,27 @@ description = ""
 [dev-dependencies]
 assert_matches.workspace = true
 cairo-vm.workspace = true
-cairo-casm = { path = "../crates/cairo-casm", version = "0.1.0" }
-cairo-compiler = { path = "../crates/cairo-compiler", version = "0.1.0" }
-cairo-defs = { path = "../crates/cairo-defs", version = "0.1.0" }
-cairo-diagnostics = { path = "../crates/cairo-diagnostics", version = "0.1.0" }
+cairo-lang-casm = { path = "../crates/cairo-lang-casm", version = "0.1.0" }
+cairo-lang-compiler = { path = "../crates/cairo-lang-compiler", version = "0.1.0" }
+cairo-lang-defs = { path = "../crates/cairo-lang-defs", version = "0.1.0" }
+cairo-lang-diagnostics = { path = "../crates/cairo-lang-diagnostics", version = "0.1.0" }
 env_logger.workspace = true
-cairo-filesystem = { path = "../crates/cairo-filesystem", version = "0.1.0" }
+cairo-lang-filesystem = { path = "../crates/cairo-lang-filesystem", version = "0.1.0" }
 itertools.workspace = true
 log.workspace = true
 num-bigint.workspace = true
-cairo-parser = { path = "../crates/cairo-parser", version = "0.1.0" }
-cairo-plugins = { path = "../crates/cairo-plugins", version = "0.1.0" }
+cairo-lang-parser = { path = "../crates/cairo-lang-parser", version = "0.1.0" }
+cairo-lang-plugins = { path = "../crates/cairo-lang-plugins", version = "0.1.0" }
 pretty_assertions.workspace = true
-cairo-runner = { path = "../crates/cairo-runner", version = "0.1.0" }
-cairo-sierra = { path = "../crates/cairo-sierra", version = "0.1.0" }
-cairo-sierra-gas = { path = "../crates/cairo-sierra-gas", version = "0.1.0" }
-cairo-semantic = { path = "../crates/cairo-semantic", features = ["testing"] }
-cairo-sierra-generator = { path = "../crates/cairo-sierra-generator", features = ["testing"] }
-cairo-sierra-to-casm = { path = "../crates/cairo-sierra-to-casm", features = ["testing"] }
-cairo-syntax = { path = "../crates/cairo-syntax", version = "0.1.0" }
-cairo-test-utils = { path = "../crates/cairo-test-utils", version = "0.1.0" }
-cairo-utils = { path = "../crates/cairo-utils", version = "0.1.0" }
+cairo-lang-runner = { path = "../crates/cairo-lang-runner", version = "0.1.0" }
+cairo-lang-sierra = { path = "../crates/cairo-lang-sierra", version = "0.1.0" }
+cairo-lang-sierra-gas = { path = "../crates/cairo-lang-sierra-gas", version = "0.1.0" }
+cairo-lang-semantic = { path = "../crates/cairo-lang-semantic", features = ["testing"] }
+cairo-lang-sierra-generator = { path = "../crates/cairo-lang-sierra-generator", features = ["testing"] }
+cairo-lang-sierra-to-casm = { path = "../crates/cairo-lang-sierra-to-casm", features = ["testing"] }
+cairo-lang-syntax = { path = "../crates/cairo-lang-syntax", version = "0.1.0" }
+cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils", version = "0.1.0" }
+cairo-lang-utils = { path = "../crates/cairo-lang-utils", version = "0.1.0" }
 salsa.workspace = true
 test-case.workspace = true
 test-log.workspace = true

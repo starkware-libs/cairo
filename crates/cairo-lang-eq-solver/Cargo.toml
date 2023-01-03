@@ -1,0 +1,18 @@
+[package]
+name = "cairo-lang-eq-solver"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Equation solving for Sierra generation."
+
+[dependencies]
+good_lp.workspace = true
+itertools.workspace = true
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+
+[dev-dependencies]
+env_logger.workspace = true
+indoc.workspace = true
+test-case.workspace = true
+test-log.workspace = true

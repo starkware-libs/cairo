@@ -1,0 +1,21 @@
+[package]
+name = "cairo-lang-utils"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "General utilities for the Cairo compiler project."
+
+[features]
+testing = []
+
+[dependencies]
+chrono.workspace = true
+env_logger.workspace = true
+indexmap.workspace = true
+itertools.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+test-case.workspace = true
+test-log.workspace = true

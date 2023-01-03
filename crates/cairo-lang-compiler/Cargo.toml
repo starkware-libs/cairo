@@ -1,0 +1,33 @@
+[package]
+name = "cairo-lang-compiler"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo compiler."
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "0.1.0" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "0.1.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "0.1.0" }
+log.workspace = true
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "0.1.0" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "0.1.0" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "0.1.0" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "0.1.0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "0.1.0" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "0.1.0" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "0.1.0" }
+cairo-lang-project = { path = "../cairo-lang-project", version = "0.1.0" }
+salsa.workspace = true
+thiserror.workspace = true
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+
+[dev-dependencies]
+test-log.workspace = true
+
+[[bin]]
+name = "cairo-compile"
+path = "src/cli.rs"

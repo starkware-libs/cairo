@@ -1,0 +1,16 @@
+[package]
+name = "cairo-lang-test-utils"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Utilities for writing tests in the Cairo compiler project."
+
+[dependencies]
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+log.workspace = true
+env_logger.workspace = true
+pretty_assertions.workspace = true
+
+[dev-dependencies]
+test-log.workspace = true

@@ -1,0 +1,25 @@
+[package]
+name = "cairo-lang-defs"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Handling of definitions of language items in Cairo."
+
+[dependencies]
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "0.1.0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "0.1.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "0.1.0" }
+indexmap.workspace = true
+itertools.workspace = true
+salsa.workspace = true
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "0.1.0" }
+thiserror.workspace = true
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "0.1.0" }
+smol_str.workspace = true
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+
+[dev-dependencies]
+indoc.workspace = true
+pretty_assertions.workspace = true
+test-log.workspace = true
