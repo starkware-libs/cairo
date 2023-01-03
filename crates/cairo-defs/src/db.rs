@@ -73,7 +73,7 @@ pub trait DefsGroup:
     fn module_files(&self, module_id: ModuleId) -> Maybe<Vec<FileId>>;
     /// Gets a file from a module and a FileIndex (i.e. ModuleFileId).
     fn module_file(&self, module_id: ModuleFileId) -> Maybe<FileId>;
-    /// Get the directory of a module.
+    /// Gets the directory of a module.
     fn module_dir(&self, module_id: ModuleId) -> Maybe<Directory>;
 
     // File to module.

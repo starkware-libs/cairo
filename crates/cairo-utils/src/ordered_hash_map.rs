@@ -8,21 +8,21 @@ use itertools::zip_eq;
 pub struct OrderedHashMap<Key: Hash + Eq, Value>(IndexMap<Key, Value>);
 
 impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
-    /// Return a reference to the value stored for key, if it is present, else None.
+    /// Returns a reference to the value stored for key, if it is present, else None.
     ///
     /// Computes in O(1) time (average).
     pub fn get<Q: ?Sized + Hash + Equivalent<Key>>(&self, key: &Q) -> Option<&Value> {
         self.0.get(key)
     }
 
-    /// Return a mutable reference to the value stored for key, if it is present, else None.
+    /// Returns a mutable reference to the value stored for key, if it is present, else None.
     ///
     /// Computes in O(1) time (average).
     pub fn get_mut<Q: ?Sized + Hash + Equivalent<Key>>(&mut self, key: &Q) -> Option<&mut Value> {
         self.0.get_mut(key)
     }
 
-    /// Get the given key’s corresponding entry in the map for insertion and/or in-place
+    /// Gets the given key’s corresponding entry in the map for insertion and/or in-place
     /// manipulation.
     ///
     /// Computes in O(1) time (amortized average).
@@ -30,22 +30,22 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
         self.0.entry(key)
     }
 
-    /// Return an iterator over the key-value pairs of the map, in their order.
+    /// Returns an iterator over the key-value pairs of the map, in their order.
     pub fn iter(&self) -> indexmap::map::Iter<'_, Key, Value> {
         self.0.iter()
     }
 
-    /// Return a mutable iterator over the key-value pairs of the map, in their order.
+    /// Returns a mutable iterator over the key-value pairs of the map, in their order.
     pub fn iter_mut(&mut self) -> indexmap::map::IterMut<'_, Key, Value> {
         self.0.iter_mut()
     }
 
-    /// Return an iterator over the keys of the map, in their order.
+    /// Returns an iterator over the keys of the map, in their order.
     pub fn keys(&self) -> indexmap::map::Keys<'_, Key, Value> {
         self.0.keys()
     }
 
-    /// Return an iterator over the values of the map, in their order.
+    /// Returns an iterator over the values of the map, in their order.
     pub fn values(&self) -> indexmap::map::Values<'_, Key, Value> {
         self.0.values()
     }
@@ -72,7 +72,7 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
         self.0.contains_key(key)
     }
 
-    /// Return the number of key-value pairs in the map.
+    /// Returns the number of key-value pairs in the map.
     pub fn len(&self) -> usize {
         self.0.len()
     }

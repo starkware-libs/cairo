@@ -130,9 +130,9 @@ impl DebugInfo {
 
 /// Trait for handling serde for the ids as map keys.
 pub trait IdAsHashKey: Hash + Eq {
-    /// Get the inner id.
+    /// Gets the inner id.
     fn get(&self) -> u64;
-    /// Return a new id from the given value.
+    /// Returns a new id from the given value.
     fn new(id: u64) -> Self;
 }
 

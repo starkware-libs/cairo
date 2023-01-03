@@ -1,3 +1,4 @@
+//! Cairo project specification. For example, crates and flags used for compilation.
 #[cfg(test)]
 mod test;
 

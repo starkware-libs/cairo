@@ -27,7 +27,7 @@ impl<Key: Hash + Eq> UnorderedHashSet<Key> {
         self.0.extend(other.0)
     }
 
-    /// Return true if an equivalent to value exists in the set.
+    /// Returns true if an equivalent to value exists in the set.
     pub fn contains<Q: ?Sized + Hash + Eq>(&self, value: &Q) -> bool
     where
         Key: Borrow<Q>,

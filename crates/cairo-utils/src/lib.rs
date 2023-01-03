@@ -1,3 +1,4 @@
+//! Cairo utilities.
 use std::fmt;
 
 pub mod casts;
