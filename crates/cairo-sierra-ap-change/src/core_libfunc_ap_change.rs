@@ -46,6 +46,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
         ],
         CoreConcreteLibfunc::Ec(libfunc) => match libfunc {
             EcConcreteLibfunc::CreatePoint(_) => vec![ApChange::Known(6), ApChange::Known(6)],
+            EcConcreteLibfunc::UnwrapPoint(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Drop(_) | CoreConcreteLibfunc::Dup(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::Felt(libfunc) => match libfunc {

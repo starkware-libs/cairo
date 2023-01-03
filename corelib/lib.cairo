@@ -143,6 +143,7 @@ mod ec;
 use ec::EcPoint;
 use ec::ec_point_from_felts;
 use ec::ec_point_try_create;
+use ec::ec_point_unwrap;
 
 // Integer.
 mod integer;

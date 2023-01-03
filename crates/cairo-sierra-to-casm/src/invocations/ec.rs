@@ -22,6 +22,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         EcConcreteLibfunc::CreatePoint(_) => build_ec_point_try_create(builder),
+        EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
     }
 }
 
@@ -72,4 +73,18 @@ fn build_ec_point_try_create(
         casm_builder,
         [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(failure_handle))],
     ))
+}
+
+/// Handles instruction for unwrapping an EC point.
+fn build_ec_point_unwrap(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_point] = builder.try_get_refs()?;
+    let [x, y] = expr_point.try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    let x = casm_builder.add_var(ResOperand::Deref(x.to_deref()?));
+    let y = casm_builder.add_var(ResOperand::Deref(y.to_deref()?));
+
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[x], &[y]], None)]))
 }
