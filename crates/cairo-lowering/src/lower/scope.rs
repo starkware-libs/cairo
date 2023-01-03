@@ -8,7 +8,7 @@ use itertools::chain;
 use super::context::LoweringContext;
 use super::semantic_map::{SemanticVariableEntry, SemanticVariablesMap};
 use super::variables::{LivingVar, LivingVariables, Splitter, UsableVariable};
-use crate::{Block, BlockEnd, BlockId, Statement, VariableId};
+use crate::{BlockId, Statement, StructuredBlock, StructuredBlockEnd, VariableId};
 
 pub mod generators;
 
@@ -43,7 +43,7 @@ pub enum BlockScopeEnd {
     /// expression).
     Callsite(Option<LivingVar>),
     /// Return from the function. The value is a vector of the vars to be returned (not dropped).
-    Return(Vec<LivingVar>),
+    Return { refs: Vec<LivingVar>, returns: Vec<LivingVar> },
     /// The end of the block is unreachable.
     Unreachable,
 }
@@ -141,18 +141,20 @@ impl BlockScope {
     }
 
     /// Seals a BlockScope from adding statements or variables. A sealed block should be finalized
-    /// with final pulls to get a [Block]. See [BlockSealed].
+    /// with final pulls to get a [StructuredBlock]. See [BlockSealed].
     fn seal(mut self, end: BlockScopeEnd) -> (BlockSealed, Box<BlockFlowMerger>) {
         let end = match end {
             BlockScopeEnd::Callsite(maybe_output) => BlockSealedEnd::Callsite(
                 maybe_output.map(|var| self.living_variables.take_var(var)),
             ),
-            BlockScopeEnd::Return(returns) => {
+            BlockScopeEnd::Return { refs, returns } => {
                 let mut drops = Vec::new();
+                let refs =
+                    refs.into_iter().map(|var| self.living_variables.take_var(var)).collect();
                 let returns =
                     returns.into_iter().map(|var| self.living_variables.take_var(var)).collect();
                 self.append_all_living_stack(&mut drops);
-                BlockSealedEnd::Return { returns, drops }
+                BlockSealedEnd::Return { refs, returns, drops }
             }
             BlockScopeEnd::Unreachable => BlockSealedEnd::Unreachable,
         };
@@ -209,7 +211,7 @@ pub enum BlockSealedEnd {
     /// expression).
     Callsite(Option<UsableVariable>),
     /// Return from the function.
-    Return { returns: Vec<UsableVariable>, drops: Vec<VariableId> },
+    Return { refs: Vec<UsableVariable>, returns: Vec<UsableVariable>, drops: Vec<VariableId> },
     /// The end of the block is unreachable.
     Unreachable,
 }
@@ -302,20 +304,25 @@ impl BlockSealed {
 
                 let drops = living_variables.get_all();
                 (
-                    BlockEnd::Callsite(outputs),
+                    StructuredBlockEnd::Callsite(outputs),
                     BlockEndInfo::Callsite { maybe_output_ty, push_tys },
                     drops,
                 )
             }
-            BlockSealedEnd::Return { returns, drops } => (
-                BlockEnd::Return(returns.iter().map(UsableVariable::var_id).collect()),
+            BlockSealedEnd::Return { refs, returns, drops } => (
+                StructuredBlockEnd::Return {
+                    refs: refs.iter().map(UsableVariable::var_id).collect(),
+                    returns: returns.iter().map(UsableVariable::var_id).collect(),
+                },
                 BlockEndInfo::End,
                 drops,
             ),
-            BlockSealedEnd::Unreachable => (BlockEnd::Unreachable, BlockEndInfo::End, vec![]),
+            BlockSealedEnd::Unreachable => {
+                (StructuredBlockEnd::Unreachable, BlockEndInfo::End, vec![])
+            }
         };
 
-        let block = ctx.blocks.alloc(Block { inputs, statements, drops, end });
+        let block = ctx.blocks.alloc(StructuredBlock { inputs, statements, drops, end });
         BlockFinalized { block, end_info }
     }
 }

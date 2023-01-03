@@ -14,12 +14,13 @@ use itertools::{chain, zip_eq};
 use super::lowered_expr_from_block_result;
 use super::scope::{generators, BlockScope, BlockScopeEnd};
 use super::variables::LivingVar;
-use crate::blocks::Blocks;
+use crate::blocks::StructuredBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::lower::scope::BlockFlowMerger;
 use crate::objects::Variable;
+use crate::VariableId;
 
 /// Builds a Lowering context.
 pub struct LoweringContextBuilder<'db> {
@@ -65,7 +66,7 @@ impl<'db> LoweringContextBuilder<'db> {
                 self.free_function_id.module_file(self.db.upcast()),
             ),
             variables: Arena::default(),
-            blocks: Blocks::default(),
+            blocks: StructuredBlocks::new(),
             semantic_defs: UnorderedHashMap::default(),
             ref_params: &self.ref_params,
             implicits: &self.implicits,
@@ -96,7 +97,7 @@ pub struct LoweringContext<'db> {
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Lowered blocks of the function.
-    pub blocks: Blocks,
+    pub blocks: StructuredBlocks,
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
     pub semantic_defs: UnorderedHashMap<cairo_semantic::VarId, cairo_semantic::Variable>,
@@ -108,6 +109,17 @@ pub struct LoweringContext<'db> {
     pub lookup_context: ImplLookupContext,
     // Expression formatter of the free function.
     pub expr_formatter: ExprFormatter<'db>,
+}
+impl<'db> LoweringContext<'db> {
+    pub fn new_var(&mut self, ty: cairo_semantic::TypeId) -> VariableId {
+        let ty_info = self.db.type_info(self.lookup_context.clone(), ty).unwrap_or_default();
+        self.variables.alloc(Variable {
+            duplicatable: ty_info.duplicatable,
+            droppable: ty_info.droppable,
+            ty,
+            ref_indices: Default::default(),
+        })
+    }
 }
 
 /// Representation of the value of a computed expression.
@@ -247,7 +259,10 @@ pub enum LoweringFlowError {
     Failed(DiagnosticAdded),
     /// The current computation is unreachable.
     Unreachable,
-    Return(Vec<LivingVar>),
+    Return {
+        refs: Vec<LivingVar>,
+        returns: Vec<LivingVar>,
+    },
 }
 
 /// Converts a lowering flow error the appropriate block scope end, if possible.
@@ -255,7 +270,7 @@ pub fn lowering_flow_error_to_block_scope_end(err: LoweringFlowError) -> Maybe<B
     match err {
         LoweringFlowError::Failed(diag_added) => Err(diag_added),
         LoweringFlowError::Unreachable => Ok(BlockScopeEnd::Unreachable),
-        LoweringFlowError::Return(return_vars) => Ok(BlockScopeEnd::Return(return_vars)),
+        LoweringFlowError::Return { refs, returns } => Ok(BlockScopeEnd::Return { refs, returns }),
     }
 }
 
@@ -273,8 +288,8 @@ impl From<LoweringFlowError> for StatementLoweringFlowError {
             LoweringFlowError::Unreachable => {
                 StatementLoweringFlowError::End(BlockScopeEnd::Unreachable)
             }
-            LoweringFlowError::Return(return_vars) => {
-                StatementLoweringFlowError::End(BlockScopeEnd::Return(return_vars))
+            LoweringFlowError::Return { refs, returns } => {
+                StatementLoweringFlowError::End(BlockScopeEnd::Return { refs, returns })
             }
         }
     }
