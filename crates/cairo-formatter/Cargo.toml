@@ -2,6 +2,9 @@
 name = "cairo-formatter"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo formatter."
 
 [[bin]]
 name = "cairo-format"
@@ -23,7 +26,7 @@ cairo-syntax = { path = "../cairo-syntax" }
 cairo-utils = { path = "../cairo-utils" }
 
 [dev-dependencies]
-cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-utils = { path = "../cairo-utils" }
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true

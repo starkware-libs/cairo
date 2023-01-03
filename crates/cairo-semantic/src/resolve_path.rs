@@ -9,11 +9,12 @@ use cairo_defs::ids::{
     ModuleId, ModuleItemId, TraitId, TypeAliasId,
 };
 use cairo_diagnostics::Maybe;
-use cairo_diagnostics_proc_macros::DebugWithDb;
 use cairo_filesystem::ids::CrateLongId;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::helpers::PathSegmentEx;
 use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_utils::extract_matches;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -185,6 +186,23 @@ impl<'db> Resolver<'db> {
                                         .map_err(|_| {
                                             diagnostics.report(&literal_syntax, UnknownLiteral)
                                         })?;
+                                generic_args.push(GenericArgumentId::Literal(
+                                    self.db.intern_literal(literal),
+                                ));
+                            }
+                            ast::Expr::Unary(unary)
+                                if matches!(unary.expr(syntax_db), ast::Expr::Literal(_))
+                                    && matches!(
+                                        unary.op(syntax_db),
+                                        ast::UnaryOperator::Minus(_)
+                                    ) =>
+                            {
+                                let mut literal = LiteralLongId::try_from(
+                                    extract_matches!(unary.expr(syntax_db), ast::Expr::Literal)
+                                        .text(syntax_db),
+                                )
+                                .map_err(|_| diagnostics.report(&unary, UnknownLiteral))?;
+                                literal.value *= -1;
                                 generic_args.push(GenericArgumentId::Literal(
                                     self.db.intern_literal(literal),
                                 ));

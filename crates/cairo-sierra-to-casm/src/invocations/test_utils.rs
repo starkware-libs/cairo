@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use cairo_casm::ap_change::ApChange;
 use cairo_casm::instructions::Instruction;
-use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
+use cairo_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_sierra::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
 use cairo_sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use cairo_sierra::extensions::types::TypeInfo;
-use cairo_sierra::extensions::{ConcreteLibFunc, ConcreteType, GenericLibFuncEx, GenericTypeEx};
+use cairo_sierra::extensions::{ConcreteLibfunc, ConcreteType, GenericLibfuncEx, GenericTypeEx};
 use cairo_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use cairo_sierra_ap_change::ap_change_info::ApChangeInfo;
@@ -66,12 +66,6 @@ macro_rules! ref_expr_extend {
         $cells.push(
             $crate::references::CellExpression::DoubleDeref(cairo_casm::deref!([$a $($op $offset)?]), $offset2)
         );
-        $crate::ref_expr_extend!($cells $(, $tok)*)
-    };
-    ($cells:ident, & $a:ident $($op:tt $offset:expr)? $(, $tok:tt)*) => {
-        $cells.push($crate::references::CellExpression::IntoSingleCellRef(
-            cairo_casm::deref!([$a $($op $offset)?])
-        ));
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, $a:expr $(, $tok:tt)*) => {
@@ -228,12 +222,12 @@ impl std::fmt::Debug for ReducedCompiledInvocation {
 ///     k([0], [2],..., [n_k])
 /// }
 pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> ReducedCompiledInvocation {
-    let long_id = cairo_sierra::ConcreteLibFuncLongIdParser::new()
+    let long_id = cairo_sierra::ConcreteLibfuncLongIdParser::new()
         .parse(libfunc.to_string().as_str())
         .unwrap();
     let context = MockSpecializationContext {};
     let libfunc =
-        CoreLibFunc::specialize_by_id(&context, &long_id.generic_id, &long_id.generic_args)
+        CoreLibfunc::specialize_by_id(&context, &long_id.generic_id, &long_id.generic_args)
             .unwrap();
 
     let mut type_sizes = HashMap::default();

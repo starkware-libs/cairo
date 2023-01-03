@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 
 use crate::ids::{
-    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, UserTypeId,
+    ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
     VarId,
 };
 
@@ -11,7 +11,7 @@ pub struct Program {
     /// Declarations for all the used types.
     pub type_declarations: Vec<TypeDeclaration>,
     /// Declarations for all the used library functions.
-    pub libfunc_declarations: Vec<LibFuncDeclaration>,
+    pub libfunc_declarations: Vec<LibfuncDeclaration>,
     /// The code of the program.
     pub statements: Vec<Statement>,
     /// Descriptions of the functions - signatures and entry points.
@@ -42,17 +42,17 @@ pub struct ConcreteTypeLongId {
 
 /// Declaration of a concrete library function.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct LibFuncDeclaration {
+pub struct LibfuncDeclaration {
     /// The id of the declared concrete libfunc.
-    pub id: ConcreteLibFuncId,
-    pub long_id: ConcreteLibFuncLongId,
+    pub id: ConcreteLibfuncId,
+    pub long_id: ConcreteLibfuncLongId,
 }
 
 /// A concrete library function (the generic parent function and the generic arguments).
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-pub struct ConcreteLibFuncLongId {
+pub struct ConcreteLibfuncLongId {
     /// The id of the used generic libfunc.
-    pub generic_id: GenericLibFuncId,
+    pub generic_id: GenericLibfuncId,
     /// The arguments for the specialization.
     pub generic_args: Vec<GenericArg>,
 }
@@ -124,7 +124,7 @@ pub enum GenericArg {
     Type(ConcreteTypeId),
     Value(BigInt),
     UserFunc(FunctionId),
-    LibFunc(ConcreteLibFuncId),
+    Libfunc(ConcreteLibfuncId),
 }
 
 /// A possible statement.
@@ -138,7 +138,7 @@ pub enum GenStatement<StatementId> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GenInvocation<StatementId> {
     /// The called libfunc.
-    pub libfunc_id: ConcreteLibFuncId,
+    pub libfunc_id: ConcreteLibfuncId,
     /// The arguments consumed by the libfunc's invocation.
     pub args: Vec<VarId>,
     /// The possible branches to continue to after the invocation.

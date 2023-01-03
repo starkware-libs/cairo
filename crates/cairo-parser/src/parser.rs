@@ -106,7 +106,7 @@ impl<'a> Parser<'a> {
     pub fn parse_syntax_file(mut self) -> SyntaxFileGreen {
         let items = ItemList::new_green(
             self.db,
-            self.parse_list(Self::try_parse_top_level_item, is_of_kind!(), "item"),
+            self.parse_attributed_list(Self::try_parse_top_level_item, is_of_kind!(), "item"),
         );
         // This will not panic since the above parsing only stops when reaches EOF.
         assert_eq!(self.peek().kind, SyntaxKind::TerminalEndOfFile);
@@ -126,7 +126,9 @@ impl<'a> Parser<'a> {
     /// If can't parse as a top level item, keeps skipping tokens until it can.
     /// Returns None only when it reaches EOF.
     pub fn try_parse_top_level_item(&mut self) -> Option<ItemGreen> {
-        let attributes = self.parse_attribute_list();
+        let attributes = self.parse_attribute_list(
+            "Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum",
+        );
 
         match self.peek().kind {
             SyntaxKind::TerminalModule => Some(self.expect_module(attributes).into()),
@@ -153,7 +155,11 @@ impl<'a> Parser<'a> {
                 let lbrace = self.take::<TerminalLBrace>();
                 let items = ItemList::new_green(
                     self.db,
-                    self.parse_list(Self::try_parse_top_level_item, is_of_kind!(rbrace), "item"),
+                    self.parse_attributed_list(
+                        Self::try_parse_top_level_item,
+                        is_of_kind!(rbrace),
+                        "item",
+                    ),
                 );
                 let rbrace = self.parse_token::<TerminalRBrace>();
                 ModuleBody::new_green(self.db, lbrace, items, rbrace).into()
@@ -281,6 +287,7 @@ impl<'a> Parser<'a> {
                 // If the next token is not type, assume it is missing.
                 ItemExternType::new_green(
                     self.db,
+                    attributes,
                     extern_kw,
                     type_kw,
                     name,
@@ -373,15 +380,15 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses an attribute list.
-    fn parse_attribute_list(&mut self) -> AttributeListGreen {
-        let expected_elements =
-            "Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute";
+    /// `expected_elements_str` are the expected elements that these attributes are parsed for.
+    /// Note: it should not include "attribute".
+    fn parse_attribute_list(&mut self, expected_elements_str: &str) -> AttributeListGreen {
         AttributeList::new_green(
             self.db,
             self.parse_list(
                 Self::try_parse_attribute,
                 is_of_kind!(rbrace, top_level),
-                expected_elements,
+                format!("{expected_elements_str} or an attribute").as_str(),
             ),
         )
     }
@@ -414,7 +421,11 @@ impl<'a> Parser<'a> {
             let lbrace = self.take::<TerminalLBrace>();
             let items = TraitItemList::new_green(
                 self.db,
-                self.parse_list(Self::try_parse_trait_item, is_of_kind!(rbrace), "trait item"),
+                self.parse_attributed_list(
+                    Self::try_parse_trait_item,
+                    is_of_kind!(rbrace, top_level),
+                    "trait item",
+                ),
             );
             let rbrace = self.parse_token::<TerminalRBrace>();
             TraitBody::new_green(self.db, lbrace, items, rbrace).into()
@@ -428,7 +439,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with a TraitItem.* kind (see
     /// [cairo_syntax::node::ast::TraitItem]).
     pub fn try_parse_trait_item(&mut self) -> Option<TraitItemGreen> {
-        let attributes = self.parse_attribute_list();
+        let attributes = self.parse_attribute_list("trait item");
 
         match self.peek().kind {
             SyntaxKind::TerminalFunction => Some(self.expect_trait_function(attributes).into()),
@@ -440,8 +451,12 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `<FunctionDeclaration><SemiColon>`
     fn expect_trait_function(&mut self, attributes: AttributeListGreen) -> TraitItemFunctionGreen {
         let declaration = self.expect_function_declaration();
-        let semicolon = self.parse_token::<TerminalSemicolon>();
-        TraitItemFunction::new_green(self.db, attributes, declaration, semicolon)
+        let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
+            self.parse_block().into()
+        } else {
+            self.parse_token::<TerminalSemicolon>().into()
+        };
+        TraitItemFunction::new_green(self.db, attributes, declaration, body)
     }
 
     /// Assumes the current token is Impl.
@@ -455,7 +470,11 @@ impl<'a> Parser<'a> {
             let lbrace = self.take::<TerminalLBrace>();
             let items = ItemList::new_green(
                 self.db,
-                self.parse_list(Self::try_parse_top_level_item, is_of_kind!(rbrace), "item"),
+                self.parse_attributed_list(
+                    Self::try_parse_top_level_item,
+                    is_of_kind!(rbrace),
+                    "item",
+                ),
             );
             let rbrace = self.parse_token::<TerminalRBrace>();
             ImplBody::new_green(self.db, lbrace, items, rbrace).into()
@@ -1148,6 +1167,10 @@ impl<'a> Parser<'a> {
     fn try_parse_generic_arg(&mut self) -> Option<ExprGreen> {
         if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
             Some(self.take::<TerminalLiteralNumber>().into())
+        } else if self.peek().kind == SyntaxKind::TerminalMinus {
+            let minus = self.take::<TerminalMinus>().into();
+            let literal = self.parse_token::<TerminalLiteralNumber>().into();
+            Some(ExprUnary::new_green(self.db, minus, literal).into())
         } else if self.peek().kind == SyntaxKind::TerminalShortString {
             Some(self.take::<TerminalShortString>().into())
         } else {
@@ -1207,11 +1230,13 @@ impl<'a> Parser<'a> {
     /// `should_stop` is a predicate to decide how to proceed in case an element can't be parsed,
     /// according to the current token. If it returns true, the parsing of the list stops. If it
     /// returns false, the current token is skipped and we try to parse an element again.
+    ///
+    /// `expected_element` is a description of the expected element.
     fn parse_list<ElementGreen>(
         &mut self,
         try_parse_list_element: fn(&mut Self) -> Option<ElementGreen>,
         should_stop: fn(SyntaxKind) -> bool,
-        expected_element: &'static str,
+        expected_element: &str,
     ) -> Vec<ElementGreen> {
         let mut children: Vec<ElementGreen> = Vec::new();
         loop {
@@ -1223,11 +1248,34 @@ impl<'a> Parser<'a> {
                     break;
                 }
                 self.skip_token(ParserDiagnosticKind::SkippedElement {
-                    element_name: expected_element,
+                    element_name: expected_element.into(),
                 });
             }
         }
         children
+    }
+
+    /// Parses a list of elements (without separators) that can be prefixed with attributes
+    /// (#[...]), where the elements are parsed using `try_parse_list_element`.
+    /// Returns the list of green ids of the elements.
+    ///
+    /// `should_stop` is a predicate to decide how to proceed in case an element can't be parsed,
+    /// according to the current token. If it returns true, the parsing of the list stops. If it
+    /// returns false, the current token is skipped and we try to parse an element again.
+    ///
+    /// `expected_element` is a description of the expected element. Note: it should not include
+    /// "attribute".
+    fn parse_attributed_list<ElementGreen>(
+        &mut self,
+        try_parse_list_element: fn(&mut Self) -> Option<ElementGreen>,
+        should_stop: fn(SyntaxKind) -> bool,
+        expected_element: &str,
+    ) -> Vec<ElementGreen> {
+        self.parse_list::<ElementGreen>(
+            try_parse_list_element,
+            should_stop,
+            &format!("{expected_element} or an attribute"),
+        )
     }
 
     /// Parses a list of elements with `separator`s, where the elements are parsed using
@@ -1266,7 +1314,7 @@ impl<'a> Parser<'a> {
                 }
                 None => {
                     self.skip_token(ParserDiagnosticKind::SkippedElement {
-                        element_name: expected_element,
+                        element_name: expected_element.into(),
                     });
                     continue;
                 }

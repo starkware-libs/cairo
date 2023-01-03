@@ -1,7 +1,12 @@
+use std::sync::Arc;
+
+use cairo_defs::ids::{FreeFunctionId, LanguageElementId};
 use cairo_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_semantic::expr::fmt::ExprFormatter;
 use cairo_semantic::items::enm::SemanticEnumEx;
 use cairo_semantic::items::imp::ImplLookupContext;
+use cairo_semantic::{Mutability, VarId};
+use cairo_syntax::node::ids::SyntaxStablePtrId;
 use cairo_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
@@ -9,11 +14,73 @@ use itertools::{chain, zip_eq};
 use super::lowered_expr_from_block_result;
 use super::scope::{generators, BlockScope, BlockScopeEnd};
 use super::variables::LivingVar;
+use crate::blocks::Blocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::lower::scope::BlockFlowMerger;
-use crate::objects::{Block, Variable};
+use crate::objects::Variable;
+
+/// Builds a Lowering context.
+pub struct LoweringContextBuilder<'db> {
+    pub db: &'db dyn LoweringGroup,
+    pub free_function_id: FreeFunctionId,
+    pub function_def: Arc<cairo_semantic::FreeFunctionDefinition>,
+    /// Semantic signature for current function.
+    pub signature: cairo_semantic::Signature,
+    // TODO(spapini): Document. (excluding implicits).
+    pub ref_params: Vec<cairo_semantic::VarId>,
+    /// The available implicits in this function.
+    pub implicits: Vec<cairo_semantic::TypeId>,
+}
+impl<'db> LoweringContextBuilder<'db> {
+    pub fn new(db: &'db dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<Self> {
+        let function_def = db.free_function_definition(free_function_id)?;
+        let signature = db.free_function_declaration_signature(free_function_id)?;
+        let implicits = db.free_function_all_implicits_vec(free_function_id)?;
+        let ref_params = signature
+            .params
+            .iter()
+            .filter(|param| param.mutability == Mutability::Reference)
+            .map(|param| VarId::Param(param.id))
+            .collect();
+        Ok(LoweringContextBuilder {
+            db,
+            free_function_id,
+            function_def,
+            signature,
+            ref_params,
+            implicits,
+        })
+    }
+    pub fn ctx<'a: 'db>(&'a self) -> Maybe<LoweringContext<'db>> {
+        let generic_params =
+            self.db.free_function_declaration_generic_params(self.free_function_id)?;
+        Ok(LoweringContext {
+            db: self.db,
+            function_def: &self.function_def,
+            signature: &self.signature,
+            may_panic: self.db.free_function_may_panic(self.free_function_id)?,
+            diagnostics: LoweringDiagnostics::new(
+                self.free_function_id.module_file(self.db.upcast()),
+            ),
+            variables: Arena::default(),
+            blocks: Blocks::default(),
+            semantic_defs: UnorderedHashMap::default(),
+            ref_params: &self.ref_params,
+            implicits: &self.implicits,
+            lookup_context: ImplLookupContext {
+                module_id: self.free_function_id.parent_module(self.db.upcast()),
+                extra_modules: vec![],
+                generic_params,
+            },
+            expr_formatter: ExprFormatter {
+                db: self.db.upcast(),
+                free_function_id: self.free_function_id,
+            },
+        })
+    }
+}
 
 /// Context for the lowering phase of a free function.
 pub struct LoweringContext<'db> {
@@ -21,15 +88,15 @@ pub struct LoweringContext<'db> {
     /// Semantic model for current function definition.
     pub function_def: &'db cairo_semantic::FreeFunctionDefinition,
     // Semantic signature for current function.
-    pub signature: cairo_semantic::Signature,
+    pub signature: &'db cairo_semantic::Signature,
     /// Whether the current function may panic.
     pub may_panic: bool,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
-    /// Arena of allocated lowered blocks.
-    pub blocks: Arena<Block>,
+    /// Lowered blocks of the function.
+    pub blocks: Blocks,
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
     pub semantic_defs: UnorderedHashMap<cairo_semantic::VarId, cairo_semantic::Variable>,
@@ -97,6 +164,7 @@ pub struct LoweredExprExternEnum {
     pub ref_args: Vec<cairo_semantic::VarId>,
     /// The implicits used/changed by the function.
     pub implicits: Vec<cairo_semantic::TypeId>,
+    pub stable_ptr: SyntaxStablePtrId,
 }
 impl LoweredExprExternEnum {
     pub fn var(
@@ -106,7 +174,10 @@ impl LoweredExprExternEnum {
     ) -> Result<LivingVar, LoweringFlowError> {
         let function_id = self.function;
 
-        let concrete_variants = ctx.db.concrete_enum_variants(self.concrete_enum_id).unwrap();
+        let concrete_variants = ctx
+            .db
+            .concrete_enum_variants(self.concrete_enum_id)
+            .map_err(LoweringFlowError::Failed)?;
         let (blocks, mut finalized_merger) =
             BlockFlowMerger::with(ctx, scope, &self.ref_args, |ctx, merger| {
                 let block_opts = concrete_variants.clone().into_iter().map(|concrete_variant| {
@@ -138,11 +209,11 @@ impl LoweredExprExternEnum {
 
                         // Bind implicits.
                         for (ty, output_var) in zip_eq(&self.implicits, implicit_outputs) {
-                            subscope.put_implicit(*ty, output_var);
+                            subscope.put_implicit(ctx, *ty, output_var);
                         }
                         // Bind the ref variables.
                         for (semantic_var_id, output_var) in zip_eq(&self.ref_args, ref_outputs) {
-                            subscope.put_semantic_variable(*semantic_var_id, output_var);
+                            subscope.put_semantic_variable(ctx, *semantic_var_id, output_var);
                         }
 
                         Ok(result)
@@ -164,7 +235,8 @@ impl LoweredExprExternEnum {
             end_info: finalized_merger.end_info.clone(),
         }
         .add(ctx, scope);
-        lowered_expr_from_block_result(scope, call_block_result, finalized_merger)?.var(ctx, scope)
+        lowered_expr_from_block_result(ctx, scope, call_block_result, finalized_merger)?
+            .var(ctx, scope)
     }
 }
 

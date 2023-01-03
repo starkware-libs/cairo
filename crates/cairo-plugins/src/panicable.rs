@@ -22,7 +22,7 @@ impl MacroPlugin for PanicablePlugin {
             ast::Item::FreeFunction(free_func_ast) => {
                 (free_func_ast.declaration(db), free_func_ast.attributes(db))
             }
-            _ => return PluginResult { code: None, diagnostics: vec![] },
+            _ => return PluginResult::default(),
         };
 
         generate_panicable_code(db, declaration, attributes)
@@ -44,12 +44,12 @@ fn generate_panicable_code(
     declaration: ast::FunctionDeclaration,
     attributes: AttributeList,
 ) -> PluginResult {
+    let remove_original_item = false;
     for attr in attributes.elements(db) {
         if attr.attr(db).text(db) != "panic_with" {
             continue;
         }
         let signature = declaration.signature(db);
-        // TODO(orizi): Add diagnostics for all the unexpected cases.
         if !matches!(
             signature.optional_no_panic(db),
             ast::OptionTerminalNoPanic::TerminalNoPanic(_)
@@ -58,9 +58,10 @@ fn generate_panicable_code(
             return PluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: signature.stable_ptr().untyped(),
+                    stable_ptr: attr.stable_ptr().untyped(),
                     message: "Only nopanic functions can be wrapped".into(),
                 }],
+                remove_original_item,
             };
         }
 
@@ -69,11 +70,12 @@ fn generate_panicable_code(
             return PluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: signature.stable_ptr().untyped(),
+                    stable_ptr: signature.ret_ty(db).stable_ptr().untyped(),
                     message: "Currently only wrapping functions returning an Option<T> or \
                                 Result<T, E>"
                         .into(),
                 }],
+                remove_original_item,
             };
         };
 
@@ -93,9 +95,10 @@ fn generate_panicable_code(
             return PluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: signature.stable_ptr().untyped(),
+                    stable_ptr: attr.stable_ptr().untyped(),
                     message: "Failed to extract panic data attribute".into(),
                 }],
+                remove_original_item,
             };
         };
 
@@ -129,9 +132,10 @@ fn generate_panicable_code(
                 aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
             }),
             diagnostics: vec![],
+            remove_original_item,
         };
     }
-    PluginResult { code: None, diagnostics: vec![] }
+    PluginResult::default()
 }
 
 /// Given a function signature, if it returns `Option::<T>` or `Result::<T, E>`, returns T and the

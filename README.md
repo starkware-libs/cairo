@@ -3,9 +3,6 @@
   <h2> ⚡ Blazing ⚡ fast ⚡ compiler for Cairo, written in 🦀 Rust 🦀 </h2>
   <img src="./resources/img/cairo-logo-square.png" height="200" width="200">
   <br />
-  <a href="#about"><strong>Explore the snippets »</strong></a>
-  <br />
-  <br />
   <a href="https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=bug&template=01_BUG_REPORT.md&title=bug%3A+">Report a Bug</a>
   -
   <a href="https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=enhancement&template=02_FEATURE_REQUEST.md&title=feat%3A+">Request a Feature</a>
@@ -16,7 +13,7 @@
 <div align="center">
 <br />
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/starkware-libs/cairo/CI?style=flat-square&logo=github)
+[![GitHub Workflow Status](https://github.com/starkware-libs/cairo/actions/workflows/ci.yml/badge.svg)](https://github.com/starkware-libs/cairo/actions/workflows/ci.yml)
 [![Project license](https://img.shields.io/github/license/starkware-libs/cairo.svg?style=flat-square)](LICENSE)
 [![Pull Requests welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square)](https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
 
@@ -30,7 +27,7 @@
 - [About](#about)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [Compile and running Cairo files](#compile-and-running-cairo-files)
+  - [Compiling and running Cairo files](#compiling-and-running-cairo-files)
   - [Development](#development)
     - [Install the language server](#install-the-language-server)
 - [Roadmap](#roadmap)
@@ -47,19 +44,7 @@
 
 ## About
 
-> Cairo is the first Turing-complete language for creating provable programs for general computation.
-
-Cairo becomes Rusty! Check by yourself👇
-
-<details>
-<summary>Code snippets</summary>
-<br>
-
-|                                 Fibonnaci                                 |                                    Enums                                    |
-| :-----------------------------------------------------------------------: | :-------------------------------------------------------------------------: |
-| <img src="resources/img/snippets/snippet-1.png" title="Fib" width="100%"> | <img src="resources/img/snippets/snippet-2.png" title="Enums" width="100%"> |
-
-</details>
+Cairo is the first Turing-complete language for creating provable programs for general computation.
 
 ## Getting Started
 
@@ -88,11 +73,9 @@ Run Cairo code directly:
 cargo run --bin cairo-run -- -p /path/to/file.cairo
 ```
 
-See more here: [runner](./crates/runner/README.md)
+See more information [here](./crates/cairo-runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.
 
-You can find Cairo examples in the [examples](./examples) directory.
-
-For running tests specifically see more here: [cairo-test](./crates/test_runner/README.md)
+For running tests specifically, see here: [cairo-test](./crates/cairo-test-runner/README.md)
 
 ### Development
 
@@ -110,9 +93,7 @@ See the [open issues](https://github.com/starkware-libs/cairo/issues) for a list
 
 ## Support
 
-Reach out to the maintainer at one of the following places:
-
-- [GitHub Discussions](https://github.com/starkware-libs/cairo/discussions)
+- We encourage developers to ask and answer questions on [stackoverflow](https://stackoverflow.com/questions/tagged/cairo-lang).
 - Contact options listed on [this GitHub profile](https://github.com/starkware-libs)
 
 ## Project assistance
@@ -120,7 +101,7 @@ Reach out to the maintainer at one of the following places:
 If you want to say **thank you** or/and support active development of Cairo:
 
 - Add a [GitHub Star](https://github.com/starkware-libs/cairo) to the project.
-- Tweet about the Cairo.
+- Tweet about your Cairo work.
 - Write interesting articles about the project on [Dev.to](https://dev.to/), [Medium](https://medium.com/) or your personal blog.
 
 Together, we can make Cairo **better**!

@@ -14,13 +14,15 @@ mod TestContract {
     fn get_something(ref arg: felt, num: felt) -> felt {
         1
     }
+
     #[external]
     fn set_something(ref arg: felt, num: felt) {
     }
 }
 
 //! > generated_cairo_code
-mod __generated__TestContract {
+#[generated_contract]
+mod TestContract {
     fn internal_func() -> felt {
         1
     }
@@ -29,15 +31,19 @@ mod __generated__TestContract {
     fn get_something(ref arg: felt, num: felt) -> felt {
         1
     }
+
     #[external]
     fn set_something(ref arg: felt, num: felt) {
     }
+
+
     trait __abi {
     fn get_something(
         ref arg: felt, num: felt
         ) -> felt; fn set_something(
         ref arg: felt, num: felt
     ); }
+
     mod __external {
         fn get_something(mut data: Array::<felt>) -> Array::<felt> {
             match get_gas() {
@@ -49,6 +55,7 @@ mod __generated__TestContract {
                     panic(err_data);
                 },
             }
+
             let mut __arg_arg = match serde::deserialize_felt(data) {
                 Option::Some(x) => x,
                 Option::None(()) => {
@@ -66,7 +73,9 @@ mod __generated__TestContract {
                 },
             };
             if array_len::<felt>(data) != 0_u128 {
+                // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
+
                 let mut err_data = array_new::<felt>();
                 array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
@@ -87,6 +96,7 @@ mod __generated__TestContract {
                     panic(err_data);
                 },
             }
+
             let mut __arg_arg = match serde::deserialize_felt(data) {
                 Option::Some(x) => x,
                 Option::None(()) => {
@@ -104,7 +114,9 @@ mod __generated__TestContract {
                 },
             };
             if array_len::<felt>(data) != 0_u128 {
+                // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
+
                 let mut err_data = array_new::<felt>();
                 array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
@@ -112,6 +124,7 @@ mod __generated__TestContract {
             super::set_something(__arg_arg, __arg_num);
             let mut arr = array_new::<felt>();
             serde::serialize_felt(arr, __arg_arg);
+
             arr
         }
     }

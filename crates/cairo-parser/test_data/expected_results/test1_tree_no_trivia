@@ -357,6 +357,7 @@
     │   │       ├── statements (kind: StatementList) []
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #4 (kind: ItemExternType)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'S'
@@ -495,7 +496,7 @@
     │       └── semicolon (kind: TokenSemicolon): ';'
     └── eof (kind: TokenEndOfFile).
 --------------------
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
  --> test1.cairo:6:1
 ;
 ^
@@ -520,27 +521,27 @@ error: Missing token TerminalSemicolon.
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                             ^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
  --> test1.cairo:33:45
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                             ^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
  --> test1.cairo:33:46
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                              ^*^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
  --> test1.cairo:33:49
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                                 ^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
  --> test1.cairo:33:51
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                                   ^*****^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
  --> test1.cairo:33:58
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                                          ^

@@ -23,17 +23,17 @@ use num_traits::Signed;
 
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
     SpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_single_type, ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibFunc, SpecializationError,
+    args_as_single_type, ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo,
+    SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericLibfuncId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing an enum.
@@ -109,35 +109,35 @@ impl ConcreteType for EnumConcreteType {
 }
 
 define_libfunc_hierarchy! {
-    pub enum EnumLibFunc {
-        Init(EnumInitLibFunc),
-        Match(EnumMatchLibFunc),
-    }, EnumConcreteLibFunc
+    pub enum EnumLibfunc {
+        Init(EnumInitLibfunc),
+        Match(EnumMatchLibfunc),
+    }, EnumConcreteLibfunc
 }
 
-pub struct EnumInitConcreteLibFunc {
-    pub signature: LibFuncSignature,
+pub struct EnumInitConcreteLibfunc {
+    pub signature: LibfuncSignature,
     /// The number of variants of the enum.
     pub num_variants: usize,
     /// The index of the relevant variant from the enum.
     pub index: usize,
 }
-impl SignatureBasedConcreteLibFunc for EnumInitConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
+impl SignatureBasedConcreteLibfunc for EnumInitConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }
 }
 
-/// LibFunc for setting a value to an enum.
+/// Libfunc for setting a value to an enum.
 #[derive(Default)]
-pub struct EnumInitLibFunc {}
-impl EnumInitLibFunc {
+pub struct EnumInitLibfunc {}
+impl EnumInitLibfunc {
     /// Creates the specialization of the enum-init libfunc with the given template arguments.
     fn specialize_concrete_lib_func(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<EnumInitConcreteLibFunc, SpecializationError> {
+    ) -> Result<EnumInitConcreteLibfunc, SpecializationError> {
         let (enum_type, index) = match args {
             [GenericArg::Type(enum_type), GenericArg::Value(index)] => {
                 (enum_type.clone(), index.clone())
@@ -155,8 +155,8 @@ impl EnumInitLibFunc {
         }
         let index: usize = index.try_into().unwrap();
         let variant_type = variant_types[index].clone();
-        Ok(EnumInitConcreteLibFunc {
-            signature: LibFuncSignature::new_non_branch_ex(
+        Ok(EnumInitConcreteLibfunc {
+            signature: LibfuncSignature::new_non_branch_ex(
                 vec![ParamSignature {
                     ty: variant_type,
                     allow_deferred: true,
@@ -174,15 +174,15 @@ impl EnumInitLibFunc {
         })
     }
 }
-impl NamedLibFunc for EnumInitLibFunc {
-    type Concrete = EnumInitConcreteLibFunc;
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("enum_init");
+impl NamedLibfunc for EnumInitLibfunc {
+    type Concrete = EnumInitConcreteLibfunc;
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("enum_init");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         Ok(self.specialize_concrete_lib_func(context, args)?.signature)
     }
 
@@ -195,17 +195,17 @@ impl NamedLibFunc for EnumInitLibFunc {
     }
 }
 
-/// LibFunc for matching an enum.
+/// Libfunc for matching an enum.
 #[derive(Default)]
-pub struct EnumMatchLibFunc {}
-impl SignatureOnlyGenericLibFunc for EnumMatchLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("enum_match");
+pub struct EnumMatchLibfunc {}
+impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("enum_match");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let enum_type = args_as_single_type(args)?;
         let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
         let variant_types =
@@ -222,7 +222,7 @@ impl SignatureOnlyGenericLibFunc for EnumMatchLibFunc {
             })
             .collect();
 
-        Ok(LibFuncSignature {
+        Ok(LibfuncSignature {
             param_signatures: vec![enum_type.into()],
             branch_signatures,
             fallthrough: None,

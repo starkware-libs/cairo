@@ -36,7 +36,6 @@ fn test_function_generator() {
     );
 
     db.module_lowering_diagnostics(module_id).expect("");
-    db.free_function_sierra_diagnostics(foo).expect("");
     let function = db.free_function_sierra(foo).unwrap();
     assert_eq!(
         function
@@ -90,7 +89,6 @@ fn test_function_generator_local_vars() {
     );
 
     db.module_lowering_diagnostics(module_id).expect("");
-    db.free_function_sierra_diagnostics(foo).expect("");
     let function = db.free_function_sierra(foo).unwrap();
     assert_eq!(
         function

@@ -1,0 +1,56 @@
+//! > Test expansion of derive.
+
+//! > test_function_name
+test_expand_plugin
+
+//! > cairo_code
+#[derive(Copy, Drop)]
+struct A{}
+
+#[derive(Copy, Drop)]
+struct B{}
+
+//! > generated_cairo_code
+#[derive(Copy, Drop)]
+struct A{}
+
+impl ACopy of Copy::<A>;
+impl ADrop of Drop::<A>;
+
+
+#[derive(Copy, Drop)]
+struct B{}
+impl BCopy of Copy::<B>;
+impl BDrop of Drop::<B>;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test diagnostics of panic with.
+
+//! > test_function_name
+test_expand_plugin
+
+//! > cairo_code
+#[derive()]
+struct EmptyArgs{}
+
+#[derive(1)]
+struct NotPath{}
+
+#[derive(long::path)]
+struct NonSimplePath{}
+
+//! > generated_cairo_code
+
+//! > expected_diagnostics
+error: Expected path.
+ --> dummy_file.cairo:4:10
+#[derive(1)]
+         ^
+
+error: Expected a single segment.
+ --> dummy_file.cairo:7:10
+#[derive(long::path)]
+         ^********^

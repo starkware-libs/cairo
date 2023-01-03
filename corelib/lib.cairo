@@ -7,13 +7,10 @@ enum bool { False: (), True: (), }
 impl BoolCopy of Copy::<bool>;
 impl BoolDrop of Drop::<bool>;
 
-// TODO(dorimedini): Once we can differentiate between the value-bool and the branch-bool, just do:
-// extern fn bool_and(a: bool, b: bool) -> bool implicits() nopanic;
-// (this will also require renaming the libfunc from "bool_and_impl" back to "bool_and").
-extern fn bool_and_impl(ref a: bool, b: bool) implicits() nopanic;
-fn bool_and(mut a: bool, b: bool) -> bool implicits() nopanic {
-    bool_and_impl(a, b);
-    a
+extern fn bool_and_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+fn bool_and(a: bool, b: bool) -> bool implicits() nopanic {
+    let (r,) = bool_and_impl(a, b);
+    r
 }
 
 // TODO(orizi): Change to extern when added.
@@ -24,30 +21,20 @@ fn bool_or(a: bool, b: bool) -> bool implicits() nopanic {
     }
 }
 
-// TODO(dorimedini): Once we can differentiate between the value-bool and the branch-bool, just do:
-// extern fn bool_not(a: bool) -> bool implicits() nopanic;
-// (this will also require renaming the libfunc from "bool_not_impl" back to "bool_not").
-extern fn bool_not_impl(ref a: bool) implicits() nopanic;
-fn bool_not(mut a: bool) -> bool implicits() nopanic {
-    bool_not_impl(a);
-    a
+extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;
+fn bool_not(a: bool) -> bool implicits() nopanic {
+    let (r,) = bool_not_impl(a);
+    r
 }
 
-// TODO(orizi): Change to extern when added.
+extern fn bool_xor_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
 fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => b,
-        bool::True(x) => bool_not(b),
-    }
+    let (r,) = bool_xor_impl(a, b);
+    r
 }
 
-// TODO(orizi): Change to extern when added.
-fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => bool_not(b),
-        bool::True(x) => b,
-    }
-}
+extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
+
 fn bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
     !(a == b)
 }
@@ -65,7 +52,9 @@ impl FeltDrop of Drop::<felt>;
 extern fn felt_add(a: felt, b: felt) -> felt nopanic;
 extern fn felt_sub(a: felt, b: felt) -> felt nopanic;
 extern fn felt_mul(a: felt, b: felt) -> felt nopanic;
-extern fn felt_neg(a: felt) -> felt nopanic;
+fn felt_neg(a: felt) -> felt nopanic {
+    a * felt_const::<-1>()
+}
 
 extern type NonZero<T>;
 // TODO(spapini): Add generic impls for NonZero for Copy, Drop.
@@ -131,6 +120,15 @@ use array::array_append;
 use array::array_pop_front;
 use array::array_at;
 use array::array_len;
+
+// Dictionary.
+mod dict;
+use dict::DictFeltTo;
+use dict::SquashedDictFeltTo;
+use dict::dict_felt_to_new;
+use dict::dict_felt_to_write;
+use dict::dict_felt_to_read;
+use dict::dict_felt_to_squash;
 
 // Result.
 mod result;
@@ -216,5 +214,7 @@ use hash::Pedersen;
 // StarkNet
 mod starknet;
 use starknet::System;
+use starknet::ContractAddress;
 
+#[cfg(test)]
 mod test;

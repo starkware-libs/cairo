@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_diagnostics::{skip_diagnostic, Maybe, ToMaybe};
 use cairo_filesystem::db::FilesGroup;
 use cairo_filesystem::ids::{CrateId, Directory, FileId, FileLongId, VirtualFile};
@@ -11,6 +10,7 @@ use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::helpers::GetIdentifier;
 use cairo_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
+use cairo_utils::Upcast;
 use itertools::chain;
 use smol_str::SmolStr;
 
@@ -82,10 +82,55 @@ pub trait DefsGroup:
     fn file_modules(&self, file_id: FileId) -> Maybe<Vec<ModuleId>>;
 
     // Module level resolving.
-    fn module_data(&self, module_id: ModuleId) -> Maybe<ModuleData>;
-    fn module_submodules(&self, module_id: ModuleId) -> Maybe<Vec<ModuleId>>;
-    fn module_free_functions(&self, module_id: ModuleId) -> Maybe<Vec<FreeFunctionId>>;
+    fn priv_module_data(&self, module_id: ModuleId) -> Maybe<ModuleData>;
+    fn module_submodules(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<OrderedHashMap<SubmoduleId, ast::ItemModule>>;
+    fn module_submodules_ids(&self, module_id: ModuleId) -> Maybe<Vec<SubmoduleId>>;
+    fn module_free_functions(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>>;
+    fn module_free_functions_ids(&self, module_id: ModuleId) -> Maybe<Vec<FreeFunctionId>>;
     fn module_items(&self, module_id: ModuleId) -> Maybe<ModuleItems>;
+    fn module_uses(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<UseId, ast::ItemUse>>;
+    fn module_uses_ids(&self, module_id: ModuleId) -> Maybe<Vec<UseId>>;
+    fn module_structs(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<OrderedHashMap<StructId, ast::ItemStruct>>;
+    fn module_structs_ids(&self, module_id: ModuleId) -> Maybe<Vec<StructId>>;
+    fn module_enums(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<EnumId, ast::ItemEnum>>;
+    fn module_enums_ids(&self, module_id: ModuleId) -> Maybe<Vec<EnumId>>;
+    fn module_type_aliases(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>>;
+    fn module_type_aliases_ids(&self, module_id: ModuleId) -> Maybe<Vec<TypeAliasId>>;
+    fn module_traits(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<TraitId, ast::ItemTrait>>;
+    fn module_traits_ids(&self, module_id: ModuleId) -> Maybe<Vec<TraitId>>;
+    fn module_impls(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<ImplId, ast::ItemImpl>>;
+    fn module_impls_ids(&self, module_id: ModuleId) -> Maybe<Vec<ImplId>>;
+    fn module_extern_types(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<OrderedHashMap<ExternTypeId, ast::ItemExternType>>;
+    fn module_extern_types_ids(&self, module_id: ModuleId) -> Maybe<Vec<ExternTypeId>>;
+    fn module_extern_functions(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>;
+    fn module_extern_functions_ids(&self, module_id: ModuleId) -> Maybe<Vec<ExternFunctionId>>;
+    fn module_generated_file_info(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<Vec<Option<GeneratedFileInfo>>>;
+    fn module_plugin_diagnostics(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<Vec<(ModuleFileId, PluginDiagnostic)>>;
+
     /// Returns [Maybe::Err] if the module was not properly resolved.
     /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
     fn module_item_by_name(
@@ -106,7 +151,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
-            let item_module_ast = &db.module_data(parent)?.submodules[submodule_id];
+            let item_module_ast = &db.priv_module_data(parent)?.submodules[submodule_id];
             match item_module_ast.body(db.upcast()) {
                 MaybeModuleBody::Some(_) => {
                     // This is an inline module, we return the file where the inline module was
@@ -127,7 +172,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
 }
 
 fn module_files(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<FileId>> {
-    Ok(db.module_data(module_id)?.files)
+    Ok(db.priv_module_data(module_id)?.files)
 }
 
 fn module_file(db: &dyn DefsGroup, module_file_id: ModuleFileId) -> Maybe<FileId> {
@@ -149,8 +194,8 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
 /// Appends all the modules under the given module, including nested modules.
 fn collect_modules_under(db: &dyn DefsGroup, modules: &mut Vec<ModuleId>, module_id: ModuleId) {
     modules.push(module_id);
-    for submodule_module_id in db.module_submodules(module_id).iter().flatten() {
-        collect_modules_under(db, modules, *submodule_module_id);
+    for submodule_module_id in db.module_submodules_ids(module_id).unwrap_or_default().into_iter() {
+        collect_modules_under(db, modules, ModuleId::Submodule(submodule_module_id));
     }
 }
 
@@ -165,8 +210,8 @@ fn priv_file_to_module_mapping(db: &dyn DefsGroup) -> OrderedHashMap<FileId, Vec
     let mut mapping = OrderedHashMap::<FileId, Vec<ModuleId>>::default();
     for crate_id in db.crates() {
         for module_id in db.crate_modules(crate_id).iter().copied() {
-            if let Ok(data) = db.module_data(module_id) {
-                for file_id in data.files {
+            if let Ok(files) = db.module_files(module_id) {
+                for file_id in files {
                     match mapping.get_mut(&file_id) {
                         Some(file_modules) => {
                             file_modules.push(module_id);
@@ -195,20 +240,20 @@ pub struct GeneratedFileInfo {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
-    pub submodules: OrderedHashMap<SubmoduleId, ast::ItemModule>,
-    pub uses: OrderedHashMap<UseId, ast::ItemUse>,
-    pub free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
-    pub structs: OrderedHashMap<StructId, ast::ItemStruct>,
-    pub enums: OrderedHashMap<EnumId, ast::ItemEnum>,
-    pub type_aliases: OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>,
-    pub traits: OrderedHashMap<TraitId, ast::ItemTrait>,
-    pub impls: OrderedHashMap<ImplId, ast::ItemImpl>,
-    pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
-    pub extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
-    pub files: Vec<FileId>,
+    submodules: OrderedHashMap<SubmoduleId, ast::ItemModule>,
+    uses: OrderedHashMap<UseId, ast::ItemUse>,
+    free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
+    structs: OrderedHashMap<StructId, ast::ItemStruct>,
+    enums: OrderedHashMap<EnumId, ast::ItemEnum>,
+    type_aliases: OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>,
+    traits: OrderedHashMap<TraitId, ast::ItemTrait>,
+    impls: OrderedHashMap<ImplId, ast::ItemImpl>,
+    extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
+    extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
+    files: Vec<FileId>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
-    pub generated_file_info: Vec<Option<GeneratedFileInfo>>,
-    pub plugin_diagnostics: Vec<(ModuleFileId, PluginDiagnostic)>,
+    generated_file_info: Vec<Option<GeneratedFileInfo>>,
+    plugin_diagnostics: Vec<(ModuleFileId, PluginDiagnostic)>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -217,7 +262,7 @@ pub struct ModuleItems {
 }
 
 // TODO(spapini): Make this private.
-fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
+fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     let syntax_db = db.upcast();
     let module_file = db.module_main_file(module_id)?;
 
@@ -226,7 +271,7 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     let item_asts = match module_id {
         ModuleId::CrateRoot(_) | ModuleId::VirtualSubmodule(_) => file_syntax.items(syntax_db),
         ModuleId::Submodule(submodule_id) => {
-            let parent_module_data = db.module_data(submodule_id.parent_module(db))?;
+            let parent_module_data = db.priv_module_data(submodule_id.parent_module(db))?;
             let item_module_ast = &parent_module_data.submodules[submodule_id];
 
             match item_module_ast.body(syntax_db) {
@@ -258,23 +303,42 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
         res.files.push(module_file);
 
         for item_ast in item_asts.elements(syntax_db) {
+            let mut remove_original_item = false;
+            // Iterate the plugins by their order. The first one to change something (either
+            // generate new code, remove the original code, or both), breaks the loop. If more
+            // plugins might have act on the item, they can do it on the generated code.
             for plugin in db.macro_plugins() {
                 let result = plugin.generate_code(db.upcast(), item_ast.clone());
                 for plugin_diag in result.diagnostics {
                     res.plugin_diagnostics.push((module_file_id, plugin_diag));
                 }
+                if result.remove_original_item {
+                    remove_original_item = true;
+                }
 
-                let Some(generated) = result.code else { continue };
-                let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
-                    parent: Some(module_file),
-                    name: generated.name,
-                    content: Arc::new(generated.content),
-                }));
-                res.generated_file_info.push(Some(GeneratedFileInfo {
-                    aux_data: generated.aux_data,
-                    origin: module_file_id,
-                }));
-                module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
+                if let Some(generated) = result.code {
+                    let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
+                        parent: Some(module_file),
+                        name: generated.name,
+                        content: Arc::new(generated.content),
+                    }));
+                    res.generated_file_info.push(Some(GeneratedFileInfo {
+                        aux_data: generated.aux_data,
+                        origin: module_file_id,
+                    }));
+                    module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
+                    // New code was generated for this item. If there are more plugins that should
+                    // operate on it, they should operate on the result (the rest of the attributes
+                    // should be copied to the new generated code).
+                    break;
+                }
+                if remove_original_item {
+                    break;
+                }
+            }
+            if remove_original_item {
+                // Don't add the original item to the module data.
+                continue;
             }
             match item_ast {
                 ast::Item::Module(module) => {
@@ -337,65 +401,188 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     Ok(res)
 }
 
-/// Finds all the *direct* submodules of a module - including those generated by macro plugins. To
-/// get all the submodules including nested modules, use [`collect_modules_under`].
-fn module_submodules(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<ModuleId>> {
-    Ok(db.module_data(module_id)?.submodules.keys().copied().map(ModuleId::Submodule).collect())
+/// Returns all the *direct* submodules of the given module - including those generated by macro
+/// plugins. To get all the submodules including nested modules, use [`collect_modules_under`].
+fn module_submodules(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<SubmoduleId, ast::ItemModule>> {
+    Ok(db.priv_module_data(module_id)?.submodules)
+}
+fn module_submodules_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<SubmoduleId>> {
+    Ok(db.module_submodules(module_id)?.keys().copied().collect())
 }
 
-/// Finds all the free functions of a module.
+/// Returns all the free functions of the given module.
 pub fn module_free_functions(
     db: &dyn DefsGroup,
     module_id: ModuleId,
+) -> Maybe<OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>> {
+    Ok(db.priv_module_data(module_id)?.free_functions)
+}
+pub fn module_free_functions_ids(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
 ) -> Maybe<Vec<FreeFunctionId>> {
-    Ok(db.module_data(module_id)?.free_functions.keys().copied().collect())
+    Ok(db.module_free_functions(module_id)?.keys().copied().collect())
+}
+
+/// Returns all the uses of the given module.
+pub fn module_uses(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<UseId, ast::ItemUse>> {
+    Ok(db.priv_module_data(module_id)?.uses)
+}
+pub fn module_uses_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<UseId>> {
+    Ok(db.module_uses(module_id)?.keys().copied().collect())
+}
+
+/// Returns all the structs of the given module.
+pub fn module_structs(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<StructId, ast::ItemStruct>> {
+    Ok(db.priv_module_data(module_id)?.structs)
+}
+pub fn module_structs_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<StructId>> {
+    Ok(db.module_structs(module_id)?.keys().copied().collect())
+}
+
+/// Returns all the enums of the given module.
+pub fn module_enums(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<EnumId, ast::ItemEnum>> {
+    Ok(db.priv_module_data(module_id)?.enums)
+}
+pub fn module_enums_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<EnumId>> {
+    Ok(db.module_enums(module_id)?.keys().copied().collect())
+}
+
+/// Returns all the type aliases of the given module.
+pub fn module_type_aliases(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>> {
+    Ok(db.priv_module_data(module_id)?.type_aliases)
+}
+pub fn module_type_aliases_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<TypeAliasId>> {
+    Ok(db.module_type_aliases(module_id)?.keys().copied().collect())
+}
+
+/// Returns all the traits of the given module.
+pub fn module_traits(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<TraitId, ast::ItemTrait>> {
+    Ok(db.priv_module_data(module_id)?.traits)
+}
+pub fn module_traits_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<TraitId>> {
+    Ok(db.module_traits(module_id)?.keys().copied().collect())
+}
+
+/// Returns all the impls of the given module.
+pub fn module_impls(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<ImplId, ast::ItemImpl>> {
+    Ok(db.priv_module_data(module_id)?.impls)
+}
+pub fn module_impls_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<ImplId>> {
+    Ok(db.module_impls(module_id)?.keys().copied().collect())
+}
+
+/// Returns all the extern_types of the given module.
+pub fn module_extern_types(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<ExternTypeId, ast::ItemExternType>> {
+    Ok(db.priv_module_data(module_id)?.extern_types)
+}
+pub fn module_extern_types_ids(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Vec<ExternTypeId>> {
+    Ok(db.module_extern_types(module_id)?.keys().copied().collect())
+}
+
+/// Returns all the extern_functions of the given module.
+pub fn module_extern_functions(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>> {
+    Ok(db.priv_module_data(module_id)?.extern_functions)
+}
+pub fn module_extern_functions_ids(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Vec<ExternFunctionId>> {
+    Ok(db.module_extern_functions(module_id)?.keys().copied().collect())
+}
+
+/// Returns the generated_file_info of the given module.
+pub fn module_generated_file_info(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Vec<Option<GeneratedFileInfo>>> {
+    Ok(db.priv_module_data(module_id)?.generated_file_info)
+}
+
+/// Returns all the plugin diagnostics of the given module.
+pub fn module_plugin_diagnostics(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Vec<(ModuleFileId, PluginDiagnostic)>> {
+    Ok(db.priv_module_data(module_id)?.plugin_diagnostics)
 }
 
 fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleItems> {
     let syntax_db = db.upcast();
-    let module_data = db.module_data(module_id)?;
     // TODO(spapini): Prune other items if name is missing.
     Ok(ModuleItems {
         items: chain!(
-            module_data.submodules.iter().map(|(submodule_id, syntax)| (
+            db.module_submodules(module_id)?.into_iter().map(|(submodule_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
-                ModuleItemId::Submodule(*submodule_id),
+                ModuleItemId::Submodule(submodule_id),
             )),
-            module_data.uses.iter().map(|(use_id, syntax)| (
+            db.module_uses(module_id)?.into_iter().map(|(use_id, syntax)| (
                 syntax.name(syntax_db).identifier(syntax_db),
-                ModuleItemId::Use(*use_id)
+                ModuleItemId::Use(use_id)
             )),
-            module_data.free_functions.iter().map(|(free_function_id, syntax)| (
+            db.module_free_functions(module_id)?.into_iter().map(|(free_function_id, syntax)| (
                 syntax.declaration(syntax_db).name(syntax_db).text(syntax_db),
-                ModuleItemId::FreeFunction(*free_function_id),
+                ModuleItemId::FreeFunction(free_function_id),
             )),
-            module_data.extern_functions.iter().map(|(extern_function_id, syntax)| (
-                syntax.declaration(syntax_db).name(syntax_db).text(syntax_db),
-                ModuleItemId::ExternFunction(*extern_function_id),
-            )),
-            module_data.extern_types.iter().map(|(extern_type_id, syntax)| (
+            db.module_extern_functions(module_id)?.into_iter().map(
+                |(extern_function_id, syntax)| (
+                    syntax.declaration(syntax_db).name(syntax_db).text(syntax_db),
+                    ModuleItemId::ExternFunction(extern_function_id),
+                )
+            ),
+            db.module_extern_types(module_id)?.into_iter().map(|(extern_type_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
-                ModuleItemId::ExternType(*extern_type_id),
+                ModuleItemId::ExternType(extern_type_id),
             )),
-            module_data.structs.iter().map(|(struct_id, syntax)| (
+            db.module_structs(module_id)?.into_iter().map(|(struct_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
-                ModuleItemId::Struct(*struct_id)
+                ModuleItemId::Struct(struct_id)
             )),
-            module_data.enums.iter().map(|(enum_id, syntax)| (
+            db.module_enums(module_id)?.into_iter().map(|(enum_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
-                ModuleItemId::Enum(*enum_id)
+                ModuleItemId::Enum(enum_id)
             )),
-            module_data.type_aliases.iter().map(|(type_alias_id, syntax)| (
+            db.module_type_aliases(module_id)?.into_iter().map(|(type_alias_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
-                ModuleItemId::TypeAlias(*type_alias_id)
+                ModuleItemId::TypeAlias(type_alias_id)
             )),
-            module_data.traits.iter().map(|(trait_id, syntax)| (
+            db.module_traits(module_id)?.into_iter().map(|(trait_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
-                ModuleItemId::Trait(*trait_id)
+                ModuleItemId::Trait(trait_id)
             )),
-            module_data.impls.iter().map(|(impl_id, syntax)| (
+            db.module_impls(module_id)?.into_iter().map(|(impl_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
-                ModuleItemId::Impl(*impl_id)
+                ModuleItemId::Impl(impl_id)
             )),
         )
         .collect(),

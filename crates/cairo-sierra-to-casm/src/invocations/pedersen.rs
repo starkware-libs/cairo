@@ -5,17 +5,17 @@ mod test;
 use cairo_casm::builder::CasmBuilder;
 use cairo_casm::casm_build_extend;
 use cairo_casm::operand::ResOperand;
-use cairo_sierra::extensions::pedersen::PedersenConcreteLibFunc;
+use cairo_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 
 /// Builds instructions for Sierra pedersen operations.
 pub fn build(
-    libfunc: &PedersenConcreteLibFunc,
+    libfunc: &PedersenConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        PedersenConcreteLibFunc::Hash(_) => build_pedersen_hash(builder),
+        PedersenConcreteLibfunc::Hash(_) => build_pedersen_hash(builder),
     }
 }
 

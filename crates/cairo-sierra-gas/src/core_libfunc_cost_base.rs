@@ -1,26 +1,27 @@
-use cairo_sierra::extensions::array::ArrayConcreteLibFunc;
-use cairo_sierra::extensions::boolean::BoolConcreteLibFunc;
+use cairo_sierra::extensions::array::ArrayConcreteLibfunc;
+use cairo_sierra::extensions::boolean::BoolConcreteLibfunc;
+use cairo_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibFunc, BuiltinCostGetGasLibFunc, CostTokenType,
+    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
 };
-use cairo_sierra::extensions::core::CoreConcreteLibFunc::{
+use cairo_sierra::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup,
     Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump,
     UnwrapNonZero,
 };
-use cairo_sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
-use cairo_sierra::extensions::ec::EcConcreteLibFunc;
-use cairo_sierra::extensions::enm::EnumConcreteLibFunc;
+use cairo_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
+use cairo_sierra::extensions::ec::EcConcreteLibfunc;
+use cairo_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_sierra::extensions::felt::FeltConcrete;
-use cairo_sierra::extensions::function_call::FunctionCallConcreteLibFunc;
-use cairo_sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
-use cairo_sierra::extensions::mem::MemConcreteLibFunc::{
+use cairo_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
+use cairo_sierra::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
+use cairo_sierra::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
-use cairo_sierra::extensions::nullable::NullableConcreteLibFunc;
-use cairo_sierra::extensions::strct::StructConcreteLibFunc;
+use cairo_sierra::extensions::nullable::NullableConcreteLibfunc;
+use cairo_sierra::extensions::strct::StructConcreteLibfunc;
 use cairo_sierra::extensions::uint128::{
-    IntOperator, Uint128Concrete, Uint128OperationConcreteLibFunc,
+    IntOperator, Uint128Concrete, Uint128OperationConcreteLibfunc,
 };
 use cairo_sierra::program::Function;
 
@@ -48,19 +49,21 @@ pub trait CostOperations {
 /// gas equations and getting actual gas usage after having a solution.
 pub fn core_libfunc_cost_base<Ops: CostOperations>(
     ops: &mut Ops,
-    libfunc: &CoreConcreteLibFunc,
+    libfunc: &CoreConcreteLibfunc,
 ) -> Vec<Ops::CostType> {
     match libfunc {
         // For the case of function calls - assumes a variable for the cost of running from a
         // function entry point and on - while also adding the call cost.
-        FunctionCall(FunctionCallConcreteLibFunc { function, .. }) => {
+        FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
             let func_content_cost = ops.function_cost(function);
             vec![ops.add(ops.const_cost(2), func_content_cost)]
         }
         Bitwise(_) => vec![ops.const_cost(5)],
-        Bool(BoolConcreteLibFunc::And(_)) => vec![ops.const_cost(0)],
-        Bool(BoolConcreteLibFunc::Not(_)) => vec![ops.const_cost(1)],
-        Ec(EcConcreteLibFunc::CreatePoint(_)) => vec![ops.const_cost(3), ops.const_cost(3)],
+        Bool(BoolConcreteLibfunc::And(_)) => vec![ops.const_cost(0)],
+        Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.const_cost(1)],
+        Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.const_cost(1)],
+        Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.const_cost(2), ops.const_cost(2)],
+        Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(3), ops.const_cost(3)],
         Gas(GetGas(_)) => {
             vec![
                 ops.sub(ops.const_cost(3), ops.statement_var_cost(CostTokenType::Step)),
@@ -74,58 +77,65 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
                 .reduce(|x, y| ops.add(x, y));
             vec![ops.add(cost.unwrap(), ops.const_cost(1))]
         }
-        Array(ArrayConcreteLibFunc::New(_)) => vec![ops.const_cost(1)],
-        Array(ArrayConcreteLibFunc::Append(_)) => vec![ops.const_cost(2)],
-        Array(ArrayConcreteLibFunc::PopFront(_)) => vec![ops.const_cost(2), ops.const_cost(3)],
-        Array(ArrayConcreteLibFunc::At(_)) => vec![ops.const_cost(4), ops.const_cost(3)],
-        Array(ArrayConcreteLibFunc::Len(_)) => vec![ops.const_cost(0)],
+        Array(ArrayConcreteLibfunc::New(_)) => vec![ops.const_cost(1)],
+        Array(ArrayConcreteLibfunc::Append(_)) => vec![ops.const_cost(2)],
+        Array(ArrayConcreteLibfunc::PopFront(_)) => vec![ops.const_cost(2), ops.const_cost(3)],
+        Array(ArrayConcreteLibfunc::At(_)) => vec![ops.const_cost(4), ops.const_cost(3)],
+        Array(ArrayConcreteLibfunc::Len(_)) => vec![ops.const_cost(0)],
         Uint128(libfunc) => integer_libfunc_cost(ops, libfunc),
         Felt(libfunc) => felt_libfunc_cost(ops, libfunc),
-        Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) | Box(_) => {
+        Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) => {
             vec![ops.const_cost(0)]
         }
+        Box(libfunc) => match libfunc {
+            BoxConcreteLibfunc::Into(_) => {
+                // TODO(lior): Fix to sizeof(T) once sizes != 1 are supported.
+                vec![ops.const_cost(1)]
+            }
+            BoxConcreteLibfunc::Unbox(_) => vec![ops.const_cost(0)],
+        },
         Mem(StoreLocal(_) | AllocLocal(_) | StoreTemp(_) | AlignTemps(_) | FinalizeLocals(_))
         | UnconditionalJump(_) => vec![ops.const_cost(1)],
-        Enum(EnumConcreteLibFunc::Init(_)) => vec![ops.const_cost(1)],
-        Enum(EnumConcreteLibFunc::Match(sig)) => {
+        Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.const_cost(1)],
+        Enum(EnumConcreteLibfunc::Match(sig)) => {
             vec![ops.const_cost(1); sig.signature.branch_signatures.len()]
         }
-        Struct(StructConcreteLibFunc::Construct(_) | StructConcreteLibFunc::Deconstruct(_)) => {
+        Struct(StructConcreteLibfunc::Construct(_) | StructConcreteLibfunc::Deconstruct(_)) => {
             vec![ops.const_cost(0)]
         }
-        DictFeltTo(DictFeltToConcreteLibFunc::New(_)) => {
+        DictFeltTo(DictFeltToConcreteLibfunc::New(_)) => {
             vec![ops.const_cost(7)]
         }
-        DictFeltTo(DictFeltToConcreteLibFunc::Read(_)) => {
+        DictFeltTo(DictFeltToConcreteLibfunc::Read(_)) => {
             vec![ops.const_cost(4)]
         }
-        DictFeltTo(DictFeltToConcreteLibFunc::Write(_)) => {
+        DictFeltTo(DictFeltToConcreteLibfunc::Write(_)) => {
             vec![ops.const_cost(4)]
         }
-        DictFeltTo(DictFeltToConcreteLibFunc::Squash(_)) => {
+        DictFeltTo(DictFeltToConcreteLibfunc::Squash(_)) => {
             // TODO(Gil): add the cost to new/read/write once the casm is added.
             vec![ops.const_cost(0)]
         }
         Pedersen(_) => {
             vec![ops.add(ops.const_cost(2), ops.const_cost_token(1, CostTokenType::Pedersen))]
         }
-        BuiltinCost(BuiltinCostConcreteLibFunc::BuiltinGetGas(_)) => {
+        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinGetGas(_)) => {
             let cost = CostTokenType::iter()
                 .map(|token_type| ops.statement_var_cost(*token_type))
                 .reduce(|x, y| ops.add(x, y));
             // Compute the (maximal) number of steps for the computation of the requested cost.
             let compute_requested_cost_steps =
-                BuiltinCostGetGasLibFunc::cost_computation_max_steps() as i32;
+                BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i32;
             vec![
                 ops.sub(ops.const_cost(compute_requested_cost_steps + 3), cost.unwrap()),
                 ops.const_cost(compute_requested_cost_steps + 5),
             ]
         }
-        CoreConcreteLibFunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
-        CoreConcreteLibFunc::Nullable(libfunc) => match libfunc {
-            NullableConcreteLibFunc::Null(_) => vec![ops.const_cost(0)],
-            NullableConcreteLibFunc::IntoNullable(_) => vec![ops.const_cost(0)],
-            NullableConcreteLibFunc::FromNullable(_) => vec![ops.const_cost(1), ops.const_cost(1)],
+        CoreConcreteLibfunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
+        CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
+            NullableConcreteLibfunc::Null(_) => vec![ops.const_cost(0)],
+            NullableConcreteLibfunc::IntoNullable(_) => vec![ops.const_cost(0)],
+            NullableConcreteLibfunc::FromNullable(_) => vec![ops.const_cost(1), ops.const_cost(1)],
         },
     }
 }
@@ -137,7 +147,7 @@ fn integer_libfunc_cost<Ops: CostOperations>(
 ) -> Vec<Ops::CostType> {
     // TODO(orizi): When sierra_to_casm actually supports integers - fix costs.
     match libfunc {
-        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc { operator, .. }) => {
+        Uint128Concrete::Operation(Uint128OperationConcreteLibfunc { operator, .. }) => {
             match operator {
                 IntOperator::DivMod => {
                     vec![ops.const_cost(7)]
@@ -165,7 +175,7 @@ fn integer_libfunc_cost<Ops: CostOperations>(
             vec![ops.const_cost(4), ops.const_cost(3)]
         }
         Uint128Concrete::Equal(_) => {
-            vec![ops.const_cost(1), ops.const_cost(1)]
+            vec![ops.const_cost(2), ops.const_cost(2)]
         }
         Uint128Concrete::LessThanOrEqual(_) => {
             vec![ops.const_cost(3), ops.const_cost(4)]
@@ -176,9 +186,7 @@ fn integer_libfunc_cost<Ops: CostOperations>(
 /// Returns costs for felt libfuncs.
 fn felt_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &FeltConcrete) -> Vec<Ops::CostType> {
     match libfunc {
-        FeltConcrete::Const(_)
-        | FeltConcrete::BinaryOperation(_)
-        | FeltConcrete::UnaryOperation(_) => vec![ops.const_cost(0)],
+        FeltConcrete::Const(_) | FeltConcrete::BinaryOperation(_) => vec![ops.const_cost(0)],
         FeltConcrete::JumpNotZero(_) => {
             vec![ops.const_cost(1), ops.const_cost(1)]
         }

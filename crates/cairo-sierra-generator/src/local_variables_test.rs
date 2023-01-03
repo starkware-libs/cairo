@@ -3,30 +3,29 @@ use cairo_lowering::db::LoweringGroup;
 use cairo_semantic::test_utils::setup_test_function;
 use cairo_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use pretty_assertions::assert_eq;
 
 use super::find_local_variables;
 use crate::function_generator_test_utils::test_function_generator;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 cairo_test_utils::test_file_test!(
-    local_variables,
-    [
-        "src/local_variables_test_data/block",
-        "src/local_variables_test_data/construct_enum",
-        "src/local_variables_test_data/match_enum",
-        "src/local_variables_test_data/match_extern",
-        "src/local_variables_test_data/simple",
-        "src/local_variables_test_data/struct",
-    ],
-    SierraGenDatabaseForTesting,
+    find_local_variables,
+    "src/local_variables_test_data",
+    {
+        block: "block",
+        construct_enum: "construct_enum",
+        match_enum: "match_enum",
+        match_extern: "match_extern",
+        simple: "simple",
+        struct_: "struct",
+    },
     check_find_local_variables
 );
 
 fn check_find_local_variables(
-    db: &mut SierraGenDatabaseForTesting,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut SierraGenDatabaseForTesting::default();
     // Parse code and create semantic model.
     let test_function = setup_test_function(
         db,
@@ -57,8 +56,8 @@ fn check_find_local_variables(
 }
 
 cairo_test_utils::test_file_test!(
-    local_variables_e2e_test,
-    ["src/local_variables_test_data/e2e",],
-    SierraGenDatabaseForTesting,
+    e2e,
+    "src/local_variables_test_data",
+    {e2e: "e2e"},
     test_function_generator
 );

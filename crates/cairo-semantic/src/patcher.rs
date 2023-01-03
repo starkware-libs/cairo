@@ -45,6 +45,53 @@ impl RewriteNode {
     pub fn set_str(&mut self, s: String) {
         *self = RewriteNode::Text(s)
     }
+    /// Creates a new Rewrite node by interpolating a string with patches.
+    /// Each substring of the form `$<name>$` is replaced with syntax nodes from `patches`.
+    /// A `$$` substring is replaced with `$`.
+    pub fn interpolate_patched(code: &str, patches: HashMap<String, RewriteNode>) -> RewriteNode {
+        let mut chars = code.chars().peekable();
+        let mut pending_text = String::new();
+        let mut children = Vec::new();
+        while let Some(c) = chars.next() {
+            if c != '$' {
+                pending_text.push(c);
+                continue;
+            }
+
+            // An opening $ was detected.
+
+            // Read the name
+            let mut name = String::new();
+            for c in chars.by_ref() {
+                if c == '$' {
+                    break;
+                }
+                name.push(c);
+            }
+
+            // A closing $ was found.
+            // If the string between the `$`s is empty - push a single `$` to the output.
+            if name.is_empty() {
+                pending_text.push('$');
+                continue;
+            }
+            // If the string wasn't empty and there is some pending text, first flush it as a text
+            // child.
+            if !pending_text.is_empty() {
+                children.push(RewriteNode::Text(pending_text.clone()));
+                pending_text.clear();
+            }
+            // Replace the substring with the relevant rewrite node.
+            // TODO(yuval): this currently panics. Fix it.
+            children.push(patches[&name].clone());
+        }
+        // Flush the remaining text as a text child.
+        if !pending_text.is_empty() {
+            children.push(RewriteNode::Text(pending_text.clone()));
+        }
+
+        RewriteNode::Modified(ModifiedNode { children })
+    }
 }
 impl From<SyntaxNode> for RewriteNode {
     fn from(node: SyntaxNode) -> Self {
@@ -119,37 +166,5 @@ impl<'a> PatchBuilder<'a> {
             origin_span: node.span(self.db),
         });
         self.code += node.get_text(self.db).as_str();
-    }
-
-    /// Interpolates a string with patches.
-    /// Each substring of the form `$<name>$` is replaced with syntax nodes from `replaces`.
-    /// The `$$` substring is replaced with `$`.
-    pub fn interpolate_patched(&mut self, code: &str, replaces: HashMap<String, RewriteNode>) {
-        let mut chars = code.chars().peekable();
-        while let Some(c) = chars.next() {
-            if c != '$' {
-                self.add_char(c);
-                continue;
-            }
-
-            // An opening $ was detected.
-            let mut name = String::new();
-            for d in chars.by_ref() {
-                if d == '$' {
-                    break;
-                }
-                name.push(d);
-            }
-
-            // A closing $ was found.
-            // If the string between the `$` is empty, push a single `$` to the output.
-            if name.is_empty() {
-                self.add_char('$');
-                continue;
-            }
-
-            // Replace the substring with a syntax node.
-            self.add_modified(replaces[&name].clone());
-        }
     }
 }

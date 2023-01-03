@@ -3,10 +3,10 @@
 members = [
     "crates/cairo-casm",
     "crates/cairo-compiler",
-    "crates/cairo-db-utils",
+    "crates/cairo-utils",
     "crates/cairo-debug",
     "crates/cairo-defs",
-    "crates/cairo-diagnostics-proc-macros",
+    "crates/cairo-proc-macros",
     "crates/cairo-diagnostics",
     "crates/cairo-eq-solver",
     "crates/cairo-filesystem",
@@ -33,12 +33,15 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/starkware-libs/cairo/"
+license = "Apache-2.0"
+license-file = "LICENSE"
 
 [workspace.dependencies]
 anyhow = "1.0.66"
 assert_matches = "1.5"
 bimap = "0.6.2"
-cairo-rs = { git = "https://github.com/lambdaclass/cairo-rs", rev="42dadd1" }
+cairo-vm = "0.1.0"
 chrono = "0.4.23"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"

@@ -1,14 +1,14 @@
 use super::felt::FeltType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
 };
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 
 /// Type representing the Pedersen hash builtin.
 #[derive(Default)]
@@ -22,25 +22,25 @@ impl NoGenericArgsGenericType for PedersenType {
 }
 
 define_libfunc_hierarchy! {
-    pub enum PedersenLibFunc {
-        Hash(PedersenHashLibFunc),
-    }, PedersenConcreteLibFunc
+    pub enum PedersenLibfunc {
+        Hash(PedersenHashLibfunc),
+    }, PedersenConcreteLibfunc
 }
 
-/// LibFunc for computing the Pedersen hash of two felts.
+/// Libfunc for computing the Pedersen hash of two felts.
 /// Returns a felt (and the updated builtin pointer).
 #[derive(Default)]
-pub struct PedersenHashLibFunc {}
-impl NoGenericArgsGenericLibFunc for PedersenHashLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("pedersen");
+pub struct PedersenHashLibfunc {}
+impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("pedersen");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let pedersen_ty = context.get_concrete_type(PedersenType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        Ok(LibFuncSignature::new_non_branch_ex(
+        Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature {
                     ty: pedersen_ty.clone(),

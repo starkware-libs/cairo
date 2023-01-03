@@ -47,6 +47,8 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
             }
             LoweringDiagnosticKind::VariableMoved => "Variable was previously moved.".into(),
+            LoweringDiagnosticKind::UnsupportedMatch => "Unsupported match.".into(),
+            LoweringDiagnosticKind::UnsupportedMatchArm => "Unsupported match arm.".into(),
         }
     }
 
@@ -72,4 +74,6 @@ pub enum LoweringDiagnosticKind {
     // TODO(lior): Remove once supported.
     OnlyMatchZeroIsSupported,
     VariableMoved,
+    UnsupportedMatch,
+    UnsupportedMatchArm,
 }

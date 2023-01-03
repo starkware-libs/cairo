@@ -2,6 +2,9 @@
 name = "cairo-starknet"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Starknet capabilities and utilities on top of Cairo."
 
 [dependencies]
 anyhow.workspace = true
@@ -11,6 +14,7 @@ convert_case.workspace = true
 cairo-defs = { path = "../cairo-defs" }
 cairo-diagnostics = { path = "../cairo-diagnostics" }
 cairo-filesystem = { path = "../cairo-filesystem" }
+cairo-formatter = { path = "../cairo-formatter" }
 genco.workspace = true
 itertools.workspace = true
 log.workspace = true
@@ -23,6 +27,7 @@ cairo-sierra-generator = { path = "../cairo-sierra-generator" }
 cairo-syntax = { path = "../cairo-syntax" }
 cairo-sierra-gas = { path = "../cairo-sierra-gas" }
 cairo-sierra-to-casm = { path = "../cairo-sierra-to-casm" }
+indoc.workspace = true
 sha3.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
@@ -37,8 +42,6 @@ cairo-parser = { path = "../cairo-parser" }
 [dev-dependencies]
 cairo-diagnostics = { path = "../cairo-diagnostics" }
 env_logger.workspace = true
-cairo-formatter = { path = "../cairo-formatter" }
-indoc.workspace = true
 pretty_assertions.workspace = true
 cairo-semantic = { path = "../cairo-semantic", features = ["testing"] }
 test-log.workspace = true

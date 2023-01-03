@@ -2,11 +2,9 @@
 use std::fmt::Write;
 
 use cairo_utils::ordered_hash_map::OrderedHashMap;
-use pretty_assertions::assert_eq;
 use test_case::test_case;
 
 use crate::colored_printer::print_colored;
-use crate::parser_test;
 use crate::printer::{print_partial_tree, print_tree};
 use crate::test_utils::{create_virtual_file, get_diagnostics, read_file};
 use crate::utils::{
@@ -174,10 +172,10 @@ fn compare_printed_and_expected_maybe_fix(
         } else {
             panic!(
                 "assertion failed: printed != expected.\nTo automatically fix this, run:\n  cargo \
-                 test -p parser -F fix_parser_tests --tests cairo_parser::test::fix_parser_tests \
-                 -- --nocapture\nNote to carefully review it and not to blindly paste it there, \
-                 as this loses the whole point of the test.\nTo debug this without fixing, use \
-                 _debug_failure()."
+                 test -p cairo-parser -F fix_parser_tests --tests \
+                 cairo_parser::test::fix_parser_tests -- --nocapture\nNote to carefully review it \
+                 and not to blindly paste it there, as this loses the whole point of the \
+                 test.\nTo debug this without fixing, use _debug_failure()."
             );
         }
     }
@@ -252,11 +250,10 @@ pub fn fix_parser_tests() {
 /// - expected_tree - the printed syntax tree of the given cairo_code, ignoring the irrelevant
 ///   kinds.
 pub fn test_partial_parser_tree(
-    db: &mut SimpleParserDatabase,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     // TODO(yuval): allow pointing to a code in another file.
-
+    let db = &SimpleParserDatabase::default();
     let file_id = create_virtual_file(db, "dummy_file.cairo", &inputs["cairo_code"]);
     let (syntax_root, diagnostics) =
         get_syntax_root_and_diagnostics(db, file_id, &inputs["cairo_code"]);
@@ -271,42 +268,37 @@ pub fn test_partial_parser_tree(
     ])
 }
 
-parser_test!(
-    diagnostic_tests,
-    [
-        "src/parser_test_data/module_diagnostics",
-        "src/parser_test_data/exprs",
-        "src/parser_test_data/fn",
-        "src/parser_test_data/if",
-        "src/parser_test_data/match",
-        "src/parser_test_data/pattern",
-        "src/parser_test_data/question_mark",
-        "src/parser_test_data/semicolon",
-        "src/parser_test_data/reserved_identifier",
-        "src/parser_test_data/underscore_not_supported",
-    ],
+cairo_test_utils::test_file_test!(
+    diagnostic,
+    "src/parser_test_data",
+    {
+        module_diagnostics: "module_diagnostics",
+        exprs: "exprs",
+        fn_: "fn",
+        if_: "if",
+        match_: "match",
+        pattern: "pattern",
+        question_mark: "question_mark",
+        semicolon: "semicolon",
+        reserved_identifier: "reserved_identifier",
+        underscore_not_supported: "underscore_not_supported",
+    },
     get_diagnostics
 );
 
-parser_test!(
-    item_free_function,
-    ["src/parser_test_data/item_free_function"],
+cairo_test_utils::test_file_test!(
+    partial_parser_tree,
+    "src/parser_test_data",
+    {
+        item_free_function: "item_free_function",
+        function_signature: "function_signature",
+        function_call: "function_call",
+        not_isnt_a_binary_operator: "not_isnt_a_binary_operator",
+        item_trait: "item_trait",
+        let_statement: "let_statement",
+        if_else: "if_else",
+        literal: "literal",
+        module: "module",
+    },
     test_partial_parser_tree
 );
-parser_test!(
-    function_signature,
-    ["src/parser_test_data/function_signature"],
-    test_partial_parser_tree
-);
-parser_test!(function_call, ["src/parser_test_data/function_call"], test_partial_parser_tree);
-parser_test!(
-    not_isnt_a_binary_operator,
-    ["src/parser_test_data/not_isnt_a_binary_operator"],
-    test_partial_parser_tree
-);
-parser_test!(item_trait, ["src/parser_test_data/item_trait"], test_partial_parser_tree);
-parser_test!(let_statement, ["src/parser_test_data/let_statement"], test_partial_parser_tree);
-parser_test!(if_else, ["src/parser_test_data/if_else"], test_partial_parser_tree);
-
-parser_test!(literal, ["src/parser_test_data/literal"], test_partial_parser_tree);
-parser_test!(module, ["src/parser_test_data/module"], test_partial_parser_tree);

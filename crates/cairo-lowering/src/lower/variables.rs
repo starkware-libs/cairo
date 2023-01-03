@@ -62,6 +62,7 @@ impl LivingVariables {
             duplicatable: ty_info.duplicatable,
             droppable: ty_info.droppable,
             ty,
+            ref_indices: Default::default(),
         });
         self.introduce_var(UsableVariable(var_id))
     }

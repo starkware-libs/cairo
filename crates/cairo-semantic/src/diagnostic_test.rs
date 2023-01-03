@@ -5,6 +5,7 @@ use cairo_defs::ids::ModuleId;
 use cairo_defs::plugin::{
     DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginGeneratedFile, PluginResult,
 };
+use cairo_diagnostics::DiagnosticEntry;
 use cairo_syntax::node::db::SyntaxGroup;
 use cairo_syntax::node::{ast, Terminal};
 use indoc::indoc;
@@ -21,15 +22,16 @@ use crate::test_utils::{
     get_crate_semantic_diagnostics, setup_test_crate, test_expr_diagnostics,
     SemanticDatabaseForTesting,
 };
-use crate::{semantic_test, SemanticDiagnostic};
+use crate::SemanticDiagnostic;
 
-semantic_test!(
-    diagnostics_tests,
-    [
-        "src/diagnostic_test_data/tests",
-        "src/diagnostic_test_data/not_found",
-        "src/diagnostic_test_data/missing"
-    ],
+cairo_test_utils::test_file_test!(
+    diagnostics,
+    "src/diagnostic_test_data",
+    {
+        tests: "tests",
+        not_found: "not_found",
+        missing: "missing",
+    },
     test_expr_diagnostics
 );
 
@@ -46,10 +48,10 @@ fn test_missing_module_file() {
     );
 
     let submodule_id =
-        *db.module_submodules(ModuleId::CrateRoot(crate_id)).unwrap().first().unwrap();
+        *db.module_submodules_ids(ModuleId::CrateRoot(crate_id)).unwrap().first().unwrap();
 
     assert_eq!(
-        db.module_semantic_diagnostics(submodule_id).unwrap().format(db),
+        db.module_semantic_diagnostics(ModuleId::Submodule(submodule_id)).unwrap().format(db),
         indoc! {"
             error: Module file not found. Expected path: src/a/abc.cairo
              --> lib.cairo:3:9
@@ -101,17 +103,17 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                         .children
                         .remove(0);
                 }
-                builder.interpolate_patched(
+                builder.add_modified(RewriteNode::interpolate_patched(
                     indoc! {"
                         mod inner_mod {{
                             extern type NewType;
                             // Comment 1.
-                            // Comment 2.
+                            // Comment $$.
                             $func$
                         }}
                     "},
                     [("func".to_string(), new_func)].into(),
-                );
+                ));
 
                 PluginResult {
                     code: Some(PluginGeneratedFile {
@@ -122,6 +124,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                         )),
                     }),
                     diagnostics: vec![],
+                    remove_original_item: false,
                 }
             }
             _ => PluginResult::default(),
@@ -158,14 +161,14 @@ impl AsDynGeneratedFileAuxData for PatchMapper {
 impl DiagnosticMapper for PatchMapper {
     fn map_diag(
         &self,
-        db: &dyn SemanticGroup,
+        db: &(dyn SemanticGroup + 'static),
         diag: &dyn std::any::Any,
     ) -> Option<PluginMappedDiagnostic> {
         let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
         let span = self
             .patches
             .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
-        Some(PluginMappedDiagnostic { span, message: "Mapped error.".into() })
+        Some(PluginMappedDiagnostic { span, message: format!("Mapped error. {}", diag.format(db)) })
     }
 }
 
@@ -195,7 +198,7 @@ fn test_inline_module_diagnostics() {
                     return 5;
                            ^
 
-            error: Plugin diagnostic: Mapped error.
+            error: Plugin diagnostic: Mapped error. Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt".
              --> lib.cairo:4:16
                     return 5;
                            ^

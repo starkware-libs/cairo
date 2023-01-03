@@ -20,7 +20,7 @@ impl MacroPlugin for DerivePlugin {
             ast::Item::Enum(enum_ast) => {
                 generate_derive_code_for_type(db, enum_ast.name(db), enum_ast.attributes(db))
             }
-            _ => PluginResult { code: None, diagnostics: vec![] },
+            _ => PluginResult::default(),
         }
     }
 }
@@ -40,10 +40,10 @@ fn generate_derive_code_for_type(
     ident: ast::TerminalIdentifier,
     attributes: AttributeList,
 ) -> PluginResult {
+    let mut diagnostics = vec![];
     let mut impls = vec![];
     for attr in attributes.elements(db) {
         if attr.attr(db).text(db) == "derive" {
-            // TODO(orizi): Add diagnostics for all the unexpected cases.
             if let ast::OptionAttributeArgs::AttributeArgs(args) = attr.args(db) {
                 for arg in args.arg_list(db).elements(db) {
                     if let ast::Expr::Path(expr) = arg {
@@ -52,45 +52,37 @@ fn generate_derive_code_for_type(
                             let derived = segment.ident(db).text(db);
                             impls.push(format!("impl {name}{derived} of {derived}::<{name}>;\n"));
                         } else {
-                            return PluginResult {
-                                code: None,
-                                diagnostics: vec![PluginDiagnostic {
-                                    stable_ptr: expr.stable_ptr().untyped(),
-                                    message: "Expected a single segment.".into(),
-                                }],
-                            };
+                            diagnostics.push(PluginDiagnostic {
+                                stable_ptr: expr.stable_ptr().untyped(),
+                                message: "Expected a single segment.".into(),
+                            });
                         }
                     } else {
-                        return PluginResult {
-                            code: None,
-                            diagnostics: vec![PluginDiagnostic {
-                                stable_ptr: arg.stable_ptr().untyped(),
-                                message: "Expected path.".into(),
-                            }],
-                        };
+                        diagnostics.push(PluginDiagnostic {
+                            stable_ptr: arg.stable_ptr().untyped(),
+                            message: "Expected path.".into(),
+                        });
                     }
                 }
             } else {
-                return PluginResult {
-                    code: None,
-                    diagnostics: vec![PluginDiagnostic {
-                        stable_ptr: attr.args(db).stable_ptr().untyped(),
-                        message: "Expected args.".into(),
-                    }],
-                };
+                diagnostics.push(PluginDiagnostic {
+                    stable_ptr: attr.args(db).stable_ptr().untyped(),
+                    message: "Expected args.".into(),
+                });
             }
         }
     }
-    if impls.is_empty() {
-        PluginResult { code: None, diagnostics: vec![] }
-    } else {
-        PluginResult {
-            code: Some(PluginGeneratedFile {
+    PluginResult {
+        code: if impls.is_empty() {
+            None
+        } else {
+            Some(PluginGeneratedFile {
                 name: "impls".into(),
                 content: impls.join(""),
                 aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
-            }),
-            diagnostics: vec![],
-        }
+            })
+        },
+        diagnostics,
+        remove_original_item: false,
     }
 }

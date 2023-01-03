@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
 use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_defs::plugin::MacroPlugin;
 use cairo_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
@@ -11,6 +10,7 @@ use cairo_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_semantic::plugin::SemanticPlugin;
 use cairo_sierra_generator::db::SierraGenDatabase;
 use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_utils::Upcast;
 
 #[salsa::database(
     DefsDatabase,
@@ -26,20 +26,18 @@ pub struct RootDatabase {
 }
 impl salsa::Database for RootDatabase {}
 impl RootDatabase {
-    pub fn new(extra_plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
+    pub fn new(plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_lowering_group(&mut res);
-        // TODO(spapini): Consider taking from config.
-        let mut plugins = get_default_plugins();
-        plugins.extend(extra_plugins.into_iter());
         res.set_semantic_plugins(plugins);
         res
     }
 }
 impl Default for RootDatabase {
     fn default() -> Self {
-        Self::new(vec![])
+        // TODO(spapini): Consider taking from config.
+        Self::new(get_default_plugins())
     }
 }
 impl AsFilesGroupMut for RootDatabase {

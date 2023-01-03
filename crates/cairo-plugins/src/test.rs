@@ -1,169 +1,63 @@
-use std::sync::Arc;
-
-use cairo_db_utils::Upcast;
-use cairo_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
-use cairo_defs::ids::ModuleId;
-use cairo_defs::plugin::MacroPlugin;
-use cairo_filesystem::db::{
-    init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
-};
-use cairo_filesystem::ids::{CrateLongId, Directory, FileLongId};
-use cairo_parser::db::ParserDatabase;
-use cairo_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
-use cairo_semantic::plugin::SemanticPlugin;
-use cairo_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use indoc::indoc;
-use itertools::zip_eq;
+use cairo_defs::plugin::{PluginGeneratedFile, PluginResult};
+use cairo_diagnostics::{format_diagnostics, DiagnosticLocation};
+use cairo_parser::test_utils::create_virtual_file;
+use cairo_parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
+use cairo_syntax::node::TypedSyntaxNode;
+use cairo_utils::ordered_hash_map::OrderedHashMap;
 use pretty_assertions::assert_eq;
-use test_case::test_case;
 
-use crate::derive::DerivePlugin;
-use crate::panicable::PanicablePlugin;
+use crate::get_default_plugins;
 
-#[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
-pub struct DatabaseForTesting {
-    storage: salsa::Storage<DatabaseForTesting>,
-}
-impl salsa::Database for DatabaseForTesting {}
-impl Default for DatabaseForTesting {
-    fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
-        init_files_group(&mut res);
-        res
-    }
-}
-impl AsFilesGroupMut for DatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
-    }
-}
-impl Upcast<dyn DefsGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
-        self
-    }
-}
-impl Upcast<dyn FilesGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
-}
-impl Upcast<dyn SyntaxGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
-        self
-    }
-}
-impl Upcast<dyn SemanticGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
-        self
-    }
-}
-impl HasMacroPlugins for DatabaseForTesting {
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
-        self.get_macro_plugins()
-    }
-}
-
-fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
-    let file_id = db.intern_file(FileLongId::OnDisk(path.into()));
-    db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.into())));
-}
-
-#[test_case(
-    vec![Arc::new(DerivePlugin{})],
-    indoc! {"
-        #[derive(Copy, Drop)]
-        struct A{}
-
-        #[derive(Copy, Drop)]
-        struct B{}
-    "},
-    &[
-        indoc! {"
-            impl ACopy of Copy::<A>;
-            impl ADrop of Drop::<A>;
-        "},
-        indoc! {"
-            impl BCopy of Copy::<B>;
-            impl BDrop of Drop::<B>;
-        "},
-    ];
-    "derive"
-)]
-#[test_case(
-    vec![Arc::new(PanicablePlugin{})],
-    indoc! {"
-        #[panic_with('1', foo_improved)]
-        extern fn foo(a: felt, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
-
-        #[panic_with('2', bar_changed)]
-        extern fn bar() -> Result::<felt, Err> nopanic;
-
-        #[panic_with('3', non_extern_stuff)]
-        fn non_extern(_: some_type) -> Option::<(felt, other)> nopanic {
-            (4, 56)
-        }
-    "},
-    &[
-        indoc! {"
-            fn foo_improved(a: felt, b: other) -> () {
-                match foo(a, b) {
-                    Option::Some (v) => {
-                        v
-                    },
-                    Option::None (v) => {
-                        let mut data = array_new::<felt>();
-                        array_append::<felt>(data, '1');
-                        panic(data)
-                    },
-                }
-            }
-        "},
-        indoc! {"
-            fn bar_changed() -> felt {
-                match bar() {
-                    Result::Ok (v) => {
-                        v
-                    },
-                    Result::Err (v) => {
-                        let mut data = array_new::<felt>();
-                        array_append::<felt>(data, '2');
-                        panic(data)
-                    },
-                }
-            }
-        "},
-        indoc! {"
-            fn non_extern_stuff(_: some_type) -> (felt, other) {
-                match non_extern(_) {
-                    Option::Some (v) => {
-                        v
-                    },
-                    Option::None (v) => {
-                        let mut data = array_new::<felt>();
-                        array_append::<felt>(data, '3');
-                        panic(data)
-                    },
-                }
-            }
-        "},
-    ];
-    "panicable"
-)]
-fn plugin_test(plugins: Vec<Arc<dyn SemanticPlugin>>, content: &str, expected_codes: &[&str]) {
-    let mut db_val = DatabaseForTesting::default();
-    let db = &mut db_val;
-
-    let crate_id = db.intern_crate(CrateLongId("test".into()));
-    let root = Directory("src".into());
-    db.set_crate_root(crate_id, Some(root));
-    db.set_semantic_plugins(plugins);
-
-    // Main module file.
-    set_file_content(db, "src/lib.cairo", content);
-    let module_id = ModuleId::CrateRoot(crate_id);
-    for (file, expected_code) in
-        zip_eq(db.module_files(module_id).unwrap().into_iter().skip(1), expected_codes)
+cairo_test_utils::test_file_test!(
+    expand_plugin,
+    "src/test_data",
     {
-        assert_eq!(db.file_content(file).unwrap().as_str(), *expected_code);
+        config: "config",
+        derive: "derive",
+        panicable: "panicable",
+    },
+    test_expand_plugin
+);
+
+pub fn test_expand_plugin(
+    inputs: &OrderedHashMap<String, String>,
+) -> OrderedHashMap<String, String> {
+    let db = &mut SimpleParserDatabase::default();
+    let cairo_code = &inputs["cairo_code"];
+    let file_id = create_virtual_file(db, "dummy_file.cairo", cairo_code);
+
+    let (syntax_file, diagnostics) = get_syntax_file_and_diagnostics(db, file_id, cairo_code);
+    assert_eq!(diagnostics.format(db), "");
+    let file_syntax_node = syntax_file.as_syntax_node();
+    let plugins = get_default_plugins();
+    let mut generated_items: Vec<String> = Vec::new();
+    let mut diagnostic_items: Vec<String> = Vec::new();
+    for item in syntax_file.items(db).elements(db).into_iter() {
+        for plugin in &plugins {
+            let PluginResult { code, diagnostics, remove_original_item } =
+                plugin.clone().as_dyn_macro_plugin().generate_code(db, item.clone());
+
+            diagnostic_items.extend(diagnostics.iter().map(|diag| {
+                let syntax_node = file_syntax_node.lookup_ptr(db, diag.stable_ptr);
+
+                let location =
+                    DiagnosticLocation { file_id, span: syntax_node.span_without_trivia(db) };
+                format_diagnostics(db, &diag.message, location)
+            }));
+
+            let content = match code {
+                Some(PluginGeneratedFile { content, .. }) => content,
+                None => continue,
+            };
+            if !remove_original_item {
+                generated_items.push(item.as_syntax_node().get_text(db));
+            }
+            generated_items.push(content);
+        }
     }
+
+    OrderedHashMap::from([
+        ("generated_cairo_code".into(), generated_items.join("\n")),
+        ("expected_diagnostics".into(), diagnostic_items.join("\n")),
+    ])
 }

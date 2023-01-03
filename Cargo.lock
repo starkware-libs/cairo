@@ -222,12 +222,13 @@ checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
 name = "cairo-casm"
 version = "0.1.0"
 dependencies = [
- "cairo-rs",
  "cairo-utils",
+ "cairo-vm",
  "env_logger",
  "indoc",
  "itertools",
  "num-bigint",
+ "num-traits 0.2.15",
  "pretty_assertions",
  "test-case",
  "test-log",
@@ -239,7 +240,6 @@ name = "cairo-compiler"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cairo-db-utils",
  "cairo-defs",
  "cairo-diagnostics",
  "cairo-filesystem",
@@ -260,18 +260,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-db-utils"
-version = "0.1.0"
-dependencies = [
- "test-log",
-]
-
-[[package]]
 name = "cairo-debug"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
- "cairo-diagnostics-proc-macros",
+ "cairo-proc-macros",
+ "cairo-utils",
  "env_logger",
  "salsa",
  "test-log",
@@ -281,7 +274,6 @@ dependencies = [
 name = "cairo-defs"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-diagnostics",
  "cairo-filesystem",
@@ -302,24 +294,15 @@ dependencies = [
 name = "cairo-diagnostics"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
- "cairo-diagnostics-proc-macros",
  "cairo-filesystem",
+ "cairo-proc-macros",
+ "cairo-utils",
  "env_logger",
  "indoc",
  "itertools",
  "pretty_assertions",
  "salsa",
  "test-log",
-]
-
-[[package]]
-name = "cairo-diagnostics-proc-macros"
-version = "0.1.0"
-dependencies = [
- "cairo-debug",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -339,9 +322,9 @@ dependencies = [
 name = "cairo-filesystem"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-project",
+ "cairo-utils",
  "env_logger",
  "path-clean",
  "salsa",
@@ -354,7 +337,6 @@ name = "cairo-formatter"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cairo-db-utils",
  "cairo-diagnostics",
  "cairo-filesystem",
  "cairo-parser",
@@ -376,7 +358,7 @@ dependencies = [
 name = "cairo-language-server"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
+ "cairo-compiler",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
@@ -387,10 +369,12 @@ dependencies = [
  "cairo-plugins",
  "cairo-project",
  "cairo-semantic",
+ "cairo-starknet",
  "cairo-syntax",
  "cairo-utils",
  "lsp-types",
  "salsa",
+ "serde",
  "serde_json",
  "test-log",
  "tokio",
@@ -401,14 +385,13 @@ dependencies = [
 name = "cairo-lowering"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
- "cairo-diagnostics-proc-macros",
  "cairo-filesystem",
  "cairo-parser",
  "cairo-plugins",
+ "cairo-proc-macros",
  "cairo-semantic",
  "cairo-syntax",
  "cairo-test-utils",
@@ -430,7 +413,6 @@ dependencies = [
 name = "cairo-parser"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-diagnostics",
  "cairo-filesystem",
  "cairo-syntax",
@@ -452,7 +434,6 @@ dependencies = [
 name = "cairo-plugins"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
@@ -460,13 +441,25 @@ dependencies = [
  "cairo-parser",
  "cairo-semantic",
  "cairo-syntax",
+ "cairo-test-utils",
  "cairo-utils",
+ "env_logger",
  "indoc",
  "itertools",
  "pretty_assertions",
  "salsa",
  "smol_str",
  "test-case",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-proc-macros"
+version = "0.1.0"
+dependencies = [
+ "cairo-debug",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -482,33 +475,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-rs"
-version = "0.1.0"
-source = "git+https://github.com/lambdaclass/cairo-rs?rev=42dadd1#42dadd1631c9196e39d91b77f130a78f73d83f5f"
-dependencies = [
- "bincode",
- "clap 3.2.23",
- "generic-array",
- "hex",
- "keccak",
- "lazy_static",
- "mimalloc",
- "nom",
- "num-bigint",
- "num-integer",
- "num-traits 0.2.15",
- "parse-hyperlinks",
- "rand_core",
- "serde",
- "serde_bytes",
- "serde_json",
- "sha2 0.10.6",
- "sha3",
- "starknet-crypto",
- "thiserror",
-]
-
-[[package]]
 name = "cairo-runner"
 version = "0.1.0"
 dependencies = [
@@ -516,13 +482,13 @@ dependencies = [
  "cairo-casm",
  "cairo-compiler",
  "cairo-diagnostics",
- "cairo-rs",
  "cairo-sierra",
  "cairo-sierra-ap-change",
  "cairo-sierra-gas",
  "cairo-sierra-generator",
  "cairo-sierra-to-casm",
  "cairo-utils",
+ "cairo-vm",
  "clap 4.0.26",
  "itertools",
  "num-bigint",
@@ -535,14 +501,13 @@ name = "cairo-semantic"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
- "cairo-db-utils",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
- "cairo-diagnostics-proc-macros",
  "cairo-filesystem",
  "cairo-parser",
  "cairo-plugins",
+ "cairo-proc-macros",
  "cairo-syntax",
  "cairo-test-utils",
  "cairo-utils",
@@ -621,15 +586,14 @@ dependencies = [
 name = "cairo-sierra-generator"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-defs",
  "cairo-diagnostics",
- "cairo-diagnostics-proc-macros",
  "cairo-filesystem",
  "cairo-lowering",
  "cairo-parser",
  "cairo-plugins",
+ "cairo-proc-macros",
  "cairo-semantic",
  "cairo-sierra",
  "cairo-syntax",
@@ -717,7 +681,6 @@ dependencies = [
 name = "cairo-syntax"
 version = "0.1.0"
 dependencies = [
- "cairo-db-utils",
  "cairo-debug",
  "cairo-filesystem",
  "cairo-utils",
@@ -751,8 +714,8 @@ dependencies = [
  "cairo-defs",
  "cairo-diagnostics",
  "cairo-filesystem",
+ "cairo-plugins",
  "cairo-project",
- "cairo-rs",
  "cairo-runner",
  "cairo-semantic",
  "cairo-sierra",
@@ -761,6 +724,7 @@ dependencies = [
  "cairo-starknet",
  "cairo-syntax",
  "cairo-utils",
+ "cairo-vm",
  "clap 4.0.26",
  "colored",
  "itertools",
@@ -792,6 +756,34 @@ dependencies = [
  "log",
  "test-case",
  "test-log",
+]
+
+[[package]]
+name = "cairo-vm"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0db448207a281d6ec29c4de24422fba5d52f0a0b9424dd7a758d995f5a89e40e"
+dependencies = [
+ "bincode",
+ "clap 3.2.23",
+ "generic-array",
+ "hex",
+ "keccak",
+ "lazy_static",
+ "mimalloc",
+ "nom",
+ "num-bigint",
+ "num-integer",
+ "num-traits 0.2.15",
+ "parse-hyperlinks",
+ "rand_core",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "sha2 0.10.6",
+ "sha3",
+ "starknet-crypto",
+ "thiserror",
 ]
 
 [[package]]
@@ -1390,6 +1382,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "html-escape"
+version = "0.2.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d1ad449764d627e22bfd7cd5e8868264fc9236e07c752972b4080cd351cb476"
+dependencies = [
+ "utf8-width",
+]
+
+[[package]]
 name = "httparse"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1844,9 +1845,13 @@ dependencies = [
 [[package]]
 name = "parse-hyperlinks"
 version = "0.23.4"
-source = "git+https://github.com/lambdaclass/cairo-rs?rev=42dadd1#42dadd1631c9196e39d91b77f130a78f73d83f5f"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0181d37c4d5ae35cc8be7cf823c1a933005661da6a08bcb2855aa392c9a54b8e"
 dependencies = [
+ "html-escape",
  "nom",
+ "percent-encoding",
+ "thiserror",
 ]
 
 [[package]]
@@ -2512,7 +2517,6 @@ dependencies = [
  "cairo-filesystem",
  "cairo-parser",
  "cairo-plugins",
- "cairo-rs",
  "cairo-runner",
  "cairo-semantic",
  "cairo-sierra",
@@ -2522,6 +2526,7 @@ dependencies = [
  "cairo-syntax",
  "cairo-test-utils",
  "cairo-utils",
+ "cairo-vm",
  "env_logger",
  "itertools",
  "log",
@@ -2798,6 +2803,12 @@ dependencies = [
  "percent-encoding",
  "serde",
 ]
+
+[[package]]
+name = "utf8-width"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5190c9442dcdaf0ddd50f37420417d219ae5261bbf5db120d0f9bab996c9cba1"
 
 [[package]]
 name = "version_check"

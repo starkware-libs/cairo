@@ -4,9 +4,9 @@ use cairo_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_casm::instructions::Instruction;
 use cairo_casm::operand::{CellRef, Register};
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
-use cairo_sierra::extensions::core::CoreConcreteLibFunc;
+use cairo_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_sierra::extensions::lib_func::BranchSignature;
-use cairo_sierra::extensions::{ConcreteLibFunc, OutputVarReferenceInfo};
+use cairo_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_sierra::ids::ConcreteTypeId;
 use cairo_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use cairo_sierra_ap_change::core_libfunc_ap_change::core_libfunc_ap_change;
@@ -169,7 +169,7 @@ type AllVars<'a> = [&'a VarCells];
 pub struct CompiledInvocationBuilder<'a> {
     pub program_info: ProgramInfo<'a>,
     pub invocation: &'a Invocation,
-    pub libfunc: &'a CoreConcreteLibFunc,
+    pub libfunc: &'a CoreConcreteLibfunc,
     pub idx: StatementIdx,
     pub refs: &'a [ReferenceValue],
     pub environment: Environment,
@@ -342,7 +342,7 @@ pub struct ProgramInfo<'a> {
 pub fn compile_invocation(
     program_info: ProgramInfo<'_>,
     invocation: &Invocation,
-    libfunc: &CoreConcreteLibFunc,
+    libfunc: &CoreConcreteLibfunc,
     idx: StatementIdx,
     refs: &[ReferenceValue],
     environment: Environment,
@@ -351,29 +351,29 @@ pub fn compile_invocation(
         CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
-        CoreConcreteLibFunc::Felt(libfunc) => felt::build(libfunc, builder),
-        CoreConcreteLibFunc::Bitwise(_) => bitwise::build(builder),
-        CoreConcreteLibFunc::Bool(libfunc) => boolean::build(libfunc, builder),
-        CoreConcreteLibFunc::Ec(libfunc) => ec::build(libfunc, builder),
-        CoreConcreteLibFunc::Uint128(libfunc) => uint128::build(libfunc, builder),
-        CoreConcreteLibFunc::Gas(libfunc) => gas::build(libfunc, builder),
-        CoreConcreteLibFunc::BranchAlign(_) => misc::build_branch_align(builder),
-        CoreConcreteLibFunc::Array(libfunc) => array::build(libfunc, builder),
-        CoreConcreteLibFunc::Drop(_) => misc::build_drop(builder),
-        CoreConcreteLibFunc::Dup(_) => misc::build_dup(builder),
-        CoreConcreteLibFunc::Mem(libfunc) => mem::build(libfunc, builder),
-        CoreConcreteLibFunc::UnwrapNonZero(_) => misc::build_identity(builder),
-        CoreConcreteLibFunc::FunctionCall(libfunc) => function_call::build(libfunc, builder),
-        CoreConcreteLibFunc::UnconditionalJump(_) => misc::build_jump(builder),
-        CoreConcreteLibFunc::ApTracking(_) => misc::build_revoke_ap_tracking(builder),
-        CoreConcreteLibFunc::Box(libfunc) => boxing::build(libfunc, builder),
-        CoreConcreteLibFunc::Enum(libfunc) => enm::build(libfunc, builder),
-        CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
-        CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
-        CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
-        CoreConcreteLibFunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
-        CoreConcreteLibFunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
-        CoreConcreteLibFunc::Nullable(libfunc) => nullable::build(libfunc, builder),
+        CoreConcreteLibfunc::Felt(libfunc) => felt::build(libfunc, builder),
+        CoreConcreteLibfunc::Bitwise(_) => bitwise::build(builder),
+        CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
+        CoreConcreteLibfunc::Ec(libfunc) => ec::build(libfunc, builder),
+        CoreConcreteLibfunc::Uint128(libfunc) => uint128::build(libfunc, builder),
+        CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
+        CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
+        CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),
+        CoreConcreteLibfunc::Drop(_) => misc::build_drop(builder),
+        CoreConcreteLibfunc::Dup(_) => misc::build_dup(builder),
+        CoreConcreteLibfunc::Mem(libfunc) => mem::build(libfunc, builder),
+        CoreConcreteLibfunc::UnwrapNonZero(_) => misc::build_identity(builder),
+        CoreConcreteLibfunc::FunctionCall(libfunc) => function_call::build(libfunc, builder),
+        CoreConcreteLibfunc::UnconditionalJump(_) => misc::build_jump(builder),
+        CoreConcreteLibfunc::ApTracking(_) => misc::build_revoke_ap_tracking(builder),
+        CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
+        CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
+        CoreConcreteLibfunc::Struct(libfunc) => strct::build(libfunc, builder),
+        CoreConcreteLibfunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
+        CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
+        CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
+        CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
+        CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
     }
 }
 

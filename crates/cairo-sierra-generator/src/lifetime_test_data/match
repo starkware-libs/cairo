@@ -41,14 +41,13 @@ End:
   Callsite(v4)
 
 //! > last_use
-v4: [(Id { idx: 2 }, 1)]
-v1: [(Id { idx: 0 }, 0)]
-v3: [(Id { idx: 1 }, 1)]
-v0: [(Id { idx: 2 }, 0)]
+v4: [(BlockId(2), 1)]
+v1: [(BlockId(0), 0)]
+v3: [(BlockId(1), 1)]
+v0: [(BlockId(2), 0)]
 
 //! > drops
-v2: [BeginningOfBlock(Id { idx: 1 })]
-v1: [BeginningOfBlock(Id { idx: 1 })]
+BeginningOfBlock(BlockId(1)): v2, v1
 
 //! > ==========================================================================
 
@@ -96,13 +95,13 @@ End:
   Callsite(v1)
 
 //! > last_use
-v1: [(Id { idx: 2 }, 1)]
-v3: [(Id { idx: 1 }, 1)]
-v0: [(Id { idx: 2 }, 0)]
+v1: [(BlockId(2), 1)]
+v3: [(BlockId(1), 1)]
+v0: [(BlockId(2), 0)]
 
 //! > drops
-v4: [PostStatement((Id { idx: 2 }, 0))]
-v2: [BeginningOfBlock(Id { idx: 1 })]
+PostStatement((BlockId(2), 0)): v4
+BeginningOfBlock(BlockId(1)): v2
 
 //! > ==========================================================================
 
@@ -151,15 +150,15 @@ End:
   Callsite(v6)
 
 //! > last_use
-v6: [(Id { idx: 2 }, 2)]
-v1: [(Id { idx: 0 }, 0), (Id { idx: 1 }, 1)]
-v4: [(Id { idx: 1 }, 2)]
-v3: [(Id { idx: 1 }, 1)]
-v0: [(Id { idx: 2 }, 0)]
+v6: [(BlockId(2), 2)]
+v1: [(BlockId(0), 0), (BlockId(1), 1)]
+v4: [(BlockId(1), 2)]
+v3: [(BlockId(1), 1)]
+v0: [(BlockId(2), 0)]
 
 //! > drops
-v5: [PostStatement((Id { idx: 2 }, 0))]
-v2: [BeginningOfBlock(Id { idx: 1 })]
+PostStatement((BlockId(2), 0)): v5
+BeginningOfBlock(BlockId(1)): v2
 
 //! > ==========================================================================
 
@@ -259,21 +258,20 @@ End:
   Callsite(v13)
 
 //! > last_use
-v13: [(Id { idx: 6 }, 2)]
-v1: [(Id { idx: 4 }, 0), (Id { idx: 0 }, 0)]
-v11: [(Id { idx: 5 }, 3)]
-v8: [(Id { idx: 2 }, 2)]
-v7: [(Id { idx: 1 }, 1)]
-v5: [(Id { idx: 2 }, 1)]
-v0: [(Id { idx: 2 }, 0)]
-v10: [(Id { idx: 3 }, 1)]
-v4: [(Id { idx: 5 }, 2)]
-v3: [(Id { idx: 5 }, 1)]
+v13: [(BlockId(6), 2)]
+v1: [(BlockId(4), 0), (BlockId(0), 0)]
+v11: [(BlockId(5), 3)]
+v8: [(BlockId(2), 2)]
+v7: [(BlockId(1), 1)]
+v5: [(BlockId(2), 1)]
+v0: [(BlockId(2), 0)]
+v10: [(BlockId(3), 1)]
+v4: [(BlockId(5), 2)]
+v3: [(BlockId(5), 1)]
 
 //! > drops
-v12: [PostStatement((Id { idx: 6 }, 0))]
-v6: [BeginningOfBlock(Id { idx: 1 })]
-v1: [BeginningOfBlock(Id { idx: 1 }), BeginningOfBlock(Id { idx: 3 })]
-v9: [BeginningOfBlock(Id { idx: 3 })]
-v0: [BeginningOfBlock(Id { idx: 3 }), BeginningOfBlock(Id { idx: 4 })]
-v2: [BeginningOfBlock(Id { idx: 5 })]
+PostStatement((BlockId(6), 0)): v12
+BeginningOfBlock(BlockId(1)): v6, v1
+BeginningOfBlock(BlockId(3)): v9, v1, v0
+BeginningOfBlock(BlockId(5)): v2
+BeginningOfBlock(BlockId(4)): v0

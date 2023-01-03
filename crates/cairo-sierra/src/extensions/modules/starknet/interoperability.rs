@@ -1,17 +1,17 @@
 use super::syscalls::SystemType;
 use crate::extensions::array::ArrayType;
-use crate::extensions::consts::{ConstGenLibFunc, WrapConstGenLibFunc};
+use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type for StarkNet storage address, a value in the range [0, 2 ** 250).
@@ -25,33 +25,33 @@ impl NoGenericArgsGenericType for ContractAddressType {
     const SIZE: i16 = 1;
 }
 
-/// LibFunc for creating a constant storage address.
+/// Libfunc for creating a constant storage address.
 #[derive(Default)]
-pub struct ContractAddressConstLibFuncWrapped {}
-impl ConstGenLibFunc for ContractAddressConstLibFuncWrapped {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("contract_address_const");
+pub struct ContractAddressConstLibfuncWrapped {}
+impl ConstGenLibfunc for ContractAddressConstLibfuncWrapped {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("contract_address_const");
     const GENERIC_TYPE_ID: GenericTypeId = <ContractAddressType as NoGenericArgsGenericType>::ID;
 }
 
-pub type ContractAddressConstLibFunc = WrapConstGenLibFunc<ContractAddressConstLibFuncWrapped>;
+pub type ContractAddressConstLibfunc = WrapConstGenLibfunc<ContractAddressConstLibfuncWrapped>;
 
-/// LibFunc for a storage call contract system call.
+/// Libfunc for a storage call contract system call.
 #[derive(Default)]
-pub struct CallContractLibFunc {}
-impl NoGenericArgsGenericLibFunc for CallContractLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("call_contract_syscall");
+pub struct CallContractLibfunc {}
+impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("call_contract_syscall");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         let felt_array_ty =
             context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty.clone())])?;
-        Ok(LibFuncSignature {
+        Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
                 ParamSignature::new(gas_builtin_ty.clone()),

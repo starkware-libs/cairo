@@ -1,22 +1,22 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, SierraApChange, SignatureSpecializationContext,
+    LibfuncSignature, SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::{NoGenericArgsGenericLibFunc, SpecializationError};
-use crate::ids::GenericLibFuncId;
+use crate::extensions::{NoGenericArgsGenericLibfunc, SpecializationError};
+use crate::ids::GenericLibfuncId;
 
-/// LibFunc for aligning branches.
+/// Libfunc for aligning branches.
 /// Used to equalize environment changes across merging paths.
 /// This may include gas usages and ap changes.
 #[derive(Default)]
-pub struct BranchAlignLibFunc {}
-impl NoGenericArgsGenericLibFunc for BranchAlignLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("branch_align");
+pub struct BranchAlignLibfunc {}
+impl NoGenericArgsGenericLibfunc for BranchAlignLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("branch_align");
 
     fn specialize_signature(
         &self,
         _context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch(
             vec![],
             vec![],
             SierraApChange::Known { new_vars_only: false },

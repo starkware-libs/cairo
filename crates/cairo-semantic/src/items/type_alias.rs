@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_defs::ids::{GenericParamId, LanguageElementId, TypeAliasId};
 use cairo_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
@@ -34,13 +34,14 @@ pub fn priv_type_alias_semantic_data(
     db: &(dyn SemanticGroup),
     type_alias_id: TypeAliasId,
 ) -> Maybe<TypeAliasData> {
-    // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
-    // selector.
     let module_file_id = type_alias_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let module_data = db.module_data(module_file_id.0)?;
-    let type_alias_ast = module_data.type_aliases.get(&type_alias_id).to_maybe()?;
+    let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
+    let type_alias_ast = module_type_aliases.get(&type_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
     let generic_params = semantic_generic_params(
         db,
@@ -67,8 +68,8 @@ pub fn priv_type_alias_semantic_data_cycle(
 ) -> Maybe<TypeAliasData> {
     let module_file_id = type_alias_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
-    let module_data = db.module_data(module_file_id.0)?;
-    let type_alias_ast = module_data.type_aliases.get(type_alias_id).to_maybe()?;
+    let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
+    let type_alias_ast = module_type_aliases.get(type_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
     let err =
         Err(diagnostics

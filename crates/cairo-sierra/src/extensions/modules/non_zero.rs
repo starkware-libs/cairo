@@ -1,5 +1,5 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibFunc,
+    LibfuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibfunc,
     SignatureSpecializationContext,
 };
 use crate::extensions::types::{
@@ -8,7 +8,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type wrapping a value as non zero.
@@ -31,19 +31,19 @@ impl GenericTypeArgGenericType for NonZeroTypeWrapped {
 }
 pub type NonZeroType = GenericTypeArgGenericTypeWrapper<NonZeroTypeWrapped>;
 
-/// LibFunc for unwrapping a `NonZero<T>` back into a T.
+/// Libfunc for unwrapping a `NonZero<T>` back into a T.
 #[derive(Default)]
-pub struct UnwrapNonZeroLibFunc {}
-impl SignatureOnlyGenericLibFunc for UnwrapNonZeroLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("unwrap_nz");
+pub struct UnwrapNonZeroLibfunc {}
+impl SignatureOnlyGenericLibfunc for UnwrapNonZeroLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("unwrap_nz");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        Ok(LibFuncSignature::new_non_branch(
+        Ok(LibfuncSignature::new_non_branch(
             vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?],
             vec![OutputVarInfo {
                 ty,

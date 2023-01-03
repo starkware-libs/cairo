@@ -33,13 +33,13 @@ End:
   Callsite(v2)
 
 //! > last_use
-v2: [(Id { idx: 0 }, 6)]
-v3: [(Id { idx: 0 }, 4)]
-v5: [(Id { idx: 0 }, 4)]
-v0: [(Id { idx: 0 }, 0)]
+v2: [(BlockId(0), 6)]
+v3: [(BlockId(0), 4)]
+v5: [(BlockId(0), 4)]
+v0: [(BlockId(0), 0)]
 
 //! > drops
-v7: [PostStatement((Id { idx: 0 }, 5))]
-v6: [PostStatement((Id { idx: 0 }, 4))]
-v4: [PostStatement((Id { idx: 0 }, 2))]
-v1: [BeginningOfBlock(Id { idx: 0 })]
+PostStatement((BlockId(0), 5)): v7
+PostStatement((BlockId(0), 4)): v6
+PostStatement((BlockId(0), 2)): v4
+BeginningOfBlock(BlockId(0)): v1

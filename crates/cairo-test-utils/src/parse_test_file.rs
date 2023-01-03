@@ -142,7 +142,6 @@ impl TestBuilder {
 /// The signature of `func` should be of the form:
 /// ```ignore
 /// fn func(
-///     db: &mut SomeCrateDatabaseForTesting,
 ///     inputs: &OrderedHashMap<String, String>
 /// ) -> OrderedHashMap<String, String>;
 /// ```
@@ -173,79 +172,84 @@ impl TestBuilder {
 /// <another test>
 /// ```
 ///
-/// Each crate should define its own wrapper for it with the relevant Database for testing, e.g.:
+/// The call to the macro looks like:
 /// ```ignore
-/// #[macro_export]
-/// macro_rules! parser_test {
-///     ($test_name:ident, $filenames:expr, $func:ident) => {
-///         cairo_test_utils::test_file_test!($test_name, $filenames, ParserDatabaseForTesting, $func);
-///     };
-/// }
-/// ```
-///
-/// Then, the call to the macro looks like:
-/// ```ignore
-/// parser_test!(unique_test_name, [<test_file1>, <test_file2], test_to_upper);
+/// test_file_test!(
+///     test_suite_name,
+///     "path/to/test/dir",
+///     {
+///         test_name1: "test_file1",
+///         test_name2: "test_file2",
+///     },
+///     test_to_upper
+/// );
 /// ```
 #[macro_export]
 macro_rules! test_file_test {
-    ($test_name:ident, $filenames:expr, $db_type:ty, $func:ident) => {
-        #[test_log::test]
-        fn $test_name() -> Result<(), std::io::Error> {
-            // TODO(mkaput): consider extracting this part into a function and passing macro args
-            // via refs or closures. It may reduce compilation time sizeably.
-            let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
-            for filename in $filenames {
-                let path: std::path::PathBuf =
-                    [env!("CARGO_MANIFEST_DIR"), filename].iter().collect();
-                let tests = cairo_test_utils::parse_test_file(path.as_path())?;
-                let mut new_tests = cairo_utils::ordered_hash_map::OrderedHashMap::<
-                    String,
-                    cairo_test_utils::parse_test_file::Test,
-                >::default();
-                // TODO(alont): global tags for all tests in a file.
-                let test_func_name = stringify!($func);
-                for (test_name, test) in tests {
-                    log::debug!(r#"Running test: {test_func_name}::{filename}::"{test_name}""#);
-                    let outputs = $func(&mut <$db_type>::default(), &test.attributes);
-                    let line_num = test.line_num;
-                    let full_filename = std::fs::canonicalize(path.as_path())?;
-                    let full_filename_str = full_filename.to_str().unwrap();
-
-                    let get_attr = |key: &str| {
-                        test.attributes.get(key).unwrap_or_else(|| {
-                            panic!(
-                                "Missing attribute {key} in test '{test_name}'.\nIn \
-                                 {full_filename_str}:{line_num}"
-                            )
-                        })
-                    };
-
-                    assert_eq!(get_attr("test_function_name"), test_func_name);
-
-                    if is_fix_mode {
-                        let mut new_test = test.clone();
-                        for (key, value) in outputs {
-                            new_test.attributes.insert(key.to_string(), value.trim().to_string());
-                        }
-                        new_tests.insert(test_name.to_string(), new_test);
-                    } else {
-                        for (key, value) in outputs {
-                            pretty_assertions::assert_eq!(
-                                value.trim(),
-                                get_attr(&key),
-                                "Test \"{test_name}\" failed.\nIn \
-                                 {full_filename_str}:{line_num}.\nRerun with CAIRO_FIX_TESTS=1 to \
-                                 fix."
-                            );
-                        }
-                    }
-                }
-                if is_fix_mode {
-                    cairo_test_utils::parse_test_file::dump_to_test_file(new_tests, filename)?;
-                }
+    ($suite:ident, $base_dir:expr, { $($test_name:ident : $test_file:expr),* $(,)? }, $test_func:ident) => {
+        mod $suite {
+            use super::*;
+        $(
+            #[test_log::test]
+            fn $test_name() -> Result<(), std::io::Error> {
+                let path: std::path::PathBuf = [env!("CARGO_MANIFEST_DIR"), $base_dir, $test_file].iter().collect();
+                cairo_test_utils::parse_test_file::run_test_file(
+                    path.as_path(),
+                    stringify!($test_func),
+                    $test_func,
+                )
             }
-            Ok(())
+        )*
         }
     };
+}
+
+/// Runs a test based on file at `path` named `test_func_name` by running `test_func` on it.
+/// May fix the test file if `CAIRO_FIX_TESTS` is set to true.
+pub fn run_test_file(
+    path: &Path,
+    test_func_name: &str,
+    test_func: fn(&OrderedHashMap<String, String>) -> OrderedHashMap<String, String>,
+) -> Result<(), std::io::Error> {
+    let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
+    let tests = parse_test_file(path)?;
+    let mut new_tests = OrderedHashMap::<String, Test>::default();
+    for (test_name, test) in tests {
+        let outputs = test_func(&test.attributes);
+        let line_num = test.line_num;
+        let full_filename = std::fs::canonicalize(path)?;
+        let full_filename_str = full_filename.to_str().unwrap();
+
+        let get_attr = |key: &str| {
+            test.attributes.get(key).unwrap_or_else(|| {
+                panic!(
+                    "Missing attribute {key} in test '{test_name}'.\nIn \
+                     {full_filename_str}:{line_num}"
+                )
+            })
+        };
+
+        pretty_assertions::assert_eq!(get_attr("test_function_name"), test_func_name);
+
+        if is_fix_mode {
+            let mut new_test = test.clone();
+            for (key, value) in outputs {
+                new_test.attributes.insert(key.to_string(), value.trim().to_string());
+            }
+            new_tests.insert(test_name.to_string(), new_test);
+        } else {
+            for (key, value) in outputs {
+                pretty_assertions::assert_eq!(
+                    value.trim(),
+                    get_attr(&key),
+                    "Test \"{test_name}\" failed.\nIn {full_filename_str}:{line_num}.\nRerun with \
+                     CAIRO_FIX_TESTS=1 to fix."
+                );
+            }
+        }
+    }
+    if is_fix_mode {
+        dump_to_test_file(new_tests, path.to_str().unwrap())?;
+    }
+    Ok(())
 }

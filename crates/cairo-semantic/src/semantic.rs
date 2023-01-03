@@ -2,7 +2,7 @@ use cairo_defs::db::DefsGroup;
 use cairo_defs::ids::LocalVarId;
 // Reexport objects
 pub use cairo_defs::ids::{ParamId, VarId};
-use cairo_diagnostics_proc_macros::DebugWithDb;
+use cairo_proc_macros::DebugWithDb;
 use cairo_syntax::node::ast;
 
 pub use super::expr::objects::*;

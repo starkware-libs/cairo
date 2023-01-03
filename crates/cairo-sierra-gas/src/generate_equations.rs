@@ -1,5 +1,5 @@
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
-use cairo_sierra::ids::ConcreteLibFuncId;
+use cairo_sierra::ids::ConcreteLibfuncId;
 use cairo_sierra::program::{Program, StatementIdx};
 use cairo_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
@@ -22,7 +22,7 @@ pub trait StatementFutureCost {
 /// Generates a set of equations from a program, and a function to extract cost expressions from a
 /// library function id.
 pub fn generate_equations<
-    GetCost: Fn(&mut dyn StatementFutureCost, &StatementIdx, &ConcreteLibFuncId) -> Vec<CostExprMap>,
+    GetCost: Fn(&mut dyn StatementFutureCost, &StatementIdx, &ConcreteLibfuncId) -> Vec<CostExprMap>,
 >(
     program: &Program,
     get_cost: GetCost,

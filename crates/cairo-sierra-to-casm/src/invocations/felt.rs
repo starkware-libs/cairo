@@ -1,14 +1,13 @@
 use cairo_casm::operand::DerefOrImmediate;
 use cairo_sierra::extensions::felt::{
-    FeltBinaryOpConcreteLibFunc, FeltBinaryOperationConcreteLibFunc, FeltBinaryOperator,
-    FeltConcrete, FeltOperationWithConstConcreteLibFunc, FeltUnaryOpConcreteLibFunc,
-    FeltUnaryOperationConcreteLibFunc, FeltUnaryOperator,
+    FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
+    FeltConcrete, FeltOperationWithConstConcreteLibfunc,
 };
 use num_bigint::BigInt;
 
 use super::misc::build_jump_nz;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, UnaryOpExpression};
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 
 #[cfg(test)]
 #[path = "felt_test.rs"]
@@ -20,14 +19,11 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        FeltConcrete::UnaryOperation(FeltUnaryOperationConcreteLibFunc::Unary(
-            FeltUnaryOpConcreteLibFunc { operator, .. },
-        )) => build_felt_unary_op(builder, *operator),
-        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Binary(
-            FeltBinaryOpConcreteLibFunc { operator, .. },
+        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibfunc::Binary(
+            FeltBinaryOpConcreteLibfunc { operator, .. },
         )) => build_felt_op(builder, *operator),
-        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Const(
-            FeltOperationWithConstConcreteLibFunc { operator, c, .. },
+        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibfunc::Const(
+            FeltOperationWithConstConcreteLibfunc { operator, c, .. },
         )) => build_felt_op_with_const(builder, *operator, c.clone()),
         FeltConcrete::JumpNotZero(_) => build_jump_nz(builder),
         FeltConcrete::Const(libfunc) => Ok(builder.build_only_reference_changes(
@@ -35,18 +31,6 @@ pub fn build(
                 .into_iter(),
         )),
     }
-}
-
-/// Handles a felt operation with the given unary op.
-fn build_felt_unary_op(
-    builder: CompiledInvocationBuilder<'_>,
-    op: FeltUnaryOperator,
-) -> Result<CompiledInvocation, InvocationError> {
-    let a = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref_or_immediate()?;
-    Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::UnaryOp(UnaryOpExpression { op, a }))]
-            .into_iter(),
-    ))
 }
 
 /// Handles a felt operation with the given op.

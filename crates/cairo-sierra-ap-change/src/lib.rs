@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use ap_change_info::ApChangeInfo;
-use cairo_sierra::extensions::core::{CoreLibFunc, CoreType};
+use cairo_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_sierra::extensions::ConcreteType;
 use cairo_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_sierra::program::{Program, StatementIdx};
@@ -51,7 +51,7 @@ pub enum ApChangeError {
 
 /// Calculates gas information for a given program.
 pub fn calc_ap_changes(program: &Program) -> Result<ApChangeInfo, ApChangeError> {
-    let registry = ProgramRegistry::<CoreType, CoreLibFunc>::new(program)?;
+    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     let equations = generate_equations::generate_equations(program, |libfunc_id| {
         let libfunc = registry.get_libfunc(libfunc_id)?;
         core_libfunc_ap_change::core_libfunc_ap_change(libfunc)
@@ -78,7 +78,7 @@ pub fn calc_ap_changes(program: &Program) -> Result<ApChangeInfo, ApChangeError>
     let mut function_ap_change = HashMap::<cairo_sierra::ids::FunctionId, usize>::default();
     for (var, value) in solution {
         match var {
-            Var::LibFuncImplicitApChangeVariable(idx) => {
+            Var::LibfuncImplicitApChangeVariable(idx) => {
                 variable_values.insert(idx, value as usize)
             }
             Var::FunctionApChange(func_id) => function_ap_change.insert(func_id, value as usize),

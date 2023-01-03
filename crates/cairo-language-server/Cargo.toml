@@ -2,13 +2,16 @@
 name = "cairo-language-server"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo language server."
 
 [[bin]]
 name = "cairo-language-server"
 path = "src/bin/language_server.rs"
 
 [dependencies]
-cairo-db-utils = { path = "../cairo-db-utils" }
+cairo-compiler = { path = "../cairo-compiler" }
 cairo-defs = { path = "../cairo-defs" }
 cairo-debug = { path = "../cairo-debug" }
 cairo-diagnostics = { path = "../cairo-diagnostics" }
@@ -18,6 +21,7 @@ cairo-formatter = { path = "../cairo-formatter" }
 cairo-parser = { path = "../cairo-parser" }
 cairo-plugins = { path = "../cairo-plugins" }
 cairo-project = { path = "../cairo-project" }
+cairo-starknet = { path = "../cairo-starknet" }
 cairo-syntax = { path = "../cairo-syntax" }
 cairo-filesystem = { path = "../cairo-filesystem" }
 tokio.workspace = true
@@ -26,6 +30,7 @@ lsp.workspace = true
 serde_json.workspace = true
 salsa.workspace = true
 cairo-utils = { path = "../cairo-utils" }
+serde = { version = "1.0.34", features = ["derive"] }
 
 [dev-dependencies]
 test-log.workspace = true

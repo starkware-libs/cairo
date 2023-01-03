@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
-use cairo_db_utils::Upcast;
-use cairo_defs::ids::{FreeFunctionId, ModuleId};
-use cairo_diagnostics::{Diagnostics, Maybe};
+use cairo_defs::ids::FreeFunctionId;
+use cairo_diagnostics::Maybe;
 use cairo_filesystem::ids::CrateId;
 use cairo_lowering::db::LoweringGroup;
 use cairo_semantic::corelib::get_core_ty_by_name;
@@ -10,10 +9,11 @@ use cairo_semantic::{GenericArgumentId, Mutability};
 use cairo_sierra::extensions::lib_func::SierraApChange;
 use cairo_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_sierra::ids::ConcreteTypeId;
+use cairo_utils::Upcast;
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::{ap_change, function_generator, pre_sierra, SierraGeneratorDiagnostic};
+use crate::{ap_change, function_generator, pre_sierra};
 
 #[salsa::query_group(SierraGenDatabase)]
 pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
@@ -23,8 +23,8 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::interned]
     fn intern_concrete_lib_func(
         &self,
-        id: cairo_sierra::program::ConcreteLibFuncLongId,
-    ) -> cairo_sierra::ids::ConcreteLibFuncId;
+        id: cairo_sierra::program::ConcreteLibfuncLongId,
+    ) -> cairo_sierra::ids::ConcreteLibfuncId;
 
     #[salsa::interned]
     fn intern_concrete_type(
@@ -66,23 +66,10 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         &self,
         function_id: FreeFunctionId,
     ) -> function_generator::SierraFreeFunctionData;
-    /// Returns the Sierra diagnostics of a free function.
-    #[salsa::invoke(function_generator::free_function_sierra_diagnostics)]
-    fn free_function_sierra_diagnostics(
-        &self,
-        function_id: FreeFunctionId,
-    ) -> Diagnostics<SierraGeneratorDiagnostic>;
     /// Returns the Sierra code (as [pre_sierra::Function]) for a given free function.
     #[salsa::invoke(function_generator::free_function_sierra)]
     fn free_function_sierra(&self, function_id: FreeFunctionId)
     -> Maybe<Arc<pre_sierra::Function>>;
-
-    /// Returns the Sierra diagnostics of a module.
-    #[salsa::invoke(program_generator::module_sierra_diagnostics)]
-    fn module_sierra_diagnostics(
-        &self,
-        module_id: ModuleId,
-    ) -> Diagnostics<SierraGeneratorDiagnostic>;
 
     /// Returns `true` if the function calls (possibly indirectly) itself, or if it calls (possibly
     /// indirectly) such a function. For example, if f0 calls f1, f1 calls f2, f2 calls f3, and f3

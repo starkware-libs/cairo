@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 use thiserror::Error;
 
-use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Error occurring while specializing extensions.
@@ -33,7 +33,7 @@ pub enum ExtensionError {
     #[error("Could not specialize type")]
     TypeSpecialization { type_id: GenericTypeId, error: SpecializationError },
     #[error("Could not specialize libfunc")]
-    LibFuncSpecialization { libfunc_id: GenericLibFuncId, error: SpecializationError },
+    LibfuncSpecialization { libfunc_id: GenericLibfuncId, error: SpecializationError },
     #[error("The requested functionality is not implemented yet")]
     NotImplemented,
 }

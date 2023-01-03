@@ -674,7 +674,7 @@ extern fn bar(ref r: felt) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > lowering_format
 blk0:
-Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
+Inputs: v2[r0]: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
 Statements:
   (v6: (core::felt, (core::felt, core::felt))) <- struct_construct(v4, v5)
   (v7: test::MyEnum) <- MyEnum::a(v6)
@@ -683,7 +683,7 @@ End:
   Callsite(v2, v3, v7)
 
 blk1:
-Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
+Inputs: v8[r0]: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
 Statements:
   (v12: (core::felt, (core::felt, core::felt))) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::b(v12)
@@ -692,7 +692,7 @@ End:
   Callsite(v8, v9, v13)
 
 blk2:
-Inputs: v14: core::RangeCheck, v15: core::felt, v16: core::felt, v17: (core::felt, core::felt)
+Inputs: v14[r0]: core::RangeCheck, v15: core::felt, v16: core::felt, v17: (core::felt, core::felt)
 Statements:
   (v18: (core::felt, (core::felt, core::felt))) <- struct_construct(v16, v17)
   (v19: test::MyEnum) <- MyEnum::c(v18)
@@ -701,7 +701,7 @@ End:
   Callsite(v14, v15, v19)
 
 blk3:
-Inputs: v20: core::RangeCheck, v21: core::felt, v22: core::felt, v23: core::felt
+Inputs: v20[r0]: core::RangeCheck, v21: core::felt, v22: core::felt, v23: core::felt
 Statements:
   (v24: (core::felt, core::felt)) <- struct_construct(v22, v23)
   (v25: test::MyEnum) <- MyEnum::d(v24)
@@ -710,7 +710,7 @@ End:
   Callsite(v20, v21, v25)
 
 blk4:
-Inputs: v26: core::RangeCheck, v27: core::felt, v28: core::felt, v29: core::felt
+Inputs: v26[r0]: core::RangeCheck, v27: core::felt, v28: core::felt, v29: core::felt
 Statements:
   (v30: (core::felt, core::felt)) <- struct_construct(v28, v29)
   (v31: test::MyEnum) <- MyEnum::e(v30)
@@ -719,7 +719,7 @@ End:
   Callsite(v26, v27, v31)
 
 blk5:
-Inputs: v32: core::RangeCheck, v33: core::felt, v34: core::felt
+Inputs: v32[r0]: core::RangeCheck, v33: core::felt, v34: core::felt
 Statements:
   (v35: (core::felt,)) <- struct_construct(v34)
   (v36: test::MyEnum) <- MyEnum::f(v35)
@@ -728,7 +728,7 @@ End:
   Callsite(v32, v33, v36)
 
 blk6:
-Inputs: v37: core::RangeCheck, v38: core::felt, v39: core::felt
+Inputs: v37[r0]: core::RangeCheck, v38: core::felt, v39: core::felt
 Statements:
   (v40: (core::felt,)) <- struct_construct(v39)
   (v41: test::MyEnum) <- MyEnum::g(v40)
@@ -737,7 +737,7 @@ End:
   Callsite(v37, v38, v41)
 
 blk7:
-Inputs: v42: core::RangeCheck, v43: core::felt, v44: core::felt
+Inputs: v42[r0]: core::RangeCheck, v43: core::felt, v44: core::felt
 Statements:
   (v45: test::MyEnum) <- MyEnum::h(v44)
 Drops: v44
@@ -870,9 +870,9 @@ End:
   Callsite()
 
 blk24 (root):
-Inputs: v0: core::RangeCheck, v1: core::felt
+Inputs: v0[r0]: core::RangeCheck, v1: core::felt
 Statements:
-  (v47: core::RangeCheck, v48: core::felt, v46: test::MyEnum) <- match test::bar(v0, v1) {
+  (v47[r0]: core::RangeCheck, v48: core::felt, v46: test::MyEnum) <- match test::bar(v0, v1) {
     (v2, v3, v4, v5) => blk0,
     (v8, v9, v10, v11) => blk1,
     (v14, v15, v16, v17) => blk2,
@@ -941,7 +941,7 @@ extern fn bar(ref r: felt) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > lowering_format
 blk0:
-Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
+Inputs: v2[r0]: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
 Statements:
   (v6: (core::felt, (core::felt, core::felt))) <- struct_construct(v4, v5)
   (v7: test::MyEnum) <- MyEnum::a(v6)
@@ -950,7 +950,7 @@ End:
   Callsite(v2, v3, v7)
 
 blk1:
-Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
+Inputs: v8[r0]: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
 Statements:
   (v12: (core::felt, (core::felt, core::felt))) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::b(v12)
@@ -959,7 +959,7 @@ End:
   Callsite(v8, v9, v13)
 
 blk2:
-Inputs: v14: core::RangeCheck, v15: core::felt, v16: core::felt, v17: (core::felt, core::felt)
+Inputs: v14[r0]: core::RangeCheck, v15: core::felt, v16: core::felt, v17: (core::felt, core::felt)
 Statements:
   (v18: (core::felt, (core::felt, core::felt))) <- struct_construct(v16, v17)
   (v19: test::MyEnum) <- MyEnum::c(v18)
@@ -968,7 +968,7 @@ End:
   Callsite(v14, v15, v19)
 
 blk3:
-Inputs: v20: core::RangeCheck, v21: core::felt, v22: core::felt, v23: core::felt
+Inputs: v20[r0]: core::RangeCheck, v21: core::felt, v22: core::felt, v23: core::felt
 Statements:
   (v24: (core::felt, core::felt)) <- struct_construct(v22, v23)
   (v25: test::MyEnum) <- MyEnum::d(v24)
@@ -977,7 +977,7 @@ End:
   Callsite(v20, v21, v25)
 
 blk4:
-Inputs: v26: core::RangeCheck, v27: core::felt, v28: core::felt, v29: core::felt
+Inputs: v26[r0]: core::RangeCheck, v27: core::felt, v28: core::felt, v29: core::felt
 Statements:
   (v30: (core::felt, core::felt)) <- struct_construct(v28, v29)
   (v31: test::MyEnum) <- MyEnum::e(v30)
@@ -986,7 +986,7 @@ End:
   Callsite(v26, v27, v31)
 
 blk5:
-Inputs: v32: core::RangeCheck, v33: core::felt, v34: core::felt
+Inputs: v32[r0]: core::RangeCheck, v33: core::felt, v34: core::felt
 Statements:
   (v35: (core::felt,)) <- struct_construct(v34)
   (v36: test::MyEnum) <- MyEnum::f(v35)
@@ -995,7 +995,7 @@ End:
   Callsite(v32, v33, v36)
 
 blk6:
-Inputs: v37: core::RangeCheck, v38: core::felt, v39: core::felt
+Inputs: v37[r0]: core::RangeCheck, v38: core::felt, v39: core::felt
 Statements:
   (v40: (core::felt,)) <- struct_construct(v39)
   (v41: test::MyEnum) <- MyEnum::g(v40)
@@ -1004,7 +1004,7 @@ End:
   Callsite(v37, v38, v41)
 
 blk7:
-Inputs: v42: core::RangeCheck, v43: core::felt, v44: core::felt
+Inputs: v42[r0]: core::RangeCheck, v43: core::felt, v44: core::felt
 Statements:
   (v45: test::MyEnum) <- MyEnum::h(v44)
 Drops: v44
@@ -1137,9 +1137,9 @@ End:
   Callsite()
 
 blk24 (root):
-Inputs: v0: core::RangeCheck, v1: core::felt
+Inputs: v0[r0]: core::RangeCheck, v1: core::felt
 Statements:
-  (v47: core::RangeCheck, v48: core::felt, v46: test::MyEnum) <- match test::bar(v0, v1) {
+  (v47[r0]: core::RangeCheck, v48: core::felt, v46: test::MyEnum) <- match test::bar(v0, v1) {
     (v2, v3, v4, v5) => blk0,
     (v8, v9, v10, v11) => blk1,
     (v14, v15, v16, v17) => blk2,

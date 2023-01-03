@@ -1,5 +1,5 @@
-use cairo_db_utils::Upcast;
 use cairo_filesystem::db::{FilesDatabase, FilesGroup};
+use cairo_utils::Upcast;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use test_log::test;

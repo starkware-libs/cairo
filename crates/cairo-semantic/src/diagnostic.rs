@@ -178,6 +178,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_id.name(defs_db),
                 )
             }
+            SemanticDiagnosticKind::TraitFunctionWithBody { trait_id, function_id } => {
+                let defs_db = db.upcast();
+                format!(
+                    "Trait function `{}::{}` has a body. Trait functions with body are not \
+                     supported.",
+                    trait_id.name(defs_db),
+                    function_id.name(defs_db),
+                )
+            }
             SemanticDiagnosticKind::ParamaterShouldBeReference {
                 impl_id,
                 impl_function_id,
@@ -216,6 +225,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
+            }
+            SemanticDiagnosticKind::ImplBodyIsNotSupported => {
+                "impl body is not supported yet.".into()
             }
             SemanticDiagnosticKind::WrongReturnType { expected_ty, actual_ty } => {
                 format!(
@@ -476,6 +488,10 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         function_id: TraitFunctionId,
     },
+    TraitFunctionWithBody {
+        trait_id: TraitId,
+        function_id: TraitFunctionId,
+    },
     ParamaterShouldBeReference {
         impl_id: ImplId,
         impl_function_id: ImplFunctionId,
@@ -494,6 +510,7 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
+    ImplBodyIsNotSupported,
     WrongReturnTypeForImpl {
         impl_id: ImplId,
         impl_function_id: ImplFunctionId,

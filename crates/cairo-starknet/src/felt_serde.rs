@@ -1,10 +1,10 @@
 use cairo_sierra::ids::{
-    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, UserTypeId,
+    ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
     VarId,
 };
 use cairo_sierra::program::{
-    BranchInfo, BranchTarget, ConcreteLibFuncLongId, ConcreteTypeLongId, Function,
-    FunctionSignature, GenericArg, Invocation, LibFuncDeclaration, Param, Program, Statement,
+    BranchInfo, BranchTarget, ConcreteLibfuncLongId, ConcreteTypeLongId, Function,
+    FunctionSignature, GenericArg, Invocation, LibfuncDeclaration, Param, Program, Statement,
     StatementIdx, TypeDeclaration,
 };
 use num_bigint::{BigInt, ToBigInt};
@@ -142,8 +142,8 @@ macro_rules! id_serde {
 
 id_serde!(GenericTypeId);
 id_serde!(ConcreteTypeId);
-id_serde!(GenericLibFuncId);
-id_serde!(ConcreteLibFuncId);
+id_serde!(GenericLibfuncId);
+id_serde!(ConcreteLibfuncId);
 id_serde!(VarId);
 id_serde!(UserTypeId);
 id_serde!(FunctionId);
@@ -202,7 +202,7 @@ macro_rules! struct_serde {
 struct_serde! {
     Program {
         type_declarations: Vec<TypeDeclaration>,
-        libfunc_declarations: Vec<LibFuncDeclaration>,
+        libfunc_declarations: Vec<LibfuncDeclaration>,
         statements: Vec<Statement>,
         funcs: Vec<Function>,
     }
@@ -216,9 +216,9 @@ struct_serde! {
 }
 
 struct_serde! {
-    LibFuncDeclaration {
-        id:  ConcreteLibFuncId,
-        long_id:  ConcreteLibFuncLongId,
+    LibfuncDeclaration {
+        id:  ConcreteLibfuncId,
+        long_id:  ConcreteLibfuncLongId,
     }
 }
 
@@ -239,8 +239,8 @@ struct_serde! {
 }
 
 struct_serde! {
-    ConcreteLibFuncLongId {
-        generic_id: GenericLibFuncId,
+    ConcreteLibfuncLongId {
+        generic_id: GenericLibfuncId,
         generic_args: Vec<GenericArg>,
     }
 }
@@ -261,7 +261,7 @@ struct_serde! {
 
 struct_serde! {
     Invocation {
-        libfunc_id: ConcreteLibFuncId,
+        libfunc_id: ConcreteLibfuncId,
         args: Vec<VarId>,
         branches: Vec<BranchInfo>,
     }
@@ -339,7 +339,7 @@ enum_serde! {
         Type(ConcreteTypeId) = 1,
         Value(BigInt) = 2,
         UserFunc(FunctionId) = 3,
-        LibFunc(ConcreteLibFuncId) = 4,
+        Libfunc(ConcreteLibfuncId) = 4,
     }
 }
 

@@ -1,14 +1,14 @@
 use super::felt::FeltType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 
 // Type representing the EcOp builtin.
 #[derive(Default)]
@@ -33,23 +33,23 @@ impl NoGenericArgsGenericType for EcPointType {
 }
 
 define_libfunc_hierarchy! {
-    pub enum EcLibFunc {
-        CreatePoint(EcCreatePointLibFunc),
-    }, EcConcreteLibFunc
+    pub enum EcLibfunc {
+        CreatePoint(EcCreatePointLibfunc),
+    }, EcConcreteLibfunc
 }
 
-/// LibFunc for creating an EC point. Inputs are verified to be on the curve.
+/// Libfunc for creating an EC point. Inputs are verified to be on the curve.
 #[derive(Default)]
-pub struct EcCreatePointLibFunc {}
-impl NoGenericArgsGenericLibFunc for EcCreatePointLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("ec_point_try_create");
+pub struct EcCreatePointLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_point_try_create");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        Ok(LibFuncSignature {
+        Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(felt_ty.clone()),
                 ParamSignature::new(felt_ty),

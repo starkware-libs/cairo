@@ -98,7 +98,7 @@ pub fn lower_expr_if_bool(
         end_info: finalized_merger.end_info.clone(),
     })
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger)
+    lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
 /// Lowers an expression of type [cairo_semantic::ExprIf], for the case of [IfCondition::Eq].
@@ -172,7 +172,7 @@ pub fn lower_expr_if_eq(
         end_info: finalized_merger.end_info.clone(),
     })
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger)
+    lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
 /// Lowers an optional else block. If the else block is missing it is replaced with a block

@@ -9,29 +9,29 @@ use crate::lower::lower;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_test_utils::test_file_test!(
-    lowering_test,
-    [
-        "src/test_data/assignment",
-        "src/test_data/call",
-        "src/test_data/enums",
-        "src/test_data/error_propagate",
-        "src/test_data/extern",
-        "src/test_data/arm_pattern_destructure",
-        "src/test_data/if",
-        "src/test_data/match",
-        "src/test_data/panic",
-        "src/test_data/struct",
-        "src/test_data/tests",
-        "src/test_data/tuple",
-    ],
-    LoweringDatabaseForTesting,
+    lowering,
+    "src/test_data",
+    {
+        assignment :"assignment",
+        call :"call",
+        enums :"enums",
+        error_propagate :"error_propagate",
+        extern_ :"extern",
+        arm_pattern_destructure :"arm_pattern_destructure",
+        if_ :"if",
+        match_ :"match",
+        panic :"panic",
+        struct_ :"struct",
+        tests :"tests",
+        tuple :"tuple",
+    },
     test_function_lowering
 );
 
 fn test_function_lowering(
-    db: &mut LoweringDatabaseForTesting,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
+    let db = &mut LoweringDatabaseForTesting::default();
     db.set_semantic_plugins(get_default_plugins());
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,

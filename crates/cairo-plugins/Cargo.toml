@@ -2,9 +2,11 @@
 name = "cairo-plugins"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo core plugin implementations."
 
 [dependencies]
-cairo-db-utils = { path = "../cairo-db-utils" }
 cairo-defs = { path = "../cairo-defs" }
 cairo-diagnostics = { path = "../cairo-diagnostics" }
 cairo-filesystem = { path = "../cairo-filesystem" }
@@ -20,6 +22,9 @@ cairo-utils = { path = "../cairo-utils" }
 
 [dev-dependencies]
 cairo-debug = { path = "../cairo-debug" }
-indoc.workspace = true
+cairo-test-utils = { path = "../cairo-test-utils" }
 cairo-parser = { path = "../cairo-parser" }
+env_logger.workspace = true
+indoc.workspace = true
 test-case.workspace = true
+test-log.workspace = true

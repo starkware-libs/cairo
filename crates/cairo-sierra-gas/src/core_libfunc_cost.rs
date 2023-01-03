@@ -1,5 +1,5 @@
 use cairo_sierra::extensions::builtin_cost::CostTokenType;
-use cairo_sierra::extensions::core::CoreConcreteLibFunc;
+use cairo_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_sierra::program::StatementIdx;
 use cairo_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_utils::ordered_hash_map::OrderedHashMap;
@@ -48,7 +48,7 @@ impl CostOperations for Ops<'_> {
 pub fn core_libfunc_cost(
     gas_info: &GasInfo,
     idx: &StatementIdx,
-    libfunc: &CoreConcreteLibFunc,
+    libfunc: &CoreConcreteLibfunc,
 ) -> Vec<Option<OrderedHashMap<CostTokenType, i64>>> {
     core_libfunc_cost_base(&mut Ops { gas_info, idx: *idx }, libfunc)
 }

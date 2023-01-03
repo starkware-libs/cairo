@@ -2,10 +2,13 @@
 name = "cairo-runner"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Basic cairo runner."
 
 [dependencies]
 anyhow.workspace = true
-cairo-rs.workspace = true
+cairo-vm.workspace = true
 clap.workspace = true
 cairo-compiler = { path = "../cairo-compiler" }
 cairo-casm = { path = "../cairo-casm" }

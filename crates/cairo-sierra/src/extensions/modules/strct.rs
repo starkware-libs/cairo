@@ -15,15 +15,15 @@ use cairo_utils::try_extract_matches;
 
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
+    DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
     args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericLibfuncId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing a struct.
@@ -99,29 +99,29 @@ impl ConcreteType for StructConcreteType {
 }
 
 define_libfunc_hierarchy! {
-    pub enum StructLibFunc {
-        Construct(StructConstructLibFunc),
-        Deconstruct(StructDeconstructLibFunc),
-    }, StructConcreteLibFunc
+    pub enum StructLibfunc {
+        Construct(StructConstructLibfunc),
+        Deconstruct(StructDeconstructLibfunc),
+    }, StructConcreteLibfunc
 }
 
-/// LibFunc for constructing a struct.
+/// Libfunc for constructing a struct.
 #[derive(Default)]
-pub struct StructConstructLibFunc {}
-impl SignatureOnlyGenericLibFunc for StructConstructLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("struct_construct");
+pub struct StructConstructLibfunc {}
+impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("struct_construct");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
         let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
         let member_types =
             StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
                 .members;
-        Ok(LibFuncSignature::new_non_branch_ex(
+        Ok(LibfuncSignature::new_non_branch_ex(
             member_types
                 .into_iter()
                 .map(|ty| ParamSignature {
@@ -140,23 +140,23 @@ impl SignatureOnlyGenericLibFunc for StructConstructLibFunc {
     }
 }
 
-/// LibFunc for deconstructing a struct.
+/// Libfunc for deconstructing a struct.
 #[derive(Default)]
-pub struct StructDeconstructLibFunc {}
-impl SignatureOnlyGenericLibFunc for StructDeconstructLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("struct_deconstruct");
+pub struct StructDeconstructLibfunc {}
+impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("struct_deconstruct");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
         let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
         let member_types =
             StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
                 .members;
-        Ok(LibFuncSignature::new_non_branch(
+        Ok(LibfuncSignature::new_non_branch(
             vec![struct_type],
             member_types
                 .into_iter()
