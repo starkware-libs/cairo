@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_defs::db::{DefsGroup, GeneratedFileInfo};
@@ -589,7 +590,20 @@ fn module_semantic_diagnostics(
             kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
         });
     }
-    for (_name, item) in db.module_items(module_id)?.items.iter() {
+
+    let mut defined_items = HashSet::new();
+    for (name, item) in db.module_items(module_id)?.items.iter() {
+        if defined_items.insert(name) {
+            let def_db = db.upcast();
+            diagnostics.add(SemanticDiagnostic {
+                stable_location: StableLocation::new(
+                    item.module_file_id(def_db),
+                    item.untyped_stable_ptr(def_db),
+                ),
+                kind: SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.clone() },
+            });
+        }
+
         match item {
             // Add signature diagnostics.
             ModuleItemId::Use(use_id) => {
