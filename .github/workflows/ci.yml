@@ -16,7 +16,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          components: llvm-tools-preview
+          components: llvm-tools-preview, rustfmt
           toolchain: nightly-2022-11-03
           override: true
       - name: Retreive cached dependecies
