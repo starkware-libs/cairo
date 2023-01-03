@@ -36,7 +36,10 @@ fn test_ec_operations() {
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
     let beta_plus_2 = 3141592653589793238462643383279502884197169399375105820974944592307816406667;
     let beta_p2_root = 2487829544412206244690656897973144572467842667075005257202960243805141046681;
-    ec_point_from_felts(1, beta_p2_root);
+    let p = ec_point_from_felts(1, beta_p2_root);
+    let (x, y) = ec_point_unwrap(p);
+    assert(x == 1, 'x == 1');
+    assert(y == beta_p2_root, 'y is correct');
 }
 
 #[test]
