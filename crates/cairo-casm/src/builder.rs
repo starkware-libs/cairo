@@ -730,4 +730,10 @@ macro_rules! casm_build_extend {
         $builder.rescope([$(($new_var, $value_var)),*]);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
+    ($builder:ident, print (
+        $($s:ident)*
+    ); $($tok:tt)*) => {
+        println!("{}", stringify!($($s)*));
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
 }
