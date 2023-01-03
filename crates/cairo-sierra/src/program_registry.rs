@@ -82,7 +82,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
     ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {
         Self::with_ap_change(program, HashMap::default())
     }
-    /// Get a function from the input program.
+    /// Gets a function from the input program.
     pub fn get_function<'a>(
         &'a self,
         id: &FunctionId,
@@ -91,7 +91,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
             .get(id)
             .ok_or_else(|| Box::new(ProgramRegistryError::MissingFunction(id.clone())))
     }
-    /// Get a type from the input program.
+    /// Gets a type from the input program.
     pub fn get_type<'a>(
         &'a self,
         id: &ConcreteTypeId,
@@ -100,7 +100,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
             .get(id)
             .ok_or_else(|| Box::new(ProgramRegistryError::MissingType(id.clone())))
     }
-    /// Get a libfunc from the input program.
+    /// Gets a libfunc from the input program.
     pub fn get_libfunc<'a>(
         &'a self,
         id: &ConcreteLibfuncId,

@@ -1,3 +1,6 @@
+//! Sierra gas computation.
+//!
+//! This crate provides the gas computation for the Cairo programs.
 use std::collections::HashMap;
 
 use cairo_sierra::extensions::builtin_cost::CostTokenType;

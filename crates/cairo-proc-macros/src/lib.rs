@@ -1,3 +1,4 @@
+//! Procedural macros.
 use proc_macro::TokenStream;
 use quote::__private::{Span, TokenStream as TokenStream2};
 use quote::quote;

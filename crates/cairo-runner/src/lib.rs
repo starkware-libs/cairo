@@ -1,3 +1,4 @@
+//! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
 use cairo_casm::instructions::Instruction;
