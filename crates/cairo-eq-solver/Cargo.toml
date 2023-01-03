@@ -9,7 +9,7 @@ description = "Equation solving for Sierra generation."
 [dependencies]
 good_lp.workspace = true
 itertools.workspace = true
-cairo-utils = { path = "../cairo-utils" }
+cairo-utils = { path = "../cairo-utils", version = "0.1.0" }
 
 [dev-dependencies]
 env_logger.workspace = true

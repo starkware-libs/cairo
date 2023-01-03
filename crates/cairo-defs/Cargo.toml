@@ -7,17 +7,17 @@ license-file.workspace = true
 description = "Handling of definitions of language items in Cairo."
 
 [dependencies]
-cairo-debug = { path = "../cairo-debug" }
-cairo-diagnostics = { path = "../cairo-diagnostics" }
-cairo-filesystem = { path = "../cairo-filesystem" }
+cairo-debug = { path = "../cairo-debug", version = "0.1.0" }
+cairo-diagnostics = { path = "../cairo-diagnostics", version = "0.1.0" }
+cairo-filesystem = { path = "../cairo-filesystem", version = "0.1.0" }
 indexmap.workspace = true
 itertools.workspace = true
 salsa.workspace = true
-cairo-syntax = { path = "../cairo-syntax" }
+cairo-syntax = { path = "../cairo-syntax", version = "0.1.0" }
 thiserror.workspace = true
-cairo-parser = { path = "../cairo-parser" }
+cairo-parser = { path = "../cairo-parser", version = "0.1.0" }
 smol_str.workspace = true
-cairo-utils = { path = "../cairo-utils" }
+cairo-utils = { path = "../cairo-utils", version = "0.1.0" }
 
 [dev-dependencies]
 indoc.workspace = true

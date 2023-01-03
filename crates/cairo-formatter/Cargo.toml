@@ -14,19 +14,19 @@ path = "src/bin/cli.rs"
 anyhow.workspace = true
 clap.workspace = true
 colored.workspace = true
-cairo-diagnostics = { path = "../cairo-diagnostics" }
+cairo-diagnostics = { path = "../cairo-diagnostics", version = "0.1.0" }
 diffy.workspace = true
-cairo-filesystem = { path = "../cairo-filesystem" }
+cairo-filesystem = { path = "../cairo-filesystem", version = "0.1.0" }
 itertools.workspace = true
 log.workspace = true
-cairo-parser = { path = "../cairo-parser" }
+cairo-parser = { path = "../cairo-parser", version = "0.1.0" }
 salsa.workspace = true
 smol_str.workspace = true
-cairo-syntax = { path = "../cairo-syntax" }
-cairo-utils = { path = "../cairo-utils" }
+cairo-syntax = { path = "../cairo-syntax", version = "0.1.0" }
+cairo-utils = { path = "../cairo-utils", version = "0.1.0" }
 
 [dev-dependencies]
-cairo-utils = { path = "../cairo-utils" }
+cairo-utils = { path = "../cairo-utils", version = "0.1.0" }
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true

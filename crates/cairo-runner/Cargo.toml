@@ -10,16 +10,16 @@ description = "Basic cairo runner."
 anyhow.workspace = true
 cairo-vm.workspace = true
 clap.workspace = true
-cairo-compiler = { path = "../cairo-compiler" }
-cairo-casm = { path = "../cairo-casm" }
-cairo-diagnostics = { path = "../cairo-diagnostics" }
+cairo-compiler = { path = "../cairo-compiler", version = "0.1.0" }
+cairo-casm = { path = "../cairo-casm", version = "0.1.0" }
+cairo-diagnostics = { path = "../cairo-diagnostics", version = "0.1.0" }
 num-bigint.workspace = true
-cairo-sierra = { path = "../cairo-sierra" }
-cairo-sierra-ap-change = { path = "../cairo-sierra-ap-change" }
-cairo-sierra-gas = { path = "../cairo-sierra-gas" }
-cairo-sierra-generator = { path = "../cairo-sierra-generator" }
-cairo-sierra-to-casm = { path = "../cairo-sierra-to-casm" }
-cairo-utils = { path = "../cairo-utils" }
+cairo-sierra = { path = "../cairo-sierra", version = "0.1.0" }
+cairo-sierra-ap-change = { path = "../cairo-sierra-ap-change", version = "0.1.0" }
+cairo-sierra-gas = { path = "../cairo-sierra-gas", version = "0.1.0" }
+cairo-sierra-generator = { path = "../cairo-sierra-generator", version = "0.1.0" }
+cairo-sierra-to-casm = { path = "../cairo-sierra-to-casm", version = "0.1.0" }
+cairo-utils = { path = "../cairo-utils", version = "0.1.0" }
 itertools.workspace = true
 salsa.workspace = true
 thiserror.workspace = true
