@@ -40,6 +40,7 @@ mod HelloStarknet {
         balance::read()
     }
 
+    
     mod balance {
         fn read() -> felt {
             // Only address_domain 0 is currently supported.
@@ -64,8 +65,7 @@ mod HelloStarknet {
                 starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>(),
                 value,
             ) {
-                Result::Ok(()) => {
-                },
+                Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
                     let mut err_data = array_new::<felt>();
                     array_append::<felt>(err_data, revert_reason);
@@ -75,7 +75,10 @@ mod HelloStarknet {
         }
     }
     trait __abi {
-    fn increase_balance(amount: felt); fn get_balance() -> felt; }
+        fn increase_balance(amount: felt);
+        fn get_balance() -> felt;
+        
+    }
 
     mod __external {
         fn increase_balance(mut data: Array::<felt>) -> Array::<felt> {
@@ -88,7 +91,7 @@ mod HelloStarknet {
                     panic(err_data);
                 },
             }
-
+            
             let __arg_amount = match serde::deserialize_felt(data) {
                 Option::Some(x) => x,
                 Option::None(()) => {
@@ -107,7 +110,8 @@ mod HelloStarknet {
             }
             super::increase_balance(__arg_amount);
             let mut arr = array_new::<felt>();
-
+            // References.
+            // Result.
             arr
         }
         fn get_balance(mut data: Array::<felt>) -> Array::<felt> {
@@ -120,7 +124,7 @@ mod HelloStarknet {
                     panic(err_data);
                 },
             }
-
+            
             if array_len::<felt>(data) != 0_u128 {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -129,12 +133,15 @@ mod HelloStarknet {
                 array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
             }
+            
             let res = super::get_balance();
             let mut arr = array_new::<felt>();
-
+            // References.
+            // Result.
             serde::serialize_felt(arr, res)
             arr
         }
+        
     }
 }
 
