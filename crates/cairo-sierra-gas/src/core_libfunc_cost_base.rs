@@ -174,7 +174,7 @@ fn integer_libfunc_cost<Ops: CostOperations>(
             vec![ops.const_cost(4), ops.const_cost(3)]
         }
         Uint128Concrete::Equal(_) => {
-            vec![ops.const_cost(1), ops.const_cost(1)]
+            vec![ops.const_cost(2), ops.const_cost(2)]
         }
         Uint128Concrete::LessThanOrEqual(_) => {
             vec![ops.const_cost(3), ops.const_cost(4)]
