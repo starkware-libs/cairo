@@ -1,3 +1,4 @@
+use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use super::context::LoweringContext;
@@ -55,7 +56,7 @@ impl LivingVariables {
     pub fn introduce_new_var(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        ty: cairo_lang_semantic::TypeId,
+        ty: semantic::TypeId,
     ) -> LivingVar {
         let var_id = ctx.new_var(ty);
         self.introduce_var(UsableVariable(var_id))

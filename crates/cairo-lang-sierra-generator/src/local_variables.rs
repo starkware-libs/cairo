@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::lower::Lowered;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_sierra::extensions::lib_func::OutputVarInfo;
@@ -52,14 +53,14 @@ fn inner_find_local_variables(
         state.use_variables(&statement.inputs(), res);
 
         match statement {
-            cairo_lang_lowering::Statement::Literal(statement_literal) => {
+            lowering::Statement::Literal(statement_literal) => {
                 // Treat literal as a temporary variable.
                 state.set_variable_status(
                     statement_literal.output,
                     VariableStatus::TemporaryVariable,
                 );
             }
-            cairo_lang_lowering::Statement::Call(statement_call) => {
+            lowering::Statement::Call(statement_call) => {
                 let (_, concrete_function_id) =
                     get_concrete_libfunc_id(db, statement_call.function);
 
@@ -72,7 +73,7 @@ fn inner_find_local_variables(
                     &statement_call.outputs,
                 );
             }
-            cairo_lang_lowering::Statement::CallBlock(statement_call_block) => {
+            lowering::Statement::CallBlock(statement_call_block) => {
                 let block_known_ap_change = inner_find_local_variables(
                     db,
                     lowered_function,
@@ -86,7 +87,7 @@ fn inner_find_local_variables(
                 }
                 state.mark_outputs_as_temporary(statement);
             }
-            cairo_lang_lowering::Statement::MatchExtern(statement_match_extern) => {
+            lowering::Statement::MatchExtern(statement_match_extern) => {
                 let (_, concrete_function_id) =
                     get_concrete_libfunc_id(db, statement_match_extern.function);
                 let arm_blocks: Vec<_> =
@@ -101,7 +102,7 @@ fn inner_find_local_variables(
                     res,
                 )?;
             }
-            cairo_lang_lowering::Statement::MatchEnum(statement_match_enum) => {
+            lowering::Statement::MatchEnum(statement_match_enum) => {
                 let concrete_enum_type = db.get_concrete_type_id(
                     lowered_function.variables[statement_match_enum.input].ty,
                 )?;
@@ -121,7 +122,7 @@ fn inner_find_local_variables(
                     res,
                 )?;
             }
-            cairo_lang_lowering::Statement::StructConstruct(statement_struct_construct) => {
+            lowering::Statement::StructConstruct(statement_struct_construct) => {
                 let ty = db.get_concrete_type_id(
                     lowered_function.variables[statement_struct_construct.output].ty,
                 )?;
@@ -134,7 +135,7 @@ fn inner_find_local_variables(
                     &[statement_struct_construct.output],
                 );
             }
-            cairo_lang_lowering::Statement::StructDestructure(statement_struct_destructure) => {
+            lowering::Statement::StructDestructure(statement_struct_destructure) => {
                 let ty = db.get_concrete_type_id(
                     lowered_function.variables[statement_struct_destructure.input].ty,
                 )?;
@@ -147,7 +148,7 @@ fn inner_find_local_variables(
                     &statement_struct_destructure.outputs,
                 );
             }
-            cairo_lang_lowering::Statement::EnumConstruct(statement_enum_construct) => {
+            lowering::Statement::EnumConstruct(statement_enum_construct) => {
                 let ty = db.get_concrete_type_id(
                     lowered_function.variables[statement_enum_construct.output].ty,
                 )?;
@@ -166,17 +167,16 @@ fn inner_find_local_variables(
     // TODO(lior): Handle block.drops.
 
     match &block.end {
-        cairo_lang_lowering::FlatBlockEnd::Callsite(vars)
-        | cairo_lang_lowering::FlatBlockEnd::Return(vars) => {
+        lowering::FlatBlockEnd::Callsite(vars) | lowering::FlatBlockEnd::Return(vars) => {
             state.use_variables(vars, res);
         }
-        cairo_lang_lowering::FlatBlockEnd::Unreachable => {}
+        lowering::FlatBlockEnd::Unreachable => {}
     }
     Ok(known_ap_change)
 }
 
-/// Handles a match ([cairo_lang_lowering::Statement::MatchExtern] and
-/// [cairo_lang_lowering::Statement::MatchEnum]).
+/// Handles a match ([lowering::Statement::MatchExtern] and
+/// [lowering::Statement::MatchEnum]).
 ///
 /// Returns true if executing the entire match results in a known ap change.
 fn handle_match(
@@ -184,9 +184,9 @@ fn handle_match(
     lowered_function: &Lowered,
     concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
     arm_blocks: &[BlockId],
-    statement: &cairo_lang_lowering::Statement,
+    statement: &lowering::Statement,
     state: &mut LocalVariablesState,
-    res: &mut OrderedHashSet<id_arena::Id<cairo_lang_lowering::Variable>>,
+    res: &mut OrderedHashSet<id_arena::Id<lowering::Variable>>,
 ) -> Maybe<bool> {
     // The number of branches that continue to the next statement after the match.
     let mut reachable_branches: usize = 0;
@@ -207,9 +207,7 @@ fn handle_match(
             inner_find_local_variables(db, lowered_function, *block_id, state_clone, res)?;
 
         // Update reachable_branches and reachable_branches_known_ap_change.
-        if let cairo_lang_lowering::FlatBlockEnd::Callsite(_) =
-            lowered_function.blocks[*block_id].end
-        {
+        if let lowering::FlatBlockEnd::Callsite(_) = lowered_function.blocks[*block_id].end {
             reachable_branches += 1;
             if !inner_known_ap_change {
                 reachable_branches_known_ap_change = false;
@@ -231,14 +229,14 @@ fn handle_match(
 }
 
 /// Helper function for statements that result in a simple function call, such as
-/// [cairo_lang_lowering::Statement::Call] and [cairo_lang_lowering::Statement::StructConstruct].
+/// [lowering::Statement::Call] and [lowering::Statement::StructConstruct].
 fn handle_function_call(
     db: &dyn SierraGenGroup,
     state: &mut LocalVariablesState,
     known_ap_change: &mut bool,
     concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
-    inputs: &[cairo_lang_lowering::VariableId],
-    outputs: &[cairo_lang_lowering::VariableId],
+    inputs: &[lowering::VariableId],
+    outputs: &[lowering::VariableId],
 ) {
     let libfunc_signature = get_libfunc_signature(db, concrete_function_id.clone());
     assert_eq!(
@@ -348,7 +346,7 @@ impl LocalVariablesState {
     }
 
     /// Marks all the outputs of the statement as [VariableStatus::TemporaryVariable].
-    fn mark_outputs_as_temporary(&mut self, statement: &cairo_lang_lowering::Statement) {
+    fn mark_outputs_as_temporary(&mut self, statement: &lowering::Statement) {
         for var_id in statement.outputs() {
             self.set_variable_status(var_id, VariableStatus::TemporaryVariable);
         }

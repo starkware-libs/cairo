@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, LanguageElementId};
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{
     core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
     get_enum_concrete_variant, get_panic_ty, jump_nz_nonzero_variant, jump_nz_zero_variant,
@@ -62,8 +63,8 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
     let lowering_builder = LoweringContextBuilder::new(db, free_function_id)?;
     let mut ctx = lowering_builder.ctx()?;
 
-    let input_semantic_vars: Vec<cairo_lang_semantic::Variable> =
-        ctx.signature.params.iter().cloned().map(cairo_lang_semantic::Variable::Param).collect();
+    let input_semantic_vars: Vec<semantic::Variable> =
+        ctx.signature.params.iter().cloned().map(semantic::Variable::Param).collect();
     // TODO(spapini): Build semantic_defs in semantic model.
     let (input_semantic_var_ids, input_var_tys): (Vec<_>, Vec<_>) = input_semantic_vars
         .iter()
@@ -77,10 +78,8 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
 
     let root = if is_empty_semantic_diagnostics {
         // Fetch body block expr.
-        let semantic_block = extract_matches!(
-            &ctx.function_def.exprs[ctx.function_def.body],
-            cairo_lang_semantic::Expr::Block
-        );
+        let semantic_block =
+            extract_matches!(&ctx.function_def.exprs[ctx.function_def.body], semantic::Expr::Block);
         // Lower block to a BlockSealed.
         let (block_sealed_opt, mut merger_finalized) =
             BlockFlowMerger::with_root(&mut ctx, ref_params, |ctx, merger| {
@@ -123,7 +122,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
 fn lower_block(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    expr_block: &cairo_lang_semantic::ExprBlock,
+    expr_block: &semantic::ExprBlock,
     root: bool,
 ) -> Maybe<BlockScopeEnd> {
     log::trace!("Lowering a block.");
@@ -165,7 +164,7 @@ fn lower_block(
 pub fn lower_tail_expr(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    expr: Option<cairo_lang_semantic::ExprId>,
+    expr: Option<semantic::ExprId>,
     root: bool,
 ) -> Maybe<BlockScopeEnd> {
     log::trace!("Lowering a tail expression.");
@@ -201,13 +200,10 @@ pub fn lowered_expr_to_block_scope_end(
 pub fn lower_statement(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    stmt: &cairo_lang_semantic::Statement,
+    stmt: &semantic::Statement,
 ) -> Result<(), StatementLoweringFlowError> {
     match stmt {
-        cairo_lang_semantic::Statement::Expr(cairo_lang_semantic::StatementExpr {
-            expr,
-            stable_ptr: _,
-        }) => {
+        semantic::Statement::Expr(semantic::StatementExpr { expr, stable_ptr: _ }) => {
             log::trace!("Lowering an expression statement.");
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
             // The LoweredExpr must be evaluated now to push/bring back variables in case it is
@@ -219,19 +215,12 @@ pub fn lower_statement(
                 LoweredExpr::AtVariable(_) | LoweredExpr::Tuple(_) => {}
             }
         }
-        cairo_lang_semantic::Statement::Let(cairo_lang_semantic::StatementLet {
-            pattern,
-            expr,
-            stable_ptr: _,
-        }) => {
+        semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
             log::trace!("Lowering a let statement.");
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
             lower_single_pattern(ctx, scope, pattern, lowered_expr)?
         }
-        cairo_lang_semantic::Statement::Return(cairo_lang_semantic::StatementReturn {
-            expr,
-            stable_ptr: _,
-        }) => {
+        semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr: _ }) => {
             log::trace!("Lowering a return statement.");
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
             let (refs, returns) = get_full_return_vars(ctx, scope, lowered_expr)?;
@@ -319,24 +308,21 @@ fn get_plain_full_return_vars(
 fn lower_single_pattern(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    pattern: &cairo_lang_semantic::Pattern,
+    pattern: &semantic::Pattern,
     lowered_expr: LoweredExpr,
 ) -> Result<(), LoweringFlowError> {
     log::trace!("Lowering a single pattern.");
     match pattern {
-        cairo_lang_semantic::Pattern::Literal(_) => unreachable!(),
-        cairo_lang_semantic::Pattern::Variable(cairo_lang_semantic::PatternVariable {
-            name: _,
-            var: sem_var,
-        }) => {
-            let sem_var = cairo_lang_semantic::Variable::Local(sem_var.clone());
+        semantic::Pattern::Literal(_) => unreachable!(),
+        semantic::Pattern::Variable(semantic::PatternVariable { name: _, var: sem_var }) => {
+            let sem_var = semantic::Variable::Local(sem_var.clone());
             // Deposit the owned variable in the semantic variables store.
             let var = lowered_expr.var(ctx, scope)?;
             scope.put_semantic_variable(ctx, sem_var.id(), var);
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
-        cairo_lang_semantic::Pattern::Struct(strct) => {
+        semantic::Pattern::Struct(strct) => {
             let members = ctx.db.struct_members(strct.id).map_err(LoweringFlowError::Failed)?;
             let mut required_members = UnorderedHashMap::from_iter(
                 strct.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
@@ -352,10 +338,7 @@ fn lower_single_pattern(
                 }
             }
         }
-        cairo_lang_semantic::Pattern::Tuple(cairo_lang_semantic::PatternTuple {
-            field_patterns,
-            ty,
-        }) => {
+        semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty }) => {
             let outputs = if let LoweredExpr::Tuple(exprs) = lowered_expr {
                 exprs
             } else {
@@ -370,8 +353,8 @@ fn lower_single_pattern(
                 lower_single_pattern(ctx, scope, pattern, var)?;
             }
         }
-        cairo_lang_semantic::Pattern::EnumVariant(_) => unreachable!(),
-        cairo_lang_semantic::Pattern::Otherwise(_) => {}
+        semantic::Pattern::EnumVariant(_) => unreachable!(),
+        semantic::Pattern::Otherwise(_) => {}
     }
     Ok(())
 }
@@ -380,17 +363,17 @@ fn lower_single_pattern(
 fn lower_expr(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    expr_id: cairo_lang_semantic::ExprId,
+    expr_id: semantic::ExprId,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     let expr = &ctx.function_def.exprs[expr_id];
     match expr {
-        cairo_lang_semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, scope),
-        cairo_lang_semantic::Expr::Assignment(expr) => lower_expr_assignment(ctx, expr, scope),
-        cairo_lang_semantic::Expr::Block(expr) => lower_expr_block(ctx, scope, expr),
-        cairo_lang_semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, scope),
-        cairo_lang_semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, scope),
-        cairo_lang_semantic::Expr::If(expr) => lower_expr_if(ctx, scope, expr),
-        cairo_lang_semantic::Expr::Var(expr) => {
+        semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, scope),
+        semantic::Expr::Assignment(expr) => lower_expr_assignment(ctx, expr, scope),
+        semantic::Expr::Block(expr) => lower_expr_block(ctx, scope, expr),
+        semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, scope),
+        semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, scope),
+        semantic::Expr::If(expr) => lower_expr_if(ctx, scope, expr),
+        semantic::Expr::Var(expr) => {
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
             Ok(LoweredExpr::AtVariable(use_semantic_var(
                 ctx,
@@ -399,28 +382,26 @@ fn lower_expr(
                 expr.stable_ptr.untyped(),
             )?))
         }
-        cairo_lang_semantic::Expr::Literal(expr) => {
+        semantic::Expr::Literal(expr) => {
             log::trace!("Lowering a literal: {:?}", expr.debug(&ctx.expr_formatter));
             Ok(LoweredExpr::AtVariable(
                 generators::Literal { value: expr.value.clone(), ty: expr.ty }.add(ctx, scope),
             ))
         }
-        cairo_lang_semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, scope),
-        cairo_lang_semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, scope),
-        cairo_lang_semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, scope),
-        cairo_lang_semantic::Expr::PropagateError(expr) => {
-            lower_expr_error_propagate(ctx, expr, scope)
+        semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, scope),
+        semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, scope),
+        semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, scope),
+        semantic::Expr::PropagateError(expr) => lower_expr_error_propagate(ctx, expr, scope),
+        semantic::Expr::Missing(semantic::ExprMissing { diag_added, .. }) => {
+            Err(LoweringFlowError::Failed(*diag_added))
         }
-        cairo_lang_semantic::Expr::Missing(cairo_lang_semantic::ExprMissing {
-            diag_added, ..
-        }) => Err(LoweringFlowError::Failed(*diag_added)),
     }
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprTuple].
+/// Lowers an expression of type [semantic::ExprTuple].
 fn lower_expr_tuple(
     ctx: &mut LoweringContext<'_>,
-    expr: &cairo_lang_semantic::ExprTuple,
+    expr: &semantic::ExprTuple,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a tuple: {:?}", expr.debug(&ctx.expr_formatter));
@@ -432,11 +413,11 @@ fn lower_expr_tuple(
     Ok(LoweredExpr::Tuple(inputs))
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprBlock].
+/// Lowers an expression of type [semantic::ExprBlock].
 fn lower_expr_block(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    expr: &cairo_lang_semantic::ExprBlock,
+    expr: &semantic::ExprBlock,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a block expression: {:?}", expr.debug(&ctx.expr_formatter));
     let (block_sealed, mut finalized_merger) =
@@ -457,10 +438,10 @@ fn lower_expr_block(
     lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprFunctionCall].
+/// Lowers an expression of type [semantic::ExprFunctionCall].
 fn lower_expr_function_call(
     ctx: &mut LoweringContext<'_>,
-    expr: &cairo_lang_semantic::ExprFunctionCall,
+    expr: &semantic::ExprFunctionCall,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a function call expression: {:?}", expr.debug(&ctx.expr_formatter));
@@ -498,9 +479,8 @@ fn lower_expr_function_call(
 
     // The following is relevant only to extern functions.
     if let Some(extern_function_id) = expr.function.try_get_extern_function_id(ctx.db.upcast()) {
-        if let cairo_lang_semantic::TypeLongId::Concrete(
-            cairo_lang_semantic::ConcreteTypeId::Enum(concrete_enum_id),
-        ) = ctx.db.lookup_intern_type(expr.ty)
+        if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
+            ctx.db.lookup_intern_type(expr.ty)
         {
             let lowered_expr = LoweredExprExternEnum {
                 function: expr.function,
@@ -562,10 +542,10 @@ fn lower_expr_function_call(
 fn perform_function_call(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    function: cairo_lang_semantic::FunctionId,
+    function: semantic::FunctionId,
     inputs: Vec<LivingVar>,
-    ref_tys: Vec<cairo_lang_semantic::TypeId>,
-    ret_ty: cairo_lang_semantic::TypeId,
+    ref_tys: Vec<semantic::TypeId>,
+    ret_ty: semantic::TypeId,
 ) -> Result<(Vec<LivingVar>, Vec<LivingVar>, LoweredExpr), LoweringFlowError> {
     // If the function is not extern, simply call it.
     if function.try_get_extern_function_id(ctx.db.upcast()).is_none() {
@@ -603,10 +583,10 @@ fn lower_panic(
     Err(LoweringFlowError::Return { refs, returns })
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprMatch].
+/// Lowers an expression of type [semantic::ExprMatch].
 fn lower_expr_match(
     ctx: &mut LoweringContext<'_>,
-    expr: &cairo_lang_semantic::ExprMatch,
+    expr: &semantic::ExprMatch,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a match expression: {:?}", expr.debug(&ctx.expr_formatter));
@@ -637,13 +617,12 @@ fn lower_expr_match(
                     // Create a scope for the arm block.
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, arm_inputs| {
                         // TODO(spapini): Make a better diagnostic.
-                        let enum_pattern = try_extract_matches!(
-                            &arm.pattern,
-                            cairo_lang_semantic::Pattern::EnumVariant
-                        )
-                        .ok_or_else(|| {
-                            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArm)
-                        })?;
+                        let enum_pattern =
+                            try_extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant)
+                                .ok_or_else(|| {
+                                    ctx.diagnostics
+                                        .report(expr.stable_ptr.untyped(), UnsupportedMatchArm)
+                                })?;
                         // TODO(spapini): Make a better diagnostic.
                         if &enum_pattern.variant != concrete_variant {
                             return Err(ctx
@@ -692,7 +671,7 @@ fn lower_optimized_extern_match(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     extern_enum: LoweredExprExternEnum,
-    match_arms: &[cairo_lang_semantic::MatchArm],
+    match_arms: &[semantic::MatchArm],
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Started lowering of an optimized extern match.");
     let concrete_variants = ctx
@@ -720,13 +699,12 @@ fn lower_optimized_extern_match(
                     // Create a scope for the arm block.
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
                         // TODO(spapini): Make a better diagnostic.
-                        let enum_pattern = try_extract_matches!(
-                            &arm.pattern,
-                            cairo_lang_semantic::Pattern::EnumVariant
-                        )
-                        .ok_or_else(|| {
-                            ctx.diagnostics.report(extern_enum.stable_ptr, UnsupportedMatchArm)
-                        })?;
+                        let enum_pattern =
+                            try_extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant)
+                                .ok_or_else(|| {
+                                    ctx.diagnostics
+                                        .report(extern_enum.stable_ptr, UnsupportedMatchArm)
+                                })?;
                         // TODO(spapini): Make a better diagnostic.
                         if &enum_pattern.variant != concrete_variant {
                             return Err(ctx
@@ -778,27 +756,23 @@ fn lower_optimized_extern_match(
     lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprMatch] where the matched expression is a
+/// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a
 /// felt. Currently only a simple match-zero is supported.
 fn lower_expr_match_felt(
     ctx: &mut LoweringContext<'_>,
-    expr: &cairo_lang_semantic::ExprMatch,
+    expr: &semantic::ExprMatch,
     expr_var: LivingVar,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a match-felt expression.");
     // Check that the match has the expected form.
     let (literal, block0, block_otherwise) = if let [
-        cairo_lang_semantic::MatchArm {
-            pattern:
-                cairo_lang_semantic::Pattern::Literal(cairo_lang_semantic::PatternLiteral {
-                    literal,
-                    ..
-                }),
+        semantic::MatchArm {
+            pattern: semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }),
             expression: block0,
         },
-        cairo_lang_semantic::MatchArm {
-            pattern: cairo_lang_semantic::Pattern::Otherwise(_),
+        semantic::MatchArm {
+            pattern: semantic::Pattern::Otherwise(_),
             expression: block_otherwise,
         },
     ] = &expr.arms[..]
@@ -857,11 +831,8 @@ fn lower_expr_match_felt(
 /// enum.
 fn extract_concrete_enum(
     ctx: &mut LoweringContext<'_>,
-    expr: &cairo_lang_semantic::ExprMatch,
-) -> Result<
-    (cairo_lang_semantic::ConcreteEnumId, Vec<cairo_lang_semantic::ConcreteVariant>),
-    LoweringFlowError,
-> {
+    expr: &semantic::ExprMatch,
+) -> Result<(semantic::ConcreteEnumId, Vec<semantic::ConcreteVariant>), LoweringFlowError> {
     let concrete_ty = try_extract_matches!(
         ctx.db.lookup_intern_type(ctx.function_def.exprs[expr.matched_expr].ty()),
         TypeLongId::Concrete
@@ -897,7 +868,7 @@ fn extract_concrete_enum(
 /// propagates that flow error without returning any variable.
 fn lower_exprs_as_vars(
     ctx: &mut LoweringContext<'_>,
-    exprs: &[cairo_lang_semantic::ExprId],
+    exprs: &[semantic::ExprId],
     scope: &mut BlockScope,
 ) -> Result<Vec<LivingVar>, LoweringFlowError> {
     exprs
@@ -906,10 +877,10 @@ fn lower_exprs_as_vars(
         .collect::<Result<Vec<_>, _>>()
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprEnumVariantCtor].
+/// Lowers an expression of type [semantic::ExprEnumVariantCtor].
 fn lower_expr_enum_ctor(
     ctx: &mut LoweringContext<'_>,
-    expr: &cairo_lang_semantic::ExprEnumVariantCtor,
+    expr: &semantic::ExprEnumVariantCtor,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!(
@@ -925,10 +896,10 @@ fn lower_expr_enum_ctor(
     ))
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprMemberAccess].
+/// Lowers an expression of type [semantic::ExprMemberAccess].
 fn lower_expr_member_access(
     ctx: &mut LoweringContext<'_>,
-    expr: &cairo_lang_semantic::ExprMemberAccess,
+    expr: &semantic::ExprMemberAccess,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a member-access expression: {:?}", expr.debug(&ctx.expr_formatter));
@@ -948,10 +919,10 @@ fn lower_expr_member_access(
     ))
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprStructCtor].
+/// Lowers an expression of type [semantic::ExprStructCtor].
 fn lower_expr_struct_ctor(
     ctx: &mut LoweringContext<'_>,
-    expr: &cairo_lang_semantic::ExprStructCtor,
+    expr: &semantic::ExprStructCtor,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a struct c'tor expression: {:?}", expr.debug(&ctx.expr_formatter));
@@ -969,12 +940,12 @@ fn lower_expr_struct_ctor(
     ))
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprPropagateError].
+/// Lowers an expression of type [semantic::ExprPropagateError].
 fn lower_panic_error_propagate(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     lowered_expr: LoweredExpr,
-    ty: cairo_lang_semantic::TypeId,
+    ty: semantic::TypeId,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     let ok_variant = get_enum_concrete_variant(
         ctx.db.upcast(),
@@ -1005,10 +976,10 @@ fn lower_panic_error_propagate(
     )
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprPropagateError].
+/// Lowers an expression of type [semantic::ExprPropagateError].
 fn lower_expr_error_propagate(
     ctx: &mut LoweringContext<'_>,
-    expr: &cairo_lang_semantic::ExprPropagateError,
+    expr: &semantic::ExprPropagateError,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!(
@@ -1032,9 +1003,9 @@ fn lower_error_propagate(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     lowered_expr: LoweredExpr,
-    ok_variant: &cairo_lang_semantic::ConcreteVariant,
-    err_variant: &cairo_lang_semantic::ConcreteVariant,
-    func_err_variant: &cairo_lang_semantic::ConcreteVariant,
+    ok_variant: &semantic::ConcreteVariant,
+    err_variant: &semantic::ConcreteVariant,
+    func_err_variant: &semantic::ConcreteVariant,
     panic_error: bool,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
@@ -1102,9 +1073,9 @@ fn lower_optimized_extern_error_propagate(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     extern_enum: LoweredExprExternEnum,
-    ok_variant: &cairo_lang_semantic::ConcreteVariant,
-    err_variant: &cairo_lang_semantic::ConcreteVariant,
-    func_err_variant: &cairo_lang_semantic::ConcreteVariant,
+    ok_variant: &semantic::ConcreteVariant,
+    err_variant: &semantic::ConcreteVariant,
+    func_err_variant: &semantic::ConcreteVariant,
     panic_error: bool,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Started lowering of an optimized error-propagate expression.");
@@ -1188,9 +1159,9 @@ fn lower_optimized_extern_error_propagate(
 /// Returns the input types for an extern match variant arm.
 fn match_extern_variant_arm_input_types(
     ctx: &mut LoweringContext<'_>,
-    ty: cairo_lang_semantic::TypeId,
+    ty: semantic::TypeId,
     extern_enum: &LoweredExprExternEnum,
-) -> Vec<cairo_lang_semantic::TypeId> {
+) -> Vec<semantic::TypeId> {
     let variant_input_tys = extern_facade_return_tys(ctx, ty);
     let ref_tys =
         extern_enum.ref_args.iter().map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty());
@@ -1216,10 +1187,10 @@ fn match_extern_arm_ref_args_bind(
     }
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprAssignment].
+/// Lowers an expression of type [semantic::ExprAssignment].
 fn lower_expr_assignment(
     ctx: &mut LoweringContext<'_>,
-    expr: &cairo_lang_semantic::ExprAssignment,
+    expr: &semantic::ExprAssignment,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!(
@@ -1237,7 +1208,7 @@ fn lower_expr_assignment(
 fn use_semantic_var(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    semantic_var: cairo_lang_semantic::VarId,
+    semantic_var: semantic::VarId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Result<LivingVar, LoweringFlowError> {
     scope
@@ -1251,7 +1222,7 @@ fn use_semantic_var(
 fn take_semantic_var(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    semantic_var: cairo_lang_semantic::VarId,
+    semantic_var: semantic::VarId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Result<LivingVar, LoweringFlowError> {
     scope

@@ -1,5 +1,6 @@
 use cairo_lang_defs::ids::FreeFunctionId;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_lowering as lowering;
 use cairo_lang_sierra::extensions::uninitialized::UninitializedType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
@@ -14,7 +15,7 @@ use crate::pre_sierra;
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
-    lowered: &'a cairo_lang_lowering::lower::Lowered,
+    lowered: &'a lowering::lower::Lowered,
     function_id: FreeFunctionId,
     // TODO(lior): Remove `allow(dead_code)` once this field is used.
     #[allow(dead_code)]
@@ -28,7 +29,7 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
     pub fn new(
         db: &'a dyn SierraGenGroup,
-        lowered: &'a cairo_lang_lowering::lower::Lowered,
+        lowered: &'a lowering::lower::Lowered,
         function_id: FreeFunctionId,
         lifetime: &'a VariableLifetimeResult,
     ) -> Self {
@@ -53,7 +54,7 @@ impl<'a> ExprGeneratorContext<'a> {
         self.db
     }
 
-    /// Returns the Sierra variable that corresponds to [cairo_lang_lowering::VariableId].
+    /// Returns the Sierra variable that corresponds to [lowering::VariableId].
     /// Allocates a new Sierra variable on the first call (for each variable).
     pub fn get_sierra_variable(
         &mut self,
@@ -72,7 +73,7 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Same as [Self::get_sierra_variable] except that it operates of a list of variables.
     pub fn get_sierra_variables(
         &mut self,
-        vars: &[cairo_lang_lowering::VariableId],
+        vars: &[lowering::VariableId],
     ) -> Vec<cairo_lang_sierra::ids::VarId> {
         vars.iter().map(|var| self.get_sierra_variable(*var)).collect()
     }
@@ -88,7 +89,7 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Returns the [cairo_lang_sierra::ids::ConcreteTypeId] associated with
-    /// [cairo_lang_lowering::VariableId].
+    /// [lowering::VariableId].
     pub fn get_variable_sierra_type(
         &self,
         var: impl Into<SierraGenVar>,
@@ -108,12 +109,9 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    /// Returns the block ([cairo_lang_lowering::FlatBlock]) associated with
-    /// [cairo_lang_lowering::BlockId].
-    pub fn get_lowered_block(
-        &self,
-        block_id: cairo_lang_lowering::BlockId,
-    ) -> &'a cairo_lang_lowering::FlatBlock {
+    /// Returns the block ([lowering::FlatBlock]) associated with
+    /// [lowering::BlockId].
+    pub fn get_lowered_block(&self, block_id: lowering::BlockId) -> &'a lowering::FlatBlock {
         &self.lowered.blocks[block_id]
     }
 

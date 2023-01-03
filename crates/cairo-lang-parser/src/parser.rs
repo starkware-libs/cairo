@@ -7,6 +7,7 @@ use std::mem;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan};
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -95,7 +96,7 @@ impl<'a> Parser<'a> {
 
     /// Returns the missing terminal and adds the corresponding missing token
     /// diagnostic report.
-    fn create_and_report_missing_terminal<Terminal: cairo_lang_syntax::node::Terminal>(
+    fn create_and_report_missing_terminal<Terminal: syntax::node::Terminal>(
         &mut self,
     ) -> Terminal::Green {
         self.create_and_report_missing::<Terminal>(ParserDiagnosticKind::MissingToken(
@@ -122,7 +123,7 @@ impl<'a> Parser<'a> {
 
     // ------------------------------- Top level items -------------------------------
 
-    /// Returns a GreenId of a node with an Item.* kind (see [cairo_lang_syntax::node::ast::Item]).
+    /// Returns a GreenId of a node with an Item.* kind (see [syntax::node::ast::Item]).
     /// If can't parse as a top level item, keeps skipping tokens until it can.
     /// Returns None only when it reaches EOF.
     pub fn try_parse_top_level_item(&mut self) -> Option<ItemGreen> {
@@ -437,7 +438,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with a TraitItem.* kind (see
-    /// [cairo_lang_syntax::node::ast::TraitItem]).
+    /// [syntax::node::ast::TraitItem]).
     pub fn try_parse_trait_item(&mut self) -> Option<TraitItemGreen> {
         let attributes = self.parse_attribute_list("trait item");
 
@@ -496,12 +497,12 @@ impl<'a> Parser<'a> {
 
     // ------------------------------- Expressions -------------------------------
 
-    /// Returns a GreenId of a node with an Expr.* kind (see [cairo_lang_syntax::node::ast::Expr])
+    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or None if an expression can't be parsed.
     fn try_parse_expr(&mut self) -> Option<ExprGreen> {
         self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow)
     }
-    /// Returns a GreenId of a node with an Expr.* kind (see [cairo_lang_syntax::node::ast::Expr])
+    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or a node with kind ExprMissing if an expression can't be parsed.
     pub fn parse_expr(&mut self) -> ExprGreen {
         match self.try_parse_expr() {
@@ -546,7 +547,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a node with an Expr.* kind (see [cairo_lang_syntax::node::ast::Expr])
+    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or None if such an expression can't be parsed.
     ///
     /// Parsing will be limited by:
@@ -587,7 +588,7 @@ impl<'a> Parser<'a> {
         }
         Some(expr)
     }
-    /// Returns a GreenId of a node with an Expr.* kind (see [cairo_lang_syntax::node::ast::Expr]),
+    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]),
     /// excluding ExprBlock, or ExprMissing if such an expression can't be parsed.
     ///
     /// `lbrace_allowed` - See [LbraceAllowed].
@@ -841,7 +842,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with some Pattern kind (see
-    /// [cairo_lang_syntax::node::ast::Pattern]) or None if a pattern can't be parsed.
+    /// [syntax::node::ast::Pattern]) or None if a pattern can't be parsed.
     fn try_parse_pattern(&mut self) -> Option<PatternGreen> {
         let modifier_list = self.parse_modifier_list();
         if !modifier_list.is_empty() {
@@ -905,7 +906,7 @@ impl<'a> Parser<'a> {
         })
     }
     /// Returns a GreenId of a node with some Pattern kind (see
-    /// [cairo_lang_syntax::node::ast::Pattern]).
+    /// [syntax::node::ast::Pattern]).
     fn parse_pattern(&mut self) -> PatternGreen {
         // If not found, return a missing underscore pattern.
         self.try_parse_pattern().unwrap_or_else(|| {
@@ -934,7 +935,7 @@ impl<'a> Parser<'a> {
     // ------------------------------- Statements -------------------------------
 
     /// Returns a GreenId of a node with a Statement.* kind (see
-    /// [cairo_lang_syntax::node::ast::Statement]) or None if a statement can't be parsed.
+    /// [syntax::node::ast::Statement]) or None if a statement can't be parsed.
     pub fn try_parse_statement(&mut self) -> Option<StatementGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalLet => {
@@ -1092,7 +1093,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with some ParamName kind (see
-    /// [cairo_lang_syntax::node::ast::ParamName]) or None if a param name can't be parsed.
+    /// [syntax::node::ast::ParamName]) or None if a param name can't be parsed.
     fn try_parse_param_name(&mut self) -> Option<ParamNameGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalUnderscore => Some(self.take::<TerminalUnderscore>().into()),
@@ -1307,7 +1308,7 @@ impl<'a> Parser<'a> {
     /// is added and we continue to try to parse another element (with the same token).
     fn parse_separated_list<
         Element: TypedSyntaxNode,
-        Separator: cairo_lang_syntax::node::Terminal,
+        Separator: syntax::node::Terminal,
         ElementOrSeparatorGreen,
     >(
         &mut self,
@@ -1388,7 +1389,7 @@ impl<'a> Parser<'a> {
 
     /// Skips the current token, reports the given diagnostic and returns missing kind of the
     /// expected terminal.
-    fn skip_token_and_return_missing<ExpectedTerminal: cairo_lang_syntax::node::Terminal>(
+    fn skip_token_and_return_missing<ExpectedTerminal: syntax::node::Terminal>(
         &mut self,
         diagnostic: ParserDiagnosticKind,
     ) -> ExpectedTerminal::Green {
@@ -1416,7 +1417,7 @@ impl<'a> Parser<'a> {
 
     /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
     /// to the given terminal as extra leading trivia.
-    fn add_trivia_to_terminal<Terminal: cairo_lang_syntax::node::Terminal>(
+    fn add_trivia_to_terminal<Terminal: syntax::node::Terminal>(
         &mut self,
         lexer_terminal: LexerTerminal,
     ) -> Terminal::Green {
@@ -1434,7 +1435,7 @@ impl<'a> Parser<'a> {
 
     /// Takes a token from the Lexer and place it in self.current. If tokens were skipped, glue them
     /// to this token as leading trivia.
-    fn take<Terminal: cairo_lang_syntax::node::Terminal>(&mut self) -> Terminal::Green {
+    fn take<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
         let token = self.take_raw();
         assert_eq!(token.kind, Terminal::KIND);
         self.add_trivia_to_terminal::<Terminal>(token)
@@ -1444,9 +1445,7 @@ impl<'a> Parser<'a> {
     /// None.
     /// Note that this function should not be called for 'TerminalIdentifier' -
     /// try_parse_identifier() should be used instead.
-    fn try_parse_token<Terminal: cairo_lang_syntax::node::Terminal>(
-        &mut self,
-    ) -> Option<Terminal::Green> {
+    fn try_parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Option<Terminal::Green> {
         if Terminal::KIND == self.peek().kind { Some(self.take::<Terminal>()) } else { None }
     }
 
@@ -1455,12 +1454,12 @@ impl<'a> Parser<'a> {
     ///
     /// Note that this function should not be called for 'TerminalIdentifier' - parse_identifier()
     /// should be used instead.
-    fn parse_token<Terminal: cairo_lang_syntax::node::Terminal>(&mut self) -> Terminal::Green {
+    fn parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
         self.parse_token_ex::<Terminal>(true)
     }
 
     /// Same as [Self::parse_token], except that the diagnostic may be omitted.
-    fn parse_token_ex<Terminal: cairo_lang_syntax::node::Terminal>(
+    fn parse_token_ex<Terminal: syntax::node::Terminal>(
         &mut self,
         report_diagnostic: bool,
     ) -> Terminal::Green {

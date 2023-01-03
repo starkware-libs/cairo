@@ -2,6 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, ParamLongId};
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches};
 use smol_str::SmolStr;
@@ -148,7 +149,7 @@ pub fn function_signature_implicit_parameters(
             db,
             diagnostics,
             resolver,
-            &cairo_lang_syntax::node::ast::Expr::Path(implicit),
+            &syntax::node::ast::Expr::Path(implicit),
         ));
     }
     implicits

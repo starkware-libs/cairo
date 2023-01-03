@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{borrow_as_box, try_extract_matches};
 use itertools::chain;
@@ -30,9 +31,9 @@ pub struct BlockScope {
     /// A store for semantic variables, owning their OwnedVariable instances.
     semantic_variables: SemanticVariablesMap,
     /// A store for implicit variables, owning their OwnedVariable instances.
-    implicits: HashMap<cairo_lang_semantic::TypeId, LivingVar>,
+    implicits: HashMap<semantic::TypeId, LivingVar>,
     // The implicits that are used/changed in this block.
-    changed_implicits: HashSet<cairo_lang_semantic::TypeId>,
+    changed_implicits: HashSet<semantic::TypeId>,
     /// Current sequence of lowered statements emitted.
     statements: Vec<Statement>,
 }
@@ -57,7 +58,7 @@ impl BlockScope {
     pub fn put_semantic_variable(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        semantic_var_id: cairo_lang_semantic::VarId,
+        semantic_var_id: semantic::VarId,
         var: LivingVar,
     ) {
         if let Some((implicit_index, _)) = ctx
@@ -78,7 +79,7 @@ impl BlockScope {
     pub fn use_semantic_variable(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        semantic_var_id: cairo_lang_semantic::VarId,
+        semantic_var_id: semantic::VarId,
     ) -> SemanticVariableEntry {
         self.try_ensure_semantic_variable(ctx, semantic_var_id);
         self.semantic_variables.get(ctx, semantic_var_id).unwrap_or(SemanticVariableEntry::Moved)
@@ -90,7 +91,7 @@ impl BlockScope {
     pub fn take_semantic_variable(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        semantic_var_id: cairo_lang_semantic::VarId,
+        semantic_var_id: semantic::VarId,
     ) -> SemanticVariableEntry {
         self.try_ensure_semantic_variable(ctx, semantic_var_id);
         self.semantic_variables.take(semantic_var_id).unwrap_or(SemanticVariableEntry::Moved)
@@ -101,7 +102,7 @@ impl BlockScope {
     pub fn try_ensure_semantic_variable(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        semantic_var_id: cairo_lang_semantic::VarId,
+        semantic_var_id: semantic::VarId,
     ) -> Option<()> {
         if self.semantic_variables.contains(semantic_var_id) {
             return Some(());
@@ -116,7 +117,7 @@ impl BlockScope {
     pub fn put_implicit(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        ty: cairo_lang_semantic::TypeId,
+        ty: semantic::TypeId,
         var: LivingVar,
     ) {
         let (implicit_index, _) = ctx
@@ -131,12 +132,12 @@ impl BlockScope {
     }
 
     /// Marks the implicit as changed and moves it.
-    pub fn take_implicit(&mut self, ty: cairo_lang_semantic::TypeId) -> Option<LivingVar> {
+    pub fn take_implicit(&mut self, ty: semantic::TypeId) -> Option<LivingVar> {
         self.mark_implicit_changed(ty);
         self.implicits.remove(&ty)
     }
 
-    pub fn mark_implicit_changed(&mut self, ty: cairo_lang_semantic::TypeId) {
+    pub fn mark_implicit_changed(&mut self, ty: semantic::TypeId) {
         self.changed_implicits.insert(ty);
     }
 
@@ -196,9 +197,9 @@ pub struct BlockSealed {
     /// The semantic variables and their state in the end of the block.
     semantic_variables: SemanticVariablesMap,
     /// All the implicits available in this block.
-    implicits: HashMap<cairo_lang_semantic::TypeId, LivingVar>,
+    implicits: HashMap<semantic::TypeId, LivingVar>,
     /// The implicits that were used/changed by this block.
-    changed_implicits: HashSet<cairo_lang_semantic::TypeId>,
+    changed_implicits: HashSet<semantic::TypeId>,
     /// The lowered statements of this block.
     statements: Vec<Statement>,
     /// The end type of this block.
@@ -219,13 +220,13 @@ pub enum BlockSealedEnd {
 /// Parameters for [`BlockSealed::finalize()`].
 pub struct BlockFinalizeParams<'a> {
     // Variables that are pulled from the calling scope to current scope.
-    pulls: OrderedHashMap<cairo_lang_semantic::VarId, UsableVariable>,
+    pulls: OrderedHashMap<semantic::VarId, UsableVariable>,
     // Variables that are returned from current scope to the calling scope via block outputs.
-    pushes: &'a [cairo_lang_semantic::VarId],
+    pushes: &'a [semantic::VarId],
     // Variables that are returned from current scope to the calling scope by not changing them.
-    bring_back: &'a [cairo_lang_semantic::VarId],
+    bring_back: &'a [semantic::VarId],
     // Implicits that are returned from current scope to the calling scope via block outputs.
-    implicit_pushes: &'a [cairo_lang_semantic::TypeId],
+    implicit_pushes: &'a [semantic::TypeId],
 }
 
 impl BlockSealed {
@@ -339,10 +340,10 @@ pub enum BlockEndInfo {
     /// The block returns to callsite.
     Callsite {
         /// Type for the "block value" output variable if exists.
-        maybe_output_ty: Option<cairo_lang_semantic::TypeId>,
+        maybe_output_ty: Option<semantic::TypeId>,
         /// Types for the push (rebind) output variables, that get bound to semantic variables at
         /// the calling scope.
-        push_tys: Vec<cairo_lang_semantic::TypeId>,
+        push_tys: Vec<semantic::TypeId>,
     },
     /// The block does not return to callsite, and thus, has no outputs.
     End,
@@ -369,19 +370,19 @@ pub struct BlockFlowMerger {
     /// Holds the pulled variables and allows splitting them for parallel branches. See [Splitter].
     splitter: Splitter,
     /// Variables that were pulled from a higher scope, "used", are kept here.
-    pulls: OrderedHashMap<cairo_lang_semantic::VarId, LivingVar>,
+    pulls: OrderedHashMap<semantic::VarId, LivingVar>,
     // Implicit parameters that were pulled (moved) from the higher scope. This are always all the
     // implicits that exist in the higher scope.
-    implicit_pulls: OrderedHashMap<cairo_lang_semantic::TypeId, LivingVar>,
+    implicit_pulls: OrderedHashMap<semantic::TypeId, LivingVar>,
     /// All variables that were pulled, and then rebound to something else.
-    changed_semantic_vars: HashSet<cairo_lang_semantic::VarId>,
+    changed_semantic_vars: HashSet<semantic::VarId>,
     /// All variables that were pulled and consumed (moved) in at least one branch, and thus cannot
     /// be available in the parent scope anymore (i.e. cannot be pushed).
-    moved_semantic_vars: HashSet<cairo_lang_semantic::VarId>,
+    moved_semantic_vars: HashSet<semantic::VarId>,
     /// All implicits that were changed in the block. Note, in the case of an optimized match, this
     /// doesn't include the implicits that were consumed by the extern function.
-    changed_implicits: HashSet<cairo_lang_semantic::TypeId>,
-    maybe_output_ty: Option<cairo_lang_semantic::TypeId>,
+    changed_implicits: HashSet<semantic::TypeId>,
+    maybe_output_ty: Option<semantic::TypeId>,
     reachable: bool,
     // TODO(spapini): Optimize pushes by using shouldnt_push.
 }
@@ -393,7 +394,7 @@ impl BlockFlowMerger {
     pub fn with<T, F: FnOnce(&mut LoweringContext<'_>, &mut Self) -> T>(
         ctx: &mut LoweringContext<'_>,
         parent_scope: &mut BlockScope,
-        extra_outputs: &[cairo_lang_semantic::VarId],
+        extra_outputs: &[semantic::VarId],
         f: F,
     ) -> (T, BlockMergerFinalized) {
         borrow_as_box(parent_scope, |mut boxed_parent_scope| {
@@ -415,7 +416,7 @@ impl BlockFlowMerger {
     /// used for the root scope only.
     pub fn with_root<T, F: FnOnce(&mut LoweringContext<'_>, &mut Self) -> T>(
         ctx: &mut LoweringContext<'_>,
-        extra_outputs: &[cairo_lang_semantic::VarId],
+        extra_outputs: &[semantic::VarId],
         f: F,
     ) -> (T, BlockMergerFinalized) {
         let mut merger = Self::default();
@@ -434,7 +435,7 @@ impl BlockFlowMerger {
     >(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        input_tys: Vec<cairo_lang_semantic::TypeId>,
+        input_tys: Vec<semantic::TypeId>,
         // TODO(yuval): rename f.
         f: F,
     ) -> Maybe<BlockSealed> {
@@ -477,7 +478,7 @@ impl BlockFlowMerger {
     fn take_from_higher_scope(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        semantic_var_id: cairo_lang_semantic::VarId,
+        semantic_var_id: semantic::VarId,
     ) -> Option<UsableVariable> {
         // Try to use from parent scope if the semantic variable is not present.
         if !self.pulls.contains_key(&semantic_var_id) {
@@ -547,7 +548,7 @@ impl BlockFlowMerger {
     fn finalize(
         mut self,
         ctx: &LoweringContext<'_>,
-        extra_outputs: &[cairo_lang_semantic::VarId],
+        extra_outputs: &[semantic::VarId],
     ) -> (BlockMergerFinalized, Option<Box<BlockScope>>) {
         let mut pulls = OrderedHashMap::default();
         let mut pushes = Vec::new();
@@ -589,7 +590,7 @@ impl BlockFlowMerger {
             }
         }
 
-        let mut implicits_to_push: Vec<cairo_lang_semantic::TypeId> = Vec::new();
+        let mut implicits_to_push: Vec<semantic::TypeId> = Vec::new();
         for ty in ctx.implicits {
             if !unchanged_implicits.contains_key(ty) {
                 implicits_to_push.push(*ty);
@@ -628,17 +629,17 @@ impl BlockFlowMerger {
 #[derive(Debug)]
 pub struct OuterVarInfo {
     /// Variables that are returned from current scope to the calling scope via block outputs.
-    pub pushes: Vec<cairo_lang_semantic::VarId>,
+    pub pushes: Vec<semantic::VarId>,
     /// Variables that are returned from current scope to the calling scope by not changing them.
-    pub bring_back: OrderedHashMap<cairo_lang_semantic::VarId, LivingVar>,
+    pub bring_back: OrderedHashMap<semantic::VarId, LivingVar>,
 }
 /// Information about the effect on the implicits of the outer scope.
 #[derive(Debug)]
 pub struct OuterImplicitInfo {
     /// Implicits that are returned from current scope to the calling scope via block outputs.
-    pub pushes: Vec<cairo_lang_semantic::TypeId>,
+    pub pushes: Vec<semantic::TypeId>,
     /// Implicits that are returned from current scope to the calling scope by not changing them.
-    pub unchanged: HashMap<cairo_lang_semantic::TypeId, LivingVar>,
+    pub unchanged: HashMap<semantic::TypeId, LivingVar>,
 }
 
 /// Used to finalize blocks. Generated after calling [`BlockFlowMerger::finalize()`].
@@ -648,7 +649,7 @@ pub struct BlockMergerFinalized {
     /// Holds the pulled variables and allows splitting them for parallel branches. See [Splitter].
     splitter: Splitter,
     /// Variables that are pulled from the calling scope to current scope.
-    pulls: OrderedHashMap<cairo_lang_semantic::VarId, LivingVar>,
+    pulls: OrderedHashMap<semantic::VarId, LivingVar>,
     /// Information about the effect on the variables of the outer scope.
     pub outer_var_info: OuterVarInfo,
     /// Information about the effect on the implicits of the outer scope.

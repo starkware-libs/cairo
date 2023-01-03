@@ -5,6 +5,7 @@ mod test;
 use std::fmt::Debug;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::lower::Lowered;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -100,14 +101,14 @@ fn inner_find_variable_lifetime(
 
     // Go over the block in reverse order, starting from handling the block end.
     match &block.end {
-        cairo_lang_lowering::FlatBlockEnd::Callsite(vars) => {
+        lowering::FlatBlockEnd::Callsite(vars) => {
             state.use_variables(context, vars, (block_id, block.statements.len()));
         }
-        cairo_lang_lowering::FlatBlockEnd::Return(vars) => {
+        lowering::FlatBlockEnd::Return(vars) => {
             state.clear();
             state.use_variables(context, vars, (block_id, block.statements.len()));
         }
-        cairo_lang_lowering::FlatBlockEnd::Unreachable => {}
+        lowering::FlatBlockEnd::Unreachable => {}
     }
 
     for (idx, statement) in block.statements.iter().enumerate().rev() {
@@ -121,20 +122,20 @@ fn inner_find_variable_lifetime(
         );
 
         match statement {
-            cairo_lang_lowering::Statement::Literal(_)
-            | cairo_lang_lowering::Statement::Call(_)
-            | cairo_lang_lowering::Statement::StructConstruct(_)
-            | cairo_lang_lowering::Statement::StructDestructure(_)
-            | cairo_lang_lowering::Statement::EnumConstruct(_) => {}
-            cairo_lang_lowering::Statement::CallBlock(statement_call_block) => {
+            lowering::Statement::Literal(_)
+            | lowering::Statement::Call(_)
+            | lowering::Statement::StructConstruct(_)
+            | lowering::Statement::StructDestructure(_)
+            | lowering::Statement::EnumConstruct(_) => {}
+            lowering::Statement::CallBlock(statement_call_block) => {
                 inner_find_variable_lifetime(context, statement_call_block.block, state);
             }
-            cairo_lang_lowering::Statement::MatchExtern(statement_match_extern) => {
+            lowering::Statement::MatchExtern(statement_match_extern) => {
                 let arm_blocks: Vec<_> =
                     statement_match_extern.arms.iter().map(|(_, block_id)| *block_id).collect();
                 handle_match(context, &arm_blocks, state);
             }
-            cairo_lang_lowering::Statement::MatchEnum(statement_match_enum) => {
+            lowering::Statement::MatchEnum(statement_match_enum) => {
                 let arm_blocks: Vec<_> =
                     statement_match_enum.arms.iter().map(|(_, block_id)| *block_id).collect();
                 handle_match(context, &arm_blocks, state);
@@ -149,8 +150,8 @@ fn inner_find_variable_lifetime(
     state.handle_new_variables(context, &block.inputs, DropLocation::BeginningOfBlock(block_id));
 }
 
-/// Handles a match statement ([cairo_lang_lowering::Statement::MatchExtern] and
-/// [cairo_lang_lowering::Statement::MatchEnum]):
+/// Handles a match statement ([lowering::Statement::MatchExtern] and
+/// [lowering::Statement::MatchEnum]):
 ///
 /// * Updates the state with the used variables of all the branches.
 /// * Adds drop statements for variables which are last-used in only part of the branches.

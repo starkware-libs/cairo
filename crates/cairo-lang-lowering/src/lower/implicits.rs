@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId};
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::strongly_connected_components::{compute_scc, GraphNode};
 use itertools::Itertools;
@@ -34,7 +35,7 @@ pub fn function_scc_explicit_implicits(
 /// Query implementation of [crate::db::LoweringGroup::function_all_implicits].
 pub fn function_all_implicits(
     db: &dyn LoweringGroup,
-    function: cairo_lang_semantic::FunctionId,
+    function: semantic::FunctionId,
 ) -> Maybe<Vec<TypeId>> {
     match db.lookup_intern_function(function).function.generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_all_implicits_vec(free_function),
@@ -135,10 +136,7 @@ impl<'a> GraphNode for FreeFunctionNode<'a> {
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
-pub fn function_may_panic(
-    db: &dyn LoweringGroup,
-    function: cairo_lang_semantic::FunctionId,
-) -> Maybe<bool> {
+pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId) -> Maybe<bool> {
     match db.lookup_intern_function(function).function.generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_may_panic(free_function),
         GenericFunctionId::Extern(extern_function) => {
