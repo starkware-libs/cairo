@@ -41,6 +41,8 @@ fn test_ec_operations() {
     let (x, y) = ec_point_unwrap(p);
     assert(x == 1, 'x == 1');
     assert(y == beta_p2_root, 'y is correct');
+    let p = ec_point_from_felts(1, beta_p2_root);
+    let state2 = ec_add_to_state(state, p);
 }
 
 #[test]

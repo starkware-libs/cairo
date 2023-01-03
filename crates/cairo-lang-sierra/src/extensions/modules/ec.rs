@@ -45,6 +45,7 @@ impl NoGenericArgsGenericType for EcStateType {
 
 define_libfunc_hierarchy! {
     pub enum EcLibfunc {
+        AddToState(EcAddToStateLibfunc),
         CreatePoint(EcCreatePointLibfunc),
         InitState(EcInitStateLibfunc),
         UnwrapPoint(EcUnwrapPointLibfunc),
@@ -127,6 +128,28 @@ impl NoGenericArgsGenericLibfunc for EcInitStateLibfunc {
             vec![],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(EcStateType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+/// Libfunc for initializing an EC state from an EC point.
+#[derive(Default)]
+pub struct EcAddToStateLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcAddToStateLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_add_to_state");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let state_ty = context.get_concrete_type(EcStateType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![state_ty.clone(), context.get_concrete_type(EcPointType::id(), &[])?],
+            vec![OutputVarInfo {
+                ty: state_ty,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
             SierraApChange::Known { new_vars_only: false },
