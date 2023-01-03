@@ -78,13 +78,7 @@ pub fn simulate<
             [CoreValue::Felt(x), CoreValue::Felt(y)] => {
                 // If the point is on the curve use the fallthrough branch and return the point.
                 if y * y == x * x * x + x + get_beta() {
-                    Ok((
-                        vec![CoreValue::Struct(vec![
-                            CoreValue::Felt(x.clone()),
-                            CoreValue::Felt(y.clone()),
-                        ])],
-                        0,
-                    ))
+                    Ok((vec![CoreValue::EcPoint(x.clone(), y.clone())], 0))
                 } else {
                     Ok((vec![], 1))
                 }
