@@ -63,6 +63,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.const_cost(2), ops.const_cost(2)],
+        Ec(EcConcreteLibfunc::AddToState(_)) => vec![ops.const_cost(10)],
         Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(6), ops.const_cost(6)],
         Ec(EcConcreteLibfunc::InitState(_)) => vec![ops.const_cost(8)],
         Ec(EcConcreteLibfunc::UnwrapPoint(_)) => vec![ops.const_cost(0)],

@@ -6,6 +6,7 @@ use num_bigint::BigInt;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CoreValue {
     EcPoint(BigInt, BigInt),
+    EcState(BigInt, BigInt, BigInt),
     // TODO(orizi): Use actual felt object.
     Felt(BigInt),
     GasBuiltin(i64),

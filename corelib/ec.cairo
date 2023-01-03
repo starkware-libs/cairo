@@ -5,3 +5,4 @@ extern type EcState;
 extern fn ec_point_try_create(x: felt, y: felt) -> Option::<EcPoint> nopanic;
 extern fn ec_point_unwrap(p: EcPoint) -> (felt, felt) nopanic;
 extern fn ec_init_state(p: EcPoint) -> EcState nopanic;
+extern fn ec_add_to_state(s: EcState, p: EcPoint) -> EcState nopanic;

@@ -141,6 +141,7 @@ use option::Option;
 // EC.
 mod ec;
 use ec::EcPoint;
+use ec::ec_add_to_state;
 use ec::ec_init_state;
 use ec::ec_point_from_felts;
 use ec::ec_point_try_create;
