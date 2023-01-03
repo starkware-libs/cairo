@@ -3,9 +3,6 @@
   <h2> ⚡ Blazing ⚡ fast ⚡ compiler for Cairo, written in 🦀 Rust 🦀 </h2>
   <img src="./resources/img/cairo-logo-square.png" height="200" width="200">
   <br />
-  <a href="#about"><strong>Explore the snippets »</strong></a>
-  <br />
-  <br />
   <a href="https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=bug&template=01_BUG_REPORT.md&title=bug%3A+">Report a Bug</a>
   -
   <a href="https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=enhancement&template=02_FEATURE_REQUEST.md&title=feat%3A+">Request a Feature</a>
@@ -16,7 +13,7 @@
 <div align="center">
 <br />
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/starkware-libs/cairo/CI?style=flat-square&logo=github)
+[![GitHub Workflow Status](https://github.com/starkware-libs/cairo/actions/workflows/ci.yml/badge.svg)](https://github.com/starkware-libs/cairo/actions/workflows/ci.yml)
 [![Project license](https://img.shields.io/github/license/starkware-libs/cairo.svg?style=flat-square)](LICENSE)
 [![Pull Requests welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square)](https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
 
@@ -25,10 +22,12 @@
 <details open="open">
 <summary>Table of Contents</summary>
 
+- [Report a Bug](#report-a-bug)
+- [Request a Feature](#request-a-feature)
 - [About](#about)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [Compile and running Cairo files](#compile-and-running-cairo-files)
+  - [Compiling and running Cairo files](#compiling-and-running-cairo-files)
   - [Development](#development)
     - [Install the language server](#install-the-language-server)
 - [Roadmap](#roadmap)
@@ -74,9 +73,9 @@ Run Cairo code directly:
 cargo run --bin cairo-run -- -p /path/to/file.cairo
 ```
 
-See more information [here](./crates/runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.
+See more information [here](./crates/cairo-runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.
 
-For running tests specifically, see here: [cairo-test](./crates/test_runner/README.md)
+For running tests specifically, see here: [cairo-test](./crates/cairo-test-runner/README.md)
 
 ### Development
 

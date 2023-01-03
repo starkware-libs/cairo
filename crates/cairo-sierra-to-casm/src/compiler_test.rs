@@ -99,12 +99,13 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 // box_and_back:
                 %{ memory[ap + 0] = segments.add() %}
                 [fp + -3] = [[ap + 0] + 0], ap++;
+                [ap + 0] = [ap + -1], ap++;
                 [ap + 0] = [[ap + -1] + 0], ap++;
                 ret;
 
                 // box_and_back_wrapper:
                 [ap + 0] = [fp + -3], ap++;
-                call rel -4;
+                call rel -5;
                 ret;
             "};
             "good_flow")]
@@ -363,92 +364,6 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
             "};
             "fib_recursive")]
-#[test_case(indoc! {"
-                type felt = felt;
-                type DictFeltToFelt = DictFeltTo<felt>;
-                type RangeCheck = RangeCheck;
-                type DictManager = DictManager;
-
-                libfunc felt_const<11> = felt_const<11>;
-                libfunc felt_const<12> = felt_const<12>;
-                libfunc felt_const<13> = felt_const<13>;
-                libfunc felt_drop = drop<felt>;
-                libfunc store_temp_felt = store_temp<felt>;
-                libfunc dict_felt_to_new<felt> = dict_felt_to_new<felt>;
-                libfunc dict_felt_to_write<felt> = dict_felt_to_write<felt>;
-                libfunc dict_felt_to_read<felt> = dict_felt_to_read<felt>;
-                libfunc store_temp_range_check = store_temp<RangeCheck>;
-                libfunc store_temp_dict_manager = store_temp<DictManager>;
-                libfunc store_temp_dict_felt_to_felt = store_temp<DictFeltToFelt>;
-
-                felt_const<11>() -> ([2]);
-                store_temp_felt([2]) -> ([2]);
-                felt_const<12>() -> ([3]);
-                store_temp_felt([3]) -> ([3]);
-                felt_const<13>() -> ([4]);
-                store_temp_felt([4]) -> ([4]);
-                dict_felt_to_new<felt>([1]) -> ([5], [6]);
-                store_temp_dict_felt_to_felt([6]) -> ([6]);
-                dict_felt_to_read<felt>([6], [2]) -> ([7], [8]);
-                felt_drop([8]) -> ();
-                dict_felt_to_write<felt>([7], [3], [4]) -> ([9]);
-                store_temp_range_check([0]) -> ([0]);
-                store_temp_dict_manager([5]) -> ([5]);
-                store_temp_dict_felt_to_felt([9]) -> ([9]);
-                return ([0], [5], [9]);
-                test_program@0([0]: RangeCheck, [1]: DictManager) -> (RangeCheck, DictManager, DictFeltToFelt);
-            "},
-            false,
-            indoc! {"
-                [ap + 0] = 11, ap++;
-                [ap + 0] = 12, ap++;
-                [ap + 0] = 13, ap++;
-                %{
-                   if '__dict_manager' not in globals():
-                       from starkware.cairo.common.dict import DictManager
-                       __dict_manager = DictManager()
-                   # memory[dict_manager_ptr] is the address of the current dict manager
-                   n_dicts = memory[memory[fp + -3] + 1]
-                   # memory[memory[dict_manager_ptr] + 0] is the address of the dict infos segment
-                   # n_dicts * 3 is added to get the address of the new DictInfo
-                   memory[memory[memory[fp + -3] + 0] + n_dicts * 3] = (
-                       __dict_manager.new_default_dict(segments, 0, temp_segment=n_dicts > 0)
-                   )
-                %}
-                [ap + 0] = [[fp + -3] + 0], ap++;
-                [ap + 0] = [[fp + -3] + 1], ap++;
-                [ap + 0] = [[fp + -3] + 2], ap++;
-                [ap + -3] = [[fp + -3] + 3];
-                [ap + 0] = [ap + -2] + 1, ap++;
-                [ap + -1] = [[fp + -3] + 4];
-                [ap + -2] = [[fp + -3] + 5];
-                [ap + 0] = [ap + -3] * 3, ap++;
-                [ap + 0] = [ap + -5] + [ap + -1], ap++;
-                [ap + 0] = [[ap + -1] + 0], ap++;
-                %{
-                dict_tracker = __dict_manager.get_tracker(memory[ap + -1])
-                dict_tracker.current_ptr += 3
-                memory[ap + 0] = dict_tracker.data[memory[ap + -10]]
-                %}
-                [ap + -10] = [[ap + -1] + 0], ap++;
-                [ap + -1] = [[ap + -2] + 1];
-                [ap + -1] = [[ap + -2] + 2];
-                %{
-                dict_tracker = __dict_manager.get_tracker(memory[ap + -2] + 3)
-                dict_tracker.current_ptr += 3
-                memory[ap + 0] = dict_tracker.data[memory[ap + -10]]
-                dict_tracker.data[memory[ap + -10]] = memory[ap + -9]
-                %}
-                [ap + -10] = [[ap + -2] + 3], ap++;
-                [ap + -1] = [[ap + -3] + 4];
-                [ap + -10] = [[ap + -3] + 5];
-                [ap + 0] = [fp + -4], ap++;
-                [ap + 0] = [fp + -3] + 3, ap++;
-                [ap + 0] = [ap + -5] + 6, ap++;
-                ret;
-            "};
-            "dict test")]
-
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(

@@ -1,5 +1,6 @@
-use cairo_casm::casm;
-use cairo_casm::operand::{ap_cell_ref, DerefOrImmediate};
+use cairo_casm::builder::CasmBuilder;
+use cairo_casm::operand::{ap_cell_ref, DerefOrImmediate, ResOperand};
+use cairo_casm::{casm, casm_build_extend};
 use cairo_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_sierra::extensions::felt::FeltBinaryOperator;
 
@@ -14,6 +15,7 @@ pub fn build(
     match libfunc {
         BoolConcreteLibfunc::And(_) => build_bool_and(builder),
         BoolConcreteLibfunc::Not(_) => build_bool_not(builder),
+        BoolConcreteLibfunc::Xor(_) => build_bool_xor(builder),
     }
 }
 
@@ -56,4 +58,24 @@ fn build_bool_not(
         .into_iter()]
         .into_iter(),
     ))
+}
+
+/// Handles instructions for boolean XOR.
+fn build_bool_xor(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_a, expr_b] = builder.try_get_refs()?;
+    let a = expr_a.try_unpack_single()?.to_deref()?;
+    let b = expr_b.try_unpack_single()?.to_deref()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    let a = casm_builder.add_var(ResOperand::Deref(a));
+    let b = casm_builder.add_var(ResOperand::Deref(b));
+
+    // Outputs `(a - b)^2`.
+    casm_build_extend! {casm_builder,
+        tempvar diff = a - b;
+        let res = diff * diff;
+    }
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
 }

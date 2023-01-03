@@ -66,11 +66,6 @@ fn get_store_instructions(
             CellExpression::DoubleDeref(operand, offset) => {
                 add_instruction!(ctx, dst = [[&operand] + offset])
             }
-            CellExpression::IntoSingleCellRef(operand) => add_instruction!(
-                ctx,
-                %{ memory dst = segments.add() %}
-                operand = [[&dst]]
-            ),
             CellExpression::Immediate(operand) => add_instruction!(ctx, dst = operand),
             CellExpression::BinOp(BinOpExpression { op, a, b }) => match op {
                 FeltBinaryOperator::Add => add_instruction!(ctx, dst = a + b),

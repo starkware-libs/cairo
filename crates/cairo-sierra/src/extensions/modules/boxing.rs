@@ -55,7 +55,7 @@ impl SignatureOnlyGenericLibfunc for IntoBoxLibfunc {
             vec![ty.clone()],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
             }],
             SierraApChange::Known { new_vars_only: true },
         ))

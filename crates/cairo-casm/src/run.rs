@@ -1,18 +1,19 @@
 use std::any::Any;
 use std::collections::HashMap;
 
-use cairo_rs::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
-use cairo_rs::serde::deserialize_program::{
+use cairo_utils::extract_matches;
+use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
+use cairo_vm::serde::deserialize_program::{
     ApTracking, FlowTrackingData, HintParams, ReferenceManager,
 };
-use cairo_rs::types::exec_scope::ExecutionScopes;
-use cairo_rs::types::program::Program;
-use cairo_rs::types::relocatable::{MaybeRelocatable, Relocatable};
-use cairo_rs::vm::errors::vm_errors::VirtualMachineError;
-use cairo_rs::vm::runners::cairo_runner::CairoRunner;
-use cairo_rs::vm::vm_core::VirtualMachine;
-use cairo_utils::extract_matches;
+use cairo_vm::types::exec_scope::ExecutionScopes;
+use cairo_vm::types::program::Program;
+use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
+use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
+use cairo_vm::vm::runners::cairo_runner::CairoRunner;
+use cairo_vm::vm::vm_core::VirtualMachine;
 use num_bigint::BigInt;
+use num_traits::identities::Zero;
 
 use crate::hints::Hint;
 use crate::instructions::Instruction;
@@ -91,7 +92,7 @@ struct StarknetExecScope {
 impl HintProcessor for CairoHintProcessor {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
-        &self,
+        &mut self,
         vm: &mut VirtualMachine,
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
@@ -189,16 +190,19 @@ impl HintProcessor for CairoHintProcessor {
                     _ => panic!("Illegal argument for system pointer."),
                 };
                 let (selector_sign, selector) =
-                    get_double_deref_val(cell, &base_offset)?.to_bytes_le();
+                    get_double_deref_val(cell, &base_offset)?.to_bytes_be();
                 assert_eq!(selector_sign, num_bigint::Sign::Plus, "Illegal selector.");
-                if selector == "storage_write".as_bytes() {
+                if selector == "StorageWrite".as_bytes() {
                     let gas_counter = get_double_deref_val(cell, &(base_offset.clone() + 1))?;
                     const WRITE_GAS_SIM_COST: usize = 1000;
-                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 4))?;
-                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 5))?;
-                    if gas_counter >= WRITE_GAS_SIM_COST.into() {
-                        let addr = get_double_deref_val(cell, &(base_offset.clone() + 2))?;
-                        let value = get_double_deref_val(cell, &(base_offset + 3))?;
+                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 5))?;
+                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 6))?;
+                    let addr_domain = get_double_deref_val(cell, &(base_offset.clone() + 2))?;
+
+                    // Only address_domain 0 is currently supported.
+                    if addr_domain.is_zero() && gas_counter >= WRITE_GAS_SIM_COST.into() {
+                        let addr = get_double_deref_val(cell, &(base_offset.clone() + 3))?;
+                        let value = get_double_deref_val(cell, &(base_offset + 4))?;
                         starknet_exec_scope.storage.insert(addr, value);
                         vm.insert_value(
                             &gas_counter_updated_ptr,
@@ -209,15 +213,31 @@ impl HintProcessor for CairoHintProcessor {
                         vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
                         vm.insert_value(&revert_reason_ptr, BigInt::from(1))?;
                     }
-                } else if selector == "storage_read".as_bytes() {
-                    let addr = get_double_deref_val(cell, &(base_offset.clone() + 1))?;
-                    let value = starknet_exec_scope
-                        .storage
-                        .get(&addr)
-                        .cloned()
-                        .unwrap_or_else(|| BigInt::from(0));
-                    let result_ptr = get_ptr(cell, &(base_offset + 2))?;
-                    vm.insert_value(&result_ptr, value)?;
+                } else if selector == "StorageRead".as_bytes() {
+                    let gas_counter = get_double_deref_val(cell, &(base_offset.clone() + 1))?;
+                    const READ_GAS_SIM_COST: usize = 100;
+                    let addr_domain = get_double_deref_val(cell, &(base_offset.clone() + 2))?;
+                    let addr = get_double_deref_val(cell, &(base_offset.clone() + 3))?;
+
+                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 4))?;
+                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 5))?;
+
+                    // Only address_domain 0 is currently supported.
+                    if addr_domain.is_zero() && gas_counter >= READ_GAS_SIM_COST.into() {
+                        let value = starknet_exec_scope
+                            .storage
+                            .get(&addr)
+                            .cloned()
+                            .unwrap_or_else(|| BigInt::from(0));
+                        let result_ptr = get_ptr(cell, &(base_offset + 6))?;
+
+                        vm.insert_value(&gas_counter_updated_ptr, gas_counter - READ_GAS_SIM_COST)?;
+                        vm.insert_value(&revert_reason_ptr, BigInt::from(0))?;
+                        vm.insert_value(&result_ptr, value)?;
+                    } else {
+                        vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
+                        vm.insert_value(&revert_reason_ptr, BigInt::from(1))?;
+                    }
                 } else if selector == "call_contract".as_bytes() {
                     todo!()
                 } else {
@@ -251,7 +271,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
         .map(MaybeRelocatable::from)
         .collect();
 
-    let hint_processor = CairoHintProcessor::new(instructions);
+    let mut hint_processor = CairoHintProcessor::new(instructions);
 
     let program = Program {
         builtins,
@@ -274,10 +294,10 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 
-    runner.run_until_pc(end, &mut vm, &hint_processor)?;
+    runner.run_until_pc(end, &mut vm, &mut hint_processor)?;
     // TODO(alont) Remove this hack once the VM no longer squashes Nones at the end of segments.
     vm.insert_value(&vm.get_ap().add_int_mod(&1.into(), &get_prime())?, BigInt::from(0))?;
-    runner.end_run(true, false, &mut vm, &hint_processor).map_err(Box::new)?;
+    runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
     Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
 }

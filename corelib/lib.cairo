@@ -33,12 +33,13 @@ fn bool_not(mut a: bool) -> bool implicits() nopanic {
     a
 }
 
-// TODO(orizi): Change to extern when added.
-fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => b,
-        bool::True(x) => bool_not(b),
-    }
+// TODO: Once we can differentiate between the value-bool and the branch-bool, do:
+// extern fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic;
+// (this will also require renaming the libfunc from "bool_xor_impl" back to "bool_xor").
+extern fn bool_xor_impl(ref a: bool, b: bool) implicits() nopanic;
+fn bool_xor(mut a: bool, b: bool) -> bool implicits() nopanic {
+    bool_xor_impl(a, b);
+    a
 }
 
 // TODO(orizi): Change to extern when added.
@@ -133,6 +134,15 @@ use array::array_append;
 use array::array_pop_front;
 use array::array_at;
 use array::array_len;
+
+// Dictionary.
+mod dict;
+use dict::DictFeltTo;
+use dict::SquashedDictFeltTo;
+use dict::dict_felt_to_new;
+use dict::dict_felt_to_write;
+use dict::dict_felt_to_read;
+use dict::dict_felt_to_squash;
 
 // Result.
 mod result;

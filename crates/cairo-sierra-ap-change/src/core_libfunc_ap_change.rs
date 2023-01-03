@@ -1,5 +1,6 @@
 use cairo_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_sierra::extensions::boolean::BoolConcreteLibfunc;
+use cairo_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_sierra::extensions::builtin_cost::BuiltinCostGetGasLibfunc;
 use cairo_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
@@ -32,8 +33,12 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
         CoreConcreteLibfunc::Bool(libfunc) => match libfunc {
             BoolConcreteLibfunc::And(_) => vec![ApChange::Known(0)],
             BoolConcreteLibfunc::Not(_) => vec![ApChange::Known(1)],
+            BoolConcreteLibfunc::Xor(_) => vec![ApChange::Known(1)],
         },
-        CoreConcreteLibfunc::Box(_) => vec![ApChange::Known(0)],
+        CoreConcreteLibfunc::Box(libfunc) => match libfunc {
+            BoxConcreteLibfunc::Into(_) => vec![ApChange::Known(1)],
+            BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
+        },
         CoreConcreteLibfunc::BuiltinCost(_) => vec![
             ApChange::Known(BuiltinCostGetGasLibfunc::cost_computation_max_steps() + 2),
             ApChange::Known(BuiltinCostGetGasLibfunc::cost_computation_max_steps() + 3),
@@ -110,7 +115,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
             StarkNetConcreteLibfunc::CallContract(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
-            StarkNetConcreteLibfunc::StorageRead(_) => vec![ApChange::Known(2)],
+            StarkNetConcreteLibfunc::StorageRead(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             StarkNetConcreteLibfunc::StorageWrite(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }

@@ -32,7 +32,7 @@ fn bar(ref a: felt, b: bool) {
 blk0:
 Inputs: v5: ()
 Statements:
-  (v7: core::felt, v6: ()) <- test::bar(v0, v2)
+  (v7[r0]: core::felt, v6: ()) <- test::bar(v0, v2)
 Drops: v5, v6, v0
 End:
   Callsite(v7)
@@ -60,13 +60,13 @@ End:
   Callsite()
 
 blk4 (root):
-Inputs: v0: core::felt
+Inputs: v0[r0]: core::felt
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
   (v3: ()) <- struct_construct()
   (v4: core::bool) <- bool::True(v3)
-  (v9: core::felt) <- match_enum(v4) {
+  (v9[r0]: core::felt) <- match_enum(v4) {
     bool::False => blk1,
     bool::True => blk0,
   }
