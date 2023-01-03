@@ -662,22 +662,6 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Assumes the current token is LParen.
-    /// Expected pattern: `\(<ExprList>\)`
-    fn expect_expression_list_parenthesized(&mut self) -> ExprListParenthesizedGreen {
-        let lparen = self.take::<TerminalLParen>();
-        let expression_list = ExprList::new_green(
-            self.db,
-            self.parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
-                Self::try_parse_expr,
-                is_of_kind!(rparen, block, rbrace, top_level),
-                "expression",
-            ),
-        );
-        let rparen = self.parse_token::<TerminalRParen>();
-        ExprListParenthesized::new_green(self.db, lparen, expression_list, rparen)
-    }
-
     /// Assumes the current token is LBrace.
     /// Expected pattern: `\{<StructArgList>\}`
     fn expect_struct_ctor_argument_list_braced(&mut self) -> ArgListBracedGreen {
@@ -696,14 +680,60 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is LParen.
-    /// Expected pattern: `<ExprListParenthesized>`
+    /// Expected pattern: `<ArgListParenthesized>`
     fn expect_function_call(&mut self, path: ExprPathGreen) -> ExprFunctionCallGreen {
         let func_name = path;
-        let parenthesized_args = self.expect_expression_list_parenthesized();
+        let parenthesized_args = self.expect_parenthesized_argument_list();
         ExprFunctionCall::new_green(self.db, func_name, parenthesized_args)
     }
 
-    #[allow(dead_code)]
+    /// Assumes the current token is LParen.
+    /// Expected pattern: `\(<ArgList>\)`
+    fn expect_parenthesized_argument_list(&mut self) -> ArgListParenthesizedGreen {
+        let lparen = self.take::<TerminalLParen>();
+        let arg_list = ArgList::new_green(
+            self.db,
+            self.parse_separated_list::<Arg, TerminalComma, ArgListElementOrSeparatorGreen>(
+                Self::parse_function_argument,
+                is_of_kind!(rparen, block, rbrace, top_level),
+                "argument",
+            ),
+        );
+        let rparen = self.parse_token::<TerminalRParen>();
+        ArgListParenthesized::new_green(self.db, lparen, arg_list, rparen)
+    }
+
+    /// Parses a function call's argument, which is an expression with or without the name
+    /// of the argument.
+    ///
+    /// Possible patterns:
+    /// * `<Expr>`
+    /// * `<Identifier>: <Expr>`
+    fn parse_function_argument(&mut self) -> Option<ArgGreen> {
+        // Read an expression.
+        let expr_or_argname = self.try_parse_expr()?;
+
+        // If the next token is `:` and the expression is an identifier, this is the argument's
+        // name.
+        if self.peek().kind == SyntaxKind::TerminalColon {
+            if let Some(argname) = self.try_extract_identifier(expr_or_argname) {
+                let colon = self.take::<TerminalColon>();
+                let expr = self.try_parse_expr()?;
+                return Some(Arg::new_green(
+                    self.db,
+                    ArgNameClause::new_green(self.db, argname, colon).into(),
+                    expr,
+                ));
+            }
+        }
+
+        Some(Arg::new_green(
+            self.db,
+            OptionArgNameClauseEmpty::new_green(self.db).into(),
+            expr_or_argname,
+        ))
+    }
+
     /// If the given `expr` is a simple identifier, returns the corresponding green node.
     /// Otherwise, returns `None`.
     fn try_extract_identifier(&self, expr: ExprGreen) -> Option<TerminalIdentifierGreen> {
