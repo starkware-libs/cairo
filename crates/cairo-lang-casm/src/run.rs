@@ -260,10 +260,19 @@ impl HintProcessor for CairoHintProcessor {
     }
 }
 
+/// Provides context for the `additional_initialization` callback function of [run_function].
+pub struct RunFunctionContext<'a> {
+    pub vm: &'a mut VirtualMachine,
+    pub data_len: usize,
+}
+
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     instructions: Instructions,
     builtins: Vec<String>,
+    additional_initialization: fn(
+        context: RunFunctionContext<'_>,
+    ) -> Result<(), Box<VirtualMachineError>>,
 ) -> Result<(Vec<Option<BigInt>>, usize), Box<VirtualMachineError>> {
     let data: Vec<MaybeRelocatable> = instructions
         .clone()
@@ -273,6 +282,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
 
     let mut hint_processor = CairoHintProcessor::new(instructions);
 
+    let data_len = data.len();
     let program = Program {
         builtins,
         prime: get_prime(),
@@ -294,6 +304,8 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 
+    additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
+
     runner.run_until_pc(end, &mut vm, &mut hint_processor)?;
     // TODO(alont) Remove this hack once the VM no longer squashes Nones at the end of segments.
     vm.insert_value(&vm.get_ap().add_int_mod(&1.into(), &get_prime())?, BigInt::from(0))?;
@@ -308,7 +320,7 @@ pub fn run_function_return_values<'a, Instructions: Iterator<Item = &'a Instruct
     builtins: Vec<String>,
     n_returns: usize,
 ) -> Result<Vec<BigInt>, Box<VirtualMachineError>> {
-    let (cells, ap) = run_function(instructions, builtins)?;
+    let (cells, ap) = run_function(instructions, builtins, |_| Ok(()))?;
     // TODO(orizi): Return an error instead of unwrapping.
     let cells = cells.into_iter().skip(ap - n_returns);
     Ok(cells.take(n_returns).map(|cell| cell.unwrap()).collect())
