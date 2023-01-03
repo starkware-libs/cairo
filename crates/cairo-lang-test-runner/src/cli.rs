@@ -252,7 +252,7 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
                 continue;
             };
 
-            for item in module_items.items.values() {
+            for item in module_items.iter() {
                 if let ModuleItemId::FreeFunction(func_id) = item {
                     if let Ok(attrs) = db.free_function_declaration_attributes(*func_id) {
                         let mut is_test = false;

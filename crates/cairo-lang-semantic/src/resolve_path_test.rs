@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};

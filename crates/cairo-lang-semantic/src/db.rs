@@ -21,6 +21,7 @@ use smol_str::SmolStr;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
 use crate::items::imp::{ConcreteImplId, ImplLookupContext};
+use crate::items::module::ModuleSemanticData;
 use crate::items::trt::ConcreteTraitId;
 use crate::plugin::{DynDiagnosticMapper, SemanticPlugin};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
@@ -91,7 +92,24 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::us::use_resolved_lookback)]
     fn use_resolved_lookback(&self, use_id: UseId) -> Maybe<Arc<ResolvedLookback>>;
 
-    // Returns the attributes of a module
+    // Module.
+    // ====
+
+    /// Private query to compute data about the module.
+    #[salsa::invoke(items::module::priv_module_items_data)]
+    fn priv_module_items_data(&self, module_id: ModuleId) -> Maybe<Arc<ModuleSemanticData>>;
+
+    /// Returns [Maybe::Err] if the module was not properly resolved.
+    /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
+    #[salsa::invoke(items::module::module_item_by_name)]
+    fn module_item_by_name(
+        &self,
+        module_id: ModuleId,
+        name: SmolStr,
+    ) -> Maybe<Option<ModuleItemId>>;
+
+    /// Returns the attributes of a module
+    // TODO(ilya): Move impl to module.rs.
     #[salsa::invoke(items::attribute::module_attributes)]
     fn module_attributes(&self, module_id: ModuleId) -> Maybe<Vec<Attribute>>;
 
@@ -589,7 +607,10 @@ fn module_semantic_diagnostics(
             kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
         });
     }
-    for (_name, item) in db.module_items(module_id)?.items.iter() {
+
+    diagnostics.extend(db.priv_module_items_data(module_id)?.diagnostics.clone());
+
+    for item in db.module_items(module_id)?.iter() {
         match item {
             // Add signature diagnostics.
             ModuleItemId::Use(use_id) => {

@@ -1,6 +1,6 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_utils::extract_matches;
 use indoc::indoc;
@@ -30,7 +30,7 @@ fn test_function_generator() {
     .unwrap()
     .module_id;
     let foo = extract_matches!(
-        db.module_items(module_id).unwrap().items["foo"],
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction,
         "Unexpected item type."
     );
@@ -83,7 +83,7 @@ fn test_function_generator_local_vars() {
     .unwrap()
     .module_id;
     let foo = extract_matches!(
-        db.module_items(module_id).unwrap().items["foo"],
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction,
         "Unexpected item type."
     );
