@@ -1,5 +1,4 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_utils::extract_matches;
 use indoc::indoc;
