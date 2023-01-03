@@ -183,7 +183,6 @@ impl HintProcessor for CairoHintProcessor {
             Hint::DictFeltToWrite { .. } => todo!(),
             Hint::EnterScope => todo!(),
             Hint::ExitScope => todo!(),
-            Hint::DictSquashHints { .. } => todo!(),
             Hint::RandomEcPoint { x, y } => {
                 // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
                 // residue.
@@ -277,6 +276,23 @@ impl HintProcessor for CairoHintProcessor {
                     panic!("Unknown selector for system call!");
                 }
             }
+            Hint::DictDestruct { .. } => todo!(),
+            Hint::DictSquash1 { .. } => todo!(),
+            Hint::DictSquash2 { .. } => todo!(),
+            Hint::SquashDict { .. } => todo!(),
+            Hint::SquashDictInner1 { .. } => todo!(),
+            Hint::SquashDictInner2 { .. } => todo!(),
+            Hint::SquashDictInner3 { .. } => todo!(),
+            Hint::SquashDictInner4 { .. } => todo!(),
+            Hint::SquashDictInner5 => todo!(),
+            Hint::SquashDictInner6 { .. } => todo!(),
+            Hint::SquashDictInner7 => todo!(),
+            Hint::SquashDictInner8 { .. } => todo!(),
+            Hint::AssertLtFelt { .. } => todo!(),
+            Hint::AssertLeFelt1 { .. } => todo!(),
+            Hint::AssertLeFelt2 { .. } => todo!(),
+            Hint::AssertLeFelt3 { .. } => todo!(),
+            Hint::AssertLeFelt4 => todo!(),
         };
         Ok(())
     }

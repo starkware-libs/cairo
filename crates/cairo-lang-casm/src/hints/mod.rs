@@ -48,11 +48,61 @@ pub enum Hint {
     },
     EnterScope,
     ExitScope,
-    /// Represent a hint which is part of the dict_squash function. The hint_index is the position
-    /// of the index in the set of hints of the function.
-    DictSquashHints {
-        hint_index: usize,
+    DictDestruct {
+        dict_manager_ptr: ResOperand,
+        dict_end_ptr: ResOperand,
+        dict_index: CellRef,
     },
+    DictSquash1 {
+        dict_end_ptr: ResOperand,
+    },
+    DictSquash2 {
+        squashed_dict_start: ResOperand,
+        squashed_dict_end: ResOperand,
+    },
+    SquashDict {
+        dict_accesses: ResOperand,
+        ptr_diff: ResOperand,
+        n_accesses: ResOperand,
+        big_keys: CellRef,
+        first_key: CellRef,
+    },
+    SquashDictInner1 {
+        range_check_ptr: ResOperand,
+    },
+    SquashDictInner2 {
+        should_skip_loop: CellRef,
+    },
+    SquashDictInner3 {
+        index_delta_minus1: CellRef,
+    },
+    SquashDictInner4 {
+        should_continue: CellRef,
+    },
+    SquashDictInner5,
+    SquashDictInner6 {
+        n_used_accesses: CellRef,
+    },
+    SquashDictInner7,
+    SquashDictInner8 {
+        next_key: CellRef,
+    },
+    AssertLtFelt {
+        a: ResOperand,
+        b: ResOperand,
+    },
+    AssertLeFelt1 {
+        range_check_ptr: ResOperand,
+        a: ResOperand,
+        b: ResOperand,
+    },
+    AssertLeFelt2 {
+        skip_exclude_a_flag: ResOperand,
+    },
+    AssertLeFelt3 {
+        skip_exclude_b_minus_a: ResOperand,
+    },
+    AssertLeFelt4,
     /// Samples a random point on the EC.
     RandomEcPoint {
         x: CellRef,
@@ -146,7 +196,6 @@ impl Display for Hint {
             }
             Hint::EnterScope => write!(f, "vm_enter_scope()")?,
             Hint::ExitScope => write!(f, "vm_exit_scope()")?,
-            Hint::DictSquashHints { hint_index } => dict_squash::fmt_hint_by_index(f, *hint_index)?,
             Hint::RandomEcPoint { x, y } => {
                 writedoc!(
                     f,
@@ -170,6 +219,148 @@ impl Display for Hint {
                 fmt_res_operand(f, system)?;
                 write!(f, ")")?;
             }
+            Hint::SquashDictInner1 { range_check_ptr } => writedoc!(
+                f,
+                "
+
+                    current_access_indices = sorted(access_indices[key])[::-1]
+                    current_access_index = current_access_indices.pop()
+                    memory{range_check_ptr} = current_access_index
+                "
+            )?,
+            Hint::SquashDictInner2 { should_skip_loop } => {
+                write!(f, " memory{should_skip_loop} = 0 if current_access_indices else 1 ")?
+            }
+            Hint::SquashDictInner3 { index_delta_minus1 } => writedoc!(
+                f,
+                "
+
+                    new_access_index = current_access_indices.pop()
+                    memory{index_delta_minus1} = new_access_index - current_access_index - 1
+                    current_access_index = new_access_index
+                "
+            )?,
+            Hint::SquashDictInner4 { should_continue } => {
+                write!(f, " memory{should_continue} = 1 if current_access_indices else 0 ")?
+            }
+            Hint::SquashDictInner5 => write!(f, " assert len(current_access_indices) == 0 ")?,
+            Hint::SquashDictInner6 { n_used_accesses } => {
+                write!(f, " assert memory{n_used_accesses} == len(access_indices[key]) ")?
+            }
+            Hint::SquashDictInner7 => write!(f, " assert len(keys) == 0 ")?,
+            Hint::SquashDictInner8 { next_key } => writedoc!(
+                f,
+                "
+                    assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
+                    memory{next_key} = key = keys.pop()
+                "
+            )?,
+            Hint::DictDestruct { dict_manager_ptr, dict_end_ptr, dict_index } => writedoc!(
+                f,
+                "
+
+                    expected_segment_index = memory{dict_end_ptr}.segment_index
+                    for i in range(memory[memory{dict_manager_ptr}]):
+                        if memory[memory{dict_manager_ptr} + 1].segment_index == \
+                 expected_segment_index:
+                            memory{dict_index} = i
+                            break
+                    else:
+                        raise Exception(f\"Dict with end pointer was not found.\")
+                "
+            )?,
+            Hint::DictSquash1 { dict_end_ptr } => writedoc!(
+                f,
+                "
+
+                    # Prepare arguments for dict_new. In particular, the same dictionary values \
+                 should be copied
+                    # to the new (squashed) dictionary.
+                    vm_enter_scope({{
+                        # Make __dict_manager accessible.
+                        '__dict_manager': __dict_manager,
+                        # Create a copy of the dict, in case it changes in the future.
+                        'initial_dict': dict(__dict_manager.get_dict(memory{dict_end_ptr})),
+                    }})
+                "
+            )?,
+            Hint::DictSquash2 { squashed_dict_start, squashed_dict_end } => writedoc!(
+                f,
+                "
+                    # Update the DictTracker's current_ptr to point to the end of the squashed \
+                 dict.
+                    __dict_manager.get_tracker(memory{squashed_dict_start}).current_ptr = \
+                 memory{squashed_dict_end}.address_
+                "
+            )?,
+            Hint::SquashDict { dict_accesses, ptr_diff, n_accesses, big_keys, first_key } => {
+                writedoc!(
+                    f,
+                    "
+                    dict_access_size = 3
+                    address = memory{dict_accesses}.address_
+                    assert memory{ptr_diff} % dict_access_size == 0, 'Accesses array size must be \
+                     divisible by DictAccess.SIZE'
+                    n_accesses = memory{n_accesses}
+                    if '__squash_dict_max_size' in globals():
+                        assert n_accesses <= __squash_dict_max_size, f'squash_dict() can only be \
+                     used with n_accesses<={{__squash_dict_max_size}}. ' f'Got: \
+                     n_accesses={{n_accesses}}.'
+                    # A map from key to the list of indices accessing it.
+                    access_indices = {{}}
+                    for i in range(n_accesses):
+                        key = memory[address + dict_access_size * i]
+                        access_indices.setdefault(key, []).append(i)
+                    # Descending list of keys.
+                    keys = sorted(access_indices.keys(), reverse=True)
+                    # Are the keys used bigger than range_check bound.
+                    memory{big_keys} = 1 if keys[0] >= range_check_builtin.bound else 0
+                    memory{first_key} = key = keys.pop()
+                "
+                )?
+            }
+            Hint::AssertLtFelt { a, b } => writedoc!(
+                f,
+                "
+                    from starkware.cairo.common.math_utils import assert_integer
+                    assert_integer(memory{a})
+                    assert_integer(memory{b})
+                    assert (memory{a} % PRIME) < (memory{b} % PRIME), f'a = {{memory{a} % PRIME}} \
+                 is not less than b = {{memory{b} % PRIME}}.'
+                "
+            )?,
+            Hint::AssertLeFelt1 { range_check_ptr, a, b } => writedoc!(
+                f,
+                "
+                    import itertools
+
+                    from starkware.cairo.common.math_utils import assert_integer
+                    assert_integer(memory{a})
+                    assert_integer(memory{b})
+                    a = memory{a} % PRIME
+                    b = memory{b} % PRIME
+                    assert a <= b, f'a = {{a}} is not less than or equal to b = {{b}}.'
+
+                    # Find an arc less than PRIME / 3, and another less than PRIME / 2.
+                    lengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]
+                    lengths_and_indices.sort()
+                    assert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] \
+                 <= PRIME // 2
+                    excluded = lengths_and_indices[2][1]
+
+                    memory[{range_check_ptr} + 1], memory[{range_check_ptr} + 0] = (
+                        divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))
+                    memory[{range_check_ptr} + 3], memory[{range_check_ptr} + 2] = (
+                        divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))
+                "
+            )?,
+            Hint::AssertLeFelt2 { skip_exclude_a_flag } => {
+                write!(f, "memory{skip_exclude_a_flag} = 1 if excluded != 0 else 0")?
+            }
+            Hint::AssertLeFelt3 { skip_exclude_b_minus_a } => {
+                write!(f, "memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0")?
+            }
+            Hint::AssertLeFelt4 => write!(f, "assert excluded == 2")?,
         }
         Ok(())
     }
