@@ -201,6 +201,9 @@ pub fn compile(
         }
     }
 
+    // Push the final offset at the end of `statement_offsets`.
+    statement_offsets.push(program_offset);
+
     relocate_instructions(&relocations, &statement_offsets, &mut instructions);
 
     Ok(CairoProgram {
