@@ -299,7 +299,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 }
             }
             ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == "Storage" => {
-                storage_code = handle_storage_struct(db, item_struct.clone());
+                let (storage_code_rewrite, storage_diagnostics) =
+                    handle_storage_struct(db, item_struct.clone());
+                storage_code = storage_code_rewrite;
+                diagnostics.extend(storage_diagnostics);
             }
             _ => {}
         };
@@ -362,25 +365,51 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 }
 
 /// Generate getters and setters for the variables in the storage struct.
-fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> RewriteNode {
+fn handle_storage_struct(
+    db: &dyn SyntaxGroup,
+    struct_ast: ast::ItemStruct,
+) -> (RewriteNode, Vec<PluginDiagnostic>) {
     let mut members_code = Vec::new();
+    let mut diagnostics = vec![];
 
     for member in struct_ast.members(db).elements(db) {
-        let name = member.name(db).text(db).to_string();
+        let name = member.name(db).text(db);
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
+        let type_ast = member.type_clause(db).ty(db);
+        let type_name = type_ast.as_syntax_node().get_text(db);
+        let type_name = type_name.trim();
 
+        if type_name.starts_with("Map<") && type_name.ends_with('>') {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: type_ast.stable_ptr().untyped(),
+                message: "Mapping storage vars are not yet supported.".to_string(),
+            });
+            continue;
+        }
+        let (convert_to, convert_from) = match type_name.trim() {
+            "felt" => ("value", "value"),
+            "bool" => ("if value == 0 { false } else { true }", "if value { 0 } else { 1 }"),
+            "u128" => ("u128_from_felt(value)", "u128_to_felt(value)"),
+            _ => {
+                diagnostics.push(PluginDiagnostic {
+                    stable_ptr: type_ast.stable_ptr().untyped(),
+                    message: "Unsupported type for storage var.".to_string(),
+                });
+                continue;
+            }
+        };
         let generated_submodule = RewriteNode::interpolate_patched(
             formatdoc!(
                 "
-                mod $name$ {{
-                    fn read() -> felt {{
+                mod {name} {{
+                    fn read() -> {type_name} {{
                         // Only address_domain 0 is currently supported.
                         let address_domain = 0;
                         match starknet::storage_read_syscall(
                             address_domain,
                             starknet::storage_address_const::<{address}>(),
                         ) {{
-                            Result::Ok(x) => x,
+                            Result::Ok(value) => {convert_to},
                             Result::Err(revert_reason) => {{
                                 let mut err_data = array_new::<felt>();
                                 array_append::<felt>(err_data, revert_reason);
@@ -388,7 +417,8 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> R
                             }},
                         }}
                     }}
-                    fn write(value: felt) {{
+                    fn write(value: {type_name}) {{
+                        let value = {convert_from};
                         // Only address_domain 0 is currently supported.
                         let address_domain = 0;
                         match starknet::storage_write_syscall(
@@ -415,7 +445,7 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> R
 
         members_code.push(generated_submodule)
     }
-    RewriteNode::Modified(ModifiedNode { children: members_code })
+    (RewriteNode::Modified(ModifiedNode { children: members_code }), diagnostics)
 }
 
 /// Returns the serde functions for a type.
