@@ -1,0 +1,20 @@
+[package]
+name = "cairo-lang-diagnostics"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Diagnostic utilities."
+
+[dependencies]
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "0.1.0" }
+itertools.workspace = true
+salsa.workspace = true
+
+[dev-dependencies]
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "0.1.0" }
+env_logger.workspace = true
+indoc.workspace = true
+pretty_assertions.workspace = true
+test-log.workspace = true

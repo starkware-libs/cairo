@@ -1,0 +1,39 @@
+[package]
+name = "cairo-lang-sierra-generator"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Sierra code generation from lowered Cairo representation."
+
+[features]
+testing = []
+
+[dependencies]
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "0.1.0" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "0.1.0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "0.1.0" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "0.1.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "0.1.0" }
+id-arena.workspace = true
+itertools.workspace = true
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "0.1.0" }
+num-bigint.workspace = true
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "0.1.0" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "0.1.0" }
+salsa.workspace = true
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "0.1.0" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "0.1.0" }
+smol_str.workspace = true
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "0.1.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+
+[dev-dependencies]
+env_logger.workspace = true
+indoc.workspace = true
+log.workspace = true
+pretty_assertions.workspace = true
+cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
+test-case.workspace = true
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "0.1.0" }
+test-log.workspace = true

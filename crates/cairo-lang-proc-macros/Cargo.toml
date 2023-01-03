@@ -1,0 +1,19 @@
+[package]
+name = "cairo-lang-proc-macros"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Procedural macros."
+
+[lib]
+proc-macro = true
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["cairo-lang-debug"]
+
+[dependencies]
+# This is used only for docs.
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "0.1.0" }
+quote.workspace = true
+syn.workspace = true

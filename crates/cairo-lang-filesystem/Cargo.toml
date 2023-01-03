@@ -1,0 +1,19 @@
+[package]
+name = "cairo-lang-filesystem"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Virtual filesystem for the compiler."
+
+[dependencies]
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "0.1.0" }
+path-clean.workspace = true
+cairo-lang-project = { path = "../cairo-lang-project", version = "0.1.0" }
+salsa.workspace = true
+smol_str.workspace = true
+
+[dev-dependencies]
+env_logger.workspace = true
+test-log.workspace = true
