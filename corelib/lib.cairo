@@ -33,13 +33,8 @@ fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
     r
 }
 
-// TODO(orizi): Change to extern when added.
-fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => bool_not(b),
-        bool::True(x) => b,
-    }
-}
+extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
+
 fn bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
     !(a == b)
 }
