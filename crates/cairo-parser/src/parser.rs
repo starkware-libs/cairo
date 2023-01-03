@@ -772,7 +772,18 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind ExprBlock.
     fn parse_block(&mut self) -> ExprBlockGreen {
-        let lbrace = self.parse_token::<TerminalLBrace>();
+        let skipped_tokens = self.skip_until(is_of_kind!(lbrace, top_level, block));
+
+        if let Err(SkippedError(span)) = skipped_tokens {
+            self.diagnostics.add(ParserDiagnostic {
+                file_id: self.file_id,
+                kind: ParserDiagnosticKind::SkippedElement { element_name: "'{'".into() },
+                span,
+            });
+        }
+
+        // Don't report diagnostic if one has already been reported.
+        let lbrace = self.parse_token_ex::<TerminalLBrace>(skipped_tokens.is_ok());
         let statements = StatementList::new_green(
             self.db,
             self.parse_list(Self::try_parse_statement, is_of_kind!(rbrace, top_level), "statement"),
@@ -1384,6 +1395,24 @@ impl<'a> Parser<'a> {
         ExpectedTerminal::missing(self.db)
     }
 
+    /// Skips terminals until `should_stop` returns `true`.
+    ///
+    /// Returns the span of the skipped terminals, if any.
+    fn skip_until(&mut self, should_stop: fn(SyntaxKind) -> bool) -> Result<(), SkippedError> {
+        let mut diag_start = None;
+        let mut diag_end = None;
+        while !should_stop(self.peek().kind) {
+            let terminal = self.take_raw();
+            diag_start.get_or_insert(self.offset as usize);
+            diag_end = Some((self.offset as usize) + terminal.text.len());
+        }
+        if let (Some(diag_start), Some(diag_end)) = (diag_start, diag_end) {
+            Err(SkippedError(TextSpan { start: TextOffset(diag_start), end: TextOffset(diag_end) }))
+        } else {
+            Ok(())
+        }
+    }
+
     /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
     /// to the given terminal as extra leading trivia.
     fn add_trivia_to_terminal<Terminal: cairo_syntax::node::Terminal>(
@@ -1426,9 +1455,23 @@ impl<'a> Parser<'a> {
     /// Note that this function should not be called for 'TerminalIdentifier' - parse_identifier()
     /// should be used instead.
     fn parse_token<Terminal: cairo_syntax::node::Terminal>(&mut self) -> Terminal::Green {
+        self.parse_token_ex::<Terminal>(true)
+    }
+
+    /// Same as [Self::parse_token], except that the diagnostic may be omitted.
+    fn parse_token_ex<Terminal: cairo_syntax::node::Terminal>(
+        &mut self,
+        report_diagnostic: bool,
+    ) -> Terminal::Green {
         match self.try_parse_token::<Terminal>() {
             Some(green) => green,
-            None => self.create_and_report_missing_terminal::<Terminal>(),
+            None => {
+                if report_diagnostic {
+                    self.create_and_report_missing_terminal::<Terminal>()
+                } else {
+                    Terminal::missing(self.db)
+                }
+            }
         }
     }
 }
@@ -1446,3 +1489,6 @@ enum LbraceAllowed {
     Forbid,
     Allow,
 }
+
+/// Indicates that [Parser::skip_until] skipped some terminals.
+struct SkippedError(TextSpan);
