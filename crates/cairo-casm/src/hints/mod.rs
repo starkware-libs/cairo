@@ -62,6 +62,11 @@ pub enum Hint {
     SystemCall {
         system: ResOperand,
     },
+    Roll {
+        address: ResOperand,
+        caller_address: ResOperand,
+        dst: CellRef,
+    },
 }
 
 impl Display for Hint {
@@ -163,6 +168,10 @@ impl Display for Hint {
                 write!(f, "syscall_handler.syscall(syscall_ptr=",)?;
                 fmt_res_operand(f, system)?;
                 write!(f, ")")?;
+            }
+            Hint::Roll { address, caller_address , dst} => {
+                write!(f, " memory{dst} = 0; ")?;
+                write!(f, " roll(address={}, caller_address={}) ", address, caller_address)?
             }
         }
         Ok(())
