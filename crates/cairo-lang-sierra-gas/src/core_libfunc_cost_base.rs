@@ -120,18 +120,21 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Pedersen(_) => {
             vec![ops.add(ops.const_cost(2), ops.const_cost_token(1, CostTokenType::Pedersen))]
         }
-        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinGetGas(_)) => {
-            let cost = CostTokenType::iter()
-                .map(|token_type| ops.statement_var_cost(*token_type))
-                .reduce(|x, y| ops.add(x, y));
-            // Compute the (maximal) number of steps for the computation of the requested cost.
-            let compute_requested_cost_steps =
-                BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i32;
-            vec![
-                ops.sub(ops.const_cost(compute_requested_cost_steps + 3), cost.unwrap()),
-                ops.const_cost(compute_requested_cost_steps + 5),
-            ]
-        }
+        BuiltinCost(libfunc) => match libfunc {
+            BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => {
+                let cost = CostTokenType::iter()
+                    .map(|token_type| ops.statement_var_cost(*token_type))
+                    .reduce(|x, y| ops.add(x, y));
+                // Compute the (maximal) number of steps for the computation of the requested cost.
+                let compute_requested_cost_steps =
+                    BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i32;
+                vec![
+                    ops.sub(ops.const_cost(compute_requested_cost_steps + 3), cost.unwrap()),
+                    ops.const_cost(compute_requested_cost_steps + 5),
+                ]
+            }
+            BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => vec![ops.const_cost(3)],
+        },
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ops.const_cost(0)],
