@@ -1,5 +1,5 @@
 
-func cheatcode_caller() -> () {
+fn cheatcode_caller() {
    roll(1, 2)
 }
 
