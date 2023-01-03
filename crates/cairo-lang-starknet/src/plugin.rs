@@ -139,7 +139,7 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                             &formatdoc!("        {ser_func}(calldata, $arg_name$);\n"),
                             HashMap::from([(
                                 "arg_name".to_string(),
-                                RewriteNode::Copied(param.name(db).as_syntax_node()),
+                                RewriteNode::Trimmed(param.name(db).as_syntax_node()),
                             )]),
                         ));
                     } else {
@@ -284,13 +284,16 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 // TODO(yuval): keep track of whether the function is external/view.
                 abi_functions.push(RewriteNode::Modified(ModifiedNode {
                     children: vec![
-                        RewriteNode::Copied(item_function.declaration(db).as_syntax_node()),
+                        RewriteNode::Text("\n        ".to_string()),
+                        RewriteNode::Trimmed(item_function.declaration(db).as_syntax_node()),
                         RewriteNode::Text(";".to_string()),
                     ],
                 }));
 
                 match generate_entry_point_wrapper(db, item_function) {
                     Ok(generated_function) => {
+                        generated_external_functions
+                            .push(RewriteNode::Text("\n        ".to_string()));
                         generated_external_functions.push(generated_function);
                     }
                     Err(entry_point_diagnostics) => {
@@ -311,14 +314,12 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             "
             #[{GENERATED_CONTRACT_ATTR}]
             mod $contract_name$ {{
-                $original_items$
+            $original_items$
                 $storage_code$
-                trait {ABI_TRAIT} {{
-                    $abi_functions$
+                trait {ABI_TRAIT} {{$abi_functions$
                 }}
 
-                mod {EXTERNAL_MODULE} {{
-                    $generated_external_functions$
+                mod {EXTERNAL_MODULE} {{$generated_external_functions$
                 }}
             }}
         "
@@ -327,7 +328,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         HashMap::from([
             (
                 "contract_name".to_string(),
-                RewriteNode::Copied(module_ast.name(db).as_syntax_node()),
+                RewriteNode::Trimmed(module_ast.name(db).as_syntax_node()),
             ),
             (
                 "original_items".to_string(),
@@ -351,7 +352,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
-            content: cairo_lang_formatter::format_string(db, builder.code),
+            content: builder.code,
             aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(DiagnosticRemapper {
                 patches: builder.patches,
             })),
@@ -409,7 +410,7 @@ fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> R
             .as_str(),
             HashMap::from([(
                 "name".to_string(),
-                RewriteNode::Copied(member.name(db).as_syntax_node()),
+                RewriteNode::Trimmed(member.name(db).as_syntax_node()),
             )]),
         );
 
@@ -461,8 +462,9 @@ fn generate_entry_point_wrapper(
         arg_names.push(arg_name.clone());
         let mut_modifier = if is_ref { "mut " } else { "" };
         // TODO(yuval): use panicable version of deserializations when supported.
-        let arg_definition = formatdoc!(
-            "let {mut_modifier}{arg_name} = match {deser_func}(data) {{
+        let arg_definition = format!(
+            "
+            let {mut_modifier}{arg_name} = match {deser_func}(data) {{
                 Option::Some(x) => x,
                 Option::None(()) => {{
                     let mut err_data = array_new::<felt>();
@@ -474,12 +476,13 @@ fn generate_entry_point_wrapper(
         arg_definitions.push(arg_definition);
 
         if is_ref {
-            ref_appends.push(RewriteNode::Text(format!("{ser_func}(arr, {arg_name});")));
+            ref_appends
+                .push(RewriteNode::Text(format!("\n            {ser_func}(arr, {arg_name});")));
         }
     }
     let arg_names_str = arg_names.join(", ");
 
-    let function_name = RewriteNode::Copied(declaration.name(db).as_syntax_node());
+    let function_name = RewriteNode::Trimmed(declaration.name(db).as_syntax_node());
     let wrapped_name = RewriteNode::interpolate_patched(
         "super::$function_name$",
         HashMap::from([("function_name".to_string(), function_name.clone())]),
@@ -491,7 +494,7 @@ fn generate_entry_point_wrapper(
             let ret_type_name = ret_type_ast.as_syntax_node().get_text(db);
             // TODO(orizi): Handle tuple types.
             if let Some((ser_func, _)) = get_type_serde_funcs(&ret_type_name) {
-                ("let res = ", format!("{ser_func}(arr, res)"))
+                ("\n            let res = ", format!("\n            {ser_func}(arr, res)"))
             } else {
                 diagnostics.push(PluginDiagnostic {
                     stable_ptr: ret_type_ast.stable_ptr().0,
@@ -511,33 +514,32 @@ fn generate_entry_point_wrapper(
     // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
     let arg_definitions = arg_definitions.join("\n");
     Ok(RewriteNode::interpolate_patched(
-        formatdoc!(
+        format!(
             "fn $function_name$(mut data: Array::<felt>) -> Array::<felt> {{
-                        match get_gas() {{
-                            Option::Some(_) => {{
-                            }},
-                            Option::None(_) => {{
-                                let mut err_data = array_new::<felt>();
-                                array_append::<felt>(err_data, {oog_err});
-                                panic(err_data);
-                            }},
-                        }}
+            match get_gas() {{
+                Option::Some(_) => {{
+                }},
+                Option::None(_) => {{
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, {oog_err});
+                    panic(err_data);
+                }},
+            }}
+            {arg_definitions}
+            if array_len::<felt>(data) != 0_u128 {{
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
 
-                        {arg_definitions}
-                        if array_len::<felt>(data) != 0_u128 {{
-                            // Force the inclusion of `System` in the list of implicits.
-                            starknet::use_system_implicit();
-
-                            let mut err_data = array_new::<felt>();
-                            array_append::<felt>(err_data, {input_data_long_err});
-                            panic(err_data);
-                        }}
-                        {let_res} $wrapped_name$({arg_names_str});
-                        let mut arr = array_new::<felt>();
-                        $ref_appends$
-                        {append_res}
-                        arr
-            }}"
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, {input_data_long_err});
+                panic(err_data);
+            }}
+            {let_res}$wrapped_name$({arg_names_str});
+            let mut arr = array_new::<felt>();
+            // References.$ref_appends$
+            // Result.{append_res}
+            arr
+        }}"
         )
         .as_str(),
         HashMap::from([
