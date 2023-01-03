@@ -1,9 +1,9 @@
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureSpecializationContext, SierraApChange, OutputVarInfo, ParamSignature, BranchSignature,
+    LibfuncSignature, SignatureSpecializationContext, SierraApChange, OutputVarInfo, ParamSignature, BranchSignature,
 };
-use crate::extensions::{SpecializationError, NoGenericArgsGenericLibFunc, NamedType, OutputVarReferenceInfo};
-use crate::ids::{GenericLibFuncId};
+use crate::extensions::{SpecializationError, NoGenericArgsGenericLibfunc, NamedType, OutputVarReferenceInfo};
+use crate::ids::{GenericLibfuncId};
 
 use super::felt::FeltType;
 
@@ -16,15 +16,15 @@ define_libfunc_hierarchy! {
 /// LibFunc for creating a new array.
 #[derive(Default)]
 pub struct RollLibFunc {}
-impl NoGenericArgsGenericLibFunc for RollLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("cheat_roll");
+impl NoGenericArgsGenericLibfunc for RollLibFunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("cheat_roll");
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibFuncSignature, SpecializationError> {
+    ) -> Result<LibfuncSignature, SpecializationError> {
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        Ok(LibFuncSignature {
+        Ok(LibfuncSignature {
             param_signatures: vec![
                 // Address
                 ParamSignature::new(felt_ty.clone()),

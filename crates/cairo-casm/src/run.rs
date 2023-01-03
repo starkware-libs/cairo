@@ -244,6 +244,7 @@ impl HintProcessor for CairoHintProcessor {
                     panic!("Unknown selector for system call!");
                 }
             }
+            &Hint::Roll { .. } => todo!()
         };
         Ok(())
     }

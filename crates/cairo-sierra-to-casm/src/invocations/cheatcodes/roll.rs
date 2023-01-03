@@ -1,14 +1,15 @@
-use casm::{builder::{CasmBuilder, CasmBuildResult}, operand::ResOperand, casm_build_extend};
+use cairo_casm::{builder::{CasmBuilder, CasmBuildResult}, operand::ResOperand, casm_build_extend};
 
-use crate::references::{
+use crate::{references::{
     ReferenceValue, ReferenceExpression, CellExpression,
-};
+}, invocations::get_non_fallthrough_statement_id};
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use sierra_ap_change::core_libfunc_ap_change;
+use cairo_sierra_ap_change::core_libfunc_ap_change;
 
 pub fn build_roll(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let (address, caller_address) = match builder.refs {
         [
             ReferenceValue { expression: expr_address, .. },
@@ -31,25 +32,21 @@ pub fn build_roll(
         jump Failure if error_reason != 0;
     };
 
-    let CasmBuildResult { 
-        instructions,
-        awaiting_relocations: _,
-        label_state,
-        fallthrough_state 
-    } = casm_builder.build();
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[], None),
+            (
+                "Failure",
+                &[&[error_reason]],
+                Some(failure_handle_statement_id),
+            ),
+        ],
+    ))
 
     // assert_eq!(
     //     core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
     //     [sierra_ap_change::ApChange::Known(fallthrough_state.ap_change)]
     // );
-
-    let output_expressions = [
-        vec![].into_iter(),
-        vec![
-            ReferenceExpression::from_cell(CellExpression::Deref(
-                label_state["Failure"].get_adjusted_as_cell_ref(error_reason),
-            )),
-        ].into_iter()
-    ].into_iter();
-    Ok(builder.build(instructions, vec![], output_expressions))
 }
