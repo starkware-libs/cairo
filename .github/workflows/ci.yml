@@ -17,7 +17,7 @@ jobs:
         with:
           profile: minimal
           components: llvm-tools-preview, rustfmt
-          toolchain: nightly-2022-11-03
+          toolchain: stable
           override: true
       - name: Retreive cached dependecies
         uses: Swatinem/rust-cache@v2
