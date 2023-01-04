@@ -7,6 +7,8 @@ license-file.workspace = true
 description = "Cairo assembly encoding."
 
 [dependencies]
+ark-ff = { version = "0.4.0-alpha.6" }
+ark-std = { version = "0.3.0" }
 cairo-vm.workspace = true
 thiserror.workspace = true
 num-bigint.workspace = true
