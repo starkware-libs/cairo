@@ -21,3 +21,6 @@ pub use self::semantic::*;
 
 #[cfg(any(feature = "testing", test))]
 pub mod test_utils;
+
+#[cfg(test)]
+mod test;

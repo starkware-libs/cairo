@@ -101,7 +101,7 @@ fn module_lowering_diagnostics(
     module_id: ModuleId,
 ) -> Maybe<Diagnostics<LoweringDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (_name, item) in db.module_items(module_id)?.items.iter() {
+    for item in db.module_items(module_id)?.iter() {
         match item {
             ModuleItemId::FreeFunction(free_function) => {
                 diagnostics.extend(
