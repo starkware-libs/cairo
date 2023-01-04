@@ -178,6 +178,15 @@ impl HintProcessor for CairoHintProcessor {
                 )?;
                 vm.insert_value(&cell_ref_to_relocatable(remainder, vm), lhs_val % rhs_val)?;
             }
+            Hint::LinearSplit { value, scalar, max_x: x_bound, x, y } => {
+                let value = get_val(value)?;
+                let scalar = get_val(scalar)?;
+                let x_bound = get_val(x_bound)?;
+                let x_value = (value.clone() / scalar.clone()).min(x_bound);
+                let y_value = value - x_value.clone() * scalar;
+                vm.insert_value(&cell_ref_to_relocatable(x, vm), x_value)?;
+                vm.insert_value(&cell_ref_to_relocatable(y, vm), y_value)?;
+            }
             Hint::AllocDictFeltTo { .. } => todo!(),
             Hint::DictFeltToRead { .. } => todo!(),
             Hint::DictFeltToWrite { .. } => todo!(),
