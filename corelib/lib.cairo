@@ -141,6 +141,9 @@ use option::Option;
 // EC.
 mod ec;
 use ec::EcPoint;
+use ec::EcState;
+use ec::ec_add_to_state;
+use ec::ec_init_state;
 use ec::ec_point_from_felts;
 use ec::ec_point_try_create;
 use ec::ec_point_unwrap;
@@ -188,6 +191,7 @@ use integer::Bitwise;
 mod gas;
 use gas::BuiltinCosts;
 use gas::GasBuiltin;
+use gas::get_builtin_costs;
 use gas::get_gas;
 use gas::get_gas_all;
 

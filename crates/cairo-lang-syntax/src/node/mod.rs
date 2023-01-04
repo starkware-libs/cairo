@@ -27,6 +27,8 @@ pub mod ids;
 pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
+#[cfg(test)]
+mod test_utils;
 
 /// SyntaxNode. Untyped view of the syntax tree. Adds parent() and offset() capabilities.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]

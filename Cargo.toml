@@ -39,6 +39,8 @@ license-file = "LICENSE"
 
 [workspace.dependencies]
 anyhow = "1.0.66"
+ark-ff = "0.4.0-alpha.7"
+ark-std = "0.3.0"
 assert_matches = "1.5"
 bimap = "0.6.2"
 cairo-vm = "0.1.0"

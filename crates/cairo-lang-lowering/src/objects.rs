@@ -3,6 +3,7 @@
 //! assigned once. It is also normal form: each function argument is a variable, rather than a
 //! compound expression.
 
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use id_arena::Id;
@@ -120,7 +121,7 @@ pub struct Variable {
     /// Note that a lowered variable might be assigned to multiple reference variables.
     pub ref_indices: OrderedHashSet<usize>,
     /// Semantic type of the variable.
-    pub ty: cairo_lang_semantic::TypeId,
+    pub ty: semantic::TypeId,
 }
 
 /// Lowered statement.
@@ -174,7 +175,7 @@ impl Statement {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementLiteral {
     /// The type of the literal.
-    pub ty: cairo_lang_semantic::TypeId,
+    pub ty: semantic::TypeId,
     /// The value of the literal.
     pub value: BigInt,
     /// The variable to bind the value to.
@@ -185,7 +186,7 @@ pub struct StatementLiteral {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementCall {
     /// A function to "call".
-    pub function: cairo_lang_semantic::FunctionId,
+    pub function: semantic::FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
     /// New variables to be introduced into the current scope from the function outputs.
@@ -208,7 +209,7 @@ pub struct StatementCallBlock {
 pub struct StatementMatchExtern {
     // TODO(spapini): ConcreteExternFunctionId once it exists.
     /// A concrete external function to call.
-    pub function: cairo_lang_semantic::FunctionId,
+    pub function: semantic::FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
     /// Match arms. All blocks should have the same rets.

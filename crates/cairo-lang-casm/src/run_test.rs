@@ -107,6 +107,7 @@ fn test_allocate_segment() {
         .instructions
         .iter(),
         vec![],
+        |_| Ok(()),
     )
     .expect("Running code failed.");
     let ptr = memory[ap].as_ref().expect("Uninitialized value.");

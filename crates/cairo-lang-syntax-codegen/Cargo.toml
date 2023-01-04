@@ -20,5 +20,5 @@ env_logger.workspace = true
 test-log.workspace = true
 
 [[bin]]
-name = "cairo-lang-generate-syntax"
+name = "generate-syntax"
 path = "src/generate_syntax.rs"

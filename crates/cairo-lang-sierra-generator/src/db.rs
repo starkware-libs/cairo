@@ -4,6 +4,7 @@ use cairo_lang_defs::ids::FreeFunctionId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::get_core_ty_by_name;
 use cairo_lang_semantic::{GenericArgumentId, Mutability};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
@@ -38,14 +39,14 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::interned]
     fn intern_sierra_function(
         &self,
-        id: cairo_lang_semantic::FunctionId,
+        id: semantic::FunctionId,
     ) -> cairo_lang_sierra::ids::FunctionId;
 
     /// Returns the matching sierra concrete type id for a given semantic type id.
     #[salsa::invoke(crate::types::get_concrete_type_id)]
     fn get_concrete_type_id(
         &self,
-        type_id: cairo_lang_semantic::TypeId,
+        type_id: semantic::TypeId,
     ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId>;
 
     /// Returns the [cairo_lang_sierra::program::FunctionSignature] object for the given function

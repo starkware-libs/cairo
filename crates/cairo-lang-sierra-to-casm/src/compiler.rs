@@ -99,7 +99,8 @@ pub fn compile(
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
 
-    // Maps statement_idx to program_offset.
+    // Maps statement_idx to program_offset. The last value (for statement_idx=number-of-statements)
+    // contains the final offset (the size of the program code segment).
     let mut statement_offsets = Vec::with_capacity(program.statements.len());
 
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::with_ap_change(
@@ -200,6 +201,9 @@ pub fn compile(
             }
         }
     }
+
+    // Push the final offset at the end of `statement_offsets`.
+    statement_offsets.push(program_offset);
 
     relocate_instructions(&relocations, &statement_offsets, &mut instructions);
 

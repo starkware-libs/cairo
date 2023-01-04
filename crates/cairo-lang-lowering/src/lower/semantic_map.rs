@@ -1,3 +1,4 @@
+use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::context::LoweringContext;
@@ -42,7 +43,7 @@ impl SemanticVariableEntry {
 #[derive(Default)]
 pub struct SemanticVariablesMap {
     /// Mapping from a semantic variable to its current liveness state.
-    pub var_mapping: OrderedHashMap<cairo_lang_semantic::VarId, SemanticVariableEntry>,
+    pub var_mapping: OrderedHashMap<semantic::VarId, SemanticVariableEntry>,
 }
 impl SemanticVariablesMap {
     /// Fetches a semantic variable.
@@ -52,13 +53,13 @@ impl SemanticVariablesMap {
     pub fn get(
         &mut self,
         ctx: &LoweringContext<'_>,
-        semantic_var_id: cairo_lang_semantic::VarId,
+        semantic_var_id: semantic::VarId,
     ) -> Option<SemanticVariableEntry> {
         Some(self.var_mapping.get_mut(&semantic_var_id)?.get(ctx))
     }
 
     /// Returns true if the variable exists in the map.
-    pub fn contains(&mut self, semantic_var_id: cairo_lang_semantic::VarId) -> bool {
+    pub fn contains(&mut self, semantic_var_id: semantic::VarId) -> bool {
         self.var_mapping.contains_key(&semantic_var_id)
     }
 
@@ -66,17 +67,14 @@ impl SemanticVariablesMap {
     /// If the semantic variable was never in the store, returns None.
     /// Otherwise, if it was moved, returns SemanticVariableState::Moved.
     /// Otherwise, moves the var from the map.
-    pub fn take(
-        &mut self,
-        semantic_var_id: cairo_lang_semantic::VarId,
-    ) -> Option<SemanticVariableEntry> {
+    pub fn take(&mut self, semantic_var_id: semantic::VarId) -> Option<SemanticVariableEntry> {
         Some(self.var_mapping.get_mut(&semantic_var_id)?.take())
     }
 
     /// Stores a semantic variable together with its owned lowered variable into the store.
     pub fn put(
         &mut self,
-        semantic_var_id: cairo_lang_semantic::VarId,
+        semantic_var_id: semantic::VarId,
         var: LivingVar,
     ) -> &mut SemanticVariableEntry {
         self.var_mapping.insert(semantic_var_id, SemanticVariableEntry::Alive(var));
