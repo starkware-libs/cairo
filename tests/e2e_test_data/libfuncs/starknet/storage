@@ -1,0 +1,75 @@
+//! > storage_address_from_felt libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(addr: felt) -> starknet::StorageAddress {
+    starknet::storage_addr_from_felt(addr)
+}
+
+//! > casm
+%{ memory[ap + 0] = memory[fp + -3] < 3618502788666131106986593281521497120414687020801267626233049500247285300992 %}
+jmp rel 14 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 5] + 3618502788666131106986593281521497120414687020801267626233049500247285300992, ap++;
+%{
+value = memory[ap + 4]
+scalar = 313594649253062377472
+max_x = 340282366920938463463374607431768211455
+x = min(value // scalar, max_x)
+y = value - x * scalar
+memory[ap + -1] = x
+memory[ap + 0] = y
+%}
+[ap + 1] = [ap + -1] * 313594649253062377472, ap++;
+[ap + 3] = [ap + 0] + [ap + -1], ap++;
+[ap + -3] = [[fp + -4] + 0], ap++;
+[ap + -3] = [[fp + -4] + 1], ap++;
+[ap + -2] = [ap + -4] + 340282366920938463149779958178705833727, ap++;
+[ap + -3] = [[fp + -4] + 2];
+jmp rel 17;
+[ap + 5] = [fp + -3], ap++;
+%{
+value = memory[ap + 4]
+scalar = 10633823966279326983230456482242756608
+max_x = 340282366920938463463374607431768211454
+x = min(value // scalar, max_x)
+y = value - x * scalar
+memory[ap + -1] = x
+memory[ap + 0] = y
+%}
+[ap + 1] = [ap + -1] * 10633823966279326983230456482242756608, ap++;
+[ap + 3] = [ap + 0] + [ap + -1], ap++;
+[ap + -2] = [[fp + -4] + 0], ap++;
+[ap + -1] = [ap + -3] + 319014718988379809496913694467282698496, ap++;
+[ap + -2] = [[fp + -4] + 1], ap++;
+[ap + -6] = [[fp + -4] + 2];
+[ap + -6] = [ap + -2] + 340282366920938463463374607431768211455;
+jmp rel 4 if [ap + -2] != 0;
+jmp rel 0;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = [ap + -2], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 12})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type felt = felt;
+type StorageAddress = StorageAddress;
+
+libfunc storage_addr_from_felt = storage_addr_from_felt;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
+
+storage_addr_from_felt([0], [1]) -> ([2], [3]);
+store_temp<RangeCheck>([2]) -> ([2]);
+rename<RangeCheck>([2]) -> ([4]);
+store_temp<StorageAddress>([3]) -> ([5]);
+return([4], [5]);
+
+test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, StorageAddress);

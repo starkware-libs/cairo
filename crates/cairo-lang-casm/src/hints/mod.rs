@@ -46,6 +46,14 @@ pub enum Hint {
         quotient: CellRef,
         remainder: CellRef,
     },
+    /// Finds some `x` and `y` such that `x * scalar + y = value` and `x <= max_x`.
+    LinearSplit {
+        value: ResOperand,
+        scalar: ResOperand,
+        max_x: ResOperand,
+        x: CellRef,
+        y: CellRef,
+    },
     EnterScope,
     ExitScope,
     DictDestruct {
@@ -193,6 +201,27 @@ impl Display for Hint {
                 write!(f, ", ")?;
                 fmt_res_operand(f, rhs)?;
                 write!(f, ")")?;
+            }
+            Hint::LinearSplit { value, scalar, max_x, x, y } => {
+                writeln!(f)?;
+                write!(f, "value = ")?;
+                fmt_res_operand(f, value)?;
+                writeln!(f)?;
+                write!(f, "scalar = ")?;
+                fmt_res_operand(f, scalar)?;
+                writeln!(f)?;
+                write!(f, "max_x = ")?;
+                fmt_res_operand(f, max_x)?;
+                writeln!(f)?;
+                writedoc!(
+                    f,
+                    "
+                        x = min(value // scalar, max_x)
+                        y = value - x * scalar
+                        memory{x} = x
+                        memory{y} = y
+                    "
+                )?;
             }
             Hint::EnterScope => write!(f, "vm_enter_scope()")?,
             Hint::ExitScope => write!(f, "vm_exit_scope()")?,
