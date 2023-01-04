@@ -11,6 +11,7 @@ use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
+use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 #[salsa::database(
     DefsDatabase,
@@ -56,17 +57,17 @@ impl Upcast<dyn SyntaxGroup> for RootDatabase {
     }
 }
 impl Upcast<dyn DefsGroup> for RootDatabase {
-    fn upcast(&self) -> &(dyn cairo_lang_defs::db::DefsGroup + 'static) {
+    fn upcast(&self) -> &(dyn defs::db::DefsGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn SemanticGroup> for RootDatabase {
-    fn upcast(&self) -> &(dyn cairo_lang_semantic::db::SemanticGroup + 'static) {
+    fn upcast(&self) -> &(dyn semantic::db::SemanticGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn LoweringGroup> for RootDatabase {
-    fn upcast(&self) -> &(dyn cairo_lang_lowering::db::LoweringGroup + 'static) {
+    fn upcast(&self) -> &(dyn lowering::db::LoweringGroup + 'static) {
         self
     }
 }

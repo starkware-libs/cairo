@@ -14,6 +14,7 @@ use cairo_lang_sierra::program;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
 use salsa::{InternId, InternKey};
+use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
 use crate::pre_sierra;
@@ -58,17 +59,17 @@ impl Upcast<dyn SyntaxGroup> for SierraGenDatabaseForTesting {
     }
 }
 impl Upcast<dyn DefsGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn cairo_lang_defs::db::DefsGroup + 'static) {
+    fn upcast(&self) -> &(dyn defs::db::DefsGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn SemanticGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn cairo_lang_semantic::db::SemanticGroup + 'static) {
+    fn upcast(&self) -> &(dyn semantic::db::SemanticGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
-    fn upcast(&self) -> &(dyn cairo_lang_lowering::db::LoweringGroup + 'static) {
+    fn upcast(&self) -> &(dyn lowering::db::LoweringGroup + 'static) {
         self
     }
 }

@@ -4,6 +4,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{FreeFunctionId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
@@ -49,10 +50,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// order is consistent, but not necessarily related to the order of the explicit implicits in
     /// the signature of the function.
     #[salsa::invoke(crate::lower::implicits::function_all_implicits)]
-    fn function_all_implicits(
-        &self,
-        function: cairo_lang_semantic::FunctionId,
-    ) -> Maybe<Vec<TypeId>>;
+    fn function_all_implicits(&self, function: semantic::FunctionId) -> Maybe<Vec<TypeId>>;
 
     /// Returns all the implicit parameters that the free function requires (according to both its
     /// signature and the functions it calls).
@@ -68,7 +66,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Returns whether the function may panic.
     #[salsa::invoke(crate::lower::implicits::function_may_panic)]
-    fn function_may_panic(&self, function: cairo_lang_semantic::FunctionId) -> Maybe<bool>;
+    fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
 
     /// Returns whether the function may panic.
     #[salsa::invoke(crate::lower::implicits::free_function_may_panic)]

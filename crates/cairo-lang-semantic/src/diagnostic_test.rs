@@ -6,6 +6,7 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_diagnostics::DiagnosticEntry;
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal};
 use indoc::indoc;
@@ -73,7 +74,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
-        item_ast: cairo_lang_syntax::node::ast::Item,
+        item_ast: syntax::node::ast::Item,
     ) -> PluginResult {
         match item_ast {
             ast::Item::FreeFunction(func)

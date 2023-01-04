@@ -1,4 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -41,8 +42,7 @@ fn check_find_local_variables(
 
     let lowered_function = &*db.free_function_lowered(test_function.function_id).unwrap();
 
-    let lowered_formatter =
-        cairo_lang_lowering::fmt::LoweredFormatter { db, lowered: lowered_function };
+    let lowered_formatter = lowering::fmt::LoweredFormatter { db, lowered: lowered_function };
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
     let local_variables_str = find_local_variables(db, lowered_function)

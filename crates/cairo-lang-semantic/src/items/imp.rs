@@ -9,6 +9,7 @@ use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
 };
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{self, Item, MaybeImplBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -169,7 +170,7 @@ pub fn impl_semantic_definition_diagnostics(
 }
 
 /// An helper function to report diagnostics in priv_impl_definition_data.
-fn report_invalid_in_impl<Terminal: cairo_lang_syntax::node::Terminal>(
+fn report_invalid_in_impl<Terminal: syntax::node::Terminal>(
     syntax_db: &dyn SyntaxGroup,
     diagnostics: &mut SemanticDiagnostics,
     kw_terminal: Terminal,
