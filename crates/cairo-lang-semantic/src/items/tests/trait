@@ -43,6 +43,8 @@ impl MyImpl2<T> of MyTrait::<T> {
     }
 }
 
+impl abc of abc;
+
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:3:35
@@ -53,6 +55,91 @@ error: impl body is not supported yet.
  --> lib.cairo:8:33
 impl MyImpl2<T> of MyTrait::<T> {
                                 ^
+
+error: `mod` is not allowed inside impl.
+ --> lib.cairo:9:5
+    mod a;
+    ^*^
+
+error: `use` is not allowed inside impl.
+ --> lib.cairo:10:5
+    use b;
+    ^*^
+
+error: `extern` is not allowed inside impl.
+ --> lib.cairo:11:5
+    extern fn extern_func() nopanic;
+    ^****^
+
+error: `extern` is not allowed inside impl.
+ --> lib.cairo:12:5
+    extern type DummyType;
+    ^****^
+
+error: `trait` is not allowed inside impl.
+ --> lib.cairo:14:5
+    trait DummyTrait;
+    ^***^
+
+error: `impl` is not allowed inside impl.
+ --> lib.cairo:15:5
+    impl DummyImpl of MyTrait::<T>;
+    ^**^
+
+error: `struct` is not allowed inside impl.
+ --> lib.cairo:17:5
+    struct DummyStruct {}
+    ^****^
+
+error: `enum` is not allowed inside impl.
+ --> lib.cairo:19:5
+    enum DummyEnum {}
+    ^**^
+
+error: Impl function `MyImpl2::my_bar` is not a member of trait `MyTrait`.
+ --> lib.cairo:21:5
+    fn my_bar() {
+    ^***********^
+
+error: The number of parameters in the impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: 1, actual: 3.
+ --> lib.cairo:25:19
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                  ^***********************^
+
+error: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `core::integer::u128`, actual: `core::felt`.
+ --> lib.cairo:25:22
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                     ^**^
+
+error: Parameter of impl function MyImpl2::param_test is incompatible with MyTrait::param_test. It should be a reference.
+ --> lib.cairo:25:19
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                  ^
+
+error: The signature of function `param_test` is incompatible with trait `MyTrait`. The trait function is declared as nopanic.
+ --> lib.cairo:25:18
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                 ^*********************************^
+
+error: Return type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `<missing>`, actual: `core::integer::u128`.
+ --> lib.cairo:25:49
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                                                ^**^
+
+error: Parameter of impl function MyImpl2::no_ret_ty is incompatible with MyTrait::no_ret_ty. It should not be a reference.
+ --> lib.cairo:29:18
+    fn no_ret_ty(ref a: u128) {
+                 ^*^
+
+error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `MyTrait::no_ret_ty`. Expected: `core::felt`, actual: `()`.
+ --> lib.cairo:29:31
+    fn no_ret_ty(ref a: u128) {
+                              ^
+
+error: Not a trait.
+ --> lib.cairo:34:13
+impl abc of abc;
+            ^*^
 
 //! > ==========================================================================
 
@@ -75,6 +162,11 @@ impl MyImpl4 of foo;
 
 //! > expected_diagnostics
 error: Trait not found.
+ --> lib.cairo:3:17
+impl MyImpl3 of NonExistingTrait;
+                ^**************^
+
+error: Not a trait.
  --> lib.cairo:3:17
 impl MyImpl3 of NonExistingTrait;
                 ^**************^

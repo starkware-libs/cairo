@@ -640,6 +640,10 @@ fn specialize_impl(
     impl_id: ImplId,
     mut generic_args: Vec<GenericArgumentId>,
 ) -> Maybe<ConcreteImplId> {
+    // Check for cycles in this type alias definition.
+    // TODO(orizi): Handle this without using `priv_impl_declaration_data`.
+    db.priv_impl_declaration_data(impl_id)?.check_no_cycle()?;
+
     // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
     let generic_params = db
         .impl_generic_params(impl_id)
