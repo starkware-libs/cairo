@@ -11,6 +11,8 @@ use syscalls::SystemType;
 pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
 
+use self::storage::StorageAddressFromFeltLibfunc;
+
 define_type_hierarchy! {
     pub enum StarkNetType {
         ContractAddress(ContractAddressType),
@@ -26,5 +28,6 @@ define_libfunc_hierarchy! {
          StorageRead(StorageReadLibfunc),
          StorageWrite(StorageWriteLibfunc),
          StorageAddressConst(StorageAddressConstLibfunc),
+         StorageAddressFromFelt(StorageAddressFromFeltLibfunc),
     }, StarkNetConcreteLibfunc
 }
