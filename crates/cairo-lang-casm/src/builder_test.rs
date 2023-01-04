@@ -283,3 +283,31 @@ fn test_local_fib() {
         "}
     );
 }
+
+#[test]
+fn test_array_access() {
+    let mut builder = CasmBuilder::default();
+    casm_build_extend! {builder,
+        const zero = 0;
+        const one = 1;
+        tempvar a = zero;
+        tempvar b = one;
+        tempvar ptr;
+        hint AllocSegment {} into {dst: ptr};
+        assert a = ptr[0];
+        assert b = ptr[1];
+    };
+    let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
+        builder.build(["Fallthrough"]);
+    assert!(awaiting_relocations.is_empty());
+    assert_eq!(
+        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
+        indoc! {"
+            [ap + 0] = 0, ap++;
+            [ap + 0] = 1, ap++;
+            %{ memory[ap + 0] = segments.add() %}
+            [ap + -2] = [[ap + 0] + 0], ap++;
+            [ap + -2] = [[ap + -1] + 1];
+        "}
+    );
+}
