@@ -56,6 +56,16 @@ pub struct ImplDeclarationData {
     resolved_lookback: Arc<ResolvedLookback>,
 }
 
+impl ImplDeclarationData {
+    /// Returns Maybe::Err if a cycle is detected here.
+    // TODO(orizi): Remove this function when cycle validation is not required through a type's
+    // field.
+    pub fn check_no_cycle(&self) -> Maybe<()> {
+        self.concrete_trait?;
+        Ok(())
+    }
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_semantic_declaration_diagnostics].
 pub fn impl_semantic_declaration_diagnostics(
     db: &dyn SemanticGroup,
@@ -82,12 +92,29 @@ pub fn impl_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<ConcreteTrai
     db.priv_impl_declaration_data(impl_id)?.concrete_trait
 }
 
-// TODO(ilya): Remove `allow` once when enable impl.
-#[allow(unreachable_code)]
+/// Cycle handling for [crate::db::SemanticGroup::priv_impl_declaration_data].
+pub fn priv_impl_declaration_data_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    impl_id: &ImplId,
+) -> Maybe<ImplDeclarationData> {
+    priv_impl_declaration_data_inner(db, *impl_id, false)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_declaration_data].
 pub fn priv_impl_declaration_data(
     db: &dyn SemanticGroup,
     impl_id: ImplId,
+) -> Maybe<ImplDeclarationData> {
+    priv_impl_declaration_data_inner(db, impl_id, true)
+}
+
+/// Shared code for the query and cycle handling.
+/// The cycle handling logic needs to pass resolve_trait=false to prevent the cycle.
+pub fn priv_impl_declaration_data_inner(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+    resolve_trait: bool,
 ) -> Maybe<ImplDeclarationData> {
     let module_file_id = impl_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
@@ -99,21 +126,6 @@ pub fn priv_impl_declaration_data(
     let syntax_db = db.upcast();
     let impl_ast = module_impls.get(&impl_id).to_maybe()?;
 
-    // TODO(ilya): Enable impl logic.
-    if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
-        let resolved_lookback = Arc::new(ResolvedLookback::default());
-        let diag_added = diagnostics
-            .report_by_ptr(body.lbrace(syntax_db).stable_ptr().untyped(), ImplBodyIsNotSupported);
-
-        return Ok(ImplDeclarationData {
-            diagnostics: diagnostics.build(),
-            generic_params: vec![],
-            concrete_trait: Err(diag_added),
-            attributes: vec![],
-            resolved_lookback,
-        });
-    }
-
     // Generic params.
     let generic_params = semantic_generic_params(
         db,
@@ -121,16 +133,27 @@ pub fn priv_impl_declaration_data(
         module_file_id,
         &impl_ast.generic_params(syntax_db),
     );
-    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
-    // TODO(ilya): Fix panic due to loop for `impl a of a'.
-    let concrete_trait = resolver
-        .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
-        .and_then(|option_concrete_path| {
-            try_extract_matches!(option_concrete_path, ResolvedConcreteItem::Trait)
-                .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
-        });
+    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
+
+    let concrete_trait = if resolve_trait {
+        resolver
+            .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
+            .ok()
+            .and_then(|concrete_item| {
+                try_extract_matches!(concrete_item, ResolvedConcreteItem::Trait)
+            })
+    } else {
+        None
+    }
+    .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait));
+
+    // TODO(ilya): Remove once compilation of impl body is supported.
+    if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
+        diagnostics
+            .report_by_ptr(body.lbrace(syntax_db).stable_ptr().untyped(), ImplBodyIsNotSupported);
+    }
 
     let attributes = ast_attributes_to_semantic(syntax_db, impl_ast.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);

@@ -26,9 +26,7 @@ mod abc {}
 
 trait abc {}
 
-trait bar {}
-
-impl abc of bar;
+impl abc of abc;
 
 //! > expected_diagnostics
 error: The name `abc` is defined multiple times.
@@ -57,6 +55,11 @@ trait abc {}
 ^**********^
 
 error: The name `abc` is defined multiple times.
- --> lib.cairo:19:1
-impl abc of bar;
+ --> lib.cairo:17:1
+impl abc of abc;
 ^**************^
+
+error: Not a trait.
+ --> lib.cairo:17:13
+impl abc of abc;
+            ^*^

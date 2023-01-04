@@ -242,6 +242,7 @@ pub trait SemanticGroup:
     // =======
     /// Private query to compute declaration data about an impl.
     #[salsa::invoke(items::imp::priv_impl_declaration_data)]
+    #[salsa::cycle(items::imp::priv_impl_declaration_data_cycle)]
     fn priv_impl_declaration_data(&self, impl_id: ImplId)
     -> Maybe<items::imp::ImplDeclarationData>;
     /// Returns the semantic declaration diagnostics of an impl.
