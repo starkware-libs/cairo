@@ -2,10 +2,8 @@ mod traits;
 use traits::Copy;
 use traits::Drop;
 
+#[derive(Copy, Drop)]
 enum bool { False: (), True: (), }
-// TODO(spapini): Make unnamed.
-impl BoolCopy of Copy::<bool>;
-impl BoolDrop of Drop::<bool>;
 
 extern fn bool_and_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
 fn bool_and(a: bool, b: bool) -> bool implicits() nopanic {
@@ -42,6 +40,7 @@ fn bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
 // Felt.
 extern type RangeCheck;
 
+#[derive(Copy, Drop)]
 extern type felt;
 extern fn felt_const<value>() -> felt nopanic;
 
