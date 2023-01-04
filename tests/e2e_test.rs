@@ -22,6 +22,15 @@ cairo_lang_test_utils::test_file_test!(
     run_small_e2e_test
 );
 
+cairo_lang_test_utils::test_file_test!(
+    starknet_libfunc_e2e,
+    "e2e_test_data/libfuncs/starknet",
+    {
+        storage: "storage",
+    },
+    run_small_e2e_test
+);
+
 fn run_small_e2e_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
     let db = &mut RootDatabase::default();
     // Parse code and create semantic model.
