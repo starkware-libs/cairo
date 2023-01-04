@@ -20,6 +20,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 
 use crate::contract::starknet_keccak;
@@ -305,6 +306,8 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                     handle_storage_struct(db, item_struct.clone());
                 storage_code = storage_code_rewrite;
                 diagnostics.extend(storage_diagnostics);
+                // Don't recreate the struct - as it might not be valid due to mappings.
+                continue;
             }
             _ => {}
         };
@@ -378,56 +381,100 @@ fn handle_storage_struct(
         let name = member.name(db).text(db);
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
         let type_ast = member.type_clause(db).ty(db);
-        let type_name = type_ast.as_syntax_node().get_text(db);
-        let type_name = type_name.trim();
-
-        if type_name.starts_with("Map<") && type_name.ends_with('>') {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: type_ast.stable_ptr().untyped(),
-                message: "Mapping storage vars are not yet supported.".to_string(),
-            });
-            continue;
-        }
-        match handle_simple_storage_var(type_name, &address) {
-            Some(code) => members_code.push(RewriteNode::interpolate_patched(
-                code.as_str(),
-                HashMap::from([
-                    (
-                        "storage_var_name".to_string(),
-                        RewriteNode::Trimmed(member.name(db).as_syntax_node()),
-                    ),
-                    ("type_name".to_string(), RewriteNode::Trimmed(type_ast.as_syntax_node())),
-                ]),
-            )),
-            None => diagnostics.push(PluginDiagnostic {
-                stable_ptr: type_ast.stable_ptr().untyped(),
-                message: "Unsupported type for storage var.".to_string(),
-            }),
+        if let Some((key_type_ast, value_type_ast)) = try_extract_mapping_types(db, &type_ast) {
+            match handle_mapping_storage_var(
+                key_type_ast.as_syntax_node().get_text(db).trim(),
+                value_type_ast.as_syntax_node().get_text(db).trim(),
+                &address,
+            ) {
+                Some(code) => members_code.push(RewriteNode::interpolate_patched(
+                    code.as_str(),
+                    HashMap::from([
+                        (
+                            "storage_var_name".to_string(),
+                            RewriteNode::Trimmed(member.name(db).as_syntax_node()),
+                        ),
+                        (
+                            "key_type".to_string(),
+                            RewriteNode::Trimmed(key_type_ast.as_syntax_node()),
+                        ),
+                        (
+                            "value_type".to_string(),
+                            RewriteNode::Trimmed(value_type_ast.as_syntax_node()),
+                        ),
+                    ]),
+                )),
+                None => diagnostics.push(PluginDiagnostic {
+                    stable_ptr: type_ast.stable_ptr().untyped(),
+                    message: "Unsupported type for storage var.".to_string(),
+                }),
+            }
+        } else {
+            match handle_simple_storage_var(type_ast.as_syntax_node().get_text(db).trim(), &address)
+            {
+                Some(code) => members_code.push(RewriteNode::interpolate_patched(
+                    code.as_str(),
+                    HashMap::from([
+                        (
+                            "storage_var_name".to_string(),
+                            RewriteNode::Trimmed(member.name(db).as_syntax_node()),
+                        ),
+                        ("type_name".to_string(), RewriteNode::Trimmed(type_ast.as_syntax_node())),
+                    ]),
+                )),
+                None => diagnostics.push(PluginDiagnostic {
+                    stable_ptr: type_ast.stable_ptr().untyped(),
+                    message: "Unsupported type for storage var.".to_string(),
+                }),
+            }
         }
     }
     (RewriteNode::Modified(ModifiedNode { children: members_code }), diagnostics)
 }
 
+/// Given a type, if it is of form `Map::<K, V>`, returns `K` and `V`. Otherwise, returns None.
+fn try_extract_mapping_types(
+    db: &dyn SyntaxGroup,
+    type_ast: &ast::Expr,
+) -> Option<(ast::Expr, ast::Expr)> {
+    let as_path = try_extract_matches!(type_ast, ast::Expr::Path)?;
+    let [ast::PathSegment::WithGenericArgs(segment)] = &as_path.elements(db)[..] else {
+        return None;
+    };
+    let ty = segment.ident(db).text(db);
+    if ty == "Map" {
+        let [key_ty, value_ty] =
+            <[ast::Expr; 2]>::try_from(segment.generic_args(db).generic_args(db).elements(db))
+                .ok()?;
+        Some((key_ty, value_ty))
+    } else {
+        None
+    }
+}
+
+/// Returns the conversion string to and from felt for the type.
+fn get_conversions(type_name: &str) -> Option<(&str, &str)> {
+    Some(match type_name {
+        "felt" => ("value", "value"),
+        "bool" => ("if value == 0 { false } else { true }", "if value { 1 } else { 0 }"),
+        "u128" => ("u128_from_felt(value)", "u128_to_felt(value)"),
+        _ => return None,
+    })
+}
+
 /// Generate getters and setters skeleton for a non-mapping member in the storage struct.
 fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
-    let (convert_to, convert_from) = match type_name {
-        "felt" => ("value", "value"),
-        "bool" => ("if value == 0 { false } else { true }", "if value { 0 } else { 1 }"),
-        "u128" => ("u128_from_felt(value)", "u128_to_felt(value)"),
-        _ => {
-            return None;
-        }
-    };
+    let (convert_to, convert_from) = get_conversions(type_name)?;
     Some(format!(
         "
     mod $storage_var_name$ {{
+        fn address() -> starknet::StorageAddress {{
+            starknet::storage_address_const::<{address}>()
+        }}
         fn read() -> $type_name$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
-                address_domain,
-                starknet::storage_address_const::<{address}>(),
-            ) {{
+            match starknet::storage_read_syscall(address_domain, address()) {{
                 Result::Ok(value) => {convert_to},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
@@ -439,10 +486,57 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
         fn write(value: $type_name$) {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
+            match starknet::storage_write_syscall(address_domain, address(), {convert_from}) {{
+                Result::Ok(()) => {{}},
+                Result::Err(revert_reason) => {{
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, revert_reason);
+                    panic(err_data)
+                }},
+            }}
+        }}
+    }}"
+    ))
+}
+
+/// Generate getters and setters skeleton for a non-mapping member in the storage struct.
+fn handle_mapping_storage_var(
+    key_type_name: &str,
+    value_type_name: &str,
+    address: &str,
+) -> Option<String> {
+    let key_convert_to = match key_type_name {
+        "felt" => "key",
+        "bool" => "if key { 1 } else { 0 }",
+        "u128" => "u128_to_felt(key)",
+        _ => return None,
+    };
+    let (value_convert_to, value_convert_from) = get_conversions(value_type_name)?;
+    Some(format!(
+        "
+    mod $storage_var_name$ {{
+        fn address(key: $key_type$) -> starknet::StorageAddress {{
+            starknet::storage_addr_from_felt(pedersen({address}, {key_convert_to}))
+        }}
+        fn read(key: $key_type$) -> $value_type$ {{
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            match starknet::storage_read_syscall(address_domain, address(key)) {{
+                Result::Ok(value) => {value_convert_to},
+                Result::Err(revert_reason) => {{
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, revert_reason);
+                    panic(err_data)
+                }},
+            }}
+        }}
+        fn write(key: $key_type$, value: $value_type$) {{
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
             match starknet::storage_write_syscall(
                 address_domain,
-                starknet::storage_address_const::<{address}>(),
-                {convert_from},
+                address(key),
+                {value_convert_from},
             ) {{
                 Result::Ok(()) => {{}},
                 Result::Err(revert_reason) => {{
