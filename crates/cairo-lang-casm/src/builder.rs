@@ -503,7 +503,7 @@ impl CasmBuilder {
         adjust_ap: bool,
     ) -> (CellRef, i16) {
         match self.get_value(var, adjust_ap) {
-            ResOperand::Deref(cell) => (cell, 0),
+            ResOperand::Deref(cell) => (cell, additional_offset),
             ResOperand::BinOp(BinOpOperand {
                 op: Operation::Add,
                 a,
