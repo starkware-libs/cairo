@@ -67,14 +67,12 @@ pub fn get_external_functions(
 ) -> anyhow::Result<Vec<FreeFunctionId>> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
     match db
-        .module_items(generated_module_id)
+        .module_item_by_name(generated_module_id, EXTERNAL_MODULE.into())
         .to_option()
-        .with_context(|| "Failed to get generated module items.")?
-        .items
-        .get(EXTERNAL_MODULE)
+        .with_context(|| "Failed to initiate a lookup in the the generated module.")?
     {
         Some(ModuleItemId::Submodule(external_module_id)) => Ok(db
-            .module_free_functions_ids(ModuleId::Submodule(*external_module_id))
+            .module_free_functions_ids(ModuleId::Submodule(external_module_id))
             .to_option()
             .with_context(|| "Failed to get external module functions.")?),
         _ => anyhow::bail!("Failed to get the external module."),
@@ -88,13 +86,11 @@ pub fn get_abi(
 ) -> anyhow::Result<TraitId> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
     match db
-        .module_items(generated_module_id)
+        .module_item_by_name(generated_module_id, ABI_TRAIT.into())
         .to_option()
-        .with_context(|| "Failed to get generated module items.")?
-        .items
-        .get(ABI_TRAIT)
+        .with_context(|| "Failed to initiate a lookup in the generated module.")?
     {
-        Some(ModuleItemId::Trait(trait_id)) => Ok(*trait_id),
+        Some(ModuleItemId::Trait(trait_id)) => Ok(trait_id),
         _ => anyhow::bail!("Failed to get the ABI trait."),
     }
 }
@@ -108,15 +104,13 @@ fn get_generated_contract_module(
     let contract_name = contract.submodule_id.name(db.upcast());
 
     match db
-        .module_items(parent_module_id)
+        .module_item_by_name(parent_module_id, contract_name.clone())
         .to_option()
-        .with_context(|| "Failed to get root module items.")?
-        .items
-        .get(contract_name.as_str())
+        .with_context(|| "Failed to initiate a lookup in the root module.")?
     {
         Some(ModuleItemId::Submodule(generated_module_id)) => {
-            Ok(ModuleId::Submodule(*generated_module_id))
+            Ok(ModuleId::Submodule(generated_module_id))
         }
-        _ => anyhow::bail!(format!("Failed to get generated module {}.", contract_name.clone())),
+        _ => anyhow::bail!(format!("Failed to get generated module {}.", contract_name)),
     }
 }
