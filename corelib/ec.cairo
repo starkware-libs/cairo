@@ -8,3 +8,5 @@ extern fn ec_point_try_create(x: felt, y: felt) -> Option::<EcPoint> nopanic;
 extern fn ec_point_unwrap(p: EcPoint) -> (felt, felt) nopanic;
 extern fn ec_init_state() -> EcState nopanic;
 extern fn ec_add_to_state(s: EcState, p: EcPoint) -> EcState nopanic;
+#[panic_with('not on EC', ec_finalize_state)]
+extern fn ec_try_finalize_state(s: EcState) -> Option::<EcPoint> nopanic;

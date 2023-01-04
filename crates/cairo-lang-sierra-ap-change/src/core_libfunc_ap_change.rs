@@ -50,8 +50,9 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
             BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => vec![ApChange::Known(3)],
         },
         CoreConcreteLibfunc::Ec(libfunc) => match libfunc {
-            EcConcreteLibfunc::AddToState(_) => vec![ApChange::Known(10)],
+            EcConcreteLibfunc::AddToState(_) => vec![ApChange::Known(9)],
             EcConcreteLibfunc::CreatePoint(_) => vec![ApChange::Known(6), ApChange::Known(6)],
+            EcConcreteLibfunc::FinalizeState(_) => vec![ApChange::Known(13), ApChange::Known(6)],
             EcConcreteLibfunc::InitState(_) => vec![ApChange::Known(8)],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ApChange::Known(0)],
         },

@@ -179,6 +179,12 @@ impl HintProcessor for CairoHintProcessor {
                 )?;
                 vm.insert_value(&cell_ref_to_relocatable(remainder, vm), lhs_val % rhs_val)?;
             }
+            Hint::PrimeDiv { lhs, rhs, result } => {
+                let lhs_val = Fq::from(get_val(lhs)?.to_biguint().unwrap());
+                let rhs_val = Fq::from(get_val(rhs)?.to_biguint().unwrap());
+                let div: BigUint = (lhs_val / rhs_val).into_bigint().into();
+                vm.insert_value(&cell_ref_to_relocatable(result, vm), BigInt::from(div))?;
+            }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
                 let value = get_val(value)?;
                 let scalar = get_val(scalar)?;

@@ -126,6 +126,13 @@ pub enum Hint {
         start: ResOperand,
         end: ResOperand,
     },
+    /// TODO(orizi): Remove this hint when division bug is fixed.
+    /// Computes the field division of two field elements.
+    PrimeDiv {
+        lhs: ResOperand,
+        rhs: ResOperand,
+        result: CellRef,
+    },
 }
 
 impl Display for Hint {
@@ -248,6 +255,13 @@ impl Display for Hint {
                         (memory{x}, memory{y}) = x, y
                     "
                 )?;
+            }
+            Hint::PrimeDiv { lhs, rhs, result } => {
+                write!(f, "memory{result} = (")?;
+                fmt_res_operand(f, lhs)?;
+                write!(f, " * pow(")?;
+                fmt_res_operand(f, rhs)?;
+                write!(f, ", PRIME-2, PRIME)) % PRIME")?;
             }
             Hint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr=",)?;
