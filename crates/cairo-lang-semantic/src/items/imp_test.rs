@@ -7,12 +7,11 @@ use crate::db::SemanticGroup;
 use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 
 // TODO(ilya): enable test once impls are enabled.
-#[ignore]
 #[test]
 fn test_impl() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let db = &mut db_val;
-    let test_module = setup_test_module(
+    let (test_module, diagnostics) = setup_test_module(
         db,
         indoc::indoc! {"
             #[ABI]
@@ -29,7 +28,18 @@ fn test_impl() {
             }
         "},
     )
-    .unwrap();
+    .split();
+
+    assert_eq!(
+        diagnostics,
+        indoc::indoc! {"
+        error: impl body is not supported yet.
+         --> lib.cairo:8:28
+        impl Contract of IContract {
+                                   ^
+
+        "}
+    );
 
     let impl_id = extract_matches!(
         db.module_item_by_name(test_module.module_id, "Contract".into()).unwrap().unwrap(),
