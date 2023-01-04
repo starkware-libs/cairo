@@ -1,6 +1,6 @@
 #[contract]
 mod TestContract {
-    struct Storage { value: felt }
+    struct Storage { value: felt, mapping: Map::<u128, bool>, }
 
     #[view]
     fn get_plus_2(a: felt) -> felt {
@@ -24,6 +24,21 @@ mod TestContract {
     #[view]
     fn get_value() -> felt {
         value::read()
+    }
+
+    #[external]
+    fn insert(key: u128) {
+        mapping::write(key, true)
+    }
+
+    #[external]
+    fn remove(key: u128) {
+        mapping::write(key, false)
+    }
+
+    #[view]
+    fn contains(key: u128) -> bool {
+        mapping::read(key)
     }
 }
 
@@ -106,5 +121,35 @@ fn write_read_value() {
     assert_empty(TestContract::__external::set_value(single_element_arr(4)));
     let mut retdata = TestContract::__external::get_value(array_new::<felt>());
     pop_and_compare(retdata, 4, 'Wrong result');
+    assert_empty(retdata);
+}
+
+#[test]
+#[available_gas(200000)]
+fn empty_start() {
+    let mut retdata = TestContract::__external::contains(single_element_arr(4));
+    pop_and_compare(retdata, 0, 'Wrong result');
+    assert_empty(retdata);
+}
+
+#[test]
+#[available_gas(300000)]
+fn contains_added() {
+    assert_empty(TestContract::__external::insert(single_element_arr(4)));
+    let mut retdata = TestContract::__external::contains(single_element_arr(4));
+    pop_and_compare(retdata, 1, 'Wrong result');
+    assert_empty(retdata);
+    let mut retdata = TestContract::__external::contains(single_element_arr(5));
+    pop_and_compare(retdata, 0, 'Wrong result');
+    assert_empty(retdata);
+}
+
+#[test]
+#[available_gas(300000)]
+fn not_contains_removed() {
+    assert_empty(TestContract::__external::insert(single_element_arr(4)));
+    assert_empty(TestContract::__external::remove(single_element_arr(4)));
+    let mut retdata = TestContract::__external::contains(single_element_arr(4));
+    pop_and_compare(retdata, 0, 'Wrong result');
     assert_empty(retdata);
 }
