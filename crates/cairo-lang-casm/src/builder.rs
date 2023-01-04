@@ -352,7 +352,7 @@ impl CasmBuilder {
         self.statements.push(Statement::Jump(label.clone(), instruction));
         let mut state = State::default();
         std::mem::swap(&mut state, &mut self.main_state);
-        self.label_state.insert(label, state);
+        self.set_or_test_label_state(label, state);
         self.reachable = false;
     }
 
