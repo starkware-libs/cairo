@@ -7,6 +7,7 @@ use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use num_bigint::BigInt;
 use smol_str::SmolStr;
+use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -123,7 +124,7 @@ fn get_libfunc_id_without_generics(
 
 pub fn const_libfunc_id_by_type(
     db: &dyn SierraGenGroup,
-    ty: cairo_lang_semantic::TypeId,
+    ty: semantic::TypeId,
     value: BigInt,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
@@ -202,7 +203,7 @@ pub fn get_libfunc_signature(
 /// Returns the [ConcreteLibfuncId] for calling a user-defined function.
 pub fn function_call_libfunc_id(
     db: &dyn SierraGenGroup,
-    func: cairo_lang_semantic::FunctionId,
+    func: semantic::FunctionId,
 ) -> ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string("function_call"),
@@ -215,7 +216,7 @@ pub fn function_call_libfunc_id(
 /// Returns the [ConcreteLibfuncId] used for calling a libfunc.
 pub fn generic_libfunc_id(
     db: &dyn SierraGenGroup,
-    extern_id: cairo_lang_defs::ids::ExternFunctionId,
+    extern_id: defs::ids::ExternFunctionId,
     generic_args: Vec<cairo_lang_sierra::program::GenericArg>,
 ) -> ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
@@ -227,8 +228,8 @@ pub fn generic_libfunc_id(
 /// Returns the [ConcreteLibfuncId] used for calling a function (either user-defined or libfunc).
 pub fn get_concrete_libfunc_id(
     db: &dyn SierraGenGroup,
-    function: cairo_lang_semantic::FunctionId,
-) -> (cairo_lang_semantic::ConcreteFunction, ConcreteLibfuncId) {
+    function: semantic::FunctionId,
+) -> (semantic::ConcreteFunction, ConcreteLibfuncId) {
     // Check if this is a user-defined function or a libfunc.
     let concrete_function = db.lookup_intern_function(function).function;
     match concrete_function.generic_function {
@@ -237,13 +238,13 @@ pub fn get_concrete_libfunc_id(
             let mut generic_args = vec![];
             for generic_arg in &concrete_function.generic_args {
                 generic_args.push(match generic_arg {
-                    cairo_lang_semantic::GenericArgumentId::Type(ty) => {
+                    semantic::GenericArgumentId::Type(ty) => {
                         // TODO(lior): How should the following unwrap() be handled?
                         cairo_lang_sierra::program::GenericArg::Type(
                             db.get_concrete_type_id(*ty).unwrap(),
                         )
                     }
-                    cairo_lang_semantic::GenericArgumentId::Literal(literal_id) => {
+                    semantic::GenericArgumentId::Literal(literal_id) => {
                         cairo_lang_sierra::program::GenericArg::Value(
                             db.lookup_intern_literal(*literal_id).value,
                         )

@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::FreeFunctionId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::program::GenStatement;
+use {cairo_lang_defs as defs, cairo_lang_lowering as lowering};
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -16,19 +17,19 @@ pub fn contains_cycle(db: &dyn SierraGenGroup, function_id: FreeFunctionId) -> M
     let lowered_function = &*db.free_function_lowered(function_id)?;
     for (_, block) in &lowered_function.blocks {
         for statement in &block.statements {
-            if let cairo_lang_lowering::Statement::Call(statement_call) = statement {
+            if let lowering::Statement::Call(statement_call) = statement {
                 let concrete = db.lookup_intern_function(statement_call.function).function;
                 match concrete.generic_function {
-                    cairo_lang_defs::ids::GenericFunctionId::Free(free_function_id) => {
+                    defs::ids::GenericFunctionId::Free(free_function_id) => {
                         if db.contains_cycle(free_function_id)? {
                             return Ok(true);
                         }
                     }
-                    cairo_lang_defs::ids::GenericFunctionId::Extern(_) => {}
-                    cairo_lang_defs::ids::GenericFunctionId::TraitFunction(_) => {
+                    defs::ids::GenericFunctionId::Extern(_) => {}
+                    defs::ids::GenericFunctionId::TraitFunction(_) => {
                         panic!("Trait function should be replaced with concrete functions.")
                     }
-                    cairo_lang_defs::ids::GenericFunctionId::ImplFunction(_) => todo!(),
+                    defs::ids::GenericFunctionId::ImplFunction(_) => todo!(),
                 }
             }
         }

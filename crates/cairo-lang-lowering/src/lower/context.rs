@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{FreeFunctionId, LanguageElementId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
@@ -26,13 +27,13 @@ use crate::VariableId;
 pub struct LoweringContextBuilder<'db> {
     pub db: &'db dyn LoweringGroup,
     pub free_function_id: FreeFunctionId,
-    pub function_def: Arc<cairo_lang_semantic::FreeFunctionDefinition>,
+    pub function_def: Arc<semantic::FreeFunctionDefinition>,
     /// Semantic signature for current function.
-    pub signature: cairo_lang_semantic::Signature,
+    pub signature: semantic::Signature,
     // TODO(spapini): Document. (excluding implicits).
-    pub ref_params: Vec<cairo_lang_semantic::VarId>,
+    pub ref_params: Vec<semantic::VarId>,
     /// The available implicits in this function.
-    pub implicits: Vec<cairo_lang_semantic::TypeId>,
+    pub implicits: Vec<semantic::TypeId>,
 }
 impl<'db> LoweringContextBuilder<'db> {
     pub fn new(db: &'db dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<Self> {
@@ -87,9 +88,9 @@ impl<'db> LoweringContextBuilder<'db> {
 pub struct LoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Semantic model for current function definition.
-    pub function_def: &'db cairo_lang_semantic::FreeFunctionDefinition,
+    pub function_def: &'db semantic::FreeFunctionDefinition,
     // Semantic signature for current function.
-    pub signature: &'db cairo_lang_semantic::Signature,
+    pub signature: &'db semantic::Signature,
     /// Whether the current function may panic.
     pub may_panic: bool,
     /// Current emitted diagnostics.
@@ -100,18 +101,18 @@ pub struct LoweringContext<'db> {
     pub blocks: StructuredBlocks,
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
-    pub semantic_defs: UnorderedHashMap<cairo_lang_semantic::VarId, cairo_lang_semantic::Variable>,
+    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
     // TODO(spapini): Document. (excluding implicits).
-    pub ref_params: &'db [cairo_lang_semantic::VarId],
+    pub ref_params: &'db [semantic::VarId],
     // The available implicits in this function.
-    pub implicits: &'db [cairo_lang_semantic::TypeId],
+    pub implicits: &'db [semantic::TypeId],
     // Lookup context for impls.
     pub lookup_context: ImplLookupContext,
     // Expression formatter of the free function.
     pub expr_formatter: ExprFormatter<'db>,
 }
 impl<'db> LoweringContext<'db> {
-    pub fn new_var(&mut self, ty: cairo_lang_semantic::TypeId) -> VariableId {
+    pub fn new_var(&mut self, ty: semantic::TypeId) -> VariableId {
         let ty_info = self.db.type_info(self.lookup_context.clone(), ty).unwrap_or_default();
         self.variables.alloc(Variable {
             duplicatable: ty_info.duplicatable,
@@ -146,24 +147,22 @@ impl LoweredExpr {
                     .map(|expr| expr.var(ctx, scope))
                     .collect::<Result<Vec<_>, _>>()?;
                 let tys = inputs.iter().map(|var| ctx.variables[var.var_id()].ty).collect();
-                let ty = ctx.db.intern_type(cairo_lang_semantic::TypeLongId::Tuple(tys));
+                let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
                 Ok(generators::StructConstruct { inputs, ty }.add(ctx, scope))
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
         }
     }
-    pub fn ty(&self, ctx: &mut LoweringContext<'_>) -> cairo_lang_semantic::TypeId {
+    pub fn ty(&self, ctx: &mut LoweringContext<'_>) -> semantic::TypeId {
         match self {
             LoweredExpr::AtVariable(var) => ctx.variables[var.var_id()].ty,
-            LoweredExpr::Tuple(exprs) => {
-                ctx.db.intern_type(cairo_lang_semantic::TypeLongId::Tuple(
-                    exprs.iter().map(|expr| expr.ty(ctx)).collect(),
-                ))
-            }
+            LoweredExpr::Tuple(exprs) => ctx.db.intern_type(semantic::TypeLongId::Tuple(
+                exprs.iter().map(|expr| expr.ty(ctx)).collect(),
+            )),
             LoweredExpr::ExternEnum(extern_enum) => {
-                ctx.db.intern_type(cairo_lang_semantic::TypeLongId::Concrete(
-                    cairo_lang_semantic::ConcreteTypeId::Enum(extern_enum.concrete_enum_id),
-                ))
+                ctx.db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
+                    extern_enum.concrete_enum_id,
+                )))
             }
         }
     }
@@ -172,12 +171,12 @@ impl LoweredExpr {
 /// Lazy expression value of an extern call returning an enum.
 #[derive(Debug)]
 pub struct LoweredExprExternEnum {
-    pub function: cairo_lang_semantic::FunctionId,
-    pub concrete_enum_id: cairo_lang_semantic::ConcreteEnumId,
+    pub function: semantic::FunctionId,
+    pub concrete_enum_id: semantic::ConcreteEnumId,
     pub inputs: Vec<LivingVar>,
-    pub ref_args: Vec<cairo_lang_semantic::VarId>,
+    pub ref_args: Vec<semantic::VarId>,
     /// The implicits used/changed by the function.
-    pub implicits: Vec<cairo_lang_semantic::TypeId>,
+    pub implicits: Vec<semantic::TypeId>,
     pub stable_ptr: SyntaxStablePtrId,
 }
 impl LoweredExprExternEnum {

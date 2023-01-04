@@ -1,4 +1,5 @@
 use cairo_lang_filesystem::span::TextOffset;
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{self};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -31,7 +32,7 @@ impl SemanticTokensTraverser {
     ) {
         let green_node = node.green_node(db);
         match green_node.details {
-            cairo_lang_syntax::node::green::GreenNodeDetails::Token(text) => {
+            syntax::node::green::GreenNodeDetails::Token(text) => {
                 if green_node.kind == SyntaxKind::TokenNewline {
                     self.encoder.next_line();
                     return;
@@ -55,7 +56,7 @@ impl SemanticTokensTraverser {
                     self.encoder.skip(width);
                 }
             }
-            cairo_lang_syntax::node::green::GreenNodeDetails::Node { .. } => {
+            syntax::node::green::GreenNodeDetails::Node { .. } => {
                 let children = node.children(db);
                 match green_node.kind {
                     SyntaxKind::Param => {
