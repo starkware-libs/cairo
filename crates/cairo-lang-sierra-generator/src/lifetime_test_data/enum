@@ -38,7 +38,6 @@ Statements:
   (v6: test::MyEnum) <- MyEnum::A(v5)
   (v7: core::felt) <- 2u
   (v8: test::MyEnum) <- MyEnum::A(v7)
-Drops: v5, v6, v7
 End:
   Callsite(v8)
 
@@ -48,7 +47,6 @@ Statements:
   (v11: core::felt) <- core::felt_add(v10, v1)
   (v12: core::felt) <- core::felt_add(v11, v2)
   (v13: test::MyEnum) <- MyEnum::A(v12)
-Drops: v12, v11
 End:
   Callsite(v13)
 
@@ -57,7 +55,6 @@ Inputs:
 Statements:
   (v18: (core::felt, core::felt)) <- struct_construct(v2, v3)
   (v19: test::MyEnum) <- MyEnum::C(v18)
-Drops: v18
 End:
   Callsite(v19)
 
@@ -65,7 +62,6 @@ blk3:
 Inputs: v4: core::felt
 Statements:
   (v9: test::MyEnum) <- blk0()
-Drops: v4
 End:
   Callsite(v9)
 
@@ -73,7 +69,6 @@ blk4:
 Inputs: v10: core::felt
 Statements:
   (v14: test::MyEnum) <- blk1()
-Drops: v10
 End:
   Callsite(v14)
 
@@ -82,7 +77,6 @@ Inputs: v15: (core::felt, core::felt)
 Statements:
   (v16: core::felt, v17: core::felt) <- struct_destructure(v15)
   (v20: test::MyEnum) <- blk2()
-Drops: v15, v16, v17
 End:
   Callsite(v20)
 
@@ -94,7 +88,6 @@ Statements:
     MyEnum::B => blk4,
     MyEnum::C => blk5,
   }
-Drops: v21, v1, v2
 End:
   Callsite(v3)
 

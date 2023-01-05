@@ -39,7 +39,6 @@ Inputs:
 Statements:
   (v3: core::felt) <- test::revoke_ap()
   (v4: core::felt) <- core::unwrap_nz<Type(core::felt),>(v2)
-Drops: v3
 End:
   Callsite(v4)
 
@@ -47,7 +46,6 @@ blk1:
 Inputs:
 Statements:
   (v1: core::felt) <- 1u
-Drops:
 End:
   Callsite(v1)
 
@@ -55,7 +53,6 @@ blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v5: core::felt) <- blk0()
-Drops: v2
 End:
   Callsite(v5)
 
@@ -64,7 +61,6 @@ Inputs:
 Statements:
   (v10: core::felt) <- test::revoke_ap()
   (v11: core::felt) <- core::unwrap_nz<Type(core::felt),>(v9)
-Drops: v10
 End:
   Callsite(v11)
 
@@ -72,7 +68,6 @@ blk4:
 Inputs:
 Statements:
   (v8: core::felt) <- 1u
-Drops:
 End:
   Callsite(v8)
 
@@ -80,7 +75,6 @@ blk5:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v12: core::felt) <- blk3()
-Drops: v9
 End:
   Callsite(v12)
 
@@ -96,7 +90,6 @@ Statements:
     () => blk4,
     (v9) => blk5,
   }
-Drops: v0, v6, v7
 End:
   Callsite(v13)
 
@@ -136,7 +129,6 @@ blk0:
 Inputs:
 Statements:
   (v3: core::felt) <- 1u
-Drops:
 End:
   Callsite(v3)
 
@@ -144,7 +136,6 @@ blk1:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
   (v5: core::felt) <- 2u
-Drops: v4
 End:
   Callsite(v5)
 
@@ -152,7 +143,6 @@ blk2:
 Inputs:
 Statements:
   (v8: core::felt) <- 1u
-Drops:
 End:
   Callsite(v8)
 
@@ -160,7 +150,6 @@ blk3:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 2u
-Drops: v9
 End:
   Callsite(v10)
 
@@ -179,7 +168,6 @@ Statements:
     (v9) => blk3,
   }
   (v12: core::felt) <- test::revoke_ap()
-Drops: v0, v1, v2, v6, v7, v12
 End:
   Callsite(v11)
 
@@ -235,7 +223,6 @@ Inputs:
 Statements:
   (v4: core::felt) <- test::revoke_ap()
   (v5: core::felt) <- 0u
-Drops: v4, v3, v0, v1
 End:
   Return(v5)
 
@@ -243,7 +230,6 @@ blk1:
 Inputs:
 Statements:
   (v2: core::felt) <- 1u
-Drops:
 End:
   Callsite(v2)
 
@@ -251,7 +237,6 @@ blk2:
 Inputs: v3: core::NonZero::<core::felt>
 Statements:
   () <- blk0()
-Drops:
 End:
   Unreachable
 
@@ -259,7 +244,6 @@ blk3:
 Inputs:
 Statements:
   (v10: core::felt) <- 2u
-Drops:
 End:
   Callsite(v10)
 
@@ -267,7 +251,6 @@ blk4:
 Inputs:
 Statements:
   (v8: core::felt) <- 1u
-Drops:
 End:
   Callsite(v8)
 
@@ -275,7 +258,6 @@ blk5:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v11: core::felt) <- blk3()
-Drops: v9
 End:
   Callsite(v11)
 
@@ -293,7 +275,6 @@ Statements:
     (v9) => blk5,
   }
   (v13: core::felt) <- core::felt_add(v7, v0)
-Drops: v0, v1, v6, v7, v12
 End:
   Callsite(v13)
 
