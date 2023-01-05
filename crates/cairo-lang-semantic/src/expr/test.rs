@@ -23,6 +23,7 @@ cairo_lang_test_utils::test_file_test!(
         assignment: "assignment",
         enum_: "enum",
         error_propagate: "error_propagate",
+        function_call: "function_call",
         generics: "generics",
         if_: "if",
         let_statement: "let_statement",
