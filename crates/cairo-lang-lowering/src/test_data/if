@@ -21,7 +21,34 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0:
+Inputs: v2: ()
+Initial refs:
+Statements:
+  (v3: core::felt) <- 1u
+End:
+  Callsite(v3)
+
+blk1:
+Inputs: v4: ()
+Initial refs:
+Statements:
+End:
+  Callsite(v1)
+
+blk2 (root):
+Inputs: v0: core::bool, v1: core::felt
+Initial refs:
+Statements:
+  (v5: core::felt) <- match_enum(v0) {
+    bool::False => blk1,
+    bool::True => blk0,
+  }
+End:
+  Callsite(v5)
+
+//! > lowering_flat
 blk0:
 Inputs: v2: ()
 Statements:
@@ -70,7 +97,34 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0:
+Inputs:
+Initial refs:
+Statements:
+  (v1: core::felt) <- 1u
+End:
+  Callsite(v1)
+
+blk1:
+Inputs: v2: core::NonZero::<core::felt>
+Initial refs:
+Statements:
+End:
+  Callsite(v0)
+
+blk2 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v3: core::felt) <- match core::felt_jump_nz(v0) {
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
+  }
+End:
+  Callsite(v3)
+
+//! > lowering_flat
 blk0:
 Inputs:
 Statements:
@@ -88,8 +142,8 @@ blk2 (root):
 Inputs: v0: core::felt
 Statements:
   (v3: core::felt) <- match core::felt_jump_nz(v0) {
-    () => blk0,
-    (v2) => blk1,
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
 End:
   Callsite(v3)
@@ -118,7 +172,35 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0:
+Inputs:
+Initial refs:
+Statements:
+  (v1: core::felt) <- 10u
+End:
+  Return(v1)
+
+blk1:
+Inputs: v2: core::NonZero::<core::felt>
+Initial refs:
+Statements:
+End:
+  Callsite()
+
+blk2 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  () <- match core::felt_jump_nz(v0) {
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
+  }
+  (v3: core::felt) <- 20u
+End:
+  Callsite(v3)
+
+//! > lowering_flat
 blk0:
 Inputs:
 Statements:
@@ -136,8 +218,8 @@ blk2 (root):
 Inputs: v0: core::felt
 Statements:
   () <- match core::felt_jump_nz(v0) {
-    () => blk0,
-    (v2) => blk1,
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
   (v3: core::felt) <- 20u
 End:
@@ -168,7 +250,38 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0:
+Inputs:
+Initial refs:
+Statements:
+  (v7: core::felt) <- 0u
+End:
+  Callsite(v7)
+
+blk1:
+Inputs: v8: core::NonZero::<core::felt>
+Initial refs:
+Statements:
+  (v9: core::felt) <- 1u
+End:
+  Callsite(v9)
+
+blk2 (root):
+Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
+Initial refs:
+Statements:
+  (v4: core::felt) <- core::felt_add(v0, v1)
+  (v5: core::felt) <- core::felt_sub(v2, v3)
+  (v6: core::felt) <- core::felt_sub(v4, v5)
+  (v10: core::felt) <- match core::felt_jump_nz(v6) {
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
+  }
+End:
+  Callsite(v10)
+
+//! > lowering_flat
 blk0:
 Inputs:
 Statements:
@@ -190,8 +303,8 @@ Statements:
   (v5: core::felt) <- core::felt_sub(v2, v3)
   (v6: core::felt) <- core::felt_sub(v4, v5)
   (v10: core::felt) <- match core::felt_jump_nz(v6) {
-    () => blk0,
-    (v8) => blk1,
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
 End:
   Callsite(v10)

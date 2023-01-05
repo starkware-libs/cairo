@@ -19,7 +19,35 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0:
+Inputs: v2: ()
+Initial refs:
+Statements:
+  (v3: core::felt) <- 3u
+End:
+  Callsite(v3)
+
+blk1:
+Inputs: v4: ()
+Initial refs:
+Statements:
+End:
+  Callsite(v1)
+
+blk2 (root):
+Inputs: v0: core::bool
+Initial refs:
+Statements:
+  (v1: core::felt) <- 2u
+  (v5: core::felt) <- match_enum(v0) {
+    bool::False => blk1,
+    bool::True => blk0,
+  }
+End:
+  Callsite(v5)
+
+//! > lowering_flat
 blk0:
 Inputs: v2: ()
 Statements:

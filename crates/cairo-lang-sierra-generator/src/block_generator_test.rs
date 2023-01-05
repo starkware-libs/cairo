@@ -1,4 +1,4 @@
-use cairo_lang_lowering::lower::lower;
+use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -33,7 +33,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     .split();
 
     // Lower code.
-    let lowered = lower(db, test_function.function_id).unwrap();
+    let lowered = db.free_function_lowered_flat(test_function.function_id).unwrap();
 
     if lowered.root.is_err() {
         return OrderedHashMap::from([

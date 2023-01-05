@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, LanguageElementId};
-use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe, ToMaybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{
     core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
@@ -11,7 +11,6 @@ use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
-use id_arena::Arena;
 use itertools::{chain, zip_eq, Itertools};
 use num_traits::Zero;
 use scope::{BlockScope, BlockScopeEnd};
@@ -24,12 +23,10 @@ use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::lower_if::lower_expr_if;
 use self::scope::{generators, BlockFlowMerger, BlockMergerFinalized};
 use self::variables::LivingVar;
-use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
-use crate::diagnostic::LoweringDiagnostic;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::LoweringContextBuilder;
-use crate::objects::{BlockId, Variable};
+use crate::StructuredLowered;
 
 pub mod context;
 mod external;
@@ -39,21 +36,8 @@ mod scope;
 mod semantic_map;
 mod variables;
 
-/// A lowered function code.
-#[derive(Debug, PartialEq, Eq)]
-pub struct Lowered {
-    /// Diagnostics produced while lowering.
-    pub diagnostics: Diagnostics<LoweringDiagnostic>,
-    /// Block id for the start of the lowered function.
-    pub root: Maybe<BlockId>,
-    /// Arena of allocated lowered variables.
-    pub variables: Arena<Variable>,
-    /// Arena of allocated lowered blocks.
-    pub blocks: FlatBlocks,
-}
-
 /// Lowers a semantic free function.
-pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<Lowered> {
+pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<StructuredLowered> {
     log::trace!("Lowering a free function.");
     let is_empty_semantic_diagnostics =
         db.free_function_declaration_diagnostics(free_function_id).is_empty()
@@ -94,6 +78,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
                     for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables_iter) {
                         scope.put_semantic_variable(ctx, semantic_var_id, var);
                     }
+                    scope.bind_refs();
                     lower_block(ctx, scope, semantic_block, true)
                 })
             });
@@ -103,18 +88,11 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
         Err(DiagnosticAdded)
     };
 
-    // Convert block to flat block.
-    // TODO(spapini): Do this in another phase.
-    let mut flat_blocks = FlatBlocks::new();
-    for block in ctx.blocks.0.into_iter() {
-        flat_blocks.alloc(block.try_into().expect("Panic block ends are not supported yet."));
-    }
-
-    Ok(Lowered {
+    Ok(StructuredLowered {
         diagnostics: ctx.diagnostics.build(),
         root,
         variables: ctx.variables,
-        blocks: flat_blocks,
+        blocks: ctx.blocks,
     })
 }
 
@@ -423,6 +401,7 @@ fn lower_expr_block(
     let (block_sealed, mut finalized_merger) =
         BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
             merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
+                subscope.bind_refs();
                 lower_block(ctx, subscope, expr, false)
             })
         });
@@ -616,6 +595,7 @@ fn lower_expr_match(
 
                     // Create a scope for the arm block.
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, arm_inputs| {
+                        subscope.bind_refs();
                         // TODO(spapini): Make a better diagnostic.
                         let enum_pattern =
                             try_extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant)
@@ -796,11 +776,13 @@ fn lower_expr_match_felt(
     // Lower both blocks.
     let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
         let block0_end = merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
+            subscope.bind_refs();
             lower_tail_expr(ctx, subscope, Some(*block0), false)
         });
         let non_zero_type = core_nonzero_ty(semantic_db, core_felt_ty(semantic_db));
         let block_otherwise_end =
             merger.run_in_subscope(ctx, vec![non_zero_type], |ctx, subscope, _| {
+                subscope.bind_refs();
                 lower_tail_expr(ctx, subscope, Some(*block_otherwise), false)
             });
         Ok((block0_end, block_otherwise_end))
@@ -1026,13 +1008,15 @@ fn lower_error_propagate(
         BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| -> Result<_, LoweringFlowError> {
             Ok([
                 merger
-                    .run_in_subscope(ctx, vec![ok_variant.ty], |_ctx, _subscope, arm_inputs| {
+                    .run_in_subscope(ctx, vec![ok_variant.ty], |_ctx, subscope, arm_inputs| {
+                        subscope.bind_refs();
                         let [var] = <[_; 1]>::try_from(arm_inputs).ok().unwrap();
                         Ok(BlockScopeEnd::Callsite(Some(var)))
                     })
                     .map_err(LoweringFlowError::Failed)?,
                 merger
                     .run_in_subscope(ctx, vec![err_variant.ty], |ctx, subscope, arm_inputs| {
+                        subscope.bind_refs();
                         let [var] = <[_; 1]>::try_from(arm_inputs).ok().unwrap();
                         let value_var = generators::EnumConstruct {
                             input: var,
@@ -1185,6 +1169,7 @@ fn match_extern_arm_ref_args_bind(
     for (semantic_var_id, output_var) in zip_eq(&extern_enum.ref_args, ref_outputs) {
         subscope.put_semantic_variable(ctx, *semantic_var_id, output_var);
     }
+    subscope.bind_refs();
 }
 
 /// Lowers an expression of type [semantic::ExprAssignment].

@@ -34,8 +34,8 @@ blk2 (root):
 Inputs: v0: core::felt
 Statements:
   () <- match core::felt_jump_nz(v0) {
-    () => blk0,
-    (v2) => blk1,
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
 End:
   Callsite(v0)
@@ -129,8 +129,8 @@ blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
   () <- match core::felt_jump_nz(v0) {
-    () => blk0,
-    (v3) => blk1,
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
 End:
   Unreachable

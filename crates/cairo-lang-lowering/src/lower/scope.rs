@@ -20,6 +20,11 @@ pub mod generators;
 // create an instance of BlockScope.
 #[derive(Default)]
 pub struct BlockScope {
+    /// The variable ids currently bound to the ref variables.
+    current_refs: Vec<Option<VariableId>>,
+    /// The variable ids bound to the ref variables (including implicits) at the beginning of the
+    /// block.
+    initial_refs: Option<Vec<VariableId>>,
     /// Variables given as inputs to the block, including implicits. Relevant for function blocks /
     /// match arm blocks, etc...
     inputs: Vec<VariableId>,
@@ -50,6 +55,13 @@ pub enum BlockScopeEnd {
 }
 
 impl BlockScope {
+    pub fn bind_refs(&mut self) {
+        assert!(self.initial_refs.is_none(), "References cannot be bound twice.");
+        self.initial_refs = Some(
+            self.current_refs.iter().copied().map(|v| v.expect("Reference not bound.")).collect(),
+        );
+    }
+
     /// Puts a semantic variable and its owned lowered variable into the current scope.
     // TODO(spapini): Consider enforcing that semantic_var_id is pulled from a higher scope if
     // possible. put_semantic_variable() might be used in a scope other than the defining scope of
@@ -61,13 +73,15 @@ impl BlockScope {
         semantic_var_id: semantic::VarId,
         var: LivingVar,
     ) {
-        if let Some((implicit_index, _)) = ctx
+        if let Some((ref_index, _)) = ctx
             .ref_params
             .iter()
             .enumerate()
             .find(|(_, ref_semantic_var_id)| **ref_semantic_var_id == semantic_var_id)
         {
-            ctx.variables[var.var_id()].ref_indices.insert(ctx.implicits.len() + implicit_index);
+            let index = ctx.implicits.len() + ref_index;
+            ctx.variables[var.var_id()].ref_indices.insert(index);
+            self.current_refs[index] = Some(var.var_id());
         }
 
         self.semantic_variables.put(semantic_var_id, var);
@@ -127,6 +141,7 @@ impl BlockScope {
             .find(|(_, imp_ty)| **imp_ty == ty)
             .expect("Unknown implicit.");
         ctx.variables[var.var_id()].ref_indices.insert(implicit_index);
+        self.current_refs[implicit_index] = Some(var.var_id());
 
         self.implicits.insert(ty, var);
     }
@@ -158,6 +173,7 @@ impl BlockScope {
             BlockScopeEnd::Unreachable => BlockSealedEnd::Unreachable,
         };
         let sealed = BlockSealed {
+            initial_refs: self.initial_refs.expect("References have not been bound yet."),
             inputs: self.inputs,
             living_variables: self.living_variables,
             semantic_variables: self.semantic_variables,
@@ -182,6 +198,9 @@ impl BlockScope {
 /// A block that was sealed after adding all the statements, just before determining the final
 /// inputs.
 pub struct BlockSealed {
+    /// The variable ids bound to the ref variables (including implicits) at the beginning of the
+    /// block.
+    pub initial_refs: Vec<VariableId>,
     /// The inputs to the block, including implicits.
     inputs: Vec<VariableId>,
     /// The living variables at the end of the block.
@@ -310,7 +329,12 @@ impl BlockSealed {
             BlockSealedEnd::Unreachable => (StructuredBlockEnd::Unreachable, BlockEndInfo::End),
         };
 
-        let block = ctx.blocks.alloc(StructuredBlock { inputs, statements, end });
+        let block = ctx.blocks.alloc(StructuredBlock {
+            initial_refs: self.initial_refs,
+            inputs,
+            statements,
+            end,
+        });
         BlockFinalized { block, end_info }
     }
 }
@@ -427,6 +451,12 @@ impl BlockFlowMerger {
         f: F,
     ) -> Maybe<BlockSealed> {
         let block_sealed = borrow_as_box(self, |merger| {
+            let current_refs: Vec<Option<VariableId>> =
+                if let Some(parent) = merger.parent_scope.as_ref() {
+                    parent.current_refs.clone()
+                } else {
+                    (0..(ctx.implicits.len() + ctx.ref_params.len())).map(|_| None).collect()
+                };
             // Add all implicits to scope.
             let mut living_variables = LivingVariables::default();
             let implicit_vars: Vec<_> = merger
@@ -438,7 +468,8 @@ impl BlockFlowMerger {
                     (*ty, living_var)
                 })
                 .collect();
-            let mut block_scope = BlockScope { merger, living_variables, ..BlockScope::default() };
+            let mut block_scope =
+                BlockScope { merger, living_variables, current_refs, ..BlockScope::default() };
             for (ty, living_var) in implicit_vars.into_iter() {
                 block_scope.put_implicit(ctx, ty, living_var);
             }

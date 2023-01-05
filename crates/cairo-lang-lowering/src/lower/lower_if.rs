@@ -67,6 +67,7 @@ pub fn lower_expr_if_bool(
     let unit_ty = corelib::unit_ty(semantic_db);
     let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
         let main_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
+            subscope.bind_refs();
             lower_block(
                 ctx,
                 subscope,
@@ -75,6 +76,7 @@ pub fn lower_expr_if_bool(
             )
         });
         let else_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
+            subscope.bind_refs();
             lower_optional_else_block(ctx, subscope, expr.else_block)
         });
         Ok((main_block_scope, else_block_scope))
@@ -135,6 +137,7 @@ pub fn lower_expr_if_eq(
     // Lower both blocks.
     let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
         let main_block_scope = merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
+            subscope.bind_refs();
             lower_block(
                 ctx,
                 subscope,
@@ -146,6 +149,7 @@ pub fn lower_expr_if_eq(
             corelib::core_nonzero_ty(semantic_db, corelib::core_felt_ty(semantic_db));
         let else_block_scope =
             merger.run_in_subscope(ctx, vec![non_zero_type], |ctx, subscope, _| {
+                subscope.bind_refs();
                 lower_optional_else_block(ctx, subscope, expr.else_block)
             });
         Ok((main_block_scope, else_block_scope))

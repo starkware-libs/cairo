@@ -40,8 +40,8 @@ blk2 (root):
 Inputs: v0: core::felt
 Statements:
   (v5: core::felt) <- match core::felt_jump_nz(v0) {
-    () => blk0,
-    (v1) => blk1,
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
 End:
   Callsite(v5)
