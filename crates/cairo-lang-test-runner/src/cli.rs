@@ -24,10 +24,10 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_syntax::node::ast::Expr;
 use cairo_lang_syntax::node::Token;
+use cairo_lang_utils::short_string::as_cairo_short_string;
 use clap::Parser;
 use colored::Colorize;
 use itertools::Itertools;
-use num_bigint::BigInt;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 /// Command line args parser.
@@ -134,22 +134,6 @@ fn main() -> anyhow::Result<()> {
             ignored.len()
         );
     }
-}
-
-/// Converts a bigint representing a felt to a Cairo short-string.
-fn as_cairo_short_string(value: &BigInt) -> Option<String> {
-    let mut as_string = String::default();
-    let mut is_end = false;
-    for byte in value.to_bytes_be().1 {
-        if byte == 0 {
-            is_end = true;
-        } else if is_end || !byte.is_ascii() {
-            return None;
-        } else {
-            as_string.push(byte as char);
-        }
-    }
-    Some(as_string)
 }
 
 /// Summary data of the ran tests.

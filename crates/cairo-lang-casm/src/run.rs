@@ -6,6 +6,7 @@ use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::short_string::as_cairo_short_string;
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
 use cairo_vm::serde::deserialize_program::{
     ApTracking, FlowTrackingData, HintParams, ReferenceManager,
@@ -301,9 +302,13 @@ impl HintProcessor for CairoHintProcessor {
                 };
                 let mut curr = as_relocatable(start)?;
                 let end = as_relocatable(end)?;
-                // TODO(orizi): Also format shortstrings.
                 while curr != end {
-                    print!("{}, ", vm.get_integer(&curr)?);
+                    let value = vm.get_integer(&curr)?;
+                    if let Some(shortstring) = as_cairo_short_string(&value) {
+                        print!("'{shortstring}' (raw: {value}), ",);
+                    } else {
+                        print!("{value}, ");
+                    }
                     curr = curr.add_int_mod(&1.into(), &get_prime())?;
                 }
                 println!();
