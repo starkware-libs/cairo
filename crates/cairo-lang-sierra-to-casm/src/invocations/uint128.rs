@@ -1,9 +1,8 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_sierra::extensions::uint128::{
-    IntOperator, Uint128Concrete, Uint128OperationConcreteLibfunc,
-};
+use cairo_lang_sierra::extensions::uint::IntOperator;
+use cairo_lang_sierra::extensions::uint128::{Uint128Concrete, Uint128OperationConcreteLibfunc};
 use num_bigint::BigInt;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};

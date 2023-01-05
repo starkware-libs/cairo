@@ -6,7 +6,7 @@ use cairo_lang_sierra::extensions::builtin_cost::{
 };
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup,
-    Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump,
+    Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint8, UnconditionalJump,
     UnwrapNonZero,
 };
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
@@ -20,9 +20,8 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::strct::StructConcreteLibfunc;
-use cairo_lang_sierra::extensions::uint128::{
-    IntOperator, Uint128Concrete, Uint128OperationConcreteLibfunc,
-};
+use cairo_lang_sierra::extensions::uint::{IntOperator, Uint8Concrete};
+use cairo_lang_sierra::extensions::uint128::{Uint128Concrete, Uint128OperationConcreteLibfunc};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 
@@ -102,7 +101,8 @@ pub fn core_libfunc_cost_base<Ops: CostOperations, InfoProvider: InvocationCostI
         Array(ArrayConcreteLibfunc::PopFront(_)) => vec![ops.const_cost(2), ops.const_cost(3)],
         Array(ArrayConcreteLibfunc::At(_)) => vec![ops.const_cost(4), ops.const_cost(3)],
         Array(ArrayConcreteLibfunc::Len(_)) => vec![ops.const_cost(0)],
-        Uint128(libfunc) => integer_libfunc_cost(ops, libfunc),
+        Uint128(libfunc) => u128_libfunc_cost(ops, libfunc),
+        Uint8(libfunc) => u8_libfunc_cost(ops, libfunc),
         Felt(libfunc) => felt_libfunc_cost(ops, libfunc),
         Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) => {
             vec![ops.const_cost(0)]
@@ -175,8 +175,15 @@ pub fn core_libfunc_cost_base<Ops: CostOperations, InfoProvider: InvocationCostI
     }
 }
 
-/// Returns costs for integer libfuncs.
-fn integer_libfunc_cost<Ops: CostOperations>(
+/// Returns costs for u8 libfuncs.
+fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> Vec<Ops::CostType> {
+    match libfunc {
+        Uint8Concrete::Const(_) => vec![ops.const_cost(0)],
+    }
+}
+
+/// Returns costs for u128 libfuncs.
+fn u128_libfunc_cost<Ops: CostOperations>(
     ops: &Ops,
     libfunc: &Uint128Concrete,
 ) -> Vec<Ops::CostType> {

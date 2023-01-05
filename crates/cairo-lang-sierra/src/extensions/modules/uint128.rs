@@ -2,28 +2,21 @@ use super::felt::FeltType;
 use super::jump_not_zero::{JumpNotZeroLibfunc, JumpNotZeroTraits};
 use super::non_zero::NonZeroType;
 use super::range_check::RangeCheckType;
+use super::uint::{IntOperator, UintConstLibfunc, UintTraits, UintType};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
-    GenericLibfunc, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
-    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
+    GenericLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
+    SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type for u128.
-#[derive(Default)]
-pub struct Uint128Type {}
-impl NoGenericArgsGenericType for Uint128Type {
-    const ID: GenericTypeId = GenericTypeId::new_inline("u128");
-    const STORABLE: bool = true;
-    const DUPLICATABLE: bool = true;
-    const DROPPABLE: bool = true;
-    const SIZE: i16 = 1;
-}
+pub type Uint128Type = UintType<Uint128Traits>;
 
 define_libfunc_hierarchy! {
     pub enum Uint128Libfunc {
@@ -31,29 +24,25 @@ define_libfunc_hierarchy! {
         LessThan(Uint128LessThanLibfunc),
         Equal(Uint128EqualLibfunc),
         LessThanOrEqual(Uint128LessThanOrEqualLibfunc),
-        Const(Uint128ConstLibfunc),
+        Const(UintConstLibfunc<Uint128Traits>),
         FromFelt(Uint128sFromFeltLibfunc),
         ToFelt(Uint128ToFeltLibfunc),
-        JumpNotZero(Uint128JumpNotZeroLibfunc),
+        JumpNotZero(JumpNotZeroLibfunc<Uint128Traits>),
     }, Uint128Concrete
 }
 
 #[derive(Default)]
-pub struct Uint128Traits {}
+pub struct Uint128Traits;
+
+impl UintTraits for Uint128Traits {
+    type UintType = u128;
+    const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u128");
+    const CONST: GenericLibfuncId = GenericLibfuncId::new_inline("u128_const");
+}
+
 impl JumpNotZeroTraits for Uint128Traits {
     const JUMP_NOT_ZERO: GenericLibfuncId = GenericLibfuncId::new_inline("u128_jump_nz");
     const GENERIC_TYPE_ID: GenericTypeId = <Uint128Type as NamedType>::ID;
-}
-pub type Uint128JumpNotZeroLibfunc = JumpNotZeroLibfunc<Uint128Traits>;
-
-/// Operators for integers.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum IntOperator {
-    OverflowingAdd,
-    OverflowingSub,
-    OverflowingMul,
-    DivMod,
-    WideMul,
 }
 
 /// Libfunc for u128 operations.
@@ -222,57 +211,6 @@ pub struct Uint128OperationConcreteLibfunc {
     pub signature: LibfuncSignature,
 }
 impl SignatureBasedConcreteLibfunc for Uint128OperationConcreteLibfunc {
-    fn signature(&self) -> &LibfuncSignature {
-        &self.signature
-    }
-}
-
-/// Libfunc for creating a constant u128.
-#[derive(Default)]
-pub struct Uint128ConstLibfunc {}
-impl NamedLibfunc for Uint128ConstLibfunc {
-    type Concrete = Uint128ConstConcreteLibfunc;
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("u128_const");
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-        _args: &[GenericArg],
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch(
-            vec![],
-            vec![OutputVarInfo {
-                ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
-            }],
-            SierraApChange::Known { new_vars_only: true },
-        ))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        match args {
-            [GenericArg::Value(c)] => Ok(Uint128ConstConcreteLibfunc {
-                c: u128::try_from(c).unwrap(),
-                signature: <Self as NamedLibfunc>::specialize_signature(
-                    self,
-                    context.upcast(),
-                    args,
-                )?,
-            }),
-            _ => Err(SpecializationError::UnsupportedGenericArg),
-        }
-    }
-}
-
-pub struct Uint128ConstConcreteLibfunc {
-    pub c: u128,
-    pub signature: LibfuncSignature,
-}
-impl SignatureBasedConcreteLibfunc for Uint128ConstConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }
