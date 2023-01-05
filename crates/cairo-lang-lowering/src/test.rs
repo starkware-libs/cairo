@@ -4,8 +4,8 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
+use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
-use crate::lower::lower;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -40,12 +40,18 @@ fn test_function_lowering(
         inputs["module_code"].as_str(),
     )
     .split();
-    let lowered = lower(db, test_function.function_id).unwrap();
+    let structured_lowered =
+        db.free_function_lowered_structured(test_function.function_id).unwrap();
+    let flat_lowered = db.free_function_lowered_flat(test_function.function_id).unwrap();
 
-    let lowered_formatter = LoweredFormatter { db, lowered: &lowered };
+    let lowered_formatter = LoweredFormatter { db, variables: &flat_lowered.variables };
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
-        ("lowering_diagnostics".into(), lowered.diagnostics.format(db)),
-        ("lowering_format".into(), format!("{:?}", lowered.debug(&lowered_formatter))),
+        ("lowering_diagnostics".into(), structured_lowered.diagnostics.format(db)),
+        (
+            "lowering_structured".into(),
+            format!("{:?}", structured_lowered.debug(&lowered_formatter)),
+        ),
+        ("lowering_flat".into(), format!("{:?}", flat_lowered.debug(&lowered_formatter))),
     ])
 }

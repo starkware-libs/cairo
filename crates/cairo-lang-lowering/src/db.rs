@@ -9,14 +9,22 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
 
+use crate::blocks::FlatBlocks;
 use crate::diagnostic::LoweringDiagnostic;
-use crate::lower::{lower, Lowered};
+use crate::lower::lower;
+use crate::{FlatLowered, StructuredLowered};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
 pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Computed the lowered representation of a free function.
-    fn free_function_lowered(&self, free_function: FreeFunctionId) -> Maybe<Arc<Lowered>>;
+    fn free_function_lowered_structured(
+        &self,
+        free_function: FreeFunctionId,
+    ) -> Maybe<Arc<StructuredLowered>>;
+
+    /// Computed the lowered representation of a free function.
+    fn free_function_lowered_flat(&self, free_function: FreeFunctionId) -> Maybe<Arc<FlatLowered>>;
 
     /// Aggregates module level semantic diagnostics.
     fn module_lowering_diagnostics(
@@ -89,11 +97,30 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct SCCRepresentative(pub FreeFunctionId);
 
-fn free_function_lowered(
+fn free_function_lowered_structured(
     db: &dyn LoweringGroup,
     free_function_id: FreeFunctionId,
-) -> Maybe<Arc<Lowered>> {
+) -> Maybe<Arc<StructuredLowered>> {
     Ok(Arc::new(lower(db.upcast(), free_function_id)?))
+}
+
+fn free_function_lowered_flat(
+    db: &dyn LoweringGroup,
+    free_function_id: FreeFunctionId,
+) -> Maybe<Arc<FlatLowered>> {
+    // Convert blocks to flat blocks.
+    // TODO(spapini): Do this in another phase.
+    let structured = db.free_function_lowered_structured(free_function_id)?;
+    let mut flat_blocks = FlatBlocks::new();
+    for block in structured.blocks.0.iter().cloned() {
+        flat_blocks.alloc(block.try_into().expect("Panic block ends are not supported yet."));
+    }
+    Ok(Arc::new(FlatLowered {
+        diagnostics: Default::default(),
+        root: structured.root,
+        variables: structured.variables.clone(),
+        blocks: flat_blocks,
+    }))
 }
 
 fn module_lowering_diagnostics(
@@ -105,7 +132,7 @@ fn module_lowering_diagnostics(
         match item {
             ModuleItemId::FreeFunction(free_function) => {
                 diagnostics.extend(
-                    db.free_function_lowered(*free_function)
+                    db.free_function_lowered_structured(*free_function)
                         .map(|lowered| lowered.diagnostics.clone())
                         .unwrap_or_default(),
                 );
