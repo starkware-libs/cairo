@@ -25,6 +25,7 @@ pub fn build(
         EcConcreteLibfunc::CreatePoint(_) => build_ec_point_try_create(builder),
         EcConcreteLibfunc::FinalizeState(_) => build_ec_try_finalize_state(builder),
         EcConcreteLibfunc::InitState(_) => build_ec_init_state(builder),
+        EcConcreteLibfunc::Op(_) => build_ec_op_builtin(builder),
         EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
     }
 }
@@ -237,5 +238,39 @@ fn build_ec_try_finalize_state(
             ("Fallthrough", &[&[result_x, result_y]], None),
             ("SumIsInfinity", &[], Some(failure_handle)),
         ],
+    ))
+}
+
+/// Handles instruction for computing `S + M * Q` where `S` is an EC state, `M` is a scalar (felt)
+/// and `Q` is an EC point.
+fn build_ec_op_builtin(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [ec_builtin_expr, expr_state, expr_m, expr_point] = builder.try_get_refs()?;
+    let ec_builtin = ec_builtin_expr.try_unpack_single()?.to_buffer(6)?;
+    let [sx, sy, random_ptr] = expr_state.try_unpack()?;
+    let [m] = expr_m.try_unpack()?;
+    let [px, py] = expr_point.try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    let ec_builtin = casm_builder.add_var(ec_builtin);
+    let sx = casm_builder.add_var(ResOperand::Deref(sx.to_deref()?));
+    let sy = casm_builder.add_var(ResOperand::Deref(sy.to_deref()?));
+    let random_ptr = casm_builder.add_var(ResOperand::Deref(random_ptr.to_deref()?));
+    let px = casm_builder.add_var(ResOperand::Deref(px.to_deref()?));
+    let py = casm_builder.add_var(ResOperand::Deref(py.to_deref()?));
+    let m = casm_builder.add_var(ResOperand::Deref(m.to_deref()?));
+    casm_build_extend! {casm_builder,
+        assert sx = *(ec_builtin++);
+        assert sy = *(ec_builtin++);
+        assert px = *(ec_builtin++);
+        assert py = *(ec_builtin++);
+        assert m = *(ec_builtin++);
+        let result_x = *(ec_builtin++);
+        let result_y = *(ec_builtin++);
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[ec_builtin], &[result_x, result_y, random_ptr]], None)],
     ))
 }
