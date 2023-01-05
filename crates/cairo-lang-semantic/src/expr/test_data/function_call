@@ -1,0 +1,45 @@
+//! > Named arguments
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    // Valid.
+    bar(0, 1, 2, c: 3, d: 4);
+    // Invalid.
+    bar(x: 0, 1, y: 2, 3, 4);
+    MyEnum::A(x: 0);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(_: felt, a: felt, b: felt, c: felt, d: felt) {
+}
+
+enum MyEnum {
+    A: felt
+}
+
+//! > expected_diagnostics
+error: Expected an unnamed argument, found 'x'.
+ --> lib.cairo:11:9
+    bar(x: 0, 1, y: 2, 3, 4);
+        ^
+
+error: Unnamed arguments cannot follow named arguments.
+ --> lib.cairo:11:15
+    bar(x: 0, 1, y: 2, 3, 4);
+              ^
+
+error: Unexpected argument name. Expected: 'b', found 'y'.
+ --> lib.cairo:11:18
+    bar(x: 0, 1, y: 2, 3, 4);
+                 ^
+
+error: Named arguments are not supported in this context.
+ --> lib.cairo:12:15
+    MyEnum::A(x: 0);
+              ^
