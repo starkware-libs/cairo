@@ -296,6 +296,27 @@ pub fn simulate<
         CoreConcreteLibfunc::Nullable(_) => {
             unimplemented!("Simulation of nullable is not implemented yet.")
         }
+        CoreConcreteLibfunc::Debug(_) => {
+            if inputs.len() == 1 {
+                let arr = extract_matches!(&inputs[0], CoreValue::Array);
+                let mut bytes = Vec::new();
+                for limb in arr {
+                    let limb = extract_matches!(limb, CoreValue::Felt);
+                    // TODO(spapini): What to do with the sign?
+                    let (_sign, limb_bytes) = limb.to_bytes_be();
+                    // Currently, we ignore leading zeros. That might need to change.
+                    bytes.extend(limb_bytes);
+                }
+                if let Ok(s) = String::from_utf8(bytes) {
+                    print!("{}", s);
+                } else {
+                    println!("Not utf8");
+                }
+                Ok((vec![], 0))
+            } else {
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
+            }
+        }
     }
 }
 

@@ -6,13 +6,14 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
+use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
 use crate::ids::{GenericLibfuncId, GenericTypeId};
 
-/// Type for StarkNet storage address, a value in the range [0, 2 ** 251).
+/// Type for StarkNet storage address, a value in the range [0, 2 ** 251 - 256).
 #[derive(Default)]
 pub struct StorageAddressType {}
 impl NoGenericArgsGenericType for StorageAddressType {
@@ -32,6 +33,44 @@ impl ConstGenLibfunc for StorageAddressConstLibfuncWrapped {
 }
 
 pub type StorageAddressConstLibfunc = WrapConstGenLibfunc<StorageAddressConstLibfuncWrapped>;
+
+/// Libfunc for converting a felt into a storage address.
+#[derive(Default)]
+pub struct StorageAddressFromFeltLibfunc {}
+impl NoGenericArgsGenericLibfunc for StorageAddressFromFeltLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_addr_from_felt");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: range_check_ty.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
 
 /// Libfunc for a storage read system call.
 #[derive(Default)]

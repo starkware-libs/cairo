@@ -1,3 +1,4 @@
+use indoc::indoc;
 use test_log::test;
 
 use crate::hints::Hint;
@@ -93,5 +94,19 @@ fn test_syscall_hint_format() {
     assert_eq!(
         Hint::SystemCall { system }.to_string(),
         "syscall_handler.syscall(syscall_ptr=memory[fp + -3] + 3)"
+    );
+}
+
+#[test]
+fn test_debug_hint_format() {
+    assert_eq!(
+        Hint::DebugPrint { start: res!([ap + 6]), end: res!([fp - 8]) }.to_string(),
+        indoc! {"
+
+            let start = memory[ap + 6]
+            let end = memory[fp + -8]
+            for i in range(start, end):
+                print(memory[i])
+        "}
     );
 }

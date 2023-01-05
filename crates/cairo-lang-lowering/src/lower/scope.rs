@@ -149,13 +149,11 @@ impl BlockScope {
                 maybe_output.map(|var| self.living_variables.take_var(var)),
             ),
             BlockScopeEnd::Return { refs, returns } => {
-                let mut drops = Vec::new();
                 let refs =
                     refs.into_iter().map(|var| self.living_variables.take_var(var)).collect();
                 let returns =
                     returns.into_iter().map(|var| self.living_variables.take_var(var)).collect();
-                self.append_all_living_stack(&mut drops);
-                BlockSealedEnd::Return { refs, returns, drops }
+                BlockSealedEnd::Return { refs, returns }
             }
             BlockScopeEnd::Unreachable => BlockSealedEnd::Unreachable,
         };
@@ -169,12 +167,6 @@ impl BlockScope {
             end,
         };
         (sealed, self.merger)
-    }
-
-    /// Appends all the living variable in the call stack, from this scope to the root.
-    fn append_all_living_stack(&self, all_living: &mut Vec<VariableId>) {
-        all_living.extend(self.living_variables.get_all());
-        self.merger.append_all_living_stack(all_living);
     }
 
     /// Pull the living implicit variables into the given merger.
@@ -212,7 +204,7 @@ pub enum BlockSealedEnd {
     /// expression).
     Callsite(Option<UsableVariable>),
     /// Returns from the function.
-    Return { refs: Vec<UsableVariable>, returns: Vec<UsableVariable>, drops: Vec<VariableId> },
+    Return { refs: Vec<UsableVariable>, returns: Vec<UsableVariable> },
     /// The end of the block is unreachable.
     Unreachable,
 }
@@ -259,7 +251,7 @@ impl BlockSealed {
             }
         }
         // Compute drops.
-        let (end, end_info, drops) = match end {
+        let (end, end_info) = match end {
             BlockSealedEnd::Callsite(maybe_output) => {
                 for semantic_var_id in params.bring_back {
                     // Take the variable from this scope if it exists, so it will stay alive for the
@@ -303,27 +295,22 @@ impl BlockSealed {
                 let push_tys = pushes.iter().map(|var_id| ctx.variables[*var_id].ty).collect();
                 let outputs = chain!(implicit_pushes, pushes, maybe_output.into_iter()).collect();
 
-                let drops = living_variables.get_all();
                 (
                     StructuredBlockEnd::Callsite(outputs),
                     BlockEndInfo::Callsite { maybe_output_ty, push_tys },
-                    drops,
                 )
             }
-            BlockSealedEnd::Return { refs, returns, drops } => (
+            BlockSealedEnd::Return { refs, returns } => (
                 StructuredBlockEnd::Return {
                     refs: refs.iter().map(UsableVariable::var_id).collect(),
                     returns: returns.iter().map(UsableVariable::var_id).collect(),
                 },
                 BlockEndInfo::End,
-                drops,
             ),
-            BlockSealedEnd::Unreachable => {
-                (StructuredBlockEnd::Unreachable, BlockEndInfo::End, vec![])
-            }
+            BlockSealedEnd::Unreachable => (StructuredBlockEnd::Unreachable, BlockEndInfo::End),
         };
 
-        let block = ctx.blocks.alloc(StructuredBlock { inputs, statements, drops, end });
+        let block = ctx.blocks.alloc(StructuredBlock { inputs, statements, end });
         BlockFinalized { block, end_info }
     }
 }
@@ -492,13 +479,6 @@ impl BlockFlowMerger {
 
         // If we own it, give a copy.
         Some(self.splitter.split(self.pulls.get(&semantic_var_id)?))
-    }
-
-    /// Appends all the living variable in the call stack, from this scope to the root.
-    fn append_all_living_stack(&self, all_living: &mut Vec<VariableId>) {
-        if let Some(parent_scope) = &self.parent_scope {
-            parent_scope.append_all_living_stack(all_living);
-        }
     }
 
     /// Adds a sealed block to the merger. This will help the merger decide on the correct

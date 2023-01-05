@@ -6,6 +6,7 @@ use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::short_string::as_cairo_short_string;
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
 use cairo_vm::serde::deserialize_program::{
     ApTracking, FlowTrackingData, HintParams, ReferenceManager,
@@ -178,12 +179,20 @@ impl HintProcessor for CairoHintProcessor {
                 )?;
                 vm.insert_value(&cell_ref_to_relocatable(remainder, vm), lhs_val % rhs_val)?;
             }
+            Hint::LinearSplit { value, scalar, max_x, x, y } => {
+                let value = get_val(value)?;
+                let scalar = get_val(scalar)?;
+                let max_x = get_val(max_x)?;
+                let x_value = (value.clone() / scalar.clone()).min(max_x);
+                let y_value = value - x_value.clone() * scalar;
+                vm.insert_value(&cell_ref_to_relocatable(x, vm), x_value)?;
+                vm.insert_value(&cell_ref_to_relocatable(y, vm), y_value)?;
+            }
             Hint::AllocDictFeltTo { .. } => todo!(),
             Hint::DictFeltToRead { .. } => todo!(),
             Hint::DictFeltToWrite { .. } => todo!(),
             Hint::EnterScope => todo!(),
             Hint::ExitScope => todo!(),
-            Hint::DictSquashHints { .. } => todo!(),
             Hint::RandomEcPoint { x, y } => {
                 // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
                 // residue.
@@ -213,15 +222,7 @@ impl HintProcessor for CairoHintProcessor {
                             exec_scopes.get_mut_ref::<StarknetExecScope>("starknet_exec_scope")?
                         }
                     };
-                let (cell, base_offset) = match system {
-                    ResOperand::Deref(cell) => (cell, 0.into()),
-                    ResOperand::BinOp(BinOpOperand {
-                        op: crate::operand::Operation::Add,
-                        a,
-                        b,
-                    }) => (a, extract_matches!(b, DerefOrImmediate::Immediate).clone()),
-                    _ => panic!("Illegal argument for system pointer."),
-                };
+                let (cell, base_offset) = extract_buffer(system);
                 let (selector_sign, selector) =
                     get_double_deref_val(cell, &base_offset)?.to_bytes_be();
                 assert_eq!(selector_sign, num_bigint::Sign::Plus, "Illegal selector.");
@@ -277,6 +278,41 @@ impl HintProcessor for CairoHintProcessor {
                     panic!("Unknown selector for system call!");
                 }
             }
+            Hint::DictDestruct { .. } => todo!(),
+            Hint::DictSquash1 { .. } => todo!(),
+            Hint::DictSquash2 { .. } => todo!(),
+            Hint::SquashDict { .. } => todo!(),
+            Hint::SquashDictInner1 { .. } => todo!(),
+            Hint::SquashDictInner2 { .. } => todo!(),
+            Hint::SquashDictInner3 { .. } => todo!(),
+            Hint::SquashDictInner4 { .. } => todo!(),
+            Hint::SquashDictInner5 => todo!(),
+            Hint::SquashDictInner6 { .. } => todo!(),
+            Hint::SquashDictInner7 => todo!(),
+            Hint::SquashDictInner8 { .. } => todo!(),
+            Hint::AssertLtFelt { .. } => todo!(),
+            Hint::AssertLeFelt1 { .. } => todo!(),
+            Hint::AssertLeFelt2 { .. } => todo!(),
+            Hint::AssertLeFelt3 { .. } => todo!(),
+            Hint::AssertLeFelt4 => todo!(),
+            Hint::DebugPrint { start, end } => {
+                let as_relocatable = |value| {
+                    let (base, offset) = extract_buffer(value);
+                    get_ptr(base, &offset)
+                };
+                let mut curr = as_relocatable(start)?;
+                let end = as_relocatable(end)?;
+                while curr != end {
+                    let value = vm.get_integer(&curr)?;
+                    if let Some(shortstring) = as_cairo_short_string(&value) {
+                        print!("'{shortstring}' (raw: {value}), ",);
+                    } else {
+                        print!("{value}, ");
+                    }
+                    curr = curr.add_int_mod(&1.into(), &get_prime())?;
+                }
+                println!();
+            }
         };
         Ok(())
     }
@@ -291,6 +327,18 @@ impl HintProcessor for CairoHintProcessor {
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
+}
+
+/// Extracts a parameter assumed to be a buffer.
+fn extract_buffer(buffer: &ResOperand) -> (&CellRef, BigInt) {
+    let (cell, base_offset) = match buffer {
+        ResOperand::Deref(cell) => (cell, 0.into()),
+        ResOperand::BinOp(BinOpOperand { op: crate::operand::Operation::Add, a, b }) => {
+            (a, extract_matches!(b, DerefOrImmediate::Immediate).clone())
+        }
+        _ => panic!("Illegal argument for a buffer."),
+    };
+    (cell, base_offset)
 }
 
 /// Provides context for the `additional_initialization` callback function of [run_function].

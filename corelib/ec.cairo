@@ -1,9 +1,7 @@
 #[derive(Copy, Drop)]
 extern type EcPoint;
+#[derive(Copy, Drop)]
 extern type EcState;
-
-impl EcPointCopy of Copy::<EcPoint>;
-impl EcPointDrop of Drop::<EcPoint>;
 
 #[panic_with('not on EC', ec_point_from_felts)]
 extern fn ec_point_try_create(x: felt, y: felt) -> Option::<EcPoint> nopanic;

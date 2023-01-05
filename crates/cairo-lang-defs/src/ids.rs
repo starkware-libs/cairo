@@ -22,7 +22,7 @@
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::ids::{CrateId, FileId};
+use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
@@ -237,7 +237,6 @@ macro_rules! toplevel_enum {
 pub enum ModuleId {
     CrateRoot(CrateId),
     Submodule(SubmoduleId),
-    VirtualSubmodule(VirtualSubmoduleId),
 }
 impl ModuleId {
     pub fn full_path(&self, db: &dyn DefsGroup) -> String {
@@ -245,10 +244,6 @@ impl ModuleId {
             ModuleId::CrateRoot(id) => db.lookup_intern_crate(*id).0.to_string(),
             ModuleId::Submodule(id) => {
                 format!("{}::{}", id.parent_module(db).full_path(db), id.name(db))
-            }
-            ModuleId::VirtualSubmodule(virtual_submodule_id) => {
-                let virtual_submodule = db.lookup_intern_virtual_submodule(*virtual_submodule_id);
-                format!("{}::{}", virtual_submodule.parent.full_path(db), virtual_submodule.name)
             }
         }
     }
@@ -263,16 +258,6 @@ impl DebugWithDb<dyn DefsGroup> for ModuleId {
 pub struct FileIndex(pub usize);
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ModuleFileId(pub ModuleId, pub FileIndex);
-
-/// A virtual sub module is a module create by a macro plugin. All plugin generated code is placed
-/// in such submodules to avoid namespace pollution.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct VirtualSubmodule {
-    pub name: SmolStr,
-    pub parent: ModuleId,
-    pub file: FileId,
-}
-define_short_id!(VirtualSubmoduleId, VirtualSubmodule, DefsGroup, lookup_intern_virtual_submodule);
 
 define_language_element_id_as_enum! {
     /// Id for direct children of a module.

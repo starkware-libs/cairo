@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
@@ -26,8 +26,6 @@ pub trait DefsGroup:
     + Upcast<dyn FilesGroup>
     + HasMacroPlugins
 {
-    #[salsa::interned]
-    fn intern_virtual_submodule(&self, virtual_submodule: VirtualSubmodule) -> VirtualSubmoduleId;
     #[salsa::interned]
     fn intern_submodule(&self, id: SubmoduleLongId) -> SubmoduleId;
     #[salsa::interned]
@@ -155,9 +153,6 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
                 }
             }
         }
-        ModuleId::VirtualSubmodule(virtual_submodule_id) => {
-            db.lookup_intern_virtual_submodule(virtual_submodule_id).file
-        }
     })
 }
 
@@ -177,7 +172,6 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
             let name = submodule_id.name(db);
             Ok(db.module_dir(parent)?.subdir(name))
         }
-        ModuleId::VirtualSubmodule(_) => Err(skip_diagnostic()),
     }
 }
 
@@ -254,7 +248,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let file_syntax = db.file_syntax(module_file)?;
     let mut main_file_info: Option<GeneratedFileInfo> = None;
     let item_asts = match module_id {
-        ModuleId::CrateRoot(_) | ModuleId::VirtualSubmodule(_) => file_syntax.items(syntax_db),
+        ModuleId::CrateRoot(_) => file_syntax.items(syntax_db),
         ModuleId::Submodule(submodule_id) => {
             let parent_module_data = db.priv_module_data(submodule_id.parent_module(db))?;
             let item_module_ast = &parent_module_data.submodules[submodule_id];

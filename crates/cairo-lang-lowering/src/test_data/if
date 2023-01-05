@@ -26,14 +26,12 @@ blk0:
 Inputs: v2: ()
 Statements:
   (v3: core::felt) <- 1u
-Drops: v2, v1
 End:
   Callsite(v3)
 
 blk1:
 Inputs: v4: ()
 Statements:
-Drops: v4
 End:
   Callsite(v1)
 
@@ -44,7 +42,6 @@ Statements:
     bool::False => blk1,
     bool::True => blk0,
   }
-Drops: v0, v1
 End:
   Callsite(v5)
 
@@ -78,14 +75,12 @@ blk0:
 Inputs:
 Statements:
   (v1: core::felt) <- 1u
-Drops: v0
 End:
   Callsite(v1)
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
-Drops: v2
 End:
   Callsite(v0)
 
@@ -96,7 +91,6 @@ Statements:
     () => blk0,
     (v2) => blk1,
   }
-Drops: v0
 End:
   Callsite(v3)
 
@@ -129,14 +123,12 @@ blk0:
 Inputs:
 Statements:
   (v1: core::felt) <- 10u
-Drops: v0
 End:
   Return(v1)
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
-Drops: v2
 End:
   Callsite()
 
@@ -148,7 +140,6 @@ Statements:
     (v2) => blk1,
   }
   (v3: core::felt) <- 20u
-Drops: v0
 End:
   Callsite(v3)
 
@@ -182,7 +173,6 @@ blk0:
 Inputs:
 Statements:
   (v7: core::felt) <- 0u
-Drops:
 End:
   Callsite(v7)
 
@@ -190,7 +180,6 @@ blk1:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
   (v9: core::felt) <- 1u
-Drops: v8
 End:
   Callsite(v9)
 
@@ -204,6 +193,5 @@ Statements:
     () => blk0,
     (v8) => blk1,
   }
-Drops: v0, v1, v2, v3, v4, v5, v6
 End:
   Callsite(v10)

@@ -24,7 +24,6 @@ fn foo(x: felt) -> felt {
 blk0:
 Inputs:
 Statements:
-Drops:
 End:
   Callsite(v0)
 
@@ -34,7 +33,6 @@ Statements:
   (v2: core::felt) <- core::felt_add(v0, v0)
   (v3: core::felt) <- 0u
   (v4: core::felt) <- test::foo(v3)
-Drops: v1, v0, v4, v3
 End:
   Callsite(v2)
 
@@ -45,7 +43,6 @@ Statements:
     () => blk0,
     (v1) => blk1,
   }
-Drops: v0
 End:
   Callsite(v5)
 
