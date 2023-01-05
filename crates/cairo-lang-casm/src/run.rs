@@ -221,15 +221,7 @@ impl HintProcessor for CairoHintProcessor {
                             exec_scopes.get_mut_ref::<StarknetExecScope>("starknet_exec_scope")?
                         }
                     };
-                let (cell, base_offset) = match system {
-                    ResOperand::Deref(cell) => (cell, 0.into()),
-                    ResOperand::BinOp(BinOpOperand {
-                        op: crate::operand::Operation::Add,
-                        a,
-                        b,
-                    }) => (a, extract_matches!(b, DerefOrImmediate::Immediate).clone()),
-                    _ => panic!("Illegal argument for system pointer."),
-                };
+                let (cell, base_offset) = extract_buffer(system);
                 let (selector_sign, selector) =
                     get_double_deref_val(cell, &base_offset)?.to_bytes_be();
                 assert_eq!(selector_sign, num_bigint::Sign::Plus, "Illegal selector.");
@@ -302,6 +294,20 @@ impl HintProcessor for CairoHintProcessor {
             Hint::AssertLeFelt2 { .. } => todo!(),
             Hint::AssertLeFelt3 { .. } => todo!(),
             Hint::AssertLeFelt4 => todo!(),
+            Hint::DebugPrint { start, end } => {
+                let as_relocatable = |value| {
+                    let (base, offset) = extract_buffer(value);
+                    get_ptr(base, &offset)
+                };
+                let mut curr = as_relocatable(start)?;
+                let end = as_relocatable(end)?;
+                // TODO(orizi): Also format shortstrings.
+                while curr != end {
+                    print!("{}, ", vm.get_integer(&curr)?);
+                    curr = curr.add_int_mod(&1.into(), &get_prime())?;
+                }
+                println!();
+            }
         };
         Ok(())
     }
@@ -316,6 +322,18 @@ impl HintProcessor for CairoHintProcessor {
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
+}
+
+/// Extracts a parameter assumed to be a buffer.
+fn extract_buffer(buffer: &ResOperand) -> (&CellRef, BigInt) {
+    let (cell, base_offset) = match buffer {
+        ResOperand::Deref(cell) => (cell, 0.into()),
+        ResOperand::BinOp(BinOpOperand { op: crate::operand::Operation::Add, a, b }) => {
+            (a, extract_matches!(b, DerefOrImmediate::Immediate).clone())
+        }
+        _ => panic!("Illegal argument for a buffer."),
+    };
+    (cell, base_offset)
 }
 
 /// Provides context for the `additional_initialization` callback function of [run_function].

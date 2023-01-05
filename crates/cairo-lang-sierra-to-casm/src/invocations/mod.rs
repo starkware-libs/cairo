@@ -27,6 +27,7 @@ mod bitwise;
 mod boolean;
 mod boxing;
 mod builtin_cost;
+mod debug;
 mod dict_felt_to;
 mod ec;
 mod enm;
@@ -374,9 +375,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
         CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
-        CoreConcreteLibfunc::Debug(_libfunc) => {
-            Err(InvocationError::NotImplemented(invocation.clone()))
-        }
+        CoreConcreteLibfunc::Debug(libfunc) => debug::build(libfunc, builder),
     }
 }
 

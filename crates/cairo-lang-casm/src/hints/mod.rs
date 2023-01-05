@@ -120,6 +120,12 @@ pub enum Hint {
     SystemCall {
         system: ResOperand,
     },
+    /// Prints the values from start to end.
+    /// Both must be pointers.
+    DebugPrint {
+        start: ResOperand,
+        end: ResOperand,
+    },
 }
 
 impl Display for Hint {
@@ -390,6 +396,22 @@ impl Display for Hint {
                 write!(f, "memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0")?
             }
             Hint::AssertLeFelt4 => write!(f, "assert excluded == 2")?,
+            Hint::DebugPrint { start, end } => {
+                writeln!(f)?;
+                write!(f, "let start = ")?;
+                fmt_res_operand(f, start)?;
+                writeln!(f)?;
+                write!(f, "let end = ")?;
+                fmt_res_operand(f, end)?;
+                writedoc!(
+                    f,
+                    "
+
+                        for i in range(start, end):
+                            print(memory[i])
+                    "
+                )?;
+            }
         }
         Ok(())
     }
