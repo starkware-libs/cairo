@@ -137,5 +137,6 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
                 vec![ApChange::Known(0), ApChange::Known(0)]
             }
         },
+        CoreConcreteLibfunc::Debug(_) => vec![ApChange::Known(0)],
     }
 }

@@ -215,6 +215,9 @@ mod hash;
 use hash::pedersen;
 use hash::Pedersen;
 
+// Debug.
+mod debug;
+
 // StarkNet
 mod starknet;
 use starknet::System;
