@@ -94,6 +94,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
                     for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables_iter) {
                         scope.put_semantic_variable(ctx, semantic_var_id, var);
                     }
+                    scope.bind_refs();
                     lower_block(ctx, scope, semantic_block, true)
                 })
             });
@@ -423,6 +424,7 @@ fn lower_expr_block(
     let (block_sealed, mut finalized_merger) =
         BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
             merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
+                subscope.bind_refs();
                 lower_block(ctx, subscope, expr, false)
             })
         });
@@ -616,6 +618,7 @@ fn lower_expr_match(
 
                     // Create a scope for the arm block.
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, arm_inputs| {
+                        subscope.bind_refs();
                         // TODO(spapini): Make a better diagnostic.
                         let enum_pattern =
                             try_extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant)
@@ -796,11 +799,13 @@ fn lower_expr_match_felt(
     // Lower both blocks.
     let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
         let block0_end = merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
+            subscope.bind_refs();
             lower_tail_expr(ctx, subscope, Some(*block0), false)
         });
         let non_zero_type = core_nonzero_ty(semantic_db, core_felt_ty(semantic_db));
         let block_otherwise_end =
             merger.run_in_subscope(ctx, vec![non_zero_type], |ctx, subscope, _| {
+                subscope.bind_refs();
                 lower_tail_expr(ctx, subscope, Some(*block_otherwise), false)
             });
         Ok((block0_end, block_otherwise_end))
@@ -1026,13 +1031,15 @@ fn lower_error_propagate(
         BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| -> Result<_, LoweringFlowError> {
             Ok([
                 merger
-                    .run_in_subscope(ctx, vec![ok_variant.ty], |_ctx, _subscope, arm_inputs| {
+                    .run_in_subscope(ctx, vec![ok_variant.ty], |_ctx, subscope, arm_inputs| {
+                        subscope.bind_refs();
                         let [var] = <[_; 1]>::try_from(arm_inputs).ok().unwrap();
                         Ok(BlockScopeEnd::Callsite(Some(var)))
                     })
                     .map_err(LoweringFlowError::Failed)?,
                 merger
                     .run_in_subscope(ctx, vec![err_variant.ty], |ctx, subscope, arm_inputs| {
+                        subscope.bind_refs();
                         let [var] = <[_; 1]>::try_from(arm_inputs).ok().unwrap();
                         let value_var = generators::EnumConstruct {
                             input: var,
@@ -1185,6 +1192,7 @@ fn match_extern_arm_ref_args_bind(
     for (semantic_var_id, output_var) in zip_eq(&extern_enum.ref_args, ref_outputs) {
         subscope.put_semantic_variable(ctx, *semantic_var_id, output_var);
     }
+    subscope.bind_refs();
 }
 
 /// Lowers an expression of type [semantic::ExprAssignment].

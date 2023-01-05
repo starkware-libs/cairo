@@ -228,6 +228,7 @@ impl LoweredExprExternEnum {
                         for (semantic_var_id, output_var) in zip_eq(&self.ref_args, ref_outputs) {
                             subscope.put_semantic_variable(ctx, *semantic_var_id, output_var);
                         }
+                        subscope.bind_refs();
 
                         Ok(result)
                     })

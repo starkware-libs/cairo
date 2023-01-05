@@ -47,6 +47,16 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
             }
         }
 
+        write!(f, "Initial refs:")?;
+        let mut refs = self.initial_refs.iter().peekable();
+        while let Some(var) = refs.next() {
+            write!(f, " ")?;
+            format_var_with_ty(*var, f, ctx)?;
+            if refs.peek().is_some() {
+                write!(f, ",")?;
+            }
+        }
+
         writeln!(f, "\nStatements:")?;
         for stmt in &self.statements {
             write!(f, "  ")?;
