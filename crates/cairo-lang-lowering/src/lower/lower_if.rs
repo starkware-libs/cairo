@@ -129,6 +129,7 @@ pub fn lower_expr_if_eq(
             ret_tys: vec![ret_ty],
         }
         .add(ctx, scope);
+        scope.finalize_statement();
         call_result.returns.into_iter().next().unwrap()
     };
 

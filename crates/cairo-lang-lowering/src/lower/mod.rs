@@ -509,6 +509,9 @@ fn lower_expr_function_call(
         scope.put_semantic_variable(ctx, *semantic_var_id, output_var);
     }
 
+    // Finalize call statement after ref rebinding.
+    scope.finalize_statement();
+
     if may_panic {
         return lower_panic_error_propagate(ctx, scope, res, expr.ty);
     }
@@ -1251,11 +1254,17 @@ fn lowered_expr_from_block_result(
                 scope.put_semantic_variable(ctx, semantic_var_id, var);
             }
 
+            // Finalize the statement after ref rebinding.
+            scope.finalize_statement();
+
             Ok(match maybe_output {
                 Some(output) => LoweredExpr::AtVariable(output),
                 None => LoweredExpr::Tuple(vec![]),
             })
         }
-        generators::CallBlockResult::End => Err(LoweringFlowError::Unreachable),
+        generators::CallBlockResult::End => {
+            scope.finalize_statement();
+            Err(LoweringFlowError::Unreachable)
+        }
     }
 }
