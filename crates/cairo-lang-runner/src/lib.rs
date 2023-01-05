@@ -131,6 +131,7 @@ impl SierraCasmRunner {
                     && *ty != "Bitwise".into()
                     && *ty != "Pedersen".into()
                     && *ty != "System".into()
+                    && *ty != "DictManager".into()
             }
         });
         assert!(results_data.len() <= 1);
@@ -237,7 +238,21 @@ impl SierraCasmRunner {
             (cairo_lang_sierra::ids::ConcreteTypeId::new_inline("Bitwise"), 4),
             (cairo_lang_sierra::ids::ConcreteTypeId::new_inline("EcOp"), 3),
         ]);
-        for ty in func.signature.param_types.iter() {
+        if func.signature.param_types.contains(&"DictManager".into()) {
+            casm_extend! {ctx,
+                // DictManager segment.
+                %{ memory[ap + 0] = segments.add() %}
+                // DictInfos segment.
+                %{ memory[ap + 1] = segments.add() %}
+                ap += 2;
+                [ap + 0] = 0, ap++;
+                // Write DictInfos segment, n_dicts (0), and n_destructed (0) to the DictManager segment.
+                [ap - 2] = [[ap - 3]];
+                [ap - 1] = [[ap - 3] + 1];
+                [ap - 1] = [[ap - 3] + 2];
+            }
+        }
+        for (i, ty) in func.signature.param_types.iter().enumerate() {
             if let Some(offset) = builtin_offset.get(ty) {
                 casm_extend! {ctx,
                     [ap + 0] = [fp - offset], ap++;
@@ -250,6 +265,11 @@ impl SierraCasmRunner {
             } else if ty == &"GasBuiltin".into() {
                 casm_extend! {ctx,
                     [ap + 0] = initial_gas, ap++;
+                }
+            } else if ty == &"DictManager".into() {
+                let offset = -(i as i16) - 3;
+                casm_extend! {ctx,
+                    [ap + 0] = [ap + offset], ap++;
                 }
             } else {
                 let arg_size = self.sierra_program_registry.get_type(ty)?.info().size;

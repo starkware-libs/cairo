@@ -19,7 +19,9 @@ use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use num_bigint::{BigInt, BigUint};
 use num_traits::identities::Zero;
+use num_traits::ToPrimitive;
 
+use crate::dict_manager::DictManagerExecScope;
 use crate::hints::Hint;
 use crate::instructions::Instruction;
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
@@ -188,7 +190,32 @@ impl HintProcessor for CairoHintProcessor {
                 vm.insert_value(&cell_ref_to_relocatable(x, vm), x_value)?;
                 vm.insert_value(&cell_ref_to_relocatable(y, vm), y_value)?;
             }
-            Hint::AllocDictFeltTo { .. } => todo!(),
+            Hint::AllocDictFeltTo { dict_manager_ptr } => {
+                let (cell, base_offset) = extract_buffer(dict_manager_ptr);
+                let dict_manager_address = get_ptr(cell, &base_offset)?;
+                let n_dicts = vm
+                    .get_integer(&(dict_manager_address + 1))?
+                    .into_owned()
+                    .to_usize()
+                    .expect("Number of dictionaries too large.");
+                let dict_infos_base = vm.get_relocatable(&(dict_manager_address))?;
+
+                let dict_manager_exec_scope = match exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                {
+                    Ok(dict_manager_exec_scope) => dict_manager_exec_scope,
+                    Err(_) => {
+                        exec_scopes.assign_or_update_variable(
+                            "dict_manager_exec_scope",
+                            Box::<DictManagerExecScope>::default(),
+                        );
+                        exec_scopes
+                            .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")?
+                    }
+                };
+                let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
+                vm.insert_value(&(dict_infos_base + 3 * n_dicts), new_dict_segment)?;
+            }
             Hint::DictFeltToRead { .. } => todo!(),
             Hint::DictFeltToWrite { .. } => todo!(),
             Hint::EnterScope => todo!(),
