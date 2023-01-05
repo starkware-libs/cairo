@@ -10,7 +10,7 @@ use crate::objects::{
 };
 use crate::{
     FlatBlock, FlatBlockEnd, FlatLowered, StatementEnumConstruct, StatementMatchEnum,
-    StatementStructConstruct, StructuredLowered, Variable,
+    StatementStructConstruct, StructuredLowered, StructuredStatement, Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
@@ -175,9 +175,6 @@ fn format_var_with_ty(
 ) -> std::fmt::Result {
     var_id.fmt(f, ctx)?;
     let var = &ctx.variables[var_id];
-    for ref_index in var.ref_indices.iter() {
-        write!(f, "[r{}]", ref_index)?;
-    }
     write!(f, ": {}", var.ty.format(ctx.db.upcast()))
 }
 
@@ -198,6 +195,22 @@ impl DebugWithDb<LoweredFormatter<'_>> for VariableId {
         _lowered: &LoweredFormatter<'_>,
     ) -> std::fmt::Result {
         write!(f, "v{:?}", self.index())
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for StructuredStatement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        self.statement.fmt(f, ctx)?;
+        if !self.ref_updates.is_empty() {
+            write!(f, "\n    Ref changes: ")?;
+            for (i, (ref_index, var_id)) in self.ref_updates.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "r{ref_index} <- {:?}", var_id.debug(ctx))?;
+            }
+        }
+        Ok(())
     }
 }
 

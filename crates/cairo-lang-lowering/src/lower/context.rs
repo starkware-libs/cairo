@@ -118,7 +118,6 @@ impl<'db> LoweringContext<'db> {
             duplicatable: ty_info.duplicatable,
             droppable: ty_info.droppable,
             ty,
-            ref_indices: Default::default(),
         })
     }
 }

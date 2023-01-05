@@ -9,7 +9,9 @@ use itertools::chain;
 use super::context::LoweringContext;
 use super::semantic_map::{SemanticVariableEntry, SemanticVariablesMap};
 use super::variables::{LivingVar, LivingVariables, Splitter, UsableVariable};
-use crate::{BlockId, Statement, StructuredBlock, StructuredBlockEnd, VariableId};
+use crate::{
+    BlockId, Statement, StructuredBlock, StructuredBlockEnd, StructuredStatement, VariableId,
+};
 
 pub mod generators;
 
@@ -37,10 +39,16 @@ pub struct BlockScope {
     semantic_variables: SemanticVariablesMap,
     /// A store for implicit variables, owning their OwnedVariable instances.
     implicits: HashMap<semantic::TypeId, LivingVar>,
-    // The implicits that are used/changed in this block.
+    /// The implicits that are used/changed in this block.
     changed_implicits: HashSet<semantic::TypeId>,
     /// Current sequence of lowered statements emitted.
-    statements: Vec<Statement>,
+    statements: Vec<StructuredStatement>,
+    /// Statement pending finalize_statement().
+    pending_statement: Option<Statement>,
+    /// Updates to the variable ids bound to the ref variables (including implicits), from the last
+    /// update until exactly after next statement. When finalize_statement() will be called, these
+    /// updates will be added to the statement.
+    pending_ref_updates: OrderedHashMap<usize, VariableId>,
 }
 
 /// Represents how a block ends.
@@ -80,7 +88,7 @@ impl BlockScope {
             .find(|(_, ref_semantic_var_id)| **ref_semantic_var_id == semantic_var_id)
         {
             let index = ctx.implicits.len() + ref_index;
-            ctx.variables[var.var_id()].ref_indices.insert(index);
+            self.pending_ref_updates.insert(index, var.var_id());
             self.current_refs[index] = Some(var.var_id());
         }
 
@@ -140,7 +148,7 @@ impl BlockScope {
             .enumerate()
             .find(|(_, imp_ty)| **imp_ty == ty)
             .expect("Unknown implicit.");
-        ctx.variables[var.var_id()].ref_indices.insert(implicit_index);
+        self.pending_ref_updates.insert(implicit_index, var.var_id());
         self.current_refs[implicit_index] = Some(var.var_id());
 
         self.implicits.insert(ty, var);
@@ -156,9 +164,22 @@ impl BlockScope {
         self.changed_implicits.insert(ty);
     }
 
+    pub fn push_statement(&mut self, stmt: Statement) {
+        assert!(self.pending_statement.replace(stmt).is_none(), "finalize_statement() not called.");
+    }
+
+    pub fn finalize_statement(&mut self) {
+        let statement = self.pending_statement.take().expect("push_statement() not called.");
+        self.statements.push(StructuredStatement {
+            statement,
+            ref_updates: std::mem::take(&mut self.pending_ref_updates),
+        });
+    }
+
     /// Seals a BlockScope from adding statements or variables. A sealed block should be finalized
     /// with final pulls to get a [StructuredBlock]. See [BlockSealed].
     fn seal(mut self, end: BlockScopeEnd) -> (BlockSealed, Box<BlockFlowMerger>) {
+        assert!(self.pending_statement.is_none(), "finalize_statement() not called.");
         let end = match end {
             BlockScopeEnd::Callsite(maybe_output) => BlockSealedEnd::Callsite(
                 maybe_output.map(|var| self.living_variables.take_var(var)),
@@ -212,7 +233,7 @@ pub struct BlockSealed {
     /// The implicits that were used/changed by this block.
     changed_implicits: HashSet<semantic::TypeId>,
     /// The lowered statements of this block.
-    statements: Vec<Statement>,
+    statements: Vec<StructuredStatement>,
     /// The end type of this block.
     end: BlockSealedEnd,
 }
