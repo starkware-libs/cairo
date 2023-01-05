@@ -12,6 +12,7 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
+use syntax::node::green::{GreenNode, GreenNodeDetails};
 
 use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
@@ -700,6 +701,37 @@ impl<'a> Parser<'a> {
         let func_name = path;
         let parenthesized_args = self.expect_expression_list_parenthesized();
         ExprFunctionCall::new_green(self.db, func_name, parenthesized_args)
+    }
+
+    #[allow(dead_code)]
+    /// If the given `expr` is a simple identifier, returns the corresponding green node.
+    /// Otherwise, returns `None`.
+    fn try_extract_identifier(&self, expr: ExprGreen) -> Option<TerminalIdentifierGreen> {
+        // Check that `expr` is `ExprPath`.
+        let GreenNode {
+            kind: SyntaxKind::ExprPath,
+            details: GreenNodeDetails::Node { children: children0, .. },
+        } = &self.db.lookup_intern_green(expr.0) else {return None;};
+
+        // Check that it has one child.
+        let [path_segment] = children0[..] else {return None;};
+
+        // Check that `path_segment` is `PathSegmentSimple`.
+        let GreenNode {
+            kind: SyntaxKind::PathSegmentSimple,
+            details: GreenNodeDetails::Node { children: children1, .. },
+        } = self.db.lookup_intern_green(path_segment) else {return None;};
+
+        // Check that it has one child.
+        let [ident] = children1[..] else {return None;};
+
+        // Check that it is indeed `TerminalIdentifier`.
+        let GreenNode {
+            kind: SyntaxKind::TerminalIdentifier,
+            ..
+        } = self.db.lookup_intern_green(ident) else {return None;};
+
+        Some(TerminalIdentifierGreen(ident))
     }
 
     /// Assumes the current token is LBrace.
