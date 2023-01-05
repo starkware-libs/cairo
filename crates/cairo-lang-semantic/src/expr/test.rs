@@ -263,8 +263,8 @@ fn test_tuple_type() {
     let param = &signature.params[0];
     assert_eq!(
         format!("{:?}", param.debug(db)),
-        "Parameter { id: ParamId(test::a), ty: (core::felt, (), (core::felt,)), mutability: \
-         Mutable }"
+        "Parameter { id: ParamId(test::a), name: \"a\", ty: (core::felt, (), (core::felt,)), \
+         mutability: Mutable }"
     );
 }
 
