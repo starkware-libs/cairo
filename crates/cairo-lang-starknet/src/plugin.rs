@@ -29,6 +29,7 @@ const ABI_ATTR: &str = "abi";
 const CONTRACT_ATTR: &str = "contract";
 const EXTERNAL_ATTR: &str = "external";
 const VIEW_ATTR: &str = "view";
+const EVENT_ATTR: &str = "event";
 pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
@@ -117,6 +118,11 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
     for item_ast in body.items(db).elements(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
+                // Ignore events.
+                if func.has_attr(db, EVENT_ATTR) {
+                    continue;
+                }
+
                 let declaration = func.declaration(db);
 
                 let mut skip_generation = false;
@@ -276,8 +282,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     let mut storage_code = RewriteNode::Text("".to_string());
     let mut original_items = Vec::new();
     let mut abi_functions = Vec::new();
+    let mut event_functions = Vec::new();
+    let mut abi_events = Vec::new();
     for item in body.items(db).elements(db) {
-        match &item {
+        let keep_original = match &item {
             ast::Item::FreeFunction(item_function)
                 if item_function.has_attr(db, EXTERNAL_ATTR)
                     || item_function.has_attr(db, VIEW_ATTR) =>
@@ -300,18 +308,31 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                         diagnostics.extend(entry_point_diagnostics);
                     }
                 }
+
+                true
+            }
+            ast::Item::FreeFunction(item_function) if item_function.has_attr(db, EVENT_ATTR) => {
+                let (rewrite_nodes, event_diagnostics) = handle_event(db, item_function.clone());
+                if let Some((event_function_rewrite, abi_event_rewrite)) = rewrite_nodes {
+                    event_functions.push(event_function_rewrite);
+                    // TODO(yuval): keep track in the ABI that these are events.
+                    abi_events.push(abi_event_rewrite);
+                }
+                diagnostics.extend(event_diagnostics);
+                false
             }
             ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == "Storage" => {
-                let (storage_code_rewrite, storage_diagnostics) =
+                let (storage_rewrite_node, storage_diagnostics) =
                     handle_storage_struct(db, item_struct.clone());
-                storage_code = storage_code_rewrite;
+                storage_code = storage_rewrite_node;
                 diagnostics.extend(storage_diagnostics);
-                // Don't recreate the struct - as it might not be valid due to mappings.
-                continue;
+                false
             }
-            _ => {}
+            _ => true,
         };
-        original_items.push(RewriteNode::Copied(item.as_syntax_node()));
+        if keep_original {
+            original_items.push(RewriteNode::Copied(item.as_syntax_node()));
+        }
     }
 
     let generated_contract_mod = RewriteNode::interpolate_patched(
@@ -323,10 +344,12 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 $storage_code$
                 trait {ABI_TRAIT} {{
                     $abi_functions$
+                    $abi_events$
                 }}
 
                 mod {EXTERNAL_MODULE} {{
                     $generated_external_functions$
+                    $event_functions$
                 }}
             }}
         "
@@ -347,8 +370,16 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 RewriteNode::Modified(ModifiedNode { children: abi_functions }),
             ),
             (
+                "abi_events".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: abi_events }),
+            ),
+            (
                 "generated_external_functions".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: generated_external_functions }),
+            ),
+            (
+                "event_functions".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: event_functions }),
             ),
         ]),
     );
@@ -367,6 +398,123 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         diagnostics,
         remove_original_item: true,
     }
+}
+
+/// Generates a function to emit an event and the corresponding ABI item.
+/// On success, returns a RewriteNode for the event function and a RewriteNode for the ABI
+/// declaration. On failure returns None. In addition, returns diagnostics.
+fn handle_event(
+    db: &dyn SyntaxGroup,
+    function_ast: ast::ItemFreeFunction,
+) -> (Option<(RewriteNode, RewriteNode)>, Vec<PluginDiagnostic>) {
+    let mut diagnostics = vec![];
+    let declaration = function_ast.declaration(db);
+    let signature = declaration.signature(db);
+    let ret_ty = declaration.signature(db).ret_ty(db);
+    if matches!(ret_ty, OptionReturnTypeClause::ReturnTypeClause(_)) {
+        diagnostics.push(PluginDiagnostic {
+            stable_ptr: ret_ty.stable_ptr().untyped(),
+            message: "Event functions must not return a value.".to_string(),
+        });
+    }
+
+    let mut param_serializations = Vec::new();
+    for param in signature.parameters(db).elements(db) {
+        // If we encounter errors with this parameter that don't allow us to serialize it, we skip
+        // the serialization of it in the generated code.
+        let mut skip_param_serialization = false;
+        if is_ref_param(db, &param) {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: param.modifiers(db).stable_ptr().untyped(),
+                message: "`ref` parameters are not supported in contract events.".to_string(),
+            });
+            skip_param_serialization = true;
+        }
+
+        let param_name = param.name(db);
+        let param_type_ast = param.type_clause(db).ty(db);
+        let type_name = param_type_ast.as_syntax_node().get_text(db);
+        let ser_func = if let Some((ser_func, _)) = get_type_serde_funcs(&type_name) {
+            ser_func
+        } else {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: param_type_ast.stable_ptr().0,
+                message: format!("Could not find serialization for type `{type_name}`"),
+            });
+            skip_param_serialization = true;
+            ""
+        };
+
+        if skip_param_serialization {
+            continue;
+        }
+
+        // TODO(yuval): use panicable version of deserializations when supported.
+        let param_serialization = RewriteNode::interpolate_patched(
+            &format!("{ser_func}(data, $param_name$);\n            "),
+            HashMap::from([(
+                "param_name".to_string(),
+                RewriteNode::Trimmed(param_name.as_syntax_node()),
+            )]),
+        );
+        param_serializations.push(param_serialization);
+    }
+
+    if !function_ast.body(db).statements(db).elements(db).is_empty() {
+        diagnostics.push(PluginDiagnostic {
+            stable_ptr: function_ast.body(db).statements(db).stable_ptr().untyped(),
+            message: "Event function body must be empty.".to_string(),
+        });
+    }
+
+    if !diagnostics.is_empty() {
+        return (None, diagnostics);
+    }
+
+    let name = declaration.name(db).text(db);
+    let event_key = format!("0x{:x}", starknet_keccak(name.as_bytes()));
+
+    (
+        Some((
+            // Event function
+            RewriteNode::interpolate_patched(
+                &format!(
+                    "
+        $attrs$
+        $declaration$ {{
+            let mut keys = array_new::<felt>();
+            array_append::<felt>(keys, {event_key});
+            let mut data = array_new::<felt>();
+            $param_serializations$
+            starknet::emit_event_syscall(keys, data);
+        }}
+            "
+                ),
+                HashMap::from([
+                    // TODO(yuval): All the attributes are currently copied. Remove the #[event]
+                    // attr.
+                    (
+                        "attrs".to_string(),
+                        RewriteNode::Trimmed(function_ast.attributes(db).as_syntax_node()),
+                    ),
+                    ("declaration".to_string(), RewriteNode::Trimmed(declaration.as_syntax_node())),
+                    (
+                        "param_serializations".to_string(),
+                        RewriteNode::Modified(ModifiedNode { children: param_serializations }),
+                    ),
+                ]),
+            ),
+            // ABI event
+            RewriteNode::Modified(ModifiedNode {
+                children: vec![
+                    RewriteNode::Text("#[event]\n        ".to_string()),
+                    RewriteNode::Trimmed(function_ast.declaration(db).as_syntax_node()),
+                    RewriteNode::Text(";\n        ".to_string()),
+                ],
+            }),
+        )),
+        diagnostics,
+    )
 }
 
 /// Generate getters and setters for the variables in the storage struct.
@@ -642,8 +790,8 @@ fn generate_entry_point_wrapper(
     let oog_err = "'Out of gas'";
     let input_data_long_err = "'Input too long for arguments'";
 
-    // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
     let arg_definitions = arg_definitions.join("\n");
+    // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
     Ok(RewriteNode::interpolate_patched(
         format!(
             "fn $function_name$(mut data: Array::<felt>) -> Array::<felt> {{
