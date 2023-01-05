@@ -10,6 +10,9 @@ struct A{}
 #[derive(Copy, Drop)]
 struct B{}
 
+#[derive(Copy, Drop)]
+extern type ExternType;
+
 //! > generated_cairo_code
 #[derive(Copy, Drop)]
 struct A{}
@@ -20,8 +23,15 @@ impl ADrop of Drop::<A>;
 
 #[derive(Copy, Drop)]
 struct B{}
+
 impl BCopy of Copy::<B>;
 impl BDrop of Drop::<B>;
+
+
+#[derive(Copy, Drop)]
+extern type ExternType;
+impl ExternTypeCopy of Copy::<ExternType>;
+impl ExternTypeDrop of Drop::<ExternType>;
 
 //! > expected_diagnostics
 

@@ -54,19 +54,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
             writeln!(f)?;
         }
 
-        write!(f, "Drops:")?;
-        let mut drops = self.drops.iter().peekable();
-        if drops.peek().is_some() {
-            write!(f, " ")?;
-        }
-        while let Some(var) = drops.next() {
-            var.fmt(f, ctx)?;
-            if drops.peek().is_some() {
-                write!(f, ", ")?;
-            }
-        }
-
-        writeln!(f, "\nEnd:")?;
+        writeln!(f, "End:")?;
         self.end.fmt(f, ctx)?;
         writeln!(f)
     }
@@ -121,19 +109,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
             writeln!(f)?;
         }
 
-        write!(f, "Drops:")?;
-        let mut drops = self.drops.iter().peekable();
-        if drops.peek().is_some() {
-            write!(f, " ")?;
-        }
-        while let Some(var) = drops.next() {
-            var.fmt(f, ctx)?;
-            if drops.peek().is_some() {
-                write!(f, ", ")?;
-            }
-        }
-
-        writeln!(f, "\nEnd:")?;
+        writeln!(f, "End:")?;
         self.end.fmt(f, ctx)?;
         writeln!(f)
     }

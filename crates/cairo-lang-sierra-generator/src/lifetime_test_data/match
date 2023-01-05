@@ -17,7 +17,6 @@ fn foo(x: felt, y: felt) -> felt {
 blk0:
 Inputs:
 Statements:
-Drops:
 End:
   Callsite(v1)
 
@@ -25,7 +24,6 @@ blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
-Drops: v2, v1
 End:
   Callsite(v3)
 
@@ -36,7 +34,6 @@ Statements:
     () => blk0,
     (v2) => blk1,
   }
-Drops: v0, v1
 End:
   Callsite(v4)
 
@@ -71,7 +68,6 @@ fn foo(x: felt, y: felt) -> felt {
 blk0:
 Inputs:
 Statements:
-Drops:
 End:
   Callsite(v1)
 
@@ -79,7 +75,6 @@ blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
-Drops: v2, v1
 End:
   Callsite(v3)
 
@@ -90,7 +85,6 @@ Statements:
     () => blk0,
     (v2) => blk1,
   }
-Drops: v0, v4
 End:
   Callsite(v1)
 
@@ -124,7 +118,6 @@ fn foo(x: felt, y: felt) {
 blk0:
 Inputs:
 Statements:
-Drops:
 End:
   Callsite(v1)
 
@@ -133,7 +126,6 @@ Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 3u
   (v4: core::felt) <- core::felt_add(v1, v3)
-Drops: v2, v1, v3
 End:
   Callsite(v4)
 
@@ -145,7 +137,6 @@ Statements:
     (v2) => blk1,
   }
   (v6: ()) <- struct_construct()
-Drops: v0, v1, v5
 End:
   Callsite(v6)
 
@@ -193,7 +184,6 @@ fn foo(x: felt, y: felt) {
 blk0:
 Inputs:
 Statements:
-Drops:
 End:
   Callsite(v1)
 
@@ -201,7 +191,6 @@ blk1:
 Inputs: v6: core::NonZero::<core::felt>
 Statements:
   (v7: core::felt) <- 1234u
-Drops: v6, v1
 End:
   Callsite(v7)
 
@@ -213,7 +202,6 @@ Statements:
     () => blk0,
     (v6) => blk1,
   }
-Drops: v5
 End:
   Callsite(v8)
 
@@ -221,14 +209,12 @@ blk3:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 1000u
-Drops: v9
 End:
   Callsite(v10)
 
 blk4:
 Inputs:
 Statements:
-Drops:
 End:
   Callsite(v1)
 
@@ -241,7 +227,6 @@ Statements:
     () => blk2,
     (v9) => blk3,
   }
-Drops: v2, v1, v3, v4
 End:
   Callsite(v11)
 
@@ -253,7 +238,6 @@ Statements:
     (v2) => blk5,
   }
   (v13: ()) <- struct_construct()
-Drops: v0, v1, v12
 End:
   Callsite(v13)
 

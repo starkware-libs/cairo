@@ -1,6 +1,5 @@
+#[derive(Copy, Drop)]
 extern type u128;
-impl U128Copy of Copy::<u128>;
-impl U128Drop of Drop::<u128>;
 extern fn u128_const<value>() -> u128 nopanic;
 
 enum U128sFromFeltResult { Narrow: u128, Wide: (u128, u128), }

@@ -28,7 +28,6 @@ blk0:
 Inputs:
 Statements:
   (v3: core::felt) <- 5u
-Drops:
 End:
   Callsite(v3)
 
@@ -39,6 +38,5 @@ Statements:
   (v2: core::bool) <- bool::True(v1)
   (v4: core::felt) <- blk0()
   (v5: test::MyEnum) <- MyEnum::B(v4)
-Drops: v0, v1, v2, v4
 End:
   Callsite(v5)

@@ -129,6 +129,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
             StarkNetConcreteLibfunc::StorageAddressConst(_) => vec![ApChange::Known(0)],
+            StarkNetConcreteLibfunc::StorageAddressFromFelt(_) => vec![ApChange::Known(7)],
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],
@@ -138,5 +139,6 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
             }
         },
         CoreConcreteLibfunc::Cheatcodes(_) => vec![ApChange::Known(1), ApChange::Known(1)]
+        CoreConcreteLibfunc::Debug(_) => vec![ApChange::Known(0)],
     }
 }

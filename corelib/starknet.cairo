@@ -1,5 +1,7 @@
 extern type System;
+#[derive(Copy, Drop)]
 extern type StorageAddress;
+#[derive(Copy, Drop)]
 extern type ContractAddress;
 
 // An Helper function to force the inclusion of `System` in the list of implicits.
@@ -8,6 +10,7 @@ fn use_system_implicit() implicits(System) {
 
 // Storage.
 extern fn storage_address_const<address>() -> StorageAddress nopanic;
+extern fn storage_addr_from_felt(addr: felt) -> StorageAddress implicits(RangeCheck) nopanic;
 
 // Only address_domain 0 is currently supported.
 // This parameter is going to be used to access address spaces with different

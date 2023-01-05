@@ -30,9 +30,6 @@ pub struct StructuredBlock {
     /// Note: Match is a possible statement, which means it has control flow logic inside, but
     /// after its execution is completed, the flow returns to the following statement of the block.
     pub statements: Vec<Statement>,
-    /// Which variables are needed to be dropped at the end of this block. Note that these are
-    /// not explicitly dropped by statements.
-    pub drops: Vec<VariableId>,
     /// Describes how this block ends: returns to the caller or exits the function.
     pub end: StructuredBlockEnd,
 }
@@ -62,9 +59,6 @@ pub struct FlatBlock {
     /// Note: Match is a possible statement, which means it has control flow logic inside, but
     /// after its execution is completed, the flow returns to the following statement of the block.
     pub statements: Vec<Statement>,
-    /// Which variables are needed to be dropped at the end of this block. Note that these are
-    /// not explicitly dropped by statements.
-    pub drops: Vec<VariableId>,
     /// Describes how this block ends: returns to the caller or exits the function.
     pub end: FlatBlockEnd,
 }
@@ -88,7 +82,6 @@ impl TryFrom<StructuredBlock> for FlatBlock {
         Ok(FlatBlock {
             inputs: value.inputs,
             statements: value.statements,
-            drops: value.drops,
             end: value.end.try_into()?,
         })
     }

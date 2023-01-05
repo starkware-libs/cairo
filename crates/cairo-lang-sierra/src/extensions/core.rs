@@ -5,6 +5,7 @@ use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::builtin_cost::{BuiltinCostLibfunc, BuiltinCostsType};
 use super::cheatcodes::CheatcodesLibFunc;
+use super::debug::DebugLibfunc;
 use super::dict_felt_to::{DictFeltToLibfunc, DictFeltToType};
 use super::dict_manager::DictManagerType;
 use super::drop::DropLibfunc;
@@ -79,5 +80,6 @@ define_libfunc_hierarchy! {
         Pedersen(PedersenLibfunc),
         StarkNet(StarkNetLibfunc),
         Cheatcodes(CheatcodesLibFunc),
+        Debug(DebugLibfunc),
     }, CoreConcreteLibfunc
 }

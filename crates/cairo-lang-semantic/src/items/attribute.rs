@@ -57,7 +57,7 @@ pub fn ast_attributes_to_semantic(
 /// Query implementation of [crate::db::SemanticGroup::module_attributes].
 pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<Vec<Attribute>> {
     Ok(match module_id {
-        ModuleId::CrateRoot(_) | ModuleId::VirtualSubmodule(_) => vec![],
+        ModuleId::CrateRoot(_) => vec![],
         ModuleId::Submodule(submodule_id) => {
             let module_ast =
                 &db.module_submodules(submodule_id.parent_module(db.upcast()))?[submodule_id];
