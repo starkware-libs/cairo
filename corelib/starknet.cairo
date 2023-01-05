@@ -1,5 +1,7 @@
 extern type System;
+#[derive(Copy, Drop)]
 extern type StorageAddress;
+#[derive(Copy, Drop)]
 extern type ContractAddress;
 
 // An Helper function to force the inclusion of `System` in the list of implicits.

@@ -20,6 +20,11 @@ impl MacroPlugin for DerivePlugin {
             ast::Item::Enum(enum_ast) => {
                 generate_derive_code_for_type(db, enum_ast.name(db), enum_ast.attributes(db))
             }
+            ast::Item::ExternType(extern_type_ast) => generate_derive_code_for_type(
+                db,
+                extern_type_ast.name(db),
+                extern_type_ast.attributes(db),
+            ),
             _ => PluginResult::default(),
         }
     }
