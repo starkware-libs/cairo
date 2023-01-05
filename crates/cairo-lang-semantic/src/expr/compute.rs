@@ -120,12 +120,11 @@ impl Environment {
     pub fn add_param(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        name: &Option<SmolStr>,
         semantic_param: Parameter,
         ast_param: &ast::Param,
         function_id: GenericFunctionId,
     ) -> Maybe<()> {
-        let name = match name {
+        let name = match &semantic_param.name {
             Some(name) => name,
             None => {
                 self.unnamed_variables.push(Variable::Param(semantic_param));

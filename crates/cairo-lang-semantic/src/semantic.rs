@@ -4,6 +4,7 @@ use cairo_lang_defs::ids::LocalVarId;
 pub use cairo_lang_defs::ids::{ParamId, VarId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast;
+use smol_str::SmolStr;
 
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
@@ -40,6 +41,8 @@ impl LocalVariable {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Parameter {
     pub id: ParamId,
+    /// The name of the parameter. `None` means a nameless parameter (`_`).
+    pub name: Option<SmolStr>,
     pub ty: TypeId,
     pub mutability: Mutability,
 }
