@@ -68,11 +68,6 @@ impl LivingVariables {
         LivingVar(var.0)
     }
 
-    /// Retrieves the set of living variables as an ordered vector in order to drop / destruct.
-    pub fn get_all(&self) -> Vec<VariableId> {
-        self.living_variables.iter().copied().collect()
-    }
-
     // Returns true if the given var_id exists as a living var.
     pub fn contains(&self, var_id: VariableId) -> bool {
         self.living_variables.contains(&var_id)
