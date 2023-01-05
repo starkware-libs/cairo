@@ -160,19 +160,22 @@ impl SignatureOnlyGenericLibfunc for DictFeltToSquashLibfunc {
             context.get_wrapped_concrete_type(DictFeltToType::id(), generic_ty.clone())?;
         let squashed_dict_ty =
             context.get_wrapped_concrete_type(SquashedDictFeltToType::id(), generic_ty)?;
+        let dict_manager_ty = context.get_concrete_type(DictManagerType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch(
-            vec![range_check_type.clone(), dict_ty],
+            vec![range_check_type.clone(), dict_manager_ty.clone(), dict_ty],
             vec![
                 OutputVarInfo {
                     ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
+                OutputVarInfo {
+                    ty: dict_manager_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
                 },
                 OutputVarInfo {
                     ty: squashed_dict_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(2) },
                 },
             ],
             SierraApChange::Unknown,
