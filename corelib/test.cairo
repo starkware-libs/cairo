@@ -354,3 +354,8 @@ fn test_array_out_of_bound_1() {
 fn test_array_out_of_bound_2() {
     test_array_helper(11_u128);
 }
+
+#[test]
+fn test_dict_new() -> DictFeltTo::<felt> {
+    dict_felt_to_new::<felt>()
+}
