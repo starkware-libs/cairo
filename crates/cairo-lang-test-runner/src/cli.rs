@@ -41,6 +41,12 @@ struct Args {
     /// The filter for the tests, running only tests containing the filter string.
     #[arg(short, long, default_value_t = String::default())]
     filter: String,
+    /// Should we run ignored tests as well.
+    #[arg(long, default_value_t = false)]
+    include_ignored: bool,
+    /// Should we run only the ignored tests.
+    #[arg(long, default_value_t = false)]
+    ignored: bool,
     /// Should we add the starknet plugin to run the tests.
     #[arg(long, default_value_t = false)]
     starknet: bool,
@@ -82,7 +88,11 @@ fn main() -> anyhow::Result<()> {
     let total_tests_count = all_tests.len();
     let named_tests = all_tests
         .into_iter()
-        .map(|test| {
+        .map(|mut test| {
+            // Un-ignoring all the tests in `include-ignored` mode.
+            if args.include_ignored {
+                test.ignored = false;
+            }
             (
                 format!(
                     "{:?}",
@@ -98,6 +108,8 @@ fn main() -> anyhow::Result<()> {
             )
         })
         .filter(|(name, _)| name.contains(&args.filter))
+        // Filtering unignored tests in `ignored` mode.
+        .filter(|(_, test)| !args.ignored || test.ignored)
         .collect_vec();
     let filtered_out = total_tests_count - named_tests.len();
     let TestsSummary { passed, failed, ignored, failed_run_results } =
