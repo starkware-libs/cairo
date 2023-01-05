@@ -36,13 +36,12 @@ mod TestContract {
     fn set_something(ref arg: felt, num: felt) {
     }
 
-
+    
     trait __abi {
-    fn get_something(
-        ref arg: felt, num: felt
-        ) -> felt; fn set_something(
-        ref arg: felt, num: felt
-    ); }
+        fn get_something(ref arg: felt, num: felt) -> felt;
+        fn set_something(ref arg: felt, num: felt);
+        
+    }
 
     mod __external {
         fn get_something(mut data: Array::<felt>) -> Array::<felt> {
@@ -55,7 +54,7 @@ mod TestContract {
                     panic(err_data);
                 },
             }
-
+            
             let mut __arg_arg = match serde::deserialize_felt(data) {
                 Option::Some(x) => x,
                 Option::None(()) => {
@@ -64,6 +63,7 @@ mod TestContract {
                     panic(err_data)
                 },
             };
+
             let __arg_num = match serde::deserialize_felt(data) {
                 Option::Some(x) => x,
                 Option::None(()) => {
@@ -80,9 +80,12 @@ mod TestContract {
                 array_append::<felt>(err_data, 'Input too long for arguments');
                 panic(err_data);
             }
+            
             let res = super::get_something(__arg_arg, __arg_num);
             let mut arr = array_new::<felt>();
+            // References.
             serde::serialize_felt(arr, __arg_arg);
+            // Result.
             serde::serialize_felt(arr, res)
             arr
         }
@@ -96,7 +99,7 @@ mod TestContract {
                     panic(err_data);
                 },
             }
-
+            
             let mut __arg_arg = match serde::deserialize_felt(data) {
                 Option::Some(x) => x,
                 Option::None(()) => {
@@ -105,6 +108,7 @@ mod TestContract {
                     panic(err_data)
                 },
             };
+
             let __arg_num = match serde::deserialize_felt(data) {
                 Option::Some(x) => x,
                 Option::None(()) => {
@@ -123,10 +127,12 @@ mod TestContract {
             }
             super::set_something(__arg_arg, __arg_num);
             let mut arr = array_new::<felt>();
+            // References.
             serde::serialize_felt(arr, __arg_arg);
-
+            // Result.
             arr
         }
+        
     }
 }
 

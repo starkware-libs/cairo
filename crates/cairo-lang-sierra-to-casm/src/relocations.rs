@@ -1,7 +1,8 @@
 use cairo_lang_casm::instructions::{
-    CallInstruction, Instruction, InstructionBody, JnzInstruction, JumpInstruction,
+    AssertEqInstruction, CallInstruction, Instruction, InstructionBody, JnzInstruction,
+    JumpInstruction,
 };
-use cairo_lang_casm::operand::DerefOrImmediate;
+use cairo_lang_casm::operand::{BinOpOperand, DerefOrImmediate, ResOperand};
 use cairo_lang_sierra::program::StatementIdx;
 
 type CodeOffset = usize;
@@ -11,6 +12,9 @@ pub enum Relocation {
     /// Adds program_offset(StatementIdx) and subtracts the program offset of the casm instruction
     /// that is being relocated.
     RelativeStatementId(StatementIdx),
+    /// Adds the offset between the current statement index and the end of the program code
+    /// segment.
+    EndOfProgram,
 }
 
 impl Relocation {
@@ -20,39 +24,53 @@ impl Relocation {
         statement_offsets: &[CodeOffset],
         instruction: &mut Instruction,
     ) {
-        match self {
-            Relocation::RelativeStatementId(statement_idx) => match instruction {
-                Instruction {
-                    body:
-                        InstructionBody::Call(CallInstruction {
-                            target: DerefOrImmediate::Immediate(value),
-                            relative: true,
-                        }),
-                    inc_ap: false,
-                    ..
-                }
-                | Instruction {
-                    body:
-                        InstructionBody::Jnz(JnzInstruction {
-                            jump_offset: DerefOrImmediate::Immediate(value),
-                            condition: _,
-                        }),
-                    ..
-                }
-                | Instruction {
-                    body:
-                        InstructionBody::Jump(JumpInstruction {
-                            target: DerefOrImmediate::Immediate(value),
-                            relative: true,
-                        }),
-                    inc_ap: false,
-                    ..
-                } => {
-                    *value +=
-                        statement_offsets[statement_idx.0] as i128 - instruction_offset as i128;
-                }
-                _ => panic!("Bad relocation."),
-            },
+        let target_pc = match self {
+            Relocation::RelativeStatementId(statement_idx) => statement_offsets[statement_idx.0],
+            Relocation::EndOfProgram => *statement_offsets.last().unwrap(),
+        };
+
+        match instruction {
+            Instruction {
+                body:
+                    InstructionBody::Call(CallInstruction {
+                        target: DerefOrImmediate::Immediate(value),
+                        relative: true,
+                    }),
+                inc_ap: false,
+                ..
+            }
+            | Instruction {
+                body:
+                    InstructionBody::Jnz(JnzInstruction {
+                        jump_offset: DerefOrImmediate::Immediate(value),
+                        condition: _,
+                    }),
+                ..
+            }
+            | Instruction {
+                body:
+                    InstructionBody::Jump(JumpInstruction {
+                        target: DerefOrImmediate::Immediate(value),
+                        relative: true,
+                    }),
+                inc_ap: false,
+                ..
+            }
+            | Instruction {
+                body:
+                    InstructionBody::AssertEq(AssertEqInstruction {
+                        b:
+                            ResOperand::BinOp(BinOpOperand {
+                                b: DerefOrImmediate::Immediate(value),
+                                ..
+                            }),
+                        ..
+                    }),
+                ..
+            } => {
+                *value += target_pc as i128 - instruction_offset as i128;
+            }
+            _ => panic!("Bad relocation."),
         }
     }
 }

@@ -139,7 +139,7 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                             &formatdoc!("        {ser_func}(calldata, $arg_name$);\n"),
                             HashMap::from([(
                                 "arg_name".to_string(),
-                                RewriteNode::Copied(param.name(db).as_syntax_node()),
+                                RewriteNode::Trimmed(param.name(db).as_syntax_node()),
                             )]),
                         ));
                     } else {
@@ -284,14 +284,16 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 // TODO(yuval): keep track of whether the function is external/view.
                 abi_functions.push(RewriteNode::Modified(ModifiedNode {
                     children: vec![
-                        RewriteNode::Copied(item_function.declaration(db).as_syntax_node()),
-                        RewriteNode::Text(";".to_string()),
+                        RewriteNode::Trimmed(item_function.declaration(db).as_syntax_node()),
+                        RewriteNode::Text(";\n        ".to_string()),
                     ],
                 }));
 
                 match generate_entry_point_wrapper(db, item_function) {
                     Ok(generated_function) => {
                         generated_external_functions.push(generated_function);
+                        generated_external_functions
+                            .push(RewriteNode::Text("\n        ".to_string()));
                     }
                     Err(entry_point_diagnostics) => {
                         diagnostics.extend(entry_point_diagnostics);
@@ -299,7 +301,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 }
             }
             ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == "Storage" => {
-                storage_code = handle_storage_struct(db, item_struct.clone());
+                let (storage_code_rewrite, storage_diagnostics) =
+                    handle_storage_struct(db, item_struct.clone());
+                storage_code = storage_code_rewrite;
+                diagnostics.extend(storage_diagnostics);
             }
             _ => {}
         };
@@ -311,7 +316,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             "
             #[{GENERATED_CONTRACT_ATTR}]
             mod $contract_name$ {{
-                $original_items$
+            $original_items$
                 $storage_code$
                 trait {ABI_TRAIT} {{
                     $abi_functions$
@@ -327,7 +332,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         HashMap::from([
             (
                 "contract_name".to_string(),
-                RewriteNode::Copied(module_ast.name(db).as_syntax_node()),
+                RewriteNode::Trimmed(module_ast.name(db).as_syntax_node()),
             ),
             (
                 "original_items".to_string(),
@@ -351,7 +356,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
-            content: cairo_lang_formatter::format_string(db, builder.code),
+            content: builder.code,
             aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(DiagnosticRemapper {
                 patches: builder.patches,
             })),
@@ -362,60 +367,93 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 }
 
 /// Generate getters and setters for the variables in the storage struct.
-fn handle_storage_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> RewriteNode {
+fn handle_storage_struct(
+    db: &dyn SyntaxGroup,
+    struct_ast: ast::ItemStruct,
+) -> (RewriteNode, Vec<PluginDiagnostic>) {
     let mut members_code = Vec::new();
+    let mut diagnostics = vec![];
 
     for member in struct_ast.members(db).elements(db) {
-        let name = member.name(db).text(db).to_string();
+        let name = member.name(db).text(db);
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
+        let type_ast = member.type_clause(db).ty(db);
+        let type_name = type_ast.as_syntax_node().get_text(db);
+        let type_name = type_name.trim();
 
-        let generated_submodule = RewriteNode::interpolate_patched(
-            formatdoc!(
-                "
-                mod $name$ {{
-                    fn read() -> felt {{
-                        // Only address_domain 0 is currently supported.
-                        let address_domain = 0;
-                        match starknet::storage_read_syscall(
-                            address_domain,
-                            starknet::storage_address_const::<{address}>(),
-                        ) {{
-                            Result::Ok(x) => x,
-                            Result::Err(revert_reason) => {{
-                                let mut err_data = array_new::<felt>();
-                                array_append::<felt>(err_data, revert_reason);
-                                panic(err_data)
-                            }},
-                        }}
-                    }}
-                    fn write(value: felt) {{
-                        // Only address_domain 0 is currently supported.
-                        let address_domain = 0;
-                        match starknet::storage_write_syscall(
-                            address_domain,
-                            starknet::storage_address_const::<{address}>(),
-                            value,
-                        ) {{
-                            Result::Ok(()) => {{}},
-                            Result::Err(revert_reason) => {{
-                                let mut err_data = array_new::<felt>();
-                                array_append::<felt>(err_data, revert_reason);
-                                panic(err_data)
-                            }},
-                        }}
-                    }}
-                }}"
-            )
-            .as_str(),
-            HashMap::from([(
-                "name".to_string(),
-                RewriteNode::Copied(member.name(db).as_syntax_node()),
-            )]),
-        );
-
-        members_code.push(generated_submodule)
+        if type_name.starts_with("Map<") && type_name.ends_with('>') {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: type_ast.stable_ptr().untyped(),
+                message: "Mapping storage vars are not yet supported.".to_string(),
+            });
+            continue;
+        }
+        match handle_simple_storage_var(type_name, &address) {
+            Some(code) => members_code.push(RewriteNode::interpolate_patched(
+                code.as_str(),
+                HashMap::from([
+                    (
+                        "storage_var_name".to_string(),
+                        RewriteNode::Trimmed(member.name(db).as_syntax_node()),
+                    ),
+                    ("type_name".to_string(), RewriteNode::Trimmed(type_ast.as_syntax_node())),
+                ]),
+            )),
+            None => diagnostics.push(PluginDiagnostic {
+                stable_ptr: type_ast.stable_ptr().untyped(),
+                message: "Unsupported type for storage var.".to_string(),
+            }),
+        }
     }
-    RewriteNode::Modified(ModifiedNode { children: members_code })
+    (RewriteNode::Modified(ModifiedNode { children: members_code }), diagnostics)
+}
+
+/// Generate getters and setters skeleton for a non-mapping member in the storage struct.
+fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
+    let (convert_to, convert_from) = match type_name {
+        "felt" => ("value", "value"),
+        "bool" => ("if value == 0 { false } else { true }", "if value { 0 } else { 1 }"),
+        "u128" => ("u128_from_felt(value)", "u128_to_felt(value)"),
+        _ => {
+            return None;
+        }
+    };
+    Some(format!(
+        "
+    mod $storage_var_name$ {{
+        fn read() -> $type_name$ {{
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            match starknet::storage_read_syscall(
+                address_domain,
+                starknet::storage_address_const::<{address}>(),
+            ) {{
+                Result::Ok(value) => {convert_to},
+                Result::Err(revert_reason) => {{
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, revert_reason);
+                    panic(err_data)
+                }},
+            }}
+        }}
+        fn write(value: $type_name$) {{
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            match starknet::storage_write_syscall(
+                address_domain,
+                starknet::storage_address_const::<{address}>(),
+                {convert_from},
+            ) {{
+                Result::Ok(()) => {{}},
+                Result::Err(revert_reason) => {{
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, revert_reason);
+                    panic(err_data)
+                }},
+            }}
+        }}
+    }}"
+    ))
 }
 
 /// Returns the serde functions for a type.
@@ -461,8 +499,9 @@ fn generate_entry_point_wrapper(
         arg_names.push(arg_name.clone());
         let mut_modifier = if is_ref { "mut " } else { "" };
         // TODO(yuval): use panicable version of deserializations when supported.
-        let arg_definition = formatdoc!(
-            "let {mut_modifier}{arg_name} = match {deser_func}(data) {{
+        let arg_definition = format!(
+            "
+            let {mut_modifier}{arg_name} = match {deser_func}(data) {{
                 Option::Some(x) => x,
                 Option::None(()) => {{
                     let mut err_data = array_new::<felt>();
@@ -474,12 +513,13 @@ fn generate_entry_point_wrapper(
         arg_definitions.push(arg_definition);
 
         if is_ref {
-            ref_appends.push(RewriteNode::Text(format!("{ser_func}(arr, {arg_name});")));
+            ref_appends
+                .push(RewriteNode::Text(format!("\n            {ser_func}(arr, {arg_name});")));
         }
     }
     let arg_names_str = arg_names.join(", ");
 
-    let function_name = RewriteNode::Copied(declaration.name(db).as_syntax_node());
+    let function_name = RewriteNode::Trimmed(declaration.name(db).as_syntax_node());
     let wrapped_name = RewriteNode::interpolate_patched(
         "super::$function_name$",
         HashMap::from([("function_name".to_string(), function_name.clone())]),
@@ -491,7 +531,7 @@ fn generate_entry_point_wrapper(
             let ret_type_name = ret_type_ast.as_syntax_node().get_text(db);
             // TODO(orizi): Handle tuple types.
             if let Some((ser_func, _)) = get_type_serde_funcs(&ret_type_name) {
-                ("let res = ", format!("{ser_func}(arr, res)"))
+                ("\n            let res = ", format!("\n            {ser_func}(arr, res)"))
             } else {
                 diagnostics.push(PluginDiagnostic {
                     stable_ptr: ret_type_ast.stable_ptr().0,
@@ -511,33 +551,32 @@ fn generate_entry_point_wrapper(
     // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
     let arg_definitions = arg_definitions.join("\n");
     Ok(RewriteNode::interpolate_patched(
-        formatdoc!(
+        format!(
             "fn $function_name$(mut data: Array::<felt>) -> Array::<felt> {{
-                        match get_gas() {{
-                            Option::Some(_) => {{
-                            }},
-                            Option::None(_) => {{
-                                let mut err_data = array_new::<felt>();
-                                array_append::<felt>(err_data, {oog_err});
-                                panic(err_data);
-                            }},
-                        }}
+            match get_gas() {{
+                Option::Some(_) => {{
+                }},
+                Option::None(_) => {{
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(err_data, {oog_err});
+                    panic(err_data);
+                }},
+            }}
+            {arg_definitions}
+            if array_len::<felt>(data) != 0_u128 {{
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
 
-                        {arg_definitions}
-                        if array_len::<felt>(data) != 0_u128 {{
-                            // Force the inclusion of `System` in the list of implicits.
-                            starknet::use_system_implicit();
-
-                            let mut err_data = array_new::<felt>();
-                            array_append::<felt>(err_data, {input_data_long_err});
-                            panic(err_data);
-                        }}
-                        {let_res} $wrapped_name$({arg_names_str});
-                        let mut arr = array_new::<felt>();
-                        $ref_appends$
-                        {append_res}
-                        arr
-            }}"
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(err_data, {input_data_long_err});
+                panic(err_data);
+            }}
+            {let_res}$wrapped_name$({arg_names_str});
+            let mut arr = array_new::<felt>();
+            // References.$ref_appends$
+            // Result.{append_res}
+            arr
+        }}"
         )
         .as_str(),
         HashMap::from([

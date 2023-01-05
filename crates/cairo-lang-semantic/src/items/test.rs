@@ -11,6 +11,7 @@ cairo_lang_test_utils::test_file_test!(
         struct_: "struct",
         trait_: "trait",
         type_alias: "type_alias",
+        module: "module",
     },
     test_function_diagnostics
 );

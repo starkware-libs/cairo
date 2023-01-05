@@ -57,6 +57,9 @@ pub enum RunResultValue {
     Panic(Vec<BigInt>),
 }
 
+// Dummy cost of a builtin invocation.
+pub const DUMMY_BUILTIN_GAS_COST: usize = 10000;
+
 /// Runner enabling running a Sierra program on the vm.
 pub struct SierraCasmRunner {
     /// The sierra program.
@@ -92,9 +95,28 @@ impl SierraCasmRunner {
         let func = self.find_function(name_suffix)?;
         let initial_gas = self.get_initial_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
+        let footer = self.create_code_footer();
         let (cells, ap) = cairo_lang_casm::run::run_function(
-            chain!(entry_code.iter(), self.casm_program.instructions.iter()),
+            chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter()),
             builtins,
+            |context| {
+                let vm = context.vm;
+                // Create the builtin cost segment, with dummy values.
+                let builtin_cost_segment = vm.add_memory_segment();
+                for token_type in CostTokenType::iter() {
+                    if *token_type == CostTokenType::Step {
+                        continue;
+                    }
+                    vm.insert_value(
+                        &(builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)),
+                        BigInt::from(DUMMY_BUILTIN_GAS_COST),
+                    )?;
+                }
+                // Put a pointer to the builtin cost segment at the end of the program (after the
+                // additional `ret` statement).
+                vm.insert_value(&(vm.get_pc() + context.data_len), builtin_cost_segment)?;
+                Ok(())
+            },
         )?;
         let mut results_data = self.get_results_data(func, &cells, ap)?;
         // Handling implicits.
@@ -276,6 +298,16 @@ impl SierraCasmRunner {
         let required_gas =
             self.metadata.gas_info.function_costs[&func.id][CostTokenType::Step] as usize;
         available_gas.checked_sub(required_gas).ok_or(RunnerError::NotEnoughGasToCall)
+    }
+
+    /// Creates a list of instructions that will be appended to the program's bytecode.
+    pub fn create_code_footer(&self) -> Vec<Instruction> {
+        casm! {
+            // Add a `ret` instruction used in libfuncs that retrieve the current value of the `fp`
+            // and `pc` registers.
+            ret;
+        }
+        .instructions
     }
 }
 

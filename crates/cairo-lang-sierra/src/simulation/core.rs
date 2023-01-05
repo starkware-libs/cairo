@@ -14,7 +14,7 @@ use crate::extensions::core::CoreConcreteLibfunc::{
     Gas, Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
-use crate::extensions::ec::EcConcreteLibfunc::{CreatePoint, UnwrapPoint};
+use crate::extensions::ec::EcConcreteLibfunc::{AddToState, CreatePoint, InitState, UnwrapPoint};
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt::{
     FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
@@ -74,6 +74,7 @@ pub fn simulate<
             [value] => Ok((vec![value.clone(), value.clone()], 0)),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Ec(AddToState(_)) => todo!(),
         Ec(CreatePoint(_)) => match &inputs[..] {
             [CoreValue::Felt(x), CoreValue::Felt(y)] => {
                 // If the point is on the curve use the fallthrough branch and return the point.
@@ -86,6 +87,7 @@ pub fn simulate<
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Ec(InitState(_)) => todo!(),
         Ec(UnwrapPoint(_)) => match &inputs[..] {
             [CoreValue::EcPoint(x, y)] => {
                 Ok((vec![CoreValue::Felt(x.clone()), CoreValue::Felt(y.clone())], 0))
@@ -293,6 +295,27 @@ pub fn simulate<
         }
         CoreConcreteLibfunc::Nullable(_) => {
             unimplemented!("Simulation of nullable is not implemented yet.")
+        }
+        CoreConcreteLibfunc::Debug(_) => {
+            if inputs.len() == 1 {
+                let arr = extract_matches!(&inputs[0], CoreValue::Array);
+                let mut bytes = Vec::new();
+                for limb in arr {
+                    let limb = extract_matches!(limb, CoreValue::Felt);
+                    // TODO(spapini): What to do with the sign?
+                    let (_sign, limb_bytes) = limb.to_bytes_be();
+                    // Currently, we ignore leading zeros. That might need to change.
+                    bytes.extend(limb_bytes);
+                }
+                if let Ok(s) = String::from_utf8(bytes) {
+                    print!("{}", s);
+                } else {
+                    println!("Not utf8");
+                }
+                Ok((vec![], 0))
+            } else {
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
+            }
         }
     }
 }

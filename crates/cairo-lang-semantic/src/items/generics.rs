@@ -1,4 +1,5 @@
 use cairo_lang_defs::ids::{GenericParamId, GenericParamLongId, ModuleFileId};
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 
 use crate::db::SemanticGroup;
@@ -14,10 +15,8 @@ pub fn semantic_generic_params(
     let syntax_db = db.upcast();
 
     match generic_args {
-        cairo_lang_syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
-        cairo_lang_syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(
-            syntax,
-        ) => syntax
+        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
+        syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
             .generic_params(syntax_db)
             .elements(syntax_db)
             .iter()

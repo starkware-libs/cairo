@@ -79,30 +79,6 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
 }
 
 #[test]
-fn test_resolve() {
-    let mut db_val = DatabaseForTesting::default();
-    let module_id = setup_test_module(
-        &mut db_val,
-        indoc! {"
-            fn foo() -> felt { 5 }
-            extern fn felt_add(a: felt, b: felt) -> felt nopanic;
-        "},
-    );
-    let db = &db_val;
-    assert!(db.module_item_by_name(module_id, "doesnt_exist".into()).unwrap().is_none());
-    let felt_add = db.module_item_by_name(module_id, "felt_add".into()).unwrap();
-    assert_eq!(format!("{:?}", felt_add.debug(db)), "Some(ExternFunctionId(test::felt_add))");
-    match db.module_item_by_name(module_id, "felt_add".into()).unwrap().unwrap() {
-        crate::ids::ModuleItemId::ExternFunction(_) => {}
-        _ => panic!("Expected an extern function"),
-    };
-    match db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap() {
-        crate::ids::ModuleItemId::FreeFunction(_) => {}
-        _ => panic!("Expected a free function"),
-    };
-}
-
-#[test]
 fn test_module_file() {
     let mut db_val = DatabaseForTesting::default();
     let module_id = setup_test_module(
@@ -112,10 +88,10 @@ fn test_module_file() {
         "},
     );
     let db = &db_val;
-    let item_id = extract_matches!(
-        db.module_item_by_name(module_id, "mysubmodule".into()).unwrap().unwrap(),
-        ModuleItemId::Submodule
-    );
+    let item_id =
+        extract_matches!(db.module_items(module_id).ok().unwrap()[0], ModuleItemId::Submodule);
+    assert_eq!(item_id.name(db), "mysubmodule");
+
     let submodule_id = ModuleId::Submodule(item_id);
     assert_eq!(
         db.lookup_intern_file(db.module_main_file(module_id).unwrap()),
@@ -153,9 +129,10 @@ fn test_submodules() {
     let subsubmodule_id =
         ModuleId::Submodule(*db.module_submodules_ids(submodule_id).unwrap().first().unwrap());
 
-    db.module_item_by_name(subsubmodule_id, "foo".into())
-        .unwrap()
-        .expect("Expected to find foo() in subsubmodule.");
+    assert_eq!(
+        format!("{:?}", db.module_items(subsubmodule_id).unwrap().debug(db)),
+        "[FreeFunctionId(test::submod::subsubmod::foo), ExternTypeId(test::submod::subsubmod::B)]"
+    );
 
     // Test file mappings.
     assert_eq!(db.file_modules(db.module_main_file(module_id).unwrap()).unwrap(), vec![module_id]);
@@ -234,20 +211,12 @@ fn test_plugin() {
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
 
-    // Verify the original struct still exists.
+    // Verify that:
+    // 1. The original struct still exists.
+    // 2. The expected items were generated.
     assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "A".into()).unwrap().debug(db)),
-        "Some(StructId(test::A))"
-    );
-
-    // Verify the expected items were generated.
-    assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "f".into()).unwrap().debug(db)),
-        "Some(FreeFunctionId(test::f))"
-    );
-    assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "B".into()).unwrap().debug(db)),
-        "Some(ExternTypeId(test::B))"
+        format!("{:?}", db.module_items(module_id).unwrap().debug(db)),
+        "[FreeFunctionId(test::f), ExternTypeId(test::B), StructId(test::A)]"
     );
 }
 
@@ -266,20 +235,12 @@ fn test_plugin_remove_original() {
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
 
-    // Verify the original struct was removed.
+    // Verify that:
+    // 1. The original struct was removed.
+    // 2. The expected items were generated.
     assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "A".into()).unwrap().debug(db)),
-        "None"
-    );
-
-    // Verify the expected items were generated.
-    assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "f".into()).unwrap().debug(db)),
-        "Some(FreeFunctionId(test::f))"
-    );
-    assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "B".into()).unwrap().debug(db)),
-        "Some(ExternTypeId(test::B))"
+        format!("{:?}", db.module_items(module_id).unwrap().debug(db)),
+        "[FreeFunctionId(test::f), ExternTypeId(test::B)]"
     );
 }
 
@@ -347,16 +308,12 @@ fn test_foo_to_bar() {
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
 
-    // Verify the original function remained.
+    // Verify that:
+    // 1. The original function remained.
+    // 2. The expected items were generated.
     assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).unwrap().debug(db)),
-        "Some(FreeFunctionId(test::foo))"
-    );
-
-    // Verify the expected item was generated.
-    assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "bar".into()).unwrap().debug(db)),
-        "Some(FreeFunctionId(test::bar))"
+        format!("{:?}", db.module_items(module_id).unwrap().debug(db)),
+        "[FreeFunctionId(test::foo), FreeFunctionId(test::bar), ExternTypeId(test::B)]"
     );
 }
 
@@ -376,22 +333,16 @@ fn test_first_plugin_removes() {
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
 
-    // Verify the original function was removed.
-    assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).unwrap().debug(db)),
-        "None"
-    );
-    // Verify no 'B' was generated by DummyPlugin.
+    // Verify that:
+    // 1. The original function was removed.
+    // 2. No 'B' was generated by DummyPlugin.
     // Note RemoveOrigPlugin is before DummyPlugin in the plugins order. RemoveOrigPlugin already
     // acted on 'foo', so DummyPlugin shouldn't.
-    assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "B".into()).unwrap().debug(db)),
-        "None"
-    );
+    assert_eq!(format!("{:?}", db.module_items(module_id).unwrap().debug(db)), "[]");
 }
 
-// Verify that if the first plugin generates new code, the later plugins don't act on the original
-// item.
+// Verify that if the first plugin generates new code, the later plugins don't act on the
+// original // item.
 #[test]
 fn test_first_plugin_generates() {
     let mut db_val = DatabaseForTesting::default();
@@ -406,17 +357,14 @@ fn test_first_plugin_generates() {
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
 
-    // Verify 'bar' was generated by FooToBarPlugin.
-    assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "bar".into()).unwrap().debug(db)),
-        "Some(FreeFunctionId(test::bar))"
-    );
-    // Verify the original function remained.
+    // Verify that:
+    // 1. 'bar' was generated by FooToBarPlugin.
+    // 2. the original function remained.
     // Note RemoveOrigPlugin is after FooToBarPlugin in the plugins order. FooToBarPlugin already
     // acted on the original 'foo' and thus RemoveOrigPlugin shouldn't act on it.
     assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).unwrap().debug(db)),
-        "Some(FreeFunctionId(test::foo))"
+        format!("{:?}", db.module_items(module_id).unwrap().debug(db)),
+        "[FreeFunctionId(test::foo), FreeFunctionId(test::bar), ExternTypeId(test::B)]"
     );
 }
 
@@ -435,19 +383,12 @@ fn test_plugin_chain() {
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
 
-    // Verify the original function remained.
+    // Verify that:
+    // 1.  The original function remained.
+    // 2. 'bar' was generated by FooToBarPlugin.
+    // 3. 'B' were generated by DummyPlugin.
     assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).unwrap().debug(db)),
-        "Some(FreeFunctionId(test::foo))"
-    );
-    // Verify 'bar' was generated by FooToBarPlugin.
-    assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "bar".into()).unwrap().debug(db)),
-        "Some(FreeFunctionId(test::bar))"
-    );
-    // Verify 'B' were generated by DummyPlugin.
-    assert_eq!(
-        format!("{:?}", db.module_item_by_name(module_id, "B".into()).unwrap().debug(db)),
-        "Some(ExternTypeId(test::B))"
-    );
+        format!("{:?}", db.module_items(module_id).unwrap().debug(db)),
+        "[FreeFunctionId(test::foo), FreeFunctionId(test::bar), ExternTypeId(test::B)]"
+    )
 }

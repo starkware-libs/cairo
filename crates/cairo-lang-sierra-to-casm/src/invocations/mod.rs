@@ -374,6 +374,9 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
         CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
+        CoreConcreteLibfunc::Debug(_libfunc) => {
+            Err(InvocationError::NotImplemented(invocation.clone()))
+        }
     }
 }
 

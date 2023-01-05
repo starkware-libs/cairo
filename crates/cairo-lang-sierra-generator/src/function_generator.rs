@@ -15,6 +15,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::zip_eq;
+use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::block_generator::{generate_block_code, generate_return_code};
 use crate::db::SierraGenGroup;
@@ -98,11 +99,11 @@ fn get_function_code(
 
     // Generate the return statement if necessary.
     match &block.end {
-        cairo_lang_lowering::FlatBlockEnd::Callsite(returned_variables)
-        | cairo_lang_lowering::FlatBlockEnd::Return(returned_variables) => {
+        lowering::FlatBlockEnd::Callsite(returned_variables)
+        | lowering::FlatBlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(&mut context, returned_variables)?);
         }
-        cairo_lang_lowering::FlatBlockEnd::Unreachable => {}
+        lowering::FlatBlockEnd::Unreachable => {}
     };
 
     let drop_id = GenericLibfuncId::from_string("drop");
@@ -125,8 +126,8 @@ fn get_function_code(
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
     // be regarded as private.
     Ok(pre_sierra::Function {
-        id: db.intern_sierra_function(db.intern_function(cairo_lang_semantic::FunctionLongId {
-            function: cairo_lang_semantic::ConcreteFunction {
+        id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
+            function: semantic::ConcreteFunction {
                 generic_function: GenericFunctionId::Free(function_id),
                 // TODO(lior): Add generic arguments.
                 generic_args: vec![],
@@ -148,7 +149,7 @@ fn get_function_code(
 /// * A list of Sierra statements.
 fn allocate_local_variables(
     context: &mut ExprGeneratorContext<'_>,
-    local_variables: &OrderedHashSet<cairo_lang_lowering::VariableId>,
+    local_variables: &OrderedHashSet<lowering::VariableId>,
 ) -> Maybe<(LocalVariables, Vec<Statement>)> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     let mut sierra_local_variables =

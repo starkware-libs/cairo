@@ -1,7 +1,7 @@
 extern type DictManager;
 extern type DictFeltTo<T>;
-#[derive(Drop)]
 extern type SquashedDictFeltTo<T>;
+impl SquashedDictFeltToFeltDrop of Drop::<SquashedDictFeltTo::<felt>>;
 
 extern fn dict_felt_to_new<T>() -> DictFeltTo::<T> implicits(DictManager) nopanic;
 extern fn dict_felt_to_write<T>(ref dict: DictFeltTo::<T>, key: felt, value: T) nopanic;

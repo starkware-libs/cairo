@@ -1,7 +1,9 @@
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
-use cairo_lang_sierra::extensions::builtin_cost::BuiltinCostGetGasLibfunc;
+use cairo_lang_sierra::extensions::builtin_cost::{
+    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc,
+};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
@@ -40,12 +42,17 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
             BoxConcreteLibfunc::Into(_) => vec![ApChange::Known(1)],
             BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
         },
-        CoreConcreteLibfunc::BuiltinCost(_) => vec![
-            ApChange::Known(BuiltinCostGetGasLibfunc::cost_computation_max_steps() + 2),
-            ApChange::Known(BuiltinCostGetGasLibfunc::cost_computation_max_steps() + 3),
-        ],
+        CoreConcreteLibfunc::BuiltinCost(libfunc) => match libfunc {
+            BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => vec![
+                ApChange::Known(BuiltinCostGetGasLibfunc::cost_computation_max_steps() + 2),
+                ApChange::Known(BuiltinCostGetGasLibfunc::cost_computation_max_steps() + 3),
+            ],
+            BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => vec![ApChange::Known(3)],
+        },
         CoreConcreteLibfunc::Ec(libfunc) => match libfunc {
+            EcConcreteLibfunc::AddToState(_) => vec![ApChange::Known(10)],
             EcConcreteLibfunc::CreatePoint(_) => vec![ApChange::Known(6), ApChange::Known(6)],
+            EcConcreteLibfunc::InitState(_) => vec![ApChange::Known(8)],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Drop(_) | CoreConcreteLibfunc::Dup(_) => vec![ApChange::Known(0)],
@@ -130,5 +137,6 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
                 vec![ApChange::Known(0), ApChange::Known(0)]
             }
         },
+        CoreConcreteLibfunc::Debug(_) => vec![ApChange::Known(0)],
     }
 }

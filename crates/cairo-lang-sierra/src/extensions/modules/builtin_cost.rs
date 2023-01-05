@@ -64,6 +64,7 @@ impl NoGenericArgsGenericType for BuiltinCostsType {
 define_libfunc_hierarchy! {
     pub enum BuiltinCostLibfunc {
         BuiltinGetGas(BuiltinCostGetGasLibfunc),
+        GetBuiltinCosts(BuiltinCostGetBuiltinCostsLibfunc),
     }, BuiltinCostConcreteLibfunc
 }
 
@@ -135,5 +136,29 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostGetGasLibfunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// Libfunc for getting the pointer to the gas cost array.
+/// See [BuiltinCostsType].
+#[derive(Default)]
+pub struct BuiltinCostGetBuiltinCostsLibfunc {}
+
+impl NoGenericArgsGenericLibfunc for BuiltinCostGetBuiltinCostsLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("get_builtin_costs");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let builtin_costs_type = context.get_concrete_type(BuiltinCostsType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![],
+            vec![OutputVarInfo {
+                ty: builtin_costs_type,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
     }
 }

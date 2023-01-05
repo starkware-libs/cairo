@@ -31,7 +31,6 @@ Statements:
   (v0: ()) <- struct_construct()
   (v1: core::bool) <- bool::True(v0)
   (v2: core::felt) <- test::revoke_ap()
-Drops: v0, v2
 End:
   Callsite(v1)
 

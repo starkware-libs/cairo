@@ -1,6 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
+use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::FreeFunctionId;
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe};
 use cairo_lang_filesystem::ids::CrateId;
@@ -204,8 +205,7 @@ fn try_get_free_function_id(
         )
         .function;
     assert!(function.generic_args.is_empty(), "Generic args are not yet supported");
-    try_extract_matches!(function.generic_function, cairo_lang_defs::ids::GenericFunctionId::Free)
-        .to_maybe()
+    try_extract_matches!(function.generic_function, defs::ids::GenericFunctionId::Free).to_maybe()
 }
 
 pub fn get_sierra_program(

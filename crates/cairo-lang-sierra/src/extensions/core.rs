@@ -4,11 +4,12 @@ use super::bitwise::{BitwiseLibfunc, BitwiseType};
 use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::builtin_cost::{BuiltinCostLibfunc, BuiltinCostsType};
+use super::debug::DebugLibfunc;
 use super::dict_felt_to::{DictFeltToLibfunc, DictFeltToType};
 use super::dict_manager::DictManagerType;
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
-use super::ec::{EcLibfunc, EcPointType};
+use super::ec::{EcLibfunc, EcPointType, EcStateType};
 use super::enm::{EnumLibfunc, EnumType};
 use super::modules::boxing::{BoxLibfunc, BoxType};
 use super::modules::felt::{FeltLibfunc, FeltType};
@@ -33,6 +34,7 @@ define_type_hierarchy! {
         Bitwise(BitwiseType),
         Box(BoxType),
         EcPoint(EcPointType),
+        EcState(EcStateType),
         Felt(FeltType),
         GasBuiltin(GasBuiltinType),
         BuiltinCosts(BuiltinCostsType),
@@ -76,5 +78,6 @@ define_libfunc_hierarchy! {
         DictFeltTo(DictFeltToLibfunc),
         Pedersen(PedersenLibfunc),
         StarkNet(StarkNetLibfunc),
+        Debug(DebugLibfunc),
     }, CoreConcreteLibfunc
 }

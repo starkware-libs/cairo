@@ -1,3 +1,4 @@
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::SyntaxNode;
@@ -83,7 +84,7 @@ impl<'a> Printer<'a> {
         let extra_head_indent = if is_last { "└── " } else { "├── " };
         let green_node = syntax_node.green_node(self.db);
         match green_node.details {
-            cairo_lang_syntax::node::green::GreenNodeDetails::Token(text) => {
+            syntax::node::green::GreenNodeDetails::Token(text) => {
                 if under_top_level {
                     self.print_token_node(
                         field_description,
@@ -94,7 +95,7 @@ impl<'a> Printer<'a> {
                     )
                 }
             }
-            cairo_lang_syntax::node::green::GreenNodeDetails::Node { .. } => {
+            syntax::node::green::GreenNodeDetails::Node { .. } => {
                 self.print_internal_node(
                     field_description,
                     indent,

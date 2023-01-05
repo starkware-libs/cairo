@@ -33,8 +33,8 @@ assert_matches.workspace = true
 env_logger.workspace = true
 indoc.workspace = true
 log.workspace = true
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "0.1.0" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins" }
 pretty_assertions.workspace = true
 test-log.workspace = true
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "0.1.0" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
 test-case.workspace = true

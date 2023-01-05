@@ -63,7 +63,9 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.const_cost(2), ops.const_cost(2)],
-        Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(3), ops.const_cost(3)],
+        Ec(EcConcreteLibfunc::AddToState(_)) => vec![ops.const_cost(10)],
+        Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(6), ops.const_cost(6)],
+        Ec(EcConcreteLibfunc::InitState(_)) => vec![ops.const_cost(8)],
         Ec(EcConcreteLibfunc::UnwrapPoint(_)) => vec![ops.const_cost(0)],
         Gas(GetGas(_)) => {
             vec![
@@ -120,24 +122,28 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Pedersen(_) => {
             vec![ops.add(ops.const_cost(2), ops.const_cost_token(1, CostTokenType::Pedersen))]
         }
-        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinGetGas(_)) => {
-            let cost = CostTokenType::iter()
-                .map(|token_type| ops.statement_var_cost(*token_type))
-                .reduce(|x, y| ops.add(x, y));
-            // Compute the (maximal) number of steps for the computation of the requested cost.
-            let compute_requested_cost_steps =
-                BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i32;
-            vec![
-                ops.sub(ops.const_cost(compute_requested_cost_steps + 3), cost.unwrap()),
-                ops.const_cost(compute_requested_cost_steps + 5),
-            ]
-        }
+        BuiltinCost(libfunc) => match libfunc {
+            BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => {
+                let cost = CostTokenType::iter()
+                    .map(|token_type| ops.statement_var_cost(*token_type))
+                    .reduce(|x, y| ops.add(x, y));
+                // Compute the (maximal) number of steps for the computation of the requested cost.
+                let compute_requested_cost_steps =
+                    BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i32;
+                vec![
+                    ops.sub(ops.const_cost(compute_requested_cost_steps + 3), cost.unwrap()),
+                    ops.const_cost(compute_requested_cost_steps + 5),
+                ]
+            }
+            BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => vec![ops.const_cost(3)],
+        },
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ops.const_cost(0)],
             NullableConcreteLibfunc::IntoNullable(_) => vec![ops.const_cost(0)],
             NullableConcreteLibfunc::FromNullable(_) => vec![ops.const_cost(1), ops.const_cost(1)],
         },
+        CoreConcreteLibfunc::Debug(_) => vec![ops.const_cost(0)],
     }
 }
 

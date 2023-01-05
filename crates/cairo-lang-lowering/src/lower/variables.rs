@@ -1,3 +1,4 @@
+use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use super::context::LoweringContext;
@@ -55,7 +56,7 @@ impl LivingVariables {
     pub fn introduce_new_var(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        ty: cairo_lang_semantic::TypeId,
+        ty: semantic::TypeId,
     ) -> LivingVar {
         let var_id = ctx.new_var(ty);
         self.introduce_var(UsableVariable(var_id))
@@ -65,11 +66,6 @@ impl LivingVariables {
     pub fn introduce_var(&mut self, var: UsableVariable) -> LivingVar {
         assert!(self.living_variables.insert(var.0), "Unexpected reintroduced variable.");
         LivingVar(var.0)
-    }
-
-    /// Retrieves the set of living variables as an ordered vector in order to drop / destruct.
-    pub fn get_all(&self) -> Vec<VariableId> {
-        self.living_variables.iter().copied().collect()
     }
 
     // Returns true if the given var_id exists as a living var.

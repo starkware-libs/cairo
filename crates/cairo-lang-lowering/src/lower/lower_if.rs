@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_utils::extract_matches;
 use num_traits::Zero;
@@ -12,19 +13,16 @@ use super::{
 
 #[allow(dead_code)]
 enum IfCondition {
-    BoolExpr(cairo_lang_semantic::ExprId),
-    Eq(cairo_lang_semantic::ExprId, cairo_lang_semantic::ExprId),
+    BoolExpr(semantic::ExprId),
+    Eq(semantic::ExprId, semantic::ExprId),
 }
 
 /// Analyzes the condition of an if statement into an [IfCondition] tree, to allow different
 /// optimizations.
 // TODO(lior): Make it an actual tree (handling && and ||).
-fn analyze_condition(
-    ctx: &LoweringContext<'_>,
-    expr_id: cairo_lang_semantic::ExprId,
-) -> IfCondition {
+fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> IfCondition {
     let expr = &ctx.function_def.exprs[expr_id];
-    if let cairo_lang_semantic::Expr::FunctionCall(function_call) = expr {
+    if let semantic::Expr::FunctionCall(function_call) = expr {
         if function_call.function == corelib::felt_eq(ctx.db.upcast())
             && function_call.args.len() == 2
         {
@@ -35,16 +33,16 @@ fn analyze_condition(
     IfCondition::BoolExpr(expr_id)
 }
 
-fn is_zero(ctx: &LoweringContext<'_>, expr_id: cairo_lang_semantic::ExprId) -> bool {
+fn is_zero(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> bool {
     let expr = &ctx.function_def.exprs[expr_id];
-    matches!(expr, cairo_lang_semantic::Expr::Literal(literal) if literal.value.is_zero())
+    matches!(expr, semantic::Expr::Literal(literal) if literal.value.is_zero())
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprIf].
+/// Lowers an expression of type [semantic::ExprIf].
 pub fn lower_expr_if(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    expr: &cairo_lang_semantic::ExprIf,
+    expr: &semantic::ExprIf,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     match analyze_condition(ctx, expr.condition) {
         IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, scope, expr),
@@ -52,12 +50,12 @@ pub fn lower_expr_if(
     }
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprIf], for the case of
+/// Lowers an expression of type [semantic::ExprIf], for the case of
 /// [IfCondition::BoolExpr].
 pub fn lower_expr_if_bool(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    expr: &cairo_lang_semantic::ExprIf,
+    expr: &semantic::ExprIf,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a boolean if expression: {:?}", expr.debug(&ctx.expr_formatter));
     // The condition cannot be unit.
@@ -72,10 +70,7 @@ pub fn lower_expr_if_bool(
             lower_block(
                 ctx,
                 subscope,
-                extract_matches!(
-                    &ctx.function_def.exprs[expr.if_block],
-                    cairo_lang_semantic::Expr::Block
-                ),
+                extract_matches!(&ctx.function_def.exprs[expr.if_block], semantic::Expr::Block),
                 false,
             )
         });
@@ -105,13 +100,13 @@ pub fn lower_expr_if_bool(
     lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
 }
 
-/// Lowers an expression of type [cairo_lang_semantic::ExprIf], for the case of [IfCondition::Eq].
+/// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::Eq].
 pub fn lower_expr_if_eq(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    expr: &cairo_lang_semantic::ExprIf,
-    expr_a: cairo_lang_semantic::ExprId,
-    expr_b: cairo_lang_semantic::ExprId,
+    expr: &semantic::ExprIf,
+    expr_a: semantic::ExprId,
+    expr_b: semantic::ExprId,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!(
         "Started lowering of an if-eq-zero expression: {:?}",
@@ -143,10 +138,7 @@ pub fn lower_expr_if_eq(
             lower_block(
                 ctx,
                 subscope,
-                extract_matches!(
-                    &ctx.function_def.exprs[expr.if_block],
-                    cairo_lang_semantic::Expr::Block
-                ),
+                extract_matches!(&ctx.function_def.exprs[expr.if_block], semantic::Expr::Block),
                 false,
             )
         });
@@ -184,13 +176,13 @@ pub fn lower_expr_if_eq(
 fn lower_optional_else_block(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    else_expr_opt: Option<cairo_lang_semantic::ExprId>,
+    else_expr_opt: Option<semantic::ExprId>,
 ) -> Maybe<BlockScopeEnd> {
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {
         Some(else_expr) => match &ctx.function_def.exprs[else_expr] {
-            cairo_lang_semantic::Expr::Block(block) => lower_block(ctx, scope, block, false),
-            cairo_lang_semantic::Expr::If(if_expr) => {
+            semantic::Expr::Block(block) => lower_block(ctx, scope, block, false),
+            semantic::Expr::If(if_expr) => {
                 let lowered_if = lower_expr_if(ctx, scope, if_expr);
                 lowered_expr_to_block_scope_end(ctx, scope, lowered_if, false)
             }

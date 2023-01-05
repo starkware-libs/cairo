@@ -1,5 +1,6 @@
 use std::fmt;
 
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
@@ -541,11 +542,7 @@ impl<'a> Formatter<'a> {
         self.format_trivia(trailing_trivia, allowed_newlines);
     }
     /// Appends a trivia node (if needed) to the result.
-    fn format_trivia(
-        &mut self,
-        trivia: cairo_lang_syntax::node::ast::Trivia,
-        mut allowed_newlines: usize,
-    ) {
+    fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, mut allowed_newlines: usize) {
         for trivium in trivia.elements(self.db) {
             match trivium {
                 ast::Trivium::SingleLineComment(_) => {

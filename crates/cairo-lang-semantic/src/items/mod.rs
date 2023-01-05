@@ -7,6 +7,7 @@ pub mod functions;
 pub mod generics;
 pub mod imp;
 pub mod modifiers;
+pub mod module;
 pub mod strct;
 pub mod trt;
 pub mod type_alias;
