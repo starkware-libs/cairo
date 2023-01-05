@@ -1,4 +1,4 @@
-//! > Test enum constructor.
+//! > Test function call.
 
 //! > test_function_name
 test_function_lowering
