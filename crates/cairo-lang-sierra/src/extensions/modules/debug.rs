@@ -10,7 +10,7 @@ use crate::ids::GenericLibfuncId;
 define_libfunc_hierarchy! {
     pub enum DebugLibfunc {
         Print(PrintLibfunc),
-    }, MemConcreteLibfunc
+    }, DebugConcreteLibfunc
 }
 
 /// Libfunc for debug printing.
