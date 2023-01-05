@@ -22,10 +22,13 @@ pub enum CostTokenType {
     Pedersen,
     /// One invocation of the bitwise builtin.
     Bitwise,
+    /// One invocation of the EC op builtin.
+    EcOp,
 }
 impl CostTokenType {
     pub fn iter() -> std::slice::Iter<'static, Self> {
-        [CostTokenType::Step, CostTokenType::Pedersen, CostTokenType::Bitwise].iter()
+        [CostTokenType::Step, CostTokenType::Pedersen, CostTokenType::Bitwise, CostTokenType::EcOp]
+            .iter()
     }
 
     /// Returns the name of the token type, in snake_case.
@@ -34,6 +37,7 @@ impl CostTokenType {
             CostTokenType::Step => "step",
             CostTokenType::Pedersen => "pedersen",
             CostTokenType::Bitwise => "bitwise",
+            CostTokenType::EcOp => "ec_op",
         }
         .into()
     }
@@ -47,6 +51,7 @@ impl CostTokenType {
             CostTokenType::Step => panic!("offset_in_builtin_costs is not supported for 'Step'."),
             CostTokenType::Pedersen => 0,
             CostTokenType::Bitwise => 1,
+            CostTokenType::EcOp => 2,
         }
     }
 }

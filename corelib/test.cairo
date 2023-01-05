@@ -45,6 +45,23 @@ fn test_ec_operations() {
     let (qx, qy) = ec_point_unwrap(q);
     assert(qx == x, 'bad finalize x');
     assert(qy == y, 'bad finalize y');
+    // Try doing the same thing with the EC op builtin.
+    let state3 = ec_op_builtin(state, 1, p);
+    let q3 = ec_finalize_state(state3);
+    let (qx, qy) = ec_point_unwrap(q);
+    assert(qx == x, 'bad EC op x');
+    assert(qy == y, 'bad EC op y');
+    // Try computing `p + p` using the ec_op function.
+    let double_p = ec_op(p, 1, p);
+    let (double_x, double_y) = ec_point_unwrap(double_p);
+    assert(
+        double_x == 75984168971785666410219869038140038216102669781812169677875295511117260233,
+        'bad double x'
+    );
+    assert(
+        double_y == 3572434102142093425782752266058856056057826477682467661647843687948039943621,
+        'bad double y'
+    );
 }
 
 #[test]

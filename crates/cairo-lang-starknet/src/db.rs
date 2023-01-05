@@ -16,7 +16,7 @@ pub fn get_starknet_database() -> RootDatabase {
 
     // Override implicit precedence for compatibility with the StarkNet OS.
     db.set_implicit_precedence(Arc::new(
-        ["Pedersen", "RangeCheck", "Bitwise", "GasBuiltin", "System"]
+        ["Pedersen", "RangeCheck", "Bitwise", "EcOp", "GasBuiltin", "System"]
             .iter()
             .map(|name| get_core_ty_by_name(db, name.into(), vec![]))
             .collect_vec(),
