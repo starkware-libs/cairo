@@ -6,10 +6,10 @@ use std::fmt::Debug;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
-use cairo_lang_lowering::lower::Lowered;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use lowering::FlatLowered;
 
 pub type StatementLocation = (BlockId, usize);
 
@@ -93,7 +93,7 @@ impl VariableLifetimeResult {
 /// Given the lowering of a function, returns lifetime information for all the variables.
 /// See [VariableLifetimeResult].
 pub fn find_variable_lifetime(
-    lowered_function: &Lowered,
+    lowered_function: &FlatLowered,
     local_vars: &OrderedHashSet<VariableId>,
 ) -> Maybe<VariableLifetimeResult> {
     let mut context = VariableLifetimeContext {
@@ -110,7 +110,7 @@ pub fn find_variable_lifetime(
 
 /// Context information for [inner_find_variable_lifetime] and its helper functions.
 struct VariableLifetimeContext<'a> {
-    lowered_function: &'a Lowered,
+    lowered_function: &'a FlatLowered,
     local_vars: &'a OrderedHashSet<VariableId>,
     res: VariableLifetimeResult,
 }

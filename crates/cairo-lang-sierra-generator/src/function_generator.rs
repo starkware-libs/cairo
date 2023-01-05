@@ -49,7 +49,7 @@ fn get_function_code(
     function_id: FreeFunctionId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
     let signature = db.free_function_declaration_signature(function_id)?;
-    let lowered_function = &*db.free_function_lowered(function_id)?;
+    let lowered_function = &*db.free_function_lowered_flat(function_id)?;
     let block_id = lowered_function.root?;
     let block = &lowered_function.blocks[block_id];
 

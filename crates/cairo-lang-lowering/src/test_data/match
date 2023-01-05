@@ -21,7 +21,36 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0:
+Inputs:
+Initial refs:
+Statements:
+  (v2: core::felt) <- 1u
+  (v3: core::felt) <- core::felt_add(v0, v2)
+End:
+  Callsite(v3)
+
+blk1:
+Inputs: v4: core::NonZero::<core::felt>
+Initial refs:
+Statements:
+End:
+  Callsite(v1)
+
+blk2 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v1: core::felt) <- 7u
+  (v5: core::felt) <- match core::felt_jump_nz(v1) {
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
+  }
+End:
+  Callsite(v5)
+
+//! > lowering_flat
 blk0:
 Inputs:
 Statements:
@@ -41,8 +70,8 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
   (v5: core::felt) <- match core::felt_jump_nz(v1) {
-    () => blk0,
-    (v4) => blk1,
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
 End:
   Callsite(v5)
@@ -76,7 +105,9 @@ error: Match with a non-zero value is not supported.
         12 => x,
         ^^
 
-//! > lowering_format
+//! > lowering_structured
+
+//! > lowering_flat
 
 //! > ==========================================================================
 
@@ -107,4 +138,6 @@ error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported
   match x {
   ^*******^
 
-//! > lowering_format
+//! > lowering_structured
+
+//! > lowering_flat

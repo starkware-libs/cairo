@@ -82,13 +82,13 @@ blk6 (root):
 Inputs: v0: core::felt
 Statements:
   (v6: core::felt) <- match core::felt_jump_nz(v0) {
-    () => blk1,
-    (v2) => blk2,
+    JumpNzResult::Zero => blk1,
+    JumpNzResult::NonZero => blk2,
   }
   (v7: core::felt) <- core::felt_add(v0, v0)
   (v13: core::felt) <- match core::felt_jump_nz(v7) {
-    () => blk4,
-    (v9) => blk5,
+    JumpNzResult::Zero => blk4,
+    JumpNzResult::NonZero => blk5,
   }
 End:
   Callsite(v13)
@@ -159,13 +159,13 @@ Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
   (v2: core::felt) <- core::felt_add(v1, v1)
   (v6: core::felt) <- match core::felt_jump_nz(v2) {
-    () => blk0,
-    (v4) => blk1,
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
   (v7: core::felt) <- core::felt_add(v1, v6)
   (v11: core::felt) <- match core::felt_jump_nz(v1) {
-    () => blk2,
-    (v9) => blk3,
+    JumpNzResult::Zero => blk2,
+    JumpNzResult::NonZero => blk3,
   }
   (v12: core::felt) <- test::revoke_ap()
 End:
@@ -266,13 +266,13 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
   (v6: core::felt) <- match core::felt_jump_nz(v0) {
-    () => blk1,
-    (v3) => blk2,
+    JumpNzResult::Zero => blk1,
+    JumpNzResult::NonZero => blk2,
   }
   (v7: core::felt) <- core::felt_add(v1, v0)
   (v12: core::felt) <- match core::felt_jump_nz(v0) {
-    () => blk4,
-    (v9) => blk5,
+    JumpNzResult::Zero => blk4,
+    JumpNzResult::NonZero => blk5,
   }
   (v13: core::felt) <- core::felt_add(v7, v0)
 End:

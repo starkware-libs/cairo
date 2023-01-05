@@ -40,9 +40,10 @@ fn check_find_local_variables(
         .unwrap()
         .expect_with_db(db, "Unexpected diagnostics.");
 
-    let lowered_function = &*db.free_function_lowered(test_function.function_id).unwrap();
+    let lowered_function = &*db.free_function_lowered_flat(test_function.function_id).unwrap();
 
-    let lowered_formatter = lowering::fmt::LoweredFormatter { db, lowered: lowered_function };
+    let lowered_formatter =
+        lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
     let local_variables_str = find_local_variables(db, lowered_function)
