@@ -28,7 +28,6 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_mul(v0, v0)
   (v2: core::felt) <- core::felt_add(v0, v1)
-Drops: v0, v1
 End:
   Return(v2)
 
@@ -60,7 +59,6 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 1u
   (v2: core::felt) <- 5u
-Drops: v0, v1
 End:
   Callsite(v2)
 
@@ -93,14 +91,12 @@ blk0:
 Inputs:
 Statements:
   (v1: core::felt) <- 7u
-Drops: v1
 End:
   Callsite()
 
 blk1:
 Inputs:
 Statements:
-Drops:
 End:
   Callsite()
 
@@ -108,7 +104,6 @@ blk2:
 Inputs:
 Statements:
   (v6: core::felt) <- 6u
-Drops:
 End:
   Callsite(v6)
 
@@ -116,7 +111,6 @@ blk3:
 Inputs: v7: core::NonZero::<core::felt>
 Statements:
   (v8: core::felt) <- 7u
-Drops: v7
 End:
   Callsite(v8)
 
@@ -126,7 +120,6 @@ Statements:
   (v13: core::felt) <- 3u
   (v14: core::felt) <- 0u
   (v15: core::felt) <- core::felt_add(v0, v14)
-Drops: v13, v14
 End:
   Callsite(v15)
 
@@ -149,7 +142,6 @@ Statements:
   (v16: core::felt) <- blk4()
   (v17: core::felt) <- core::felt_mul(v12, v16)
   (v18: core::felt) <- core::felt_add(v11, v17)
-Drops: v0, v2, v3, v4, v5, v9, v10, v11, v12, v16, v17
 End:
   Callsite(v18)
 
@@ -188,14 +180,12 @@ blk0:
 Inputs:
 Statements:
   (v2: core::felt) <- 5u
-Drops: v1, v0
 End:
   Return(v2)
 
 blk1:
 Inputs:
 Statements:
-Drops:
 End:
   Callsite(v3)
 
@@ -203,7 +193,6 @@ blk2:
 Inputs:
 Statements:
   (v6: core::felt) <- 7u
-Drops:
 End:
   Callsite(v6)
 
@@ -211,7 +200,6 @@ blk3:
 Inputs: v1: ()
 Statements:
   () <- blk0()
-Drops:
 End:
   Unreachable
 
@@ -219,7 +207,6 @@ blk4:
 Inputs: v3: core::felt
 Statements:
   (v4: core::felt) <- blk1()
-Drops: v3
 End:
   Callsite(v4)
 
@@ -227,7 +214,6 @@ blk5:
 Inputs: v5: core::box::Box::<((), core::felt)>
 Statements:
   (v7: core::felt) <- blk2()
-Drops: v5
 End:
   Callsite(v7)
 
@@ -239,7 +225,6 @@ Statements:
     MyEnum::B => blk4,
     MyEnum::C => blk5,
   }
-Drops:
 End:
   Callsite(v8)
 
@@ -270,6 +255,5 @@ blk0 (root):
 Inputs: v0: test::Array::<core::felt, 5>
 Statements:
   (v1: core::felt) <- core::felt_const<Literal(LiteralLongId { value: 17 }),>()
-Drops: v0
 End:
   Callsite(v1)

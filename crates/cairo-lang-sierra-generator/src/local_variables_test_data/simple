@@ -36,7 +36,6 @@ Statements:
   (v6: core::felt) <- test::revoke_ap()
   (v7: core::felt) <- core::felt_add(v0, v2)
   (v8: core::felt) <- core::felt_add(v7, v5)
-Drops: v8, v1, v2, v3, v4, v5, v6, v7
 End:
   Callsite(v0)
 
@@ -72,7 +71,6 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
   (v2: core::felt) <- test::revoke_ap()
-Drops: v0, v2
 End:
   Return(v1)
 
@@ -117,7 +115,6 @@ Statements:
   (v7: core::felt, v8: core::felt) <- core::dup<Type(core::felt),>(v5)
   (v9: core::felt) <- test::revoke_ap()
   (v10: core::felt) <- core::felt_add(v7, v8)
-Drops: v0, v1, v2, v3, v4, v5, v6, v7, v8, v9
 End:
   Callsite(v10)
 
