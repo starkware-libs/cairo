@@ -207,7 +207,11 @@ impl HintProcessor for CairoHintProcessor {
                     Err(_) => {
                         exec_scopes.assign_or_update_variable(
                             "dict_manager_exec_scope",
+<<<<<<< HEAD
                             Box::<DictManagerExecScope>::default(),
+=======
+                            Box::new(DictManagerExecScope::default()),
+>>>>>>> 2ba3587c... Add AllocateDictFeltTo to the hint_processor.
                         );
                         exec_scopes
                             .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")?
