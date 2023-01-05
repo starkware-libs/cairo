@@ -73,6 +73,7 @@ mod HelloStarknet {
         fn increase_balance(amount: felt);
         fn get_balance() -> felt;
         
+        
     }
 
     mod __external {
@@ -136,6 +137,7 @@ mod HelloStarknet {
             serde::serialize_felt(arr, res)
             arr
         }
+        
         
     }
 }
