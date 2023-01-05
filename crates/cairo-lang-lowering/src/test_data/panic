@@ -20,7 +20,19 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::bool
+Initial refs:
+Statements:
+  (v1: core::array::Array::<core::felt>) <- core::array::array_new<Type(core::felt),>()
+  (v2: core::felt) <- 1u
+  (v3: core::array::Array::<core::felt>) <- core::array::array_append<Type(core::felt),>(v1, v2)
+  (v4: core::PanicResult::<core::felt>) <- PanicResult::Err(v3)
+End:
+  Return(v4)
+
+//! > lowering_flat
 blk0 (root):
 Inputs: v0: core::bool
 Statements:

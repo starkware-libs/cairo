@@ -22,7 +22,20 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v1: ()) <- struct_construct()
+  (v2: core::felt) <- 3u
+  (v3: core::felt) <- 7u
+  (v4: (core::felt, core::felt)) <- struct_construct(v2, v3)
+  (v5: test::MyStruct) <- struct_construct(v1, v0, v4)
+End:
+  Callsite(v5)
+
+//! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
@@ -60,7 +73,16 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: test::MyStruct
+Initial refs:
+Statements:
+  (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
+End:
+  Callsite(v2)
+
+//! > lowering_flat
 blk0 (root):
 Inputs: v0: test::MyStruct
 Statements:
@@ -95,7 +117,18 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: test::MyStruct
+Initial refs:
+Statements:
+  (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
+  (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
+  (v6: (core::felt, core::felt)) <- struct_construct(v4, v2)
+End:
+  Callsite(v6)
+
+//! > lowering_flat
 blk0 (root):
 Inputs: v0: test::MyStruct
 Statements:
