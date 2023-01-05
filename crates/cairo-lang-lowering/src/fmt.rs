@@ -61,7 +61,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
         writeln!(f, "\nStatements:")?;
         for stmt in &self.statements {
             write!(f, "  ")?;
-            stmt.fmt(f, ctx)?;
+            stmt.statement.fmt(f, ctx)?;
             writeln!(f)?;
         }
 
@@ -175,9 +175,6 @@ fn format_var_with_ty(
 ) -> std::fmt::Result {
     var_id.fmt(f, ctx)?;
     let var = &ctx.variables[var_id];
-    for ref_index in var.ref_indices.iter() {
-        write!(f, "[r{}]", ref_index)?;
-    }
     write!(f, ": {}", var.ty.format(ctx.db.upcast()))
 }
 
