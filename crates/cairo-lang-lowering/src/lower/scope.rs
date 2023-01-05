@@ -9,7 +9,7 @@ use itertools::chain;
 use super::context::LoweringContext;
 use super::semantic_map::{SemanticVariableEntry, SemanticVariablesMap};
 use super::variables::{LivingVar, LivingVariables, Splitter, UsableVariable};
-use crate::{BlockId, Statement, StructuredBlock, StructuredBlockEnd, VariableId};
+use crate::{BlockId, StructuredBlock, StructuredBlockEnd, StructuredStatement, VariableId};
 
 pub mod generators;
 
@@ -37,10 +37,10 @@ pub struct BlockScope {
     semantic_variables: SemanticVariablesMap,
     /// A store for implicit variables, owning their OwnedVariable instances.
     implicits: HashMap<semantic::TypeId, LivingVar>,
-    // The implicits that are used/changed in this block.
+    /// The implicits that are used/changed in this block.
     changed_implicits: HashSet<semantic::TypeId>,
     /// Current sequence of lowered statements emitted.
-    statements: Vec<Statement>,
+    statements: Vec<StructuredStatement>,
 }
 
 /// Represents how a block ends.
@@ -80,7 +80,9 @@ impl BlockScope {
             .find(|(_, ref_semantic_var_id)| **ref_semantic_var_id == semantic_var_id)
         {
             let index = ctx.implicits.len() + ref_index;
-            ctx.variables[var.var_id()].ref_indices.insert(index);
+            if let Some(stmt) = self.statements.last_mut() {
+                stmt.ref_changes.insert(index, var.var_id());
+            }
             self.current_refs[index] = Some(var.var_id());
         }
 
@@ -140,7 +142,9 @@ impl BlockScope {
             .enumerate()
             .find(|(_, imp_ty)| **imp_ty == ty)
             .expect("Unknown implicit.");
-        ctx.variables[var.var_id()].ref_indices.insert(implicit_index);
+        if let Some(stmt) = self.statements.last_mut() {
+            stmt.ref_changes.insert(implicit_index, var.var_id());
+        }
         self.current_refs[implicit_index] = Some(var.var_id());
 
         self.implicits.insert(ty, var);
@@ -212,7 +216,7 @@ pub struct BlockSealed {
     /// The implicits that were used/changed by this block.
     changed_implicits: HashSet<semantic::TypeId>,
     /// The lowered statements of this block.
-    statements: Vec<Statement>,
+    statements: Vec<StructuredStatement>,
     /// The end type of this block.
     end: BlockSealedEnd,
 }
