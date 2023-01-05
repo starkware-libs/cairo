@@ -143,6 +143,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             NullableConcreteLibfunc::IntoNullable(_) => vec![ops.const_cost(0)],
             NullableConcreteLibfunc::FromNullable(_) => vec![ops.const_cost(1), ops.const_cost(1)],
         },
+        CoreConcreteLibfunc::Debug(_) => vec![ops.const_cost(0)],
     }
 }
 
