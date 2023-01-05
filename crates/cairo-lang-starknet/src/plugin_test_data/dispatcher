@@ -11,6 +11,9 @@ trait IContract {
     fn empty();
 
     fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
+
+    #[event]
+    fn my_event();
 }
 
 //! > generated_cairo_code
@@ -21,6 +24,9 @@ trait IContract {
     fn empty();
 
     fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
+
+    #[event]
+    fn my_event();
 }
 mod IContractDispatcher {
         fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {

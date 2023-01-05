@@ -210,9 +210,11 @@ mod TestContract {
     }
     trait __abi {
         
+        
     }
 
     mod __external {
+        
         
     }
 }
