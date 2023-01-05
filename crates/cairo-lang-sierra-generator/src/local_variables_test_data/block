@@ -33,7 +33,6 @@ Inputs:
 Statements:
   (v3: core::felt) <- test::revoke_ap()
   (v4: core::felt) <- core::felt_add(v1, v1)
-Drops: v3
 End:
   Callsite(v4)
 
@@ -46,7 +45,6 @@ Statements:
   (v6: core::felt) <- core::felt_add(v1, v2)
   (v7: core::felt) <- test::revoke_ap()
   (v8: core::felt) <- core::felt_add(v1, v5)
-Drops: v0, v1, v2, v5, v6, v7
 End:
   Callsite(v8)
 

@@ -27,14 +27,12 @@ Inputs:
 Statements:
   (v2: core::felt) <- 1u
   (v3: core::felt) <- core::felt_add(v0, v2)
-Drops: v1, v2
 End:
   Callsite(v3)
 
 blk1:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
-Drops: v4
 End:
   Callsite(v1)
 
@@ -46,7 +44,6 @@ Statements:
     () => blk0,
     (v4) => blk1,
   }
-Drops: v0, v1
 End:
   Callsite(v5)
 

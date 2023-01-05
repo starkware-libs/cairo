@@ -24,14 +24,12 @@ blk0:
 Inputs: v2: ()
 Statements:
   (v3: core::felt) <- 3u
-Drops: v2, v1
 End:
   Callsite(v3)
 
 blk1:
 Inputs: v4: ()
 Statements:
-Drops: v4
 End:
   Callsite(v1)
 
@@ -43,6 +41,5 @@ Statements:
     bool::False => blk1,
     bool::True => blk0,
   }
-Drops: v0, v1
 End:
   Callsite(v5)
