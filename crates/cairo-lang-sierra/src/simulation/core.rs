@@ -11,7 +11,7 @@ use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt, FunctionCall,
-    Gas, Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
+    Gas, Mem, Struct, Uint128, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use crate::extensions::ec::EcConcreteLibfunc::{
@@ -28,9 +28,8 @@ use crate::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::strct::StructConcreteLibfunc;
-use crate::extensions::uint128::{
-    IntOperator, Uint128Concrete, Uint128ConstConcreteLibfunc, Uint128OperationConcreteLibfunc,
-};
+use crate::extensions::uint::{IntOperator, Uint8Concrete, UintConstConcreteLibfunc};
+use crate::extensions::uint128::{Uint128Concrete, Uint128OperationConcreteLibfunc};
 use crate::ids::FunctionId;
 
 // TODO(orizi): This def is duplicated.
@@ -188,7 +187,8 @@ pub fn simulate<
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128(libfunc) => simulate_integer_libfunc(libfunc, &inputs),
+        Uint8(libfunc) => simulate_u8_libfunc(libfunc, &inputs),
+        Uint128(libfunc) => simulate_u128_libfunc(libfunc, &inputs),
         Bool(libfunc) => simulate_bool_libfunc(libfunc, &inputs),
         Felt(libfunc) => simulate_felt_libfunc(libfunc, &inputs),
         UnwrapNonZero(_) => match &inputs[..] {
@@ -383,13 +383,13 @@ fn simulate_bool_libfunc(
     }
 }
 
-/// Simulate integer library functions.
-fn simulate_integer_libfunc(
+/// Simulate u128 library functions.
+fn simulate_u128_libfunc(
     libfunc: &Uint128Concrete,
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint128Concrete::Const(Uint128ConstConcreteLibfunc { c, .. }) => {
+        Uint128Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint128(*c)], 0))
             } else {
@@ -510,6 +510,22 @@ fn simulate_integer_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+    }
+}
+
+/// Simulate u8 library functions.
+fn simulate_u8_libfunc(
+    libfunc: &Uint8Concrete,
+    inputs: &[CoreValue],
+) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
+    match libfunc {
+        Uint8Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+            if inputs.is_empty() {
+                Ok((vec![CoreValue::Uint8(*c)], 0))
+            } else {
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
+            }
+        }
     }
 }
 
