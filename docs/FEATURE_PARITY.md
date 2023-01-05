@@ -7,17 +7,18 @@
 ## Cairo features
 | name                   | status |
 |------------------------|--------|
-| if (x == y)            | ✅      |
+| `if (x == y)`            | ✅      |
+| `if (x == y & z == w)` | ✅     |
 | Short strings          | ✅      |
+| Structs                | ✅      |
 | Builtin Range check    | ✅      |
+| Builtin Pedersen       | ✅      |
+| Builtin Bitwise        | ✅      |
 | Dict                   | ⏳      |
 | Uint256                | ⏳      |
-| Structs                | ⏳      |
-| Builtin Pedersen       | ⏳      |
-| Builtin Bitwise        | ⏳      |
 | Builtin ec-op          | ⏳      |
+| `if (cond1 && cond2)`  |        |
 | Append-only arrays     |        |
-| `if (x == y & z == w)` |        |
 | Named arguments        |        |
 | Serde (serialization)  |        |
 | Find element           |        |
@@ -41,10 +42,19 @@
 
 ## StarkNet system calls
 
-| name          | status |
-|---------------|--------|
-| read          | ✅      |
-| write         | ✅      |
-| call_contract | ⏳      |
-| library_call  |        |
-|               |        |
+| name                  | status |
+|-----------------------|--------|
+| storage_read          | ✅      |
+| storage_write         | ✅      |
+| call_contract         | ⏳      |
+| library_call          |        |
+| deploy                |        |
+| get_block_number      |        |
+| get_block_timestamp   |        |
+| get_caller_address    |        |
+| get_contract_address  |        |
+| get_sequencer_address |        |
+| get_transaction_info  |        |
+| send_message_to_l1    |        |
+| deploy                |        |
+
