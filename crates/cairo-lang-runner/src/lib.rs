@@ -129,6 +129,7 @@ impl SierraCasmRunner {
             } else {
                 *ty != "RangeCheck".into()
                     && *ty != "Bitwise".into()
+                    && *ty != "EcOp".into()
                     && *ty != "Pedersen".into()
                     && *ty != "System".into()
                     && *ty != "DictManager".into()
