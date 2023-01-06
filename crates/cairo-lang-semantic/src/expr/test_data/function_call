@@ -6,7 +6,7 @@ test_function_diagnostics
 //! > function
 fn foo() {
     // Valid (except for one wrong type).
-    bar(0, 1, 2, d: false, e: 4);
+    bar(0, 1, 2, d: false, _e: 4);
     // Invalid.
     // Note that a diagnostic is not reported for the wrong type when the name is wrong.
     bar(x: 0, 1, y: 2, 3, false);
@@ -17,7 +17,7 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar(a: felt, b: felt, c: felt, d: felt, e: felt) {
+fn bar(a: felt, b: felt, _c: felt, _d: felt, e: felt) {
 }
 
 enum MyEnum {
@@ -27,7 +27,7 @@ enum MyEnum {
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
  --> lib.cairo:9:21
-    bar(0, 1, 2, d: false, e: 4);
+    bar(0, 1, 2, d: false, _e: 4);
                     ^***^
 
 error: Unexpected argument name. Expected: 'a', found 'x'.
@@ -40,7 +40,7 @@ error: Unnamed arguments cannot follow named arguments.
     bar(x: 0, 1, y: 2, 3, false);
               ^
 
-error: Unexpected argument name. Expected: 'c', found 'y'.
+error: Unexpected argument name. Expected: '_c', found 'y'.
  --> lib.cairo:12:18
     bar(x: 0, 1, y: 2, 3, false);
                  ^

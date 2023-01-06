@@ -1116,11 +1116,14 @@ fn check_named_arguments(
         if let Some(name_terminal) = name_opt {
             seen_named_arguments = true;
             let name = name_terminal.text(ctx.db.upcast());
-            if param.name != name.clone() {
-                res = Err(ctx.diagnostics.report_by_ptr(
+            // Compare `param.name` and `name`, after trimming underscores.
+            // This is done so that a (for example, unused) parameter named `_x` can be referred to
+            // both as `x` or `_x` in the call-site.
+            if param.name.trim_start_matches('_') != name.trim_start_matches('_') {
+                ctx.diagnostics.report_by_ptr(
                     name_terminal.stable_ptr().untyped(),
                     NamedArgumentMismatch { expected: param.name.clone(), found: name },
-                ));
+                );
             }
         } else if seen_named_arguments && !reported_unnamed_argument_follows_named {
             reported_unnamed_argument_follows_named = true;
