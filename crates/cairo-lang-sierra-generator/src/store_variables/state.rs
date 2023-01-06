@@ -83,8 +83,6 @@ impl State {
         let mut is_deferred: Option<DeferredVariableKind> = None;
         let mut is_temp_var: bool = false;
 
-        self.deferred_variables.swap_remove(&res);
-        self.temporary_variables.swap_remove(&res);
         self.known_stack.remove_variable(&res);
 
         match &output_info.ref_info {
@@ -102,11 +100,7 @@ impl State {
                 is_temp_var = true;
             }
             OutputVarReferenceInfo::SameAsParam { param_idx } => {
-                // We already removed `res` from `self.deferred_variables` and
-                // `self.temporary_variables`, so we check that this doesn't affect querying
-                // the status of the argument.
                 let arg = &args[*param_idx];
-                assert_ne!(res, *arg);
                 if let Some(deferred_info) = self.deferred_variables.get(arg) {
                     is_deferred = Some(deferred_info.kind);
                 }
@@ -116,6 +110,9 @@ impl State {
             }
             OutputVarReferenceInfo::NewLocalVar => {}
         }
+
+        self.deferred_variables.swap_remove(&res);
+        self.temporary_variables.swap_remove(&res);
 
         if let Some(deferred_variable_info_kind) = is_deferred {
             self.deferred_variables.insert(

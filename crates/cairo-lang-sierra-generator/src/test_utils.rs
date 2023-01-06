@@ -125,7 +125,7 @@ fn dummy_concrete_lib_func_id(db: &dyn SierraGenGroup, name: &str) -> ConcreteLi
     })
 }
 
-/// Returns a vector of variable ids based on the inputs mapped into varaible ids.
+/// Returns a vector of variable ids based on the inputs mapped into variable ids.
 pub fn as_var_id_vec(ids: &[&str]) -> Vec<cairo_lang_sierra::ids::VarId> {
     ids.iter().map(|id| (*id).into()).collect()
 }
