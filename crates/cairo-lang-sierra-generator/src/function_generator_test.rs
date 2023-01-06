@@ -100,16 +100,16 @@ fn test_function_generator_local_vars() {
             "label0:",
             "alloc_local<felt>() -> ([2])",
             "finalize_locals() -> ()",
-            "dup<felt>([0]) -> ([0], [6])",
-            "dup<felt>([0]) -> ([0], [7])",
-            "felt_add([6], [7]) -> ([3])",
+            "dup<felt>([0]) -> ([0], [4])",
+            "dup<felt>([0]) -> ([0], [5])",
+            "felt_add([4], [5]) -> ([3])",
             "store_temp<felt>([3]) -> ([3])",
             "felt_add([3], [0]) -> ([1])",
             "store_local<felt>([2], [1]) -> ([1])",
-            "function_call<user@test::revoke_ap>() -> ([4])",
-            "drop<felt>([4]) -> ()",
-            "store_temp<felt>([1]) -> ([5])",
-            "return([5])",
+            "function_call<user@test::revoke_ap>() -> ([6])",
+            "drop<felt>([6]) -> ()",
+            "store_temp<felt>([1]) -> ([7])",
+            "return([7])",
         ]
     );
     assert_eq!(function.entry_point.to_string(), "label0");

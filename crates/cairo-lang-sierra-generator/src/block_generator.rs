@@ -4,18 +4,19 @@ mod test;
 
 use cairo_lang_defs::ids::GenericFunctionId;
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_lowering as lowering;
-use cairo_lang_sierra::program;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
+use sierra::program;
+use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
 
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::lifetime::{DropLocation, SierraGenVar};
+use crate::lifetime::{DropLocation, SierraGenVar, StatementLocation, UseLocation};
 use crate::pre_sierra;
 use crate::utils::{
-    branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, enum_init_libfunc_id,
-    get_concrete_libfunc_id, jump_libfunc_id, jump_statement, match_enum_libfunc_id,
-    return_statement, simple_statement, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, dup_libfunc_id,
+    enum_init_libfunc_id, get_concrete_libfunc_id, jump_libfunc_id, jump_statement,
+    match_enum_libfunc_id, return_statement, simple_statement, struct_construct_libfunc_id,
+    struct_deconstruct_libfunc_id,
 };
 
 /// Generates Sierra code that computes a given [lowering::FlatBlock].
@@ -37,8 +38,9 @@ pub fn generate_block_code(
 
     // Process the statements.
     for (i, statement) in block.statements.iter().enumerate() {
-        statements.extend(generate_statement_code(context, statement)?);
-        let drop_location = &DropLocation::PostStatement((block_id, i));
+        let statement_location = (block_id, i);
+        statements.extend(generate_statement_code(context, statement, &statement_location)?);
+        let drop_location = &DropLocation::PostStatement(statement_location);
         add_drop_statements(context, drops, drop_location, &mut statements)?;
     }
 
@@ -150,13 +152,14 @@ pub fn generate_return_code(
 pub fn generate_statement_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::Statement,
+    statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     match statement {
         lowering::Statement::Literal(statement_literal) => {
             generate_statement_literal_code(context, statement_literal)
         }
         lowering::Statement::Call(statement_call) => {
-            generate_statement_call_code(context, statement_call)
+            generate_statement_call_code(context, statement_call, statement_location)
         }
         lowering::Statement::MatchExtern(statement_match_extern) => {
             generate_statement_match_extern_code(context, statement_match_extern)
@@ -196,6 +199,7 @@ fn generate_statement_literal_code(
 fn generate_statement_call_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementCall,
+    statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     // Prepare the Sierra input and output variables.
     let inputs = context.get_sierra_variables(&statement.inputs);
@@ -208,7 +212,7 @@ fn generate_statement_call_code(
     match function_long_id.generic_function {
         GenericFunctionId::Free(_) => {
             // Create [pre_sierra::PushValue] instances for the arguments.
-            let mut args_on_stack: Vec<cairo_lang_sierra::ids::VarId> = vec![];
+            let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
             let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
 
             for (var_id, var) in zip_eq(&statement.inputs, inputs) {
@@ -230,11 +234,67 @@ fn generate_statement_call_code(
                 simple_statement(libfunc_id, &args_on_stack, &outputs),
             ])
         }
-        GenericFunctionId::Extern(_) => Ok(vec![simple_statement(libfunc_id, &inputs, &outputs)]),
+        GenericFunctionId::Extern(_) => {
+            // Dup variables as needed.
+            let mut statements: Vec<pre_sierra::Statement> = vec![];
+            let inputs_after_dup = add_dup_statements(
+                context,
+                statement_location,
+                &statement.inputs,
+                &mut statements,
+            )?;
+
+            statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
+            Ok(statements)
+        }
         GenericFunctionId::TraitFunction(_) => {
             panic!("Trait function should be replaced with concrete functions.")
         }
         GenericFunctionId::ImplFunction(_) => todo!(),
+    }
+}
+
+/// Adds calls to the `dup` libfunc for the given [StatementLocation] and the given statement's
+/// inputs.
+fn add_dup_statements(
+    context: &mut ExprGeneratorContext<'_>,
+    statement_location: &StatementLocation,
+    lowering_vars: &[id_arena::Id<lowering::Variable>],
+    statements: &mut Vec<pre_sierra::Statement>,
+) -> Maybe<Vec<sierra::ids::VarId>> {
+    lowering_vars
+        .iter()
+        .enumerate()
+        .map(|(idx, lowering_var)| {
+            add_dup_statement(context, statement_location, idx, lowering_var, statements)
+        })
+        .collect()
+}
+
+/// If necessary, adds a call to the `dup` libfunc for the given [StatementLocation] and the given
+/// statement's input, and returns the duplicated copy. Otherwise, returns the original variable.
+fn add_dup_statement(
+    context: &mut ExprGeneratorContext<'_>,
+    statement_location: &StatementLocation,
+    idx: usize,
+    lowering_var: &id_arena::Id<lowering::Variable>,
+    statements: &mut Vec<pre_sierra::Statement>,
+) -> Maybe<sierra::ids::VarId> {
+    let sierra_var = context.get_sierra_variable(*lowering_var);
+
+    // Check whether the variable should be dupped.
+    if context.is_last_use(&UseLocation { statement_location: *statement_location, idx }) {
+        // Dup is not required.
+        Ok(sierra_var)
+    } else {
+        let ty = context.get_variable_sierra_type(*lowering_var)?;
+        let dup_var = context.allocate_sierra_variable();
+        statements.push(simple_statement(
+            dup_libfunc_id(context.get_db(), ty),
+            &[sierra_var.clone()],
+            &[sierra_var, dup_var.clone()],
+        ));
+        Ok(dup_var)
     }
 }
 
