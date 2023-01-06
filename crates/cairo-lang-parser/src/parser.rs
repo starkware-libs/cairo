@@ -1052,8 +1052,13 @@ impl<'a> Parser<'a> {
     fn parse_type_clause(&mut self) -> TypeClauseGreen {
         match self.try_parse_type_clause() {
             Some(green) => green,
-            None => self
-                .create_and_report_missing::<TypeClause>(ParserDiagnosticKind::MissingTypeClause),
+            None => {
+                let res = self.create_and_report_missing::<TypeClause>(
+                    ParserDiagnosticKind::MissingTypeClause,
+                );
+                self.skip_until(is_of_kind!(comma, rbrace, top_level)).ok();
+                res
+            }
         }
     }
     fn try_parse_type_clause(&mut self) -> Option<TypeClauseGreen> {

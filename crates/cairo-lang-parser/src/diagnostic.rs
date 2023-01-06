@@ -41,7 +41,7 @@ impl DiagnosticEntry for ParserDiagnostic {
                 "Missing tokens. Expected a path segment.".to_string()
             }
             ParserDiagnosticKind::MissingTypeClause => {
-                "Missing tokens. Expected a type clause.".to_string()
+                "Unexpected token, expected ':' followed by a type.".to_string()
             }
             ParserDiagnosticKind::MissingTypeExpression => {
                 "Missing tokens. Expected a type expression.".to_string()
