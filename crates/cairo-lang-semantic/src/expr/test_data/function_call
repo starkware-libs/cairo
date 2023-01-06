@@ -6,7 +6,7 @@ test_function_diagnostics
 //! > function
 fn foo() {
     // Valid.
-    bar(0, 1, 2, c: 3, d: 4);
+    bar(0, 1, 2, c: 3, _d: 4);
     // Invalid.
     bar(x: 0, 1, y: 2, 3, 4);
     MyEnum::A(x: 0);
@@ -16,7 +16,7 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar(_: felt, a: felt, b: felt, c: felt, d: felt) {
+fn bar(_: felt, a: felt, _b: felt, _c: felt, d: felt) {
 }
 
 enum MyEnum {
@@ -34,7 +34,7 @@ error: Unnamed arguments cannot follow named arguments.
     bar(x: 0, 1, y: 2, 3, 4);
               ^
 
-error: Unexpected argument name. Expected: 'b', found 'y'.
+error: Unexpected argument name. Expected: '_b', found 'y'.
  --> lib.cairo:11:18
     bar(x: 0, 1, y: 2, 3, 4);
                  ^

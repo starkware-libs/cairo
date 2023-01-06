@@ -1085,7 +1085,12 @@ fn expr_function_call(
         if let Some(name_terminal) = name_opt {
             saw_named_arguments = true;
             let name = name_terminal.text(ctx.db.upcast());
-            if param.name != Some(name.clone()) {
+            // Compare `param.name` and `name`, after trimming underscores.
+            // This is done so that a (for example, unused) parameter named `_x` can be referred to
+            // both as `x` or `_x` in the call-site.
+            if param.name.as_ref().map(|x| x.trim_start_matches('_'))
+                != Some(name.trim_start_matches('_'))
+            {
                 ctx.diagnostics.report_by_ptr(
                     name_terminal.stable_ptr().untyped(),
                     NamedArgumentMismatch { expected: param.name.clone(), found: name },
