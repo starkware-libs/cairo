@@ -45,11 +45,11 @@ fn test_program_generator() {
             function_call<user@test::bar>([3]) -> ([2]);
             rename<felt>([2]) -> ([4]);
             return([4]);
-            dup<felt>([0]) -> ([0], [3]);
-            felt_add([0], [3]) -> ([1]);
+            dup<felt>([0]) -> ([0], [2]);
+            felt_add([2], [0]) -> ([1]);
             store_temp<felt>([1]) -> ([1]);
-            rename<felt>([1]) -> ([2]);
-            return([2]);
+            rename<felt>([1]) -> ([3]);
+            return([3]);
 
             test::foo@0([0]: felt) -> (felt);
             test::bar@6([0]: felt) -> (felt);
