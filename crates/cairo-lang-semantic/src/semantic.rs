@@ -23,6 +23,8 @@ pub use crate::types::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteStructId, ConcreteTypeId, TypeId, TypeLongId,
 };
 
+const UNUSED_PARAMETER_PREFIX: &str = "_";
+
 /// Semantic model of a variable.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -45,6 +47,14 @@ pub struct Parameter {
     pub name: Option<SmolStr>,
     pub ty: TypeId,
     pub mutability: Mutability,
+}
+impl Parameter {
+    /// Returns the expected name of the corresponding argument.
+    /// If the parameter name starts with `_`, it is removed.
+    pub fn expected_arg_name(&self) -> Option<SmolStr> {
+        let name = self.name.as_ref()?;
+        Some(name.strip_prefix(UNUSED_PARAMETER_PREFIX).unwrap_or(name.as_str()).into())
+    }
 }
 
 /// The mutability attribute of a variable.

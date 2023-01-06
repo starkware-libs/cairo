@@ -16,7 +16,7 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar(_: felt, a: felt, b: felt, c: felt, d: felt) {
+fn bar(_: felt, a: felt, b: felt, _c: felt, d: felt) {
 }
 
 enum MyEnum {

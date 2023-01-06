@@ -1085,10 +1085,11 @@ fn expr_function_call(
         if let Some(name_terminal) = name_opt {
             saw_named_arguments = true;
             let name = name_terminal.text(ctx.db.upcast());
-            if param.name != Some(name.clone()) {
+            let expected = param.expected_arg_name();
+            if expected != Some(name.clone()) {
                 ctx.diagnostics.report_by_ptr(
                     name_terminal.stable_ptr().untyped(),
-                    NamedArgumentMismatch { expected: param.name.clone(), found: name },
+                    NamedArgumentMismatch { expected, found: name },
                 );
             }
         } else if saw_named_arguments && !reported_unnamed_argument_follows_named {
