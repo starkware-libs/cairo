@@ -17,70 +17,15 @@ ItemEnum
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing tokens. Expected a type clause.
+error: Unexpected token, expected ':' followed by a type.
  --> dummy_file.cairo:3:6
     B(felt),
      ^
 
-error: Missing token TerminalComma.
- --> dummy_file.cairo:3:6
-    B(felt),
-     ^
-
-error: Skipped tokens. Expected: member or variant.
- --> dummy_file.cairo:3:6
-    B(felt),
-     ^
-
-error: Missing tokens. Expected a type clause.
- --> dummy_file.cairo:3:11
-    B(felt),
-          ^
-
-error: Missing token TerminalRBrace.
- --> dummy_file.cairo:3:11
-    B(felt),
-          ^
-
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> dummy_file.cairo:3:11
-    B(felt),
-          ^
-
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> dummy_file.cairo:3:12
-    B(felt),
-           ^
-
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> dummy_file.cairo:4:5
-    C: felt,
-    ^
-
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> dummy_file.cairo:4:6
-    C: felt,
-     ^
-
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> dummy_file.cairo:4:8
-    C: felt,
-       ^**^
-
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> dummy_file.cairo:4:12
-    C: felt,
-           ^
-
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> dummy_file.cairo:5:5
+error: Unexpected token, expected ':' followed by a type.
+ --> dummy_file.cairo:5:17
     MissingComma
-    ^**********^
-
-error: Skipped tokens. Expected: item or an attribute.
- --> dummy_file.cairo:6:1
-}
-^
+                ^
 
 //! > expected_tree
 └── Top level kind: ItemEnum
@@ -103,10 +48,18 @@ error: Skipped tokens. Expected: item or an attribute.
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon: Missing
     │   │       └── ty: Missing []
-    │   ├── separator #1: Missing
-    │   └── item #2 (kind: Member)
-    │       ├── name (kind: TokenIdentifier): 'felt'
+    │   ├── separator #1 (kind: TokenComma): ','
+    │   ├── item #2 (kind: Member)
+    │   │   ├── name (kind: TokenIdentifier): 'C'
+    │   │   └── type_clause (kind: TypeClause)
+    │   │       ├── colon (kind: TokenColon): ':'
+    │   │       └── ty (kind: ExprPath)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   ├── separator #2 (kind: TokenComma): ','
+    │   └── item #3 (kind: Member)
+    │       ├── name (kind: TokenIdentifier): 'MissingComma'
     │       └── type_clause (kind: TypeClause)
     │           ├── colon: Missing
     │           └── ty: Missing []
-    └── rbrace: Missing
+    └── rbrace (kind: TokenRBrace): '}'
