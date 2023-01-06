@@ -37,15 +37,15 @@ End:
   Callsite(v13)
 
 //! > last_use
-v13: [(BlockId(0), 9)]
-v11: [(BlockId(0), 8)]
-v12: [(BlockId(0), 8)]
-v6: [(BlockId(0), 5)]
-v9: [(BlockId(0), 5)]
-v5: [(BlockId(0), 4)]
-v1: [(BlockId(0), 2)]
-v4: [(BlockId(0), 2)]
-v0: [(BlockId(0), 1)]
+((BlockId(0), 9), 0)
+((BlockId(0), 8), 1)
+((BlockId(0), 8), 0)
+((BlockId(0), 5), 1)
+((BlockId(0), 5), 0)
+((BlockId(0), 4), 0)
+((BlockId(0), 2), 1)
+((BlockId(0), 2), 0)
+((BlockId(0), 1), 0)
 
 //! > drops
 PostStatement((BlockId(0), 5)): v10
