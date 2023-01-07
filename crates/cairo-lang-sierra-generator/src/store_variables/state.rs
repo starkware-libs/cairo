@@ -1,3 +1,4 @@
+use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, OutputVarInfo, SierraApChange,
 };
@@ -11,7 +12,7 @@ use super::known_stack::KnownStack;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DeferredVariableInfo {
     /// The type of the variable.
-    pub ty: cairo_lang_sierra::ids::ConcreteTypeId,
+    pub ty: sierra::ids::ConcreteTypeId,
     /// The deferred type.
     pub kind: DeferredVariableKind,
 }
@@ -31,12 +32,11 @@ pub enum DeferredVariableKind {
 /// For example, which variable contains a deferred value and which variable is on the stack.
 #[derive(Clone, Debug, Default)]
 pub struct State {
-    /// A map from [cairo_lang_sierra::ids::VarId] of a deferred reference
+    /// A map from [sierra::ids::VarId] of a deferred reference
     /// (for example, `[ap - 1] + [ap - 2]`) to [DeferredVariableInfo].
-    pub deferred_variables: OrderedHashMap<cairo_lang_sierra::ids::VarId, DeferredVariableInfo>,
-    /// A map from [cairo_lang_sierra::ids::VarId] of temporary variables to their type.
-    pub temporary_variables:
-        OrderedHashMap<cairo_lang_sierra::ids::VarId, cairo_lang_sierra::ids::ConcreteTypeId>,
+    pub deferred_variables: OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
+    /// A map from [sierra::ids::VarId] of temporary variables to their type.
+    pub temporary_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId>,
     /// The information known about the top of the stack.
     pub known_stack: KnownStack,
 }
@@ -45,9 +45,10 @@ impl State {
     /// Clears the stack if needed.
     pub fn register_outputs(
         &mut self,
-        results: &[cairo_lang_sierra::ids::VarId],
+        results: &[sierra::ids::VarId],
         branch_signature: &BranchSignature,
-        args: &[cairo_lang_sierra::ids::VarId],
+        args: &[sierra::ids::VarId],
+        deferred_args: &OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
     ) {
         // Clear the stack if needed.
         match branch_signature.ap_change {
@@ -62,7 +63,7 @@ impl State {
         }
 
         for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {
-            self.register_output(var.clone(), var_info, args);
+            self.register_output(var.clone(), var_info, args, deferred_args);
         }
 
         // Update `known_stack_size`. It is one more than the maximum of the indices in
@@ -76,9 +77,10 @@ impl State {
     /// [Self::deferred_variables]. Similarly for [Self::temporary_variables].
     fn register_output(
         &mut self,
-        res: cairo_lang_sierra::ids::VarId,
+        res: sierra::ids::VarId,
         output_info: &OutputVarInfo,
-        args: &[cairo_lang_sierra::ids::VarId],
+        args: &[sierra::ids::VarId],
+        deferred_args: &OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
     ) {
         let mut is_deferred: Option<DeferredVariableKind> = None;
         let mut is_temp_var: bool = false;
@@ -99,7 +101,7 @@ impl State {
             OutputVarReferenceInfo::SameAsParam { param_idx }
             | OutputVarReferenceInfo::PartialParam { param_idx } => {
                 let arg = &args[*param_idx];
-                if let Some(deferred_info) = self.deferred_variables.get(arg) {
+                if let Some(deferred_info) = deferred_args.get(arg) {
                     is_deferred = Some(deferred_info.kind);
                 }
                 is_temp_var = self.temporary_variables.get(arg).is_some();
@@ -143,11 +145,7 @@ impl State {
     /// Marks `dst` as a rename of `src`.
     ///
     /// Updates [Self::known_stack] and [Self::temporary_variables] if necessary.
-    pub fn rename_var(
-        &mut self,
-        src: &cairo_lang_sierra::ids::VarId,
-        dst: &cairo_lang_sierra::ids::VarId,
-    ) {
+    pub fn rename_var(&mut self, src: &sierra::ids::VarId, dst: &sierra::ids::VarId) {
         self.known_stack.clone_if_on_stack(src, dst);
         if let Some(uninitialized_local_var_id) = self.temporary_variables.get(src) {
             self.temporary_variables.insert(dst.clone(), uninitialized_local_var_id.clone());
