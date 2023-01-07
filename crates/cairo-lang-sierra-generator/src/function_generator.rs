@@ -9,7 +9,7 @@ use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
-use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
+use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::Param;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -111,17 +111,11 @@ fn get_function_code(
         lowering::FlatBlockEnd::Unreachable => {}
     };
 
-    let drop_id = GenericLibfuncId::from_string("drop");
     let statements = add_store_statements(
         context.get_db(),
         statements,
         &|concrete_lib_func_id: ConcreteLibfuncId| -> LibfuncInfo {
-            let libfunc_generic_id =
-                db.lookup_intern_concrete_lib_func(concrete_lib_func_id.clone()).generic_id;
-            LibfuncInfo {
-                signature: get_libfunc_signature(context.get_db(), concrete_lib_func_id),
-                is_drop: libfunc_generic_id == drop_id,
-            }
+            LibfuncInfo { signature: get_libfunc_signature(context.get_db(), concrete_lib_func_id) }
         },
         sierra_local_variables,
     );
