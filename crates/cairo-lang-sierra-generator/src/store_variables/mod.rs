@@ -31,9 +31,6 @@ pub type LocalVariables =
 /// Information about a libfunc, required by the `store_variables` module.
 pub struct LibfuncInfo {
     pub signature: LibfuncSignature,
-    /// `true` if the libfunc is `drop()`.
-    // TODO(lior): Consider removing this field after moving the dup mechanism before this phase.
-    pub is_drop: bool,
 }
 
 /// Automatically adds store_temp() statements to the given list of [pre_sierra::Statement].
@@ -105,7 +102,6 @@ impl<'a> AddStoreVariableStatements<'a> {
                 self.prepare_libfunc_arguments(
                     &invocation.args,
                     &signature.param_signatures,
-                    libfunc_info.is_drop,
                 );
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
@@ -183,7 +179,6 @@ impl<'a> AddStoreVariableStatements<'a> {
         &mut self,
         args: &[cairo_lang_sierra::ids::VarId],
         param_signatures: &[ParamSignature],
-        is_drop: bool,
     ) {
         for (arg, param_signature) in zip_eq(args, param_signatures) {
             self.prepare_libfunc_argument(
@@ -191,7 +186,6 @@ impl<'a> AddStoreVariableStatements<'a> {
                 param_signature.allow_deferred,
                 param_signature.allow_add_const,
                 param_signature.allow_const,
-                is_drop,
             );
         }
     }
@@ -205,7 +199,6 @@ impl<'a> AddStoreVariableStatements<'a> {
         allow_deferred: bool,
         allow_add_const: bool,
         allow_const: bool,
-        is_drop: bool,
     ) -> bool {
         if let Some(deferred_info) = self.state().deferred_variables.get(arg).cloned() {
             match deferred_info.kind {
@@ -225,17 +218,8 @@ impl<'a> AddStoreVariableStatements<'a> {
                     }
                 }
             };
-            // In this case, the deferred value can be used directly by the libfunc and does not
-            // require a store statement. If its type is not duplicatable, or the libfunc is `drop`,
-            // we remove it from the deferred_variables map to ensure it won't be stored later.
-            let duplicatable = self
-                .db
-                .get_type_info(deferred_info.ty)
-                .expect("All types should be valid at this point.")
-                .duplicatable;
-            if is_drop || !duplicatable {
-                self.state().deferred_variables.swap_remove(arg);
-            }
+
+            self.state().deferred_variables.swap_remove(arg);
         }
 
         if self.state().temporary_variables.get(arg).is_some() {
@@ -278,7 +262,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // `prepare_libfunc_argument`.
                 // `should_rename` should be set to `true` if the variable was copied onto the
                 // stack.
-                self.prepare_libfunc_argument(var, false, false, true, false)
+                self.prepare_libfunc_argument(var, false, false, true)
             } else {
                 // Check if this is part of the prefix. If it is, rename instead of adding
                 // `store_temp`.

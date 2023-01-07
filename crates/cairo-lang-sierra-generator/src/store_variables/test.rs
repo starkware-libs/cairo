@@ -218,7 +218,7 @@ fn test_add_store_statements(
     add_store_statements(
         db,
         statements,
-        &(|libfunc| LibfuncInfo { signature: get_lib_func_signature(db, libfunc), is_drop: false }),
+        &(|libfunc| LibfuncInfo { signature: get_lib_func_signature(db, libfunc) }),
         local_variables,
     )
     .iter()
