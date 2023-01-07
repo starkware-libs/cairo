@@ -1,4 +1,3 @@
-use cairo_lang_sierra::program::GenBranchTarget;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::pre_sierra::{LabelId, Statement};
@@ -36,14 +35,6 @@ impl NextStatementIndexFetch {
             }
         }
         Self { label_to_statement }
-    }
-
-    /// Returns the index of the next statement to run, for the given branch target.
-    pub fn get(&self, index: usize, target: &GenBranchTarget<LabelId>) -> usize {
-        match target {
-            GenBranchTarget::Fallthrough => index + 1,
-            GenBranchTarget::Statement(label) => self.resolve_label(label),
-        }
     }
 
     /// Returns the index of a statement pointed by the given label.
