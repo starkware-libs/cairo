@@ -1,0 +1,112 @@
+//! > Test enum
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+enum MyEnum {
+    A: felt,
+    B(felt),
+    C: felt,
+    MissingComma
+}
+
+//! > top_level_kind
+ItemEnum
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing tokens. Expected a type clause.
+ --> dummy_file.cairo:3:6
+    B(felt),
+     ^
+
+error: Missing token TerminalComma.
+ --> dummy_file.cairo:3:6
+    B(felt),
+     ^
+
+error: Skipped tokens. Expected: member or variant.
+ --> dummy_file.cairo:3:6
+    B(felt),
+     ^
+
+error: Missing tokens. Expected a type clause.
+ --> dummy_file.cairo:3:11
+    B(felt),
+          ^
+
+error: Missing token TerminalRBrace.
+ --> dummy_file.cairo:3:11
+    B(felt),
+          ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:3:11
+    B(felt),
+          ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:3:12
+    B(felt),
+           ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:4:5
+    C: felt,
+    ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:4:6
+    C: felt,
+     ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:4:8
+    C: felt,
+       ^**^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:4:12
+    C: felt,
+           ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:5:5
+    MissingComma
+    ^**********^
+
+error: Skipped tokens. Expected: item or an attribute.
+ --> dummy_file.cairo:6:1
+}
+^
+
+//! > expected_tree
+└── Top level kind: ItemEnum
+    ├── attributes (kind: AttributeList) []
+    ├── enum_kw (kind: TokenEnum): 'enum'
+    ├── name (kind: TokenIdentifier): 'MyEnum'
+    ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    ├── lbrace (kind: TokenLBrace): '{'
+    ├── variants (kind: MemberList)
+    │   ├── item #0 (kind: Member)
+    │   │   ├── name (kind: TokenIdentifier): 'A'
+    │   │   └── type_clause (kind: TypeClause)
+    │   │       ├── colon (kind: TokenColon): ':'
+    │   │       └── ty (kind: ExprPath)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   ├── separator #0 (kind: TokenComma): ','
+    │   ├── item #1 (kind: Member)
+    │   │   ├── name (kind: TokenIdentifier): 'B'
+    │   │   └── type_clause (kind: TypeClause)
+    │   │       ├── colon: Missing
+    │   │       └── ty: Missing []
+    │   ├── separator #1: Missing
+    │   └── item #2 (kind: Member)
+    │       ├── name (kind: TokenIdentifier): 'felt'
+    │       └── type_clause (kind: TypeClause)
+    │           ├── colon: Missing
+    │           └── ty: Missing []
+    └── rbrace: Missing
