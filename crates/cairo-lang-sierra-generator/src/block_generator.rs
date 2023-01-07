@@ -186,16 +186,16 @@ pub fn generate_statement_code(
             generate_statement_call_block_code(context, statement_call_block)
         }
         lowering::Statement::EnumConstruct(statement_enum_construct) => {
-            generate_statement_enum_construct(context, statement_enum_construct)
+            generate_statement_enum_construct(context, statement_enum_construct, statement_location)
         }
         lowering::Statement::MatchEnum(statement_match_enum) => {
             generate_statement_match_enum(context, statement_match_enum, statement_location)
         }
         lowering::Statement::StructConstruct(statement) => {
-            generate_statement_struct_construct_code(context, statement)
+            generate_statement_struct_construct_code(context, statement, statement_location)
         }
         lowering::Statement::StructDestructure(statement) => {
-            generate_statement_struct_destructure_code(context, statement)
+            generate_statement_struct_destructure_code(context, statement, statement_location)
         }
     }
 }
@@ -410,46 +410,67 @@ fn generate_statement_call_block_code(
 fn generate_statement_enum_construct(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementEnumConstruct,
+    statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
-    Ok(vec![simple_statement(
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+    let input =
+        add_dup_statement(context, statement_location, 0, &statement.input, &mut statements)?;
+
+    statements.push(simple_statement(
         enum_init_libfunc_id(
             context.get_db(),
             context.get_variable_sierra_type(statement.output)?,
             statement.variant.idx,
         ),
-        &[context.get_sierra_variable(statement.input)],
+        &[input],
         &[context.get_sierra_variable(statement.output)],
-    )])
+    ));
+    Ok(statements)
 }
 
 /// Generates Sierra code for [lowering::StatementStructConstruct].
 fn generate_statement_struct_construct_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementStructConstruct,
+    statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
-    Ok(vec![simple_statement(
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+    let inputs =
+        add_dup_statements(context, statement_location, &statement.inputs, &mut statements)?;
+
+    statements.push(simple_statement(
         struct_construct_libfunc_id(
             context.get_db(),
             context.get_variable_sierra_type(statement.output)?,
         ),
-        &context.get_sierra_variables(&statement.inputs),
+        &inputs,
         &[context.get_sierra_variable(statement.output)],
-    )])
+    ));
+    Ok(statements)
 }
 
 /// Generates Sierra code for [lowering::StatementStructDestructure].
 fn generate_statement_struct_destructure_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementStructDestructure,
+    statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
-    Ok(vec![simple_statement(
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+    let input =
+        add_dup_statement(context, statement_location, 0, &statement.input, &mut statements)?;
+
+    statements.push(simple_statement(
         struct_deconstruct_libfunc_id(
             context.get_db(),
             context.get_variable_sierra_type(statement.input)?,
         ),
-        &[context.get_sierra_variable(statement.input)],
+        &[input],
         &context.get_sierra_variables(&statement.outputs),
-    )])
+    ));
+    Ok(statements)
 }
 
 /// Generates Sierra code for [lowering::StatementMatchEnum].
