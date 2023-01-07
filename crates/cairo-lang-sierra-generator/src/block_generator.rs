@@ -176,7 +176,11 @@ pub fn generate_statement_code(
             generate_statement_call_code(context, statement_call, statement_location)
         }
         lowering::Statement::MatchExtern(statement_match_extern) => {
-            generate_statement_match_extern_code(context, statement_match_extern)
+            generate_statement_match_extern_code(
+                context,
+                statement_match_extern,
+                statement_location,
+            )
         }
         lowering::Statement::CallBlock(statement_call_block) => {
             generate_statement_call_block_code(context, statement_call_block)
@@ -185,7 +189,7 @@ pub fn generate_statement_code(
             generate_statement_enum_construct(context, statement_enum_construct)
         }
         lowering::Statement::MatchEnum(statement_match_enum) => {
-            generate_statement_match_enum(context, statement_match_enum)
+            generate_statement_match_enum(context, statement_match_enum, statement_location)
         }
         lowering::Statement::StructConstruct(statement) => {
             generate_statement_struct_construct_code(context, statement)
@@ -329,9 +333,11 @@ fn add_dup_statement(
 fn generate_statement_match_extern_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementMatchExtern,
+    statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
-    // Prepare the Sierra input and output variables.
-    let args = context.get_sierra_variables(&statement.inputs);
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    // Prepare the Sierra input variables.
+    let args = add_dup_statements(context, statement_location, &statement.inputs, &mut statements)?;
 
     // Generate labels for all the arms, except for the first (which will be Fallthrough).
     let arm_labels: Vec<(pre_sierra::Statement, pre_sierra::LabelId)> =
@@ -342,8 +348,6 @@ fn generate_statement_match_extern_code(
     // Get the [ConcreteLibfuncId].
     let (_function_long_id, libfunc_id) =
         get_concrete_libfunc_id(context.get_db(), statement.function);
-
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
 
     // Create the arm branches.
     let arm_targets: Vec<program::GenBranchTarget<pre_sierra::LabelId>> = chain!(
@@ -452,8 +456,13 @@ fn generate_statement_struct_destructure_code(
 fn generate_statement_match_enum(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementMatchEnum,
+    statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
-    let matched_enum = context.get_sierra_variable(statement.input);
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+    let matched_enum =
+        add_dup_statement(context, statement_location, 0, &statement.input, &mut statements)?;
+
     let concrete_enum_type = context.get_variable_sierra_type(statement.input)?;
     // Generate labels for all the arms.
     let (arm_label_statements, arm_label_ids): (
@@ -462,8 +471,6 @@ fn generate_statement_match_enum(
     ) = (0..statement.arms.len()).map(|_i| context.new_label()).unzip();
     // Generate a label for the end of the match.
     let (end_label, end_label_id) = context.new_label();
-
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
 
     let branches: Vec<_> = zip_eq(&statement.arms, arm_label_ids)
         .map(|((_variant, arm), label_id)| program::GenBranchInfo {
