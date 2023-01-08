@@ -103,6 +103,13 @@ fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatab
     base + (cell_ref.offset as i32)
 }
 
+/// Inserts a value into the vm memory cell represented by the cellref.
+macro_rules! insert_value_to_cellref {
+    ($vm:ident, $cell_ref:ident, $value:expr) => {
+        $vm.insert_value(&cell_ref_to_relocatable($cell_ref, $vm), $value)
+    };
+}
+
 /// Execution scope for starknet related data.
 struct StarknetExecScope {
     /// The values of addresses in the simulated storage.
@@ -154,32 +161,31 @@ impl HintProcessor for CairoHintProcessor {
         match hint {
             Hint::AllocSegment { dst } => {
                 let segment = vm.add_memory_segment();
-                vm.insert_value(&cell_ref_to_relocatable(dst, vm), segment)?;
+                insert_value_to_cellref!(vm, dst, segment)?;
             }
             Hint::TestLessThan { lhs, rhs, dst } => {
                 let lhs_val = get_val(lhs)?;
                 let rhs_val = get_val(rhs)?;
-                vm.insert_value(
-                    &cell_ref_to_relocatable(dst, vm),
-                    if lhs_val < rhs_val { BigInt::from(1) } else { BigInt::from(0) },
+                insert_value_to_cellref!(
+                    vm,
+                    dst,
+                    if lhs_val < rhs_val { BigInt::from(1) } else { BigInt::from(0) }
                 )?;
             }
             Hint::TestLessThanOrEqual { lhs, rhs, dst } => {
                 let lhs_val = get_val(lhs)?;
                 let rhs_val = get_val(rhs)?;
-                vm.insert_value(
-                    &cell_ref_to_relocatable(dst, vm),
-                    if lhs_val <= rhs_val { BigInt::from(1) } else { BigInt::from(0) },
+                insert_value_to_cellref!(
+                    vm,
+                    dst,
+                    if lhs_val <= rhs_val { BigInt::from(1) } else { BigInt::from(0) }
                 )?;
             }
             Hint::DivMod { lhs, rhs, quotient, remainder } => {
                 let lhs_val = get_val(lhs)?;
                 let rhs_val = get_val(rhs)?;
-                vm.insert_value(
-                    &cell_ref_to_relocatable(quotient, vm),
-                    lhs_val.clone() / rhs_val.clone(),
-                )?;
-                vm.insert_value(&cell_ref_to_relocatable(remainder, vm), lhs_val % rhs_val)?;
+                insert_value_to_cellref!(vm, quotient, lhs_val.clone() / rhs_val.clone())?;
+                insert_value_to_cellref!(vm, remainder, lhs_val % rhs_val)?;
             }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
                 let value = get_val(value)?;
@@ -187,8 +193,8 @@ impl HintProcessor for CairoHintProcessor {
                 let max_x = get_val(max_x)?;
                 let x_value = (value.clone() / scalar.clone()).min(max_x);
                 let y_value = value - x_value.clone() * scalar;
-                vm.insert_value(&cell_ref_to_relocatable(x, vm), x_value)?;
-                vm.insert_value(&cell_ref_to_relocatable(y, vm), y_value)?;
+                insert_value_to_cellref!(vm, x, x_value)?;
+                insert_value_to_cellref!(vm, y, y_value)?;
             }
             Hint::AllocDictFeltTo { dict_manager_ptr } => {
                 let (cell, base_offset) = extract_buffer(dict_manager_ptr);
@@ -216,8 +222,32 @@ impl HintProcessor for CairoHintProcessor {
                 let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
                 vm.insert_value(&(dict_infos_base + 3 * n_dicts), new_dict_segment)?;
             }
-            Hint::DictFeltToRead { .. } => todo!(),
-            Hint::DictFeltToWrite { .. } => todo!(),
+            Hint::DictFeltToRead { dict_ptr, key, value_dst } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+                let dict_address = get_ptr(dict_base, &dict_offset)?;
+                let key = get_val(key)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to read from a dict while dict manager was not initialized.");
+                let value = dict_manager_exec_scope
+                    .get_from_tracker(dict_address, &key)
+                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                insert_value_to_cellref!(vm, value_dst, value)?;
+            }
+            Hint::DictFeltToWrite { dict_ptr, key, value, prev_value_dst } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+                let dict_address = get_ptr(dict_base, &dict_offset)?;
+                let key = get_val(key)?;
+                let value = get_val(value)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to write to a dict while dict manager was not initialized.");
+                let prev_value = dict_manager_exec_scope
+                    .get_from_tracker(dict_address, &key)
+                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                insert_value_to_cellref!(vm, prev_value_dst, prev_value)?;
+                dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
+            }
             Hint::EnterScope => todo!(),
             Hint::ExitScope => todo!(),
             Hint::RandomEcPoint { x, y } => {
@@ -234,8 +264,8 @@ impl HintProcessor for CairoHintProcessor {
                 };
                 let x_bigint: BigUint = random_x.into_bigint().into();
                 let y_bigint: BigUint = random_y_squared.sqrt().unwrap().into_bigint().into();
-                vm.insert_value(&cell_ref_to_relocatable(x, vm), BigInt::from(x_bigint))?;
-                vm.insert_value(&cell_ref_to_relocatable(y, vm), BigInt::from(y_bigint))?;
+                insert_value_to_cellref!(vm, x, BigInt::from(x_bigint))?;
+                insert_value_to_cellref!(vm, y, BigInt::from(y_bigint))?;
             }
             Hint::SystemCall { system } => {
                 let starknet_exec_scope =

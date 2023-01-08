@@ -27,6 +27,8 @@ impl DictTrackerExecScope {
 }
 
 impl DictManagerExecScope {
+    pub const DICT_DEFAULT_VALUE: usize = 0;
+
     /// Allocates a new segment for a new dictionary and return the start of the segment.
     pub fn new_default_dict(&mut self, vm: &mut VirtualMachine) -> Relocatable {
         let dict_segment = vm.add_memory_segment();
@@ -66,7 +68,7 @@ impl DictManagerExecScope {
 
     /// Gets a value from the dict tracker corresponding to a given pointer to a dict segment.
     /// None if the key does not exist in the tracker data.
-    pub fn get_from_tracker(&self, dict_end: Relocatable, key: BigInt) -> Option<BigInt> {
-        self.get_dict_tracker(dict_end).data.get(&key).cloned()
+    pub fn get_from_tracker(&self, dict_end: Relocatable, key: &BigInt) -> Option<BigInt> {
+        self.get_dict_tracker(dict_end).data.get(key).cloned()
     }
 }
