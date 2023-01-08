@@ -37,3 +37,89 @@ Statements:
   (v3: core::felt) <- test::bar()
 End:
   Callsite(v3, v2)
+
+//! > ==========================================================================
+
+//! > Test rebindings with early return.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(ref a: felt, b: felt, c: felt) -> felt {
+    a = b;
+    a = bar()
+    if b == 2 {
+      a = c;
+      return b;
+    }
+    c
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar() -> felt nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0:
+Inputs:
+Initial refs: v3: core::felt
+Statements:
+End:
+  Return(v2, v1)
+
+blk1:
+Inputs: v6: core::NonZero::<core::felt>
+Initial refs: v3: core::felt
+Statements:
+End:
+  Callsite()
+
+blk2 (root):
+Inputs: v0: core::felt, v1: core::felt, v2: core::felt
+Initial refs: v0: core::felt
+Statements:
+  (v3: core::felt) <- test::bar()
+    Ref changes: r0 <- v1
+  (v4: core::felt) <- 2u
+    Ref changes: r0 <- v3
+  (v5: core::felt) <- core::felt_sub(v1, v4)
+  () <- match core::felt_jump_nz(v5) {
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
+  }
+    Ref changes: r0 <- v3
+End:
+  Callsite(v3, v2)
+
+//! > lowering_flat
+blk0:
+Inputs:
+Statements:
+End:
+  Return(v2, v1)
+
+blk1:
+Inputs: v6: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite()
+
+blk2 (root):
+Inputs: v0: core::felt, v1: core::felt, v2: core::felt
+Statements:
+  (v3: core::felt) <- test::bar()
+  (v4: core::felt) <- 2u
+  (v5: core::felt) <- core::felt_sub(v1, v4)
+  () <- match core::felt_jump_nz(v5) {
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
+  }
+End:
+  Callsite(v3, v2)

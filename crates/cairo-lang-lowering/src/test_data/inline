@@ -1,0 +1,216 @@
+//! > Test function inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: bool, b: bool) -> bool {
+  inline_bool_xor(a, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn inline_bool_xor(a: bool, b: bool) -> bool implicits() nopanic  {
+  let (r,) = bool_xor_impl(a, b);
+  r
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::bool, v1: core::bool
+Initial refs:
+Statements:
+  (v2: core::bool) <- test::inline_bool_xor(v0, v1)
+End:
+  Callsite(v2)
+
+//! > lowering_flat
+blk0:
+Inputs: v3: core::bool, v4: core::bool
+Initial refs:
+Statements:
+  (v5: core::bool) <- core::bool_xor_impl(v3, v4)
+End:
+  Callsite(v5)
+
+blk1 (root):
+Inputs: v0: core::bool, v1: core::bool
+Initial refs:
+Statements:
+  (v2: core::bool) <- blk0()
+End:
+  Callsite(v2)
+
+//! > inlining_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::bool, v1: core::bool
+Initial refs:
+Statements:
+  (v2: core::bool) <- test::inline_bool_xor(v0, v1)
+End:
+  Callsite(v2)
+
+//! > after
+blk0:
+Inputs: v3: core::bool, v4: core::bool
+Initial refs:
+Statements:
+  (v5: core::bool) <- core::bool_xor_impl(v3, v4)
+End:
+  Callsite(v5)
+
+blk1 (root):
+Inputs: v0: core::bool, v1: core::bool
+Initial refs:
+Statements:
+  (v2: core::bool) <- blk0()
+End:
+  Callsite(v2)
+
+//! > ==========================================================================
+
+//! > Test inlining with ref args.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(mut a: felt) -> felt {
+  bar(a)
+  a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn bar(ref a: felt) {
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v2: core::felt, v1: ()) <- test::bar(v0)
+End:
+  Callsite(v2)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+End:
+  Callsite(v2)
+
+//! > inlining_diagnostics
+error: Inlining failed: Cannot inline a function with ref arguments.
+ --> lib.cairo:1:1
+#[inline]
+^*******^
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v2: core::felt, v1: ()) <- test::bar(v0)
+End:
+  Callsite(v2)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+End:
+  Callsite(v2)
+
+//! > ==========================================================================
+
+//! > Test inlining with early return.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt) -> felt {
+  bar(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn bar(a: felt) -> felt {
+    if a == 1 {
+      return 1;
+    }
+    return 0;
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Callsite(v1)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+End:
+  Callsite(v1)
+
+//! > inlining_diagnostics
+error: Inlining failed: Cannot inline a function an early return.
+ --> lib.cairo:1:1
+#[inline]
+^*******^
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Callsite(v1)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+End:
+  Callsite(v1)

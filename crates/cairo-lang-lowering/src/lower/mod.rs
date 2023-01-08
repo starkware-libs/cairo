@@ -31,6 +31,7 @@ use crate::StructuredLowered;
 pub mod context;
 mod external;
 pub mod implicits;
+pub mod inline;
 mod lower_if;
 mod scope;
 mod semantic_map;
