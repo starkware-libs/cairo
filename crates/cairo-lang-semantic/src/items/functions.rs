@@ -1,5 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, ParamLongId};
+use cairo_lang_defs::ids::{
+    ExternFunctionId, FreeFunctionId, GenericFunctionId, GenericParamId, ParamLongId,
+};
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
@@ -43,6 +45,17 @@ impl FunctionId {
         try_extract_matches!(
             db.lookup_intern_function(*self).function.generic_function,
             GenericFunctionId::Extern
+        )
+    }
+
+    /// Returns the FreeFunctionId if this is an free function. Otherwise returns none.
+    pub fn try_get_free_function_id(
+        &self,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> Option<FreeFunctionId> {
+        try_extract_matches!(
+            db.lookup_intern_function(*self).function.generic_function,
+            GenericFunctionId::Free
         )
     }
 }
