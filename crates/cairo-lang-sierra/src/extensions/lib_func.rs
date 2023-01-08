@@ -322,6 +322,12 @@ impl From<ConcreteTypeId> for ParamSignature {
 pub enum OutputVarReferenceInfo {
     /// The output value is exactly the same as one of the parameters.
     SameAsParam { param_idx: usize },
+    /// The output value is a part of one of the parameters.
+    /// For example, it may be the first element of a struct.
+    ///
+    /// Information, such as whether the parameter was a temporary or local variable, will be
+    /// copied to the output variable.
+    PartialParam { param_idx: usize },
     /// The output was allocated as a temporary variable.
     /// For the outputs that are at the top of the stack (contiguously), contains the index of the
     /// temporary variable in the stack (0 is the lowest variable).

@@ -216,7 +216,7 @@ impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
             .map(|ty| BranchSignature {
                 vars: vec![OutputVarInfo {
                     ty,
-                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                 }],
                 ap_change: SierraApChange::Known { new_vars_only: true },
             })

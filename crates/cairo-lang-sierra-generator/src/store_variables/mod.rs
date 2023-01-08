@@ -19,7 +19,8 @@ use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::store_variables::known_stack::KnownStack;
 use crate::utils::{
-    rename_libfunc_id, simple_statement, store_local_libfunc_id, store_temp_libfunc_id,
+    dup_libfunc_id, rename_libfunc_id, simple_statement, store_local_libfunc_id,
+    store_temp_libfunc_id,
 };
 
 /// A map from variables that should be stored as local to their allocated
@@ -269,7 +270,9 @@ impl<'a> AddStoreVariableStatements<'a> {
         // Optimization: check if there is a prefix of `push_values` that is already on the stack.
         let prefix_size = self.known_stack().compute_on_stack_prefix_size(push_values);
 
-        for (i, pre_sierra::PushValue { var, var_on_stack, ty }) in push_values.iter().enumerate() {
+        for (i, pre_sierra::PushValue { var, var_on_stack, ty, dup_var }) in
+            push_values.iter().enumerate()
+        {
             let should_rename = if self.state().deferred_variables.contains_key(var) {
                 // Convert the deferred variable into a temporary variable, by calling
                 // `prepare_libfunc_argument`.
@@ -280,6 +283,14 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // Check if this is part of the prefix. If it is, rename instead of adding
                 // `store_temp`.
                 i < prefix_size
+            };
+
+            // Duplicate the variable if needed.
+            let var = if let Some(dup_var) = dup_var {
+                self.dup(var, dup_var, ty);
+                dup_var
+            } else {
+                var
             };
 
             if should_rename {
@@ -394,6 +405,21 @@ impl<'a> AddStoreVariableStatements<'a> {
         ));
     }
 
+    /// Adds a call to the dup() libfunc, duplicating `var` into `dup_var`.
+    fn dup(
+        &mut self,
+        var: &cairo_lang_sierra::ids::VarId,
+        dup_var: &cairo_lang_sierra::ids::VarId,
+        ty: &cairo_lang_sierra::ids::ConcreteTypeId,
+    ) {
+        self.result.push(simple_statement(
+            dup_libfunc_id(self.db, ty.clone()),
+            &[var.clone()],
+            &[var.clone(), dup_var.clone()],
+        ));
+    }
+
+    /// Adds a call to the rename() libfunc, renaming `src` to `dst`.
     fn rename_var(
         &mut self,
         src: &cairo_lang_sierra::ids::VarId,

@@ -1,4 +1,5 @@
 use cairo_lang_defs::ids::FreeFunctionId;
+use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
 use cairo_lang_utils::{define_short_id, write_comma_separated};
@@ -26,7 +27,7 @@ impl std::fmt::Display for LabelId {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Function {
     /// The source function which was compiled.
-    pub id: cairo_lang_sierra::ids::FunctionId,
+    pub id: sierra::ids::FunctionId,
     /// Number of statements in the body that are the function prolog, including the label and the
     /// local variables definition.
     pub prolog_size: usize,
@@ -37,7 +38,7 @@ pub struct Function {
     /// The parameters for the function.
     pub parameters: Vec<program::Param>,
     /// The return types from the function.
-    pub ret_types: Vec<cairo_lang_sierra::ids::ConcreteTypeId>,
+    pub ret_types: Vec<sierra::ids::ConcreteTypeId>,
 }
 
 /// Represents a pre-sierra statement - a statement before label-resolution.
@@ -68,7 +69,13 @@ impl std::fmt::Display for Statement {
                 write!(f, ") -> (")?;
                 write_comma_separated(
                     f,
-                    values.iter().map(|PushValue { var_on_stack, .. }| var_on_stack),
+                    values.iter().map(|PushValue { var_on_stack, dup_var, .. }| {
+                        if let Some(dup_var) = dup_var {
+                            format!("{var_on_stack} {dup_var}")
+                        } else {
+                            format!("{var_on_stack}")
+                        }
+                    }),
                 )?;
                 write!(f, ")")
             }
@@ -81,11 +88,13 @@ impl std::fmt::Display for Statement {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PushValue {
     /// The variable id to push.
-    pub var: cairo_lang_sierra::ids::VarId,
+    pub var: sierra::ids::VarId,
     /// The variable id on the stack (e.g., the result of `store_temp()`).
-    pub var_on_stack: cairo_lang_sierra::ids::VarId,
+    pub var_on_stack: sierra::ids::VarId,
     /// The type of the variable.
     pub ty: ConcreteTypeId,
+    /// Indicates whether the variable should be duplicated before pushing it.
+    pub dup_var: Option<sierra::ids::VarId>,
 }
 
 /// Represents a pre-sierra label.

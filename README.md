@@ -71,9 +71,9 @@ Run Cairo code directly:
 cargo run --bin cairo-run -- -p /path/to/file.cairo
 ```
 
-See more information [here](./crates/cairo-runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.
+See more information [here](./crates/cairo-lang-runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.
 
-For running tests specifically, see here: [cairo-test](./crates/cairo-test-runner/README.md)
+For running tests specifically, see here: [cairo-test](./crates/cairo-lang-test-runner/README.md)
 
 ### Development
 

@@ -287,10 +287,10 @@ fn compute_expr_function_call_semantic(
         ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path, NotFoundItemType::Function)?;
     let args_syntax = syntax.arguments(syntax_db);
     let arg_exprs: Vec<_> = args_syntax
-        .expressions(syntax_db)
+        .args(syntax_db)
         .elements(syntax_db)
         .into_iter()
-        .map(|arg_syntax| compute_expr_semantic(ctx, &arg_syntax))
+        .map(|arg_syntax| compute_expr_semantic(ctx, &arg_syntax.value(syntax_db)))
         .collect();
     match item {
         ResolvedConcreteItem::Function(function) => {

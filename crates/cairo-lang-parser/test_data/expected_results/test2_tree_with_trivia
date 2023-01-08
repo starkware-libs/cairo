@@ -551,24 +551,28 @@
     │           │   │       │       │           │           ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │           │           ├── token (kind: TokenIdentifier): 'foo'
     │           │   │       │       │           │           └── trailing_trivia (kind: Trivia) []
-    │           │   │       │       │           └── arguments (kind: ExprListParenthesized)
+    │           │   │       │       │           └── arguments (kind: ArgListParenthesized)
     │           │   │       │       │               ├── lparen (kind: TerminalLParen)
     │           │   │       │       │               │   ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │               │   ├── token (kind: TokenLParen): '('
     │           │   │       │       │               │   └── trailing_trivia (kind: Trivia) []
-    │           │   │       │       │               ├── expressions (kind: ExprList)
-    │           │   │       │       │               │   ├── item #0 (kind: TerminalLiteralNumber)
-    │           │   │       │       │               │   │   ├── leading_trivia (kind: Trivia) []
-    │           │   │       │       │               │   │   ├── token (kind: TokenLiteralNumber): '1'
-    │           │   │       │       │               │   │   └── trailing_trivia (kind: Trivia) []
+    │           │   │       │       │               ├── args (kind: ArgList)
+    │           │   │       │       │               │   ├── item #0 (kind: Arg)
+    │           │   │       │       │               │   │   ├── name (kind: OptionArgNameClauseEmpty) []
+    │           │   │       │       │               │   │   └── value (kind: TerminalLiteralNumber)
+    │           │   │       │       │               │   │       ├── leading_trivia (kind: Trivia) []
+    │           │   │       │       │               │   │       ├── token (kind: TokenLiteralNumber): '1'
+    │           │   │       │       │               │   │       └── trailing_trivia (kind: Trivia) []
     │           │   │       │       │               │   ├── separator #0 (kind: TerminalComma)
     │           │   │       │       │               │   │   ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │               │   │   ├── token (kind: TokenComma): ','
     │           │   │       │       │               │   │   └── trailing_trivia (kind: Trivia) []
-    │           │   │       │       │               │   └── item #1 (kind: TerminalLiteralNumber)
-    │           │   │       │       │               │       ├── leading_trivia (kind: Trivia) []
-    │           │   │       │       │               │       ├── token (kind: TokenLiteralNumber): '3'
-    │           │   │       │       │               │       └── trailing_trivia (kind: Trivia) []
+    │           │   │       │       │               │   └── item #1 (kind: Arg)
+    │           │   │       │       │               │       ├── name (kind: OptionArgNameClauseEmpty) []
+    │           │   │       │       │               │       └── value (kind: TerminalLiteralNumber)
+    │           │   │       │       │               │           ├── leading_trivia (kind: Trivia) []
+    │           │   │       │       │               │           ├── token (kind: TokenLiteralNumber): '3'
+    │           │   │       │       │               │           └── trailing_trivia (kind: Trivia) []
     │           │   │       │       │               └── rparen (kind: TerminalRParen)
     │           │   │       │       │                   ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │                   ├── token (kind: TokenRParen): ')'
