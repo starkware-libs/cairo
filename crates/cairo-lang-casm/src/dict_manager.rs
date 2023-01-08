@@ -28,23 +28,27 @@ impl DictTrackerExecScope {
 
 impl DictManagerExecScope {
     pub const DICT_DEFAULT_VALUE: usize = 0;
+
     /// Allocates a new segment for a new dictionary and return the start of the segment.
     pub fn new_default_dict(&mut self, vm: &mut VirtualMachine) -> Relocatable {
         let dict_segment = vm.add_memory_segment();
         assert!(
-            !self.trackers.contains_key(&dict_segment.segment_index),
+            self.trackers
+                .insert(dict_segment.segment_index, DictTrackerExecScope::new(self.trackers.len()))
+                .is_none(),
             "Segment index already in use."
         );
-        self.trackers
-            .insert(dict_segment.segment_index, DictTrackerExecScope::new(self.trackers.len()));
+
         dict_segment
     }
+
     /// Returns a reference for a dict tracker corresponding to a given pointer to a dict segment.
     fn get_dict_tracker(&self, dict_end: Relocatable) -> &DictTrackerExecScope {
         self.trackers
             .get(&dict_end.segment_index)
             .expect("The given value does not point to a known dictionary.")
     }
+
     /// Returns a mut reference for a dict tracker corresponding to a given pointer to a dict
     /// segment.
     fn get_dict_tracker_mut(&mut self, dict_end: Relocatable) -> &mut DictTrackerExecScope {
@@ -52,14 +56,17 @@ impl DictManagerExecScope {
             .get_mut(&dict_end.segment_index)
             .expect("The given value does not point to a known dictionary.")
     }
+
     /// Returns the index of the dict tracker corresponding to a given pointer to a dict segment.
     pub fn get_dict_infos_index(&self, dict_end: Relocatable) -> usize {
         self.get_dict_tracker(dict_end).idx
     }
+
     /// Inserts a value to the dict tracker corresponding to a given pointer to a dict segment.
     pub fn insert_to_tracker(&mut self, dict_end: Relocatable, key: BigInt, value: BigInt) {
         self.get_dict_tracker_mut(dict_end).data.insert(key, value);
     }
+
     /// Gets a value from the dict tracker corresponding to a given pointer to a dict segment.
     /// None if the key does not exist in the tracker data.
     pub fn get_from_tracker(&self, dict_end: Relocatable, key: &BigInt) -> Option<BigInt> {
