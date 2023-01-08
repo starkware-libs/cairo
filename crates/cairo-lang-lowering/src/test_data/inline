@@ -1,0 +1,130 @@
+//! > Test function inlining.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(a: bool, b: bool) -> bool {
+  inline_bool_xor(a, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn inline_bool_xor(a: bool, b: bool) -> bool implicits() nopanic  {
+  let (r,) = bool_xor_impl(a, b);
+  r
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+
+//! > lowering_structured
+blk0:
+Inputs: v2: core::bool, v3: core::bool
+Initial refs:
+Statements:
+  (v4: core::bool) <- core::bool_xor_impl(v2, v3)
+End:
+  Callsite(v4)
+
+blk1 (root):
+Inputs: v0: core::bool, v1: core::bool
+Initial refs:
+Statements:
+  (v5: core::bool) <- blk0()
+End:
+  Callsite(v5)
+
+//! > lowering_flat
+blk0:
+Inputs: v2: core::bool, v3: core::bool
+Statements:
+  (v4: core::bool) <- core::bool_xor_impl(v2, v3)
+End:
+  Callsite(v4)
+
+blk1 (root):
+Inputs: v0: core::bool, v1: core::bool
+Statements:
+  (v5: core::bool) <- blk0()
+End:
+  Callsite(v5)
+
+//! > ==========================================================================
+
+//! > Test inlining with ref args.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(mut a: felt) -> felt {
+  bar(a)
+  a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn bar(ref a: felt) {
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Inlining faild: Cannot inline a function an early return.
+ --> lib.cairo:5:3
+  bar(a)
+  ^****^
+
+//! > lowering_format
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test inlining with early return.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(a: felt) -> felt {
+  bar(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn bar(a: felt) -> felt {
+    if a == 1 {
+      return 1;
+    }
+    return 0;
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Inlining faild: Cannot inline a function with ref arguments.
+ --> lib.cairo:9:3
+  bar(a)
+  ^****^
+
+//! > lowering_format
+
+//! > lowering_structured
+
+//! > lowering_flat

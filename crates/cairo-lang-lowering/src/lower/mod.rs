@@ -26,11 +26,14 @@ use self::variables::LivingVar;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::LoweringContextBuilder;
+use crate::lower::scope::generators::CallBlockResult;
+use crate::lower::scope::BlockEndInfo;
 use crate::StructuredLowered;
 
 pub mod context;
 mod external;
 pub mod implicits;
+mod inline;
 mod lower_if;
 mod scope;
 mod semantic_map;
@@ -439,6 +442,7 @@ fn lower_expr_function_call(
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()
         .unzip();
+
     let callee_implicit_types =
         ctx.db.function_all_implicits(expr.function).map_err(LoweringFlowError::Failed)?;
     let implicits = callee_implicit_types
@@ -447,6 +451,9 @@ fn lower_expr_function_call(
         .collect::<Option<Vec<_>>>()
         .to_maybe()
         .map_err(LoweringFlowError::Failed)?;
+
+    let has_ref_arguments = !implicits.is_empty() || !ref_inputs.is_empty();
+
     // TODO(orizi): Support ref args that are not the first arguments.
     let inputs = chain!(implicits, ref_inputs, arg_inputs.into_iter()).collect();
 
@@ -496,6 +503,51 @@ fn lower_expr_function_call(
 
     let may_panic = ctx.db.function_may_panic(expr.function).map_err(LoweringFlowError::Failed)?;
     let expr_ty = if may_panic { get_panic_ty(ctx.db.upcast(), expr.ty) } else { expr.ty };
+
+    // The following is relevant only to free functions.
+    if let Some(free_function_id) = expr.function.try_get_free_function_id(ctx.db.upcast()) {
+        let inline = ctx
+            .db
+            .free_function_declaration_attributes(free_function_id)
+            .map_err(LoweringFlowError::Failed)?
+            .iter()
+            .any(|attr| attr.id == "inline");
+
+        if inline {
+            let lowered = ctx
+                .db
+                .free_function_lowered_structured(free_function_id)
+                .map_err(LoweringFlowError::Failed)?;
+
+            if has_ref_arguments {
+                return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
+                    expr.stable_ptr.untyped(),
+                    InliningFailed {
+                        reason: "Cannot inline a function an early return.".to_string(),
+                    },
+                )));
+            }
+
+            let block = inline::inline_function(ctx, expr, &lowered)?;
+
+            // Emit the statement.
+            let block_result = generators::CallBlock {
+                block,
+                end_info: BlockEndInfo::Callsite {
+                    maybe_output_ty: Some(expr.ty),
+                    push_tys: vec![],
+                },
+            }
+            .add(ctx, scope);
+
+            let var = match block_result {
+                CallBlockResult::Callsite { pushes: _, maybe_output: Some(var) } => var,
+                _ => panic!("Unexpected block result."),
+            };
+
+            return Ok(LoweredExpr::AtVariable(var));
+        }
+    }
 
     let (implicit_outputs, ref_outputs, res) =
         perform_function_call(ctx, scope, expr.function, inputs, ref_tys, expr_ty)?;
