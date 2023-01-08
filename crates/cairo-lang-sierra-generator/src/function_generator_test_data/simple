@@ -1,0 +1,39 @@
+//! > Simple function call
+
+//! > test_function_name
+test_function_generator
+
+//! > function
+fn foo(a: felt, b: felt) -> felt {
+    let b = felt_add(a, 5);
+    bar(b, b, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(x: felt, y: felt, z: felt) -> felt {
+    0
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label1:
+drop<felt>([1]) -> ()
+felt_const<5>() -> ([2])
+felt_add([0], [2]) -> ([3])
+store_temp<felt>([3]) -> ([3])
+dup<felt>([3]) -> ([3], [5])
+rename<felt>([5]) -> ([6])
+dup<felt>([3]) -> ([3], [7])
+store_temp<felt>([7]) -> ([8])
+store_temp<felt>([3]) -> ([9])
+function_call<user@test::bar>([6], [8], [9]) -> ([4])
+rename<felt>([4]) -> ([10])
+return([10])
