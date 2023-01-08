@@ -12,6 +12,7 @@ cairo_lang_test_utils::test_file_test!(
     "e2e_test_data/libfuncs",
     {
         array: "array",
+        bitwise: "bitwise",
         box_: "box",
         builtin_costs: "builtin_costs",
         dict_felt_to: "dict_felt_to",
