@@ -82,8 +82,7 @@ impl State {
     ) {
         let mut is_deferred: Option<DeferredVariableKind> = None;
         let mut is_temp_var: bool = false;
-
-        self.known_stack.remove_variable(&res);
+        let mut add_to_known_stack: Option<isize> = None;
 
         match &output_info.ref_info {
             OutputVarReferenceInfo::Deferred(kind) => {
@@ -94,9 +93,7 @@ impl State {
                 });
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
-                if let Some(idx) = idx {
-                    self.known_stack.insert(res.clone(), *idx);
-                }
+                add_to_known_stack = idx.map(|idx| idx.try_into().unwrap());
                 is_temp_var = true;
             }
             OutputVarReferenceInfo::SameAsParam { param_idx }
@@ -105,8 +102,9 @@ impl State {
                 if let Some(deferred_info) = self.deferred_variables.get(arg) {
                     is_deferred = Some(deferred_info.kind);
                 }
-                if self.temporary_variables.get(arg).is_some() {
-                    is_temp_var = true;
+                is_temp_var = self.temporary_variables.get(arg).is_some();
+                if matches!(output_info.ref_info, OutputVarReferenceInfo::SameAsParam { .. }) {
+                    add_to_known_stack = self.known_stack.get(arg);
                 }
             }
             OutputVarReferenceInfo::NewLocalVar => {}
@@ -114,6 +112,7 @@ impl State {
 
         self.deferred_variables.swap_remove(&res);
         self.temporary_variables.swap_remove(&res);
+        self.known_stack.remove_variable(&res);
 
         if let Some(deferred_variable_info_kind) = is_deferred {
             self.deferred_variables.insert(
@@ -126,7 +125,11 @@ impl State {
         }
 
         if is_temp_var {
-            self.temporary_variables.insert(res, output_info.ty.clone());
+            self.temporary_variables.insert(res.clone(), output_info.ty.clone());
+        }
+
+        if let Some(idx) = add_to_known_stack {
+            self.known_stack.insert_signed(res, idx);
         }
     }
 

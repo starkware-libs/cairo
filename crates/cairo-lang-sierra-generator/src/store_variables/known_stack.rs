@@ -32,7 +32,21 @@ impl KnownStack {
     /// Marks that the given variable appears on slot `idx` of the stack (note that `0` here means
     /// that the address is `ap`, and other indices will have larger addresses).
     pub fn insert(&mut self, var: cairo_lang_sierra::ids::VarId, idx: usize) {
-        self.variables_on_stack.insert(var, self.offset + idx);
+        self.insert_signed(var, idx.try_into().unwrap())
+    }
+
+    /// Same as [Self::insert], except that `idx` is `isize`.
+    pub fn insert_signed(&mut self, var: cairo_lang_sierra::ids::VarId, idx: isize) {
+        let ioffset: isize = self.offset.try_into().unwrap();
+        self.variables_on_stack.insert(var, (ioffset + idx).try_into().unwrap());
+    }
+
+    /// Returns the slot `idx` of the stack in which the given variable appears, or `None` if it is
+    /// not on the known stack.
+    pub fn get(&mut self, var: &cairo_lang_sierra::ids::VarId) -> Option<isize> {
+        let ioffset: isize = self.offset.try_into().unwrap();
+        let val: isize = (*self.variables_on_stack.get(var)?).try_into().unwrap();
+        Some(val - ioffset)
     }
 
     /// Adds a value to the top of the stack, and advances `ap` accordingly (more precisely,
@@ -42,7 +56,7 @@ impl KnownStack {
         self.offset += 1;
     }
 
-    // If `src` is on the known stack, marks `dst` as located in the same cell.
+    /// If `src` is on the known stack, marks `dst` as located in the same cell.
     pub fn clone_if_on_stack(
         &mut self,
         src: &cairo_lang_sierra::ids::VarId,

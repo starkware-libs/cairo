@@ -199,7 +199,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
             ],
-            SierraApChange::Known { new_vars_only: false },
+            SierraApChange::Known { new_vars_only: true },
         ),
         _ => panic!("get_branch_signatures() is not implemented for '{}'.", name),
     }
@@ -362,6 +362,28 @@ fn same_as_param() {
             "store_temp<felt>(3) -> (3)",
             "store_temp<felt>(4) -> (4)",
             "felt_add(3, 4) -> (5)",
+            "return()",
+        ]
+    );
+}
+
+#[test]
+fn same_as_param_push_value_optimization() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "store_temp<felt>", &["0"], &["1"]),
+        dummy_simple_statement(&db, "dup", &["1"], &["2", "3"]),
+        dummy_push_values(&db, &[("2", "102"), ("4", "104")]),
+        dummy_return_statement(&[]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec![
+            "store_temp<felt>(0) -> (1)",
+            "dup(1) -> (2, 3)",
+            "rename<felt>(2) -> (102)",
+            "store_temp<felt>(4) -> (104)",
             "return()",
         ]
     );
