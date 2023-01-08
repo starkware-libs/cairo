@@ -398,10 +398,10 @@ impl Display for Hint {
             Hint::AssertLeFelt4 => write!(f, "assert excluded == 2")?,
             Hint::DebugPrint { start, end } => {
                 writeln!(f)?;
-                write!(f, "let start = ")?;
+                write!(f, "start = ")?;
                 fmt_res_operand(f, start)?;
                 writeln!(f)?;
-                write!(f, "let end = ")?;
+                write!(f, "end = ")?;
                 fmt_res_operand(f, end)?;
                 writedoc!(
                     f,

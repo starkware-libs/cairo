@@ -15,8 +15,9 @@ use crate::pre_sierra;
 use crate::replace_ids::replace_sierra_ids;
 use crate::store_variables::add_store_statements;
 use crate::test_utils::{
-    dummy_jump_statement, dummy_label, dummy_push_values, dummy_return_statement,
-    dummy_simple_branch, dummy_simple_statement, SierraGenDatabaseForTesting,
+    dummy_jump_statement, dummy_label, dummy_push_values, dummy_push_values_ex,
+    dummy_return_statement, dummy_simple_branch, dummy_simple_statement,
+    SierraGenDatabaseForTesting,
 };
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
@@ -199,7 +200,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
             ],
-            SierraApChange::Known { new_vars_only: false },
+            SierraApChange::Known { new_vars_only: true },
         ),
         _ => panic!("get_branch_signatures() is not implemented for '{}'.", name),
     }
@@ -217,7 +218,7 @@ fn test_add_store_statements(
     add_store_statements(
         db,
         statements,
-        &(|libfunc| LibfuncInfo { signature: get_lib_func_signature(db, libfunc), is_drop: false }),
+        &(|libfunc| LibfuncInfo { signature: get_lib_func_signature(db, libfunc) }),
         local_variables,
     )
     .iter()
@@ -367,6 +368,28 @@ fn same_as_param() {
     );
 }
 
+#[test]
+fn same_as_param_push_value_optimization() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "store_temp<felt>", &["0"], &["1"]),
+        dummy_simple_statement(&db, "dup", &["1"], &["2", "3"]),
+        dummy_push_values(&db, &[("2", "102"), ("4", "104")]),
+        dummy_return_statement(&[]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec![
+            "store_temp<felt>(0) -> (1)",
+            "dup(1) -> (2, 3)",
+            "rename<felt>(2) -> (102)",
+            "store_temp<felt>(4) -> (104)",
+            "return()",
+        ]
+    );
+}
+
 /// Tests that storing the result of an if as a local variable works correctly.
 ///
 /// For example:
@@ -444,6 +467,41 @@ fn store_temp_push_values() {
             "store_temp<felt>(6) -> (103)",
             "nope() -> ()",
             "return(6)",
+        ]
+    );
+}
+
+/// Tests the behavior of the [PushValues](pre_sierra::Statement::PushValues) statement with
+/// [dup_var](pre_sierra::Statement::PushValues::dup_var).
+#[test]
+fn store_temp_push_values_with_dup() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_push_values_ex(
+            &db,
+            &[
+                // Deferred with dup.
+                ("2", "102", Some("202")),
+                // Temporary variable with dup.
+                ("0", "100", Some("200")),
+            ],
+        ),
+        dummy_return_statement(&[]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec![
+            "felt_add(0, 1) -> (2)",
+            "nope() -> ()",
+            "store_temp<felt>(2) -> (2)",
+            "dup<felt>(2) -> (2, 202)",
+            "rename<felt>(202) -> (102)",
+            "dup<felt>(0) -> (0, 200)",
+            "store_temp<felt>(200) -> (100)",
+            "return()",
         ]
     );
 }
@@ -631,39 +689,6 @@ fn push_values_early_return() {
 
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
-fn store_temp_gets_deferred() {
-    let db = SierraGenDatabaseForTesting::default();
-    let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
-        dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_simple_statement(&db, "store_temp<felt>", &["2"], &["3"]),
-        dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_simple_statement(&db, "felt_add", &["2", "2"], &["4"]),
-        dummy_simple_statement(&db, "felt_add", &["3", "3"], &["6"]),
-        dummy_return_statement(&["0"]),
-    ];
-
-    assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default()),
-        vec![
-            "felt_add(0, 1) -> (2)",
-            "nope() -> ()",
-            // Explicit call to store_temp() is not preceded by an implicit store_temp().
-            "store_temp<felt>(2) -> (3)",
-            "nope() -> ()",
-            // Since var 2 is still deferred an implicit store_temp() is added before felt_add().
-            "store_temp<felt>(2) -> (2)",
-            "felt_add(2, 2) -> (4)",
-            // Var 3 is already on the stack.
-            "felt_add(3, 3) -> (6)",
-            // Return.
-            "return(0)",
-        ]
-    );
-}
-
-/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
-#[test]
 fn consecutive_const_additions() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
@@ -724,8 +749,6 @@ fn consecutive_const_additions_with_branch() {
             "felt_add3(2) -> (3)",
             // There is no need to add a store_temp() instruction between two `felt_add3()`.
             "felt_add3(3) -> (4)",
-            // TODO(orizi): Prevent this store from occuring, as the variable won't be used.
-            "store_temp<felt>(3) -> (3)",
             "store_temp<felt>(4) -> (4)",
             "branch() { label0() fallthrough() }",
             "label0:",

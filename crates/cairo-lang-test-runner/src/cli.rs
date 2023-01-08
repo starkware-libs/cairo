@@ -35,9 +35,18 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The file to compile and run.
+    /// The path to compile and run its tests.
     #[arg(short, long)]
     path: String,
+    /// The filter for the tests, running only tests containing the filter string.
+    #[arg(short, long, default_value_t = String::default())]
+    filter: String,
+    /// Should we run ignored tests as well.
+    #[arg(long, default_value_t = false)]
+    include_ignored: bool,
+    /// Should we run only the ignored tests.
+    #[arg(long, default_value_t = false)]
+    ignored: bool,
     /// Should we add the starknet plugin to run the tests.
     #[arg(long, default_value_t = false)]
     starknet: bool,
@@ -76,9 +85,14 @@ fn main() -> anyhow::Result<()> {
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
     let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
+    let total_tests_count = all_tests.len();
     let named_tests = all_tests
         .into_iter()
-        .map(|test| {
+        .map(|mut test| {
+            // Un-ignoring all the tests in `include-ignored` mode.
+            if args.include_ignored {
+                test.ignored = false;
+            }
             (
                 format!(
                     "{:?}",
@@ -93,12 +107,16 @@ fn main() -> anyhow::Result<()> {
                 test,
             )
         })
+        .filter(|(name, _)| name.contains(&args.filter))
+        // Filtering unignored tests in `ignored` mode.
+        .filter(|(_, test)| !args.ignored || test.ignored)
         .collect_vec();
+    let filtered_out = total_tests_count - named_tests.len();
     let TestsSummary { passed, failed, ignored, failed_run_results } =
         run_tests(named_tests, sierra_program)?;
     if failed.is_empty() {
         println!(
-            "test result: {}. {} passed; {} failed; {} ignored",
+            "test result: {}. {} passed; {} failed; {} ignored; {filtered_out} filtered out;",
             "ok".bright_green(),
             passed.len(),
             failed.len(),

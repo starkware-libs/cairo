@@ -1,0 +1,50 @@
+//! > Match with dup
+
+//! > test_function_name
+test_function_generator
+
+//! > function
+fn foo(a: felt) {
+    let (x, y) = if a == 0 {
+        (a, a)
+    } else {
+        (a, a)
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label0:
+dup<felt>([0]) -> ([0], [1])
+felt_jump_nz([1]) { fallthrough() label1([2]) }
+branch_align() -> ()
+dup<felt>([0]) -> ([0], [3])
+struct_construct<Tuple<felt, felt>>([3], [0]) -> ([4])
+store_temp<Tuple<felt, felt>>([4]) -> ([4])
+rename<Tuple<felt, felt>>([4]) -> ([5])
+jump() { label2() }
+label1:
+branch_align() -> ()
+drop<NonZero<felt>>([2]) -> ()
+dup<felt>([0]) -> ([0], [6])
+struct_construct<Tuple<felt, felt>>([6], [0]) -> ([7])
+store_temp<Tuple<felt, felt>>([7]) -> ([7])
+rename<Tuple<felt, felt>>([7]) -> ([5])
+label2:
+struct_deconstruct<Tuple<felt, felt>>([5]) -> ([8], [9])
+drop<felt>([8]) -> ()
+drop<felt>([9]) -> ()
+struct_construct<Unit>() -> ([10])
+store_temp<Unit>([10]) -> ([10])
+rename<Unit>([10]) -> ([11])
+return([11])

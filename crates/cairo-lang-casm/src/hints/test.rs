@@ -103,8 +103,8 @@ fn test_debug_hint_format() {
         Hint::DebugPrint { start: res!([ap + 6]), end: res!([fp - 8]) }.to_string(),
         indoc! {"
 
-            let start = memory[ap + 6]
-            let end = memory[fp + -8]
+            start = memory[ap + 6]
+            end = memory[fp + -8]
             for i in range(start, end):
                 print(memory[i])
         "}

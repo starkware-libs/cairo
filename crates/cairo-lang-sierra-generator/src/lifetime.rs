@@ -20,9 +20,33 @@ pub enum DropLocation {
     PostStatement(StatementLocation),
 }
 
+/// Represents a location where a variable is being used.
+/// Contains the statement location, and the index of the argument within this statement.
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+pub struct UseLocation {
+    /// The statement where the variable is used.
+    pub statement_location: StatementLocation,
+    /// The index of the argument within the statement.
+    pub idx: usize,
+}
+
+impl Debug for UseLocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({:?}, {})", self.statement_location, self.idx)
+    }
+}
+
+/// Represents a Sierra variable by its corresponding lowering [VariableId].
+///
+/// For example, uninitialized local variables do not have a representation as lowering
+/// [VariableId], since they are created in the sierra-generation phase.
+/// Instead, we refer to it as [SierraGenVar::UninitializedLocal] by the actual local variable
+/// (not the uninitialized version).
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub enum SierraGenVar {
+    /// Represents a regular variable.
     LoweringVar(VariableId),
+    /// Represents an uninitialized local variable, by the corresponding local variable.
     UninitializedLocal(VariableId),
 }
 
@@ -44,14 +68,14 @@ impl Debug for SierraGenVar {
 /// Information returned by [find_variable_lifetime] regarding the lifetime of variables.
 #[derive(Default)]
 pub struct VariableLifetimeResult {
-    /// A map from [VariableId] to the statements where it is used, but not required after.
+    /// A set of [UseLocation] where a variable is used, but not required after.
     ///
     /// Note that a variable may be mentioned twice. For example, when it's last used within two
     /// branches.
     ///
     /// StatementLocation may point to a nonexisting statement after the end of the block -
     /// this means that the last use was in `block.end`.
-    pub last_use: OrderedHashMap<VariableId, Vec<StatementLocation>>,
+    pub last_use: OrderedHashSet<UseLocation>,
     /// A map from [DropLocation] to the list of variables that should be dropped at this location.
     pub drops: OrderedHashMap<DropLocation, Vec<SierraGenVar>>,
 }
@@ -251,15 +275,16 @@ impl VariableLifetimeState {
         var_ids: &[VariableId],
         statement_location: StatementLocation,
     ) {
-        for var_id in var_ids {
+        // Iterate over the variables in reverse order, since we want the last use of each variable.
+        for (idx, var_id) in var_ids.iter().enumerate().rev() {
             let sierra_gen_var = SierraGenVar::LoweringVar(*var_id);
             if self.used_variables.insert(sierra_gen_var) {
                 // This is the last use of the variable.
-                if let Some(statement_locations) = context.res.last_use.get_mut(var_id) {
-                    statement_locations.push(statement_location);
-                } else {
-                    context.res.last_use.insert(*var_id, vec![statement_location]);
-                }
+                let use_location = UseLocation { statement_location, idx };
+                assert!(
+                    context.res.last_use.insert(use_location),
+                    "Internal compiler error: UseLocation {use_location:?} visited more than once."
+                );
             }
         }
     }
