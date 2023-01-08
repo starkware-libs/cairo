@@ -7,6 +7,7 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::lower::Lowered;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_sierra::extensions::lib_func::OutputVarInfo;
+use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::zip_eq;
@@ -303,16 +304,14 @@ impl LocalVariablesState {
     ) {
         for (var_id, var_info) in zip_eq(var_ids, var_infos) {
             match var_info.ref_info {
-                cairo_lang_sierra::extensions::OutputVarReferenceInfo::SameAsParam {
-                    param_idx,
-                } => {
+                OutputVarReferenceInfo::SameAsParam { param_idx }
+                | OutputVarReferenceInfo::PartialParam { param_idx } => {
                     self.set_variable_status(*var_id, VariableStatus::Alias(params[param_idx]));
                 }
-                cairo_lang_sierra::extensions::OutputVarReferenceInfo::NewTempVar { .. }
-                | cairo_lang_sierra::extensions::OutputVarReferenceInfo::Deferred(_) => {
+                OutputVarReferenceInfo::NewTempVar { .. } | OutputVarReferenceInfo::Deferred(_) => {
                     self.set_variable_status(*var_id, VariableStatus::TemporaryVariable);
                 }
-                cairo_lang_sierra::extensions::OutputVarReferenceInfo::NewLocalVar => {}
+                OutputVarReferenceInfo::NewLocalVar => {}
             }
         }
     }
