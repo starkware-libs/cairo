@@ -6,6 +6,7 @@ mod state;
 #[cfg(test)]
 mod test;
 
+use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, SierraApChange};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
@@ -14,7 +15,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 use state::{merge_optional_states, State};
 
-use self::state::DeferredVariableKind;
+use self::state::{DeferredVariableInfo, DeferredVariableKind};
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::store_variables::known_stack::KnownStack;
@@ -31,9 +32,6 @@ pub type LocalVariables =
 /// Information about a libfunc, required by the `store_variables` module.
 pub struct LibfuncInfo {
     pub signature: LibfuncSignature,
-    /// `true` if the libfunc is `drop()`.
-    // TODO(lior): Consider removing this field after moving the dup mechanism before this phase.
-    pub is_drop: bool,
 }
 
 /// Automatically adds store_temp() statements to the given list of [pre_sierra::Statement].
@@ -102,11 +100,8 @@ impl<'a> AddStoreVariableStatements<'a> {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
                 let libfunc_info = get_lib_func_signature(invocation.libfunc_id.clone());
                 let signature = libfunc_info.signature;
-                self.prepare_libfunc_arguments(
-                    &invocation.args,
-                    &signature.param_signatures,
-                    libfunc_info.is_drop,
-                );
+                let deferred_args =
+                    self.prepare_libfunc_arguments(&invocation.args, &signature.param_signatures);
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
@@ -120,7 +115,12 @@ impl<'a> AddStoreVariableStatements<'a> {
                             SierraApChange::Known { .. } => {}
                         }
 
-                        self.state().register_outputs(results, branch_signature, &invocation.args);
+                        self.state().register_outputs(
+                            results,
+                            branch_signature,
+                            &invocation.args,
+                            &deferred_args,
+                        );
                     }
                     _ => {
                         // This starts a branch. Store all deferred variables.
@@ -140,6 +140,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                                 &branch.results,
                                 &branch_signature,
                                 &invocation.args,
+                                &deferred_args,
                             );
 
                             self.add_future_state(
@@ -179,70 +180,74 @@ impl<'a> AddStoreVariableStatements<'a> {
     }
 
     /// Prepares the given `args` to be used as arguments for a libfunc.
+    ///
+    /// Returns a map from arguments' [sierra::ids::VarId] to [DeferredVariableInfo] for arguments
+    /// that have a deferred value after the function (that is, they were not stored as
+    /// temp/local by the function).
     fn prepare_libfunc_arguments(
         &mut self,
         args: &[cairo_lang_sierra::ids::VarId],
         param_signatures: &[ParamSignature],
-        is_drop: bool,
-    ) {
+    ) -> OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo> {
+        let mut deferred_args =
+            OrderedHashMap::<sierra::ids::VarId, DeferredVariableInfo>::default();
         for (arg, param_signature) in zip_eq(args, param_signatures) {
-            self.prepare_libfunc_argument(
+            let (_, deferred) = self.prepare_libfunc_argument(
                 arg,
                 param_signature.allow_deferred,
                 param_signature.allow_add_const,
                 param_signature.allow_const,
-                is_drop,
             );
+
+            if let Some(deferred) = deferred {
+                deferred_args.insert(arg.clone(), deferred);
+            }
         }
+        deferred_args
     }
 
     /// Prepares the given `arg` to be used as an argument for a libfunc.
     ///
-    /// Returns `true` if the variable was copied to the stack.
+    /// Returns:
+    /// * whether the variable was copied to the stack.
+    /// * The [DeferredVariableInfo] if the variable has a deferred value after the function (that
+    ///   is, it was not stored as temp/local by the function).
     fn prepare_libfunc_argument(
         &mut self,
         arg: &cairo_lang_sierra::ids::VarId,
         allow_deferred: bool,
         allow_add_const: bool,
         allow_const: bool,
-        is_drop: bool,
-    ) -> bool {
+    ) -> (bool, Option<DeferredVariableInfo>) {
+        let mut res_deferred_info: Option<DeferredVariableInfo> = None;
+
         if let Some(deferred_info) = self.state().deferred_variables.get(arg).cloned() {
             match deferred_info.kind {
                 state::DeferredVariableKind::Const => {
                     if !allow_const {
-                        return self.store_deferred(arg);
+                        return (self.store_deferred(arg), None);
                     }
                 }
                 state::DeferredVariableKind::AddConst => {
                     if !allow_add_const {
-                        return self.store_deferred(arg);
+                        return (self.store_deferred(arg), None);
                     }
                 }
                 state::DeferredVariableKind::Generic => {
                     if !allow_deferred {
-                        return self.store_deferred(arg);
+                        return (self.store_deferred(arg), None);
                     }
                 }
             };
-            // In this case, the deferred value can be used directly by the libfunc and does not
-            // require a store statement. If its type is not duplicatable, or the libfunc is `drop`,
-            // we remove it from the deferred_variables map to ensure it won't be stored later.
-            let duplicatable = self
-                .db
-                .get_type_info(deferred_info.ty)
-                .expect("All types should be valid at this point.")
-                .duplicatable;
-            if is_drop || !duplicatable {
-                self.state().deferred_variables.swap_remove(arg);
-            }
+
+            res_deferred_info = self.state().deferred_variables.swap_remove(arg);
         }
 
         if self.state().temporary_variables.get(arg).is_some() {
             self.store_temp_as_local(arg);
         }
 
-        false
+        (false, res_deferred_info)
     }
 
     /// Adds a store_temp() or store_local() instruction for the given deferred variable and removes
@@ -278,7 +283,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // `prepare_libfunc_argument`.
                 // `should_rename` should be set to `true` if the variable was copied onto the
                 // stack.
-                self.prepare_libfunc_argument(var, false, false, true, false)
+                self.prepare_libfunc_argument(var, false, false, true).0
             } else {
                 // Check if this is part of the prefix. If it is, rename instead of adding
                 // `store_temp`.
