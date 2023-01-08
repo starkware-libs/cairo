@@ -106,6 +106,8 @@ pub fn generate_block_code_and_push_values(
                     var: context.get_sierra_variable(*inner_output),
                     var_on_stack: context.get_sierra_variable(*output),
                     ty,
+                    // TODO(lior): Set dup_var where needed.
+                    dup_var: None,
                 })
             }
             statements.push(pre_sierra::Statement::PushValues(push_values));
@@ -139,6 +141,8 @@ pub fn generate_return_code(
             var: context.get_sierra_variable(*returned_variable),
             var_on_stack: return_variable_on_stack,
             ty: context.get_variable_sierra_type(*returned_variable)?,
+            // TODO(lior): Set dup_var where needed.
+            dup_var: None,
         });
     }
 
@@ -223,6 +227,8 @@ fn generate_statement_call_code(
                     var,
                     var_on_stack: arg_on_stack.clone(),
                     ty: context.get_variable_sierra_type(*var_id)?,
+                    // TODO(lior): Set dup_var where needed.
+                    dup_var: None,
                 });
                 args_on_stack.push(arg_on_stack);
             }
