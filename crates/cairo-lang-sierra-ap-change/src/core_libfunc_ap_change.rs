@@ -52,7 +52,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
         CoreConcreteLibfunc::Ec(libfunc) => match libfunc {
             EcConcreteLibfunc::AddToState(_) => vec![ApChange::Known(9)],
             EcConcreteLibfunc::CreatePoint(_) => vec![ApChange::Known(6), ApChange::Known(6)],
-            EcConcreteLibfunc::FinalizeState(_) => vec![ApChange::Known(13), ApChange::Known(6)],
+            EcConcreteLibfunc::FinalizeState(_) => vec![ApChange::Known(11), ApChange::Known(3)],
             EcConcreteLibfunc::InitState(_) => vec![ApChange::Known(8)],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ApChange::Known(0)],
         },
