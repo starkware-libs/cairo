@@ -5,24 +5,23 @@ use std::path::PathBuf;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
 use cairo_lang_sierra_ap_change::calc_ap_changes;
-use cairo_lang_sierra_gas::calc_gas_info;
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use itertools::Itertools;
 
-use crate::metadata::Metadata;
+use crate::metadata::{calc_metadata, Metadata};
 
 /// Builds the metadata for a Sierra program.
 pub fn build_metadata(program: &Program, calculate_gas_info: bool) -> Metadata {
-    Metadata {
-        ap_change_info: calc_ap_changes(program).unwrap_or(ApChangeInfo {
-            function_ap_change: HashMap::default(),
-            variable_values: HashMap::default(),
-        }),
-        gas_info: if calculate_gas_info {
-            calc_gas_info(program).expect("Failed calculating gas variables.")
-        } else {
-            GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() }
-        },
+    if calculate_gas_info {
+        calc_metadata(program).expect("Failed calculating gas or ap change.")
+    } else {
+        Metadata {
+            ap_change_info: calc_ap_changes(program).unwrap_or(ApChangeInfo {
+                function_ap_change: HashMap::default(),
+                variable_values: HashMap::default(),
+            }),
+            gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
+        }
     }
 }
 

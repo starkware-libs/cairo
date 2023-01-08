@@ -43,6 +43,7 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registery creation would have already failed.");
+            // Retaining only cost tokens that are required by the function.
             core_libfunc_cost_expr::core_libfunc_cost_expr(statement_future_cost, idx, libfunc)
         },
     )?;
