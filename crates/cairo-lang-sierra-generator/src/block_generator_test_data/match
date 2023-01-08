@@ -70,14 +70,15 @@ foo
 
 //! > sierra_code
 felt_const<7>() -> ([0])
-felt_jump_nz([0]) { fallthrough() label0([1]) }
+dup<felt>([0]) -> ([0], [1])
+felt_jump_nz([1]) { fallthrough() label0([2]) }
 branch_align() -> ()
-PushValues([0]: felt) -> ([2])
+PushValues([0]: felt) -> ([3])
 jump() { label1() }
 label0:
 branch_align() -> ()
-drop<NonZero<felt>>([1]) -> ()
+drop<NonZero<felt>>([2]) -> ()
 drop<felt>([0]) -> ()
-felt_const<7>() -> ([3])
-PushValues([3]: felt) -> ([2])
+felt_const<7>() -> ([4])
+PushValues([4]: felt) -> ([3])
 label1:
