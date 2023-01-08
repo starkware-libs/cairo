@@ -28,9 +28,11 @@ pub enum MetadataError {
 
 /// Calculates the metadata for a Sierra program.
 pub fn calc_metadata(program: &Program) -> Result<Metadata, MetadataError> {
-    let token_gas_info = calc_gas_info(program, &HashSet::from([CostTokenType::Pedersen]))?;
+    let token_gas_info =
+        calc_gas_info(program, &HashSet::from_iter(CostTokenType::varying_cost().copied()))?;
     let ap_change_info = calc_ap_changes(program)?;
-    let mut gas_info = calc_gas_info(program, &HashSet::from([CostTokenType::Step]))?;
+    let mut gas_info =
+        calc_gas_info(program, &HashSet::from_iter(CostTokenType::const_cost().copied()))?;
     gas_info.variable_values.extend(token_gas_info.variable_values.into_iter());
     for (func_id, costs) in token_gas_info.function_costs.into_iter() {
         match gas_info.function_costs.entry(func_id) {

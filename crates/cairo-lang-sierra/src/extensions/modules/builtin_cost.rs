@@ -26,6 +26,16 @@ impl CostTokenType {
         [CostTokenType::Step, CostTokenType::Pedersen].iter()
     }
 
+    /// Iterator for the token types with a constant cost.
+    pub fn const_cost() -> std::slice::Iter<'static, Self> {
+        [CostTokenType::Step].iter()
+    }
+
+    /// Iterator for the token types with a varying cost.
+    pub fn varying_cost() -> std::slice::Iter<'static, Self> {
+        [CostTokenType::Pedersen].iter()
+    }
+
     /// Returns the name of the token type, in snake_case.
     pub fn name(&self) -> String {
         match self {
