@@ -50,67 +50,18 @@ fn verify_ec_point(
 
 /// Extends the CASM builder to compute the sum of two EC points and store the result in the given
 /// variables.
-/// Used in ec_add_to_state and in ec_try_finalize_state.
-/// Assumes neither point is the point at infinity, and does one of the following:
-/// 1. If the add_to_state variant is used, asserts the sum of the points is not the point at
-///    infinity (i.e. asserts p0 != -p1).
-/// 2. If the try_finalize_state variant is used, computes `p0 + (-p1)` (instead of `p0 + p1`), and
-///    if the result is the point at infinity, jumps to SumIsInfinity label.
-/// If the summed points are identical, enters an infinite loop (the computation of the sum involves
-/// division, identical points would mean we try to divide by zero).
+/// In addition to the two points, accepts the numerator (difference in Y coordinate values) and the
+/// denominator (difference in X coordinate values). Assumes the denominator is non zero.
 fn add_ec_points(
     casm_builder: &mut CasmBuilder,
     p0: (Var, Var),
     p1: (Var, Var),
-    finalize_variant: bool,
+    numerator: Var,
+    denominator: Var,
 ) -> (Var, Var) {
     let (x0, y0) = p0;
-    let (x1, y1) = p1;
+    let (x1, _) = p1;
 
-    casm_build_extend! {casm_builder,
-        // If the X coordinate is the same, either the points are equal or their sum is the point at
-        // infinity. Either way, we can't compute the slope in this case.
-        tempvar denominator = x0 - x1;
-        jump NotSameX if denominator != 0;
-    };
-
-    // X coordinate is identical. If we allow the sum to be the point at infinity, need to inject a
-    // specific check now.
-    if finalize_variant {
-        casm_build_extend! {casm_builder,
-            // In the finalize variant we compute `p0 + (-p1)`, and `-(x, y)` is `(x, -y)`. As such,
-            // the sum of the Y coordinates is `y0 - y1`.
-            tempvar sum_y = y0 - y1;
-            jump SumIsNotInfinity if sum_y != 0;
-            jump SumIsInfinity;
-            SumIsNotInfinity:
-        };
-    }
-
-    casm_build_extend! {casm_builder,
-        // X coordinate is identical; either `p0 + p1` is the point at infinity (either not allowed
-        // or already handled), or `p0 = p1`, which is not allowed (doubling).
-        InfiniteLoop:
-        jump InfiniteLoop;
-        NotSameX:
-    }
-    // If we are here, then `p0 != p1` and `p0 != -p1`. Compute the "slope"
-    // (`(y0 - y1) / (x0 - x1)`), and use the slope to compute the sum:
-    // `result_x = slope * slope - x0 - x1`
-    // `result_y = slope * (x0 - result_x) - y0`
-    // If this is the finalize variant, we must negate `y1`.
-    casm_build_extend! {casm_builder,
-        tempvar numerator;
-    };
-    if finalize_variant {
-        casm_build_extend! {casm_builder,
-            assert numerator = y0 + y1;
-        };
-    } else {
-        casm_build_extend! {casm_builder,
-            assert numerator = y0 - y1;
-        };
-    }
     casm_build_extend! {casm_builder,
         // TODO(dorimedini): Once PrimeDiv is removed, instead of the next 3 lines just do
         // `tempvar slope = numerator / denominator;`.
@@ -218,7 +169,22 @@ fn build_ec_add_to_state(
     let sx = casm_builder.add_var(ResOperand::Deref(sx.to_deref()?));
     let sy = casm_builder.add_var(ResOperand::Deref(sy.to_deref()?));
     let random_ptr = casm_builder.add_var(ResOperand::Deref(random_ptr.to_deref()?));
-    let (result_x, result_y) = add_ec_points(&mut casm_builder, (px, py), (sx, sy), false);
+
+    casm_build_extend! {casm_builder,
+        // If the X coordinate is the same, either the points are equal or their sum is the point at
+        // infinity. Either way, we can't compute the slope in this case.
+        tempvar denominator = px - sx;
+        jump NotSameX if denominator != 0;
+        // X coordinate is identical; either the sum of the points is the point at infinity (not
+        // allowed), or the points are equal, which is also not allowed (doubling).
+        InfiniteLoop:
+        jump InfiniteLoop;
+        NotSameX:
+        tempvar numerator = py - sy;
+    };
+
+    let (result_x, result_y) =
+        add_ec_points(&mut casm_builder, (px, py), (sx, sy), numerator, denominator);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[result_x, result_y, random_ptr]], None)],
@@ -242,11 +208,30 @@ fn build_ec_try_finalize_state(
     casm_build_extend! {casm_builder,
         tempvar random_x = random_ptr[0];
         tempvar random_y = random_ptr[1];
-    };
+        // If the X coordinate is the same, either the points are equal or their sum is the point at
+        // infinity. Either way, we can't compute the slope in this case.
+        // The result may be the point at infinity if the user called ec_try_finalize_state
+        // immediately after ec_init_state.
+        tempvar denominator = x - random_x;
+        jump NotSameX if denominator != 0;
+        // We compute `p0 + (-p1)`, and `-(x, y)` is `(x, -y)`. As such, the sum of the Y
+        // coordinates is `y - random_y`.
+        tempvar sum_y = y - random_y;
+        jump SumIsNotInfinity if sum_y != 0;
+        jump SumIsInfinity;
+        SumIsNotInfinity:
+        // X coordinate is identical; either `p0 + p1` is the point at infinity (either not allowed
+        // or already handled), or `p0 = p1`, which is not allowed (doubling).
+        InfiniteLoop:
+        jump InfiniteLoop;
+        NotSameX:
+        // The numerator is the difference in Y coordinate values of the summed points, and the Y
+        // coordinate of the negated random point is `-random_y`.
+        tempvar numerator = y + random_y;
+    }
 
-    // The result may be the point at infinity if the user called ec_try_finalize_state immediately
-    // after ec_init_state.
-    let (result_x, result_y) = add_ec_points(&mut casm_builder, (x, y), (random_x, random_y), true);
+    let (result_x, result_y) =
+        add_ec_points(&mut casm_builder, (x, y), (random_x, random_y), numerator, denominator);
 
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
