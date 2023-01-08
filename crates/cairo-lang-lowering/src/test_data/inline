@@ -1,0 +1,57 @@
+//! > Test function inlining
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(a: bool, b: bool) -> bool {
+  inline_bool_xor(a, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn inline_bool_xor(a: bool, b: bool) -> bool implicits() nopanic  {
+  let (r,) = bool_xor_impl(a, b);
+  r
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+
+//! > lowering_structured
+blk0:
+Inputs: v2: core::bool, v3: core::bool
+Initial refs:
+Statements:
+  (v4: core::bool) <- core::bool_xor_impl(v2, v3)
+End:
+  Callsite(v2)
+
+blk1 (root):
+Inputs: v0: core::bool, v1: core::bool
+Initial refs:
+Statements:
+  (v5: core::bool) <- blk0()
+End:
+  Callsite(v5)
+
+//! > lowering_flat
+blk0:
+Inputs: v2: core::bool, v3: core::bool
+Statements:
+  (v4: core::bool) <- core::bool_xor_impl(v2, v3)
+End:
+  Callsite(v2)
+
+blk1 (root):
+Inputs: v0: core::bool, v1: core::bool
+Statements:
+  (v5: core::bool) <- blk0()
+End:
+  Callsite(v5)
