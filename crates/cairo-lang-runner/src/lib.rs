@@ -19,6 +19,8 @@ use itertools::chain;
 use num_bigint::BigInt;
 use thiserror::Error;
 
+mod casm_run;
+
 #[derive(Debug, Error)]
 pub enum RunnerError {
     #[error("Not enough gas to call function.")]
@@ -96,7 +98,7 @@ impl SierraCasmRunner {
         let initial_gas = self.get_initial_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = self.create_code_footer();
-        let (cells, ap) = cairo_lang_casm::run::run_function(
+        let (cells, ap) = casm_run::run_function(
             chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter()),
             builtins,
             |context| {
