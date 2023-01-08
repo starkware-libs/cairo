@@ -15,8 +15,9 @@ use crate::pre_sierra;
 use crate::replace_ids::replace_sierra_ids;
 use crate::store_variables::add_store_statements;
 use crate::test_utils::{
-    dummy_jump_statement, dummy_label, dummy_push_values, dummy_return_statement,
-    dummy_simple_branch, dummy_simple_statement, SierraGenDatabaseForTesting,
+    dummy_jump_statement, dummy_label, dummy_push_values, dummy_push_values_ex,
+    dummy_return_statement, dummy_simple_branch, dummy_simple_statement,
+    SierraGenDatabaseForTesting,
 };
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
@@ -466,6 +467,41 @@ fn store_temp_push_values() {
             "store_temp<felt>(6) -> (103)",
             "nope() -> ()",
             "return(6)",
+        ]
+    );
+}
+
+/// Tests the behavior of the [PushValues](pre_sierra::Statement::PushValues) statement with
+/// [dup_var](pre_sierra::Statement::PushValues::dup_var).
+#[test]
+fn store_temp_push_values_with_dup() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_push_values_ex(
+            &db,
+            &[
+                // Deferred with dup.
+                ("2", "102", Some("202")),
+                // Temporary variable with dup.
+                ("0", "100", Some("200")),
+            ],
+        ),
+        dummy_return_statement(&[]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec![
+            "felt_add(0, 1) -> (2)",
+            "nope() -> ()",
+            "store_temp<felt>(2) -> (2)",
+            "dup<felt>(2) -> (2, 202)",
+            "rename<felt>(202) -> (102)",
+            "dup<felt>(0) -> (0, 200)",
+            "store_temp<felt>(200) -> (100)",
+            "return()",
         ]
     );
 }
