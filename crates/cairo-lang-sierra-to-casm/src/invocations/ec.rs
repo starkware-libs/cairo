@@ -23,6 +23,7 @@ pub fn build(
     match libfunc {
         EcConcreteLibfunc::AddToState(_) => build_ec_add_to_state(builder),
         EcConcreteLibfunc::CreatePoint(_) => build_ec_point_try_create(builder),
+        EcConcreteLibfunc::FinalizeState(_) => build_ec_try_finalize_state(builder),
         EcConcreteLibfunc::InitState(_) => build_ec_init_state(builder),
         EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
     }
@@ -49,20 +50,40 @@ fn verify_ec_point(
 
 /// Extends the CASM builder to compute the sum of two EC points and store the result in the given
 /// variables.
-/// Assumes neither point is the point at infinity, and asserts their sum is not the point at
-/// infinity (i.e. asserts p0 != -p1).
+/// Assumes neither point is the point at infinity, and does one of the following:
+/// 1. Asserts their sum is not the point at infinity (i.e. asserts p0 != -p1).
+/// 2. If p0 == -p1, jumps to SumIsInfinity label.
 /// Also asserts that the points are not equal (i.e. no doubling allowed).
-fn add_ec_points(casm_builder: &mut CasmBuilder, p0: (Var, Var), p1: (Var, Var)) -> (Var, Var) {
+fn add_ec_points(
+    casm_builder: &mut CasmBuilder,
+    p0: (Var, Var),
+    p1: (Var, Var),
+    allow_sum_is_infinity: bool,
+) -> (Var, Var) {
     let (x0, y0) = p0;
     let (x1, y1) = p1;
 
     casm_build_extend! {casm_builder,
         // If the X coordinate is the same, either the points are equal or their sum is the point at
-        // infinity.
-        tempvar diff_x = x0 - x1;
-        jump NotSameX if diff_x != 0;
-        // X coordinate is identical; either `p0 + p1` is the point at infinity (not allowed) or
-        // `p0 = p1`, which is also not allowed (doubling).
+        // infinity. Either way, we can't compute the slope in this case.
+        tempvar denominator = x0 - x1;
+        jump NotSameX if denominator != 0;
+    };
+
+    // X coordinate is identical. If we allow the sum to be the point at infinity, need to inject a
+    // specific check now.
+    if allow_sum_is_infinity {
+        casm_build_extend! {casm_builder,
+            tempvar sum_y = y0 + y1;
+            jump SumIsNotInfinity if sum_y != 0;
+            jump SumIsInfinity;
+            SumIsNotInfinity:
+        };
+    }
+
+    casm_build_extend! {casm_builder,
+        // X coordinate is identical; either `p0 + p1` is the point at infinity (either not allowed
+        // or already handled), or `p0 = p1`, which is not allowed (doubling).
         InfiniteLoop:
         jump InfiniteLoop;
         NotSameX:
@@ -71,9 +92,11 @@ fn add_ec_points(casm_builder: &mut CasmBuilder, p0: (Var, Var), p1: (Var, Var))
         // `result_x = slope * slope - x0 - x1`
         // `result_y = slope * (x0 - result_x) - y0`
         tempvar numerator = y0 - y1;
-        tempvar denominator = x0 - x1;
+        // TODO(dorimedini): Once PrimeDiv is removed, instead of the next 3 lines just do
+        // `tempvar slope = numerator / denominator;`.
         tempvar slope;
-        assert numerator = slope * denominator;
+        hint PrimeDiv { lhs: numerator, rhs: denominator } into { result: slope };
+        assert slope = numerator / denominator;
         tempvar slope2 = slope * slope;
         tempvar sum_x = x0 + x1;
         tempvar result_x = slope2 - sum_x;
@@ -175,9 +198,46 @@ fn build_ec_add_to_state(
     let sx = casm_builder.add_var(ResOperand::Deref(sx.to_deref()?));
     let sy = casm_builder.add_var(ResOperand::Deref(sy.to_deref()?));
     let random_ptr = casm_builder.add_var(ResOperand::Deref(random_ptr.to_deref()?));
-    let (result_x, result_y) = add_ec_points(&mut casm_builder, (px, py), (sx, sy));
+    let (result_x, result_y) = add_ec_points(&mut casm_builder, (px, py), (sx, sy), false);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[result_x, result_y, random_ptr]], None)],
+    ))
+}
+
+/// Handles instruction for finalizing an EC state.
+fn build_ec_try_finalize_state(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_state] = builder.try_get_refs()?;
+    let [x, y, random_ptr] = expr_state.try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    let x = casm_builder.add_var(ResOperand::Deref(x.to_deref()?));
+    let y = casm_builder.add_var(ResOperand::Deref(y.to_deref()?));
+    let random_ptr = casm_builder.add_var(ResOperand::Deref(random_ptr.to_deref()?));
+
+    // We want to return the point `(x, y) - (random_x, random_y)`, or in other words,
+    // `(x, y) + (random_x, -random_y)`.
+    casm_build_extend! {casm_builder,
+        const const_zero = 0;
+        tempvar zero = const_zero;
+        tempvar random_x = random_ptr[0];
+        tempvar random_y = random_ptr[1];
+        tempvar random_neg_y = zero - random_y;
+    };
+
+    // The result may be the point at infinity if the user called ec_try_finalize_state immediately
+    // after ec_init_state.
+    let (result_x, result_y) =
+        add_ec_points(&mut casm_builder, (x, y), (random_x, random_neg_y), true);
+
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[result_x, result_y]], None),
+            ("SumIsInfinity", &[], Some(failure_handle)),
+        ],
     ))
 }
