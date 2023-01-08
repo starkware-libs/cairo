@@ -216,8 +216,32 @@ impl HintProcessor for CairoHintProcessor {
                 let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
                 vm.insert_value(&(dict_infos_base + 3 * n_dicts), new_dict_segment)?;
             }
-            Hint::DictFeltToRead { .. } => todo!(),
-            Hint::DictFeltToWrite { .. } => todo!(),
+            Hint::DictFeltToRead { dict_ptr, key, value_dst } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+                let dict_address = get_ptr(dict_base, &dict_offset)?;
+                let key = get_val(key)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to read from a dict while dict manager was not initialized.");
+                let value = dict_manager_exec_scope
+                    .get_from_tracker(dict_address, &key)
+                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                vm.insert_value(&cell_ref_to_relocatable(value_dst, vm), value)?;
+            }
+            Hint::DictFeltToWrite { dict_ptr, key, value, prev_value_dst } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+                let dict_address = get_ptr(dict_base, &dict_offset)?;
+                let key = get_val(key)?;
+                let value = get_val(value)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to write to a dict while dict manager was not initialized.");
+                let prev_value = dict_manager_exec_scope
+                    .get_from_tracker(dict_address, &key)
+                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                vm.insert_value(&cell_ref_to_relocatable(prev_value_dst, vm), prev_value)?;
+                dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
+            }
             Hint::EnterScope => todo!(),
             Hint::ExitScope => todo!(),
             Hint::RandomEcPoint { x, y } => {

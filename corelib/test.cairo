@@ -359,3 +359,19 @@ fn test_array_out_of_bound_2() {
 fn test_dict_new() -> DictFeltTo::<felt> {
     dict_felt_to_new::<felt>()
 }
+
+#[test]
+fn test_dict_default_val() {
+    let mut dict = dict_felt_to_new::<felt>();
+    assert(dict_felt_to_read::<felt>(dict, 0) == 0, 'default_val == 0');
+}
+
+#[test]
+fn test_dict_write_read() {
+    let mut dict = dict_felt_to_new::<felt>();
+    dict_felt_to_write::<felt>(dict, 10, 110);
+    dict_felt_to_write::<felt>(dict, 11, 111);
+    assert(dict_felt_to_read::<felt>(dict, 10) == 110, 'dict[10] == 110');
+    assert(dict_felt_to_read::<felt>(dict, 11) == 111, 'dict[11] == 111');
+    assert(dict_felt_to_read::<felt>(dict, 12) == 0, 'default_val == 0');
+}
