@@ -50,15 +50,19 @@ fn verify_ec_point(
 
 /// Extends the CASM builder to compute the sum of two EC points and store the result in the given
 /// variables.
+/// Used in ec_add_to_state and in ec_try_finalize_state.
 /// Assumes neither point is the point at infinity, and does one of the following:
-/// 1. Asserts their sum is not the point at infinity (i.e. asserts p0 != -p1).
-/// 2. If p0 == -p1, jumps to SumIsInfinity label.
-/// Also asserts that the points are not equal (i.e. no doubling allowed).
+/// 1. If the add_to_state variant is used, asserts the sum of the points is not the point at
+///    infinity (i.e. asserts p0 != -p1).
+/// 2. If the try_finalize_state variant is used, computes `p0 + (-p1)` (instead of `p0 + p1`), and
+///    if the result is the point at infinity, jumps to SumIsInfinity label.
+/// If the summed points are identical, enters an infinite loop (the computation of the sum involves
+/// division, identical points would mean we try to divide by zero).
 fn add_ec_points(
     casm_builder: &mut CasmBuilder,
     p0: (Var, Var),
     p1: (Var, Var),
-    allow_sum_is_infinity: bool,
+    finalize_variant: bool,
 ) -> (Var, Var) {
     let (x0, y0) = p0;
     let (x1, y1) = p1;
@@ -72,9 +76,11 @@ fn add_ec_points(
 
     // X coordinate is identical. If we allow the sum to be the point at infinity, need to inject a
     // specific check now.
-    if allow_sum_is_infinity {
+    if finalize_variant {
         casm_build_extend! {casm_builder,
-            tempvar sum_y = y0 + y1;
+            // In the finalize variant we compute `p0 + (-p1)`, and `-(x, y)` is `(x, -y)`. As such,
+            // the sum of the Y coordinates is `y0 - y1`.
+            tempvar sum_y = y0 - y1;
             jump SumIsNotInfinity if sum_y != 0;
             jump SumIsInfinity;
             SumIsNotInfinity:
@@ -87,11 +93,25 @@ fn add_ec_points(
         InfiniteLoop:
         jump InfiniteLoop;
         NotSameX:
-        // If we are here, then `p0 != p1` and `p0 != -p1`. Compute the "slope"
-        // (`(y0 - y1) / (x0 - x1)`), and use the slope to compute the sum:
-        // `result_x = slope * slope - x0 - x1`
-        // `result_y = slope * (x0 - result_x) - y0`
-        tempvar numerator = y0 - y1;
+    }
+    // If we are here, then `p0 != p1` and `p0 != -p1`. Compute the "slope"
+    // (`(y0 - y1) / (x0 - x1)`), and use the slope to compute the sum:
+    // `result_x = slope * slope - x0 - x1`
+    // `result_y = slope * (x0 - result_x) - y0`
+    // If this is the finalize variant, we must negate `y1`.
+    casm_build_extend! {casm_builder,
+        tempvar numerator;
+    };
+    if finalize_variant {
+        casm_build_extend! {casm_builder,
+            assert numerator = y0 + y1;
+        };
+    } else {
+        casm_build_extend! {casm_builder,
+            assert numerator = y0 - y1;
+        };
+    }
+    casm_build_extend! {casm_builder,
         // TODO(dorimedini): Once PrimeDiv is removed, instead of the next 3 lines just do
         // `tempvar slope = numerator / denominator;`.
         tempvar slope;
@@ -220,17 +240,13 @@ fn build_ec_try_finalize_state(
     // We want to return the point `(x, y) - (random_x, random_y)`, or in other words,
     // `(x, y) + (random_x, -random_y)`.
     casm_build_extend! {casm_builder,
-        const const_zero = 0;
-        tempvar zero = const_zero;
         tempvar random_x = random_ptr[0];
         tempvar random_y = random_ptr[1];
-        tempvar random_neg_y = zero - random_y;
     };
 
     // The result may be the point at infinity if the user called ec_try_finalize_state immediately
     // after ec_init_state.
-    let (result_x, result_y) =
-        add_ec_points(&mut casm_builder, (x, y), (random_x, random_neg_y), true);
+    let (result_x, result_y) = add_ec_points(&mut casm_builder, (x, y), (random_x, random_y), true);
 
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
