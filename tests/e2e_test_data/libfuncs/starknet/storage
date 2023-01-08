@@ -15,10 +15,8 @@ fn foo(addr: felt) -> starknet::StorageAddress {
 jmp rel 14 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 5] + 3618502788666131106986593281521497120414687020801267626233049500247285300992, ap++;
 %{
-value = memory[ap + 4]
-scalar = 313594649253062377472
-max_x = 340282366920938463463374607431768211455
-x = min(value // scalar, max_x)
+(value, scalar) = (memory[ap + 4], 313594649253062377472)
+x = min(value // scalar, 340282366920938463463374607431768211455)
 y = value - x * scalar
 memory[ap + -1] = x
 memory[ap + 0] = y
@@ -32,10 +30,8 @@ memory[ap + 0] = y
 jmp rel 17;
 [ap + 5] = [fp + -3], ap++;
 %{
-value = memory[ap + 4]
-scalar = 10633823966279326983230456482242756608
-max_x = 340282366920938463463374607431768211454
-x = min(value // scalar, max_x)
+(value, scalar) = (memory[ap + 4], 10633823966279326983230456482242756608)
+x = min(value // scalar, 340282366920938463463374607431768211454)
 y = value - x * scalar
 memory[ap + -1] = x
 memory[ap + 0] = y
