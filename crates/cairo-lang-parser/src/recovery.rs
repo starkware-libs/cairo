@@ -41,6 +41,13 @@ macro_rules! rangle {
 }
 pub(crate) use rangle;
 
+macro_rules! comma {
+    () => {
+        SyntaxKind::TerminalComma
+    };
+}
+pub(crate) use comma;
+
 macro_rules! top_level {
     () => {
         SyntaxKind::TerminalExtern

@@ -1049,11 +1049,17 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_type_clause(&mut self) -> TypeClauseGreen {
+    /// Parses a type clause of the form: `: <type>`.
+    fn parse_type_clause(&mut self, error_recovery: ErrorRecovery) -> TypeClauseGreen {
         match self.try_parse_type_clause() {
             Some(green) => green,
-            None => self
-                .create_and_report_missing::<TypeClause>(ParserDiagnosticKind::MissingTypeClause),
+            None => {
+                let res = self.create_and_report_missing::<TypeClause>(
+                    ParserDiagnosticKind::MissingTypeClause,
+                );
+                self.skip_until(error_recovery.should_stop).ok();
+                res
+            }
         }
     }
     fn try_parse_type_clause(&mut self) -> Option<TypeClauseGreen> {
@@ -1145,7 +1151,9 @@ impl<'a> Parser<'a> {
             self.parse_identifier().into()
         };
 
-        let type_clause = self.parse_type_clause();
+        let type_clause = self.parse_type_clause(ErrorRecovery {
+            should_stop: is_of_kind!(comma, rparen, top_level),
+        });
         Some(Param::new_green(
             self.db,
             ModifierList::new_green(self.db, modifier_list),
@@ -1179,7 +1187,9 @@ impl<'a> Parser<'a> {
     /// be parsed.
     fn try_parse_member(&mut self) -> Option<MemberGreen> {
         let name = self.try_parse_identifier()?;
-        let type_clause = self.parse_type_clause();
+        let type_clause = self.parse_type_clause(ErrorRecovery {
+            should_stop: is_of_kind!(comma, rbrace, top_level),
+        });
         Some(Member::new_green(self.db, name, type_clause))
     }
 
@@ -1554,3 +1564,10 @@ enum LbraceAllowed {
 
 /// Indicates that [Parser::skip_until] skipped some terminals.
 struct SkippedError(TextSpan);
+
+/// Defines the parser behavior in the case of a parsing error.
+struct ErrorRecovery {
+    /// In the case of a parsing error, tokens will be skipped until `should_stop`
+    /// returns `true`. For example, one can stop at tokens such as `,` and `}`.
+    should_stop: fn(SyntaxKind) -> bool,
+}
