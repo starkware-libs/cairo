@@ -21,7 +21,7 @@ use crate::block_generator::{generate_block_code, generate_return_code};
 use crate::db::SierraGenGroup;
 use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::lifetime::{find_variable_lifetime, SierraGenVar};
+use crate::lifetime::{find_variable_lifetime, SierraGenVar, StatementLocation};
 use crate::local_variables::find_local_variables;
 use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -98,10 +98,15 @@ fn get_function_code(
     statements.extend(body_statements);
 
     // Generate the return statement if necessary.
+    let return_statement_location: StatementLocation = (block_id, block.statements.len());
     match &block.end {
         lowering::FlatBlockEnd::Callsite(returned_variables)
         | lowering::FlatBlockEnd::Return(returned_variables) => {
-            statements.extend(generate_return_code(&mut context, returned_variables)?);
+            statements.extend(generate_return_code(
+                &mut context,
+                returned_variables,
+                &return_statement_location,
+            )?);
         }
         lowering::FlatBlockEnd::Unreachable => {}
     };

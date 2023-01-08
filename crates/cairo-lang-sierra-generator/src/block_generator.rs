@@ -89,12 +89,16 @@ pub fn generate_block_code_and_push_values(
     binds: &[lowering::VariableId],
 ) -> Maybe<(Vec<pre_sierra::Statement>, bool)> {
     let block = context.get_lowered_block(block_id);
+    let statement_location: StatementLocation = (block_id, block.statements.len());
 
     let mut statements = generate_block_code(context, block_id, block)?;
     match &block.end {
         lowering::FlatBlockEnd::Callsite(inner_outputs) => {
             let mut push_values = Vec::<pre_sierra::PushValue>::new();
-            for (output, inner_output) in zip_eq(binds, inner_outputs) {
+            for (idx, (output, inner_output)) in zip_eq(binds, inner_outputs).enumerate() {
+                let use_location = UseLocation { statement_location, idx };
+                let dup_var = get_dup_var_if_needed(context, &use_location);
+
                 let ty = context.get_variable_sierra_type(*inner_output)?;
                 let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
                 assert_eq!(
@@ -106,15 +110,18 @@ pub fn generate_block_code_and_push_values(
                     var: context.get_sierra_variable(*inner_output),
                     var_on_stack: context.get_sierra_variable(*output),
                     ty,
-                    // TODO(lior): Set dup_var where needed.
-                    dup_var: None,
+                    dup_var,
                 })
             }
             statements.push(pre_sierra::Statement::PushValues(push_values));
             Ok((statements, true))
         }
         lowering::FlatBlockEnd::Return(returned_variables) => {
-            statements.extend(generate_return_code(context, returned_variables)?);
+            statements.extend(generate_return_code(
+                context,
+                returned_variables,
+                &statement_location,
+            )?);
             Ok((statements, false))
         }
         lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),
@@ -127,22 +134,25 @@ pub fn generate_block_code_and_push_values(
 /// Returns a list of Sierra statements.
 pub fn generate_return_code(
     context: &mut ExprGeneratorContext<'_>,
-    returned_variables: &Vec<id_arena::Id<lowering::Variable>>,
+    returned_variables: &[id_arena::Id<lowering::Variable>],
+    statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     // Copy the result to the top of the stack before returning.
     let mut return_variables_on_stack = vec![];
     let mut push_values = vec![];
 
-    for returned_variable in returned_variables {
+    for (idx, returned_variable) in returned_variables.iter().enumerate() {
+        let use_location = UseLocation { statement_location: *statement_location, idx };
+        let dup_var = get_dup_var_if_needed(context, &use_location);
+
         let return_variable_on_stack = context.allocate_sierra_variable();
         return_variables_on_stack.push(return_variable_on_stack.clone());
         push_values.push(pre_sierra::PushValue {
             var: context.get_sierra_variable(*returned_variable),
             var_on_stack: return_variable_on_stack,
             ty: context.get_variable_sierra_type(*returned_variable)?,
-            // TODO(lior): Set dup_var where needed.
-            dup_var: None,
+            dup_var,
         });
     }
 
