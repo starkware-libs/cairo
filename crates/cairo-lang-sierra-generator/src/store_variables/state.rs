@@ -99,7 +99,8 @@ impl State {
                 }
                 is_temp_var = true;
             }
-            OutputVarReferenceInfo::SameAsParam { param_idx } => {
+            OutputVarReferenceInfo::SameAsParam { param_idx }
+            | OutputVarReferenceInfo::PartialParam { param_idx } => {
                 let arg = &args[*param_idx];
                 if let Some(deferred_info) = self.deferred_variables.get(arg) {
                     is_deferred = Some(deferred_info.kind);
