@@ -49,14 +49,14 @@ fn test_function_generator() {
             "felt_const<5>() -> ([2])",
             "felt_add([0], [2]) -> ([3])",
             "store_temp<felt>([3]) -> ([3])",
-            "dup<felt>([3]) -> ([3], [9])",
-            "rename<felt>([9]) -> ([5])",
-            "dup<felt>([3]) -> ([3], [10])",
-            "store_temp<felt>([10]) -> ([6])",
-            "store_temp<felt>([3]) -> ([7])",
-            "function_call<user@test::bar>([5], [6], [7]) -> ([4])",
-            "rename<felt>([4]) -> ([8])",
-            "return([8])",
+            "dup<felt>([3]) -> ([3], [5])",
+            "rename<felt>([5]) -> ([6])",
+            "dup<felt>([3]) -> ([3], [7])",
+            "store_temp<felt>([7]) -> ([8])",
+            "store_temp<felt>([3]) -> ([9])",
+            "function_call<user@test::bar>([6], [8], [9]) -> ([4])",
+            "rename<felt>([4]) -> ([10])",
+            "return([10])",
         ]
     );
     assert_eq!(function.entry_point.to_string(), "label1");

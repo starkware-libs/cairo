@@ -219,7 +219,9 @@ fn generate_statement_call_code(
             let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
             let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
 
-            for (var_id, var) in zip_eq(&statement.inputs, inputs) {
+            for (idx, (var_id, var)) in zip_eq(&statement.inputs, inputs).enumerate() {
+                let use_location = UseLocation { statement_location: *statement_location, idx };
+                let dup_var = get_dup_var_if_needed(context, &use_location);
                 // Allocate a temporary Sierra variable that represents the argument placed on the
                 // stack.
                 let arg_on_stack = context.allocate_sierra_variable();
@@ -227,8 +229,7 @@ fn generate_statement_call_code(
                     var,
                     var_on_stack: arg_on_stack.clone(),
                     ty: context.get_variable_sierra_type(*var_id)?,
-                    // TODO(lior): Set dup_var where needed.
-                    dup_var: None,
+                    dup_var,
                 });
                 args_on_stack.push(arg_on_stack);
             }
@@ -258,6 +259,16 @@ fn generate_statement_call_code(
         }
         GenericFunctionId::ImplFunction(_) => todo!(),
     }
+}
+
+/// Returns `None` if the variable at the given location should not be duplicated.
+/// Otherwise, allocates a variable for the duplicated copy and returns it.
+fn get_dup_var_if_needed(
+    context: &mut ExprGeneratorContext<'_>,
+    use_location: &UseLocation,
+) -> Option<sierra::ids::VarId> {
+    let should_dup = !context.is_last_use(use_location);
+    if should_dup { Some(context.allocate_sierra_variable()) } else { None }
 }
 
 /// Adds calls to the `dup` libfunc for the given [StatementLocation] and the given statement's
