@@ -5,6 +5,11 @@ use std::str::FromStr;
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
+use cairo_lang_casm::hints::Hint;
+use cairo_lang_casm::instructions::Instruction;
+use cairo_lang_casm::operand::{
+    BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
+};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::short_string::as_cairo_short_string;
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
@@ -17,18 +22,14 @@ use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
+use dict_manager::DictManagerExecScope;
 use num_bigint::{BigInt, BigUint};
-use num_traits::identities::Zero;
-use num_traits::ToPrimitive;
-
-use crate::dict_manager::DictManagerExecScope;
-use crate::hints::Hint;
-use crate::instructions::Instruction;
-use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
+use num_traits::{ToPrimitive, Zero};
 
 #[cfg(test)]
-#[path = "run_test.rs"]
 mod test;
+
+mod dict_manager;
 
 /// Returns the Starkware prime 2^251 + 17*2^192 + 1.
 fn get_prime() -> BigInt {
@@ -148,12 +149,12 @@ impl HintProcessor for CairoHintProcessor {
                 ResOperand::BinOp(op) => {
                     let a = get_cell_val(&op.a)?;
                     let b = match &op.b {
-                        crate::operand::DerefOrImmediate::Deref(cell) => get_cell_val(cell)?,
-                        crate::operand::DerefOrImmediate::Immediate(x) => x.clone(),
+                        DerefOrImmediate::Deref(cell) => get_cell_val(cell)?,
+                        DerefOrImmediate::Immediate(x) => x.clone(),
                     };
                     match op.op {
-                        crate::operand::Operation::Add => Ok(a + b),
-                        crate::operand::Operation::Mul => Ok(a * b),
+                        Operation::Add => Ok(a + b),
+                        Operation::Mul => Ok(a * b),
                     }
                 }
             }
@@ -396,7 +397,7 @@ impl HintProcessor for CairoHintProcessor {
 fn extract_buffer(buffer: &ResOperand) -> (&CellRef, BigInt) {
     let (cell, base_offset) = match buffer {
         ResOperand::Deref(cell) => (cell, 0.into()),
-        ResOperand::BinOp(BinOpOperand { op: crate::operand::Operation::Add, a, b }) => {
+        ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
             (a, extract_matches!(b, DerefOrImmediate::Immediate).clone())
         }
         _ => panic!("Illegal argument for a buffer."),
@@ -456,16 +457,4 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
     Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
-}
-
-/// Runs `function` and returns `n_returns` return values.
-pub fn run_function_return_values<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
-    instructions: Instructions,
-    builtins: Vec<String>,
-    n_returns: usize,
-) -> Result<Vec<BigInt>, Box<VirtualMachineError>> {
-    let (cells, ap) = run_function(instructions, builtins, |_| Ok(()))?;
-    // TODO(orizi): Return an error instead of unwrapping.
-    let cells = cells.into_iter().skip(ap - n_returns);
-    Ok(cells.take(n_returns).map(|cell| cell.unwrap()).collect())
 }

@@ -286,15 +286,11 @@ checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
 name = "cairo-lang-casm"
 version = "0.1.0"
 dependencies = [
- "ark-ff 0.4.0-alpha.7",
- "ark-std 0.3.0",
  "cairo-lang-utils",
- "cairo-vm",
  "env_logger",
  "indoc",
  "itertools",
  "num-bigint",
- "num-traits 0.2.15",
  "pretty_assertions",
  "test-case",
  "test-log",
@@ -545,6 +541,8 @@ name = "cairo-lang-runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "ark-ff 0.4.0-alpha.7",
+ "ark-std 0.3.0",
  "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-diagnostics",
@@ -558,7 +556,10 @@ dependencies = [
  "clap 4.0.26",
  "itertools",
  "num-bigint",
+ "num-traits 0.2.15",
+ "pretty_assertions",
  "salsa",
+ "test-case",
  "thiserror",
 ]
 
