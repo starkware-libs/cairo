@@ -7,8 +7,6 @@ use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 #[cfg(test)]
 mod test;
 
-pub mod dict_squash;
-
 // Represents a cairo hint.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Hint {
