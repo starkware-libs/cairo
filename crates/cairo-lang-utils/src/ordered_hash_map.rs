@@ -101,6 +101,20 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
     pub fn swap_remove<Q: ?Sized + Hash + Equivalent<Key>>(&mut self, key: &Q) -> Option<Value> {
         self.0.swap_remove(key)
     }
+
+    /// Scan through each key-value pair in the map and keep those where the
+    /// closure `keep` returns `true`.
+    ///
+    /// The elements are visited in order, and remaining elements keep their
+    /// order.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn retain<F>(&mut self, keep: F)
+    where
+        F: FnMut(&Key, &mut Value) -> bool,
+    {
+        self.0.retain(keep)
+    }
 }
 
 impl<Key: Hash + Eq, Value> IntoIterator for OrderedHashMap<Key, Value> {
@@ -157,5 +171,19 @@ impl<Key: Hash + Eq, Value> FromIterator<(Key, Value)> for OrderedHashMap<Key, V
 impl<Key: Hash + Eq, Value, const N: usize> From<[(Key, Value); N]> for OrderedHashMap<Key, Value> {
     fn from(init_map: [(Key, Value); N]) -> Self {
         Self(init_map.into())
+    }
+}
+
+impl<Key: Hash + Eq, Value> Extend<(Key, Value)> for OrderedHashMap<Key, Value> {
+    fn extend<I: IntoIterator<Item = (Key, Value)>>(&mut self, iterable: I) {
+        self.0.extend(iterable)
+    }
+}
+
+impl<'a, Key: Hash + Eq + Copy, Value: Copy> Extend<(&'a Key, &'a Value)>
+    for OrderedHashMap<Key, Value>
+{
+    fn extend<I: IntoIterator<Item = (&'a Key, &'a Value)>>(&mut self, iterable: I) {
+        self.0.extend(iterable)
     }
 }

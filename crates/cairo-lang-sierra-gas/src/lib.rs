@@ -1,7 +1,7 @@
 //! Sierra gas computation.
 //!
 //! This crate provides the gas computation for the Cairo programs.
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
@@ -35,7 +35,10 @@ pub enum CostError {
 }
 
 /// Calculates gas information for a given program.
-pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
+pub fn calc_gas_info(
+    program: &Program,
+    token_types: &HashSet<CostTokenType>,
+) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     let equations = generate_equations::generate_equations(
         program,
@@ -43,7 +46,13 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registery creation would have already failed.");
-            core_libfunc_cost_expr::core_libfunc_cost_expr(statement_future_cost, idx, libfunc)
+            // Retaining only cost tokens that are required by the function.
+            let mut expr =
+                core_libfunc_cost_expr::core_libfunc_cost_expr(statement_future_cost, idx, libfunc);
+            for branch in &mut expr {
+                branch.retain(|token_type, _| token_types.contains(token_type));
+            }
+            expr
         },
     )?;
 
