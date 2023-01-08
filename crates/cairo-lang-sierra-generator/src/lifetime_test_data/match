@@ -38,10 +38,10 @@ End:
   Callsite(v4)
 
 //! > last_use
-v4: [(BlockId(2), 1)]
-v1: [(BlockId(0), 0)]
-v3: [(BlockId(1), 1)]
-v0: [(BlockId(2), 0)]
+((BlockId(2), 1), 0)
+((BlockId(0), 0), 0)
+((BlockId(1), 1), 0)
+((BlockId(2), 0), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(1)): v2, v1
@@ -89,9 +89,9 @@ End:
   Callsite(v1)
 
 //! > last_use
-v1: [(BlockId(2), 1)]
-v3: [(BlockId(1), 1)]
-v0: [(BlockId(2), 0)]
+((BlockId(2), 1), 0)
+((BlockId(1), 1), 0)
+((BlockId(2), 0), 0)
 
 //! > drops
 PostStatement((BlockId(2), 0)): v4
@@ -141,11 +141,12 @@ End:
   Callsite(v6)
 
 //! > last_use
-v6: [(BlockId(2), 2)]
-v1: [(BlockId(0), 0), (BlockId(1), 1)]
-v4: [(BlockId(1), 2)]
-v3: [(BlockId(1), 1)]
-v0: [(BlockId(2), 0)]
+((BlockId(2), 2), 0)
+((BlockId(0), 0), 0)
+((BlockId(1), 2), 0)
+((BlockId(1), 1), 1)
+((BlockId(1), 1), 0)
+((BlockId(2), 0), 0)
 
 //! > drops
 PostStatement((BlockId(2), 0)): v5
@@ -242,16 +243,17 @@ End:
   Callsite(v13)
 
 //! > last_use
-v13: [(BlockId(6), 2)]
-v1: [(BlockId(4), 0), (BlockId(0), 0)]
-v11: [(BlockId(5), 3)]
-v8: [(BlockId(2), 2)]
-v7: [(BlockId(1), 1)]
-v5: [(BlockId(2), 1)]
-v0: [(BlockId(2), 0)]
-v10: [(BlockId(3), 1)]
-v4: [(BlockId(5), 2)]
-v3: [(BlockId(5), 1)]
+((BlockId(6), 2), 0)
+((BlockId(4), 0), 0)
+((BlockId(5), 3), 0)
+((BlockId(2), 2), 0)
+((BlockId(0), 0), 0)
+((BlockId(1), 1), 0)
+((BlockId(2), 1), 0)
+((BlockId(2), 0), 0)
+((BlockId(3), 1), 0)
+((BlockId(5), 2), 0)
+((BlockId(5), 1), 1)
 
 //! > drops
 PostStatement((BlockId(6), 0)): v12

@@ -41,8 +41,8 @@ End:
   Callsite(v0)
 
 //! > last_use
-v0: [(BlockId(2), 1)]
-v1: [(BlockId(0), 1)]
+((BlockId(2), 1), 0)
+((BlockId(0), 1), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(1)): v2
@@ -83,7 +83,7 @@ End:
   Unreachable
 
 //! > last_use
-v1: [(BlockId(0), 0)]
+((BlockId(0), 0), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(1)): v0
@@ -136,9 +136,9 @@ End:
   Unreachable
 
 //! > last_use
-v2: [(BlockId(0), 1)]
-v4: [(BlockId(1), 1)]
-v0: [(BlockId(2), 0)]
+((BlockId(0), 1), 0)
+((BlockId(1), 1), 0)
+((BlockId(2), 0), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(1)): v3

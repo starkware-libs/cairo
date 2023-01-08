@@ -52,7 +52,7 @@ fn check_variable_lifetime(
     let last_use_str = find_variable_lifetime_res
         .last_use
         .iter()
-        .map(|(var_id, location)| format!("{:?}: {location:?}", var_id.debug(&lowered_formatter)))
+        .map(|location| format!("{location:?}"))
         .join("\n");
     let drop_str = find_variable_lifetime_res
         .drops
