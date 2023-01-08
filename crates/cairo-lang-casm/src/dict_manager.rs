@@ -28,6 +28,7 @@ impl DictTrackerExecScope {
 
 impl DictManagerExecScope {
     pub const DICT_DEFAULT_VALUE: usize = 0;
+
     /// Allocates a new segment for a new dictionary and return the start of the segment.
     pub fn new_default_dict(&mut self, vm: &mut VirtualMachine) -> Relocatable {
         let dict_segment = vm.add_memory_segment();
