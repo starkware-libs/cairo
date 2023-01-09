@@ -7,6 +7,7 @@ use std::vec;
 
 use cairo_lang_filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
+use substring::Substring;
 
 use self::ast::TriviaGreen;
 use self::db::SyntaxGroup;
@@ -177,6 +178,20 @@ impl SyntaxNode {
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text(self, db: &dyn SyntaxGroup) -> String {
         format!("{}", NodeTextFormatter { node: &self, db })
+    }
+
+    /// Returns all the text under the syntax node, without the outmost trivia (the leading trivia
+    /// of the first token and the trailing trivia of the last token).
+    ///
+    /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
+    pub fn get_text_without_trivia(self, db: &dyn SyntaxGroup) -> String {
+        let orig_span = self.span(db);
+
+        let trimmed_span = self.span_without_trivia(db);
+
+        let trimmed_left_offset = trimmed_span.start - orig_span.start;
+        let trimmed_right_offset = trimmed_span.end - orig_span.start;
+        self.get_text(db).substring(trimmed_left_offset, trimmed_right_offset).to_string()
     }
 }
 pub struct SyntaxNodeChildIterator<'db> {
