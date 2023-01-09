@@ -290,6 +290,7 @@ define_language_element_id!(
     lookup_intern_free_function,
     name
 );
+// TODO(yuval): remove once ordering stably in `function_scc_representative`.
 impl PartialOrd for FreeFunctionId {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.0.partial_cmp(&other.0)
@@ -331,6 +332,33 @@ impl ImplFunctionId {
         };
         let impl_ptr = ast::ItemImplPtr(parent);
         db.intern_impl(ImplLongId(module_file_id, impl_ptr))
+    }
+}
+// TODO(yuval): remove once ordering stably in `function_scc_representative`.
+impl PartialOrd for ImplFunctionId {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+impl Ord for ImplFunctionId {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
+// TODO(yuval): remove PartialOrd, Ord once ordering stably in `function_scc_representative`.
+/// Represents a function that has a body.
+#[derive(Debug, Eq, PartialEq, Clone, Hash, PartialOrd, Ord)]
+pub enum FunctionWithBodyId {
+    Free(FreeFunctionId),
+    Impl(ImplFunctionId),
+}
+impl FunctionWithBodyId {
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            FunctionWithBodyId::Free(free_function_id) => free_function_id.name(db),
+            FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.name(db),
+        }
     }
 }
 
@@ -428,6 +456,10 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
     }
 }
 
+// TODO(yuval/shahar): We should not have trait functions after semantic. To fix this, we need to
+// split the current `GenericFunctionId` to 2 enums. One for describing functions that can be
+// concretized (does not include trait functions) and one for types of function signatures (includes
+// trait functions).
 define_language_element_id_as_enum! {
     #[toplevel]
     /// Generic function ids enum.

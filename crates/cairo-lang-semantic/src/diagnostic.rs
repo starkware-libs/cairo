@@ -226,9 +226,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::ImplBodyIsNotSupported => {
-                "impl body is not supported yet.".into()
-            }
             SemanticDiagnosticKind::WrongReturnType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected return type. Expected: "{}", found: "{}"."#,
@@ -522,7 +519,6 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
-    ImplBodyIsNotSupported,
     WrongReturnTypeForImpl {
         impl_id: ImplId,
         impl_function_id: ImplFunctionId,

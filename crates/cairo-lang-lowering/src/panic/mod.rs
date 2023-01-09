@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId};
+use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, GenericFunctionId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{get_enum_concrete_variant, get_panic_ty};
@@ -30,7 +30,7 @@ pub fn lower_panics(
     ctx.variables = lowered.variables.clone();
 
     // Skip this phase for non panicable functions.
-    if !db.free_function_may_panic(free_function_id)? {
+    if !db.function_with_body_may_panic(FunctionWithBodyId::Free(free_function_id))? {
         return Ok(FlatLowered {
             diagnostics: Default::default(),
             root: lowered.root,
@@ -133,8 +133,17 @@ impl<'a> PanicBlockLoweringContext<'a> {
             crate::Statement::Call(call) => {
                 let concerete_function = self.db().lookup_intern_function(call.function).function;
                 match concerete_function.generic_function {
-                    GenericFunctionId::Free(callee)
-                        if self.db().free_function_may_panic(callee)? =>
+                    GenericFunctionId::Free(free_callee)
+                        if self.db().function_with_body_may_panic(FunctionWithBodyId::Free(
+                            free_callee,
+                        ))? =>
+                    {
+                        self.handle_stmt_call(call)
+                    }
+                    GenericFunctionId::ImplFunction(impl_callee)
+                        if self.db().function_with_body_may_panic(FunctionWithBodyId::Impl(
+                            impl_callee,
+                        ))? =>
                     {
                         self.handle_stmt_call(call)
                     }
