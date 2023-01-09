@@ -74,3 +74,42 @@ impl DictManagerExecScope {
         self.get_dict_tracker(dict_end).data.get(key).cloned()
     }
 }
+
+/// Helper object for the managment of dict_squash hints.
+#[derive(Default, Debug)]
+pub struct DictSquashExecScope {
+    // A map from key to the list of indices accessing it, each list in reverse order.
+    pub access_indices: HashMap<BigInt, Vec<BigInt>>,
+    // Descending list of keys.
+    pub keys: Vec<BigInt>,
+}
+
+impl DictSquashExecScope {
+    /// Returns the current key to process.
+    pub fn current_key(&self) -> Option<BigInt> {
+        self.keys.last().cloned()
+    }
+    /// Returns and removes the current key, and its access indices. Should be called when only the
+    /// last key access is in the corresponding indices list.
+    pub fn pop_current_key(&mut self) -> Option<BigInt> {
+        let key_accesses = self.access_indices.remove(&self.current_key().unwrap());
+        assert!(
+            key_accesses.unwrap().len() == 1,
+            "Key popped but not all accesses were processed."
+        );
+        self.keys.pop()
+    }
+    /// Returns a reference to the access indices list of the current key.
+    pub fn current_access_indices(&mut self) -> Option<&mut Vec<BigInt>> {
+        let current_key = self.current_key()?;
+        self.access_indices.get_mut(&current_key)
+    }
+    /// Returns a reference to the last index in the current access indices list.
+    pub fn current_access_index(&mut self) -> Option<&BigInt> {
+        self.current_access_indices()?.last()
+    }
+    /// Returns and removes the current access index.
+    pub fn pop_current_access_index(&mut self) -> Option<BigInt> {
+        self.current_access_indices()?.pop()
+    }
+}

@@ -299,10 +299,10 @@ jmp rel 7 if [fp + 2] != 0, ap++;
 jmp rel 3;
 [ap + 0] = [fp + -6], ap++;
 [ap + 0] = [fp + -5], ap++;
-[ap + 0] = [fp + -3], ap++;
 [fp + -4] = [ap + 0] + 1, ap++;
 [ap + 0] = [fp + 1], ap++;
-[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [fp + -3], ap++;
 [ap + 0] = [fp + 2], ap++;
 call rel 5;
 [ap + 0] = [ap + -2], ap++;
@@ -319,10 +319,10 @@ memory[fp + -9] = current_access_index
 [ap + 4] = [fp + -8] + [ap + 1], ap++;
 [ap + 4] = [[ap + 3] + 2], ap++;
 [ap + 4] = [fp + -9] + 1, ap++;
-[fp + -5] = [[ap + 1] + 0], ap++;
-[fp + -5] = [[fp + -7] + 0], ap++;
+[fp + -6] = [[ap + 1] + 0], ap++;
+[fp + -6] = [[fp + -4] + 0], ap++;
 [ap + -3] = [[ap + -1] + 1], ap++;
-[ap + -4] = [[fp + -7] + 1], ap++;
+[ap + -4] = [[fp + -4] + 1], ap++;
 %{  memory[ap + -4] = 0 if current_access_indices else 1  %}
 jmp rel 18 if [ap + -4] != 0;
 %{
@@ -336,7 +336,7 @@ current_access_index = new_access_index
 [ap + 1] = [ap + -6] + [ap + -1], ap++;
 [ap + -6] = [[ap + 0] + 1], ap++;
 [ap + 0] = [[ap + -1] + 2], ap++;
-[fp + -5] = [[ap + -2] + 0], ap++;
+[fp + -6] = [[ap + -2] + 0], ap++;
 [ap + -1] = [ap + -8] + 1;
 [ap + 0] = [ap + -3], ap++;
 [ap + 0] = [ap + -3], ap++;
@@ -344,38 +344,38 @@ current_access_index = new_access_index
 %{  memory[ap + -7] = 1 if current_access_indices else 0  %}
 jmp rel -14 if [ap + -7] != 0;
 %{  assert len(current_access_indices) == 0  %}
-[fp + -6] = [ap + 0] + [ap + -3], ap++;
-[ap + -1] = [ap + -2];
+[fp + -7] = [ap + 0] + [ap + -3], ap++;
+[ap + -1] = [[ap + -2] + 0];
 [ap + -2] = [ap + 0] + [fp + -9], ap++;
 %{  assert memory[ap + -1] == len(access_indices[key])  %}
-[ap + -4] = [[fp + -7] + 2];
-[fp + -4] = [fp + 1] + [ap + -1];
+[ap + -4] = [[fp + -4] + 2];
+[fp + -5] = [fp + 1] + [ap + -1];
 jmp rel 7 if [fp + 1] != 0;
 %{  assert len(keys) == 0  %}
 [ap + 0] = [ap + -3] + 1, ap++;
-[ap + 0] = [fp + -7] + 3, ap++;
+[ap + 0] = [fp + -4] + 3, ap++;
 ret;
 %{ assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
 memory[fp + 0] = key = keys.pop()
  %}
 jmp rel 14 if [fp + -3] != 0;
-[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [fp + -6] + 1, ap++;
 [fp + 0] = [ap + 0] + [ap + -1], ap++;
 [ap + -1] = [[ap + -5] + 1];
 [ap + 0] = [ap + -5] + 2, ap++;
 [ap + 0] = [fp + -8], ap++;
-[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -7], ap++;
 [ap + 0] = [fp + 0], ap++;
 [ap + 0] = [fp + 1], ap++;
 jmp rel 14;
 ap += 2;
 [ap + -2] = [fp + -9];
-[ap + -1] = [fp + -5];
+[ap + -1] = [fp + -6];
 [ap + 0] = [fp + 0], ap++;
 call rel 18;
 [ap + 0] = [ap + -1], ap++;
 [ap + 0] = [fp + -8], ap++;
-[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -7], ap++;
 [ap + 0] = [fp + 0], ap++;
 [ap + 0] = [fp + 1], ap++;
 [ap + 0] = [ap + -5], ap++;
@@ -383,7 +383,7 @@ call rel 18;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
-[ap + 0] = [fp + -7] + 3, ap++;
+[ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel -75;
 ret;

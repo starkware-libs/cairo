@@ -26,6 +26,8 @@ use dict_manager::DictManagerExecScope;
 use num_bigint::{BigInt, BigUint};
 use num_traits::{ToPrimitive, Zero};
 
+use self::dict_manager::DictSquashExecScope;
+
 #[cfg(test)]
 mod test;
 
@@ -255,8 +257,8 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(vm, prev_value_dst, prev_value)?;
                 dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
             }
-            Hint::EnterScope => todo!(),
-            Hint::ExitScope => todo!(),
+            Hint::EnterScope => {}
+            Hint::ExitScope => {}
             Hint::RandomEcPoint { x, y } => {
                 // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
                 // residue.
@@ -342,23 +344,176 @@ impl HintProcessor for CairoHintProcessor {
                     panic!("Unknown selector for system call!");
                 }
             }
-            Hint::DictDestruct { .. } => todo!(),
-            Hint::DictSquash1 { .. } => todo!(),
-            Hint::DictSquash2 { .. } => todo!(),
-            Hint::SquashDict { .. } => todo!(),
-            Hint::SquashDictInner1 { .. } => todo!(),
-            Hint::SquashDictInner2 { .. } => todo!(),
-            Hint::SquashDictInner3 { .. } => todo!(),
-            Hint::SquashDictInner4 { .. } => todo!(),
-            Hint::SquashDictInner5 => todo!(),
-            Hint::SquashDictInner6 { .. } => todo!(),
-            Hint::SquashDictInner7 => todo!(),
-            Hint::SquashDictInner8 { .. } => todo!(),
-            Hint::AssertLtFelt { .. } => todo!(),
-            Hint::AssertLeFelt1 { .. } => todo!(),
-            Hint::AssertLeFelt2 { .. } => todo!(),
-            Hint::AssertLeFelt3 { .. } => todo!(),
-            Hint::AssertLeFelt4 => todo!(),
+            Hint::DictDestruct { dict_end_ptr, dict_index, .. } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_end_ptr);
+                let dict_address = get_ptr(dict_base, &dict_offset)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to read from a dict while dict manager was not initialized.");
+                let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address);
+                insert_value_to_cellref!(vm, dict_index, BigInt::from(dict_infos_index))?;
+            }
+            Hint::DictSquash1 { .. } => {}
+            Hint::DictSquash2 { .. } => {}
+            Hint::SquashDict { dict_accesses, n_accesses, first_key, big_keys, .. } => {
+                let dict_access_size = 3;
+                let rangecheck_bound = BigInt::from(1) << 128;
+
+                exec_scopes.assign_or_update_variable(
+                    "dict_squash_exec_scope",
+                    Box::<DictSquashExecScope>::default(),
+                );
+                let dict_squash_exec_scope =
+                    exec_scopes.get_mut_ref::<DictSquashExecScope>("dict_squash_exec_scope")?;
+                let (dict_accesses_base, dict_accesses_offset) = extract_buffer(dict_accesses);
+                let dict_accesses_address = get_ptr(dict_accesses_base, &dict_accesses_offset)?;
+                let n_accesses = get_val(n_accesses)?
+                    .to_usize()
+                    .expect("Number of accesses is too large or negative.");
+                for i in 0..n_accesses {
+                    let current_key =
+                        vm.get_integer(&(dict_accesses_address + i * dict_access_size))?;
+                    dict_squash_exec_scope
+                        .access_indices
+                        .entry(current_key.into_owned())
+                        .and_modify(|indices| indices.push(BigInt::from(i)))
+                        .or_insert_with(|| vec![BigInt::from(i)]);
+                }
+                // Reverse the accesses in order to pop them in order later.
+                for (_, accesses) in dict_squash_exec_scope.access_indices.iter_mut() {
+                    accesses.reverse();
+                }
+                dict_squash_exec_scope.keys =
+                    dict_squash_exec_scope.access_indices.iter().map(|(k, _)| k.clone()).collect();
+                dict_squash_exec_scope.keys.sort_by(|a, b| b.cmp(a));
+                // big_keys indicates if the keys are greater than rangecheck_bound. If they are not
+                // a simple range check is used instead of assert_le_felt.
+                insert_value_to_cellref!(
+                    vm,
+                    big_keys,
+                    if dict_squash_exec_scope.keys[0] < rangecheck_bound {
+                        BigInt::from(0)
+                    } else {
+                        BigInt::from(1)
+                    }
+                )?;
+                insert_value_to_cellref!(
+                    vm,
+                    first_key,
+                    dict_squash_exec_scope.current_key().unwrap()
+                )?;
+            }
+            Hint::SquashDictInner1 { range_check_ptr } => {
+                let dict_squash_exec_scope: &mut DictSquashExecScope =
+                    exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
+                let (range_check_base, range_check_offset) = extract_buffer(range_check_ptr);
+                let range_check_ptr = get_ptr(range_check_base, &range_check_offset)?;
+                let current_access_index = dict_squash_exec_scope.current_access_index().unwrap();
+                vm.insert_value(&range_check_ptr, current_access_index)?;
+            }
+            Hint::SquashDictInner2 { should_skip_loop } => {
+                let dict_squash_exec_scope: &mut DictSquashExecScope =
+                    exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
+                insert_value_to_cellref!(
+                    vm,
+                    should_skip_loop,
+                    // The loop verifies that each two consecutive accesses are valid, thus we
+                    // break when there is only one remaining access.
+                    if dict_squash_exec_scope.current_access_indices().unwrap().len() > 1 {
+                        BigInt::from(0)
+                    } else {
+                        BigInt::from(1)
+                    }
+                )?;
+            }
+            Hint::SquashDictInner3 { index_delta_minus1 } => {
+                let dict_squash_exec_scope: &mut DictSquashExecScope =
+                    exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
+                let prev_access_index = dict_squash_exec_scope.pop_current_access_index().unwrap();
+                let index_delta_minus_1_val =
+                    dict_squash_exec_scope.current_access_index().unwrap() - prev_access_index - 1;
+                insert_value_to_cellref!(vm, index_delta_minus1, index_delta_minus_1_val)?;
+            }
+            Hint::SquashDictInner4 { should_continue } => {
+                let dict_squash_exec_scope: &mut DictSquashExecScope =
+                    exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
+                insert_value_to_cellref!(
+                    vm,
+                    should_continue,
+                    // The loop verifies that each two consecutive accesses are valid, thus we
+                    // break when there is only one remaining access.
+                    if dict_squash_exec_scope.current_access_indices().unwrap().len() > 1 {
+                        BigInt::from(1)
+                    } else {
+                        BigInt::from(0)
+                    }
+                )?;
+            }
+            Hint::SquashDictInner5 => {}
+            Hint::SquashDictInner6 { .. } => {}
+            Hint::SquashDictInner7 => {}
+            Hint::SquashDictInner8 { next_key } => {
+                let dict_squash_exec_scope: &mut DictSquashExecScope =
+                    exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
+                dict_squash_exec_scope.pop_current_key();
+                insert_value_to_cellref!(
+                    vm,
+                    next_key,
+                    dict_squash_exec_scope.current_key().unwrap()
+                )?;
+            }
+            Hint::AssertLtFelt { .. } => {}
+            Hint::AssertLeFelt1 { a, b, range_check_ptr } => {
+                let a_val = get_val(a)?;
+                let b_val = get_val(b)?;
+                let mut lengths_and_indices = vec![
+                    (a_val.clone(), 0),
+                    (b_val.clone() - a_val, 1),
+                    (get_prime() - 1 - b_val, 2),
+                ];
+                lengths_and_indices.sort();
+                exec_scopes
+                    .assign_or_update_variable("excluded_arc", Box::new(lengths_and_indices[2].1));
+                // ceil((PRIME / 2) / 2 ** 128).
+                let prime_over_2_high = 3544607988759775765608368578435044694_u128;
+                // ceil((PRIME / 3) / 2 ** 128).
+                let prime_over_3_high = 5316911983139663648412552867652567041_u128;
+                let (range_check_base, range_check_offset) = extract_buffer(range_check_ptr);
+                let range_check_ptr = get_ptr(range_check_base, &range_check_offset)?;
+                vm.insert_value(
+                    &range_check_ptr,
+                    lengths_and_indices[0].0.clone() % prime_over_3_high,
+                )?;
+                vm.insert_value(
+                    &(range_check_ptr + 1),
+                    lengths_and_indices[0].0.clone() / prime_over_3_high,
+                )?;
+                vm.insert_value(
+                    &(range_check_ptr + 2),
+                    lengths_and_indices[1].0.clone() % prime_over_2_high,
+                )?;
+                vm.insert_value(
+                    &(range_check_ptr + 3),
+                    lengths_and_indices[1].0.clone() / prime_over_2_high,
+                )?;
+            }
+            Hint::AssertLeFelt2 { skip_exclude_a_flag } => {
+                let excluded_arc: i32 = exec_scopes.get("excluded_arc")?;
+                insert_value_to_cellref!(
+                    vm,
+                    skip_exclude_a_flag,
+                    if excluded_arc != 0 { BigInt::from(1) } else { BigInt::from(0) }
+                )?;
+            }
+            Hint::AssertLeFelt3 { skip_exclude_b_minus_a } => {
+                let excluded_arc: i32 = exec_scopes.get("excluded_arc")?;
+                insert_value_to_cellref!(
+                    vm,
+                    skip_exclude_b_minus_a,
+                    if excluded_arc != 1 { BigInt::from(1) } else { BigInt::from(0) }
+                )?;
+            }
+            Hint::AssertLeFelt4 => {}
             Hint::DebugPrint { start, end } => {
                 let as_relocatable = |value| {
                     let (base, offset) = extract_buffer(value);
