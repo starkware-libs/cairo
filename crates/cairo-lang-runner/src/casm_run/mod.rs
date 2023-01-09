@@ -5,6 +5,11 @@ use std::str::FromStr;
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
+use cairo_lang_casm::hints::Hint;
+use cairo_lang_casm::instructions::Instruction;
+use cairo_lang_casm::operand::{
+    BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
+};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::short_string::as_cairo_short_string;
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
@@ -17,16 +22,14 @@ use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
+use dict_manager::DictManagerExecScope;
 use num_bigint::{BigInt, BigUint};
-use num_traits::identities::Zero;
-
-use crate::hints::Hint;
-use crate::instructions::Instruction;
-use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
+use num_traits::{ToPrimitive, Zero};
 
 #[cfg(test)]
-#[path = "run_test.rs"]
 mod test;
+
+mod dict_manager;
 
 /// Returns the Starkware prime 2^251 + 17*2^192 + 1.
 fn get_prime() -> BigInt {
@@ -101,6 +104,13 @@ fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatab
     base + (cell_ref.offset as i32)
 }
 
+/// Inserts a value into the vm memory cell represented by the cellref.
+macro_rules! insert_value_to_cellref {
+    ($vm:ident, $cell_ref:ident, $value:expr) => {
+        $vm.insert_value(&cell_ref_to_relocatable($cell_ref, $vm), $value)
+    };
+}
+
 /// Execution scope for starknet related data.
 struct StarknetExecScope {
     /// The values of addresses in the simulated storage.
@@ -139,12 +149,12 @@ impl HintProcessor for CairoHintProcessor {
                 ResOperand::BinOp(op) => {
                     let a = get_cell_val(&op.a)?;
                     let b = match &op.b {
-                        crate::operand::DerefOrImmediate::Deref(cell) => get_cell_val(cell)?,
-                        crate::operand::DerefOrImmediate::Immediate(x) => x.clone(),
+                        DerefOrImmediate::Deref(cell) => get_cell_val(cell)?,
+                        DerefOrImmediate::Immediate(x) => x.clone(),
                     };
                     match op.op {
-                        crate::operand::Operation::Add => Ok(a + b),
-                        crate::operand::Operation::Mul => Ok(a * b),
+                        Operation::Add => Ok(a + b),
+                        Operation::Mul => Ok(a * b),
                     }
                 }
             }
@@ -152,32 +162,37 @@ impl HintProcessor for CairoHintProcessor {
         match hint {
             Hint::AllocSegment { dst } => {
                 let segment = vm.add_memory_segment();
-                vm.insert_value(&cell_ref_to_relocatable(dst, vm), segment)?;
+                insert_value_to_cellref!(vm, dst, segment)?;
             }
             Hint::TestLessThan { lhs, rhs, dst } => {
                 let lhs_val = get_val(lhs)?;
                 let rhs_val = get_val(rhs)?;
-                vm.insert_value(
-                    &cell_ref_to_relocatable(dst, vm),
-                    if lhs_val < rhs_val { BigInt::from(1) } else { BigInt::from(0) },
+                insert_value_to_cellref!(
+                    vm,
+                    dst,
+                    if lhs_val < rhs_val { BigInt::from(1) } else { BigInt::from(0) }
                 )?;
             }
             Hint::TestLessThanOrEqual { lhs, rhs, dst } => {
                 let lhs_val = get_val(lhs)?;
                 let rhs_val = get_val(rhs)?;
-                vm.insert_value(
-                    &cell_ref_to_relocatable(dst, vm),
-                    if lhs_val <= rhs_val { BigInt::from(1) } else { BigInt::from(0) },
+                insert_value_to_cellref!(
+                    vm,
+                    dst,
+                    if lhs_val <= rhs_val { BigInt::from(1) } else { BigInt::from(0) }
                 )?;
             }
             Hint::DivMod { lhs, rhs, quotient, remainder } => {
                 let lhs_val = get_val(lhs)?;
                 let rhs_val = get_val(rhs)?;
-                vm.insert_value(
-                    &cell_ref_to_relocatable(quotient, vm),
-                    lhs_val.clone() / rhs_val.clone(),
-                )?;
-                vm.insert_value(&cell_ref_to_relocatable(remainder, vm), lhs_val % rhs_val)?;
+                insert_value_to_cellref!(vm, quotient, lhs_val.clone() / rhs_val.clone())?;
+                insert_value_to_cellref!(vm, remainder, lhs_val % rhs_val)?;
+            }
+            Hint::PrimeDiv { lhs, rhs, result } => {
+                let lhs_val = Fq::from(get_val(lhs)?.to_biguint().unwrap());
+                let rhs_val = Fq::from(get_val(rhs)?.to_biguint().unwrap());
+                let div: BigUint = (lhs_val / rhs_val).into_bigint().into();
+                vm.insert_value(&cell_ref_to_relocatable(result, vm), BigInt::from(div))?;
             }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
                 let value = get_val(value)?;
@@ -185,12 +200,61 @@ impl HintProcessor for CairoHintProcessor {
                 let max_x = get_val(max_x)?;
                 let x_value = (value.clone() / scalar.clone()).min(max_x);
                 let y_value = value - x_value.clone() * scalar;
-                vm.insert_value(&cell_ref_to_relocatable(x, vm), x_value)?;
-                vm.insert_value(&cell_ref_to_relocatable(y, vm), y_value)?;
+                insert_value_to_cellref!(vm, x, x_value)?;
+                insert_value_to_cellref!(vm, y, y_value)?;
             }
-            Hint::AllocDictFeltTo { .. } => todo!(),
-            Hint::DictFeltToRead { .. } => todo!(),
-            Hint::DictFeltToWrite { .. } => todo!(),
+            Hint::AllocDictFeltTo { dict_manager_ptr } => {
+                let (cell, base_offset) = extract_buffer(dict_manager_ptr);
+                let dict_manager_address = get_ptr(cell, &base_offset)?;
+                let n_dicts = vm
+                    .get_integer(&(dict_manager_address + 1))?
+                    .into_owned()
+                    .to_usize()
+                    .expect("Number of dictionaries too large.");
+                let dict_infos_base = vm.get_relocatable(&(dict_manager_address))?;
+
+                let dict_manager_exec_scope = match exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                {
+                    Ok(dict_manager_exec_scope) => dict_manager_exec_scope,
+                    Err(_) => {
+                        exec_scopes.assign_or_update_variable(
+                            "dict_manager_exec_scope",
+                            Box::<DictManagerExecScope>::default(),
+                        );
+                        exec_scopes
+                            .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")?
+                    }
+                };
+                let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
+                vm.insert_value(&(dict_infos_base + 3 * n_dicts), new_dict_segment)?;
+            }
+            Hint::DictFeltToRead { dict_ptr, key, value_dst } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+                let dict_address = get_ptr(dict_base, &dict_offset)?;
+                let key = get_val(key)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to read from a dict while dict manager was not initialized.");
+                let value = dict_manager_exec_scope
+                    .get_from_tracker(dict_address, &key)
+                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                insert_value_to_cellref!(vm, value_dst, value)?;
+            }
+            Hint::DictFeltToWrite { dict_ptr, key, value, prev_value_dst } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+                let dict_address = get_ptr(dict_base, &dict_offset)?;
+                let key = get_val(key)?;
+                let value = get_val(value)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to write to a dict while dict manager was not initialized.");
+                let prev_value = dict_manager_exec_scope
+                    .get_from_tracker(dict_address, &key)
+                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                insert_value_to_cellref!(vm, prev_value_dst, prev_value)?;
+                dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
+            }
             Hint::EnterScope => todo!(),
             Hint::ExitScope => todo!(),
             Hint::RandomEcPoint { x, y } => {
@@ -207,8 +271,8 @@ impl HintProcessor for CairoHintProcessor {
                 };
                 let x_bigint: BigUint = random_x.into_bigint().into();
                 let y_bigint: BigUint = random_y_squared.sqrt().unwrap().into_bigint().into();
-                vm.insert_value(&cell_ref_to_relocatable(x, vm), BigInt::from(x_bigint))?;
-                vm.insert_value(&cell_ref_to_relocatable(y, vm), BigInt::from(y_bigint))?;
+                insert_value_to_cellref!(vm, x, BigInt::from(x_bigint))?;
+                insert_value_to_cellref!(vm, y, BigInt::from(y_bigint))?;
             }
             Hint::SystemCall { system } => {
                 let starknet_exec_scope =
@@ -334,7 +398,7 @@ impl HintProcessor for CairoHintProcessor {
 fn extract_buffer(buffer: &ResOperand) -> (&CellRef, BigInt) {
     let (cell, base_offset) = match buffer {
         ResOperand::Deref(cell) => (cell, 0.into()),
-        ResOperand::BinOp(BinOpOperand { op: crate::operand::Operation::Add, a, b }) => {
+        ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
             (a, extract_matches!(b, DerefOrImmediate::Immediate).clone())
         }
         _ => panic!("Illegal argument for a buffer."),
@@ -389,21 +453,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
     runner.run_until_pc(end, &mut vm, &mut hint_processor)?;
-    // TODO(alont) Remove this hack once the VM no longer squashes Nones at the end of segments.
-    vm.insert_value(&vm.get_ap().add_int_mod(&1.into(), &get_prime())?, BigInt::from(0))?;
     runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
     Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
-}
-
-/// Runs `function` and returns `n_returns` return values.
-pub fn run_function_return_values<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
-    instructions: Instructions,
-    builtins: Vec<String>,
-    n_returns: usize,
-) -> Result<Vec<BigInt>, Box<VirtualMachineError>> {
-    let (cells, ap) = run_function(instructions, builtins, |_| Ok(()))?;
-    // TODO(orizi): Return an error instead of unwrapping.
-    let cells = cells.into_iter().skip(ap - n_returns);
-    Ok(cells.take(n_returns).map(|cell| cell.unwrap()).collect())
 }

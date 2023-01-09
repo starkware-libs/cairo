@@ -1,25 +1,26 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::ConcreteVariant;
+use id_arena::Arena;
 use itertools::chain;
 
 use crate::db::LoweringGroup;
-use crate::lower::Lowered;
 use crate::objects::{
     BlockId, Statement, StatementCall, StatementCallBlock, StatementLiteral, StatementMatchExtern,
     StatementStructDestructure, StructuredBlock, StructuredBlockEnd, VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, StatementEnumConstruct, StatementMatchEnum, StatementStructConstruct,
+    FlatBlock, FlatBlockEnd, FlatLowered, StatementEnumConstruct, StatementMatchEnum,
+    StatementStructConstruct, StructuredLowered, Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
 pub struct LoweredFormatter<'db> {
     pub db: &'db (dyn LoweringGroup + 'static),
-    pub lowered: &'db Lowered,
+    pub variables: &'db Arena<Variable>,
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for Lowered {
+impl DebugWithDb<LoweredFormatter<'_>> for StructuredLowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         for (block_id, block) in self.blocks.iter() {
             block_id.fmt(f, ctx)?;
@@ -43,6 +44,16 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
             write!(f, " ")?;
             format_var_with_ty(*var, f, ctx)?;
             if inputs.peek().is_some() {
+                write!(f, ",")?;
+            }
+        }
+
+        write!(f, "\nInitial refs:")?;
+        let mut refs = self.initial_refs.iter().peekable();
+        while let Some(var) = refs.next() {
+            write!(f, " ")?;
+            format_var_with_ty(*var, f, ctx)?;
+            if refs.peek().is_some() {
                 write!(f, ",")?;
             }
         }
@@ -87,6 +98,22 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
             }
         }
         write!(f, ")")
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        for (block_id, block) in self.blocks.iter() {
+            block_id.fmt(f, ctx)?;
+            if self.root == Ok(block_id) {
+                writeln!(f, " (root):")?;
+            } else {
+                writeln!(f, ":")?;
+            }
+            block.fmt(f, ctx)?;
+            writeln!(f)?;
+        }
+        Ok(())
     }
 }
 
@@ -147,7 +174,7 @@ fn format_var_with_ty(
     ctx: &LoweredFormatter<'_>,
 ) -> std::fmt::Result {
     var_id.fmt(f, ctx)?;
-    let var = &ctx.lowered.variables[var_id];
+    let var = &ctx.variables[var_id];
     for ref_index in var.ref_indices.iter() {
         write!(f, "[r{}]", ref_index)?;
     }
@@ -239,16 +266,8 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchExtern {
             }
         }
         writeln!(f, ") {{")?;
-        for (_, block_id) in &self.arms {
-            write!(f, "    (")?;
-            let mut inputs = ctx.lowered.blocks[*block_id].inputs.iter().peekable();
-            while let Some(var) = inputs.next() {
-                var.fmt(f, ctx)?;
-                if inputs.peek().is_some() {
-                    write!(f, ", ")?;
-                }
-            }
-            writeln!(f, ") => {:?},", block_id.debug(ctx))?;
+        for (variant, block_id) in &self.arms {
+            writeln!(f, "    {:?} => {:?},", variant.debug(ctx), block_id.debug(ctx))?;
         }
         write!(f, "  }}")
     }

@@ -47,6 +47,7 @@ define_libfunc_hierarchy! {
     pub enum EcLibfunc {
         AddToState(EcAddToStateLibfunc),
         CreatePoint(EcCreatePointLibfunc),
+        FinalizeState(EcFinalizeStateLibfunc),
         InitState(EcInitStateLibfunc),
         UnwrapPoint(EcUnwrapPointLibfunc),
     }, EcConcreteLibfunc
@@ -102,11 +103,11 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
             vec![
                 OutputVarInfo {
                     ty: felt_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                 },
                 OutputVarInfo {
                     ty: felt_ty,
-                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                 },
             ],
             SierraApChange::Known { new_vars_only: true },
@@ -154,5 +155,37 @@ impl NoGenericArgsGenericLibfunc for EcAddToStateLibfunc {
             }],
             SierraApChange::Known { new_vars_only: false },
         ))
+    }
+}
+
+/// Libfunc for initializing an EC state from an EC point.
+#[derive(Default)]
+pub struct EcFinalizeStateLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcFinalizeStateLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_try_finalize_state");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(
+                context.get_concrete_type(EcStateType::id(), &[])?,
+            )],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: context.get_concrete_type(EcPointType::id(), &[])?,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
     }
 }

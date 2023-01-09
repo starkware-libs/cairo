@@ -1,0 +1,65 @@
+//! > Test enum
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+enum MyEnum {
+    A: felt,
+    B(felt),
+    C: felt,
+    MissingComma
+}
+
+//! > top_level_kind
+ItemEnum
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Unexpected token, expected ':' followed by a type.
+ --> dummy_file.cairo:3:6
+    B(felt),
+     ^
+
+error: Unexpected token, expected ':' followed by a type.
+ --> dummy_file.cairo:5:17
+    MissingComma
+                ^
+
+//! > expected_tree
+└── Top level kind: ItemEnum
+    ├── attributes (kind: AttributeList) []
+    ├── enum_kw (kind: TokenEnum): 'enum'
+    ├── name (kind: TokenIdentifier): 'MyEnum'
+    ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    ├── lbrace (kind: TokenLBrace): '{'
+    ├── variants (kind: MemberList)
+    │   ├── item #0 (kind: Member)
+    │   │   ├── name (kind: TokenIdentifier): 'A'
+    │   │   └── type_clause (kind: TypeClause)
+    │   │       ├── colon (kind: TokenColon): ':'
+    │   │       └── ty (kind: ExprPath)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   ├── separator #0 (kind: TokenComma): ','
+    │   ├── item #1 (kind: Member)
+    │   │   ├── name (kind: TokenIdentifier): 'B'
+    │   │   └── type_clause (kind: TypeClause)
+    │   │       ├── colon: Missing
+    │   │       └── ty: Missing []
+    │   ├── separator #1 (kind: TokenComma): ','
+    │   ├── item #2 (kind: Member)
+    │   │   ├── name (kind: TokenIdentifier): 'C'
+    │   │   └── type_clause (kind: TypeClause)
+    │   │       ├── colon (kind: TokenColon): ':'
+    │   │       └── ty (kind: ExprPath)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   ├── separator #2 (kind: TokenComma): ','
+    │   └── item #3 (kind: Member)
+    │       ├── name (kind: TokenIdentifier): 'MissingComma'
+    │       └── type_clause (kind: TypeClause)
+    │           ├── colon: Missing
+    │           └── ty: Missing []
+    └── rbrace (kind: TokenRBrace): '}'

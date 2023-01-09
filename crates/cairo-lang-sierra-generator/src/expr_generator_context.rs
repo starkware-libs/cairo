@@ -6,16 +6,17 @@ use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use lowering::FlatLowered;
 
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
-use crate::lifetime::{DropLocation, SierraGenVar, VariableLifetimeResult};
+use crate::lifetime::{DropLocation, SierraGenVar, UseLocation, VariableLifetimeResult};
 use crate::pre_sierra;
 
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
-    lowered: &'a lowering::lower::Lowered,
+    lowered: &'a FlatLowered,
     function_id: FreeFunctionId,
     // TODO(lior): Remove `allow(dead_code)` once this field is used.
     #[allow(dead_code)]
@@ -29,7 +30,7 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
     pub fn new(
         db: &'a dyn SierraGenGroup,
-        lowered: &'a lowering::lower::Lowered,
+        lowered: &'a FlatLowered,
         function_id: FreeFunctionId,
         lifetime: &'a VariableLifetimeResult,
     ) -> Self {
@@ -118,5 +119,11 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Returns the places where variables should be dropped. See [VariableLifetimeResult::drops].
     pub fn get_drops(&self) -> &'a OrderedHashMap<DropLocation, Vec<SierraGenVar>> {
         &self.lifetime.drops
+    }
+
+    /// Returns `true` if the given [UseLocation] is the last time a variable is used (namely,
+    /// it will not be used after the current statement).
+    pub fn is_last_use(&self, use_location: &UseLocation) -> bool {
+        self.lifetime.last_use.contains(use_location)
     }
 }

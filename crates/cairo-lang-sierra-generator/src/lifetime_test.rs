@@ -41,9 +41,10 @@ fn check_variable_lifetime(
         .unwrap()
         .expect_with_db(db, "Unexpected diagnostics.");
 
-    let lowered_function = &*db.free_function_lowered(test_function.function_id).unwrap();
+    let lowered_function = &*db.free_function_lowered_flat(test_function.function_id).unwrap();
 
-    let lowered_formatter = lowering::fmt::LoweredFormatter { db, lowered: lowered_function };
+    let lowered_formatter =
+        lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
     let local_variables = find_local_variables(db, lowered_function).unwrap();
@@ -52,7 +53,7 @@ fn check_variable_lifetime(
     let last_use_str = find_variable_lifetime_res
         .last_use
         .iter()
-        .map(|(var_id, location)| format!("{:?}: {location:?}", var_id.debug(&lowered_formatter)))
+        .map(|location| format!("{location:?}"))
         .join("\n");
     let drop_str = find_variable_lifetime_res
         .drops

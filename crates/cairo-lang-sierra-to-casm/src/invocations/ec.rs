@@ -23,6 +23,7 @@ pub fn build(
     match libfunc {
         EcConcreteLibfunc::AddToState(_) => build_ec_add_to_state(builder),
         EcConcreteLibfunc::CreatePoint(_) => build_ec_point_try_create(builder),
+        EcConcreteLibfunc::FinalizeState(_) => build_ec_try_finalize_state(builder),
         EcConcreteLibfunc::InitState(_) => build_ec_init_state(builder),
         EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
     }
@@ -47,33 +48,29 @@ fn verify_ec_point(
     };
 }
 
-/// Extends the CASM builder to compute the sum of two EC points and store the result in the given
-/// variables.
-/// Assumes neither point is the point at infinity, and asserts their sum is not the point at
-/// infinity (i.e. asserts p0 != -p1).
-/// Also asserts that the points are not equal (i.e. no doubling allowed).
-fn add_ec_points(casm_builder: &mut CasmBuilder, p0: (Var, Var), p1: (Var, Var)) -> (Var, Var) {
+/// Extends the CASM builder to compute the sum - or difference - of two EC points, and store the
+/// result in the given variables.
+/// The inputs to the function are:
+/// 1. The first point (`p0`).
+/// 2. The X coordinate of the second point (`x1`).
+/// 3. The "numerator", which is either `y0 - y1` (for point addition) or `y0 + y1` (for point
+///    subtraction).
+/// 4. The computation of `x0 - x1` (called "denominator"). Assumed to be non-zero.
+fn add_ec_points(
+    casm_builder: &mut CasmBuilder,
+    p0: (Var, Var),
+    x1: Var,
+    numerator: Var,
+    denominator: Var,
+) -> (Var, Var) {
     let (x0, y0) = p0;
-    let (x1, y1) = p1;
 
     casm_build_extend! {casm_builder,
-        // If the X coordinate is the same, either the points are equal or their sum is the point at
-        // infinity.
-        tempvar diff_x = x0 - x1;
-        jump NotSameX if diff_x != 0;
-        // X coordinate is identical; either `p0 + p1` is the point at infinity (not allowed) or
-        // `p0 = p1`, which is also not allowed (doubling).
-        InfiniteLoop:
-        jump InfiniteLoop;
-        NotSameX:
-        // If we are here, then `p0 != p1` and `p0 != -p1`. Compute the "slope"
-        // (`(y0 - y1) / (x0 - x1)`), and use the slope to compute the sum:
-        // `result_x = slope * slope - x0 - x1`
-        // `result_y = slope * (x0 - result_x) - y0`
-        tempvar numerator = y0 - y1;
-        tempvar denominator = x0 - x1;
+        // TODO(dorimedini): Once PrimeDiv is removed, instead of the next 3 lines just do
+        // `tempvar slope = numerator / denominator;`.
         tempvar slope;
-        assert numerator = slope * denominator;
+        hint PrimeDiv { lhs: numerator, rhs: denominator } into { result: slope };
+        assert slope = numerator / denominator;
         tempvar slope2 = slope * slope;
         tempvar sum_x = x0 + x1;
         tempvar result_x = slope2 - sum_x;
@@ -175,9 +172,70 @@ fn build_ec_add_to_state(
     let sx = casm_builder.add_var(ResOperand::Deref(sx.to_deref()?));
     let sy = casm_builder.add_var(ResOperand::Deref(sy.to_deref()?));
     let random_ptr = casm_builder.add_var(ResOperand::Deref(random_ptr.to_deref()?));
-    let (result_x, result_y) = add_ec_points(&mut casm_builder, (px, py), (sx, sy));
+
+    casm_build_extend! {casm_builder,
+        // If the X coordinate is the same, either the points are equal or their sum is the point at
+        // infinity. Either way, we can't compute the slope in this case.
+        tempvar denominator = px - sx;
+        jump NotSameX if denominator != 0;
+        // X coordinate is identical; either the sum of the points is the point at infinity (not
+        // allowed), or the points are equal, which is also not allowed (doubling).
+        InfiniteLoop:
+        jump InfiniteLoop;
+        NotSameX:
+        tempvar numerator = py - sy;
+    };
+
+    let (result_x, result_y) =
+        add_ec_points(&mut casm_builder, (px, py), sx, numerator, denominator);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[result_x, result_y, random_ptr]], None)],
+    ))
+}
+
+/// Handles instruction for finalizing an EC state.
+fn build_ec_try_finalize_state(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_state] = builder.try_get_refs()?;
+    let [x, y, random_ptr] = expr_state.try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    let x = casm_builder.add_var(ResOperand::Deref(x.to_deref()?));
+    let y = casm_builder.add_var(ResOperand::Deref(y.to_deref()?));
+    let random_ptr = casm_builder.add_var(ResOperand::Deref(random_ptr.to_deref()?));
+
+    // We want to return the point `(x, y) - (random_x, random_y)`, or in other words,
+    // `(x, y) + (random_x, -random_y)`.
+    casm_build_extend! {casm_builder,
+        tempvar random_x = random_ptr[0];
+        tempvar random_y = random_ptr[1];
+        // If the X coordinate is the same, either the points are equal or their sum is the point at
+        // infinity. Either way, we can't compute the slope in this case.
+        // The result may be the point at infinity if the user called ec_try_finalize_state
+        // immediately after ec_init_state.
+        tempvar denominator = x - random_x;
+        jump NotSameX if denominator != 0;
+        // Assert the result is the point at infinity (the other option is the points are the same,
+        // and doubling is not allowed).
+        assert y = random_y;
+        jump SumIsInfinity;
+        NotSameX:
+        // The numerator is the difference in Y coordinate values of the summed points, and the Y
+        // coordinate of the negated random point is `-random_y`.
+        tempvar numerator = y + random_y;
+    }
+
+    let (result_x, result_y) =
+        add_ec_points(&mut casm_builder, (x, y), random_x, numerator, denominator);
+
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[result_x, result_y]], None),
+            ("SumIsInfinity", &[], Some(failure_handle)),
+        ],
     ))
 }

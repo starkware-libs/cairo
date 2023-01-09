@@ -4,12 +4,13 @@ mod test;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
-use cairo_lang_lowering::lower::Lowered;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_sierra::extensions::lib_func::OutputVarInfo;
+use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::zip_eq;
+use lowering::FlatLowered;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
@@ -22,7 +23,7 @@ use crate::utils::{
 /// variables.
 pub fn find_local_variables(
     db: &dyn SierraGenGroup,
-    lowered_function: &Lowered,
+    lowered_function: &FlatLowered,
 ) -> Maybe<OrderedHashSet<VariableId>> {
     let mut res = OrderedHashSet::<VariableId>::default();
     inner_find_local_variables(
@@ -40,7 +41,7 @@ pub fn find_local_variables(
 /// Returns true if the code has a known ap change.
 fn inner_find_local_variables(
     db: &dyn SierraGenGroup,
-    lowered_function: &Lowered,
+    lowered_function: &FlatLowered,
     block_id: BlockId,
     mut state: LocalVariablesState,
     res: &mut OrderedHashSet<VariableId>,
@@ -181,7 +182,7 @@ fn inner_find_local_variables(
 /// Returns true if executing the entire match results in a known ap change.
 fn handle_match(
     db: &dyn SierraGenGroup,
-    lowered_function: &Lowered,
+    lowered_function: &FlatLowered,
     concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
     arm_blocks: &[BlockId],
     statement: &lowering::Statement,
@@ -303,16 +304,14 @@ impl LocalVariablesState {
     ) {
         for (var_id, var_info) in zip_eq(var_ids, var_infos) {
             match var_info.ref_info {
-                cairo_lang_sierra::extensions::OutputVarReferenceInfo::SameAsParam {
-                    param_idx,
-                } => {
+                OutputVarReferenceInfo::SameAsParam { param_idx }
+                | OutputVarReferenceInfo::PartialParam { param_idx } => {
                     self.set_variable_status(*var_id, VariableStatus::Alias(params[param_idx]));
                 }
-                cairo_lang_sierra::extensions::OutputVarReferenceInfo::NewTempVar { .. }
-                | cairo_lang_sierra::extensions::OutputVarReferenceInfo::Deferred(_) => {
+                OutputVarReferenceInfo::NewTempVar { .. } | OutputVarReferenceInfo::Deferred(_) => {
                     self.set_variable_status(*var_id, VariableStatus::TemporaryVariable);
                 }
-                cairo_lang_sierra::extensions::OutputVarReferenceInfo::NewLocalVar => {}
+                OutputVarReferenceInfo::NewLocalVar => {}
             }
         }
     }

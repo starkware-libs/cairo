@@ -125,7 +125,7 @@ fn dummy_concrete_lib_func_id(db: &dyn SierraGenGroup, name: &str) -> ConcreteLi
     })
 }
 
-/// Returns a vector of variable ids based on the inputs mapped into varaible ids.
+/// Returns a vector of variable ids based on the inputs mapped into variable ids.
 pub fn as_var_id_vec(ids: &[&str]) -> Vec<cairo_lang_sierra::ids::VarId> {
     ids.iter().map(|id| (*id).into()).collect()
 }
@@ -182,14 +182,26 @@ pub fn dummy_push_values(
     db: &dyn SierraGenGroup,
     values: &[(&str, &str)],
 ) -> pre_sierra::Statement {
+    dummy_push_values_ex(
+        db,
+        &values.iter().map(|(src, dst)| (*src, *dst, None)).collect::<Vec<_>>(),
+    )
+}
+
+/// Same as [dummy_push_values] except that it also accepts value for `dup_var`.
+pub fn dummy_push_values_ex(
+    db: &dyn SierraGenGroup,
+    values: &[(&str, &str, Option<&str>)],
+) -> pre_sierra::Statement {
     let felt_ty = db.get_concrete_type_id(db.core_felt_ty()).expect("Can't find core::felt.");
     pre_sierra::Statement::PushValues(
         values
             .iter()
-            .map(|(src, dst)| pre_sierra::PushValue {
+            .map(|(src, dst, dup_var)| pre_sierra::PushValue {
                 var: (*src).into(),
                 var_on_stack: (*dst).into(),
                 ty: felt_ty.clone(),
+                dup_var: dup_var.map(|x| (*x).into()),
             })
             .collect(),
     )

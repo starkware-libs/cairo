@@ -3,16 +3,46 @@
 //! assigned once. It is also normal form: each function argument is a variable, rather than a
 //! compound expression.
 
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use id_arena::Id;
+use id_arena::{Arena, Id};
 use itertools::chain;
 use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
 
+use self::blocks::{FlatBlocks, StructuredBlocks};
+use crate::diagnostic::LoweringDiagnostic;
+
 pub type VariableId = Id<Variable>;
+
+/// A lowered function code.
+#[derive(Debug, PartialEq, Eq)]
+pub struct StructuredLowered {
+    /// Diagnostics produced while lowering.
+    pub diagnostics: Diagnostics<LoweringDiagnostic>,
+    /// Block id for the start of the lowered function.
+    pub root: Maybe<BlockId>,
+    /// Arena of allocated lowered variables.
+    pub variables: Arena<Variable>,
+    /// Arena of allocated lowered blocks.
+    pub blocks: StructuredBlocks,
+}
+
+/// A lowered function code using flat blocks.
+#[derive(Debug, PartialEq, Eq)]
+pub struct FlatLowered {
+    /// Diagnostics produced while lowering.
+    pub diagnostics: Diagnostics<LoweringDiagnostic>,
+    /// Block id for the start of the lowered function.
+    pub root: Maybe<BlockId>,
+    /// Arena of allocated lowered variables.
+    pub variables: Arena<Variable>,
+    /// Arena of allocated lowered blocks.
+    pub blocks: FlatBlocks,
+}
 
 /// A block of statements. Each block gets inputs and outputs, and is composed of
 /// a linear sequence of statements.
@@ -23,6 +53,9 @@ pub type VariableId = Id<Variable>;
 /// the output variables, it is guaranteed that no other variable is alive.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StructuredBlock {
+    /// The variable ids bound to the ref variables (including implicits) at the beginning of the
+    /// block.
+    pub initial_refs: Vec<VariableId>,
     /// Input variables to the block, including implicits.
     pub inputs: Vec<VariableId>,
     /// Statements sequence running one after the other in the block, in a linear flow.

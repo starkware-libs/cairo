@@ -164,7 +164,7 @@ impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
                     ty,
                     // All memory of the deconstruction would have the same lifetime as the first
                     // param - as it is its deconstruction.
-                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                 })
                 .collect(),
             SierraApChange::Known { new_vars_only: true },

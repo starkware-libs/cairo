@@ -211,12 +211,16 @@
     │           │   │       │       │           ├── path (kind: ExprPath)
     │           │   │       │       │           │   └── item #0 (kind: PathSegmentSimple)
     │           │   │       │       │           │       └── ident (kind: TokenIdentifier): 'foo'
-    │           │   │       │       │           └── arguments (kind: ExprListParenthesized)
+    │           │   │       │       │           └── arguments (kind: ArgListParenthesized)
     │           │   │       │       │               ├── lparen (kind: TokenLParen): '('
-    │           │   │       │       │               ├── expressions (kind: ExprList)
-    │           │   │       │       │               │   ├── item #0 (kind: TokenLiteralNumber): '1'
+    │           │   │       │       │               ├── args (kind: ArgList)
+    │           │   │       │       │               │   ├── item #0 (kind: Arg)
+    │           │   │       │       │               │   │   ├── name (kind: OptionArgNameClauseEmpty) []
+    │           │   │       │       │               │   │   └── value (kind: TokenLiteralNumber): '1'
     │           │   │       │       │               │   ├── separator #0 (kind: TokenComma): ','
-    │           │   │       │       │               │   └── item #1 (kind: TokenLiteralNumber): '3'
+    │           │   │       │       │               │   └── item #1 (kind: Arg)
+    │           │   │       │       │               │       ├── name (kind: OptionArgNameClauseEmpty) []
+    │           │   │       │       │               │       └── value (kind: TokenLiteralNumber): '3'
     │           │   │       │       │               └── rparen (kind: TokenRParen): ')'
     │           │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │           │   │       └── rbrace (kind: TokenRBrace): '}'

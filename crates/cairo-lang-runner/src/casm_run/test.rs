@@ -1,10 +1,10 @@
+use cairo_lang_casm::inline::CasmContext;
+use cairo_lang_casm::{casm, deref};
 use itertools::Itertools;
 use num_bigint::{BigInt, Sign};
 use test_case::test_case;
 
-use crate::inline::CasmContext;
-use crate::run::{run_function, run_function_return_values};
-use crate::{casm, deref};
+use crate::casm_run::run_function;
 
 #[test_case(
     casm! {
@@ -87,10 +87,24 @@ use crate::{casm, deref};
     &[377];
     "fib(1, 1, 13)"
 )]
+#[test_case(
+    casm! {
+        [ap + 0] = 2, ap++;
+        [ap + 0] = 1, ap++;
+        [ap - 1] = [ap + 0] * [ap - 2], ap++; // Caclulates.
+        [ap - 2] = [ap - 1] * [ap - 3]; // Validates the calculation.
+        ret;
+    },
+    1,
+    &[] => ignore["Enable when VM division is fixed"];
+    "simple_division"
+)]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
+    let (cells, ap) = run_function(function.instructions.iter(), vec![], |_| Ok(()))
+        .expect("Running code failed.");
+    let cells = cells.into_iter().skip(ap - n_returns);
     assert_eq!(
-        run_function_return_values(function.instructions.iter(), vec![], n_returns)
-            .expect("Running code failed."),
+        cells.take(n_returns).map(|cell| cell.unwrap()).collect_vec(),
         expected.iter().copied().map(BigInt::from).collect_vec()
     );
 }

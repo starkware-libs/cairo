@@ -58,13 +58,16 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             let func_content_cost = ops.function_cost(function);
             vec![ops.add(ops.const_cost(2), func_content_cost)]
         }
-        Bitwise(_) => vec![ops.const_cost(5)],
+        Bitwise(_) => {
+            vec![ops.add(ops.const_cost(2), ops.const_cost_token(1, CostTokenType::Bitwise))]
+        }
         Bool(BoolConcreteLibfunc::And(_)) => vec![ops.const_cost(0)],
         Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.const_cost(2), ops.const_cost(2)],
-        Ec(EcConcreteLibfunc::AddToState(_)) => vec![ops.const_cost(10)],
+        Ec(EcConcreteLibfunc::AddToState(_)) => vec![ops.const_cost(9)],
         Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(6), ops.const_cost(6)],
+        Ec(EcConcreteLibfunc::FinalizeState(_)) => vec![ops.const_cost(13), ops.const_cost(6)],
         Ec(EcConcreteLibfunc::InitState(_)) => vec![ops.const_cost(8)],
         Ec(EcConcreteLibfunc::UnwrapPoint(_)) => vec![ops.const_cost(0)],
         Gas(GetGas(_)) => {
