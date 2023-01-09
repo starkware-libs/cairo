@@ -17,6 +17,139 @@ mod TestContract;
 
 //! > ==========================================================================
 
+//! > Test diagnostics of non-serializable parameter in entry point.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo(x: (felt, felt)) {
+    }
+}
+
+//! > generated_cairo_code
+#[generated_contract]
+mod TestContract {
+    #[external]
+    fn foo(x: (felt, felt)) {
+    }
+
+    
+    trait __abi {
+        fn foo(x: (felt, felt));
+        
+        
+    }
+
+    mod __external {
+        
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Could not find serialization for type `(felt, felt)`
+ --> dummy_file.cairo:4:15
+    fn foo(x: (felt, felt)) {
+              ^**********^
+
+//! > ==========================================================================
+
+//! > Test diagnostics of non-serializable return type in entry point.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo() -> (felt, felt) {
+    }
+}
+
+//! > generated_cairo_code
+#[generated_contract]
+mod TestContract {
+    #[external]
+    fn foo() -> (felt, felt) {
+    }
+
+    
+    trait __abi {
+        fn foo() -> (felt, felt);
+        
+        
+    }
+
+    mod __external {
+        
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Could not find serialization for type `(felt, felt)`
+ --> dummy_file.cairo:4:17
+    fn foo() -> (felt, felt) {
+                ^**********^
+
+//! > ==========================================================================
+
+//! > Test multiple diagnostics from entry point.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+    }
+}
+
+//! > generated_cairo_code
+#[generated_contract]
+mod TestContract {
+    #[external]
+    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+    }
+
+    
+    trait __abi {
+        fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt);
+        
+        
+    }
+
+    mod __external {
+        
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Could not find serialization for type `(felt, felt)`
+ --> dummy_file.cairo:4:15
+    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+              ^**********^
+
+error: Could not find serialization for type `(felt, felt)`
+ --> dummy_file.cairo:4:32
+    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+                               ^**********^
+
+error: Could not find serialization for type `(felt, felt)`
+ --> dummy_file.cairo:4:49
+    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+                                                ^**********^
+
+//! > ==========================================================================
+
 //! > Test diagnostics from event with nonempty body.
 
 //! > test_function_name
