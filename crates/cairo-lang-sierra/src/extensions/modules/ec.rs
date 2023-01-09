@@ -49,6 +49,7 @@ define_libfunc_hierarchy! {
         CreatePoint(EcCreatePointLibfunc),
         FinalizeState(EcFinalizeStateLibfunc),
         InitState(EcInitStateLibfunc),
+        Op(EcOpLibfunc),
         UnwrapPoint(EcUnwrapPointLibfunc),
     }, EcConcreteLibfunc
 }
@@ -187,5 +188,42 @@ impl NoGenericArgsGenericLibfunc for EcFinalizeStateLibfunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// Libfunc for applying the EC op builtin: given an EC state `S`, a scalar `M` and an EC point `Q`,
+/// computes a new EC state `S + M * Q`.
+#[derive(Default)]
+pub struct EcOpLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcOpLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_op_builtin");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ec_builtin_ty = context.get_concrete_type(EcOpType::id(), &[])?;
+        let ec_state_ty = context.get_concrete_type(EcStateType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![
+                ec_builtin_ty.clone(),
+                ec_state_ty.clone(),
+                context.get_concrete_type(FeltType::id(), &[])?,
+                context.get_concrete_type(EcPointType::id(), &[])?,
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: ec_builtin_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: ec_state_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+            ],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 }
