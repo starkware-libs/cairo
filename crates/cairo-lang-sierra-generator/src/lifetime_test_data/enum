@@ -89,7 +89,7 @@ Statements:
     MyEnum::C => blk5,
   }
 End:
-  Callsite(v3)
+  Return(v3)
 
 //! > last_use
 ((BlockId(6), 1), 0)

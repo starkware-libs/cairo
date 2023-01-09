@@ -46,7 +46,7 @@ Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
   (v7: core::felt) <- blk1()
 End:
-  Callsite(v7)
+  Return(v7)
 
 //! > last_use
 ((BlockId(2), 2), 0)

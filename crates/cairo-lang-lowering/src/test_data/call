@@ -83,7 +83,7 @@ Statements:
     Ref changes: r0 <- v9
   (v15: core::felt) <- 5u
 End:
-  Callsite(v9, v15)
+  Return(v9, v15)
 
 //! > lowering_flat
 blk0:
@@ -131,4 +131,4 @@ Statements:
   }
   (v15: core::felt) <- 5u
 End:
-  Callsite(v9, v15)
+  Return(v9, v15)

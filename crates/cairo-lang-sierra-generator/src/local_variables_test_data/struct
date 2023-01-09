@@ -43,7 +43,7 @@ Statements:
   (v10: core::felt) <- test::revoke_ap()
   (v11: core::felt, v12: core::felt) <- struct_destructure(v9)
 End:
-  Callsite(v11)
+  Return(v11)
 
 //! > local_variables
 v1, v9
