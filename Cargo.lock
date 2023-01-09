@@ -2608,7 +2608,6 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "cairo-vm",
  "env_logger",
  "itertools",
  "log",

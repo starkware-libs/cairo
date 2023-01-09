@@ -452,8 +452,6 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
     runner.run_until_pc(end, &mut vm, &mut hint_processor)?;
-    // TODO(alont) Remove this hack once the VM no longer squashes Nones at the end of segments.
-    vm.insert_value(&vm.get_ap().add_int_mod(&1.into(), &get_prime())?, BigInt::from(0))?;
     runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
     Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
