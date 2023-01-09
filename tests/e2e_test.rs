@@ -16,6 +16,7 @@ cairo_lang_test_utils::test_file_test!(
         box_: "box",
         builtin_costs: "builtin_costs",
         dict_felt_to: "dict_felt_to",
+        get_gas_all: "get_gas_all",
         nullable: "nullable",
         u128: "u128",
         bool: "bool",

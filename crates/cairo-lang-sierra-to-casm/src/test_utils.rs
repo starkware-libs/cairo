@@ -16,7 +16,7 @@ pub fn build_metadata(program: &Program, calculate_gas_info: bool) -> Metadata {
         calc_metadata(program).expect("Failed calculating gas or ap change.")
     } else {
         Metadata {
-            ap_change_info: calc_ap_changes(program).unwrap_or(ApChangeInfo {
+            ap_change_info: calc_ap_changes(program, |_, _| 0).unwrap_or(ApChangeInfo {
                 function_ap_change: HashMap::default(),
                 variable_values: HashMap::default(),
             }),

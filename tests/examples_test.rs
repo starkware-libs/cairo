@@ -190,7 +190,7 @@ fn lowering_test(name: &str) {
     "hash_chain")]
 #[test_case(
     "hash_chain_gas",
-    &[3].map(BigInt::from), Some(100000), Some(9330 + 3 * DUMMY_BUILTIN_GAS_COST) =>
+    &[3].map(BigInt::from), Some(100000), Some(9030 + 3 * DUMMY_BUILTIN_GAS_COST) =>
     RunResultValue::Success(vec![BigInt::parse_bytes(
         b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()]);
     "hash_chain_gas")]

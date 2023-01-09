@@ -48,7 +48,7 @@ struct StatementInfo {
 /// Generates a set of equations from a program, and a function to extract cost expressions from a
 /// library function id.
 pub fn generate_equations<
-    GetApChange: Fn(&ConcreteLibfuncId) -> Result<Vec<Effects>, ApChangeError>,
+    GetApChange: Fn(StatementIdx, &ConcreteLibfuncId) -> Result<Vec<Effects>, ApChangeError>,
 >(
     program: &Program,
     get_effects: GetApChange,
@@ -80,7 +80,7 @@ pub fn generate_equations<
                 )?;
             }
             cairo_lang_sierra::program::Statement::Invocation(invocation) => {
-                let libfunc_effects = get_effects(&invocation.libfunc_id)?;
+                let libfunc_effects = get_effects(idx, &invocation.libfunc_id)?;
                 if invocation.branches.len() != libfunc_effects.len() {
                     return Err(ApChangeError::IllegalInvocation(idx));
                 }
