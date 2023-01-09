@@ -207,7 +207,11 @@ fn generate_statement_literal_code(
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let output_var = context.get_sierra_variable(statement.output);
     Ok(vec![simple_statement(
-        const_libfunc_id_by_type(context.get_db(), statement.ty, statement.value.clone()),
+        const_libfunc_id_by_type(
+            context.get_db(),
+            context.get_var_type(statement.output),
+            statement.value.clone(),
+        ),
         &[],
         &[output_var],
     )])
