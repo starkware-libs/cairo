@@ -342,7 +342,7 @@ impl HintProcessor for CairoHintProcessor {
                     panic!("Unknown selector for system call!");
                 }
             }
-            &Hint::Roll { .. } => todo!()
+            &Hint::Roll { .. } => todo!(),
             Hint::DictDestruct { .. } => todo!(),
             Hint::DictSquash1 { .. } => todo!(),
             Hint::DictSquash2 { .. } => todo!(),
