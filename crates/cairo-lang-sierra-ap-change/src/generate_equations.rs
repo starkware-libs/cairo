@@ -97,8 +97,7 @@ pub fn generate_equations<
                         ApChange::FinalizeLocals => {
                             Some(Expr::from_const(base_info.past_locals as i32))
                         }
-                        ApChange::KnownByTypeSize(_)
-                        | ApChange::AtLocalsFinalizationByTypeSize(_) => {
+                        ApChange::AtLocalsFinalization(_) => {
                             unreachable!(
                                 "These arms are translated to `ApChange::Known` in the \
                                  `get_effects` call."
