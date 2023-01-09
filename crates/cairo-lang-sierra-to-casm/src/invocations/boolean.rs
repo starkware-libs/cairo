@@ -14,6 +14,7 @@ pub fn build(
         BoolConcreteLibfunc::And(_) => build_bool_and(builder),
         BoolConcreteLibfunc::Not(_) => build_bool_not(builder),
         BoolConcreteLibfunc::Xor(_) => build_bool_xor(builder),
+        BoolConcreteLibfunc::Or(_) => build_bool_or(builder),
         BoolConcreteLibfunc::Equal(_) => misc::build_cell_eq(builder),
     }
 }
@@ -63,6 +64,28 @@ fn build_bool_xor(
     casm_build_extend! {casm_builder,
         tempvar diff = a - b;
         let res = diff * diff;
+    }
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+}
+
+/// Handles instructions for boolean OR.
+fn build_bool_or(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_a, expr_b] = builder.try_get_refs()?;
+    let a = expr_a.try_unpack_single()?.to_deref()?;
+    let b = expr_b.try_unpack_single()?.to_deref()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    let a = casm_builder.add_var(ResOperand::Deref(a));
+    let b = casm_builder.add_var(ResOperand::Deref(b));
+
+    // Outputs 'a + b - ab'.
+    casm_build_extend! {casm_builder,
+        tempvar sum = a + b;
+        tempvar prod = a * b;
+        // TODO(orizi): Change to let when subtraction is supported.
+        tempvar res = sum - prod;
     }
     Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
 }
