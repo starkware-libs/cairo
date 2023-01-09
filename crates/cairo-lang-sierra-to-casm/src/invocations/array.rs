@@ -2,10 +2,12 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::operand::{DerefOrImmediate, ResOperand};
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
+use cairo_lang_sierra::extensions::felt::FeltBinaryOperator;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
+use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -115,9 +117,9 @@ fn build_array_at(
         // Compute the length of the array (in felts).
         tempvar array_cell_size = arr_end - arr_start;
     };
-    // TODO(orizi): Optimize with `element_offset = index` in case `element_size == 1` once it is
-    // easier to do ap-changes according to type size.
-    let element_offset = {
+    let element_offset = if element_size == 1 {
+        index
+    } else {
         casm_build_extend! {casm_builder,
             const element_size = element_size;
             // Compute the length of the array (in felts).
@@ -135,9 +137,9 @@ fn build_array_at(
         // Index out of bounds. Compute offset - length.
         tempvar offset_length_diff = element_offset - array_cell_size;
     };
-    // TODO(orizi): Optimize with `array_length = array_cell_size` in case `element_size == 1` once
-    // it is easier to do ap-changes according to type size.
-    let array_length = {
+    let array_length = if element_size == 1 {
+        array_cell_size
+    } else {
         casm_build_extend! {casm_builder,
             // Divide by element size. We assume the length is divisible by element size, and by
             // construction, so is the offset.
@@ -185,8 +187,21 @@ fn build_array_len(
     let arr_end = arr_end.to_deref()?;
 
     let element_size = builder.program_info.type_sizes[elem_ty];
-    // TODO(orizi): Do element_size = 1 optimization once it is easier to do ap-changes according to
-    // type size.
+    if element_size == 1 {
+        let len_ref_expr = ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
+            op: FeltBinaryOperator::Sub,
+            a: arr_end,
+            b: DerefOrImmediate::Deref(arr_start),
+        }));
+        let output_expressions = [
+            ReferenceExpression {
+                cells: vec![CellExpression::Deref(arr_start), CellExpression::Deref(arr_end)],
+            },
+            len_ref_expr,
+        ]
+        .into_iter();
+        return Ok(builder.build_only_reference_changes(output_expressions));
+    }
     let mut casm_builder = CasmBuilder::default();
     let start = casm_builder.add_var(ResOperand::Deref(arr_start));
     let end = casm_builder.add_var(ResOperand::Deref(arr_end));
