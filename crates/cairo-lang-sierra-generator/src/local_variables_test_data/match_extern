@@ -91,7 +91,7 @@ Statements:
     JumpNzResult::NonZero => blk5,
   }
 End:
-  Callsite(v13)
+  Return(v13)
 
 //! > local_variables
 v7
@@ -169,7 +169,7 @@ Statements:
   }
   (v12: core::felt) <- test::revoke_ap()
 End:
-  Callsite(v11)
+  Return(v11)
 
 //! > local_variables
 v1, v11
@@ -276,7 +276,7 @@ Statements:
   }
   (v13: core::felt) <- core::felt_add(v7, v0)
 End:
-  Callsite(v13)
+  Return(v13)
 
 //! > local_variables
 v7

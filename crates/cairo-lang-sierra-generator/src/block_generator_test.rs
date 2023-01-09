@@ -33,12 +33,14 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     .split();
 
     // Lower code.
+    let lowered_structured =
+        db.free_function_lowered_structured(test_function.function_id).unwrap();
     let lowered = db.free_function_lowered_flat(test_function.function_id).unwrap();
 
     if lowered.root.is_err() {
         return OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
-            ("lowering_diagnostics".into(), lowered.diagnostics.format(db)),
+            ("lowering_diagnostics".into(), lowered_structured.diagnostics.format(db)),
             ("sierra_gen_diagnostics".into(), "".into()),
             ("sierra_code".into(), "".into()),
         ]);
@@ -63,7 +65,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
-        ("lowering_diagnostics".into(), lowered.diagnostics.format(db)),
+        ("lowering_diagnostics".into(), lowered_structured.diagnostics.format(db)),
         ("sierra_code".into(), expected_sierra_code),
     ])
 }
