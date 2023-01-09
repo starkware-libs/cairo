@@ -3,6 +3,7 @@ pub mod enm;
 pub mod extern_function;
 pub mod extern_type;
 pub mod free_function;
+pub mod function_with_body;
 pub mod functions;
 pub mod generics;
 pub mod imp;
