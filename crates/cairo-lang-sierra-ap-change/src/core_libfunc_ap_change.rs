@@ -2,7 +2,7 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc,
+    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
 };
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
@@ -19,15 +19,18 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use crate::ApChange;
 
-/// Trait for providing extra information required for AP changes.
-pub trait ApChangeInfoProvider {
+/// Trait for providing extra information required for AP changes for a specific libfunc invocation.
+pub trait InvocationApChangeInfoProvider {
     /// Provides the sizes of types.
     fn type_size(&self, ty: &ConcreteTypeId) -> usize;
+    /// Number of tokens provided by the libfunc invocation (currently only relevant for
+    /// `get_gas_all`).
+    fn token_usages(&self, token_type: CostTokenType) -> usize;
 }
 
 /// Returns the ap change for a core libfunc.
 /// Values with unknown values will return as None.
-pub fn core_libfunc_ap_change<InfoProvider: ApChangeInfoProvider>(
+pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<ApChange> {
@@ -59,10 +62,16 @@ pub fn core_libfunc_ap_change<InfoProvider: ApChangeInfoProvider>(
             BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::BuiltinCost(libfunc) => match libfunc {
-            BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => vec![
-                ApChange::Known(BuiltinCostGetGasLibfunc::cost_computation_max_steps() + 2),
-                ApChange::Known(BuiltinCostGetGasLibfunc::cost_computation_max_steps() + 3),
-            ],
+            BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => {
+                let cost_computation_ap_change =
+                    BuiltinCostGetGasLibfunc::cost_computation_steps(|token_type| {
+                        info_provider.token_usages(token_type)
+                    });
+                vec![
+                    ApChange::Known(cost_computation_ap_change + 2),
+                    ApChange::Known(cost_computation_ap_change + 3),
+                ]
+            }
             BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => vec![ApChange::Known(3)],
         },
         CoreConcreteLibfunc::Ec(libfunc) => match libfunc {

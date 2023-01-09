@@ -25,6 +25,8 @@ pub enum MetadataError {
 /// Calculates the metadata for a Sierra program.
 pub fn calc_metadata(program: &Program) -> Result<Metadata, MetadataError> {
     let gas_info = calc_gas_info(program)?;
-    let ap_change_info = calc_ap_changes(program)?;
+    let ap_change_info = calc_ap_changes(program, |idx, token_type| {
+        gas_info.variable_values[&(idx, token_type)] as usize
+    })?;
     Ok(Metadata { ap_change_info, gas_info })
 }

@@ -11,7 +11,7 @@ use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
-    core_libfunc_ap_change, ApChangeInfoProvider,
+    core_libfunc_ap_change, InvocationApChangeInfoProvider,
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
@@ -169,9 +169,19 @@ type VarCells = [Var];
 /// The configuration for all Sierra variables returned from a libfunc.
 type AllVars<'a> = [&'a VarCells];
 
-impl<'a> ApChangeInfoProvider for ProgramInfo<'a> {
+impl<'a> InvocationApChangeInfoProvider for CompiledInvocationBuilder<'a> {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.type_sizes[ty] as usize
+        self.program_info.type_sizes[ty] as usize
+    }
+
+    fn token_usages(&self, token_type: CostTokenType) -> usize {
+        self.program_info
+            .metadata
+            .gas_info
+            .variable_values
+            .get(&(self.idx, token_type))
+            .copied()
+            .unwrap_or(0) as usize
     }
 }
 
@@ -206,7 +216,7 @@ impl CompiledInvocationBuilder<'_> {
             output_expressions.len(),
             "The number of output expressions does not match signature."
         );
-        let ap_changes = core_libfunc_ap_change(self.libfunc, &self.program_info);
+        let ap_changes = core_libfunc_ap_change(self.libfunc, &self);
         assert_eq!(
             branch_signatures.len(),
             ap_changes.len(),
@@ -282,7 +292,7 @@ impl CompiledInvocationBuilder<'_> {
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
         itertools::assert_equal(
-            core_libfunc_ap_change(self.libfunc, &self.program_info),
+            core_libfunc_ap_change(self.libfunc, &self),
             branches
                 .iter()
                 .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change)),

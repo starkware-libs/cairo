@@ -44,34 +44,18 @@ fn build_builtin_get_gas(
         deref gas_counter;
         deref builtin_cost;
     };
-    let token_requested_counts = CostTokenType::iter().filter_map(|token_type| {
-        if *token_type == CostTokenType::Step {
-            return None;
-        };
-        let requested_count = variable_values[&(builder.idx, *token_type)];
-        if requested_count == 0 { None } else { Some((token_type, requested_count)) }
-    });
 
     // The actual number of writes for calculating the requested gas amount.
-    let initial_writes: i64 = token_requested_counts
-        .clone()
-        .map(|(_, requested_count)| if requested_count == 1 { 2 } else { 3 })
-        .sum();
-    let optimized_out_writes =
-        (BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i64) - initial_writes;
+    let optimized_out_writes = (BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i64)
+        - (BuiltinCostGetGasLibfunc::cost_computation_steps(|token_type| {
+            variable_values[&(builder.idx, token_type)] as usize
+        }) as i64);
 
     let requested_steps = variable_values[&(builder.idx, CostTokenType::Step)];
-    // The number of instructions that we may choose to add `ap++` to, not already taken by the
-    // basic flow required allocs.
-    let free_incrementing_instruction_count = 1;
     // The cost of this libfunc is computed assuming all the cost types are used (and all are > 1).
     // Since in practice this is rarely the case, refund according to the actual number of steps
-    // produced by the libfunc, with an additional cost for `ap += <fix size>` if required.
-    let refund_steps: i64 = if optimized_out_writes <= free_incrementing_instruction_count {
-        optimized_out_writes
-    } else {
-        optimized_out_writes - 1
-    };
+    // produced by the libfunc.
+    let refund_steps = optimized_out_writes;
     assert!(
         refund_steps >= 0,
         "Internal compiler error: BuiltinCostGetGasLibfunc::max_cost() is wrong."
@@ -79,13 +63,14 @@ fn build_builtin_get_gas(
     let mut total_requested_count = casm_builder.add_var(CellExpression::Immediate(BigInt::from(
         (requested_steps - refund_steps) * STEP_COST,
     )));
-    for _ in 0..optimized_out_writes {
-        casm_builder.alloc_var(false);
-    }
-    if optimized_out_writes > free_incrementing_instruction_count {
-        casm_builder.add_ap((optimized_out_writes - free_incrementing_instruction_count) as usize);
-    }
-    for (token_type, requested_count) in token_requested_counts {
+    for token_type in CostTokenType::iter() {
+        if *token_type == CostTokenType::Step {
+            continue;
+        }
+        let requested_count = variable_values[&(builder.idx, *token_type)];
+        if requested_count == 0 {
+            continue;
+        }
         let offset = token_type.offset_in_builtin_costs();
         // Fetch the cost of a single instance.
         casm_build_extend! {casm_builder,
