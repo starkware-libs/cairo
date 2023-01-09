@@ -44,7 +44,7 @@ Statements:
     JumpNzResult::NonZero => blk1,
   }
 End:
-  Callsite(v5)
+  Return(v5)
 
 //! > last_use
 ((BlockId(2), 1), 0)

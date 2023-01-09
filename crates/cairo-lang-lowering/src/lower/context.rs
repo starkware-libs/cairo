@@ -62,7 +62,6 @@ impl<'db> LoweringContextBuilder<'db> {
             db: self.db,
             function_def: &self.function_def,
             signature: &self.signature,
-            may_panic: self.db.free_function_may_panic(self.free_function_id)?,
             diagnostics: LoweringDiagnostics::new(
                 self.free_function_id.module_file(self.db.upcast()),
             ),
@@ -91,8 +90,6 @@ pub struct LoweringContext<'db> {
     pub function_def: &'db semantic::FreeFunctionDefinition,
     // Semantic signature for current function.
     pub signature: &'db semantic::Signature,
-    /// Whether the current function may panic.
-    pub may_panic: bool,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Arena of allocated lowered variables.
@@ -264,6 +261,10 @@ pub enum LoweringFlowError {
         refs: Vec<LivingVar>,
         returns: Vec<LivingVar>,
     },
+    Panic {
+        refs: Vec<LivingVar>,
+        data: LivingVar,
+    },
 }
 
 /// Converts a lowering flow error the appropriate block scope end, if possible.
@@ -272,26 +273,6 @@ pub fn lowering_flow_error_to_block_scope_end(err: LoweringFlowError) -> Maybe<B
         LoweringFlowError::Failed(diag_added) => Err(diag_added),
         LoweringFlowError::Unreachable => Ok(BlockScopeEnd::Unreachable),
         LoweringFlowError::Return { refs, returns } => Ok(BlockScopeEnd::Return { refs, returns }),
-    }
-}
-
-/// Cases where the flow of lowering a statement should halt.
-pub enum StatementLoweringFlowError {
-    /// Computation failure. A corresponding diagnostic should be emitted.
-    Failed(DiagnosticAdded),
-    /// The block should end after this statement.
-    End(BlockScopeEnd),
-}
-impl From<LoweringFlowError> for StatementLoweringFlowError {
-    fn from(err: LoweringFlowError) -> Self {
-        match err {
-            LoweringFlowError::Failed(diag_added) => StatementLoweringFlowError::Failed(diag_added),
-            LoweringFlowError::Unreachable => {
-                StatementLoweringFlowError::End(BlockScopeEnd::Unreachable)
-            }
-            LoweringFlowError::Return { refs, returns } => {
-                StatementLoweringFlowError::End(BlockScopeEnd::Return { refs, returns })
-            }
-        }
+        LoweringFlowError::Panic { refs, data } => Ok(BlockScopeEnd::Panic { refs, data }),
     }
 }

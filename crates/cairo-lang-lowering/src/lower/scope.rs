@@ -58,6 +58,8 @@ pub enum BlockScopeEnd {
     Callsite(Option<LivingVar>),
     /// Returns from the function. The value is a vector of the vars to be returned (not dropped).
     Return { refs: Vec<LivingVar>, returns: Vec<LivingVar> },
+    /// TODO.
+    Panic { refs: Vec<LivingVar>, data: LivingVar },
     /// The end of the block is unreachable.
     Unreachable,
 }
@@ -191,6 +193,12 @@ impl BlockScope {
                     returns.into_iter().map(|var| self.living_variables.take_var(var)).collect();
                 BlockSealedEnd::Return { refs, returns }
             }
+            BlockScopeEnd::Panic { refs, data } => {
+                let refs =
+                    refs.into_iter().map(|var| self.living_variables.take_var(var)).collect();
+                let data = self.living_variables.take_var(data);
+                BlockSealedEnd::Panic { refs, data }
+            }
             BlockScopeEnd::Unreachable => BlockSealedEnd::Unreachable,
         };
         let sealed = BlockSealed {
@@ -245,6 +253,8 @@ pub enum BlockSealedEnd {
     Callsite(Option<UsableVariable>),
     /// Returns from the function.
     Return { refs: Vec<UsableVariable>, returns: Vec<UsableVariable> },
+    /// Returns from the function.
+    Panic { refs: Vec<UsableVariable>, data: UsableVariable },
     /// The end of the block is unreachable.
     Unreachable,
 }
@@ -344,6 +354,13 @@ impl BlockSealed {
                 StructuredBlockEnd::Return {
                     refs: refs.iter().map(UsableVariable::var_id).collect(),
                     returns: returns.iter().map(UsableVariable::var_id).collect(),
+                },
+                BlockEndInfo::End,
+            ),
+            BlockSealedEnd::Panic { refs, data } => (
+                StructuredBlockEnd::Panic {
+                    refs: refs.iter().map(UsableVariable::var_id).collect(),
+                    data: data.var_id(),
                 },
                 BlockEndInfo::End,
             ),

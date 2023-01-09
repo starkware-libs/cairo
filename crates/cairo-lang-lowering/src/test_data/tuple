@@ -32,7 +32,7 @@ Statements:
   (v6: core::felt) <- 2u
   (v7: ()) <- struct_construct()
 End:
-  Callsite(v7)
+  Return(v7)
 
 //! > lowering_flat
 blk0 (root):
@@ -46,4 +46,4 @@ Statements:
   (v6: core::felt) <- 2u
   (v7: ()) <- struct_construct()
 End:
-  Callsite(v7)
+  Return(v7)
