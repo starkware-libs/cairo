@@ -282,19 +282,21 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 if item_function.has_attr(db, EXTERNAL_ATTR)
                     || item_function.has_attr(db, VIEW_ATTR) =>
             {
-                // TODO(yuval): keep track of whether the function is external/view.
-                abi_functions.push(RewriteNode::Modified(ModifiedNode {
-                    children: vec![
-                        RewriteNode::Trimmed(item_function.declaration(db).as_syntax_node()),
-                        RewriteNode::Text(";\n        ".to_string()),
-                    ],
-                }));
-
                 match generate_entry_point_wrapper(db, item_function) {
                     Ok(generated_function) => {
                         generated_external_functions.push(generated_function);
                         generated_external_functions
                             .push(RewriteNode::Text("\n        ".to_string()));
+
+                        // TODO(yuval): keep track of whether the function is external/view.
+                        abi_functions.push(RewriteNode::Modified(ModifiedNode {
+                            children: vec![
+                                RewriteNode::Trimmed(
+                                    item_function.declaration(db).as_syntax_node(),
+                                ),
+                                RewriteNode::Text(";\n        ".to_string()),
+                            ],
+                        }));
                     }
                     Err(entry_point_diagnostics) => {
                         diagnostics.extend(entry_point_diagnostics);
