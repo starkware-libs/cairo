@@ -112,7 +112,6 @@ fn build_dict_felt_to_squash(
     let dict_manager_ptr = casm_builder.add_var(dict_manager_ptr);
     let range_check_ptr = casm_builder.add_var(ResOperand::Deref(range_check_ptr));
     let dict_end_address = casm_builder.add_var(dict_end_address);
-
     let (
         dict_access_size,
         dict_info_size,
@@ -290,6 +289,7 @@ fn build_dict_felt_to_squash(
             //
             // This is a wrapper of SquashDict.
             DictSquash:
+
             localvar squashed_dict_start;
             ap += 1;
             hint DictSquash1 {dict_end_ptr: dict_squash_arg_dict_accesses_end} into {};
@@ -382,10 +382,10 @@ fn build_dict_felt_to_squash(
             SquashDictEndIfBigKeys:
             // Push SquashDictInner arguments.
             tempvar squash_dict_inner_arg_dict_accesses_start = squash_dict_arg_dict_accesses_start;
-            tempvar squash_dict_inner_arg_squashed_dict_end = squash_dict_arg_squashed_dict_start;
             tempvar squash_dict_inner_arg_dict_accesses_end_minus1 = squash_dict_arg_dict_accesses_end - one;
             tempvar squash_dict_inner_arg_key = first_key;
             tempvar squash_dict_inner_arg_remaining_accesses = n_accesses;
+            tempvar squash_dict_inner_arg_squashed_dict_end = squash_dict_arg_squashed_dict_start;
             tempvar squash_dict_inner_arg_big_keys = big_keys;
             let (range_check_ptr, squashed_dict_end) = call SquashDictInner;
             tempvar returned_range_check_ptr = range_check_ptr;
@@ -506,7 +506,7 @@ fn build_dict_felt_to_squash(
             let last_loop_locals_range_check_ptr = prev_loop_locals_range_check_ptr;
             hint SquashDictInner5 {} into {};
             tempvar dict_slack = squash_dict_inner_arg_dict_accesses_end_minus1 - last_loop_locals_access_ptr;
-            assert dict_slack = last_loop_locals_range_check_ptr;
+            assert dict_slack = *last_loop_locals_range_check_ptr;
             tempvar n_used_accesses = last_loop_locals_range_check_ptr - squash_dict_inner_arg_range_check_ptr;
             hint SquashDictInner6 {} into {n_used_accesses: n_used_accesses};
             assert last_loop_locals_value = dict_diff[2];
@@ -524,7 +524,7 @@ fn build_dict_felt_to_squash(
             SquashDictInnerContinueRecursion:
             hint SquashDictInner8 {} into {next_key: next_key};
             // The if order is reversed w.r.t. the original code since the fallthrough case in the original
-            // code is the big_keys != 0 case. print(Yet another jump);
+            // code is the big_keys != 0 case.
             jump SquashDictInnerIfBigKeys if squash_dict_inner_arg_big_keys != 0;
             tempvar key_plus1 = squash_dict_inner_arg_key + one;
             tempvar key_diff = next_key - key_plus1;
@@ -635,7 +635,7 @@ fn build_dict_felt_to_squash(
             // First, choose which arc to exclude from {0 -> a, a -> b, b -> PRIME - 1}.
             // Then, to compare the set of two arc lengths, compare their sum and product.
             tempvar skip_exclude_a_flag;
-            hint AssertLeFelt2 {skip_exclude_a_flag: skip_exclude_a_flag} into {};
+            hint AssertLeFelt2 {} into {skip_exclude_a_flag: skip_exclude_a_flag};
             jump AssertLeFeltSkipExcludeA if skip_exclude_a_flag != 0;
             // Exclude "0 -> a".
             tempvar minus_arg_a = assert_le_arg_a*minus_1;
@@ -647,7 +647,7 @@ fn build_dict_felt_to_squash(
             ret;
             AssertLeFeltSkipExcludeA:
             tempvar skip_exclude_b_minus_a;
-            hint AssertLeFelt3 {skip_exclude_b_minus_a: skip_exclude_b_minus_a} into {};
+            hint AssertLeFelt3 {} into {skip_exclude_b_minus_a: skip_exclude_b_minus_a};
             jump AssertLeFeltSkipExcludeBMinusA if skip_exclude_b_minus_a != 0;
             // Exclude "a -> b".
             tempvar minus_arg_b = assert_le_arg_b*minus_1;

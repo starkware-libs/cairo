@@ -103,10 +103,10 @@ pub enum Hint {
         b: ResOperand,
     },
     AssertLeFelt2 {
-        skip_exclude_a_flag: ResOperand,
+        skip_exclude_a_flag: CellRef,
     },
     AssertLeFelt3 {
-        skip_exclude_b_minus_a: ResOperand,
+        skip_exclude_b_minus_a: CellRef,
     },
     AssertLeFelt4,
     /// Samples a random point on the EC.
@@ -446,18 +446,10 @@ impl Display for Hint {
                 )
             }
             Hint::AssertLeFelt2 { skip_exclude_a_flag } => {
-                write!(
-                    f,
-                    "{} = 1 if excluded != 0 else 0",
-                    ResOperandFormatter(skip_exclude_a_flag)
-                )
+                write!(f, "memory{skip_exclude_a_flag} = 1 if excluded != 0 else 0",)
             }
             Hint::AssertLeFelt3 { skip_exclude_b_minus_a } => {
-                write!(
-                    f,
-                    "{} = 1 if excluded != 1 else 0",
-                    ResOperandFormatter(skip_exclude_b_minus_a)
-                )
+                write!(f, "memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0",)
             }
             Hint::AssertLeFelt4 => write!(f, "assert excluded == 2"),
             Hint::DebugPrint { start, end } => writedoc!(

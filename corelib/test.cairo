@@ -384,4 +384,5 @@ fn test_dict_write_read() {
     assert(dict_felt_to_read::<felt>(dict, 10) == 110, 'dict[10] == 110');
     assert(dict_felt_to_read::<felt>(dict, 11) == 111, 'dict[11] == 111');
     assert(dict_felt_to_read::<felt>(dict, 12) == 0, 'default_val == 0');
+    let squashed_dict = dict_felt_to_squash::<felt>(dict);
 }
