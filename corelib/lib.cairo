@@ -11,12 +11,10 @@ fn bool_and(a: bool, b: bool) -> bool implicits() nopanic {
     r
 }
 
-// TODO(orizi): Change to extern when added.
+extern fn bool_or_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
 fn bool_or(a: bool, b: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => b,
-        bool::True(x) => bool::True(()),
-    }
+    let (r,) = bool_or_impl(a, b);
+    r
 }
 
 extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;

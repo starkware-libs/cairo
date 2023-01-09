@@ -371,6 +371,21 @@ fn simulate_bool_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        BoolConcreteLibfunc::Or(_) => match inputs {
+            [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
+                let (a, b) = (*a_index, *b_index);
+                // The variant index defines the true/false "value". Index zero is false.
+                Ok((
+                    vec![CoreValue::Enum {
+                        value: Box::new(CoreValue::Struct(vec![])),
+                        index: a + b - a * b,
+                    }],
+                    0,
+                ))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         BoolConcreteLibfunc::Equal(_) => match inputs {
             [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
                 // The variant index defines the true/false "value". Index zero is false.
