@@ -301,6 +301,14 @@ impl Ord for FreeFunctionId {
     }
 }
 
+struct St;
+trait Bla {
+    fn foo(x: u32);
+}
+impl Bla for St {
+    fn foo(_: u32) {}
+}
+
 define_language_element_id!(
     ImplFunctionId,
     ImplFunctionLongId,
