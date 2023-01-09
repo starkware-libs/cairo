@@ -287,8 +287,14 @@ impl Display for Hint {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
             Hint::Roll { address, caller_address , dst} => {
-                write!(f, " memory{dst} = 0; ")?;
-                write!(f, " roll(address={}, caller_address={}) ", address, caller_address)?
+                writedoc!(
+                    f,
+                    "
+
+                        memory{dst} = 0; 
+                        roll(address={address}, caller_address={caller_address})
+                    "
+                )
             }
             Hint::SquashDictInner1 { range_check_ptr } => writedoc!(
                 f,
