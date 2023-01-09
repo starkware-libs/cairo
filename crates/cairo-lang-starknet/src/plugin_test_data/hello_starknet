@@ -11,8 +11,7 @@ mod HelloStarknet {
     // Increases the balance by the given amount.
     #[external]
     fn increase_balance(amount: felt) {
-        let res = balance::read();
-        balance::write(res + amount);
+        balance::write(balance::read() + amount);
     }
 
     // Returns the current balance.
@@ -29,8 +28,7 @@ mod HelloStarknet {
     // Increases the balance by the given amount.
     #[external]
     fn increase_balance(amount: felt) {
-        let res = balance::read();
-        balance::write(res + amount);
+        balance::write(balance::read() + amount);
     }
 
     // Returns the current balance.

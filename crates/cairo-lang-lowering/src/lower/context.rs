@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FreeFunctionId, LanguageElementId};
+use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
@@ -26,6 +26,7 @@ use crate::VariableId;
 /// Builds a Lowering context.
 pub struct LoweringContextBuilder<'db> {
     pub db: &'db dyn LoweringGroup,
+    // TODO(yuval): change to FunctionWithBodyId
     pub free_function_id: FreeFunctionId,
     pub function_def: Arc<semantic::FreeFunctionDefinition>,
     /// Semantic signature for current function.
@@ -36,10 +37,12 @@ pub struct LoweringContextBuilder<'db> {
     pub implicits: Vec<semantic::TypeId>,
 }
 impl<'db> LoweringContextBuilder<'db> {
+    // TODO(yuval): change to FunctionWithBodyId
     pub fn new(db: &'db dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<Self> {
         let function_def = db.free_function_definition(free_function_id)?;
         let signature = db.free_function_declaration_signature(free_function_id)?;
-        let implicits = db.free_function_all_implicits_vec(free_function_id)?;
+        let implicits =
+            db.function_with_body_all_implicits_vec(FunctionWithBodyId::Free(free_function_id))?;
         let ref_params = signature
             .params
             .iter()
