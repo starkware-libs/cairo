@@ -36,13 +36,7 @@ impl GenericTypeArgGenericType for DictFeltToTypeWrapped {
         {
             Err(SpecializationError::UnsupportedGenericArg)
         } else {
-            Ok(TypeInfo {
-                long_id,
-                duplicatable: false,
-                droppable: wrapped_info.droppable,
-                storable: true,
-                size: 1,
-            })
+            Ok(TypeInfo { long_id, duplicatable: false, droppable: false, storable: true, size: 1 })
         }
     }
 }
