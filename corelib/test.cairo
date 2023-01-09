@@ -390,16 +390,22 @@ fn test_dict_new() -> DictFeltTo::<felt> {
 #[test]
 fn test_dict_default_val() {
     let mut dict = dict_felt_to_new::<felt>();
-    assert(dict_felt_to_read::<felt>(dict, 0) == 0, 'default_val == 0');
+    let default_val = dict_felt_to_read::<felt>(dict, 0);
+    let squashed_dict = dict_felt_to_squash::<felt>(dict);
+    assert(default_val == 0, 'default_val == 0');
 }
 
+// TODO(Gil): Assert before the squash when drop will autosquash the dict.
 #[test]
 fn test_dict_write_read() {
     let mut dict = dict_felt_to_new::<felt>();
     dict_felt_to_write::<felt>(dict, 10, 110);
     dict_felt_to_write::<felt>(dict, 11, 111);
-    assert(dict_felt_to_read::<felt>(dict, 10) == 110, 'dict[10] == 110');
-    assert(dict_felt_to_read::<felt>(dict, 11) == 111, 'dict[11] == 111');
-    assert(dict_felt_to_read::<felt>(dict, 12) == 0, 'default_val == 0');
+    let val10 = dict_felt_to_read::<felt>(dict, 10);
+    let val11 = dict_felt_to_read::<felt>(dict, 11);
+    let val12 = dict_felt_to_read::<felt>(dict, 12);
     let squashed_dict = dict_felt_to_squash::<felt>(dict);
+    assert(val10 == 110, 'dict[10] == 110');
+    assert(val11 == 111, 'dict[11] == 111');
+    assert(val12 == 0, 'default_val == 0');
 }
