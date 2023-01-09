@@ -3,9 +3,9 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
-    StructId, TraitFunctionId, TraitId, TypeAliasId, UseId, VariantId,
+    EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId, GenericFunctionId,
+    GenericParamId, GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId,
+    ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId, VariantId,
 };
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
@@ -20,7 +20,7 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
-use crate::items::imp::{ConcreteImplId, ImplLookupContext};
+use crate::items::imp::{ConcreteImplId, ImplFunctionDefinition, ImplLookupContext};
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::ConcreteTraitId;
 use crate::plugin::{DynDiagnosticMapper, SemanticPlugin};
@@ -282,19 +282,25 @@ pub trait SemanticGroup:
 
     // impl function.
     // ================
-    /// Returns the signature of a impl function.
+    /// Returns the signature of an impl function.
     #[salsa::invoke(items::imp::impl_function_signature)]
     fn impl_function_signature(
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<semantic::Signature>;
-    /// Returns the generic params of a impl function.
+    /// Returns the explicit implicits of a signature of an impl function.
+    #[salsa::invoke(items::imp::impl_function_declaration_implicits)]
+    fn impl_function_declaration_implicits(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<Vec<TypeId>>;
+    /// Returns the generic params of an impl function.
     #[salsa::invoke(items::imp::impl_function_generic_params)]
     fn impl_function_generic_params(
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<Vec<GenericParamId>>;
-    /// Returns the semantic diagnostics of a impl function declaration -
+    /// Returns the semantic diagnostics of an impl function declaration -
     /// its signature excluding its body.
     #[salsa::invoke(items::imp::impl_function_declaration_diagnostics)]
     fn impl_function_declaration_diagnostics(
@@ -307,48 +313,86 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<Arc<ResolvedLookback>>;
-    /// Private query to compute data about a impl function declaration.
+    /// Private query to compute data about an impl function declaration.
     #[salsa::invoke(items::imp::priv_impl_function_declaration_data)]
     fn priv_impl_function_declaration_data(
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<items::imp::ImplFunctionDeclarationData>;
 
+    /// Returns the semantic diagnostics of an impl function definition (declaration + body).
+    #[salsa::invoke(items::imp::impl_function_definition_diagnostics)]
+    fn impl_function_definition_diagnostics(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the body of an impl function.
+    #[salsa::invoke(items::imp::impl_function_definition_body)]
+    fn impl_function_definition_body(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<semantic::ExprId>;
+    /// Returns the direct callees of an impl function. The items in the vector are
+    /// unique.
+    #[salsa::invoke(items::imp::impl_function_definition_direct_callees)]
+    fn impl_function_definition_direct_callees(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<Vec<FunctionId>>;
+    /// Returns the free function direct callees of an impl function (i.e. excluding libfunc
+    /// callees). The items in the vector are unique.
+    #[salsa::invoke(items::imp::impl_function_definition_direct_impl_function_callees)]
+    fn impl_function_definition_direct_impl_function_callees(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<Vec<ImplFunctionId>>;
+    /// Returns the definition of an impl function.
+    #[salsa::invoke(items::imp::impl_function_definition)]
+    fn impl_function_definition(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<Arc<ImplFunctionDefinition>>;
+    /// Returns the resolution lookback of an impl function.
+    #[salsa::invoke(items::imp::impl_function_definition_resolved_lookback)]
+    fn impl_function_definition_resolved_lookback(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<Arc<ResolvedLookback>>;
+    /// Private query to compute data about an impl function definition (declaration + body)
+    #[salsa::invoke(items::imp::priv_impl_function_definition_data)]
+    fn priv_impl_function_definition_data(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<items::imp::ImplFunctionDefinitionData>;
+
     // Free function.
     // ==============
-    /// Private query to compute data about a free function declaration - its signature excluding
+    /// Returns the semantic diagnostics of a free function declaration - its signature excluding
     /// its body.
-    #[salsa::invoke(items::free_function::priv_free_function_declaration_data)]
-    fn priv_free_function_declaration_data(
-        &self,
-        function_id: FreeFunctionId,
-    ) -> Maybe<items::free_function::FreeFunctionDeclarationData>;
-    /// Returns the semantic diagnostics of a function declaration - its signature excluding its
-    /// body.
     #[salsa::invoke(items::free_function::free_function_declaration_diagnostics)]
     fn free_function_declaration_diagnostics(
         &self,
         free_function_id: FreeFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the signature of a free function declaration.
+    /// Returns the signature of a free function.
     #[salsa::invoke(items::free_function::free_function_declaration_signature)]
     fn free_function_declaration_signature(
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<semantic::Signature>;
-    /// Returns the attributes of a free function declaration.
+    /// Returns the attributes of a free function.
     #[salsa::invoke(items::free_function::free_function_declaration_attributes)]
     fn free_function_declaration_attributes(
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<Vec<Attribute>>;
-    /// Returns the explicit implicits of a signature of a free function declaration.
+    /// Returns the explicit implicits of a signature of a free function.
     #[salsa::invoke(items::free_function::free_function_declaration_implicits)]
     fn free_function_declaration_implicits(
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<Vec<TypeId>>;
-    /// Returns the generic params of a free function declaration.
+    /// Returns the generic params of a free function.
     #[salsa::invoke(items::free_function::free_function_declaration_generic_params)]
     fn free_function_declaration_generic_params(
         &self,
@@ -360,39 +404,41 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<Arc<ResolvedLookback>>;
-
-    /// Private query to compute data about a free function definition - its body.
-    #[salsa::invoke(items::free_function::priv_free_function_definition_data)]
-    fn priv_free_function_definition_data(
+    /// Private query to compute data about a free function declaration - its signature excluding
+    /// its body.
+    #[salsa::invoke(items::free_function::priv_free_function_declaration_data)]
+    fn priv_free_function_declaration_data(
         &self,
-        free_function_id: FreeFunctionId,
-    ) -> Maybe<items::free_function::FreeFunctionDefinitionData>;
-    /// Returns the semantic diagnostics of a function definition - its body.
+        function_id: FreeFunctionId,
+    ) -> Maybe<items::free_function::FreeFunctionDeclarationData>;
+
+    /// Returns the semantic diagnostics of a free function definition (declaration + body).
     #[salsa::invoke(items::free_function::free_function_definition_diagnostics)]
     fn free_function_definition_diagnostics(
         &self,
         free_function_id: FreeFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the body of a free function definition.
+    /// Returns the body of a free function.
     #[salsa::invoke(items::free_function::free_function_definition_body)]
     fn free_function_definition_body(
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<semantic::ExprId>;
-    /// Returns the direct callees of a free function definition. The items in the vector are
-    /// unique.
-    #[salsa::invoke(items::free_function::free_function_definition_direct_callees)]
-    fn free_function_definition_direct_callees(
+    /// Returns the direct callees of a function with a body. The items in the vector are unique.
+    #[salsa::invoke(items::function_with_body::function_with_body_definition_direct_callees)]
+    fn function_with_body_definition_direct_callees(
         &self,
-        free_function_id: FreeFunctionId,
+        function_id: FunctionWithBodyId,
     ) -> Maybe<Vec<FunctionId>>;
-    /// Returns the free function direct callees of a free function definition (i.e. excluding
+    /// Returns the nonextern function direct callees of a function with a body (i.e. excluding
     /// libfunc callees). The items in the vector are unique.
-    #[salsa::invoke(items::free_function::free_function_definition_direct_free_function_callees)]
-    fn free_function_definition_direct_free_function_callees(
+    #[salsa::invoke(
+        items::function_with_body::function_with_body_definition_direct_nonextern_function_callees
+    )]
+    fn function_with_body_definition_direct_nonextern_function_callees(
         &self,
-        free_function_id: FreeFunctionId,
-    ) -> Maybe<Vec<FreeFunctionId>>;
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Vec<FunctionWithBodyId>>;
     /// Returns the definition of a free function.
     #[salsa::invoke(items::free_function::free_function_definition)]
     fn free_function_definition(
@@ -405,6 +451,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<Arc<ResolvedLookback>>;
+    /// Private query to compute data about a free function definition (declaration + body).
+    #[salsa::invoke(items::free_function::priv_free_function_definition_data)]
+    fn priv_free_function_definition_data(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Maybe<items::free_function::FreeFunctionDefinitionData>;
 
     // Extern function.
     // ================
