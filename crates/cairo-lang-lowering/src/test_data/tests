@@ -22,7 +22,17 @@ error: Unreachable code
     5;6;7
     ^**^
 
-//! > lowering_format
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v1: core::felt) <- core::felt_mul(v0, v0)
+  (v2: core::felt) <- core::felt_add(v0, v1)
+End:
+  Return(v2)
+
+//! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
@@ -53,7 +63,17 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v1: core::felt) <- 1u
+  (v2: core::felt) <- 5u
+End:
+  Callsite(v2)
+
+//! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
@@ -86,7 +106,72 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0:
+Inputs:
+Initial refs:
+Statements:
+  (v1: core::felt) <- 7u
+End:
+  Callsite()
+
+blk1:
+Inputs:
+Initial refs:
+Statements:
+End:
+  Callsite()
+
+blk2:
+Inputs:
+Initial refs:
+Statements:
+  (v6: core::felt) <- 6u
+End:
+  Callsite(v6)
+
+blk3:
+Inputs: v7: core::NonZero::<core::felt>
+Initial refs:
+Statements:
+  (v8: core::felt) <- 7u
+End:
+  Callsite(v8)
+
+blk4:
+Inputs:
+Initial refs:
+Statements:
+  (v13: core::felt) <- 3u
+  (v14: core::felt) <- 0u
+  (v15: core::felt) <- core::felt_add(v0, v14)
+End:
+  Callsite(v15)
+
+blk5 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  () <- blk0()
+  (v2: ()) <- struct_construct()
+  () <- blk1()
+  (v3: core::felt) <- 1u
+  (v4: core::felt) <- 1u
+  (v5: core::felt) <- core::felt_sub(v3, v4)
+  (v9: core::felt) <- match core::felt_jump_nz(v5) {
+    JumpNzResult::Zero => blk2,
+    JumpNzResult::NonZero => blk3,
+  }
+  (v10: core::felt) <- 3u
+  (v11: core::felt) <- test::foo(v10)
+  (v12: core::felt) <- 5u
+  (v16: core::felt) <- blk4()
+  (v17: core::felt) <- core::felt_mul(v12, v16)
+  (v18: core::felt) <- core::felt_add(v11, v17)
+End:
+  Callsite(v18)
+
+//! > lowering_flat
 blk0:
 Inputs:
 Statements:
@@ -133,8 +218,8 @@ Statements:
   (v4: core::felt) <- 1u
   (v5: core::felt) <- core::felt_sub(v3, v4)
   (v9: core::felt) <- match core::felt_jump_nz(v5) {
-    () => blk2,
-    (v7) => blk3,
+    JumpNzResult::Zero => blk2,
+    JumpNzResult::NonZero => blk3,
   }
   (v10: core::felt) <- 3u
   (v11: core::felt) <- test::foo(v10)
@@ -175,7 +260,67 @@ enum MyEnum {
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0:
+Inputs:
+Initial refs:
+Statements:
+  (v2: core::felt) <- 5u
+End:
+  Return(v2)
+
+blk1:
+Inputs:
+Initial refs:
+Statements:
+End:
+  Callsite(v3)
+
+blk2:
+Inputs:
+Initial refs:
+Statements:
+  (v6: core::felt) <- 7u
+End:
+  Callsite(v6)
+
+blk3:
+Inputs: v1: ()
+Initial refs:
+Statements:
+  () <- blk0()
+End:
+  Unreachable
+
+blk4:
+Inputs: v3: core::felt
+Initial refs:
+Statements:
+  (v4: core::felt) <- blk1()
+End:
+  Callsite(v4)
+
+blk5:
+Inputs: v5: core::box::Box::<((), core::felt)>
+Initial refs:
+Statements:
+  (v7: core::felt) <- blk2()
+End:
+  Callsite(v7)
+
+blk6 (root):
+Inputs: v0: test::MyEnum
+Initial refs:
+Statements:
+  (v8: core::felt) <- match_enum(v0) {
+    MyEnum::A => blk3,
+    MyEnum::B => blk4,
+    MyEnum::C => blk5,
+  }
+End:
+  Callsite(v8)
+
+//! > lowering_flat
 blk0:
 Inputs:
 Statements:
@@ -250,7 +395,16 @@ extern type Array<T, N>;
 
 //! > lowering_diagnostics
 
-//! > lowering_format
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: test::Array::<core::felt, 5>
+Initial refs:
+Statements:
+  (v1: core::felt) <- core::felt_const<Literal(LiteralLongId { value: 17 }),>()
+End:
+  Callsite(v1)
+
+//! > lowering_flat
 blk0 (root):
 Inputs: v0: test::Array::<core::felt, 5>
 Statements:
