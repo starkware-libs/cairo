@@ -31,22 +31,23 @@ fn bar(ref a: felt, b: bool) {
 //! > lowering_structured
 blk0:
 Inputs: v5: ()
-Initial refs: v0[r0]: core::felt
+Initial refs: v0: core::felt
 Statements:
-  (v7[r0]: core::felt, v6: ()) <- test::bar(v0, v2)
+  (v7: core::felt, v6: ()) <- test::bar(v0, v2)
+    Ref changes: r0 <- v7
 End:
   Callsite(v7)
 
 blk1:
 Inputs: v8: ()
-Initial refs: v0[r0]: core::felt
+Initial refs: v0: core::felt
 Statements:
 End:
   Callsite(v0)
 
 blk2:
 Inputs: v12: ()
-Initial refs: v9[r0]: core::felt
+Initial refs: v9: core::felt
 Statements:
   (v13: core::felt) <- 6u
 End:
@@ -54,29 +55,32 @@ End:
 
 blk3:
 Inputs: v14: ()
-Initial refs: v9[r0]: core::felt
+Initial refs: v9: core::felt
 Statements:
 End:
   Callsite()
 
 blk4 (root):
-Inputs: v0[r0]: core::felt
-Initial refs: v0[r0]: core::felt
+Inputs: v0: core::felt
+Initial refs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()
+    Ref changes: r0 <- v0
   (v2: core::bool) <- bool::True(v1)
   (v3: ()) <- struct_construct()
   (v4: core::bool) <- bool::True(v3)
-  (v9[r0]: core::felt) <- match_enum(v4) {
+  (v9: core::felt) <- match_enum(v4) {
     bool::False => blk1,
     bool::True => blk0,
   }
+    Ref changes: r0 <- v9
   (v10: ()) <- struct_construct()
   (v11: core::bool) <- bool::False(v10)
   () <- match_enum(v11) {
     bool::False => blk3,
     bool::True => blk2,
   }
+    Ref changes: r0 <- v9
   (v15: core::felt) <- 5u
 End:
   Callsite(v9, v15)
@@ -85,7 +89,7 @@ End:
 blk0:
 Inputs: v5: ()
 Statements:
-  (v7[r0]: core::felt, v6: ()) <- test::bar(v0, v2)
+  (v7: core::felt, v6: ()) <- test::bar(v0, v2)
 End:
   Callsite(v7)
 
@@ -109,13 +113,13 @@ End:
   Callsite()
 
 blk4 (root):
-Inputs: v0[r0]: core::felt
+Inputs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
   (v3: ()) <- struct_construct()
   (v4: core::bool) <- bool::True(v3)
-  (v9[r0]: core::felt) <- match_enum(v4) {
+  (v9: core::felt) <- match_enum(v4) {
     bool::False => blk1,
     bool::True => blk0,
   }

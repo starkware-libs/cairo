@@ -26,15 +26,17 @@ pub struct Literal {
 impl Literal {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
         let output = scope.living_variables.introduce_new_var(ctx, self.ty);
-        scope.statements.push(Statement::Literal(StatementLiteral {
+        scope.push_statement(Statement::Literal(StatementLiteral {
             value: self.value,
             output: output.var_id(),
         }));
+        scope.finalize_statement();
         output
     }
 }
 
 /// Generator for [StatementCall].
+/// Note that scope.finalize_statement() must be called manually after ref bindings.
 pub struct Call {
     /// Called function.
     pub function: semantic::FunctionId,
@@ -74,7 +76,7 @@ impl Call {
             .map(|var: &LivingVar| var.var_id())
             .collect();
 
-        scope.statements.push(Statement::Call(StatementCall {
+        scope.push_statement(Statement::Call(StatementCall {
             function: self.function,
             inputs,
             outputs,
@@ -94,6 +96,7 @@ pub struct CallResult {
 }
 
 /// Generator for [StatementCallBlock].
+/// Note that scope.finalize_statement() must be called manually after ref bindings.
 pub struct CallBlock {
     pub block: BlockId,
     pub end_info: BlockEndInfo,
@@ -117,14 +120,16 @@ impl CallBlock {
         let (outputs, res) = process_end_info(ctx, scope, self.end_info);
 
         // TODO(spapini): Support mut variables.
-        scope
-            .statements
-            .push(Statement::CallBlock(StatementCallBlock { block: self.block, outputs }));
+        scope.push_statement(Statement::CallBlock(StatementCallBlock {
+            block: self.block,
+            outputs,
+        }));
         res
     }
 }
 
 /// Generator for [StatementMatchExtern].
+/// Note that scope.finalize_statement() must be called manually after ref bindings.
 pub struct MatchExtern {
     pub function: semantic::FunctionId,
     pub inputs: Vec<LivingVar>,
@@ -169,7 +174,7 @@ impl MatchExtern {
         }
 
         let (outputs, res) = process_end_info(ctx, scope, self.end_info);
-        scope.statements.push(Statement::MatchExtern(StatementMatchExtern {
+        scope.push_statement(Statement::MatchExtern(StatementMatchExtern {
             function: self.function,
             inputs,
             arms: self.arms,
@@ -218,16 +223,18 @@ impl EnumConstruct {
                 self.variant.concrete_enum_id,
             ))),
         );
-        scope.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
+        scope.push_statement(Statement::EnumConstruct(StatementEnumConstruct {
             variant: self.variant,
             input,
             output: output.var_id(),
         }));
+        scope.finalize_statement();
         output
     }
 }
 
 /// Generator for [StatementMatchEnum].
+/// Note that scope.finalize_statement() must be called manually after ref bindings.
 pub struct MatchEnum {
     pub input: LivingVar,
     pub concrete_enum_id: ConcreteEnumId,
@@ -247,7 +254,7 @@ impl MatchEnum {
         }
 
         let (outputs, res) = process_end_info(ctx, scope, self.end_info);
-        scope.statements.push(Statement::MatchEnum(StatementMatchEnum {
+        scope.push_statement(Statement::MatchEnum(StatementMatchEnum {
             concrete_enum: self.concrete_enum_id,
             input,
             arms: self.arms,
@@ -270,10 +277,11 @@ impl StructDestructure {
             .into_iter()
             .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
             .collect();
-        scope.statements.push(Statement::StructDestructure(StatementStructDestructure {
+        scope.push_statement(Statement::StructDestructure(StatementStructDestructure {
             input,
             outputs: outputs.iter().map(|var| var.var_id()).collect(),
         }));
+        scope.finalize_statement();
         outputs
     }
 }
@@ -305,10 +313,11 @@ impl StructConstruct {
             .map(|var| scope.living_variables.use_var(ctx, var).var_id())
             .collect();
         let output = scope.living_variables.introduce_new_var(ctx, self.ty);
-        scope.statements.push(Statement::StructConstruct(StatementStructConstruct {
+        scope.push_statement(Statement::StructConstruct(StatementStructConstruct {
             inputs,
             output: output.var_id(),
         }));
+        scope.finalize_statement();
         output
     }
 }
