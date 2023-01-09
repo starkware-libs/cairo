@@ -18,6 +18,9 @@ use crate::diagnostic::LoweringDiagnostic;
 
 pub type VariableId = Id<Variable>;
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+pub struct RefIndex(pub usize);
+
 /// A lowered function code.
 #[derive(Debug, PartialEq, Eq)]
 pub struct StructuredLowered {
@@ -147,10 +150,9 @@ pub struct Variable {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StructuredStatement {
     pub statement: Statement,
-    // TODO(spapini): Wrap ref index in a type.
     /// Updates to the variable ids bound to the ref variables (including implicits), from the last
     /// update until exactly after this statement.
-    pub ref_updates: OrderedHashMap<usize, VariableId>,
+    pub ref_updates: OrderedHashMap<RefIndex, VariableId>,
 }
 
 impl From<Statement> for StructuredStatement {

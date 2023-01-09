@@ -12,7 +12,7 @@ use crate::blocks::{Blocks, FlatBlocks};
 use crate::db::LoweringGroup;
 use crate::lower::context::LoweringContextBuilder;
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, RefIndex, Statement, StatementCall,
     StatementEnumConstruct, StatementMatchEnum, StructuredBlock, StructuredBlockEnd,
     StructuredLowered, VariableId,
 };
@@ -175,8 +175,8 @@ pub fn lower_panics(
     Ok(FlatLowered { variables: ctx.variables, blocks: flat_blocks, root: lowered.root })
 }
 
-fn update_refs(current_refs: &mut [VariableId], ref_changes: OrderedHashMap<usize, VariableId>) {
+fn update_refs(current_refs: &mut [VariableId], ref_changes: OrderedHashMap<RefIndex, VariableId>) {
     for (ref_index, var_id) in ref_changes.iter() {
-        current_refs[*ref_index] = *var_id;
+        current_refs[ref_index.0] = *var_id;
     }
 }

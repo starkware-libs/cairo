@@ -10,7 +10,8 @@ use super::context::LoweringContext;
 use super::semantic_map::{SemanticVariableEntry, SemanticVariablesMap};
 use super::variables::{LivingVar, LivingVariables, Splitter, UsableVariable};
 use crate::{
-    BlockId, Statement, StructuredBlock, StructuredBlockEnd, StructuredStatement, VariableId,
+    BlockId, RefIndex, Statement, StructuredBlock, StructuredBlockEnd, StructuredStatement,
+    VariableId,
 };
 
 pub mod generators;
@@ -48,7 +49,7 @@ pub struct BlockScope {
     /// Updates to the variable ids bound to the ref variables (including implicits), from the last
     /// update until exactly after next statement. When finalize_statement() will be called, these
     /// updates will be added to the statement.
-    pending_ref_updates: OrderedHashMap<usize, VariableId>,
+    pending_ref_updates: OrderedHashMap<RefIndex, VariableId>,
 }
 
 /// Represents how a block ends.
@@ -90,7 +91,7 @@ impl BlockScope {
             .find(|(_, ref_semantic_var_id)| **ref_semantic_var_id == semantic_var_id)
         {
             let index = ctx.implicits.len() + ref_index;
-            self.pending_ref_updates.insert(index, var.var_id());
+            self.pending_ref_updates.insert(RefIndex(index), var.var_id());
             self.current_refs[index] = Some(var.var_id());
         }
 
@@ -150,7 +151,7 @@ impl BlockScope {
             .enumerate()
             .find(|(_, imp_ty)| **imp_ty == ty)
             .expect("Unknown implicit.");
-        self.pending_ref_updates.insert(implicit_index, var.var_id());
+        self.pending_ref_updates.insert(RefIndex(implicit_index), var.var_id());
         self.current_refs[implicit_index] = Some(var.var_id());
 
         self.implicits.insert(ty, var);
