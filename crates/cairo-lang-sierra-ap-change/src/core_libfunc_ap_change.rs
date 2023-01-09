@@ -37,8 +37,14 @@ pub fn core_libfunc_ap_change<InfoProvider: ApChangeInfoProvider>(
             ArrayConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
             ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
             ArrayConcreteLibfunc::PopFront(_) => vec![ApChange::Known(1), ApChange::Known(1)],
-            ArrayConcreteLibfunc::At(_) => vec![ApChange::Known(6), ApChange::Known(5)],
-            ArrayConcreteLibfunc::Len(_) => vec![ApChange::Known(1)],
+            ArrayConcreteLibfunc::At(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 { [5, 3] } else { [6, 5] }
+                    .map(ApChange::Known)
+                    .to_vec()
+            }
+            ArrayConcreteLibfunc::Len(libfunc) => {
+                vec![ApChange::Known(usize::from(info_provider.type_size(&libfunc.ty) != 1))]
+            }
         },
         CoreConcreteLibfunc::Bitwise(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::BranchAlign(_) => vec![ApChange::FromMetadata],
