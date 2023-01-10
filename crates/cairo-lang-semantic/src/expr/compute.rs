@@ -114,14 +114,16 @@ impl Environment {
     pub fn add_param(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        name: SmolStr,
         semantic_param: Parameter,
         ast_param: &ast::Param,
         function_id: GenericFunctionId,
     ) -> Maybe<()> {
+        let name = &semantic_param.name;
         match self.variables.entry(name.clone()) {
-            std::collections::hash_map::Entry::Occupied(_) => Err(diagnostics
-                .report(ast_param, ParamNameRedefinition { function_id, param_name: name })),
+            std::collections::hash_map::Entry::Occupied(_) => Err(diagnostics.report(
+                ast_param,
+                ParamNameRedefinition { function_id, param_name: name.clone() },
+            )),
             std::collections::hash_map::Entry::Vacant(entry) => {
                 entry.insert(Variable::Param(semantic_param));
                 Ok(())
