@@ -1,11 +1,9 @@
 use cairo_lang_casm::builder::CasmBuilder;
-use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
-use cairo_lang_casm::operand::{ap_cell_ref, DerefOrImmediate};
-use cairo_lang_casm::{casm, casm_build_extend};
+use cairo_lang_casm::casm_build_extend;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra bool operations.
 pub fn build(
@@ -33,17 +31,11 @@ fn build_bool_and(
         .try_unpack_single()?
         .to_deref()
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    Ok(builder.build(
-        vec![],
-        vec![],
-        [[ReferenceExpression::from_cell(CellExpression::BinOp {
-            op: CellOperator::Mul,
-            a,
-            b: DerefOrImmediate::from(b),
-        })]
-        .into_iter()]
-        .into_iter(),
-    ))
+    let mut casm_builder = CasmBuilder::default();
+    let a = casm_builder.add_var(CellExpression::Deref(a));
+    let b = casm_builder.add_var(CellExpression::Deref(b));
+    casm_build_extend!(casm_builder, let res = a * b;);
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
 }
 
 /// Handles instructions for boolean NOT.
@@ -54,20 +46,14 @@ fn build_bool_not(
         .try_unpack_single()?
         .to_deref()
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-
-    // We want to output `1 - a`, but a SUB expression cannot have an immediate value on the LHS.
-    // Store 1 in AP first, advance AP and return `[ap - 1] - a`.
-    Ok(builder.build(
-        casm! { [ap + 0] = 1, ap++; }.instructions,
-        vec![],
-        [[ReferenceExpression::from_cell(CellExpression::BinOp {
-            op: CellOperator::Sub,
-            a: ap_cell_ref(-1),
-            b: DerefOrImmediate::from(a),
-        })]
-        .into_iter()]
-        .into_iter(),
-    ))
+    let mut casm_builder = CasmBuilder::default();
+    let a = casm_builder.add_var(CellExpression::Deref(a));
+    casm_build_extend! {casm_builder,
+        const one_imm = 1;
+        tempvar one = one_imm;
+        let res = one - a;
+    };
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
 }
 
 /// Handles instructions for boolean XOR.
