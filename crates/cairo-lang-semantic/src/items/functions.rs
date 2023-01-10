@@ -257,7 +257,7 @@ fn update_env_with_ast_params(
     let mut semantic_params = Vec::new();
     for ast_param in ast_params.iter() {
         let (name, semantic_param) = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
-        if env.add_param(diagnostics, &name, semantic_param.clone(), ast_param, function_id).is_ok()
+        if env.add_param(diagnostics, name, semantic_param.clone(), ast_param, function_id).is_ok()
         {
             semantic_params.push(semantic_param);
         }
@@ -271,13 +271,10 @@ fn ast_param_to_semantic(
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
     ast_param: &ast::Param,
-) -> (Option<SmolStr>, semantic::Parameter) {
+) -> (SmolStr, semantic::Parameter) {
     let syntax_db = db.upcast();
 
-    let name = match ast_param.name(syntax_db) {
-        ast::ParamName::Underscore(_) => None,
-        ast::ParamName::Name(name) => Some(name.text(syntax_db)),
-    };
+    let name = ast_param.name(syntax_db).text(syntax_db);
 
     let id = db.intern_param(ParamLongId(resolver.module_file_id, ast_param.stable_ptr()));
     let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
