@@ -33,6 +33,7 @@ fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str) 
 
     let (syntax_root, diagnostics) =
         get_syntax_root_and_diagnostics_from_file(db, unformatted_filename);
+    println!("{}", diagnostics.format(db));
     diagnostics.expect("A parsing error occurred while trying to format the code.");
     let config = FormatterConfig::default();
     let formatted_file = get_formatted_file(db, &syntax_root, config);
