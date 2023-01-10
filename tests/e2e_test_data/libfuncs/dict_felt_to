@@ -37,7 +37,7 @@ memory[memory[memory[fp + -3] + 0] + n_dicts * 3] = (
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 9})
+test::foo: OrderedHashMap({Step: 99})
 
 //! > sierra_code
 type DictManager = DictManager;
@@ -87,7 +87,7 @@ dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 6})
+test::foo: OrderedHashMap({Step: 106})
 
 //! > sierra_code
 type felt = felt;
@@ -139,7 +139,7 @@ dict_tracker.current_ptr += 3
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 6})
+test::foo: OrderedHashMap({Step: 106})
 
 //! > sierra_code
 type felt = felt;
