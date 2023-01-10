@@ -20,12 +20,10 @@ fn build_print(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     let mut casm_builder = CasmBuilder::default();
-    let arr_start = casm_builder.add_var(
-        arr_start.to_buffer(0).ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
-    );
-    let arr_end = casm_builder.add_var(
-        arr_end.to_buffer(0).ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
-    );
+    super::add_input_variables! {casm_builder,
+        buffer(0) arr_start;
+        buffer(0) arr_end;
+    };
     casm_build_extend! {casm_builder,
         hint DebugPrint {start: arr_start, end: arr_end} into {};
         // Since we can't have hints not carried on actual instructions.

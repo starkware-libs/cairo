@@ -1,8 +1,8 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::cell_expression::CellExpression;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::add_input_variables;
 
 #[cfg(test)]
 #[path = "bitwise_test.rs"]
@@ -20,23 +20,16 @@ fn build_bitwise(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_bitwise, expr_x, expr_y] = builder.try_get_refs()?;
-    let bitwise = expr_bitwise
-        .try_unpack_single()?
-        .to_buffer(4)
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let x = expr_x
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let y = expr_y
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let bitwise = expr_bitwise.try_unpack_single()?;
+    let x = expr_x.try_unpack_single()?;
+    let y = expr_y.try_unpack_single()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let x = casm_builder.add_var(CellExpression::Deref(x));
-    let y = casm_builder.add_var(CellExpression::Deref(y));
-    let bitwise = casm_builder.add_var(bitwise);
+    add_input_variables! {casm_builder,
+        deref x;
+        deref y;
+        buffer(4) bitwise;
+    };
     casm_build_extend! {casm_builder,
         assert x = *(bitwise++);
         assert y = *(bitwise++);

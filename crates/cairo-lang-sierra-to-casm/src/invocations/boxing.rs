@@ -29,17 +29,14 @@ fn build_into_box(
         });
     }
 
-    let operand = builder.try_get_refs::<1>()?[0]
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let operand = builder.try_get_refs::<1>()?[0].try_unpack_single()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let operand_var = casm_builder.add_var(CellExpression::Deref(operand));
+    super::add_input_variables! {casm_builder, deref operand; };
     casm_build_extend!(casm_builder,
         tempvar addr;
         hint AllocSegment {} into {dst: addr};
-        assert operand_var = addr[0];
+        assert operand = addr[0];
     );
     Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[addr]], None)]))
 }

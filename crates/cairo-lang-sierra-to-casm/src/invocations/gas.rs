@@ -36,20 +36,16 @@ fn build_get_gas(
         .ok_or(InvocationError::UnknownVariableData)?
         * STEP_COST;
     let [range_check_expr, gas_counter_expr] = builder.try_get_refs()?;
-    let range_check = range_check_expr
-        .try_unpack_single()?
-        .to_buffer(1)
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let gas_counter = gas_counter_expr
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let range_check = range_check_expr.try_unpack_single()?;
+    let gas_counter = gas_counter_expr.try_unpack_single()?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
 
     let mut casm_builder = CasmBuilder::default();
-    let range_check = casm_builder.add_var(range_check);
-    let gas_counter = casm_builder.add_var(CellExpression::Deref(gas_counter));
+    super::add_input_variables! {casm_builder,
+        buffer(1) range_check;
+        deref gas_counter;
+    };
 
     casm_build_extend! {casm_builder,
         tempvar has_enough_gas;

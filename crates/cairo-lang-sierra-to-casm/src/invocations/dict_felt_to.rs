@@ -2,7 +2,6 @@ use std::vec;
 
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder};
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -25,12 +24,9 @@ pub fn build(
 fn build_dict_felt_to_new(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let dict_manager_ptr_ref = builder.try_get_refs::<1>()?[0]
-        .try_unpack_single()?
-        .to_buffer(2)
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let dict_manager_ptr = builder.try_get_refs::<1>()?[0].try_unpack_single()?;
     let mut casm_builder = CasmBuilder::default();
-    let dict_manager_ptr = casm_builder.add_var(dict_manager_ptr_ref);
+    super::add_input_variables! {casm_builder, buffer(2) dict_manager_ptr; };
     casm_build_extend! {casm_builder,
         hint AllocDictFeltTo {dict_manager_ptr: dict_manager_ptr};
         // Previous dict info
@@ -60,18 +56,14 @@ fn build_dict_felt_to_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_dict, expr_key] = builder.try_get_refs()?;
-    let dict_ptr = expr_dict
-        .try_unpack_single()?
-        .to_buffer(2)
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let key = expr_key
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let dict_ptr = expr_dict.try_unpack_single()?;
+    let key = expr_key.try_unpack_single()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let dict_ptr = casm_builder.add_var(dict_ptr);
-    let key = casm_builder.add_var(CellExpression::Deref(key));
+    super::add_input_variables! {casm_builder,
+        buffer(2) dict_ptr;
+        deref key;
+    };
     casm_build_extend! {casm_builder,
         tempvar value;
         hint DictFeltToRead {dict_ptr: dict_ptr, key: key} into {value_dst: value};
@@ -89,23 +81,16 @@ fn build_dict_felt_to_write(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_dict, expr_key, expr_value] = builder.try_get_refs()?;
-    let dict_ptr = expr_dict
-        .try_unpack_single()?
-        .to_buffer(2)
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let key = expr_key
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let value = expr_value
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let dict_ptr = expr_dict.try_unpack_single()?;
+    let key = expr_key.try_unpack_single()?;
+    let value = expr_value.try_unpack_single()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let dict_ptr = casm_builder.add_var(dict_ptr);
-    let key = casm_builder.add_var(CellExpression::Deref(key));
-    let value = casm_builder.add_var(CellExpression::Deref(value));
+    super::add_input_variables! {casm_builder,
+        buffer(2) dict_ptr;
+        deref key;
+        deref value;
+    };
     casm_build_extend! {casm_builder,
         tempvar prev_value;
         hint DictFeltToWrite {dict_ptr: dict_ptr, key: key, value: value} into {prev_value_dst: prev_value};
@@ -122,23 +107,17 @@ fn build_dict_felt_to_squash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_range_check, expr_dict_manager, expr_dict] = builder.try_get_refs()?;
-    let dict_manager_ptr = expr_dict_manager
-        .try_unpack_single()?
-        .to_buffer(2)
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let range_check_ptr = expr_range_check
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let dict_end_address = expr_dict
-        .try_unpack_single()?
-        .to_buffer(0)
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let dict_manager_ptr = expr_dict_manager.try_unpack_single()?;
+    let range_check_ptr = expr_range_check.try_unpack_single()?;
+    let dict_end_address = expr_dict.try_unpack_single()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let dict_manager_ptr = casm_builder.add_var(dict_manager_ptr);
-    let range_check_ptr = casm_builder.add_var(CellExpression::Deref(range_check_ptr));
-    let dict_end_address = casm_builder.add_var(dict_end_address);
+    super::add_input_variables! {casm_builder,
+        buffer(2) dict_manager_ptr;
+        deref range_check_ptr;
+        buffer(0) dict_end_address;
+    };
+
     let (
         dict_access_size,
         dict_info_size,

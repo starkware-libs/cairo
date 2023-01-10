@@ -409,3 +409,37 @@ pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>)
         _ => panic!("malformed invocation"),
     }
 }
+
+/// Adds input variables into the builder while validating their type.
+macro_rules! add_input_variables {
+    ($casm_builder:ident,) => {};
+    ($casm_builder:ident, deref $var:ident; $($tok:tt)*) => {
+        let $var = $casm_builder.add_var(cairo_lang_casm::cell_expression::CellExpression::Deref(
+            $var.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+        ));
+        $crate::invocations::add_input_variables!($casm_builder, $($tok)*)
+    };
+    ($casm_builder:ident, deref_or_immediate $var:ident; $($tok:tt)*) => {
+        let $var = $casm_builder.add_var(
+            match $var
+                .to_deref_or_immediate()
+                .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?
+            {
+                cairo_lang_casm::operand::DerefOrImmediate::Deref(cell) => {
+                    cairo_lang_casm::cell_expression::CellExpression::Deref(cell)
+                }
+                cairo_lang_casm::operand::DerefOrImmediate::Immediate(cell) => {
+                    cairo_lang_casm::cell_expression::CellExpression::Immediate(cell)
+                }
+            },
+        );
+        $crate::invocations::add_input_variables!($casm_builder, $($tok)*)
+    };
+    ($casm_builder:ident, buffer($slack:expr) $var:ident; $($tok:tt)*) => {
+        let $var = $casm_builder.add_var(
+            $var.to_buffer($slack).ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+        );
+        $crate::invocations::add_input_variables!($casm_builder, $($tok)*)
+    };
+}
+use add_input_variables;
