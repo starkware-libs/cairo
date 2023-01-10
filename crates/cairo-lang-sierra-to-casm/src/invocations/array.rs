@@ -1,6 +1,7 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::{DerefOrImmediate, ResOperand};
+use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::operand::DerefOrImmediate;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
@@ -42,14 +43,19 @@ fn build_array_append(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_arr, elem] = builder.try_get_refs()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let arr_start = arr_start.to_buffer(0)?;
-    let arr_end = arr_end.to_buffer(elem.cells.len() as i16)?;
+    let arr_start =
+        arr_start.to_buffer(0).ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let arr_end = arr_end
+        .to_buffer(elem.cells.len() as i16)
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
     let arr_start = casm_builder.add_var(arr_start);
     let arr_end = casm_builder.add_var(arr_end);
     for cell in &elem.cells {
-        let cell = casm_builder.add_var(ResOperand::Deref(cell.to_deref()?));
+        let cell = casm_builder.add_var(CellExpression::Deref(
+            cell.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+        ));
         casm_build_extend!(casm_builder, assert cell = *(arr_end++););
     }
     Ok(builder
@@ -62,13 +68,15 @@ fn build_pop_front(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
-    let arr_start = arr_start.to_deref()?;
-    let arr_end = arr_end.to_deref()?;
+    let arr_start =
+        arr_start.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let arr_end =
+        arr_end.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     let element_size = builder.program_info.type_sizes[elem_ty];
 
     let mut casm_builder = CasmBuilder::default();
-    let arr_start = casm_builder.add_var(ResOperand::Deref(arr_start));
-    let arr_end = casm_builder.add_var(ResOperand::Deref(arr_end));
+    let arr_start = casm_builder.add_var(CellExpression::Deref(arr_start));
+    let arr_end = casm_builder.add_var(CellExpression::Deref(arr_end));
     casm_build_extend! {casm_builder,
         tempvar is_non_empty = arr_end - arr_start;
         jump NonEmpty if is_non_empty != 0;
@@ -95,22 +103,30 @@ fn build_array_at(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_range_check, expr_arr, expr_index] = builder.try_get_refs()?;
-    let range_check = expr_range_check.try_unpack_single()?.to_deref()?;
+    let range_check = expr_range_check
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let arr_start = arr_start.to_deref()?;
-    let arr_end = arr_end.to_deref()?;
-    let index = expr_index.try_unpack_single()?.to_deref_or_immediate()?;
+    let arr_start =
+        arr_start.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let arr_end =
+        arr_end.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let index = expr_index
+        .try_unpack_single()?
+        .to_deref_or_immediate()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let element_size = builder.program_info.type_sizes[elem_ty];
 
     let mut casm_builder = CasmBuilder::default();
     let index = casm_builder.add_var(match index {
-        DerefOrImmediate::Immediate(imm) => ResOperand::Immediate(imm),
-        DerefOrImmediate::Deref(cell) => ResOperand::Deref(cell),
+        DerefOrImmediate::Immediate(imm) => CellExpression::Immediate(imm),
+        DerefOrImmediate::Deref(cell) => CellExpression::Deref(cell),
     });
-    let arr_start = casm_builder.add_var(ResOperand::Deref(arr_start));
-    let arr_end = casm_builder.add_var(ResOperand::Deref(arr_end));
-    let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+    let arr_start = casm_builder.add_var(CellExpression::Deref(arr_start));
+    let arr_end = casm_builder.add_var(CellExpression::Deref(arr_end));
+    let range_check = casm_builder.add_var(CellExpression::Deref(range_check));
     casm_build_extend! {casm_builder,
         // Compute the length of the array (in felts).
         tempvar array_cell_size = arr_end - arr_start;
@@ -181,20 +197,21 @@ fn build_array_len(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_arr] = builder.try_get_refs()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let arr_start = arr_start.to_deref()?;
-    let arr_end = arr_end.to_deref()?;
+    let arr_start =
+        arr_start.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let arr_end =
+        arr_end.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let element_size = builder.program_info.type_sizes[elem_ty];
     // TODO(orizi): Do element_size = 1 optimization once it is easier to do ap-changes according to
     // type size.
     let mut casm_builder = CasmBuilder::default();
-    let start = casm_builder.add_var(ResOperand::Deref(arr_start));
-    let end = casm_builder.add_var(ResOperand::Deref(arr_end));
+    let start = casm_builder.add_var(CellExpression::Deref(arr_start));
+    let end = casm_builder.add_var(CellExpression::Deref(arr_end));
     casm_build_extend! {casm_builder,
         tempvar end_total_offset = end - start;
         const element_size = element_size;
-        // TODO(orizi): Return a ref to length instead of tempvar when casm builder supports division.
-        tempvar length = end_total_offset / element_size;
+        let length = end_total_offset / element_size;
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,

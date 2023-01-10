@@ -22,6 +22,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::GasBuiltin(_)
             | CoreTypeConcrete::Bitwise(_)
             | CoreTypeConcrete::BuiltinCosts(_)
+            | CoreTypeConcrete::EcOp(_)
             | CoreTypeConcrete::Nullable(_)
             | CoreTypeConcrete::Uint128(_)
             | CoreTypeConcrete::RangeCheck(_)

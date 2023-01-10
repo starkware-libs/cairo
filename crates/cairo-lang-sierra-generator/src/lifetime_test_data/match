@@ -35,7 +35,7 @@ Statements:
     JumpNzResult::NonZero => blk1,
   }
 End:
-  Callsite(v4)
+  Return(v4)
 
 //! > last_use
 ((BlockId(2), 1), 0)
@@ -86,7 +86,7 @@ Statements:
     JumpNzResult::NonZero => blk1,
   }
 End:
-  Callsite(v1)
+  Return(v1)
 
 //! > last_use
 ((BlockId(2), 1), 0)
@@ -138,7 +138,7 @@ Statements:
   }
   (v6: ()) <- struct_construct()
 End:
-  Callsite(v6)
+  Return(v6)
 
 //! > last_use
 ((BlockId(2), 2), 0)
@@ -240,7 +240,7 @@ Statements:
   }
   (v13: ()) <- struct_construct()
 End:
-  Callsite(v13)
+  Return(v13)
 
 //! > last_use
 ((BlockId(6), 2), 0)

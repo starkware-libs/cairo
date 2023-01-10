@@ -45,7 +45,7 @@ Statements:
     bool::True => blk0,
   }
 End:
-  Callsite(v5)
+  Return(v5)
 
 //! > lowering_flat
 blk0:
@@ -70,4 +70,4 @@ Statements:
     bool::True => blk0,
   }
 End:
-  Callsite(v5)
+  Return(v5)

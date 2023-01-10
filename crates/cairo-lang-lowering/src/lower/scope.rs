@@ -10,7 +10,8 @@ use super::context::LoweringContext;
 use super::semantic_map::{SemanticVariableEntry, SemanticVariablesMap};
 use super::variables::{LivingVar, LivingVariables, Splitter, UsableVariable};
 use crate::{
-    BlockId, Statement, StructuredBlock, StructuredBlockEnd, StructuredStatement, VariableId,
+    BlockId, RefIndex, Statement, StructuredBlock, StructuredBlockEnd, StructuredStatement,
+    VariableId,
 };
 
 pub mod generators;
@@ -48,7 +49,7 @@ pub struct BlockScope {
     /// Updates to the variable ids bound to the ref variables (including implicits), from the last
     /// update until exactly after next statement. When finalize_statement() will be called, these
     /// updates will be added to the statement.
-    pending_ref_updates: OrderedHashMap<usize, VariableId>,
+    pending_ref_updates: OrderedHashMap<RefIndex, VariableId>,
 }
 
 /// Represents how a block ends.
@@ -56,8 +57,13 @@ pub enum BlockScopeEnd {
     /// Returns to callsite with an optional expression (e.g. a block that might end with a tail
     /// expression).
     Callsite(Option<LivingVar>),
-    /// Returns from the function. The value is a vector of the vars to be returned (not dropped).
+    /// Returns from the function. `refs` are the reference variables (including implicits).
+    /// `returns` are the regular return variables (1 for a user function, maybe more for external
+    /// functions).
     Return { refs: Vec<LivingVar>, returns: Vec<LivingVar> },
+    /// Exits the function with a panic. `refs` are the reference variables (including implicits).
+    /// `data` is the variable of the felt array with the panic data.
+    Panic { refs: Vec<LivingVar>, data: LivingVar },
     /// The end of the block is unreachable.
     Unreachable,
 }
@@ -88,7 +94,7 @@ impl BlockScope {
             .find(|(_, ref_semantic_var_id)| **ref_semantic_var_id == semantic_var_id)
         {
             let index = ctx.implicits.len() + ref_index;
-            self.pending_ref_updates.insert(index, var.var_id());
+            self.pending_ref_updates.insert(RefIndex(index), var.var_id());
             self.current_refs[index] = Some(var.var_id());
         }
 
@@ -148,7 +154,7 @@ impl BlockScope {
             .enumerate()
             .find(|(_, imp_ty)| **imp_ty == ty)
             .expect("Unknown implicit.");
-        self.pending_ref_updates.insert(implicit_index, var.var_id());
+        self.pending_ref_updates.insert(RefIndex(implicit_index), var.var_id());
         self.current_refs[implicit_index] = Some(var.var_id());
 
         self.implicits.insert(ty, var);
@@ -190,6 +196,12 @@ impl BlockScope {
                 let returns =
                     returns.into_iter().map(|var| self.living_variables.take_var(var)).collect();
                 BlockSealedEnd::Return { refs, returns }
+            }
+            BlockScopeEnd::Panic { refs, data } => {
+                let refs =
+                    refs.into_iter().map(|var| self.living_variables.take_var(var)).collect();
+                let data = self.living_variables.take_var(data);
+                BlockSealedEnd::Panic { refs, data }
             }
             BlockScopeEnd::Unreachable => BlockSealedEnd::Unreachable,
         };
@@ -245,6 +257,8 @@ pub enum BlockSealedEnd {
     Callsite(Option<UsableVariable>),
     /// Returns from the function.
     Return { refs: Vec<UsableVariable>, returns: Vec<UsableVariable> },
+    /// Exits the function with a panic.
+    Panic { refs: Vec<UsableVariable>, data: UsableVariable },
     /// The end of the block is unreachable.
     Unreachable,
 }
@@ -344,6 +358,13 @@ impl BlockSealed {
                 StructuredBlockEnd::Return {
                     refs: refs.iter().map(UsableVariable::var_id).collect(),
                     returns: returns.iter().map(UsableVariable::var_id).collect(),
+                },
+                BlockEndInfo::End,
+            ),
+            BlockSealedEnd::Panic { refs, data } => (
+                StructuredBlockEnd::Panic {
+                    refs: refs.iter().map(UsableVariable::var_id).collect(),
+                    data: data.var_id(),
                 },
                 BlockEndInfo::End,
             ),

@@ -69,6 +69,9 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(6), ops.const_cost(6)],
         Ec(EcConcreteLibfunc::FinalizeState(_)) => vec![ops.const_cost(13), ops.const_cost(6)],
         Ec(EcConcreteLibfunc::InitState(_)) => vec![ops.const_cost(8)],
+        Ec(EcConcreteLibfunc::Op(_)) => {
+            vec![ops.add(ops.const_cost(5), ops.const_cost_token(1, CostTokenType::EcOp))]
+        }
         Ec(EcConcreteLibfunc::UnwrapPoint(_)) => vec![ops.const_cost(0)],
         Gas(GetGas(_)) => {
             vec![

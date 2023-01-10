@@ -15,12 +15,22 @@ use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::strct::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint128::{IntOperator, Uint128Concrete};
+use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use crate::ApChange;
 
+/// Trait for providing extra information required for AP changes.
+pub trait ApChangeInfoProvider {
+    /// Provides the sizes of types.
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize;
+}
+
 /// Returns the ap change for a core libfunc.
 /// Values with unknown values will return as None.
-pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
+pub fn core_libfunc_ap_change<InfoProvider: ApChangeInfoProvider>(
+    libfunc: &CoreConcreteLibfunc,
+    info_provider: &InfoProvider,
+) -> Vec<ApChange> {
     match libfunc {
         CoreConcreteLibfunc::ApTracking(_) => vec![ApChange::Unknown],
         CoreConcreteLibfunc::Array(libfunc) => match libfunc {
@@ -28,7 +38,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
             ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
             ArrayConcreteLibfunc::PopFront(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             ArrayConcreteLibfunc::At(_) => vec![ApChange::Known(6), ApChange::Known(5)],
-            ArrayConcreteLibfunc::Len(_) => vec![ApChange::Known(2)],
+            ArrayConcreteLibfunc::Len(_) => vec![ApChange::Known(1)],
         },
         CoreConcreteLibfunc::Bitwise(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::BranchAlign(_) => vec![ApChange::FromMetadata],
@@ -54,6 +64,7 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
             EcConcreteLibfunc::CreatePoint(_) => vec![ApChange::Known(6), ApChange::Known(6)],
             EcConcreteLibfunc::FinalizeState(_) => vec![ApChange::Known(11), ApChange::Known(3)],
             EcConcreteLibfunc::InitState(_) => vec![ApChange::Known(8)],
+            EcConcreteLibfunc::Op(_) => vec![ApChange::Known(0)],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Drop(_) | CoreConcreteLibfunc::Dup(_) => vec![ApChange::Known(0)],
@@ -86,15 +97,15 @@ pub fn core_libfunc_ap_change(libfunc: &CoreConcreteLibfunc) -> Vec<ApChange> {
         },
         CoreConcreteLibfunc::Mem(libfunc) => match libfunc {
             MemConcreteLibfunc::StoreTemp(libfunc) => {
-                vec![ApChange::KnownByTypeSize(libfunc.ty.clone())]
+                vec![ApChange::Known(info_provider.type_size(&libfunc.ty))]
             }
             MemConcreteLibfunc::AlignTemps(libfunc) => {
-                vec![ApChange::KnownByTypeSize(libfunc.ty.clone())]
+                vec![ApChange::Known(info_provider.type_size(&libfunc.ty))]
             }
             MemConcreteLibfunc::StoreLocal(_) => vec![ApChange::Known(0)],
             MemConcreteLibfunc::FinalizeLocals(_) => vec![ApChange::FinalizeLocals],
             MemConcreteLibfunc::AllocLocal(libfunc) => {
-                vec![ApChange::AtLocalsFinalizationByTypeSize(libfunc.ty.clone())]
+                vec![ApChange::AtLocalsFinalization(info_provider.type_size(&libfunc.ty))]
             }
             MemConcreteLibfunc::Rename(_) => {
                 vec![ApChange::Known(0)]

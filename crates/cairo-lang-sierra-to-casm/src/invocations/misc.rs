@@ -1,5 +1,5 @@
 use cairo_lang_casm::builder::CasmBuilder;
-use cairo_lang_casm::operand::ResOperand;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 
@@ -7,7 +7,6 @@ use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
     InvocationError,
 };
-use crate::references::CellExpression;
 
 /// Handles a revoke ap tracking instruction.
 pub fn build_revoke_ap_tracking(
@@ -43,10 +42,13 @@ pub fn build_drop(
 pub fn build_jump_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let value = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
+    let value = builder.try_get_refs::<1>()?[0]
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
-    let value = casm_builder.add_var(ResOperand::Deref(value));
+    let value = casm_builder.add_var(CellExpression::Deref(value));
     casm_build_extend! {casm_builder,
         jump Target if value != 0;
     };
@@ -111,16 +113,16 @@ pub fn build_cell_eq(
 
     let (a, b) = match (a, b) {
         (CellExpression::Deref(cell_expr_a), CellExpression::Deref(cell_expr_b)) => {
-            (ResOperand::Deref(*cell_expr_a), ResOperand::Deref(*cell_expr_b))
+            (CellExpression::Deref(*cell_expr_a), CellExpression::Deref(*cell_expr_b))
         }
         (CellExpression::Deref(cell_expr_a), CellExpression::Immediate(big_int_b)) => {
-            (ResOperand::Deref(*cell_expr_a), ResOperand::Immediate(big_int_b.clone()))
+            (CellExpression::Deref(*cell_expr_a), CellExpression::Immediate(big_int_b.clone()))
         }
         // The casm line 'tempvar diff = a - b;' won't work if a is an immediate.
         // So if a is an immediate and b is a deref: switch them.
         // If a, b are both immediates, alternative cairo code will be used.
         (CellExpression::Immediate(big_int_a), CellExpression::Deref(cell_expr_b)) => {
-            (ResOperand::Deref(*cell_expr_b), ResOperand::Immediate(big_int_a.clone()))
+            (CellExpression::Deref(*cell_expr_b), CellExpression::Immediate(big_int_a.clone()))
         }
         (CellExpression::Immediate(big_int_a), CellExpression::Immediate(big_int_b)) => {
             casm_build_extend! {casm_builder,

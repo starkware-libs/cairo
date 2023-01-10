@@ -1,12 +1,12 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::ResOperand;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{CellExpression, ReferenceExpression};
+use crate::references::ReferenceExpression;
 
 #[cfg(test)]
 #[path = "interoperability_test.rs"]
@@ -20,19 +20,30 @@ pub fn build_call_contract(
     let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "call_contract".as_bytes());
 
     let [expr_gas_builtin, expr_system, expr_address, expr_arr] = builder.try_get_refs()?;
-    let gas_builtin = expr_gas_builtin.try_unpack_single()?.to_deref()?;
-    let system = expr_system.try_unpack_single()?.to_buffer(8)?;
-    let contract_address = expr_address.try_unpack_single()?.to_deref()?;
+    let gas_builtin = expr_gas_builtin
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let system = expr_system
+        .try_unpack_single()?
+        .to_buffer(8)
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let contract_address = expr_address
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     let [call_data_start, call_data_end] = expr_arr.try_unpack()?;
-    let call_data_start = call_data_start.to_deref()?;
-    let call_data_end = call_data_end.to_deref()?;
+    let call_data_start =
+        call_data_start.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let call_data_end =
+        call_data_end.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
-    let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
-    let contract_address = casm_builder.add_var(ResOperand::Deref(contract_address));
-    let call_data_start = casm_builder.add_var(ResOperand::Deref(call_data_start));
-    let call_data_end = casm_builder.add_var(ResOperand::Deref(call_data_end));
+    let gas_builtin = casm_builder.add_var(CellExpression::Deref(gas_builtin));
+    let contract_address = casm_builder.add_var(CellExpression::Deref(contract_address));
+    let call_data_start = casm_builder.add_var(CellExpression::Deref(call_data_start));
+    let call_data_end = casm_builder.add_var(CellExpression::Deref(call_data_end));
     casm_build_extend! {casm_builder,
         const selector_imm = selector_imm;
         tempvar selector = selector_imm;
