@@ -45,7 +45,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 run_small_e2e_test
 
 //! > cairo
-fn foo(mut a: bool, b: bool) -> bool {
+fn foo(a: bool, b: bool) -> bool {
     // TODO(orizi): When inlining is supported move to calling `bool_or` directly.
     let (r,) = bool_or_impl(a, b);
     r
@@ -59,7 +59,7 @@ fn foo(mut a: bool, b: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 5})
+test::foo: OrderedHashMap({Step: 4})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
