@@ -86,9 +86,7 @@ fn add_ec_points(
 fn build_ec_point_try_create(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_x, expr_y] = builder.try_get_refs()?;
-    let x = expr_x.try_unpack_single()?;
-    let y = expr_y.try_unpack_single()?;
+    let [x, y] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
@@ -118,8 +116,7 @@ fn build_ec_point_try_create(
 fn build_ec_point_unwrap(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_point] = builder.try_get_refs()?;
-    let [x, y] = expr_point.try_unpack()?;
+    let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
@@ -204,8 +201,7 @@ fn build_ec_add_to_state(
 fn build_ec_try_finalize_state(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_state] = builder.try_get_refs()?;
-    let [x, y, random_ptr] = expr_state.try_unpack()?;
+    let [x, y, random_ptr] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,

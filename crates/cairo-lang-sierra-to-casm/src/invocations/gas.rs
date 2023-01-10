@@ -7,7 +7,7 @@ use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::get_non_fallthrough_statement_id;
+use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
 pub const STEP_COST: i64 = 100;
@@ -35,14 +35,12 @@ fn build_get_gas(
         .get(&(builder.idx, CostTokenType::Step))
         .ok_or(InvocationError::UnknownVariableData)?
         * STEP_COST;
-    let [range_check_expr, gas_counter_expr] = builder.try_get_refs()?;
-    let range_check = range_check_expr.try_unpack_single()?;
-    let gas_counter = gas_counter_expr.try_unpack_single()?;
+    let [range_check, gas_counter] = builder.try_get_single_cells()?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
 
     let mut casm_builder = CasmBuilder::default();
-    super::add_input_variables! {casm_builder,
+    add_input_variables! {casm_builder,
         buffer(1) range_check;
         deref gas_counter;
     };
@@ -81,8 +79,7 @@ fn build_refund_gas(
         .variable_values
         .get(&(builder.idx, CostTokenType::Step))
         .ok_or(InvocationError::UnknownVariableData)?;
-    let gas_counter_value = builder.try_get_refs::<1>()?[0]
-        .try_unpack_single()?
+    let gas_counter_value = builder.try_get_single_cells::<1>()?[0]
         .to_deref()
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 

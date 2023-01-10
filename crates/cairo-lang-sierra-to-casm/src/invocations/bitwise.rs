@@ -19,10 +19,7 @@ pub fn build(
 fn build_bitwise(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_bitwise, expr_x, expr_y] = builder.try_get_refs()?;
-    let bitwise = expr_bitwise.try_unpack_single()?;
-    let x = expr_x.try_unpack_single()?;
-    let y = expr_y.try_unpack_single()?;
+    let [bitwise, x, y] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,

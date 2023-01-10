@@ -320,7 +320,7 @@ impl CompiledInvocationBuilder<'_> {
         self.build(vec![], vec![], [output_expressions].into_iter())
     }
 
-    /// If returns the reference expressions if the size is correct.
+    /// Returns the reference expressions if the size is correct.
     pub fn try_get_refs<const COUNT: usize>(
         &self,
     ) -> Result<[&ReferenceExpression; COUNT], InvocationError> {
@@ -332,6 +332,25 @@ impl CompiledInvocationBuilder<'_> {
                 actual: self.refs.len(),
             })
         }
+    }
+
+    /// Returns the reference expressions, assuming all contains one cell if the size is correct.
+    pub fn try_get_single_cells<const COUNT: usize>(
+        &self,
+    ) -> Result<[&CellExpression; COUNT], InvocationError> {
+        let refs = self.try_get_refs::<COUNT>()?;
+        let mut last_err = None;
+        const FAKE_CELL: CellExpression =
+            CellExpression::Deref(CellRef { register: Register::AP, offset: 0 });
+        // TODO(orizi): Use `refs.try_map` once it is a stable feature.
+        let result = refs.map(|r| match r.try_unpack_single() {
+            Ok(cell) => cell,
+            Err(err) => {
+                last_err = Some(err);
+                &FAKE_CELL
+            }
+        });
+        if let Some(err) = last_err { Err(err) } else { Ok(result) }
     }
 }
 

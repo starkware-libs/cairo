@@ -175,8 +175,7 @@ fn build_array_len(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_arr] = builder.try_get_refs()?;
-    let [arr_start, arr_end] = expr_arr.try_unpack()?;
+    let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     let element_size = builder.program_info.type_sizes[elem_ty];
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
