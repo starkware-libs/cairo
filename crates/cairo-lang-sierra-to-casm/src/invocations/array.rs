@@ -211,8 +211,7 @@ fn build_array_len(
     casm_build_extend! {casm_builder,
         tempvar end_total_offset = end - start;
         const element_size = element_size;
-        // TODO(orizi): Return a ref to length instead of tempvar when casm builder supports division.
-        tempvar length = end_total_offset / element_size;
+        let length = end_total_offset / element_size;
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
