@@ -5,7 +5,6 @@ use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches};
-use smol_str::SmolStr;
 
 use super::modifiers;
 use crate::corelib::unit_ty;
@@ -233,6 +232,7 @@ pub fn concrete_function_signature(
     let generic_signature = db.generic_function_signature(generic_function)?;
     let concretize_param = |param: semantic::Parameter| Parameter {
         id: param.id,
+        name: param.name,
         ty: substitute_generics(db, &substitution_map, param.ty),
         mutability: param.mutability,
     };
@@ -256,9 +256,9 @@ fn update_env_with_ast_params(
 ) -> Vec<semantic::Parameter> {
     let mut semantic_params = Vec::new();
     for ast_param in ast_params.iter() {
-        let (name, semantic_param) = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
-        if env.add_param(diagnostics, name, semantic_param.clone(), ast_param, function_id).is_ok()
-        {
+        let semantic_param = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
+
+        if env.add_param(diagnostics, semantic_param.clone(), ast_param, function_id).is_ok() {
             semantic_params.push(semantic_param);
         }
     }
@@ -271,7 +271,7 @@ fn ast_param_to_semantic(
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
     ast_param: &ast::Param,
-) -> (SmolStr, semantic::Parameter) {
+) -> semantic::Parameter {
     let syntax_db = db.upcast();
 
     let name = ast_param.name(syntax_db).text(syntax_db);
@@ -286,6 +286,5 @@ fn ast_param_to_semantic(
         &ast_param.modifiers(syntax_db).elements(syntax_db),
     );
 
-    let semantic_param = semantic::Parameter { id, ty, mutability };
-    (name, semantic_param)
+    semantic::Parameter { id, name, ty, mutability }
 }
