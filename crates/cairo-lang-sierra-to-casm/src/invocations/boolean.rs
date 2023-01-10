@@ -22,9 +22,7 @@ pub fn build(
 fn build_bool_and(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_a, expr_b] = builder.try_get_refs()?;
-    let a = expr_a.try_unpack_single()?;
-    let b = expr_b.try_unpack_single()?;
+    let [a, b] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
         deref a;
@@ -38,7 +36,7 @@ fn build_bool_and(
 fn build_bool_not(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let a = builder.try_get_refs::<1>()?[0].try_unpack_single()?;
+    let [a] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder, deref a; };
     casm_build_extend! {casm_builder,
@@ -53,9 +51,7 @@ fn build_bool_not(
 fn build_bool_xor(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_a, expr_b] = builder.try_get_refs()?;
-    let a = expr_a.try_unpack_single()?;
-    let b = expr_b.try_unpack_single()?;
+    let [a, b] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,

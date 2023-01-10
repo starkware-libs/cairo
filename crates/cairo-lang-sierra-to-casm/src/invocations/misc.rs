@@ -43,7 +43,7 @@ pub fn build_drop(
 pub fn build_jump_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let value = builder.try_get_refs::<1>()?[0].try_unpack_single()?;
+    let [value] = builder.try_get_single_cells()?;
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     add_input_variables!(casm_builder, deref value; );

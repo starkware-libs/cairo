@@ -8,6 +8,7 @@ use num_bigint::BigInt;
 
 use super::misc::build_jump_nz;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::add_input_variables;
 use crate::references::ReferenceExpression;
 
 #[cfg(test)]
@@ -39,11 +40,9 @@ fn build_felt_op(
     builder: CompiledInvocationBuilder<'_>,
     op: FeltBinaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_a, expr_b] = builder.try_get_refs()?;
-    let a = expr_a.try_unpack_single()?;
-    let b = expr_b.try_unpack_single()?;
+    let [a, b] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
-    super::add_input_variables! {casm_builder,
+    add_input_variables! {casm_builder,
         deref a;
         deref_or_immediate b;
     };
@@ -57,9 +56,9 @@ fn build_felt_op_with_const(
     op: FeltBinaryOperator,
     c: BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let a = builder.try_get_refs::<1>()?[0].try_unpack_single()?;
+    let [a] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
-    super::add_input_variables! {casm_builder, deref a; };
+    add_input_variables! {casm_builder, deref a; };
     let c = casm_builder.add_var(CellExpression::Immediate(c));
     let res = casm_builder.bin_op(felt_to_cell_operator(op), a, c);
     Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))

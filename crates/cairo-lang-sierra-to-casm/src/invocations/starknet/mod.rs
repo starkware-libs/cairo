@@ -7,7 +7,7 @@ use num_bigint::BigInt;
 
 use self::interoperability::{build_call_contract, build_contract_address_const};
 use super::{CompiledInvocation, CompiledInvocationBuilder};
-use crate::invocations::InvocationError;
+use crate::invocations::{add_input_variables, InvocationError};
 use crate::references::ReferenceExpression;
 
 mod storage;
@@ -56,18 +56,12 @@ fn build_storage_address_from_felt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound: BigInt = (BigInt::from(1) << 251) - 256;
-    let [range_check_expr, addr_expr] = builder.try_get_refs()?;
-    let range_check = range_check_expr
-        .try_unpack_single()?
-        .to_buffer(2)
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let addr = addr_expr
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let [range_check, addr] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
-    let range_check = casm_builder.add_var(range_check);
-    let addr = casm_builder.add_var(CellExpression::Deref(addr));
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref addr;
+    };
     // For both checks later:
     // We show that a number is in the range [0, bound) by writing it as:
     //   A * x + y,

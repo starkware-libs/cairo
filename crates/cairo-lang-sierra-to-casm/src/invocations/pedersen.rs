@@ -7,6 +7,7 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::add_input_variables;
 
 /// Builds instructions for Sierra pedersen operations.
 pub fn build(
@@ -22,13 +23,10 @@ pub fn build(
 fn build_pedersen_hash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_pedersen, expr_x, expr_y] = builder.try_get_refs()?;
-    let pedersen = expr_pedersen.try_unpack_single()?;
-    let x = expr_x.try_unpack_single()?;
-    let y = expr_y.try_unpack_single()?;
+    let [pedersen, x, y] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
-    super::add_input_variables! {casm_builder,
+    add_input_variables! {casm_builder,
         deref x;
         deref y;
         buffer(2) pedersen;

@@ -37,10 +37,7 @@ fn build_u128_op(
     builder: CompiledInvocationBuilder<'_>,
     op: IntOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_range_check, expr_a, expr_b] = builder.try_get_refs()?;
-    let range_check = expr_range_check.try_unpack_single()?;
-    let a = expr_a.try_unpack_single()?;
-    let b = expr_b.try_unpack_single()?;
+    let [range_check, a, b] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
         buffer(0) range_check;
@@ -321,10 +318,7 @@ fn build_u128_from_felt(
 fn build_u128_lt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_range_check, expr_a, expr_b] = builder.try_get_refs()?;
-    let range_check = expr_range_check.try_unpack_single()?;
-    let a = expr_a.try_unpack_single()?;
-    let b = expr_b.try_unpack_single()?;
+    let [range_check, a, b] = builder.try_get_single_cells()?;
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
@@ -356,10 +350,7 @@ fn build_u128_lt(
 fn build_u128_le(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_range_check, expr_a, expr_b] = builder.try_get_refs()?;
-    let range_check = expr_range_check.try_unpack_single()?;
-    let a = expr_a.try_unpack_single()?;
-    let b = expr_b.try_unpack_single()?;
+    let [range_check, a, b] = builder.try_get_single_cells()?;
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,

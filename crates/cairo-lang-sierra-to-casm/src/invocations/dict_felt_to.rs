@@ -24,7 +24,7 @@ pub fn build(
 fn build_dict_felt_to_new(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let dict_manager_ptr = builder.try_get_refs::<1>()?[0].try_unpack_single()?;
+    let [dict_manager_ptr] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
     super::add_input_variables! {casm_builder, buffer(2) dict_manager_ptr; };
     casm_build_extend! {casm_builder,
@@ -55,9 +55,7 @@ fn build_dict_felt_to_new(
 fn build_dict_felt_to_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_dict, expr_key] = builder.try_get_refs()?;
-    let dict_ptr = expr_dict.try_unpack_single()?;
-    let key = expr_key.try_unpack_single()?;
+    let [dict_ptr, key] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     super::add_input_variables! {casm_builder,
@@ -80,10 +78,7 @@ fn build_dict_felt_to_read(
 fn build_dict_felt_to_write(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_dict, expr_key, expr_value] = builder.try_get_refs()?;
-    let dict_ptr = expr_dict.try_unpack_single()?;
-    let key = expr_key.try_unpack_single()?;
-    let value = expr_value.try_unpack_single()?;
+    let [dict_ptr, key, value] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     super::add_input_variables! {casm_builder,
@@ -106,10 +101,7 @@ fn build_dict_felt_to_write(
 fn build_dict_felt_to_squash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_range_check, expr_dict_manager, expr_dict] = builder.try_get_refs()?;
-    let dict_manager_ptr = expr_dict_manager.try_unpack_single()?;
-    let range_check_ptr = expr_range_check.try_unpack_single()?;
-    let dict_end_address = expr_dict.try_unpack_single()?;
+    let [range_check_ptr, dict_manager_ptr, dict_end_address] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     super::add_input_variables! {casm_builder,
