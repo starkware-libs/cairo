@@ -39,6 +39,7 @@ mod TestContract {
 
     
     trait __abi {
+        #[external]
         fn foo(x: (felt, felt));
         
         
@@ -80,6 +81,7 @@ mod TestContract {
 
     
     trait __abi {
+        #[external]
         fn foo() -> (felt, felt);
         
         
@@ -121,6 +123,7 @@ mod TestContract {
 
     
     trait __abi {
+        #[external]
         fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt);
         
         
