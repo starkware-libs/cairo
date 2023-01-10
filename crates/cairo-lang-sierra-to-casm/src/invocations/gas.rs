@@ -1,7 +1,7 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
-use cairo_lang_casm::operand::{DerefOrImmediate, ResOperand};
+use cairo_lang_casm::operand::DerefOrImmediate;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use num_bigint::BigInt;
@@ -49,7 +49,7 @@ fn build_get_gas(
 
     let mut casm_builder = CasmBuilder::default();
     let range_check = casm_builder.add_var(range_check);
-    let gas_counter = casm_builder.add_var(ResOperand::Deref(gas_counter));
+    let gas_counter = casm_builder.add_var(CellExpression::Deref(gas_counter));
 
     casm_build_extend! {casm_builder,
         tempvar has_enough_gas;

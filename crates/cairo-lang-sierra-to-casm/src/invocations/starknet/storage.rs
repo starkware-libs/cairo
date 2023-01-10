@@ -1,6 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::ResOperand;
+use cairo_lang_casm::cell_expression::CellExpression;
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -37,10 +37,10 @@ pub fn build_storage_read(
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
-    let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
+    let gas_builtin = casm_builder.add_var(CellExpression::Deref(gas_builtin));
     let system = casm_builder.add_var(system);
-    let address_domain = casm_builder.add_var(ResOperand::Deref(address_domain));
-    let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
+    let address_domain = casm_builder.add_var(CellExpression::Deref(address_domain));
+    let storage_address = casm_builder.add_var(CellExpression::Deref(storage_address));
 
     casm_build_extend! {casm_builder,
         let original_system = system;
@@ -103,10 +103,10 @@ pub fn build_storage_write(
 
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
-    let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
-    let address_domain = casm_builder.add_var(ResOperand::Deref(address_domain));
-    let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
-    let value = casm_builder.add_var(ResOperand::Deref(value));
+    let gas_builtin = casm_builder.add_var(CellExpression::Deref(gas_builtin));
+    let address_domain = casm_builder.add_var(CellExpression::Deref(address_domain));
+    let storage_address = casm_builder.add_var(CellExpression::Deref(storage_address));
+    let value = casm_builder.add_var(CellExpression::Deref(value));
     casm_build_extend! {casm_builder,
         let original_system = system;
         const selector_imm = selector_imm;

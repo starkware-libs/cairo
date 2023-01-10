@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::ResOperand;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use num_bigint::BigInt;
 
@@ -98,8 +98,8 @@ fn build_ec_point_try_create(
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
-    let x = casm_builder.add_var(ResOperand::Deref(x));
-    let y = casm_builder.add_var(ResOperand::Deref(y));
+    let x = casm_builder.add_var(CellExpression::Deref(x));
+    let y = casm_builder.add_var(CellExpression::Deref(y));
 
     // Assert (x,y) is on the curve.
     casm_build_extend! {casm_builder,
@@ -127,10 +127,10 @@ fn build_ec_point_unwrap(
     let [x, y] = expr_point.try_unpack()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let x = casm_builder.add_var(ResOperand::Deref(
+    let x = casm_builder.add_var(CellExpression::Deref(
         x.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let y = casm_builder.add_var(ResOperand::Deref(
+    let y = casm_builder.add_var(CellExpression::Deref(
         y.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
 
@@ -178,19 +178,19 @@ fn build_ec_add_to_state(
     let [px, py] = expr_point.try_unpack()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let px = casm_builder.add_var(ResOperand::Deref(
+    let px = casm_builder.add_var(CellExpression::Deref(
         px.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let py = casm_builder.add_var(ResOperand::Deref(
+    let py = casm_builder.add_var(CellExpression::Deref(
         py.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let sx = casm_builder.add_var(ResOperand::Deref(
+    let sx = casm_builder.add_var(CellExpression::Deref(
         sx.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let sy = casm_builder.add_var(ResOperand::Deref(
+    let sy = casm_builder.add_var(CellExpression::Deref(
         sy.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let random_ptr = casm_builder.add_var(ResOperand::Deref(
+    let random_ptr = casm_builder.add_var(CellExpression::Deref(
         random_ptr.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
 
@@ -223,13 +223,13 @@ fn build_ec_try_finalize_state(
     let [x, y, random_ptr] = expr_state.try_unpack()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let x = casm_builder.add_var(ResOperand::Deref(
+    let x = casm_builder.add_var(CellExpression::Deref(
         x.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let y = casm_builder.add_var(ResOperand::Deref(
+    let y = casm_builder.add_var(CellExpression::Deref(
         y.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let random_ptr = casm_builder.add_var(ResOperand::Deref(
+    let random_ptr = casm_builder.add_var(CellExpression::Deref(
         random_ptr.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
 
@@ -283,22 +283,22 @@ fn build_ec_op_builtin(
 
     let mut casm_builder = CasmBuilder::default();
     let ec_builtin = casm_builder.add_var(ec_builtin);
-    let sx = casm_builder.add_var(ResOperand::Deref(
+    let sx = casm_builder.add_var(CellExpression::Deref(
         sx.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let sy = casm_builder.add_var(ResOperand::Deref(
+    let sy = casm_builder.add_var(CellExpression::Deref(
         sy.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let random_ptr = casm_builder.add_var(ResOperand::Deref(
+    let random_ptr = casm_builder.add_var(CellExpression::Deref(
         random_ptr.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let px = casm_builder.add_var(ResOperand::Deref(
+    let px = casm_builder.add_var(CellExpression::Deref(
         px.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let py = casm_builder.add_var(ResOperand::Deref(
+    let py = casm_builder.add_var(CellExpression::Deref(
         py.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
-    let m = casm_builder.add_var(ResOperand::Deref(
+    let m = casm_builder.add_var(CellExpression::Deref(
         m.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ));
     casm_build_extend! {casm_builder,

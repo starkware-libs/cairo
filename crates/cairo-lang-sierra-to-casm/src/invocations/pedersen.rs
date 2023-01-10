@@ -4,7 +4,7 @@ mod test;
 
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::ResOperand;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -39,8 +39,8 @@ fn build_pedersen_hash(
 
     let mut casm_builder = CasmBuilder::default();
     let pedersen = casm_builder.add_var(pedersen);
-    let x = casm_builder.add_var(ResOperand::Deref(x));
-    let y = casm_builder.add_var(ResOperand::Deref(y));
+    let x = casm_builder.add_var(CellExpression::Deref(x));
+    let y = casm_builder.add_var(CellExpression::Deref(y));
     casm_build_extend! {casm_builder,
         assert x = *(pedersen++);
         assert y = *(pedersen++);

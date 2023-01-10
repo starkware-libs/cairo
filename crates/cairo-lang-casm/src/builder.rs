@@ -5,6 +5,7 @@ use cairo_lang_utils::extract_matches;
 use num_bigint::BigInt;
 
 use crate::ap_change::ApplyApChange;
+use crate::cell_expression::{CellExpression, CellOperator};
 use crate::deref_or_immediate;
 use crate::hints::Hint;
 use crate::instructions::{
@@ -17,7 +18,7 @@ use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Registe
 #[path = "builder_test.rs"]
 mod test;
 
-/// Variables for casm builder, representing a `ResOperand`.
+/// Variables for casm builder, representing a `CellExpression`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Var(usize);
 
@@ -25,7 +26,7 @@ pub struct Var(usize);
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct State {
     /// The value per variable.
-    vars: HashMap<Var, ResOperand>,
+    vars: HashMap<Var, CellExpression>,
     /// The number of allocated variables from the begining of the run.
     allocated: i16,
     /// The AP change since the beginging of the run.
@@ -33,18 +34,18 @@ pub struct State {
 }
 impl State {
     /// Returns the value, in relation to the initial ap value.
-    fn get_value(&self, var: Var) -> ResOperand {
+    fn get_value(&self, var: Var) -> CellExpression {
         self.vars[&var].clone()
     }
 
     /// Returns the value, in relation to the current ap value.
-    pub fn get_adjusted(&self, var: Var) -> ResOperand {
+    pub fn get_adjusted(&self, var: Var) -> CellExpression {
         self.get_value(var).unchecked_apply_known_ap_change(self.ap_change)
     }
 
     /// Returns the value, assumming it is a direct cell reference.
     pub fn get_adjusted_as_cell_ref(&self, var: Var) -> CellRef {
-        extract_matches!(self.get_adjusted(var), ResOperand::Deref)
+        extract_matches!(self.get_adjusted(var), CellExpression::Deref)
     }
 
     /// Validates that the state is valid, as it had enough ap change.
@@ -200,7 +201,7 @@ impl CasmBuilder {
     }
 
     /// Adds a variable pointing to `value`.
-    pub fn add_var(&mut self, value: ResOperand) -> Var {
+    pub fn add_var(&mut self, value: CellExpression) -> Var {
         let var = Var(self.var_count);
         self.var_count += 1;
         self.main_state.vars.insert(var, value);
@@ -209,7 +210,7 @@ impl CasmBuilder {
 
     /// Allocates a new variable in memory, either local (FP-baser) or temp (AP-based).
     pub fn alloc_var(&mut self, local_var: bool) -> Var {
-        let var = self.add_var(ResOperand::Deref(CellRef {
+        let var = self.add_var(CellExpression::Deref(CellRef {
             offset: self.main_state.allocated,
             register: if local_var { Register::FP } else { Register::AP },
         }));
@@ -235,7 +236,22 @@ impl CasmBuilder {
         outputs: [Var; OUTPUTS_COUNT],
     ) {
         self.current_hints.push(f(
-            inputs.map(|v| self.get_value(v, true)),
+            inputs.map(|v| match self.get_value(v, true) {
+                CellExpression::Deref(cell) => ResOperand::Deref(cell),
+                CellExpression::DoubleDeref(cell, offset) => ResOperand::DoubleDeref(cell, offset),
+                CellExpression::Immediate(imm) => ResOperand::Immediate(imm),
+                CellExpression::BinOp { op, a: other, b } => match op {
+                    CellOperator::Add => {
+                        ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: other, b })
+                    }
+                    CellOperator::Mul => {
+                        ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: other, b })
+                    }
+                    CellOperator::Sub | CellOperator::Div => {
+                        panic!("hints to non ResOperand references are not supported.")
+                    }
+                },
+            }),
             outputs.map(|v| self.as_cell_ref(v, true)),
         ));
     }
@@ -245,6 +261,25 @@ impl CasmBuilder {
     pub fn assert_vars_eq(&mut self, dst: Var, res: Var) {
         let a = self.as_cell_ref(dst, true);
         let b = self.get_value(res, true);
+        let (a, b) = match b {
+            CellExpression::Deref(cell) => (a, ResOperand::Deref(cell)),
+            CellExpression::DoubleDeref(cell, offset) => (a, ResOperand::DoubleDeref(cell, offset)),
+            CellExpression::Immediate(imm) => (a, ResOperand::Immediate(imm)),
+            CellExpression::BinOp { op, a: other, b } => match op {
+                CellOperator::Add => {
+                    (a, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: other, b }))
+                }
+                CellOperator::Mul => {
+                    (a, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: other, b }))
+                }
+                CellOperator::Sub => {
+                    (other, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }))
+                }
+                CellOperator::Div => {
+                    (other, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a, b }))
+                }
+            },
+        };
         let instruction =
             self.get_instruction(InstructionBody::AssertEq(AssertEqInstruction { a, b }), true);
         self.statements.push(Statement::Final(instruction));
@@ -256,7 +291,7 @@ impl CasmBuilder {
     /// `value` must be a cell reference.
     pub fn buffer_write_and_inc(&mut self, buffer: Var, value: Var) {
         let (cell, offset) = self.buffer_get_and_inc(buffer);
-        let location = self.add_var(ResOperand::DoubleDeref(cell, offset));
+        let location = self.add_var(CellExpression::DoubleDeref(cell, offset));
         self.assert_vars_eq(value, location);
     }
 
@@ -265,13 +300,13 @@ impl CasmBuilder {
         let (cell, offset) = self.as_cell_ref_plus_const(buffer, 0, false);
         self.main_state.vars.insert(
             buffer,
-            ResOperand::BinOp(BinOpOperand {
-                op: Operation::Add,
+            CellExpression::BinOp {
+                op: CellOperator::Add,
                 a: cell,
                 b: deref_or_immediate!(BigInt::from(offset) + 1),
-            }),
+            },
         );
-        self.add_var(ResOperand::DoubleDeref(cell, offset))
+        self.add_var(CellExpression::DoubleDeref(cell, offset))
     }
 
     /// Increments a buffer and returning the previous value it pointed to.
@@ -279,21 +314,21 @@ impl CasmBuilder {
     /// `buffer` must be a cell reference, or a cell reference with a small added constant.
     fn buffer_get_and_inc(&mut self, buffer: Var) -> (CellRef, i16) {
         let (base, offset) = match self.get_value(buffer, false) {
-            ResOperand::Deref(cell) => (cell, 0),
-            ResOperand::BinOp(BinOpOperand {
-                op: Operation::Add,
+            CellExpression::Deref(cell) => (cell, 0),
+            CellExpression::BinOp {
+                op: CellOperator::Add,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
-            }) => (a, imm.try_into().expect("Too many buffer writes.")),
+            } => (a, imm.try_into().expect("Too many buffer writes.")),
             _ => panic!("Not a valid buffer."),
         };
         self.main_state.vars.insert(
             buffer,
-            ResOperand::BinOp(BinOpOperand {
-                op: Operation::Add,
+            CellExpression::BinOp {
+                op: CellOperator::Add,
                 a: base,
                 b: deref_or_immediate!(offset + 1),
-            }),
+            },
         );
         (base, offset)
     }
@@ -312,19 +347,19 @@ impl CasmBuilder {
 
     /// Returns a variable that is the `op` of `lhs` and `rhs`.
     /// `lhs` must be a cell reference and `rhs` must be deref or immediate.
-    pub fn bin_op(&mut self, op: Operation, lhs: Var, rhs: Var) -> Var {
-        self.add_var(ResOperand::BinOp(BinOpOperand {
+    pub fn bin_op(&mut self, op: CellOperator, lhs: Var, rhs: Var) -> Var {
+        self.add_var(CellExpression::BinOp {
             op,
             a: self.as_cell_ref(lhs, false),
             b: self.as_deref_or_imm(rhs, false),
-        }))
+        })
     }
 
     /// Returns a variable that is `[[var] + offset]`.
     /// `var` must be a cell reference, or a cell ref plus a small constant.
     pub fn double_deref(&mut self, var: Var, offset: i16) -> Var {
         let (cell, full_offset) = self.as_cell_ref_plus_const(var, offset, false);
-        self.add_var(ResOperand::DoubleDeref(cell, full_offset))
+        self.add_var(CellExpression::DoubleDeref(cell, full_offset))
     }
 
     /// Sets the label to have the set states, otherwise tests if the state matches the existing one
@@ -403,23 +438,23 @@ impl CasmBuilder {
     pub fn call(&mut self, label: String) {
         self.main_state.validate_finality();
         // Vars to be passed to the called function state.
-        let mut function_vars: HashMap<Var, ResOperand> = HashMap::default();
+        let mut function_vars: HashMap<Var, CellExpression> = HashMap::default();
         // FP based vars which will remain in the current state.
-        let mut main_vars: HashMap<Var, ResOperand> = HashMap::default();
+        let mut main_vars: HashMap<Var, CellExpression> = HashMap::default();
         let ap_change = self.main_state.ap_change;
         let cell_to_var_flags = |cell: &CellRef| {
             if cell.register == Register::AP { (true, false) } else { (false, true) }
         };
         for (var, value) in self.main_state.vars.iter() {
             let (function_var, main_var) = match value {
-                ResOperand::DoubleDeref(cell, _) | ResOperand::Deref(cell) => {
+                CellExpression::DoubleDeref(cell, _) | CellExpression::Deref(cell) => {
                     cell_to_var_flags(cell)
                 }
-                ResOperand::Immediate(_) => (true, true),
-                ResOperand::BinOp(bin_op) => match bin_op.b {
+                CellExpression::Immediate(_) => (true, true),
+                CellExpression::BinOp { op: _, a, b } => match b {
                     DerefOrImmediate::Deref(cell) => {
-                        if bin_op.a.register == cell.register {
-                            cell_to_var_flags(&cell)
+                        if a.register == cell.register {
+                            cell_to_var_flags(cell)
                         } else {
                             // Mixed FP and AP based, dropped from both states.
                             (false, false)
@@ -433,11 +468,11 @@ impl CasmBuilder {
                 // the function call.
                 let mut value = value.clone().unchecked_apply_known_ap_change(ap_change + 2);
                 match &mut value {
-                    ResOperand::DoubleDeref(cell, _) | ResOperand::Deref(cell) => {
+                    CellExpression::DoubleDeref(cell, _) | CellExpression::Deref(cell) => {
                         cell.register = Register::FP
                     }
-                    ResOperand::Immediate(_) => {}
-                    ResOperand::BinOp(BinOpOperand { a, b, .. }) => {
+                    CellExpression::Immediate(_) => {}
+                    CellExpression::BinOp { a, b, .. } => {
                         a.register = Register::FP;
                         match b {
                             DerefOrImmediate::Deref(cell) => cell.register = Register::FP,
@@ -476,21 +511,23 @@ impl CasmBuilder {
     }
 
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
-    fn get_value(&self, var: Var, adjust_ap: bool) -> ResOperand {
+    fn get_value(&self, var: Var, adjust_ap: bool) -> CellExpression {
         if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
     }
 
     /// Returns `var`s value as a cell reference, with fixed ap if `adjust_ap` is true.
     fn as_cell_ref(&self, var: Var, adjust_ap: bool) -> CellRef {
-        extract_matches!(self.get_value(var, adjust_ap), ResOperand::Deref)
+        extract_matches!(self.get_value(var, adjust_ap), CellExpression::Deref)
     }
 
     /// Returns `var`s value as a cell reference or immediate, with fixed ap if `adjust_ap` is true.
     fn as_deref_or_imm(&self, var: Var, adjust_ap: bool) -> DerefOrImmediate {
         match self.get_value(var, adjust_ap) {
-            ResOperand::Deref(cell) => DerefOrImmediate::Deref(cell),
-            ResOperand::Immediate(imm) => DerefOrImmediate::Immediate(imm),
-            ResOperand::DoubleDeref(_, _) | ResOperand::BinOp(_) => panic!("wrong usage."),
+            CellExpression::Deref(cell) => DerefOrImmediate::Deref(cell),
+            CellExpression::Immediate(imm) => DerefOrImmediate::Immediate(imm),
+            CellExpression::DoubleDeref(_, _) | CellExpression::BinOp { .. } => {
+                panic!("wrong usage.")
+            }
         }
     }
 
@@ -503,12 +540,12 @@ impl CasmBuilder {
         adjust_ap: bool,
     ) -> (CellRef, i16) {
         match self.get_value(var, adjust_ap) {
-            ResOperand::Deref(cell) => (cell, additional_offset),
-            ResOperand::BinOp(BinOpOperand {
-                op: Operation::Add,
+            CellExpression::Deref(cell) => (cell, additional_offset),
+            CellExpression::BinOp {
+                op: CellOperator::Add,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
-            }) => (a, (imm + additional_offset).try_into().expect("Offset too large for deref.")),
+            } => (a, (imm + additional_offset).try_into().expect("Offset too large for deref.")),
             _ => panic!("Not a valid ptr."),
         }
     }
@@ -556,7 +593,7 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, const $imm:ident = $value:expr; $($tok:tt)*) => {
-        let $imm = $builder.add_var($crate::operand::ResOperand::Immediate(($value).into()));
+        let $imm = $builder.add_var($crate::cell_expression::CellExpression::Immediate(($value).into()));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, assert $dst:ident = $res:ident; $($tok:tt)*) => {
@@ -565,23 +602,31 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, assert $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         {
-            let __sum = $builder.bin_op($crate::operand::Operation::Add, $a, $b);
+            let __sum = $builder.bin_op($crate::cell_expression::CellOperator::Add, $a, $b);
             $builder.assert_vars_eq($dst, __sum);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, assert $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
         {
-            let __product = $builder.bin_op($crate::operand::Operation::Mul, $a, $b);
+            let __product = $builder.bin_op($crate::cell_expression::CellOperator::Mul, $a, $b);
             $builder.assert_vars_eq($dst, __product);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, assert $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
-        $crate::casm_build_extend!($builder, assert $a = $dst + $b; $($tok)*)
+        {
+            let __diff = $builder.bin_op($crate::cell_expression::CellOperator::Sub, $a, $b);
+            $builder.assert_vars_eq($dst, __diff);
+        }
+        $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, assert $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
-        $crate::casm_build_extend!($builder, assert $a = $dst * $b; $($tok)*)
+        {
+            let __division = $builder.bin_op($crate::cell_expression::CellOperator::Div, $a, $b);
+            $builder.assert_vars_eq($dst, __division);
+        }
+        $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, assert $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
         {
@@ -650,11 +695,19 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, localvar $var; assert $var = *$buffer; $($tok)*);
     };
     ($builder:ident, let $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
-        let $dst = $builder.bin_op($crate::operand::Operation::Add, $a, $b);
+        let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Add, $a, $b);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
-        let $dst = $builder.bin_op($crate::operand::Operation::Mul, $a, $b);
+        let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Mul, $a, $b);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, let $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
+        let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Sub, $a, $b);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, let $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
+        let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Div, $a, $b);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let $dst:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
@@ -687,7 +740,7 @@ macro_rules! casm_build_extend {
         let __var_count = {0i16 $(+ (stringify!($var_name), 1i16).1)*};
         let mut __var_index = 0;
         $(
-            let $var_name = $builder.add_var($crate::operand::ResOperand::Deref($crate::operand::CellRef {
+            let $var_name = $builder.add_var($crate::cell_expression::CellExpression::Deref($crate::operand::CellRef {
                 offset: __var_index - __var_count,
                 register: $crate::operand::Register::AP,
             }));

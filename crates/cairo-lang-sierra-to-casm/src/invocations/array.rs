@@ -1,6 +1,7 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::{DerefOrImmediate, ResOperand};
+use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::operand::DerefOrImmediate;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
@@ -52,7 +53,7 @@ fn build_array_append(
     let arr_start = casm_builder.add_var(arr_start);
     let arr_end = casm_builder.add_var(arr_end);
     for cell in &elem.cells {
-        let cell = casm_builder.add_var(ResOperand::Deref(
+        let cell = casm_builder.add_var(CellExpression::Deref(
             cell.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
         ));
         casm_build_extend!(casm_builder, assert cell = *(arr_end++););
@@ -74,8 +75,8 @@ fn build_pop_front(
     let element_size = builder.program_info.type_sizes[elem_ty];
 
     let mut casm_builder = CasmBuilder::default();
-    let arr_start = casm_builder.add_var(ResOperand::Deref(arr_start));
-    let arr_end = casm_builder.add_var(ResOperand::Deref(arr_end));
+    let arr_start = casm_builder.add_var(CellExpression::Deref(arr_start));
+    let arr_end = casm_builder.add_var(CellExpression::Deref(arr_end));
     casm_build_extend! {casm_builder,
         tempvar is_non_empty = arr_end - arr_start;
         jump NonEmpty if is_non_empty != 0;
@@ -120,12 +121,12 @@ fn build_array_at(
 
     let mut casm_builder = CasmBuilder::default();
     let index = casm_builder.add_var(match index {
-        DerefOrImmediate::Immediate(imm) => ResOperand::Immediate(imm),
-        DerefOrImmediate::Deref(cell) => ResOperand::Deref(cell),
+        DerefOrImmediate::Immediate(imm) => CellExpression::Immediate(imm),
+        DerefOrImmediate::Deref(cell) => CellExpression::Deref(cell),
     });
-    let arr_start = casm_builder.add_var(ResOperand::Deref(arr_start));
-    let arr_end = casm_builder.add_var(ResOperand::Deref(arr_end));
-    let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+    let arr_start = casm_builder.add_var(CellExpression::Deref(arr_start));
+    let arr_end = casm_builder.add_var(CellExpression::Deref(arr_end));
+    let range_check = casm_builder.add_var(CellExpression::Deref(range_check));
     casm_build_extend! {casm_builder,
         // Compute the length of the array (in felts).
         tempvar array_cell_size = arr_end - arr_start;
@@ -205,8 +206,8 @@ fn build_array_len(
     // TODO(orizi): Do element_size = 1 optimization once it is easier to do ap-changes according to
     // type size.
     let mut casm_builder = CasmBuilder::default();
-    let start = casm_builder.add_var(ResOperand::Deref(arr_start));
-    let end = casm_builder.add_var(ResOperand::Deref(arr_end));
+    let start = casm_builder.add_var(CellExpression::Deref(arr_start));
+    let end = casm_builder.add_var(CellExpression::Deref(arr_end));
     casm_build_extend! {casm_builder,
         tempvar end_total_offset = end - start;
         const element_size = element_size;

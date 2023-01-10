@@ -1,7 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::operand::ResOperand;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use num_bigint::BigInt;
@@ -68,7 +67,7 @@ fn build_storage_address_from_felt(
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     let mut casm_builder = CasmBuilder::default();
     let range_check = casm_builder.add_var(range_check);
-    let addr = casm_builder.add_var(ResOperand::Deref(addr));
+    let addr = casm_builder.add_var(CellExpression::Deref(addr));
     // For both checks later:
     // We show that a number is in the range [0, bound) by writing it as:
     //   A * x + y,

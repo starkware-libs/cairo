@@ -72,17 +72,17 @@ impl CellExpression {
 
     /// Returns the reference as a buffer with at least `required_slack` next cells that can be
     /// written as an instruction offset.
-    pub fn to_buffer(&self, required_slack: i16) -> Option<ResOperand> {
+    pub fn to_buffer(&self, required_slack: i16) -> Option<CellExpression> {
         let (base, offset) = self.to_deref_with_offset()?;
         offset.checked_add(required_slack)?;
         if offset == 0 {
-            Some(ResOperand::Deref(base))
+            Some(CellExpression::Deref(base))
         } else {
-            Some(ResOperand::BinOp(BinOpOperand {
-                op: Operation::Add,
+            Some(CellExpression::BinOp {
+                op: CellOperator::Add,
                 a: base,
                 b: DerefOrImmediate::Immediate(offset.into()),
-            }))
+            })
         }
     }
 }
