@@ -1,6 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::ResOperand;
+use cairo_lang_casm::cell_expression::CellExpression;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 
@@ -34,8 +34,8 @@ fn build_bitwise(
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
-    let x = casm_builder.add_var(ResOperand::Deref(x));
-    let y = casm_builder.add_var(ResOperand::Deref(y));
+    let x = casm_builder.add_var(CellExpression::Deref(x));
+    let y = casm_builder.add_var(CellExpression::Deref(y));
     let bitwise = casm_builder.add_var(bitwise);
     casm_build_extend! {casm_builder,
         assert x = *(bitwise++);
