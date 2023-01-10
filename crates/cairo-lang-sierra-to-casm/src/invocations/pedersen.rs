@@ -4,7 +4,6 @@ mod test;
 
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -24,23 +23,16 @@ fn build_pedersen_hash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_pedersen, expr_x, expr_y] = builder.try_get_refs()?;
-    let pedersen = expr_pedersen
-        .try_unpack_single()?
-        .to_buffer(2)
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let x = expr_x
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let y = expr_y
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let pedersen = expr_pedersen.try_unpack_single()?;
+    let x = expr_x.try_unpack_single()?;
+    let y = expr_y.try_unpack_single()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let pedersen = casm_builder.add_var(pedersen);
-    let x = casm_builder.add_var(CellExpression::Deref(x));
-    let y = casm_builder.add_var(CellExpression::Deref(y));
+    super::add_input_variables! {casm_builder,
+        deref x;
+        deref y;
+        buffer(2) pedersen;
+    };
     casm_build_extend! {casm_builder,
         assert x = *(pedersen++);
         assert y = *(pedersen++);

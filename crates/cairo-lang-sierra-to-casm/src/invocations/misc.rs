@@ -7,6 +7,7 @@ use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
     InvocationError,
 };
+use crate::invocations::add_input_variables;
 
 /// Handles a revoke ap tracking instruction.
 pub fn build_revoke_ap_tracking(
@@ -42,13 +43,10 @@ pub fn build_drop(
 pub fn build_jump_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let value = builder.try_get_refs::<1>()?[0]
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let value = builder.try_get_refs::<1>()?[0].try_unpack_single()?;
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
-    let value = casm_builder.add_var(CellExpression::Deref(value));
+    add_input_variables!(casm_builder, deref value; );
     casm_build_extend! {casm_builder,
         jump Target if value != 0;
     };

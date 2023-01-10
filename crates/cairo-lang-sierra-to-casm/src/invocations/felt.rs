@@ -1,5 +1,5 @@
+use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
-use cairo_lang_casm::operand::DerefOrImmediate;
 use cairo_lang_sierra::extensions::felt::{
     FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
     FeltConcrete, FeltOperationWithConstConcreteLibfunc,
@@ -40,22 +40,15 @@ fn build_felt_op(
     op: FeltBinaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_a, expr_b] = builder.try_get_refs()?;
-    let a = expr_a
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let b = expr_b
-        .try_unpack_single()?
-        .to_deref_or_immediate()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::BinOp {
-            op: felt_to_cell_operator(op),
-            a,
-            b,
-        })]
-        .into_iter(),
-    ))
+    let a = expr_a.try_unpack_single()?;
+    let b = expr_b.try_unpack_single()?;
+    let mut casm_builder = CasmBuilder::default();
+    super::add_input_variables! {casm_builder,
+        deref a;
+        deref_or_immediate b;
+    };
+    let res = casm_builder.bin_op(felt_to_cell_operator(op), a, b);
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
 }
 
 /// Handles a felt operation with a const.
@@ -64,18 +57,12 @@ fn build_felt_op_with_const(
     op: FeltBinaryOperator,
     c: BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let a = builder.try_get_refs::<1>()?[0]
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::BinOp {
-            op: felt_to_cell_operator(op),
-            a,
-            b: DerefOrImmediate::Immediate(c),
-        })]
-        .into_iter(),
-    ))
+    let a = builder.try_get_refs::<1>()?[0].try_unpack_single()?;
+    let mut casm_builder = CasmBuilder::default();
+    super::add_input_variables! {casm_builder, deref a; };
+    let c = casm_builder.add_var(CellExpression::Immediate(c));
+    let res = casm_builder.bin_op(felt_to_cell_operator(op), a, c);
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
 }
 
 /// Converts a felt operator to the corresponding cell operator.
