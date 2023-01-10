@@ -412,10 +412,11 @@ fn compute_expr_match_semantic(
                     compute_pattern_semantic(new_ctx, syntax_arm.pattern(syntax_db), expr.ty())?;
                 let variables = pattern.variables();
                 for v in variables {
-                    new_ctx
-                        .environment
-                        .variables
-                        .insert(v.name.clone(), Variable::Local(v.var.clone()));
+                    let var_def = Variable::Local(v.var.clone());
+                    // TODO(spapini): Wrap this in a function to couple with semantic_defs
+                    // insertion.
+                    new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+                    new_ctx.semantic_defs.insert(var_def.id(), var_def);
                 }
                 let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
                 Ok((pattern, arm_expr))
