@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
@@ -385,14 +386,14 @@ pub trait SemanticGroup:
     fn free_function_definition_direct_callees(
         &self,
         free_function_id: FreeFunctionId,
-    ) -> Maybe<Vec<FunctionId>>;
+    ) -> Maybe<HashSet<FunctionId>>;
     /// Returns the free function direct callees of a free function definition (i.e. excluding
     /// libfunc callees). The items in the vector are unique.
     #[salsa::invoke(items::free_function::free_function_definition_direct_free_function_callees)]
     fn free_function_definition_direct_free_function_callees(
         &self,
         free_function_id: FreeFunctionId,
-    ) -> Maybe<Vec<FreeFunctionId>>;
+    ) -> Maybe<HashSet<FreeFunctionId>>;
     /// Returns the definition of a free function.
     #[salsa::invoke(items::free_function::free_function_definition)]
     fn free_function_definition(
