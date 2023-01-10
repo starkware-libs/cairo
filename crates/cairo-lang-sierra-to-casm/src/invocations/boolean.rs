@@ -72,20 +72,19 @@ fn build_bool_xor(
 fn build_bool_or(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_a, expr_b] = builder.try_get_refs()?;
-    let a = expr_a.try_unpack_single()?.to_deref()?;
-    let b = expr_b.try_unpack_single()?.to_deref()?;
+    let [a, b] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let a = casm_builder.add_var(ResOperand::Deref(a));
-    let b = casm_builder.add_var(ResOperand::Deref(b));
+    add_input_variables! {casm_builder,
+        deref a;
+        deref b;
+    };
 
     // Outputs 'a + b - ab'.
     casm_build_extend! {casm_builder,
         tempvar sum = a + b;
         tempvar prod = a * b;
-        // TODO(orizi): Change to let when subtraction is supported.
-        tempvar res = sum - prod;
+        let res = sum - prod;
     }
     Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
 }
