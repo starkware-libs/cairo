@@ -9,9 +9,9 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
 
-use crate::blocks::FlatBlocks;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::lower::lower;
+use crate::panic::lower_panics;
 use crate::{FlatLowered, StructuredLowered};
 
 // Salsa database interface.
@@ -108,19 +108,8 @@ fn free_function_lowered_flat(
     db: &dyn LoweringGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<Arc<FlatLowered>> {
-    // Convert blocks to flat blocks.
-    // TODO(spapini): Do this in another phase.
     let structured = db.free_function_lowered_structured(free_function_id)?;
-    let mut flat_blocks = FlatBlocks::new();
-    for block in structured.blocks.0.iter().cloned() {
-        flat_blocks.alloc(block.try_into().expect("Panic block ends are not supported yet."));
-    }
-    Ok(Arc::new(FlatLowered {
-        diagnostics: Default::default(),
-        root: structured.root,
-        variables: structured.variables.clone(),
-        blocks: flat_blocks,
-    }))
+    lower_panics(db, free_function_id, &structured).map(Arc::new)
 }
 
 fn module_lowering_diagnostics(

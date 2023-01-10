@@ -178,7 +178,7 @@ Statements:
   }
   (v18: ()) <- struct_construct()
 End:
-  Callsite(v18)
+  Return(v18)
 
 //! > lowering_flat
 blk0:
@@ -305,7 +305,7 @@ Statements:
   }
   (v18: ()) <- struct_construct()
 End:
-  Callsite(v18)
+  Return(v18)
 
 //! > ==========================================================================
 
@@ -489,7 +489,7 @@ Statements:
   }
   (v18: ()) <- struct_construct()
 End:
-  Callsite(v18)
+  Return(v18)
 
 //! > lowering_flat
 blk0:
@@ -615,7 +615,7 @@ Statements:
   }
   (v18: ()) <- struct_construct()
 End:
-  Callsite(v18)
+  Return(v18)
 
 //! > ==========================================================================
 
@@ -882,7 +882,7 @@ Statements:
   }
   (v46: ()) <- struct_construct()
 End:
-  Callsite(v46)
+  Return(v46)
 
 //! > lowering_flat
 blk0:
@@ -1082,7 +1082,7 @@ Statements:
   }
   (v46: ()) <- struct_construct()
 End:
-  Callsite(v46)
+  Return(v46)
 
 //! > ==========================================================================
 
@@ -1362,7 +1362,7 @@ Statements:
     Ref changes: r0 <- v47
   (v66: ()) <- struct_construct()
 End:
-  Callsite(v47, v66)
+  Return(v47, v66)
 
 //! > lowering_flat
 blk0:
@@ -1562,7 +1562,7 @@ Statements:
   }
   (v66: ()) <- struct_construct()
 End:
-  Callsite(v47, v66)
+  Return(v47, v66)
 
 //! > ==========================================================================
 
@@ -1843,7 +1843,7 @@ Statements:
     Ref changes: r0 <- v47
   (v66: ()) <- struct_construct()
 End:
-  Callsite(v47, v66)
+  Return(v47, v66)
 
 //! > lowering_flat
 blk0:
@@ -2043,4 +2043,4 @@ Statements:
   }
   (v66: ()) <- struct_construct()
 End:
-  Callsite(v47, v66)
+  Return(v47, v66)

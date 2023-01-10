@@ -85,7 +85,7 @@ Statements:
   (v11: core::felt) <- core::felt_add(v1, v1)
   (v12: core::felt) <- test::revoke_ap()
 End:
-  Callsite(v10)
+  Return(v10)
 
 //! > local_variables
 v0, v1, v10
@@ -216,7 +216,7 @@ Statements:
   }
   (v19: core::felt) <- core::felt_add(v11, v1)
 End:
-  Callsite(v19)
+  Return(v19)
 
 //! > local_variables
 v11
