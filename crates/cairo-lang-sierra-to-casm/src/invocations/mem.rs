@@ -1,8 +1,8 @@
 use cairo_lang_casm::ap_change::{ApChange, ApplyApChange};
+use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_casm::{casm, casm_extend};
-use cairo_lang_sierra::extensions::felt::FeltBinaryOperator;
 use cairo_lang_sierra::extensions::lib_func::SignatureAndTypeConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -10,7 +10,7 @@ use cairo_lang_utils::casts::usize_as_i16;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::environment::frame_state;
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
+use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra memory operations.
 pub fn build(
@@ -67,13 +67,13 @@ fn get_store_instructions(
                 add_instruction!(ctx, dst = [[&operand] + offset])
             }
             CellExpression::Immediate(operand) => add_instruction!(ctx, dst = operand),
-            CellExpression::BinOp(BinOpExpression { op, a, b }) => match op {
-                FeltBinaryOperator::Add => add_instruction!(ctx, dst = a + b),
-                FeltBinaryOperator::Mul => add_instruction!(ctx, dst = a * b),
+            CellExpression::BinOp { op, a, b } => match op {
+                CellOperator::Add => add_instruction!(ctx, dst = a + b),
+                CellOperator::Mul => add_instruction!(ctx, dst = a * b),
                 // dst = a - b => a = dst + b
-                FeltBinaryOperator::Sub => add_instruction!(ctx, a = dst + b),
+                CellOperator::Sub => add_instruction!(ctx, a = dst + b),
                 // dst = a / b => a = dst * b
-                FeltBinaryOperator::Div => add_instruction!(ctx, a = dst * b),
+                CellOperator::Div => add_instruction!(ctx, a = dst * b),
             },
         }
         if inc_ap {
@@ -119,7 +119,10 @@ fn build_store_local(
     ty: &ConcreteTypeId,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [dst_expr, src_expr] = builder.try_get_refs()?;
-    let dst = dst_expr.try_unpack_single()?.to_deref()?;
+    let dst = dst_expr
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     let instructions = get_store_instructions(&builder, ty, dst, src_expr)?;
     let type_size = builder.program_info.type_sizes[ty];
     Ok(builder.build(

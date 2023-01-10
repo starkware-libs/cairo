@@ -1,13 +1,11 @@
 use std::collections::HashMap;
 
 use cairo_lang_casm::ap_change::ApplyApChange;
-use cairo_lang_casm::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
+use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
 use cairo_lang_sierra::extensions::felt::FeltBinaryOperator;
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{Function, StatementIdx};
-use cairo_lang_utils::try_extract_matches;
-use num_bigint::BigInt;
-use num_traits::cast::ToPrimitive;
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
 
@@ -56,83 +54,6 @@ impl ApplyApChange for BinOpExpression {
     }
 }
 
-/// The expression representing a cell in the Sierra intermediate memory.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum CellExpression {
-    Deref(CellRef),
-    /// Represents an expression of the form `[[cell_ref] + offset]`.
-    DoubleDeref(CellRef, i16),
-    Immediate(BigInt),
-    BinOp(BinOpExpression),
-}
-impl CellExpression {
-    pub fn from_res_operand(operand: ResOperand) -> Self {
-        match operand {
-            ResOperand::Deref(cell) => Self::Deref(cell),
-            ResOperand::DoubleDeref(cell, offset) => Self::DoubleDeref(cell, offset),
-            ResOperand::Immediate(imm) => Self::Immediate(imm),
-            ResOperand::BinOp(op) => Self::BinOp(BinOpExpression {
-                op: match op.op {
-                    cairo_lang_casm::operand::Operation::Add => FeltBinaryOperator::Add,
-                    cairo_lang_casm::operand::Operation::Mul => FeltBinaryOperator::Mul,
-                },
-                a: op.a,
-                b: op.b,
-            }),
-        }
-    }
-
-    /// Extract the cell reference from the cell expression.
-    pub fn to_deref(&self) -> Result<CellRef, InvocationError> {
-        try_extract_matches!(self, CellExpression::Deref)
-            .cloned()
-            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
-    }
-
-    /// Extract a deref or immediate from the cell expression.
-    pub fn to_deref_or_immediate(&self) -> Result<DerefOrImmediate, InvocationError> {
-        match self {
-            CellExpression::Deref(cell) => Ok(DerefOrImmediate::Deref(*cell)),
-            CellExpression::Immediate(imm) => Ok(DerefOrImmediate::Immediate(imm.clone())),
-            _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
-        }
-    }
-
-    /// Given `[ref] + offset` returns `([ref], offset)`.
-    pub fn to_deref_with_offset(&self) -> Result<(CellRef, i16), InvocationError> {
-        match self {
-            CellExpression::Deref(cell) => Ok((*cell, 0i16)),
-            CellExpression::BinOp(BinOpExpression {
-                op: FeltBinaryOperator::Add,
-                a: cell,
-                b: DerefOrImmediate::Immediate(offset),
-            }) => Ok((
-                *cell,
-                offset.to_i16().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
-            )),
-            _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
-        }
-    }
-
-    /// Returns the reference as a buffer with at least `required_slack` next cells that can be
-    /// written as an instruction offset.
-    pub fn to_buffer(&self, required_slack: i16) -> Result<ResOperand, InvocationError> {
-        let (base, offset) = self.to_deref_with_offset()?;
-        offset
-            .checked_add(required_slack)
-            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-        if offset == 0 {
-            Ok(ResOperand::Deref(base))
-        } else {
-            Ok(ResOperand::BinOp(BinOpOperand {
-                op: cairo_lang_casm::operand::Operation::Add,
-                a: base,
-                b: DerefOrImmediate::Immediate(offset.into()),
-            }))
-        }
-    }
-}
-
 /// A collection of Cell Expression which represents one logical object.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReferenceExpression {
@@ -156,33 +77,6 @@ impl ReferenceExpression {
     /// If there is only one cell in the ReferenceExpression returns the contained CellExpression.
     pub fn try_unpack_single(&self) -> Result<&CellExpression, InvocationError> {
         Ok(&self.try_unpack::<1>()?[0])
-    }
-}
-
-impl ApplyApChange for CellExpression {
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
-        Some(match self {
-            CellExpression::Deref(operand) => {
-                CellExpression::Deref(operand.apply_known_ap_change(ap_change)?)
-            }
-            CellExpression::DoubleDeref(operand, offset) => {
-                CellExpression::DoubleDeref(operand.apply_known_ap_change(ap_change)?, offset)
-            }
-            CellExpression::BinOp(operand) => {
-                CellExpression::BinOp(operand.apply_known_ap_change(ap_change)?)
-            }
-            expr @ CellExpression::Immediate(_) => expr,
-        })
-    }
-
-    fn can_apply_unknown(&self) -> bool {
-        match self {
-            CellExpression::Deref(operand) | CellExpression::DoubleDeref(operand, _) => {
-                operand.can_apply_unknown()
-            }
-            CellExpression::Immediate(_) => true,
-            CellExpression::BinOp(operand) => operand.can_apply_unknown(),
-        }
     }
 }
 

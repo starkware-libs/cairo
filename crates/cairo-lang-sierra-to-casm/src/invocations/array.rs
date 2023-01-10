@@ -42,14 +42,19 @@ fn build_array_append(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_arr, elem] = builder.try_get_refs()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let arr_start = arr_start.to_buffer(0)?;
-    let arr_end = arr_end.to_buffer(elem.cells.len() as i16)?;
+    let arr_start =
+        arr_start.to_buffer(0).ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let arr_end = arr_end
+        .to_buffer(elem.cells.len() as i16)
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
     let arr_start = casm_builder.add_var(arr_start);
     let arr_end = casm_builder.add_var(arr_end);
     for cell in &elem.cells {
-        let cell = casm_builder.add_var(ResOperand::Deref(cell.to_deref()?));
+        let cell = casm_builder.add_var(ResOperand::Deref(
+            cell.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+        ));
         casm_build_extend!(casm_builder, assert cell = *(arr_end++););
     }
     Ok(builder
@@ -62,8 +67,10 @@ fn build_pop_front(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
-    let arr_start = arr_start.to_deref()?;
-    let arr_end = arr_end.to_deref()?;
+    let arr_start =
+        arr_start.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let arr_end =
+        arr_end.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     let element_size = builder.program_info.type_sizes[elem_ty];
 
     let mut casm_builder = CasmBuilder::default();
@@ -95,11 +102,19 @@ fn build_array_at(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_range_check, expr_arr, expr_index] = builder.try_get_refs()?;
-    let range_check = expr_range_check.try_unpack_single()?.to_deref()?;
+    let range_check = expr_range_check
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let arr_start = arr_start.to_deref()?;
-    let arr_end = arr_end.to_deref()?;
-    let index = expr_index.try_unpack_single()?.to_deref_or_immediate()?;
+    let arr_start =
+        arr_start.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let arr_end =
+        arr_end.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let index = expr_index
+        .try_unpack_single()?
+        .to_deref_or_immediate()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let element_size = builder.program_info.type_sizes[elem_ty];
 
@@ -181,8 +196,10 @@ fn build_array_len(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_arr] = builder.try_get_refs()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let arr_start = arr_start.to_deref()?;
-    let arr_end = arr_end.to_deref()?;
+    let arr_start =
+        arr_start.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let arr_end =
+        arr_end.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let element_size = builder.program_info.type_sizes[elem_ty];
     // TODO(orizi): Do element_size = 1 optimization once it is easier to do ap-changes according to

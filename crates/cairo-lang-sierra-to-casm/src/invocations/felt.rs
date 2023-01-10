@@ -1,3 +1,4 @@
+use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::operand::DerefOrImmediate;
 use cairo_lang_sierra::extensions::felt::{
     FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
@@ -7,7 +8,7 @@ use num_bigint::BigInt;
 
 use super::misc::build_jump_nz;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
+use crate::references::ReferenceExpression;
 
 #[cfg(test)]
 #[path = "felt_test.rs"]
@@ -39,11 +40,21 @@ fn build_felt_op(
     op: FeltBinaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_a, expr_b] = builder.try_get_refs()?;
-    let a = expr_a.try_unpack_single()?.to_deref()?;
-    let b = expr_b.try_unpack_single()?.to_deref_or_immediate()?;
+    let a = expr_a
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let b = expr_b
+        .try_unpack_single()?
+        .to_deref_or_immediate()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression { op, a, b }))]
-            .into_iter(),
+        [ReferenceExpression::from_cell(CellExpression::BinOp {
+            op: felt_to_cell_operator(op),
+            a,
+            b,
+        })]
+        .into_iter(),
     ))
 }
 
@@ -53,13 +64,26 @@ fn build_felt_op_with_const(
     op: FeltBinaryOperator,
     c: BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let a = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
+    let a = builder.try_get_refs::<1>()?[0]
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-            op,
+        [ReferenceExpression::from_cell(CellExpression::BinOp {
+            op: felt_to_cell_operator(op),
             a,
             b: DerefOrImmediate::Immediate(c),
-        }))]
+        })]
         .into_iter(),
     ))
+}
+
+/// Converts a felt operator to the corresponding cell operator.
+fn felt_to_cell_operator(op: FeltBinaryOperator) -> CellOperator {
+    match op {
+        FeltBinaryOperator::Add => CellOperator::Add,
+        FeltBinaryOperator::Sub => CellOperator::Sub,
+        FeltBinaryOperator::Mul => CellOperator::Mul,
+        FeltBinaryOperator::Div => CellOperator::Div,
+    }
 }

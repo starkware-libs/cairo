@@ -1,11 +1,12 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::ResOperand;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{CellExpression, ReferenceExpression};
+use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra box operations.
 pub fn build(
@@ -29,7 +30,10 @@ fn build_into_box(
         });
     }
 
-    let operand = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
+    let operand = builder.try_get_refs::<1>()?[0]
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
     let operand_var = casm_builder.add_var(ResOperand::Deref(operand));
@@ -45,7 +49,10 @@ fn build_into_box(
 fn build_unbox(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let operand = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
+    let operand = builder.try_get_refs::<1>()?[0]
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::DoubleDeref(operand, 0))].into_iter(),
