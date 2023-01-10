@@ -9,7 +9,9 @@ use cairo_lang_sierra::extensions::lib_func::BranchSignature;
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
-use cairo_lang_sierra_ap_change::core_libfunc_ap_change::core_libfunc_ap_change;
+use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
+    core_libfunc_ap_change, ApChangeInfoProvider,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
 use thiserror::Error;
@@ -166,6 +168,12 @@ type VarCells = [Var];
 /// The configuration for all Sierra variables returned from a libfunc.
 type AllVars<'a> = [&'a VarCells];
 
+impl<'a> ApChangeInfoProvider for ProgramInfo<'a> {
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize {
+        self.type_sizes[ty] as usize
+    }
+}
+
 /// Helper for building compiled invocations.
 pub struct CompiledInvocationBuilder<'a> {
     pub program_info: ProgramInfo<'a>,
@@ -197,7 +205,7 @@ impl CompiledInvocationBuilder<'_> {
             output_expressions.len(),
             "The number of output expressions does not match signature."
         );
-        let ap_changes = core_libfunc_ap_change(self.libfunc);
+        let ap_changes = core_libfunc_ap_change(self.libfunc, &self.program_info);
         assert_eq!(
             branch_signatures.len(),
             ap_changes.len(),
@@ -219,7 +227,7 @@ impl CompiledInvocationBuilder<'_> {
             .map(|((branch_signature, gas_change), (expressions, ap_change))| {
                 let ap_change = match ap_change {
                     cairo_lang_sierra_ap_change::ApChange::Known(x) => ApChange::Known(x),
-                    cairo_lang_sierra_ap_change::ApChange::AtLocalsFinalizationByTypeSize(_) => {
+                    cairo_lang_sierra_ap_change::ApChange::AtLocalsFinalization(_) => {
                         ApChange::Known(0)
                     }
                     cairo_lang_sierra_ap_change::ApChange::FinalizeLocals => {
@@ -227,9 +235,6 @@ impl CompiledInvocationBuilder<'_> {
                             FrameState::Finalized { allocated } => ApChange::Known(allocated),
                             _ => panic!("Unexpected frame state."),
                         }
-                    }
-                    cairo_lang_sierra_ap_change::ApChange::KnownByTypeSize(ty) => {
-                        ApChange::Known(self.program_info.type_sizes[&ty] as usize)
                     }
                     cairo_lang_sierra_ap_change::ApChange::FunctionCall(id) => self
                         .program_info
@@ -276,7 +281,7 @@ impl CompiledInvocationBuilder<'_> {
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
         itertools::assert_equal(
-            core_libfunc_ap_change(self.libfunc),
+            core_libfunc_ap_change(self.libfunc, &self.program_info),
             branches
                 .iter()
                 .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change)),
