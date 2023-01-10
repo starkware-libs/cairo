@@ -205,58 +205,6 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(vm, x, x_value)?;
                 insert_value_to_cellref!(vm, y, y_value)?;
             }
-            Hint::AllocDictFeltTo { dict_manager_ptr } => {
-                let (cell, base_offset) = extract_buffer(dict_manager_ptr);
-                let dict_manager_address = get_ptr(cell, &base_offset)?;
-                let n_dicts = vm
-                    .get_integer(&(dict_manager_address + 1))?
-                    .into_owned()
-                    .to_usize()
-                    .expect("Number of dictionaries too large.");
-                let dict_infos_base = vm.get_relocatable(&(dict_manager_address))?;
-
-                let dict_manager_exec_scope = match exec_scopes
-                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
-                {
-                    Ok(dict_manager_exec_scope) => dict_manager_exec_scope,
-                    Err(_) => {
-                        exec_scopes.assign_or_update_variable(
-                            "dict_manager_exec_scope",
-                            Box::<DictManagerExecScope>::default(),
-                        );
-                        exec_scopes
-                            .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")?
-                    }
-                };
-                let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
-                vm.insert_value(&(dict_infos_base + 3 * n_dicts), new_dict_segment)?;
-            }
-            Hint::DictFeltToRead { dict_ptr, key, value_dst } => {
-                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-                let dict_address = get_ptr(dict_base, &dict_offset)?;
-                let key = get_val(key)?;
-                let dict_manager_exec_scope = exec_scopes
-                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
-                    .expect("Trying to read from a dict while dict manager was not initialized.");
-                let value = dict_manager_exec_scope
-                    .get_from_tracker(dict_address, &key)
-                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
-                insert_value_to_cellref!(vm, value_dst, value)?;
-            }
-            Hint::DictFeltToWrite { dict_ptr, key, value, prev_value_dst } => {
-                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-                let dict_address = get_ptr(dict_base, &dict_offset)?;
-                let key = get_val(key)?;
-                let value = get_val(value)?;
-                let dict_manager_exec_scope = exec_scopes
-                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
-                    .expect("Trying to write to a dict while dict manager was not initialized.");
-                let prev_value = dict_manager_exec_scope
-                    .get_from_tracker(dict_address, &key)
-                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
-                insert_value_to_cellref!(vm, prev_value_dst, prev_value)?;
-                dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
-            }
             Hint::EnterScope => {}
             Hint::ExitScope => {}
             Hint::RandomEcPoint { x, y } => {
@@ -344,7 +292,59 @@ impl HintProcessor for CairoHintProcessor {
                     panic!("Unknown selector for system call!");
                 }
             }
-            Hint::DictDestruct { dict_end_ptr, dict_index, .. } => {
+            Hint::AllocDictFeltTo { dict_manager_ptr } => {
+                let (cell, base_offset) = extract_buffer(dict_manager_ptr);
+                let dict_manager_address = get_ptr(cell, &base_offset)?;
+                let n_dicts = vm
+                    .get_integer(&(dict_manager_address + 1))?
+                    .into_owned()
+                    .to_usize()
+                    .expect("Number of dictionaries too large.");
+                let dict_infos_base = vm.get_relocatable(&(dict_manager_address))?;
+
+                let dict_manager_exec_scope = match exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                {
+                    Ok(dict_manager_exec_scope) => dict_manager_exec_scope,
+                    Err(_) => {
+                        exec_scopes.assign_or_update_variable(
+                            "dict_manager_exec_scope",
+                            Box::<DictManagerExecScope>::default(),
+                        );
+                        exec_scopes
+                            .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")?
+                    }
+                };
+                let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
+                vm.insert_value(&(dict_infos_base + 3 * n_dicts), new_dict_segment)?;
+            }
+            Hint::DictFeltToRead { dict_ptr, key, value_dst } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+                let dict_address = get_ptr(dict_base, &dict_offset)?;
+                let key = get_val(key)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to read from a dict while dict manager was not initialized.");
+                let value = dict_manager_exec_scope
+                    .get_from_tracker(dict_address, &key)
+                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                insert_value_to_cellref!(vm, value_dst, value)?;
+            }
+            Hint::DictFeltToWrite { dict_ptr, key, value, prev_value_dst } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+                let dict_address = get_ptr(dict_base, &dict_offset)?;
+                let key = get_val(key)?;
+                let value = get_val(value)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to write to a dict while dict manager was not initialized.");
+                let prev_value = dict_manager_exec_scope
+                    .get_from_tracker(dict_address, &key)
+                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                insert_value_to_cellref!(vm, prev_value_dst, prev_value)?;
+                dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
+            }
+            Hint::GetDictIndex { dict_end_ptr, dict_index, .. } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_end_ptr);
                 let dict_address = get_ptr(dict_base, &dict_offset)?;
                 let dict_manager_exec_scope = exec_scopes
@@ -353,9 +353,9 @@ impl HintProcessor for CairoHintProcessor {
                 let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address);
                 insert_value_to_cellref!(vm, dict_index, BigInt::from(dict_infos_index))?;
             }
-            Hint::DictSquash1 { .. } => {}
-            Hint::DictSquash2 { .. } => {}
-            Hint::SquashDict { dict_accesses, n_accesses, first_key, big_keys, .. } => {
+            Hint::EnterDictSquashScope { .. } => {}
+            Hint::SetDictTrackerEnd { .. } => {}
+            Hint::InitSquashData { dict_accesses, n_accesses, first_key, big_keys, .. } => {
                 let dict_access_size = 3;
                 let rangecheck_bound = BigInt::from(1) << 128;
 
@@ -403,7 +403,7 @@ impl HintProcessor for CairoHintProcessor {
                     dict_squash_exec_scope.current_key().unwrap()
                 )?;
             }
-            Hint::SquashDictInner1 { range_check_ptr } => {
+            Hint::GetCurrentAccessIndex { range_check_ptr } => {
                 let dict_squash_exec_scope: &mut DictSquashExecScope =
                     exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
                 let (range_check_base, range_check_offset) = extract_buffer(range_check_ptr);
@@ -411,7 +411,7 @@ impl HintProcessor for CairoHintProcessor {
                 let current_access_index = dict_squash_exec_scope.current_access_index().unwrap();
                 vm.insert_value(&range_check_ptr, current_access_index)?;
             }
-            Hint::SquashDictInner2 { should_skip_loop } => {
+            Hint::ShouldSkipSquashLoop { should_skip_loop } => {
                 let dict_squash_exec_scope: &mut DictSquashExecScope =
                     exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
                 insert_value_to_cellref!(
@@ -426,7 +426,7 @@ impl HintProcessor for CairoHintProcessor {
                     }
                 )?;
             }
-            Hint::SquashDictInner3 { index_delta_minus1 } => {
+            Hint::GetCurrentAccessDelta { index_delta_minus1 } => {
                 let dict_squash_exec_scope: &mut DictSquashExecScope =
                     exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
                 let prev_access_index = dict_squash_exec_scope.pop_current_access_index().unwrap();
@@ -434,7 +434,7 @@ impl HintProcessor for CairoHintProcessor {
                     dict_squash_exec_scope.current_access_index().unwrap() - prev_access_index - 1;
                 insert_value_to_cellref!(vm, index_delta_minus1, index_delta_minus_1_val)?;
             }
-            Hint::SquashDictInner4 { should_continue } => {
+            Hint::ShouldContinueSquashLoop { should_continue } => {
                 let dict_squash_exec_scope: &mut DictSquashExecScope =
                     exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
                 insert_value_to_cellref!(
@@ -449,10 +449,10 @@ impl HintProcessor for CairoHintProcessor {
                     }
                 )?;
             }
-            Hint::SquashDictInner5 => {}
-            Hint::SquashDictInner6 { .. } => {}
-            Hint::SquashDictInner7 => {}
-            Hint::SquashDictInner8 { next_key } => {
+            Hint::AssertCurrentAccessIndicesIsEmpty => {}
+            Hint::AssertAllAccessesUsed { .. } => {}
+            Hint::AssertAllKeysUsed => {}
+            Hint::GetNextDictKey { next_key } => {
                 let dict_squash_exec_scope: &mut DictSquashExecScope =
                     exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
                 dict_squash_exec_scope.pop_current_key();
@@ -462,8 +462,8 @@ impl HintProcessor for CairoHintProcessor {
                     dict_squash_exec_scope.current_key().unwrap()
                 )?;
             }
-            Hint::AssertLtFelt { .. } => {}
-            Hint::AssertLeFelt1 { a, b, range_check_ptr } => {
+            Hint::AssertLtAssertValidInput { .. } => {}
+            Hint::AssertLeFindSmallArcs { a, b, range_check_ptr } => {
                 let a_val = get_val(a)?;
                 let b_val = get_val(b)?;
                 let mut lengths_and_indices = vec![
@@ -497,7 +497,7 @@ impl HintProcessor for CairoHintProcessor {
                     lengths_and_indices[1].0.clone() / prime_over_2_high,
                 )?;
             }
-            Hint::AssertLeFelt2 { skip_exclude_a_flag } => {
+            Hint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
                 let excluded_arc: i32 = exec_scopes.get("excluded_arc")?;
                 insert_value_to_cellref!(
                     vm,
@@ -505,7 +505,7 @@ impl HintProcessor for CairoHintProcessor {
                     if excluded_arc != 0 { BigInt::from(1) } else { BigInt::from(0) }
                 )?;
             }
-            Hint::AssertLeFelt3 { skip_exclude_b_minus_a } => {
+            Hint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
                 let excluded_arc: i32 = exec_scopes.get("excluded_arc")?;
                 insert_value_to_cellref!(
                     vm,
@@ -513,7 +513,7 @@ impl HintProcessor for CairoHintProcessor {
                     if excluded_arc != 1 { BigInt::from(1) } else { BigInt::from(0) }
                 )?;
             }
-            Hint::AssertLeFelt4 => {}
+            Hint::AssertLeAssertThirdArcExcluded => {}
             Hint::DebugPrint { start, end } => {
                 let as_relocatable = |value| {
                     let (base, offset) = extract_buffer(value);
