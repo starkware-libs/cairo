@@ -41,7 +41,7 @@ Statements:
   (v4: core::felt) <- blk0()
   (v5: test::MyEnum) <- MyEnum::B(v4)
 End:
-  Callsite(v5)
+  Return(v5)
 
 //! > lowering_flat
 blk0:
@@ -59,4 +59,4 @@ Statements:
   (v4: core::felt) <- blk0()
   (v5: test::MyEnum) <- MyEnum::B(v4)
 End:
-  Callsite(v5)
+  Return(v5)

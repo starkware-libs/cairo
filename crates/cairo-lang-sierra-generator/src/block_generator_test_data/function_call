@@ -117,15 +117,4 @@ extern fn my_libfunc(a: felt, b: felt) -> felt;
 felt_const<3>() -> ([0])
 felt_const<6>() -> ([1])
 my_libfunc([0], [1]) -> ([2])
-enum_match<core::PanicResult::<core::felt>>([2]) { label0([3]) label1([4]) }
-label0:
-branch_align() -> ()
-PushValues([3]: felt) -> ([5])
-jump() { label2() }
-label1:
-branch_align() -> ()
-enum_init<core::PanicResult::<core::felt>, 1>([4]) -> ([6])
-PushValues([6]: core::PanicResult::<core::felt>) -> ([7])
-return([7])
-label2:
-enum_init<core::PanicResult::<core::felt>, 0>([5]) -> ([8])
+enum_init<core::PanicResult::<core::felt>, 0>([2]) -> ([3])

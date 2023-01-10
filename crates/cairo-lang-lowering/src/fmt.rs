@@ -207,7 +207,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredStatement {
                 if i > 0 {
                     write!(f, ", ")?;
                 }
-                write!(f, "r{ref_index} <- {:?}", var_id.debug(ctx))?;
+                write!(f, "r{} <- {:?}", ref_index.0, var_id.debug(ctx))?;
             }
         }
         Ok(())

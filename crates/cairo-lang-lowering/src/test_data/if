@@ -46,7 +46,7 @@ Statements:
     bool::True => blk0,
   }
 End:
-  Callsite(v5)
+  Return(v5)
 
 //! > lowering_flat
 blk0:
@@ -70,7 +70,7 @@ Statements:
     bool::True => blk0,
   }
 End:
-  Callsite(v5)
+  Return(v5)
 
 //! > ==========================================================================
 
@@ -122,7 +122,7 @@ Statements:
     JumpNzResult::NonZero => blk1,
   }
 End:
-  Callsite(v3)
+  Return(v3)
 
 //! > lowering_flat
 blk0:
@@ -146,7 +146,7 @@ Statements:
     JumpNzResult::NonZero => blk1,
   }
 End:
-  Callsite(v3)
+  Return(v3)
 
 //! > ==========================================================================
 
@@ -198,7 +198,7 @@ Statements:
   }
   (v3: core::felt) <- 20u
 End:
-  Callsite(v3)
+  Return(v3)
 
 //! > lowering_flat
 blk0:
@@ -223,7 +223,7 @@ Statements:
   }
   (v3: core::felt) <- 20u
 End:
-  Callsite(v3)
+  Return(v3)
 
 //! > ==========================================================================
 
@@ -279,7 +279,7 @@ Statements:
     JumpNzResult::NonZero => blk1,
   }
 End:
-  Callsite(v10)
+  Return(v10)
 
 //! > lowering_flat
 blk0:
@@ -307,4 +307,4 @@ Statements:
     JumpNzResult::NonZero => blk1,
   }
 End:
-  Callsite(v10)
+  Return(v10)

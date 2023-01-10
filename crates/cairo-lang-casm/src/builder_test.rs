@@ -4,15 +4,16 @@ use pretty_assertions::assert_eq;
 
 use super::CasmBuilder;
 use crate::builder::CasmBuildResult;
+use crate::cell_expression::CellExpression;
 use crate::{casm_build_extend, res};
 
 #[test]
 fn test_ap_change_fixes() {
     let mut builder = CasmBuilder::default();
-    let ap_at_7_mul_34 = builder.add_var(res!([ap + 7] * 34));
-    let fp_at_minus_3 = builder.add_var(res!([fp - 3]));
-    let imm5 = builder.add_var(res!(5));
-    let ap_at_5 = builder.add_var(res!([ap + 5]));
+    let ap_at_7_mul_34 = builder.add_var(CellExpression::from_res_operand(res!([ap + 7] * 34)));
+    let fp_at_minus_3 = builder.add_var(CellExpression::from_res_operand(res!([fp - 3])));
+    let imm5 = builder.add_var(CellExpression::from_res_operand(res!(5)));
+    let ap_at_5 = builder.add_var(CellExpression::from_res_operand(res!([ap + 5])));
     casm_build_extend! {builder,
         let ap_at_5_mul5 = ap_at_5 * imm5;
         ap += 2;
@@ -20,12 +21,21 @@ fn test_ap_change_fixes() {
     };
     let CasmBuildResult { instructions, branches: [(state, awaiting_relocations)] } =
         builder.build(["Fallthrough"]);
-    assert_eq!(state.get_adjusted(ap_at_7_mul_34), res!([ap + 5] * 34));
-    assert_eq!(state.get_adjusted(fp_at_minus_3), res!([fp - 3]));
-    assert_eq!(state.get_adjusted(ap_at_5), res!([ap + 3]));
-    assert_eq!(state.get_adjusted(imm5), res!(5));
-    assert_eq!(state.get_adjusted(ap_at_5_mul5), res!([ap + 3] * 5));
-    assert_eq!(state.get_adjusted(fp_at_minus_3_plus_ap_at_5), res!([fp - 3] + [ap + 3]));
+    assert_eq!(
+        state.get_adjusted(ap_at_7_mul_34),
+        CellExpression::from_res_operand(res!([ap + 5] * 34))
+    );
+    assert_eq!(state.get_adjusted(fp_at_minus_3), CellExpression::from_res_operand(res!([fp - 3])));
+    assert_eq!(state.get_adjusted(ap_at_5), CellExpression::from_res_operand(res!([ap + 3])));
+    assert_eq!(state.get_adjusted(imm5), CellExpression::from_res_operand(res!(5)));
+    assert_eq!(
+        state.get_adjusted(ap_at_5_mul5),
+        CellExpression::from_res_operand(res!([ap + 3] * 5))
+    );
+    assert_eq!(
+        state.get_adjusted(fp_at_minus_3_plus_ap_at_5),
+        CellExpression::from_res_operand(res!([fp - 3] + [ap + 3]))
+    );
     assert_eq!(state.ap_change, 2);
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
@@ -119,7 +129,7 @@ fn test_allocations_not_enough_commands() {
 #[test]
 fn test_aligned_branch_intersect() {
     let mut builder = CasmBuilder::default();
-    let var = builder.add_var(res!([ap + 7]));
+    let var = builder.add_var(CellExpression::from_res_operand(res!([ap + 7])));
     casm_build_extend! {builder,
         tempvar _unused;
         jump X if var != 0;
@@ -145,7 +155,7 @@ fn test_aligned_branch_intersect() {
 #[should_panic]
 fn test_unaligned_branch_intersect() {
     let mut builder = CasmBuilder::default();
-    let var = builder.add_var(res!([ap + 7]));
+    let var = builder.add_var(CellExpression::from_res_operand(res!([ap + 7])));
     casm_build_extend! {builder,
         jump X if var != 0;
         // A single tempvar in this branch.
@@ -178,7 +188,7 @@ fn test_calculation_loop() {
     let CasmBuildResult { instructions, branches: [(state, awaiting_relocations)] } =
         builder.build(["Fallthrough"]);
     assert!(awaiting_relocations.is_empty());
-    assert_eq!(state.get_adjusted(b), res!([ap - 1]));
+    assert_eq!(state.get_adjusted(b), CellExpression::from_res_operand(res!([ap - 1])));
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
         indoc! {"

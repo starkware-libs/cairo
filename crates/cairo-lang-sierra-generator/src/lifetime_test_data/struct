@@ -34,7 +34,7 @@ Statements:
   (v12: core::felt) <- 20u
   (v13: test::MyStruct) <- struct_construct(v11, v12)
 End:
-  Callsite(v13)
+  Return(v13)
 
 //! > last_use
 ((BlockId(0), 9), 0)

@@ -48,7 +48,7 @@ Statements:
     JumpNzResult::NonZero => blk1,
   }
 End:
-  Callsite(v5)
+  Return(v5)
 
 //! > lowering_flat
 blk0:
@@ -74,7 +74,7 @@ Statements:
     JumpNzResult::NonZero => blk1,
   }
 End:
-  Callsite(v5)
+  Return(v5)
 
 //! > ==========================================================================
 

@@ -34,15 +34,15 @@ fn get_example_program(name: &str) -> Program {
 #[test_case("fib_recursive" =>
             Ok(GasInfo {
                 variable_values: [
-                    ((StatementIdx(3), CostTokenType::Step), 6),
-                    ((StatementIdx(12), CostTokenType::Step), 4),
-                    ((StatementIdx(19), CostTokenType::Step), 36),
-                    ((StatementIdx(35), CostTokenType::Step), 0),
-                    ((StatementIdx(42), CostTokenType::Step), 0),
+                    ((StatementIdx(9), CostTokenType::Step), 6),
+                    ((StatementIdx(20), CostTokenType::Step), 4),
+                    ((StatementIdx(27), CostTokenType::Step), 39),
+                    ((StatementIdx(40), CostTokenType::Step), 0),
+                    ((StatementIdx(49), CostTokenType::Step), 0),
                 ].into_iter().collect(),
                 function_costs: [(
                     "Fibonacci".into(),
-                    [(CostTokenType::Step, 11)].into_iter().collect()
+                    [(CostTokenType::Step, 14)].into_iter().collect()
                 )].into_iter().collect()
             }))]
 fn solve_gas(path: &str) -> Result<GasInfo, CostError> {
