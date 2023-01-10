@@ -5,7 +5,7 @@ use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
 use cairo_lang_sierra::extensions::felt::FeltBinaryOperator;
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
-use cairo_lang_sierra::program::{Function, StatementIdx};
+use cairo_lang_sierra::program::Function;
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
 
@@ -16,8 +16,6 @@ use crate::type_sizes::TypeSizeMap;
 pub enum ReferencesError {
     #[error("Invalid function declaration.")]
     InvalidFunctionDeclaration(Function),
-    #[error("{var_id} is dangling at #{statement_idx}.")]
-    DanglingReferences { statement_idx: StatementIdx, var_id: VarId },
     #[error(
         "One of the arguments does not match the expected type of the libfunc or return statement."
     )]

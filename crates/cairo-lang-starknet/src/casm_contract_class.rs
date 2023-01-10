@@ -51,6 +51,8 @@ pub struct CasmContractClass {
 }
 
 impl CasmContractClass {
+    // TODO(ilya): Reduce the size of CompilationError.
+    #[allow(clippy::result_large_err)]
     pub fn from_contract_class(
         contract_class: ContractClass,
     ) -> Result<Self, StarknetSierraCompilationError> {
