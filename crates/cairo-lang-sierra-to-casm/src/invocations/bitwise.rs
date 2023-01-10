@@ -20,9 +20,18 @@ fn build_bitwise(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_bitwise, expr_x, expr_y] = builder.try_get_refs()?;
-    let bitwise = expr_bitwise.try_unpack_single()?.to_buffer(4)?;
-    let x = expr_x.try_unpack_single()?.to_deref()?;
-    let y = expr_y.try_unpack_single()?.to_deref()?;
+    let bitwise = expr_bitwise
+        .try_unpack_single()?
+        .to_buffer(4)
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let x = expr_x
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let y = expr_y
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
     let x = casm_builder.add_var(ResOperand::Deref(x));

@@ -19,10 +19,22 @@ pub fn build_storage_read(
 
     let [expr_gas_builtin, expr_system, expr_address_domain, expr_address] =
         builder.try_get_refs()?;
-    let gas_builtin = expr_gas_builtin.try_unpack_single()?.to_deref()?;
-    let system = expr_system.try_unpack_single()?.to_buffer(3)?;
-    let address_domain = expr_address_domain.try_unpack_single()?.to_deref()?;
-    let storage_address = expr_address.try_unpack_single()?.to_deref()?;
+    let gas_builtin = expr_gas_builtin
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let system = expr_system
+        .try_unpack_single()?
+        .to_buffer(3)
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let address_domain = expr_address_domain
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let storage_address = expr_address
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
     let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
@@ -67,12 +79,27 @@ pub fn build_storage_write(
 
     let [expr_gas_builtin, expr_system, expr_address_domain, expr_address, expr_value] =
         builder.try_get_refs()?;
-    let gas_builtin = expr_gas_builtin.try_unpack_single()?.to_deref()?;
-    let system = expr_system.try_unpack_single()?.to_buffer(6)?;
-    let address_domain = expr_address_domain.try_unpack_single()?.to_deref()?;
-    let storage_address = expr_address.try_unpack_single()?.to_deref()?;
+    let gas_builtin = expr_gas_builtin
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let system = expr_system
+        .try_unpack_single()?
+        .to_buffer(6)
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let address_domain = expr_address_domain
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let storage_address = expr_address
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
-    let value = expr_value.try_unpack_single()?.to_deref()?;
+    let value = expr_value
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);

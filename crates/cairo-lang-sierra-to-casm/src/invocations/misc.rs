@@ -1,4 +1,5 @@
 use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::ResOperand;
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
@@ -7,7 +8,6 @@ use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
     InvocationError,
 };
-use crate::references::CellExpression;
 
 /// Handles a revoke ap tracking instruction.
 pub fn build_revoke_ap_tracking(
@@ -43,7 +43,10 @@ pub fn build_drop(
 pub fn build_jump_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let value = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
+    let value = builder.try_get_refs::<1>()?[0]
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     let value = casm_builder.add_var(ResOperand::Deref(value));
