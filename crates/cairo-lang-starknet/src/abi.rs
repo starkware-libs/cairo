@@ -3,6 +3,8 @@ use cairo_lang_semantic::db::SemanticGroup;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::plugin::VIEW_ATTR;
+
 #[cfg(test)]
 #[path = "abi_test.rs"]
 mod test;
@@ -36,6 +38,14 @@ impl Contract {
         db: &dyn SemanticGroup,
         trait_function_id: TraitFunctionId,
     ) -> Result<(), ABIError> {
+        let attrs = db
+            .trait_function_attributes(trait_function_id)
+            .map_err(|_| ABIError::CompilationError)?;
+        let state_mutability = if attrs.iter().any(|attr| attr.id.to_string() == VIEW_ATTR) {
+            StateMutability::View
+        } else {
+            StateMutability::External
+        };
         let defs_db = db.upcast();
         let name = trait_function_id.name(defs_db).into();
         let signature = db
@@ -53,6 +63,7 @@ impl Contract {
                 .collect(),
             // TODO(spapini): output refs?
             output_ty: signature.return_type.format(db),
+            state_mutability,
         }));
 
         Ok(())
@@ -79,12 +90,21 @@ pub enum Item {
     Function(Function),
 }
 
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StateMutability {
+    #[serde(rename = "external")]
+    External,
+    #[serde(rename = "view")]
+    View,
+}
+
 /// Contract function ABI.
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Function {
     pub name: String,
     pub inputs: Vec<Input>,
     pub output_ty: String,
+    pub state_mutability: StateMutability,
 }
 
 /// Function input ABI.
