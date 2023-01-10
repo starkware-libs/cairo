@@ -1,7 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::operand::ResOperand;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
 use num_bigint::BigInt;
 
@@ -41,10 +40,10 @@ pub fn build_call_contract(
 
     let mut casm_builder = CasmBuilder::default();
     let system = casm_builder.add_var(system);
-    let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
-    let contract_address = casm_builder.add_var(ResOperand::Deref(contract_address));
-    let call_data_start = casm_builder.add_var(ResOperand::Deref(call_data_start));
-    let call_data_end = casm_builder.add_var(ResOperand::Deref(call_data_end));
+    let gas_builtin = casm_builder.add_var(CellExpression::Deref(gas_builtin));
+    let contract_address = casm_builder.add_var(CellExpression::Deref(contract_address));
+    let call_data_start = casm_builder.add_var(CellExpression::Deref(call_data_start));
+    let call_data_end = casm_builder.add_var(CellExpression::Deref(call_data_end));
     casm_build_extend! {casm_builder,
         const selector_imm = selector_imm;
         tempvar selector = selector_imm;

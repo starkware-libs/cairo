@@ -1,7 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::operand::ResOperand;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 
@@ -36,7 +35,7 @@ fn build_into_box(
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
-    let operand_var = casm_builder.add_var(ResOperand::Deref(operand));
+    let operand_var = casm_builder.add_var(CellExpression::Deref(operand));
     casm_build_extend!(casm_builder,
         tempvar addr;
         hint AllocSegment {} into {dst: addr};

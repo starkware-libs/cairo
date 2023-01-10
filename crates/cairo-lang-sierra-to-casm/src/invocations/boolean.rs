@@ -1,6 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
-use cairo_lang_casm::operand::{ap_cell_ref, DerefOrImmediate, ResOperand};
+use cairo_lang_casm::operand::{ap_cell_ref, DerefOrImmediate};
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 
@@ -85,8 +85,8 @@ fn build_bool_xor(
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut casm_builder = CasmBuilder::default();
-    let a = casm_builder.add_var(ResOperand::Deref(a));
-    let b = casm_builder.add_var(ResOperand::Deref(b));
+    let a = casm_builder.add_var(CellExpression::Deref(a));
+    let b = casm_builder.add_var(CellExpression::Deref(b));
 
     // Outputs `(a - b)^2`.
     casm_build_extend! {casm_builder,

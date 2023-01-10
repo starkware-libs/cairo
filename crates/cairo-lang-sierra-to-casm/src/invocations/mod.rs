@@ -305,10 +305,7 @@ impl CompiledInvocationBuilder<'_> {
         let output_expressions = branches.into_iter().zip_eq(branch_extractions.into_iter()).map(
             |((state, _), (_, vars, _))| {
                 vars.iter().map(move |var_cells| ReferenceExpression {
-                    cells: var_cells
-                        .iter()
-                        .map(|cell| CellExpression::from_res_operand(state.get_adjusted(*cell)))
-                        .collect(),
+                    cells: var_cells.iter().map(|cell| state.get_adjusted(*cell)).collect(),
                 })
             },
         );

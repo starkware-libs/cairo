@@ -1,7 +1,7 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::operand::{CellRef, ResOperand};
+use cairo_lang_casm::operand::CellRef;
 use cairo_lang_sierra::extensions::uint128::{
     IntOperator, Uint128Concrete, Uint128OperationConcreteLibfunc,
 };
@@ -36,7 +36,7 @@ pub fn build(
 /// Fetches, verifies and returns the range check, a and b references.
 pub fn unwrap_range_check_based_binary_op_refs(
     builder: &CompiledInvocationBuilder<'_>,
-) -> Result<(ResOperand, CellRef, CellRef), InvocationError> {
+) -> Result<(CellExpression, CellRef, CellRef), InvocationError> {
     let [range_check_expression, expr_a, expr_b] = builder.try_get_refs()?;
     Ok((
         range_check_expression
@@ -65,8 +65,8 @@ fn build_u128_op(
             let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
             let mut casm_builder = CasmBuilder::default();
             let range_check = casm_builder.add_var(range_check);
-            let a = casm_builder.add_var(ResOperand::Deref(a));
-            let b = casm_builder.add_var(ResOperand::Deref(b));
+            let a = casm_builder.add_var(CellExpression::Deref(a));
+            let b = casm_builder.add_var(CellExpression::Deref(b));
             let (possible_overflow, overflow_fixed) = match op {
                 IntOperator::OverflowingAdd => {
                     casm_build_extend! {casm_builder,
@@ -117,8 +117,8 @@ fn build_u128_op(
         IntOperator::DivMod => {
             let mut casm_builder = CasmBuilder::default();
             let range_check = casm_builder.add_var(range_check);
-            let a = casm_builder.add_var(ResOperand::Deref(a));
-            let b = casm_builder.add_var(ResOperand::Deref(b));
+            let a = casm_builder.add_var(CellExpression::Deref(a));
+            let b = casm_builder.add_var(CellExpression::Deref(b));
             casm_build_extend! {casm_builder,
                 tempvar r_plus_1;
                 tempvar b_minus_r_minus_1;
@@ -174,8 +174,8 @@ fn build_u128_op(
         IntOperator::WideMul => {
             let mut casm_builder = CasmBuilder::default();
             let range_check = casm_builder.add_var(range_check);
-            let a = casm_builder.add_var(ResOperand::Deref(a));
-            let b = casm_builder.add_var(ResOperand::Deref(b));
+            let a = casm_builder.add_var(CellExpression::Deref(a));
+            let b = casm_builder.add_var(CellExpression::Deref(b));
 
             casm_build_extend! {casm_builder,
                 tempvar a0;
@@ -295,7 +295,7 @@ fn build_u128_from_felt(
     let mut casm_builder = CasmBuilder::default();
     // Defining params and constants.
     let range_check = casm_builder.add_var(range_check);
-    let value = casm_builder.add_var(ResOperand::Deref(value));
+    let value = casm_builder.add_var(CellExpression::Deref(value));
     casm_build_extend! {casm_builder,
             tempvar is_u128;
             const u128_limit = u128_bound.clone();
@@ -356,8 +356,8 @@ fn build_u128_lt(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     let range_check = casm_builder.add_var(range_check);
-    let a = casm_builder.add_var(ResOperand::Deref(a));
-    let b = casm_builder.add_var(ResOperand::Deref(b));
+    let a = casm_builder.add_var(CellExpression::Deref(a));
+    let b = casm_builder.add_var(CellExpression::Deref(b));
     casm_build_extend! {casm_builder,
             tempvar a_ge_b;
             tempvar a_minus_b = a - b;
@@ -386,8 +386,8 @@ fn build_u128_le(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     let range_check = casm_builder.add_var(range_check);
-    let a = casm_builder.add_var(ResOperand::Deref(a));
-    let b = casm_builder.add_var(ResOperand::Deref(b));
+    let a = casm_builder.add_var(CellExpression::Deref(a));
+    let b = casm_builder.add_var(CellExpression::Deref(b));
     casm_build_extend! {casm_builder,
             tempvar a_gt_b;
             tempvar b_minus_a = b - a;
