@@ -28,16 +28,16 @@ use crate::relocations::RelocationEntry;
 #[macro_export]
 macro_rules! cell_expr_operator {
     (+) => {
-        cairo_lang_sierra::extensions::felt::FeltBinaryOperator::Add
+        cairo_lang_casm::cell_expression::CellOperator::Add
     };
     (-) => {
-        cairo_lang_sierra::extensions::felt::FeltBinaryOperator::Sub
+        cairo_lang_casm::cell_expression::CellOperator::Sub
     };
     (*) => {
-        cairo_lang_sierra::extensions::felt::FeltBinaryOperator::Mul
+        cairo_lang_casm::cell_expression::CellOperator::Mul
     };
     (/) => {
-        cairo_lang_sierra::extensions::felt::FeltBinaryOperator::Div
+        cairo_lang_casm::cell_expression::CellOperator::Div
     };
 }
 
@@ -47,39 +47,39 @@ macro_rules! ref_expr_extend {
     ($cells:ident) => {};
     ($cells:ident, [$a:ident $($op:tt $offset:expr)?] $(, $tok:tt)*) => {
         $cells.push(
-            $crate::references::CellExpression::Deref(cairo_lang_casm::deref!([$a $($op $offset)?]))
+            cairo_lang_casm::cell_expression::CellExpression::Deref(cairo_lang_casm::deref!([$a $($op $offset)?]))
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, [$a:ident $($op:tt $offset:expr)?] $operator:tt $b:tt $(, $tok:tt)*) => {
         $cells.push(
-            $crate::references::CellExpression::BinOp($crate::references::BinOpExpression {
+            cairo_lang_casm::cell_expression::CellExpression::BinOp {
                 op: $crate::cell_expr_operator!($operator),
                 a: cairo_lang_casm::deref!([$a $($op $offset)?]),
                 b: cairo_lang_casm::deref_or_immediate!($b),
-        }));
+        });
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, [[$a:ident $($op:tt $offset:expr)?]] $(, $tok:tt)*) => {
         $cells.push(
-            $crate::references::CellExpression::DoubleDeref(cairo_lang_casm::deref!([$a $($op $offset)?]), 0)
+            cairo_lang_casm::cell_expression::CellExpression::DoubleDeref(cairo_lang_casm::deref!([$a $($op $offset)?]), 0)
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, [[$a:ident $($op:tt $offset:expr)?] + $offset2:expr] $(, $tok:tt)*) => {
         $cells.push(
-            $crate::references::CellExpression::DoubleDeref(cairo_lang_casm::deref!([$a $($op $offset)?]), $offset2)
+            cairo_lang_casm::cell_expression::CellExpression::DoubleDeref(cairo_lang_casm::deref!([$a $($op $offset)?]), $offset2)
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, $a:expr $(, $tok:tt)*) => {
         cells.push(
-            $crate::references::CellExpression::Immediate(num_bigint::BigInt::from($a))
+            cairo_lang_casm::cell_expression::CellExpression::Immediate(num_bigint::BigInt::from($a))
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, _ $(, $tok:tt)*) => {
-        cells.push($crate::references::CellExpression::Padding);
+        cells.push(cairo_lang_casm::cell_expression::CellExpression::Padding);
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
 }

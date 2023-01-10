@@ -1,14 +1,14 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::operand::{DerefOrImmediate, ResOperand};
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
-use cairo_lang_sierra::extensions::felt::FeltBinaryOperator;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression};
+use crate::references::ReferenceExpression;
 
 pub const STEP_COST: i64 = 100;
 
@@ -36,8 +36,14 @@ fn build_get_gas(
         .ok_or(InvocationError::UnknownVariableData)?
         * STEP_COST;
     let [range_check_expr, gas_counter_expr] = builder.try_get_refs()?;
-    let range_check = range_check_expr.try_unpack_single()?.to_buffer(1)?;
-    let gas_counter = gas_counter_expr.try_unpack_single()?.to_deref()?;
+    let range_check = range_check_expr
+        .try_unpack_single()?
+        .to_buffer(1)
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let gas_counter = gas_counter_expr
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
 
@@ -79,17 +85,20 @@ fn build_refund_gas(
         .variable_values
         .get(&(builder.idx, CostTokenType::Step))
         .ok_or(InvocationError::UnknownVariableData)?;
-    let gas_counter_value = builder.try_get_refs::<1>()?[0].try_unpack_single()?.to_deref()?;
+    let gas_counter_value = builder.try_get_refs::<1>()?[0]
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     Ok(builder.build_only_reference_changes(
         [if *requested_count == 0 {
             ReferenceExpression::from_cell(CellExpression::Deref(gas_counter_value))
         } else {
-            ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                op: FeltBinaryOperator::Add,
+            ReferenceExpression::from_cell(CellExpression::BinOp {
+                op: CellOperator::Add,
                 a: gas_counter_value,
                 b: DerefOrImmediate::Immediate(BigInt::from(*requested_count)),
-            }))
+            })
         }]
         .into_iter(),
     ))

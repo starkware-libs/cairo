@@ -1,6 +1,7 @@
 use assert_matches::assert_matches;
 use cairo_lang_casm::ap_change::ApChange;
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
@@ -20,7 +21,7 @@ use {cairo_lang_casm, cairo_lang_sierra};
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
-use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 

@@ -1,5 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, ResOperand};
 use cairo_lang_sierra::extensions::uint128::{
     IntOperator, Uint128Concrete, Uint128OperationConcreteLibfunc,
@@ -8,7 +9,7 @@ use num_bigint::BigInt;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::get_non_fallthrough_statement_id;
-use crate::references::{CellExpression, ReferenceExpression};
+use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra u128 operations.
 pub fn build(
@@ -38,9 +39,18 @@ pub fn unwrap_range_check_based_binary_op_refs(
 ) -> Result<(ResOperand, CellRef, CellRef), InvocationError> {
     let [range_check_expression, expr_a, expr_b] = builder.try_get_refs()?;
     Ok((
-        range_check_expression.try_unpack_single()?.to_buffer(0)?,
-        expr_a.try_unpack_single()?.to_deref()?,
-        expr_b.try_unpack_single()?.to_deref()?,
+        range_check_expression
+            .try_unpack_single()?
+            .to_buffer(0)
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+        expr_a
+            .try_unpack_single()?
+            .to_deref()
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+        expr_b
+            .try_unpack_single()?
+            .to_deref()
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
     ))
 }
 
@@ -268,8 +278,14 @@ fn build_u128_from_felt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check_expression, expr_value] = builder.try_get_refs()?;
-    let range_check = range_check_expression.try_unpack_single()?.to_buffer(3)?;
-    let value = expr_value.try_unpack_single()?.to_deref()?;
+    let range_check = range_check_expression
+        .try_unpack_single()?
+        .to_buffer(3)
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let value = expr_value
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let u128_bound: BigInt = BigInt::from(u128::MAX) + 1; // = 2**128.
