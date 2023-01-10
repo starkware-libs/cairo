@@ -379,7 +379,7 @@ fn simulate_bool_libfunc(
                 Ok((
                     vec![CoreValue::Enum {
                         value: Box::new(CoreValue::Struct(vec![])),
-                        index: a + b - a * b,
+                        index: usize::from(a + b > 0),
                     }],
                     0,
                 ))
