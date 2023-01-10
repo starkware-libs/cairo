@@ -13,21 +13,6 @@ pub enum Hint {
     AllocSegment {
         dst: CellRef,
     },
-    // Allocates a new dict segment, and write its start address into the dict_infos segment.
-    AllocDictFeltTo {
-        dict_manager_ptr: ResOperand,
-    },
-    DictFeltToRead {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-        value_dst: CellRef,
-    },
-    DictFeltToWrite {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-        value: ResOperand,
-        prev_value_dst: CellRef,
-    },
     TestLessThan {
         lhs: ResOperand,
         rhs: ResOperand,
@@ -54,61 +39,98 @@ pub enum Hint {
     },
     EnterScope,
     ExitScope,
-    DictDestruct {
+    /// Allocates a new dict segment, and write its start address into the dict_infos segment.
+    AllocDictFeltTo {
+        dict_manager_ptr: ResOperand,
+    },
+    /// Retrives and writes the value corresponding to the given dict and key from the vm
+    /// dict_manager.
+    DictFeltToRead {
+        dict_ptr: ResOperand,
+        key: ResOperand,
+        value_dst: CellRef,
+    },
+    /// Sets the value correspoinding to the key in the vm dict_manager.
+    DictFeltToWrite {
+        dict_ptr: ResOperand,
+        key: ResOperand,
+        value: ResOperand,
+        prev_value_dst: CellRef,
+    },
+    /// Retrives the index of the given dict in the dict_infos segment.
+    GetDictIndex {
         dict_manager_ptr: ResOperand,
         dict_end_ptr: ResOperand,
         dict_index: CellRef,
     },
-    DictSquash1 {
+    /// Creates a new scope with the variables needed for dict_squash.
+    EnterDictSquashScope {
         dict_end_ptr: ResOperand,
     },
-    DictSquash2 {
+    /// Sets the end of a finalized dict in the vm tracker of the dict.
+    SetDictTrackerEnd {
         squashed_dict_start: ResOperand,
         squashed_dict_end: ResOperand,
     },
-    SquashDict {
+    /// Initialized the lists of accesses of each key of a dict as a preparation of squash_dict.
+    InitSquashData {
         dict_accesses: ResOperand,
         ptr_diff: ResOperand,
         n_accesses: ResOperand,
         big_keys: CellRef,
         first_key: CellRef,
     },
-    SquashDictInner1 {
+    /// Retrives the current index of a dict access to process.
+    GetCurrentAccessIndex {
         range_check_ptr: ResOperand,
     },
-    SquashDictInner2 {
+    /// Writes if the squash_dict loop should be skipped.
+    ShouldSkipSquashLoop {
         should_skip_loop: CellRef,
     },
-    SquashDictInner3 {
+    /// Writes the delta from the current access index to the next one.
+    GetCurrentAccessDelta {
         index_delta_minus1: CellRef,
     },
-    SquashDictInner4 {
+    /// Writes if the squash_dict loop should be continued.
+    ShouldContinueSquashLoop {
         should_continue: CellRef,
     },
-    SquashDictInner5,
-    SquashDictInner6 {
+    /// Asserts that the current access indices list is empty (after the loop).
+    AssertCurrentAccessIndicesIsEmpty,
+    /// Asserts that the number of used accesses is equal to the length of the original accesses
+    /// list.
+    AssertAllAccessesUsed {
         n_used_accesses: CellRef,
     },
-    SquashDictInner7,
-    SquashDictInner8 {
+    /// Asserts that the keys list is empty.
+    AssertAllKeysUsed,
+    /// Writes the next dict key to process.
+    GetNextDictKey {
         next_key: CellRef,
     },
-    AssertLtFelt {
+    /// Asserts that the input represents integers and that a<b.
+    AssertLtAssertValidInput {
         a: ResOperand,
         b: ResOperand,
     },
-    AssertLeFelt1 {
+    /// Finds the two small arcs from within [(0,a),(a,b),(b,PRIME)] and writes it to the
+    /// range_check segment.
+    AssertLeFindSmallArcs {
         range_check_ptr: ResOperand,
         a: ResOperand,
         b: ResOperand,
     },
-    AssertLeFelt2 {
+    /// Writes if the arc (0,a) was excluded.
+    AssertLeIsFirstArcExcluded {
         skip_exclude_a_flag: CellRef,
     },
-    AssertLeFelt3 {
+    /// Writes if the arc (a,b) was excluded.
+    AssertLeIsSecondArcExcluded {
         skip_exclude_b_minus_a: CellRef,
     },
-    AssertLeFelt4,
+    /// Asserts that the arc (b, PRIME) was excluded.
+    AssertLeAssertThirdArcExcluded,
     /// Samples a random point on the EC.
     RandomEcPoint {
         x: CellRef,
@@ -281,7 +303,7 @@ impl Display for Hint {
             Hint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
-            Hint::SquashDictInner1 { range_check_ptr } => writedoc!(
+            Hint::GetCurrentAccessIndex { range_check_ptr } => writedoc!(
                 f,
                 "
 
@@ -291,10 +313,10 @@ impl Display for Hint {
                 ",
                 ResOperandFormatter(range_check_ptr)
             ),
-            Hint::SquashDictInner2 { should_skip_loop } => {
+            Hint::ShouldSkipSquashLoop { should_skip_loop } => {
                 write!(f, " memory{should_skip_loop} = 0 if current_access_indices else 1 ")
             }
-            Hint::SquashDictInner3 { index_delta_minus1 } => writedoc!(
+            Hint::GetCurrentAccessDelta { index_delta_minus1 } => writedoc!(
                 f,
                 "
 
@@ -303,22 +325,24 @@ impl Display for Hint {
                     current_access_index = new_access_index
                 "
             ),
-            Hint::SquashDictInner4 { should_continue } => {
+            Hint::ShouldContinueSquashLoop { should_continue } => {
                 write!(f, " memory{should_continue} = 1 if current_access_indices else 0 ")
             }
-            Hint::SquashDictInner5 => write!(f, " assert len(current_access_indices) == 0 "),
-            Hint::SquashDictInner6 { n_used_accesses } => {
+            Hint::AssertCurrentAccessIndicesIsEmpty => {
+                write!(f, " assert len(current_access_indices) == 0 ")
+            }
+            Hint::AssertAllAccessesUsed { n_used_accesses } => {
                 write!(f, " assert memory{n_used_accesses} == len(access_indices[key]) ")
             }
-            Hint::SquashDictInner7 => write!(f, " assert len(keys) == 0 "),
-            Hint::SquashDictInner8 { next_key } => writedoc!(
+            Hint::AssertAllKeysUsed => write!(f, " assert len(keys) == 0 "),
+            Hint::GetNextDictKey { next_key } => writedoc!(
                 f,
                 "
                     assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
                     memory{next_key} = key = keys.pop()
                 "
             ),
-            Hint::DictDestruct { dict_manager_ptr, dict_end_ptr, dict_index } => {
+            Hint::GetDictIndex { dict_manager_ptr, dict_end_ptr, dict_index } => {
                 let (dict_manager_ptr, dict_end_ptr) =
                     (ResOperandFormatter(dict_manager_ptr), ResOperandFormatter(dict_end_ptr));
                 writedoc!(
@@ -335,7 +359,7 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::DictSquash1 { dict_end_ptr } => writedoc!(
+            Hint::EnterDictSquashScope { dict_end_ptr } => writedoc!(
                 f,
                 "
 
@@ -351,7 +375,7 @@ impl Display for Hint {
                 ",
                 ResOperandFormatter(dict_end_ptr),
             ),
-            Hint::DictSquash2 { squashed_dict_start, squashed_dict_end } => {
+            Hint::SetDictTrackerEnd { squashed_dict_start, squashed_dict_end } => {
                 let (squashed_dict_start, squashed_dict_end) = (
                     ResOperandFormatter(squashed_dict_start),
                     ResOperandFormatter(squashed_dict_end),
@@ -366,7 +390,7 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::SquashDict { dict_accesses, ptr_diff, n_accesses, big_keys, first_key } => {
+            Hint::InitSquashData { dict_accesses, ptr_diff, n_accesses, big_keys, first_key } => {
                 let (dict_accesses, ptr_diff, n_accesses) = (
                     ResOperandFormatter(dict_accesses),
                     ResOperandFormatter(ptr_diff),
@@ -398,7 +422,7 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::AssertLtFelt { a, b } => {
+            Hint::AssertLtAssertValidInput { a, b } => {
                 let (a, b) = (ResOperandFormatter(a), ResOperandFormatter(b));
                 writedoc!(
                     f,
@@ -412,7 +436,7 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::AssertLeFelt1 { range_check_ptr, a, b } => {
+            Hint::AssertLeFindSmallArcs { range_check_ptr, a, b } => {
                 let (range_check_ptr, a, b) = (
                     ResOperandFormatter(range_check_ptr),
                     ResOperandFormatter(a),
@@ -445,13 +469,13 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::AssertLeFelt2 { skip_exclude_a_flag } => {
+            Hint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
                 write!(f, "memory{skip_exclude_a_flag} = 1 if excluded != 0 else 0",)
             }
-            Hint::AssertLeFelt3 { skip_exclude_b_minus_a } => {
+            Hint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
                 write!(f, "memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0",)
             }
-            Hint::AssertLeFelt4 => write!(f, "assert excluded == 2"),
+            Hint::AssertLeAssertThirdArcExcluded => write!(f, "assert excluded == 2"),
             Hint::DebugPrint { start, end } => writedoc!(
                 f,
                 "
