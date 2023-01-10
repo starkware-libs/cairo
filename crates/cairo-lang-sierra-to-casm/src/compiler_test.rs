@@ -452,7 +452,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 return();
 
                 foo@0([1]: felt, [1]: felt) -> ();
-            "}, "Invalid function declaration.";
+            "}, "#0: Invalid function declaration.";
             "Bad Declaration")]
 #[test_case(indoc! {"
             return();
@@ -538,7 +538,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 return ([1]);
 
                 test_program@0([1]: felt, [2]: felt) -> (felt);
-            "}, "One of the arguments does not match the expected type \
+            "}, "#5: One of the arguments does not match the expected type \
 of the libfunc or return statement.";
             "Invalid return type")]
 #[test_case(indoc! {"
