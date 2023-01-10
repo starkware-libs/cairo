@@ -27,8 +27,8 @@ use crate::contract::starknet_keccak;
 
 const ABI_ATTR: &str = "abi";
 const CONTRACT_ATTR: &str = "contract";
-const EXTERNAL_ATTR: &str = "external";
-const VIEW_ATTR: &str = "view";
+pub const EXTERNAL_ATTR: &str = "external";
+pub const VIEW_ATTR: &str = "view";
 pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
@@ -282,9 +282,11 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 if item_function.has_attr(db, EXTERNAL_ATTR)
                     || item_function.has_attr(db, VIEW_ATTR) =>
             {
-                // TODO(yuval): keep track of whether the function is external/view.
+                let attr =
+                    if item_function.has_attr(db, EXTERNAL_ATTR) { "external" } else { "view" };
                 abi_functions.push(RewriteNode::Modified(ModifiedNode {
                     children: vec![
+                        RewriteNode::Text(format!("#[{attr}]\n        ")),
                         RewriteNode::Trimmed(item_function.declaration(db).as_syntax_node()),
                         RewriteNode::Text(";\n        ".to_string()),
                     ],
