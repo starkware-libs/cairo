@@ -1,0 +1,261 @@
+//! > Test simple inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: bool, b: bool) -> bool {
+
+  inline_bool_xor(a, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn inline_bool_xor(a: bool, b: bool) -> bool implicits() nopanic  {
+  let (r,) = bool_xor_impl(a, b);
+  r
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::bool, v1: core::bool
+Initial refs:
+Statements:
+  (v2: core::bool) <- test::inline_bool_xor(v0, v1)
+End:
+  Callsite(v2)
+
+//! > inlining_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::bool, v1: core::bool
+Initial refs:
+Statements:
+  (v2: core::bool) <- test::inline_bool_xor(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::bool, v1: core::bool
+Initial refs:
+Statements:
+  (v2: core::bool) <- blk1()
+End:
+  Return(v2)
+
+blk1:
+Inputs: v3: core::bool, v4: core::bool
+Initial refs:
+Statements:
+  (v5: core::bool) <- core::bool_xor_impl(v3, v4)
+End:
+  Callsite(v5)
+
+//! > ==========================================================================
+
+//! > Test inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt, b: felt) -> felt {
+  bar(a + b, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn bar(a: felt, b: felt) -> felt implicits() nopanic  {
+  bar2(a, b) + bar2(b, a)
+}
+
+#[inline]
+fn bar2(a: felt, b: felt) -> felt implicits() nopanic  {
+   a * b
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+
+//! > inlining_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Initial refs:
+Statements:
+  (v2: core::felt) <- core::felt_add(v0, v1)
+  (v3: core::felt) <- test::bar(v2, v1)
+End:
+  Return(v3)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Initial refs:
+Statements:
+  (v2: core::felt) <- core::felt_add(v0, v1)
+  (v3: core::felt) <- blk1()
+End:
+  Return(v3)
+
+blk1:
+Inputs: v4: core::felt, v5: core::felt
+Initial refs:
+Statements:
+  (v6: core::felt) <- blk2()
+  (v7: core::felt) <- blk3()
+  (v8: core::felt) <- core::felt_add(v6, v7)
+End:
+  Callsite(v8)
+
+blk2:
+Inputs: v9: core::felt, v10: core::felt
+Initial refs:
+Statements:
+  (v11: core::felt) <- core::felt_mul(v9, v10)
+End:
+  Callsite(v11)
+
+blk3:
+Inputs: v12: core::felt, v13: core::felt
+Initial refs:
+Statements:
+  (v14: core::felt) <- core::felt_mul(v12, v13)
+End:
+  Callsite(v14)
+
+//! > ==========================================================================
+
+//! > Test inlining with ref args.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(mut a: felt) -> felt {
+  bar(a)
+  a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn bar(ref a: felt) {
+}
+
+//! > lowering_format
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v2: core::felt, v1: ()) <- test::bar(v0)
+End:
+  Callsite(v2)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+End:
+  Callsite(v2)
+
+//! > inlining_diagnostics
+error: Inlining failed: Cannot inline a function with ref arguments.
+ --> lib.cairo:1:1
+#[inline]
+^*******^
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v2: core::felt, v1: ()) <- test::bar(v0)
+End:
+  Return(v2)
+
+//! > after
+blk0:
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+End:
+  Return(v2)
+
+//! > semantic_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining with early return.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt) -> felt {
+  bar(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn bar(a: felt) -> felt {
+    if a == 1 {
+      return 1;
+    }
+    return 0;
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+
+//! > inlining_diagnostics
+error: Inlining failed: Cannot inline a function an early return.
+ --> lib.cairo:1:1
+#[inline]
+^*******^
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0:
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+End:
+  Return(v1)
