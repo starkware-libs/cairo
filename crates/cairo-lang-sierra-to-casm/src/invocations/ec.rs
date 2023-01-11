@@ -66,11 +66,7 @@ fn add_ec_points(
     let (x0, y0) = p0;
 
     casm_build_extend! {casm_builder,
-        // TODO(dorimedini): Once PrimeDiv is removed, instead of the next 3 lines just do
-        // `tempvar slope = numerator / denominator;`.
-        tempvar slope;
-        hint PrimeDiv { lhs: numerator, rhs: denominator } into { result: slope };
-        assert slope = numerator / denominator;
+        tempvar slope = numerator / denominator;
         tempvar slope2 = slope * slope;
         tempvar sum_x = x0 + x1;
         tempvar result_x = slope2 - sum_x;

@@ -5,6 +5,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context};
+use cairo_felt::FeltOps;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
@@ -134,7 +135,7 @@ fn main() -> anyhow::Result<()> {
                 RunResultValue::Panic(values) => {
                     print!("panicked with [");
                     for value in &values {
-                        match as_cairo_short_string(value) {
+                        match as_cairo_short_string(&value.to_bigint()) {
                             Some(as_string) => print!("{value} ('{as_string}'), "),
                             None => print!("{value}, "),
                         }
