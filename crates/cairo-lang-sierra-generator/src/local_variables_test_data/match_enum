@@ -56,7 +56,7 @@ Statements:
   (v4: core::felt) <- test::revoke_ap()
   (v5: core::felt) <- core::felt_add(v3, v3)
 End:
-  Callsite(v5)
+  Callsite(v5 -> v6)
 
 blk1:
 Inputs:
@@ -64,21 +64,21 @@ Statements:
   (v8: core::felt) <- core::felt_add(v7, v7)
   (v9: core::felt) <- core::felt_add(v8, v7)
 End:
-  Callsite(v9)
+  Callsite(v9 -> v10)
 
 blk2:
 Inputs: v3: core::felt
 Statements:
-  (v6: core::felt) <- blk0()
+  () <- blk0()
 End:
-  Callsite(v6)
+  Callsite(v6 -> v11)
 
 blk3:
 Inputs: v7: core::felt
 Statements:
-  (v10: core::felt) <- blk1()
+  () <- blk1()
 End:
-  Callsite(v10)
+  Callsite(v10 -> v11)
 
 blk4 (root):
 Inputs:
@@ -86,7 +86,7 @@ Statements:
   (v0: test::MyEnum) <- test::bar()
   (v1: core::felt) <- 2u
   (v2: core::felt) <- test::non_literal()
-  (v11: core::felt) <- match_enum(v0) {
+  () <- match_enum(v0) {
     MyEnum::A => blk2,
     MyEnum::B => blk3,
   }
@@ -166,7 +166,7 @@ Statements:
   (v7: core::felt) <- core::felt_add(v6, v6)
   (v8: core::felt) <- core::felt_add(v7, v6)
 End:
-  Callsite(v8)
+  Callsite(v8 -> v9)
 
 blk2:
 Inputs: v3: core::felt
@@ -178,15 +178,15 @@ End:
 blk3:
 Inputs: v6: core::felt
 Statements:
-  (v9: core::felt) <- blk1()
+  () <- blk1()
 End:
-  Callsite(v9)
+  Callsite(v9 -> v10)
 
 blk4:
 Inputs:
 Statements:
 End:
-  Callsite(v12)
+  Callsite(v12 -> v13)
 
 blk5:
 Inputs:
@@ -194,32 +194,32 @@ Statements:
   (v15: core::felt) <- core::felt_add(v14, v14)
   (v16: core::felt) <- core::felt_add(v15, v14)
 End:
-  Callsite(v16)
+  Callsite(v16 -> v17)
 
 blk6:
 Inputs: v12: core::felt
 Statements:
-  (v13: core::felt) <- blk4()
+  () <- blk4()
 End:
-  Callsite(v13)
+  Callsite(v13 -> v18)
 
 blk7:
 Inputs: v14: core::felt
 Statements:
-  (v17: core::felt) <- blk5()
+  () <- blk5()
 End:
-  Callsite(v17)
+  Callsite(v17 -> v18)
 
 blk8 (root):
 Inputs: v0: test::MyEnum, v1: core::felt
 Statements:
   (v2: core::felt) <- core::felt_add(v1, v1)
-  (v10: core::felt) <- match_enum(v0) {
+  () <- match_enum(v0) {
     MyEnum::A => blk2,
     MyEnum::B => blk3,
   }
   (v11: core::felt) <- core::felt_add(v2, v1)
-  (v18: core::felt) <- match_enum(v0) {
+  () <- match_enum(v0) {
     MyEnum::A => blk6,
     MyEnum::B => blk7,
   }

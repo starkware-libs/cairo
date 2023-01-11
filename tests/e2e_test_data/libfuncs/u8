@@ -19,15 +19,16 @@ jmp rel 7 if [ap + -1] != 0, ap++;
 jmp rel 11;
 [ap + -1] = [[fp + -5] + 0];
 ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 6;
 [ap + 0] = [fp + -5] + 1, ap++;
+jmp rel 6;
 [ap + 0] = 1, ap++;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [ap + -2], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 9})
+test::foo: OrderedHashMap({Step: 10})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -39,10 +40,10 @@ libfunc u8_lt = u8_lt;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc rename<core::bool> = rename<core::bool>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
 
@@ -50,20 +51,20 @@ u8_lt([0], [1], [2]) { fallthrough([3]) 9([4]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 0>([5]) -> ([6]);
-store_temp<RangeCheck>([3]) -> ([3]);
-rename<RangeCheck>([3]) -> ([7]);
 store_temp<core::bool>([6]) -> ([6]);
-rename<core::bool>([6]) -> ([8]);
+rename<core::bool>([6]) -> ([7]);
+store_temp<RangeCheck>([3]) -> ([3]);
+rename<RangeCheck>([3]) -> ([8]);
 jump() { 16() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 enum_init<core::bool, 1>([9]) -> ([10]);
-store_temp<RangeCheck>([4]) -> ([4]);
-rename<RangeCheck>([4]) -> ([7]);
 store_temp<core::bool>([10]) -> ([10]);
-rename<core::bool>([10]) -> ([8]);
-rename<RangeCheck>([7]) -> ([11]);
-rename<core::bool>([8]) -> ([12]);
+rename<core::bool>([10]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+rename<RangeCheck>([4]) -> ([8]);
+rename<RangeCheck>([8]) -> ([11]);
+store_temp<core::bool>([7]) -> ([12]);
 return([11], [12]);
 
 test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::bool);
@@ -90,16 +91,17 @@ jmp rel 5 if [ap + -1] != 0, ap++;
 jmp rel 11;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
-[ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 0, ap++;
+[ap + 0] = [fp + -5] + 1, ap++;
 jmp rel 8;
 ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 1, ap++;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [ap + -2], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 8})
+test::foo: OrderedHashMap({Step: 9})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -111,10 +113,10 @@ libfunc u8_le = u8_le;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc rename<core::bool> = rename<core::bool>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
 
@@ -122,20 +124,20 @@ u8_le([0], [1], [2]) { fallthrough([3]) 9([4]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 0>([5]) -> ([6]);
-store_temp<RangeCheck>([3]) -> ([3]);
-rename<RangeCheck>([3]) -> ([7]);
 store_temp<core::bool>([6]) -> ([6]);
-rename<core::bool>([6]) -> ([8]);
+rename<core::bool>([6]) -> ([7]);
+store_temp<RangeCheck>([3]) -> ([3]);
+rename<RangeCheck>([3]) -> ([8]);
 jump() { 16() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 enum_init<core::bool, 1>([9]) -> ([10]);
-store_temp<RangeCheck>([4]) -> ([4]);
-rename<RangeCheck>([4]) -> ([7]);
 store_temp<core::bool>([10]) -> ([10]);
-rename<core::bool>([10]) -> ([8]);
-rename<RangeCheck>([7]) -> ([11]);
-rename<core::bool>([8]) -> ([12]);
+rename<core::bool>([10]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+rename<RangeCheck>([4]) -> ([8]);
+rename<RangeCheck>([8]) -> ([11]);
+store_temp<core::bool>([7]) -> ([12]);
 return([11], [12]);
 
 test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::bool);

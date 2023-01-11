@@ -30,7 +30,7 @@ Initial refs:
 Statements:
   (v3: core::felt) <- 5u
 End:
-  Callsite(v3)
+  Callsite(v3 -> v4)
 
 blk1 (root):
 Inputs: v0: core::felt
@@ -38,7 +38,7 @@ Initial refs:
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v4: core::felt) <- blk0()
+  () <- blk0()
   (v5: test::MyEnum) <- MyEnum::B(v4)
 End:
   Return(v5)
@@ -49,14 +49,14 @@ Inputs:
 Statements:
   (v3: core::felt) <- 5u
 End:
-  Callsite(v3)
+  Callsite(v3 -> v4)
 
 blk1 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v4: core::felt) <- blk0()
+  () <- blk0()
   (v5: test::MyEnum) <- MyEnum::B(v4)
 End:
   Return(v5)

@@ -86,16 +86,15 @@ fn add_drop_statements(
 pub fn generate_block_code_and_push_values(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
-    binds: &[lowering::VariableId],
 ) -> Maybe<(Vec<pre_sierra::Statement>, bool)> {
     let block = context.get_lowered_block(block_id);
     let statement_location: StatementLocation = (block_id, block.statements.len());
 
     let mut statements = generate_block_code(context, block_id, block)?;
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(inner_outputs) => {
+        lowering::FlatBlockEnd::Callsite(remapping) => {
             let mut push_values = Vec::<pre_sierra::PushValue>::new();
-            for (idx, (output, inner_output)) in zip_eq(binds, inner_outputs).enumerate() {
+            for (idx, (output, inner_output)) in remapping.iter().enumerate() {
                 let use_location = UseLocation { statement_location, idx };
                 let dup_var = get_dup_var_if_needed(context, &use_location);
 
@@ -383,8 +382,7 @@ fn generate_statement_match_extern_code(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let (code, is_reachable) =
-            generate_block_code_and_push_values(context, *block_id, &statement.outputs)?;
+        let (code, is_reachable) = generate_block_code_and_push_values(context, *block_id)?;
         statements.extend(code);
 
         if is_reachable {
@@ -407,7 +405,7 @@ fn generate_statement_call_block_code(
     statement: &lowering::StatementCallBlock,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     // TODO(lior): Rename instead of using PushValues.
-    Ok(generate_block_code_and_push_values(context, statement.block, &statement.outputs)?.0)
+    Ok(generate_block_code_and_push_values(context, statement.block)?.0)
 }
 
 /// Generates Sierra code for [lowering::StatementEnumConstruct].
@@ -520,8 +518,7 @@ fn generate_statement_match_enum(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let (code, is_reachable) =
-            generate_block_code_and_push_values(context, *arm, &statement.outputs)?;
+        let (code, is_reachable) = generate_block_code_and_push_values(context, *arm)?;
         statements.extend(code);
 
         if is_reachable {

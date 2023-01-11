@@ -18,19 +18,19 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite(v1)
+  Callsite(v1 -> v4)
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Callsite(v3)
+  Callsite(v3 -> v4)
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v4: core::felt) <- match core::felt_jump_nz(v0) {
+  () <- match core::felt_jump_nz(v0) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,
   }
@@ -69,19 +69,19 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite(v1)
+  Callsite(v1 -> v4)
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Callsite(v3)
+  Callsite(v3 -> v4)
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v4: core::felt) <- match core::felt_jump_nz(v0) {
+  () <- match core::felt_jump_nz(v0) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,
   }
@@ -119,7 +119,7 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite(v1)
+  Callsite(v1 -> v5)
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
@@ -127,12 +127,12 @@ Statements:
   (v3: core::felt) <- 3u
   (v4: core::felt) <- core::felt_add(v1, v3)
 End:
-  Callsite(v4)
+  Callsite(v4 -> v5)
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v5: core::felt) <- match core::felt_jump_nz(v0) {
+  () <- match core::felt_jump_nz(v0) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,
   }
@@ -186,55 +186,55 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite(v1)
+  Callsite(v1 -> v8)
 
 blk1:
 Inputs: v6: core::NonZero::<core::felt>
 Statements:
   (v7: core::felt) <- 1234u
 End:
-  Callsite(v7)
+  Callsite(v7 -> v8)
 
 blk2:
 Inputs:
 Statements:
   (v5: core::felt) <- core::felt_sub(v0, v1)
-  (v8: core::felt) <- match core::felt_jump_nz(v5) {
+  () <- match core::felt_jump_nz(v5) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,
   }
 End:
-  Callsite(v8)
+  Callsite(v8 -> v11)
 
 blk3:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 1000u
 End:
-  Callsite(v10)
+  Callsite(v10 -> v11)
 
 blk4:
 Inputs:
 Statements:
 End:
-  Callsite(v1)
+  Callsite(v1 -> v12)
 
 blk5:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- core::felt_sub(v0, v3)
-  (v11: core::felt) <- match core::felt_jump_nz(v4) {
+  () <- match core::felt_jump_nz(v4) {
     JumpNzResult::Zero => blk2,
     JumpNzResult::NonZero => blk3,
   }
 End:
-  Callsite(v11)
+  Callsite(v11 -> v12)
 
 blk6 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v12: core::felt) <- match core::felt_jump_nz(v0) {
+  () <- match core::felt_jump_nz(v0) {
     JumpNzResult::Zero => blk4,
     JumpNzResult::NonZero => blk5,
   }
