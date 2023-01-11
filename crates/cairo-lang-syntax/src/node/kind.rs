@@ -69,7 +69,7 @@ pub enum SyntaxKind {
     AttributeArgs,
     AttributeArgList,
     FunctionDeclaration,
-    ItemConst,
+    ItemConstant,
     ItemFreeFunction,
     ItemExternFunction,
     ItemExternType,
