@@ -126,9 +126,9 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:14:14
-  use_a_drop(y);
-             ^
+ --> lib.cairo:8:1
+fn foo(x: ACopy, y:ADrop) {
+^*************************^
 
 //! > lowering_structured
 blk0:
@@ -147,6 +147,21 @@ Statements:
 End:
   Callsite()
 
+blk2 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Initial refs:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk1,
+    bool::True => blk0,
+  }
+  () <- test::use_a_drop(v1)
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
 //! > lowering_flat
 blk0:
 Inputs: v4: ()
@@ -161,6 +176,20 @@ Inputs: v5: ()
 Statements:
 End:
   Callsite()
+
+blk2 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk1,
+    bool::True => blk0,
+  }
+  () <- test::use_a_drop(v1)
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
 
 //! > ==========================================================================
 
@@ -221,7 +250,7 @@ Inputs: v0: test::ADrop, v1: test::ADrop
 Statements:
   () <- test::use_a_drop(v0)
   (v4: core::PanicResult::<()>) <- test::bar()
-  (v2: ()) <- match_enum(v4) {
+  () <- match_enum(v4) {
     PanicResult::Ok => blk1,
     PanicResult::Err => blk2,
   }
@@ -234,7 +263,7 @@ blk1:
 Inputs: v5: ()
 Statements:
 End:
-  Callsite(v5)
+  Callsite(v5 -> v2)
 
 blk2:
 Inputs: v6: core::array::Array::<core::felt>

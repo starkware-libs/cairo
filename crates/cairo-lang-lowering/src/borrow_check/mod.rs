@@ -2,14 +2,12 @@ use std::collections::HashMap;
 
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use itertools::zip_eq;
 
 pub use self::demand::Demand;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, Statement, StatementMatchEnum, StatementMatchExtern,
-    VariableId,
 };
 
 mod demand;
@@ -25,7 +23,6 @@ pub struct RealBlock(BlockId, usize);
 #[derive(Clone)]
 pub struct CallsiteInfo<'a> {
     return_site: RealBlock,
-    call_output_vars: Vec<VariableId>,
     parent: Option<&'a CallsiteInfo<'a>>,
 }
 
@@ -89,13 +86,13 @@ impl<'a> BorrowChecker<'a> {
         callsite_info: Option<CallsiteInfo<'_>>,
     ) -> Demand {
         let demand = match block_end {
-            FlatBlockEnd::Callsite(vars) => {
+            FlatBlockEnd::Callsite(remapping) => {
                 let callsite_info = callsite_info.unwrap();
                 let mut demand =
                     self.get_demand(callsite_info.parent.cloned(), callsite_info.return_site);
-                for (var, callsite_var) in zip_eq(vars, &callsite_info.call_output_vars) {
-                    if demand.vars.swap_remove(callsite_var) {
-                        demand.vars.insert(*var);
+                for (dst, src) in remapping.iter() {
+                    if demand.vars.swap_remove(dst) {
+                        demand.vars.insert(*src);
                     }
                 }
                 demand
@@ -121,24 +118,21 @@ impl<'a> BorrowChecker<'a> {
         {
             // Closure that creates a new CallsiteInfo struct for a branching statement.
             // Will be removed when lowering uses Gotos.
-            let new_callsite = |outputs: &Vec<VariableId>| -> Option<CallsiteInfo<'_>> {
-                Some(CallsiteInfo {
-                    return_site: RealBlock(block_id, stmt_offset + i + 1),
-                    call_output_vars: outputs.clone(),
-                    parent: callsite_info.as_ref(),
-                })
-            };
+            let new_callsite = Some(CallsiteInfo {
+                return_site: RealBlock(block_id, stmt_offset + i + 1),
+                parent: callsite_info.as_ref(),
+            });
 
             let demand = match stmt {
                 Statement::CallBlock(stmt) => {
-                    self.get_demand(new_callsite(&stmt.outputs), RealBlock(stmt.block, 0))
+                    self.get_demand(new_callsite, RealBlock(stmt.block, 0))
                 }
-                Statement::MatchExtern(StatementMatchExtern { arms, outputs, .. })
-                | Statement::MatchEnum(StatementMatchEnum { arms, outputs, .. }) => {
+                Statement::MatchExtern(StatementMatchExtern { arms, .. })
+                | Statement::MatchEnum(StatementMatchEnum { arms, .. }) => {
                     let arm_demands = arms
                         .iter()
                         .map(|(_, arm_block)| {
-                            self.get_demand(new_callsite(outputs), RealBlock(*arm_block, 0))
+                            self.get_demand(new_callsite.clone(), RealBlock(*arm_block, 0))
                         })
                         .collect();
                     self.merge_demands(arm_demands)
