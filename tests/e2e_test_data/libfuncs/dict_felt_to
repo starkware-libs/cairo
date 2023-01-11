@@ -87,7 +87,7 @@ dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 106})
+test::foo: OrderedHashMap({Step: 105})
 
 //! > sierra_code
 type felt = felt;

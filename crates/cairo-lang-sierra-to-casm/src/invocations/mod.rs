@@ -13,6 +13,7 @@ use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, Statement
 use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
     core_libfunc_ap_change, InvocationApChangeInfoProvider,
 };
+use cairo_lang_sierra_gas::core_libfunc_cost::InvocationCostInfoProvider;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
 use thiserror::Error;
@@ -185,6 +186,12 @@ impl<'a> InvocationApChangeInfoProvider for CompiledInvocationBuilder<'a> {
     }
 }
 
+impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize {
+        self.program_info.type_sizes[ty] as usize
+    }
+}
+
 /// Helper for building compiled invocations.
 pub struct CompiledInvocationBuilder<'a> {
     pub program_info: ProgramInfo<'a>,
@@ -208,6 +215,7 @@ impl CompiledInvocationBuilder<'_> {
             &self.program_info.metadata.gas_info,
             &self.idx,
             self.libfunc,
+            &self,
         );
 
         let branch_signatures = self.libfunc.branch_signatures();
