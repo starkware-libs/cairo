@@ -71,7 +71,7 @@ pub fn function_with_body_all_implicits(
     let mut all_implicits = db.function_scc_explicit_implicits(scc_representative.clone())?;
 
     // For each direct callee, add its implicits.
-    for direct_callee in db.function_with_body_definition_direct_callees(function)? {
+    for direct_callee in db.function_with_body_direct_callees(function)? {
         let current_implicits =
             match db.lookup_intern_function(direct_callee).function.generic_function {
                 GenericFunctionId::Free(free_function) => {
@@ -192,7 +192,7 @@ pub fn function_with_body_may_panic(
     let scc_representative = db.function_scc_representative(function.clone());
 
     // For each direct callee, find if it may panic.
-    for direct_callee in db.function_with_body_definition_direct_callees(function)? {
+    for direct_callee in db.function_with_body_direct_callees(function)? {
         // For a function with a body, call this method recursively. To avoid cycles, first
         // check that the callee is not in this function's SCC.
         let direct_callee_representative =

@@ -39,7 +39,7 @@ fn test_resolve_path() {
         ModuleItemId::FreeFunction
     );
     let expr_formatter = ExprFormatter { db, free_function_id };
-    let body = db.free_function_definition_body(free_function_id);
+    let body = db.free_function_body(free_function_id);
     assert_eq!(
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
