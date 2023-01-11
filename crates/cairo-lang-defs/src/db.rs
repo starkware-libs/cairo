@@ -393,7 +393,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     Ok(res)
 }
 
-/// Returns all the constant declarations of the given module.
+/// Returns all the constant definitions of the given module.
 pub fn module_constants(
     db: &dyn DefsGroup,
     module_id: ModuleId,
