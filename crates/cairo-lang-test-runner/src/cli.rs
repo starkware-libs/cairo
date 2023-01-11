@@ -5,7 +5,6 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context};
-use cairo_felt::FeltOps;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
@@ -16,6 +15,7 @@ use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_plugins::config::ConfigPlugin;
 use cairo_lang_plugins::derive::DerivePlugin;
 use cairo_lang_plugins::panicable::PanicablePlugin;
+use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::SemanticPlugin;
@@ -25,7 +25,6 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_syntax::node::ast::Expr;
 use cairo_lang_syntax::node::Token;
-use cairo_lang_utils::short_string::as_cairo_short_string;
 use clap::Parser;
 use colored::Colorize;
 use itertools::Itertools;
@@ -135,7 +134,7 @@ fn main() -> anyhow::Result<()> {
                 RunResultValue::Panic(values) => {
                     print!("panicked with [");
                     for value in &values {
-                        match as_cairo_short_string(&value.to_bigint()) {
+                        match as_cairo_short_string(value) {
                             Some(as_string) => print!("{value} ('{as_string}'), "),
                             None => print!("{value}, "),
                         }

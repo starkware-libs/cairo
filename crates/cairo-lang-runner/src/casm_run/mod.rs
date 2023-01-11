@@ -11,7 +11,6 @@ use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
 use cairo_lang_utils::extract_matches;
-use cairo_lang_utils::short_string::as_cairo_short_string;
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
 use cairo_vm::serde::deserialize_program::{
     ApTracking, FlowTrackingData, HintParams, ReferenceManager,
@@ -28,6 +27,7 @@ use num_bigint::BigUint;
 use num_traits::{ToPrimitive, Zero};
 
 use self::dict_manager::DictSquashExecScope;
+use crate::short_string::as_cairo_short_string;
 
 #[cfg(test)]
 mod test;
@@ -515,7 +515,7 @@ impl HintProcessor for CairoHintProcessor {
                 let end = as_relocatable(end)?;
                 while curr != end {
                     let value = vm.get_integer(&curr)?;
-                    if let Some(shortstring) = as_cairo_short_string(&value.to_bigint()) {
+                    if let Some(shortstring) = as_cairo_short_string(&value) {
                         print!("'{shortstring}' (raw: {value}), ",);
                     } else {
                         print!("{value}, ");

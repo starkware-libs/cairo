@@ -7,7 +7,6 @@ pub mod extract_matches;
 pub mod logging;
 pub mod ordered_hash_map;
 pub mod ordered_hash_set;
-pub mod short_string;
 pub mod strongly_connected_components;
 pub mod unordered_hash_map;
 pub mod unordered_hash_set;
