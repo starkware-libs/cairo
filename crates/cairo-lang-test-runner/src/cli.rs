@@ -9,7 +9,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId, ModuleItemId};
+use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, GenericFunctionId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_plugins::config::ConfigPlugin;
@@ -81,7 +81,9 @@ fn main() -> anyhow::Result<()> {
     }
     let all_tests = find_all_tests(db, main_crate_ids);
     let sierra_program = db
-        .get_sierra_program_for_functions(all_tests.iter().map(|t| t.func_id).collect())
+        .get_sierra_program_for_functions(
+            all_tests.iter().map(|t| FunctionWithBodyId::Free(t.func_id)).collect(),
+        )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
     let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
@@ -256,7 +258,9 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
 
             for item in module_items.iter() {
                 if let ModuleItemId::FreeFunction(func_id) = item {
-                    if let Ok(attrs) = db.free_function_declaration_attributes(*func_id) {
+                    if let Ok(attrs) =
+                        db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id))
+                    {
                         let mut is_test = false;
                         let mut available_gas = None;
                         let mut ignored = false;

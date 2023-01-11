@@ -41,8 +41,8 @@ pub fn extern_function_declaration_diagnostics(
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
-/// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_signature].
-pub fn extern_function_declaration_signature(
+/// Query implementation of [crate::db::SemanticGroup::extern_function_signature].
+pub fn extern_function_signature(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
 ) -> Maybe<semantic::Signature> {

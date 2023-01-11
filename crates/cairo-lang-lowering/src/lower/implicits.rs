@@ -177,7 +177,7 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
             db.function_with_body_may_panic(FunctionWithBodyId::Impl(impl_function))
         }
         GenericFunctionId::Extern(extern_function) => {
-            Ok(db.extern_function_declaration_signature(extern_function)?.panicable)
+            Ok(db.extern_function_signature(extern_function)?.panicable)
         }
         GenericFunctionId::TraitFunction(_) => unreachable!(),
     }
@@ -204,7 +204,7 @@ pub fn function_with_body_may_panic(
                     function_scc_representative(db, FunctionWithBodyId::Impl(impl_function))
                 }
                 GenericFunctionId::Extern(extern_function) => {
-                    if db.extern_function_declaration_signature(extern_function)?.panicable {
+                    if db.extern_function_signature(extern_function)?.panicable {
                         return Ok(true);
                     }
                     continue;
