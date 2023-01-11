@@ -37,6 +37,8 @@ pub struct StructuredLowered {
 /// A lowered function code using flat blocks.
 #[derive(Debug, PartialEq, Eq)]
 pub struct FlatLowered {
+    /// Diagnostics produced while lowering.
+    pub diagnostics: Diagnostics<LoweringDiagnostic>,
     /// Block id for the start of the lowered function.
     pub root: Maybe<BlockId>,
     /// Arena of allocated lowered variables.
