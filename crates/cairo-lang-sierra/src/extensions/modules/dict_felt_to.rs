@@ -1,5 +1,6 @@
 use super::dict_manager::DictManagerType;
 use super::felt::FeltType;
+use super::gas::GasBuiltinType;
 use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
 use crate::define_libfunc_hierarchy;
@@ -154,22 +155,32 @@ impl SignatureOnlyGenericLibfunc for DictFeltToSquashLibfunc {
             context.get_wrapped_concrete_type(DictFeltToType::id(), generic_ty.clone())?;
         let squashed_dict_ty =
             context.get_wrapped_concrete_type(SquashedDictFeltToType::id(), generic_ty)?;
-        let dict_manager_ty = context.get_concrete_type(DictManagerType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        let dict_manager_ty = context.get_concrete_type(DictManagerType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch(
-            vec![range_check_type.clone(), dict_manager_ty.clone(), dict_ty],
+            vec![
+                range_check_type.clone(),
+                gas_builtin_type.clone(),
+                dict_manager_ty.clone(),
+                dict_ty,
+            ],
             vec![
                 OutputVarInfo {
                     ty: range_check_type,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 },
                 OutputVarInfo {
-                    ty: dict_manager_ty,
+                    ty: gas_builtin_type,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
                 },
                 OutputVarInfo {
-                    ty: squashed_dict_ty,
+                    ty: dict_manager_ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(2) },
+                },
+                OutputVarInfo {
+                    ty: squashed_dict_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(3) },
                 },
             ],
             SierraApChange::Unknown,
