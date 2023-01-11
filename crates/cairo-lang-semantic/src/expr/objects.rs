@@ -21,7 +21,7 @@ impl DebugWithDb<ExprFormatter<'_>> for ExprId {
     ) -> std::fmt::Result {
         expr_formatter
             .db
-            .expr_semantic(expr_formatter.free_function_id, *self)
+            .expr_semantic(expr_formatter.function_id.clone(), *self)
             .fmt(f, expr_formatter)
     }
 }
@@ -33,7 +33,7 @@ impl DebugWithDb<ExprFormatter<'_>> for StatementId {
     ) -> std::fmt::Result {
         expr_formatter
             .db
-            .statement_semantic(expr_formatter.free_function_id, *self)
+            .statement_semantic(expr_formatter.function_id.clone(), *self)
             .fmt(f, expr_formatter)
     }
 }

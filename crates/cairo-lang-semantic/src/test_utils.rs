@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
-use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId, ModuleId};
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
@@ -120,7 +120,7 @@ pub fn setup_test_module(
 /// Helper struct for the return value of [setup_test_function].
 pub struct TestFunction {
     pub module_id: ModuleId,
-    pub function_id: FreeFunctionId,
+    pub function_id: FunctionWithBodyId,
     pub signature: semantic::Signature,
     pub body: semantic::ExprId,
 }
@@ -145,13 +145,14 @@ pub fn setup_test_function(
         .expect("Failed to load module")
         .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function {function_name} was not found."));
-    let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
+    let function_id =
+        FunctionWithBodyId::Free(extract_matches!(generic_function_id, GenericFunctionId::Free));
     WithStringDiagnostics {
         value: TestFunction {
             module_id: test_module.module_id,
-            function_id,
-            signature: db.free_function_declaration_signature(function_id).unwrap(),
-            body: db.free_function_body(function_id).unwrap(),
+            function_id: function_id.clone(),
+            signature: db.function_with_body_signature(function_id.clone()).unwrap(),
+            body: db.function_body_expr(function_id).unwrap(),
         },
         diagnostics,
     }
@@ -160,7 +161,7 @@ pub fn setup_test_function(
 /// Helper struct for the return value of [setup_test_expr] and [setup_test_block].
 pub struct TestExpr {
     pub module_id: ModuleId,
-    pub function_id: FreeFunctionId,
+    pub function_id: FunctionWithBodyId,
     pub signature: semantic::Signature,
     pub body: semantic::ExprId,
     pub expr_id: semantic::ExprId,
@@ -179,15 +180,15 @@ pub fn setup_test_expr(
     let (test_function, diagnostics) =
         setup_test_function(db, &function_code, "test_func", module_code).split();
     let semantic::ExprBlock { statements, .. } = extract_matches!(
-        db.expr_semantic(test_function.function_id, test_function.body),
+        db.expr_semantic(test_function.function_id.clone(), test_function.body),
         semantic::Expr::Block
     );
     let statement_expr = extract_matches!(
-        db.statement_semantic(test_function.function_id, *statements.last().unwrap()),
+        db.statement_semantic(test_function.function_id.clone(), *statements.last().unwrap()),
         semantic::Statement::Expr
     );
     let semantic::ExprBlock { statements, tail, .. } = extract_matches!(
-        db.expr_semantic(test_function.function_id, statement_expr.expr),
+        db.expr_semantic(test_function.function_id.clone(), statement_expr.expr),
         semantic::Expr::Block
     );
     assert!(
