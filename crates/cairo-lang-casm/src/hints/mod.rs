@@ -146,13 +146,6 @@ pub enum Hint {
         start: ResOperand,
         end: ResOperand,
     },
-    /// TODO(orizi): Remove this hint when division bug is fixed.
-    /// Computes the field division of two field elements.
-    PrimeDiv {
-        lhs: ResOperand,
-        rhs: ResOperand,
-        result: CellRef,
-    },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -294,12 +287,6 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::PrimeDiv { lhs, rhs, result } => write!(
-                f,
-                "memory{result} = fdiv({}, {})",
-                ResOperandFormatter(lhs),
-                ResOperandFormatter(rhs),
-            ),
             Hint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }

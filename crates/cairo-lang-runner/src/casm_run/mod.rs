@@ -1,10 +1,10 @@
 use std::any::Any;
 use std::collections::HashMap;
-use std::str::FromStr;
 
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
+use cairo_felt::{self as felt, felt_str, Felt, FeltOps, PRIME_STR};
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
@@ -19,11 +19,12 @@ use cairo_vm::serde::deserialize_program::{
 use cairo_vm::types::exec_scope::ExecutionScopes;
 use cairo_vm::types::program::Program;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
+use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
-use num_bigint::{BigInt, BigUint};
+use num_bigint::BigUint;
 use num_traits::{ToPrimitive, Zero};
 
 use self::dict_manager::DictSquashExecScope;
@@ -33,16 +34,10 @@ mod test;
 
 mod dict_manager;
 
-/// Returns the Starkware prime 2^251 + 17*2^192 + 1.
-fn get_prime() -> BigInt {
-    (BigInt::from(1) << 251) + 17 * (BigInt::from(1) << 192) + 1
-}
-
 // TODO(orizi): This def is duplicated.
 /// Returns the Beta value of the Starkware elliptic curve.
-fn get_beta() -> BigInt {
-    BigInt::from_str("3141592653589793238462643383279502884197169399375105820974944592307816406665")
-        .unwrap()
+fn get_beta() -> Felt {
+    felt_str!("3141592653589793238462643383279502884197169399375105820974944592307816406665")
 }
 
 #[derive(MontConfig)]
@@ -116,7 +111,7 @@ macro_rules! insert_value_to_cellref {
 /// Execution scope for starknet related data.
 struct StarknetExecScope {
     /// The values of addresses in the simulated storage.
-    storage: HashMap<BigInt, BigInt>,
+    storage: HashMap<Felt, Felt>,
 }
 
 impl HintProcessor for CairoHintProcessor {
@@ -126,33 +121,32 @@ impl HintProcessor for CairoHintProcessor {
         vm: &mut VirtualMachine,
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
-        _constants: &HashMap<String, BigInt>,
-    ) -> Result<(), VirtualMachineError> {
+        _constants: &HashMap<String, Felt>,
+    ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
-        let get_cell_val = |x: &CellRef| -> Result<BigInt, VirtualMachineError> {
+        let get_cell_val = |x: &CellRef| -> Result<Felt, VirtualMachineError> {
             Ok(vm.get_integer(&cell_ref_to_relocatable(x, vm))?.as_ref().clone())
         };
-        let get_ptr =
-            |cell: &CellRef, offset: &BigInt| -> Result<Relocatable, VirtualMachineError> {
-                let base_ptr = vm.get_relocatable(&cell_ref_to_relocatable(cell, vm))?;
-                base_ptr.add_int_mod(offset, &get_prime())
-            };
+        let get_ptr = |cell: &CellRef, offset: &Felt| -> Result<Relocatable, VirtualMachineError> {
+            let base_ptr = vm.get_relocatable(&cell_ref_to_relocatable(cell, vm))?;
+            base_ptr.add_int(offset)
+        };
         let get_double_deref_val =
-            |cell: &CellRef, offset: &BigInt| -> Result<BigInt, VirtualMachineError> {
+            |cell: &CellRef, offset: &Felt| -> Result<Felt, VirtualMachineError> {
                 Ok(vm.get_integer(&get_ptr(cell, offset)?)?.as_ref().clone())
             };
-        let get_val = |x: &ResOperand| -> Result<BigInt, VirtualMachineError> {
+        let get_val = |x: &ResOperand| -> Result<Felt, VirtualMachineError> {
             match x {
                 ResOperand::Deref(cell) => get_cell_val(cell),
                 ResOperand::DoubleDeref(cell, offset) => {
                     get_double_deref_val(cell, &(*offset).into())
                 }
-                ResOperand::Immediate(x) => Ok(x.clone()),
+                ResOperand::Immediate(x) => Ok(Felt::from(x.clone())),
                 ResOperand::BinOp(op) => {
                     let a = get_cell_val(&op.a)?;
                     let b = match &op.b {
                         DerefOrImmediate::Deref(cell) => get_cell_val(cell)?,
-                        DerefOrImmediate::Immediate(x) => x.clone(),
+                        DerefOrImmediate::Immediate(x) => Felt::from(x.clone()),
                     };
                     match op.op {
                         Operation::Add => Ok(a + b),
@@ -172,7 +166,7 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(
                     vm,
                     dst,
-                    if lhs_val < rhs_val { BigInt::from(1) } else { BigInt::from(0) }
+                    if lhs_val < rhs_val { Felt::from(1) } else { Felt::from(0) }
                 )?;
             }
             Hint::TestLessThanOrEqual { lhs, rhs, dst } => {
@@ -181,36 +175,34 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(
                     vm,
                     dst,
-                    if lhs_val <= rhs_val { BigInt::from(1) } else { BigInt::from(0) }
+                    if lhs_val <= rhs_val { Felt::from(1) } else { Felt::from(0) }
                 )?;
             }
             Hint::DivMod { lhs, rhs, quotient, remainder } => {
-                let lhs_val = get_val(lhs)?;
-                let rhs_val = get_val(rhs)?;
-                insert_value_to_cellref!(vm, quotient, lhs_val.clone() / rhs_val.clone())?;
-                insert_value_to_cellref!(vm, remainder, lhs_val % rhs_val)?;
-            }
-            Hint::PrimeDiv { lhs, rhs, result } => {
-                let lhs_val = Fq::from(get_val(lhs)?.to_biguint().unwrap());
-                let rhs_val = Fq::from(get_val(rhs)?.to_biguint().unwrap());
-                let div: BigUint = (lhs_val / rhs_val).into_bigint().into();
-                vm.insert_value(&cell_ref_to_relocatable(result, vm), BigInt::from(div))?;
+                let lhs_val = get_val(lhs)?.to_biguint();
+                let rhs_val = get_val(rhs)?.to_biguint();
+                insert_value_to_cellref!(
+                    vm,
+                    quotient,
+                    Felt::from(lhs_val.clone() / rhs_val.clone())
+                )?;
+                insert_value_to_cellref!(vm, remainder, Felt::from(lhs_val % rhs_val))?;
             }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
-                let value = get_val(value)?;
-                let scalar = get_val(scalar)?;
-                let max_x = get_val(max_x)?;
+                let value = get_val(value)?.to_biguint();
+                let scalar = get_val(scalar)?.to_biguint();
+                let max_x = get_val(max_x)?.to_biguint();
                 let x_value = (value.clone() / scalar.clone()).min(max_x);
                 let y_value = value - x_value.clone() * scalar;
-                insert_value_to_cellref!(vm, x, x_value)?;
-                insert_value_to_cellref!(vm, y, y_value)?;
+                insert_value_to_cellref!(vm, x, Felt::from(x_value))?;
+                insert_value_to_cellref!(vm, y, Felt::from(y_value))?;
             }
             Hint::EnterScope => {}
             Hint::ExitScope => {}
             Hint::RandomEcPoint { x, y } => {
                 // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
                 // residue.
-                let beta = Fq::from(get_beta().to_biguint().unwrap());
+                let beta = Fq::from(get_beta().to_biguint());
                 let mut rng = ark_std::test_rng();
                 let (random_x, random_y_squared) = loop {
                     let random_x = Fq::rand(&mut rng);
@@ -221,8 +213,8 @@ impl HintProcessor for CairoHintProcessor {
                 };
                 let x_bigint: BigUint = random_x.into_bigint().into();
                 let y_bigint: BigUint = random_y_squared.sqrt().unwrap().into_bigint().into();
-                insert_value_to_cellref!(vm, x, BigInt::from(x_bigint))?;
-                insert_value_to_cellref!(vm, y, BigInt::from(y_bigint))?;
+                insert_value_to_cellref!(vm, x, Felt::from(x_bigint))?;
+                insert_value_to_cellref!(vm, y, Felt::from(y_bigint))?;
             }
             Hint::SystemCall { system } => {
                 let starknet_exec_scope =
@@ -237,38 +229,36 @@ impl HintProcessor for CairoHintProcessor {
                         }
                     };
                 let (cell, base_offset) = extract_buffer(system);
-                let (selector_sign, selector) =
-                    get_double_deref_val(cell, &base_offset)?.to_bytes_be();
-                assert_eq!(selector_sign, num_bigint::Sign::Plus, "Illegal selector.");
+                let selector = get_double_deref_val(cell, &base_offset)?.to_bytes_be();
                 if selector == "StorageWrite".as_bytes() {
-                    let gas_counter = get_double_deref_val(cell, &(base_offset.clone() + 1))?;
+                    let gas_counter = get_double_deref_val(cell, &(base_offset.clone() + 1u32))?;
                     const WRITE_GAS_SIM_COST: usize = 1000;
-                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 5))?;
-                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 6))?;
-                    let addr_domain = get_double_deref_val(cell, &(base_offset.clone() + 2))?;
+                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 5u32))?;
+                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 6u32))?;
+                    let addr_domain = get_double_deref_val(cell, &(base_offset.clone() + 2u32))?;
 
                     // Only address_domain 0 is currently supported.
                     if addr_domain.is_zero() && gas_counter >= WRITE_GAS_SIM_COST.into() {
-                        let addr = get_double_deref_val(cell, &(base_offset.clone() + 3))?;
-                        let value = get_double_deref_val(cell, &(base_offset + 4))?;
+                        let addr = get_double_deref_val(cell, &(base_offset.clone() + 3u32))?;
+                        let value = get_double_deref_val(cell, &(base_offset + 4u32))?;
                         starknet_exec_scope.storage.insert(addr, value);
                         vm.insert_value(
                             &gas_counter_updated_ptr,
                             gas_counter - WRITE_GAS_SIM_COST,
                         )?;
-                        vm.insert_value(&revert_reason_ptr, BigInt::from(0))?;
+                        vm.insert_value(&revert_reason_ptr, Felt::from(0))?;
                     } else {
                         vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
-                        vm.insert_value(&revert_reason_ptr, BigInt::from(1))?;
+                        vm.insert_value(&revert_reason_ptr, Felt::from(1))?;
                     }
                 } else if selector == "StorageRead".as_bytes() {
-                    let gas_counter = get_double_deref_val(cell, &(base_offset.clone() + 1))?;
+                    let gas_counter = get_double_deref_val(cell, &(base_offset.clone() + 1u32))?;
                     const READ_GAS_SIM_COST: usize = 100;
-                    let addr_domain = get_double_deref_val(cell, &(base_offset.clone() + 2))?;
-                    let addr = get_double_deref_val(cell, &(base_offset.clone() + 3))?;
+                    let addr_domain = get_double_deref_val(cell, &(base_offset.clone() + 2u32))?;
+                    let addr = get_double_deref_val(cell, &(base_offset.clone() + 3u32))?;
 
-                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 4))?;
-                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 5))?;
+                    let gas_counter_updated_ptr = get_ptr(cell, &(base_offset.clone() + 4u32))?;
+                    let revert_reason_ptr = get_ptr(cell, &(base_offset.clone() + 5u32))?;
 
                     // Only address_domain 0 is currently supported.
                     if addr_domain.is_zero() && gas_counter >= READ_GAS_SIM_COST.into() {
@@ -276,15 +266,15 @@ impl HintProcessor for CairoHintProcessor {
                             .storage
                             .get(&addr)
                             .cloned()
-                            .unwrap_or_else(|| BigInt::from(0));
-                        let result_ptr = get_ptr(cell, &(base_offset + 6))?;
+                            .unwrap_or_else(|| Felt::from(0));
+                        let result_ptr = get_ptr(cell, &(base_offset + 6u32))?;
 
                         vm.insert_value(&gas_counter_updated_ptr, gas_counter - READ_GAS_SIM_COST)?;
-                        vm.insert_value(&revert_reason_ptr, BigInt::from(0))?;
+                        vm.insert_value(&revert_reason_ptr, Felt::from(0))?;
                         vm.insert_value(&result_ptr, value)?;
                     } else {
                         vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
-                        vm.insert_value(&revert_reason_ptr, BigInt::from(1))?;
+                        vm.insert_value(&revert_reason_ptr, Felt::from(1))?;
                     }
                 } else if selector == "call_contract".as_bytes() {
                     todo!()
@@ -351,13 +341,13 @@ impl HintProcessor for CairoHintProcessor {
                     .get_ref::<DictManagerExecScope>("dict_manager_exec_scope")
                     .expect("Trying to read from a dict while dict manager was not initialized.");
                 let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address);
-                insert_value_to_cellref!(vm, dict_index, BigInt::from(dict_infos_index))?;
+                insert_value_to_cellref!(vm, dict_index, Felt::from(dict_infos_index))?;
             }
             Hint::EnterDictSquashScope { .. } => {}
             Hint::SetDictTrackerEnd { .. } => {}
             Hint::InitSquashData { dict_accesses, n_accesses, first_key, big_keys, .. } => {
                 let dict_access_size = 3;
-                let rangecheck_bound = BigInt::from(1) << 128;
+                let rangecheck_bound = Felt::from(u128::MAX) + 1u32;
 
                 exec_scopes.assign_or_update_variable(
                     "dict_squash_exec_scope",
@@ -376,8 +366,8 @@ impl HintProcessor for CairoHintProcessor {
                     dict_squash_exec_scope
                         .access_indices
                         .entry(current_key.into_owned())
-                        .and_modify(|indices| indices.push(BigInt::from(i)))
-                        .or_insert_with(|| vec![BigInt::from(i)]);
+                        .and_modify(|indices| indices.push(Felt::from(i)))
+                        .or_insert_with(|| vec![Felt::from(i)]);
                 }
                 // Reverse the accesses in order to pop them in order later.
                 for (_, accesses) in dict_squash_exec_scope.access_indices.iter_mut() {
@@ -392,9 +382,9 @@ impl HintProcessor for CairoHintProcessor {
                     vm,
                     big_keys,
                     if dict_squash_exec_scope.keys[0] < rangecheck_bound {
-                        BigInt::from(0)
+                        Felt::from(0)
                     } else {
-                        BigInt::from(1)
+                        Felt::from(1)
                     }
                 )?;
                 insert_value_to_cellref!(
@@ -420,9 +410,9 @@ impl HintProcessor for CairoHintProcessor {
                     // The loop verifies that each two consecutive accesses are valid, thus we
                     // break when there is only one remaining access.
                     if dict_squash_exec_scope.current_access_indices().unwrap().len() > 1 {
-                        BigInt::from(0)
+                        Felt::from(0)
                     } else {
-                        BigInt::from(1)
+                        Felt::from(1)
                     }
                 )?;
             }
@@ -431,7 +421,9 @@ impl HintProcessor for CairoHintProcessor {
                     exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
                 let prev_access_index = dict_squash_exec_scope.pop_current_access_index().unwrap();
                 let index_delta_minus_1_val =
-                    dict_squash_exec_scope.current_access_index().unwrap() - prev_access_index - 1;
+                    dict_squash_exec_scope.current_access_index().unwrap().clone()
+                        - prev_access_index
+                        - 1_u32;
                 insert_value_to_cellref!(vm, index_delta_minus1, index_delta_minus_1_val)?;
             }
             Hint::ShouldContinueSquashLoop { should_continue } => {
@@ -443,9 +435,9 @@ impl HintProcessor for CairoHintProcessor {
                     // The loop verifies that each two consecutive accesses are valid, thus we
                     // break when there is only one remaining access.
                     if dict_squash_exec_scope.current_access_indices().unwrap().len() > 1 {
-                        BigInt::from(1)
+                        Felt::from(1)
                     } else {
-                        BigInt::from(0)
+                        Felt::from(0)
                     }
                 )?;
             }
@@ -469,7 +461,7 @@ impl HintProcessor for CairoHintProcessor {
                 let mut lengths_and_indices = vec![
                     (a_val.clone(), 0),
                     (b_val.clone() - a_val, 1),
-                    (get_prime() - 1 - b_val, 2),
+                    (Felt::from(-1) - b_val, 2),
                 ];
                 lengths_and_indices.sort();
                 exec_scopes
@@ -482,19 +474,19 @@ impl HintProcessor for CairoHintProcessor {
                 let range_check_ptr = get_ptr(range_check_base, &range_check_offset)?;
                 vm.insert_value(
                     &range_check_ptr,
-                    lengths_and_indices[0].0.clone() % prime_over_3_high,
+                    Felt::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high),
                 )?;
                 vm.insert_value(
                     &(range_check_ptr + 1),
-                    lengths_and_indices[0].0.clone() / prime_over_3_high,
+                    Felt::from(lengths_and_indices[0].0.to_biguint() / prime_over_3_high),
                 )?;
                 vm.insert_value(
                     &(range_check_ptr + 2),
-                    lengths_and_indices[1].0.clone() % prime_over_2_high,
+                    Felt::from(lengths_and_indices[1].0.to_biguint() % prime_over_2_high),
                 )?;
                 vm.insert_value(
                     &(range_check_ptr + 3),
-                    lengths_and_indices[1].0.clone() / prime_over_2_high,
+                    Felt::from(lengths_and_indices[1].0.to_biguint() / prime_over_2_high),
                 )?;
             }
             Hint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
@@ -502,7 +494,7 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(
                     vm,
                     skip_exclude_a_flag,
-                    if excluded_arc != 0 { BigInt::from(1) } else { BigInt::from(0) }
+                    if excluded_arc != 0 { Felt::from(1) } else { Felt::from(0) }
                 )?;
             }
             Hint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
@@ -510,7 +502,7 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(
                     vm,
                     skip_exclude_b_minus_a,
-                    if excluded_arc != 1 { BigInt::from(1) } else { BigInt::from(0) }
+                    if excluded_arc != 1 { Felt::from(1) } else { Felt::from(0) }
                 )?;
             }
             Hint::AssertLeAssertThirdArcExcluded => {}
@@ -523,12 +515,12 @@ impl HintProcessor for CairoHintProcessor {
                 let end = as_relocatable(end)?;
                 while curr != end {
                     let value = vm.get_integer(&curr)?;
-                    if let Some(shortstring) = as_cairo_short_string(&value) {
+                    if let Some(shortstring) = as_cairo_short_string(&value.to_bigint()) {
                         print!("'{shortstring}' (raw: {value}), ",);
                     } else {
                         print!("{value}, ");
                     }
-                    curr = curr.add_int_mod(&1.into(), &get_prime())?;
+                    curr = curr.add_int(&1.into())?;
                 }
                 println!();
             }
@@ -549,11 +541,11 @@ impl HintProcessor for CairoHintProcessor {
 }
 
 /// Extracts a parameter assumed to be a buffer.
-fn extract_buffer(buffer: &ResOperand) -> (&CellRef, BigInt) {
+fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt) {
     let (cell, base_offset) = match buffer {
         ResOperand::Deref(cell) => (cell, 0.into()),
         ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
-            (a, extract_matches!(b, DerefOrImmediate::Immediate).clone())
+            (a, extract_matches!(b, DerefOrImmediate::Immediate).clone().into())
         }
         _ => panic!("Illegal argument for a buffer."),
     };
@@ -573,10 +565,11 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
     ) -> Result<(), Box<VirtualMachineError>>,
-) -> Result<(Vec<Option<BigInt>>, usize), Box<VirtualMachineError>> {
+) -> Result<(Vec<Option<Felt>>, usize), Box<VirtualMachineError>> {
     let data: Vec<MaybeRelocatable> = instructions
         .clone()
         .flat_map(|inst| inst.assemble().encode())
+        .map(Felt::from)
         .map(MaybeRelocatable::from)
         .collect();
 
@@ -585,7 +578,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     let data_len = data.len();
     let program = Program {
         builtins,
-        prime: get_prime(),
+        prime: PRIME_STR.to_string(),
         data,
         constants: HashMap::new(),
         main: Some(0),
@@ -600,7 +593,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     let mut runner = CairoRunner::new(&program, "all", false)
         .map_err(VirtualMachineError::from)
         .map_err(Box::new)?;
-    let mut vm = VirtualMachine::new(get_prime(), true, vec![]);
+    let mut vm = VirtualMachine::new(true, vec![]);
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 

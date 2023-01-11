@@ -1,7 +1,8 @@
+use cairo_felt::Felt;
 use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::{casm, deref};
 use itertools::Itertools;
-use num_bigint::{BigInt, Sign};
+use num_traits::ToPrimitive;
 use test_case::test_case;
 
 use crate::casm_run::run_function;
@@ -95,8 +96,8 @@ use crate::casm_run::run_function;
         [ap - 2] = [ap - 1] * [ap - 3]; // Validates the calculation.
         ret;
     },
-    1,
-    &[] => ignore["Enable when VM division is fixed"];
+    0,
+    &[];
     "simple_division"
 )]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
@@ -105,7 +106,7 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
     let cells = cells.into_iter().skip(ap - n_returns);
     assert_eq!(
         cells.take(n_returns).map(|cell| cell.unwrap()).collect_vec(),
-        expected.iter().copied().map(BigInt::from).collect_vec()
+        expected.iter().copied().map(Felt::from).collect_vec()
     );
 }
 
@@ -124,8 +125,10 @@ fn test_allocate_segment() {
         |_| Ok(()),
     )
     .expect("Running code failed.");
-    let ptr = memory[ap].as_ref().expect("Uninitialized value.");
-    let (Sign::Plus, digits) = ptr.to_u64_digits() else {panic!("Negative number.");};
-    let [ptr] = &digits[..] else {panic!("Number not in index range.");};
-    assert_eq!(memory[*ptr as usize], Some(BigInt::from(1337)));
+    let ptr = memory[ap]
+        .as_ref()
+        .expect("Uninitialized value.")
+        .to_usize()
+        .expect("Number not in index range.");
+    assert_eq!(memory[ptr], Some(Felt::from(1337)));
 }
