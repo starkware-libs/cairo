@@ -7,8 +7,8 @@ use crate::db::SemanticGroup;
 use crate::FunctionId;
 
 /// Query implementation of
-/// [crate::db::SemanticGroup::function_with_body_definition_direct_callees].
-pub fn function_with_body_definition_direct_callees(
+/// [crate::db::SemanticGroup::function_with_body_direct_callees].
+pub fn function_with_body_direct_callees(
     db: &dyn SemanticGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<HashSet<FunctionId>> {
@@ -34,7 +34,7 @@ pub fn function_with_body_direct_function_with_body_callees(
     function_id: FunctionWithBodyId,
 ) -> Maybe<HashSet<FunctionWithBodyId>> {
     Ok(db
-        .function_with_body_definition_direct_callees(function_id)?
+        .function_with_body_direct_callees(function_id)?
         .into_iter()
         .filter_map(|function_id| {
             match db.lookup_intern_function(function_id).function.generic_function {

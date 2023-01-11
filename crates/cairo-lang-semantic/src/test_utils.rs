@@ -151,7 +151,7 @@ pub fn setup_test_function(
             module_id: test_module.module_id,
             function_id,
             signature: db.free_function_declaration_signature(function_id).unwrap(),
-            body: db.free_function_definition_body(function_id).unwrap(),
+            body: db.free_function_body(function_id).unwrap(),
         },
         diagnostics,
     }

@@ -147,7 +147,7 @@ fn test_member_access() {
     );
     let expr_formatter = ExprFormatter { db, free_function_id: foo_id };
     let block = extract_matches!(
-        db.expr_semantic(foo_id, db.free_function_definition_body(foo_id).unwrap()),
+        db.expr_semantic(foo_id, db.free_function_body(foo_id).unwrap()),
         semantic::Expr::Block
     );
     let exprs: Vec<_> = block
@@ -590,7 +590,7 @@ fn test_function_body() {
     let item_id = db.module_item_by_name(test_function.module_id, "foo".into()).unwrap().unwrap();
 
     let function_id = extract_matches!(item_id, ModuleItemId::FreeFunction);
-    let body = db.free_function_definition_body(function_id).unwrap();
+    let body = db.free_function_body(function_id).unwrap();
 
     // Test the resulting semantic function body.
     let semantic::ExprBlock { statements, .. } = extract_matches!(
