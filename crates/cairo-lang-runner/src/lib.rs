@@ -345,7 +345,7 @@ fn create_metadata(
         })
     } else {
         Ok(Metadata {
-            ap_change_info: calc_ap_changes(sierra_program)?,
+            ap_change_info: calc_ap_changes(sierra_program, |_, _| 0)?,
             gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
         })
     }

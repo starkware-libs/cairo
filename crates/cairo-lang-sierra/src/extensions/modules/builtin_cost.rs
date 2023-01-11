@@ -84,7 +84,24 @@ impl BuiltinCostGetGasLibfunc {
     /// Returns the maximal number of steps required for the computation of the requested cost.
     /// The number of steps is also the change in `ap` (every step includes `ap++`).
     pub fn cost_computation_max_steps() -> usize {
-        (CostTokenType::iter().len() - 1) * 3
+        Self::cost_computation_steps(|_| 2)
+    }
+    /// Returns the number of steps required for the computation of the requested cost, given the
+    /// number of requested token usages. The number of steps is also the change in `ap` (every
+    /// step includes `ap++`).
+    pub fn cost_computation_steps<TokenUsages: Fn(CostTokenType) -> usize>(
+        token_usages: TokenUsages,
+    ) -> usize {
+        CostTokenType::iter()
+            .map(|token_type| match token_type {
+                CostTokenType::Step => 0,
+                _ => match token_usages(*token_type) {
+                    0 => 0,
+                    1 => 2,
+                    _ => 3,
+                },
+            })
+            .sum()
     }
 }
 

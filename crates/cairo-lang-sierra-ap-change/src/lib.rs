@@ -2,12 +2,13 @@
 use std::collections::HashMap;
 
 use ap_change_info::ApChangeInfo;
+use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use core_libfunc_ap_change::ApChangeInfoProvider;
+use core_libfunc_ap_change::InvocationApChangeInfoProvider;
 use generate_equations::{Effects, Var};
 use thiserror::Error;
 
@@ -48,28 +49,51 @@ pub enum ApChangeError {
     SolvingApChangeEquationFailed,
 }
 
-impl ApChangeInfoProvider for ProgramRegistry<CoreType, CoreLibfunc> {
+/// Helper to implement the `InvocationApChangeInfoProvider` for the equation generation.
+struct InvocationApChangeInfoProviderForEqGen<'a, TokenUsages: Fn(CostTokenType) -> usize> {
+    /// Registry for providing the sizes of the types.
+    registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
+    /// Closure providing the token usages for the invocation.
+    token_usages: TokenUsages,
+}
+
+impl<'a, TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
+    for InvocationApChangeInfoProviderForEqGen<'a, TokenUsages>
+{
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.get_type(ty).unwrap().info().size as usize
+        self.registry.get_type(ty).unwrap().info().size as usize
+    }
+
+    fn token_usages(&self, token_type: CostTokenType) -> usize {
+        (self.token_usages)(token_type)
     }
 }
 
 /// Calculates gas information for a given program.
-pub fn calc_ap_changes(program: &Program) -> Result<ApChangeInfo, ApChangeError> {
+pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
+    program: &Program,
+    token_usages: TokenUsages,
+) -> Result<ApChangeInfo, ApChangeError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let equations = generate_equations::generate_equations(program, |libfunc_id| {
+    let equations = generate_equations::generate_equations(program, |idx, libfunc_id| {
         let libfunc = registry.get_libfunc(libfunc_id)?;
-        core_libfunc_ap_change::core_libfunc_ap_change(libfunc, &registry)
-            .into_iter()
-            .map(|ap_change| {
-                Ok(match ap_change {
-                    ApChange::AtLocalsFinalization(known) => {
-                        Effects { ap_change: ApChange::Known(0), locals: known }
-                    }
-                    _ => Effects { ap_change, locals: 0 },
-                })
+        core_libfunc_ap_change::core_libfunc_ap_change(
+            libfunc,
+            &InvocationApChangeInfoProviderForEqGen {
+                registry: &registry,
+                token_usages: |token_type| token_usages(idx, token_type),
+            },
+        )
+        .into_iter()
+        .map(|ap_change| {
+            Ok(match ap_change {
+                ApChange::AtLocalsFinalization(known) => {
+                    Effects { ap_change: ApChange::Known(0), locals: known }
+                }
+                _ => Effects { ap_change, locals: 0 },
             })
-            .collect::<Result<Vec<_>, _>>()
+        })
+        .collect::<Result<Vec<_>, _>>()
     })?;
     let solution = cairo_lang_eq_solver::try_solve_equations(equations)
         .ok_or(ApChangeError::SolvingApChangeEquationFailed)?;
