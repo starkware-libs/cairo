@@ -4,9 +4,10 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId, GenericFunctionId,
-    GenericParamId, GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId,
-    ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId, VariantId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId,
+    GenericFunctionId, GenericParamId, GenericTypeId, ImplFunctionId, ImplId, LanguageElementId,
+    LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId,
+    VariantId,
 };
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
@@ -77,6 +78,21 @@ pub trait SemanticGroup:
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
     #[salsa::interned]
     fn intern_literal(&self, id: literals::LiteralLongId) -> literals::LiteralId;
+
+    // Const.
+    // ====
+    /// Private query to compute data about a constant definition.
+    #[salsa::invoke(items::constant::priv_constant_semantic_data)]
+    fn priv_constant_semantic_data(
+        &self,
+        const_id: ConstantId,
+    ) -> Maybe<items::constant::ConstantData>;
+    /// Returns the semantic diagnostics of a constant definition.
+    #[salsa::invoke(items::constant::constant_semantic_diagnostics)]
+    fn constant_semantic_diagnostics(
+        &self,
+        const_id: ConstantId,
+    ) -> Diagnostics<SemanticDiagnostic>;
 
     // Use.
     // ====
@@ -671,8 +687,8 @@ fn module_semantic_diagnostics(
 
     for item in db.module_items(module_id)?.iter() {
         match item {
-            ModuleItemId::Const(_) => {
-                unimplemented!("Constant declaration is not supported yet.");
+            ModuleItemId::Const(const_id) => {
+                diagnostics.extend(db.constant_semantic_diagnostics(*const_id));
             }
             // Add signature diagnostics.
             ModuleItemId::Use(use_id) => {
@@ -831,7 +847,7 @@ fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<R
     match id {
         LookupItemId::ModuleItem(module_item) => match module_item {
             ModuleItemId::Const(_) => {
-                unimplemented!("Constant declaration is not supported yet.");
+                unimplemented!("Constant definition is not supported yet.");
             }
             ModuleItemId::Submodule(_) => vec![],
             ModuleItemId::Use(id) => vec![db.use_resolved_lookback(id)],

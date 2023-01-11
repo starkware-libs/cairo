@@ -414,6 +414,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NamedArgumentMismatch { expected, found } => {
                 format!("Unexpected argument name. Expected: '{expected}', found '{found}'.")
             }
+            SemanticDiagnosticKind::ConstantsAreNotSupported => {
+                "Constant definitions are not supported yet.".into()
+            }
         }
     }
 
@@ -624,6 +627,8 @@ pub enum SemanticDiagnosticKind {
         expected: SmolStr,
         found: SmolStr,
     },
+    // TODO(lior): Remove once constants are supported.
+    ConstantsAreNotSupported,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
