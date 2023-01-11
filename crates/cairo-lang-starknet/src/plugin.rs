@@ -18,7 +18,7 @@ use cairo_lang_syntax::node::ast::{
     ItemFreeFunction, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause, Param,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
@@ -726,9 +726,9 @@ fn generate_entry_point_wrapper(
     let mut ref_appends = Vec::new();
     let input_data_short_err = "'Input too short for arguments'";
     for param in params {
-        let arg_name = format!("__arg_{}", param.name(db).identifier(db));
+        let arg_name = format!("__arg_{}", param.name(db).text(db));
         let arg_type_ast = param.type_clause(db).ty(db);
-        let type_name = arg_type_ast.as_syntax_node().get_text(db);
+        let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db);
         let Some((ser_func, deser_func)) = get_type_serde_funcs(&type_name) else {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: arg_type_ast.stable_ptr().0,
@@ -770,7 +770,7 @@ fn generate_entry_point_wrapper(
         OptionReturnTypeClause::Empty(_) => ("", "".to_string()),
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
             let ret_type_ast = ty.ty(db);
-            let ret_type_name = ret_type_ast.as_syntax_node().get_text(db);
+            let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             // TODO(orizi): Handle tuple types.
             if let Some((ser_func, _)) = get_type_serde_funcs(&ret_type_name) {
                 ("\n            let res = ", format!("\n            {ser_func}(arr, res)"))

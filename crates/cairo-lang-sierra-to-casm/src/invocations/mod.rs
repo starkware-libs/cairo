@@ -1,6 +1,7 @@
 use assert_matches::assert_matches;
 use cairo_lang_casm::ap_change::ApChange;
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
@@ -9,7 +10,9 @@ use cairo_lang_sierra::extensions::lib_func::BranchSignature;
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
-use cairo_lang_sierra_ap_change::core_libfunc_ap_change::core_libfunc_ap_change;
+use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
+    core_libfunc_ap_change, ApChangeInfoProvider,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
 use thiserror::Error;
@@ -18,7 +21,7 @@ use {cairo_lang_casm, cairo_lang_sierra};
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
-use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
@@ -166,6 +169,12 @@ type VarCells = [Var];
 /// The configuration for all Sierra variables returned from a libfunc.
 type AllVars<'a> = [&'a VarCells];
 
+impl<'a> ApChangeInfoProvider for ProgramInfo<'a> {
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize {
+        self.type_sizes[ty] as usize
+    }
+}
+
 /// Helper for building compiled invocations.
 pub struct CompiledInvocationBuilder<'a> {
     pub program_info: ProgramInfo<'a>,
@@ -197,7 +206,7 @@ impl CompiledInvocationBuilder<'_> {
             output_expressions.len(),
             "The number of output expressions does not match signature."
         );
-        let ap_changes = core_libfunc_ap_change(self.libfunc);
+        let ap_changes = core_libfunc_ap_change(self.libfunc, &self.program_info);
         assert_eq!(
             branch_signatures.len(),
             ap_changes.len(),
@@ -219,7 +228,7 @@ impl CompiledInvocationBuilder<'_> {
             .map(|((branch_signature, gas_change), (expressions, ap_change))| {
                 let ap_change = match ap_change {
                     cairo_lang_sierra_ap_change::ApChange::Known(x) => ApChange::Known(x),
-                    cairo_lang_sierra_ap_change::ApChange::AtLocalsFinalizationByTypeSize(_) => {
+                    cairo_lang_sierra_ap_change::ApChange::AtLocalsFinalization(_) => {
                         ApChange::Known(0)
                     }
                     cairo_lang_sierra_ap_change::ApChange::FinalizeLocals => {
@@ -227,9 +236,6 @@ impl CompiledInvocationBuilder<'_> {
                             FrameState::Finalized { allocated } => ApChange::Known(allocated),
                             _ => panic!("Unexpected frame state."),
                         }
-                    }
-                    cairo_lang_sierra_ap_change::ApChange::KnownByTypeSize(ty) => {
-                        ApChange::Known(self.program_info.type_sizes[&ty] as usize)
                     }
                     cairo_lang_sierra_ap_change::ApChange::FunctionCall(id) => self
                         .program_info
@@ -276,7 +282,7 @@ impl CompiledInvocationBuilder<'_> {
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
         itertools::assert_equal(
-            core_libfunc_ap_change(self.libfunc),
+            core_libfunc_ap_change(self.libfunc, &self.program_info),
             branches
                 .iter()
                 .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change)),
@@ -299,10 +305,7 @@ impl CompiledInvocationBuilder<'_> {
         let output_expressions = branches.into_iter().zip_eq(branch_extractions.into_iter()).map(
             |((state, _), (_, vars, _))| {
                 vars.iter().map(move |var_cells| ReferenceExpression {
-                    cells: var_cells
-                        .iter()
-                        .map(|cell| CellExpression::from_res_operand(state.get_adjusted(*cell)))
-                        .collect(),
+                    cells: var_cells.iter().map(|cell| state.get_adjusted(*cell)).collect(),
                 })
             },
         );
@@ -317,7 +320,7 @@ impl CompiledInvocationBuilder<'_> {
         self.build(vec![], vec![], [output_expressions].into_iter())
     }
 
-    /// If returns the reference expressions if the size is correct.
+    /// Returns the reference expressions if the size is correct.
     pub fn try_get_refs<const COUNT: usize>(
         &self,
     ) -> Result<[&ReferenceExpression; COUNT], InvocationError> {
@@ -329,6 +332,25 @@ impl CompiledInvocationBuilder<'_> {
                 actual: self.refs.len(),
             })
         }
+    }
+
+    /// Returns the reference expressions, assuming all contains one cell if the size is correct.
+    pub fn try_get_single_cells<const COUNT: usize>(
+        &self,
+    ) -> Result<[&CellExpression; COUNT], InvocationError> {
+        let refs = self.try_get_refs::<COUNT>()?;
+        let mut last_err = None;
+        const FAKE_CELL: CellExpression =
+            CellExpression::Deref(CellRef { register: Register::AP, offset: 0 });
+        // TODO(orizi): Use `refs.try_map` once it is a stable feature.
+        let result = refs.map(|r| match r.try_unpack_single() {
+            Ok(cell) => cell,
+            Err(err) => {
+                last_err = Some(err);
+                &FAKE_CELL
+            }
+        });
+        if let Some(err) = last_err { Err(err) } else { Ok(result) }
     }
 }
 
@@ -406,3 +428,37 @@ pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>)
         _ => panic!("malformed invocation"),
     }
 }
+
+/// Adds input variables into the builder while validating their type.
+macro_rules! add_input_variables {
+    ($casm_builder:ident,) => {};
+    ($casm_builder:ident, deref $var:ident; $($tok:tt)*) => {
+        let $var = $casm_builder.add_var(cairo_lang_casm::cell_expression::CellExpression::Deref(
+            $var.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+        ));
+        $crate::invocations::add_input_variables!($casm_builder, $($tok)*)
+    };
+    ($casm_builder:ident, deref_or_immediate $var:ident; $($tok:tt)*) => {
+        let $var = $casm_builder.add_var(
+            match $var
+                .to_deref_or_immediate()
+                .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?
+            {
+                cairo_lang_casm::operand::DerefOrImmediate::Deref(cell) => {
+                    cairo_lang_casm::cell_expression::CellExpression::Deref(cell)
+                }
+                cairo_lang_casm::operand::DerefOrImmediate::Immediate(cell) => {
+                    cairo_lang_casm::cell_expression::CellExpression::Immediate(cell)
+                }
+            },
+        );
+        $crate::invocations::add_input_variables!($casm_builder, $($tok)*)
+    };
+    ($casm_builder:ident, buffer($slack:expr) $var:ident; $($tok:tt)*) => {
+        let $var = $casm_builder.add_var(
+            $var.to_buffer($slack).ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+        );
+        $crate::invocations::add_input_variables!($casm_builder, $($tok)*)
+    };
+}
+use add_input_variables;

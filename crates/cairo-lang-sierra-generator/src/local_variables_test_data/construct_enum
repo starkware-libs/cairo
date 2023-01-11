@@ -32,7 +32,7 @@ Statements:
   (v1: core::bool) <- bool::True(v0)
   (v2: core::felt) <- test::revoke_ap()
 End:
-  Callsite(v1)
+  Return(v1)
 
 //! > local_variables
 v1

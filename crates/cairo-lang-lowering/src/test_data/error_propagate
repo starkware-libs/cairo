@@ -64,7 +64,7 @@ Statements:
   (v9: core::felt) <- 1u
   (v10: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v9)
 End:
-  Callsite(v10)
+  Return(v10)
 
 //! > lowering_flat
 blk0:
@@ -107,4 +107,4 @@ Statements:
   (v9: core::felt) <- 1u
   (v10: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v9)
 End:
-  Callsite(v10)
+  Return(v10)

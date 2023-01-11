@@ -62,13 +62,8 @@ impl<'ctx> ComputationContext<'ctx> {
         signature: &'ctx Signature,
         environment: Environment,
     ) -> Self {
-        let semantic_defs = environment
-            .variables
-            .values()
-            .by_ref()
-            .chain(environment.unnamed_variables.iter())
-            .map(|var| (var.id(), var.clone()))
-            .collect();
+        let semantic_defs =
+            environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
         Self {
             db,
             diagnostics,
@@ -113,26 +108,17 @@ pub type EnvVariables = HashMap<SmolStr, Variable>;
 pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
-    unnamed_variables: Vec<Variable>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
     pub fn add_param(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        name: &Option<SmolStr>,
         semantic_param: Parameter,
         ast_param: &ast::Param,
         function_id: GenericFunctionId,
     ) -> Maybe<()> {
-        let name = match name {
-            Some(name) => name,
-            None => {
-                self.unnamed_variables.push(Variable::Param(semantic_param));
-                return Ok(());
-            }
-        };
-
+        let name = &semantic_param.name;
         match self.variables.entry(name.clone()) {
             std::collections::hash_map::Entry::Occupied(_) => Err(diagnostics.report(
                 ast_param,
@@ -427,13 +413,12 @@ fn compute_expr_match_semantic(
                 let pattern =
                     compute_pattern_semantic(new_ctx, syntax_arm.pattern(syntax_db), expr.ty())?;
                 let variables = pattern.variables();
-                // TODO(yuval): allow unnamed variables. Add them here to
-                // new_ctx.environment.unnamed_variables.
                 for v in variables {
-                    new_ctx
-                        .environment
-                        .variables
-                        .insert(v.name.clone(), Variable::Local(v.var.clone()));
+                    let var_def = Variable::Local(v.var.clone());
+                    // TODO(spapini): Wrap this in a function to couple with semantic_defs
+                    // insertion.
+                    new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+                    new_ctx.semantic_defs.insert(var_def.id(), var_def);
                 }
                 let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
                 Ok((pattern, arm_expr))

@@ -35,21 +35,3 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-
-//! > ==========================================================================
-
-//! > Test valid free function with unnamed parameters
-
-//! > test_function_name
-test_function_diagnostics
-
-//! > function
-fn foo(_: bool, a: bool, _: felt) implicits(bool, felt, felt) {
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > expected_diagnostics

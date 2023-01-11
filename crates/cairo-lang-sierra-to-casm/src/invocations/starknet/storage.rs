@@ -1,10 +1,9 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::ResOperand;
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::get_non_fallthrough_statement_id;
+use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 
 #[cfg(test)]
 #[path = "storage_test.rs"]
@@ -19,16 +18,18 @@ pub fn build_storage_read(
 
     let [expr_gas_builtin, expr_system, expr_address_domain, expr_address] =
         builder.try_get_refs()?;
-    let gas_builtin = expr_gas_builtin.try_unpack_single()?.to_deref()?;
-    let system = expr_system.try_unpack_single()?.to_buffer(3)?;
-    let address_domain = expr_address_domain.try_unpack_single()?.to_deref()?;
-    let storage_address = expr_address.try_unpack_single()?.to_deref()?;
+    let gas_builtin = expr_gas_builtin.try_unpack_single()?;
+    let system = expr_system.try_unpack_single()?;
+    let address_domain = expr_address_domain.try_unpack_single()?;
+    let storage_address = expr_address.try_unpack_single()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
-    let system = casm_builder.add_var(system);
-    let address_domain = casm_builder.add_var(ResOperand::Deref(address_domain));
-    let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
+    add_input_variables! {casm_builder,
+        deref gas_builtin;
+        buffer(3) system;
+        deref address_domain;
+        deref storage_address;
+    };
 
     casm_build_extend! {casm_builder,
         let original_system = system;
@@ -67,19 +68,20 @@ pub fn build_storage_write(
 
     let [expr_gas_builtin, expr_system, expr_address_domain, expr_address, expr_value] =
         builder.try_get_refs()?;
-    let gas_builtin = expr_gas_builtin.try_unpack_single()?.to_deref()?;
-    let system = expr_system.try_unpack_single()?.to_buffer(6)?;
-    let address_domain = expr_address_domain.try_unpack_single()?.to_deref()?;
-    let storage_address = expr_address.try_unpack_single()?.to_deref()?;
-
-    let value = expr_value.try_unpack_single()?.to_deref()?;
+    let gas_builtin = expr_gas_builtin.try_unpack_single()?;
+    let system = expr_system.try_unpack_single()?;
+    let address_domain = expr_address_domain.try_unpack_single()?;
+    let storage_address = expr_address.try_unpack_single()?;
+    let value = expr_value.try_unpack_single()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let system = casm_builder.add_var(system);
-    let gas_builtin = casm_builder.add_var(ResOperand::Deref(gas_builtin));
-    let address_domain = casm_builder.add_var(ResOperand::Deref(address_domain));
-    let storage_address = casm_builder.add_var(ResOperand::Deref(storage_address));
-    let value = casm_builder.add_var(ResOperand::Deref(value));
+    add_input_variables! {casm_builder,
+        buffer(6) system;
+        deref gas_builtin;
+        deref address_domain;
+        deref storage_address;
+        deref value;
+    };
     casm_build_extend! {casm_builder,
         let original_system = system;
         const selector_imm = selector_imm;
