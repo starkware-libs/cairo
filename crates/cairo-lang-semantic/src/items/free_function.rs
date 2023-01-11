@@ -166,8 +166,8 @@ pub fn free_function_definition_diagnostics(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_definition_body].
-pub fn free_function_definition_body(
+/// Query implementation of [crate::db::SemanticGroup::free_function_body].
+pub fn free_function_body(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<semantic::ExprId> {
