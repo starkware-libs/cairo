@@ -24,7 +24,7 @@ fn test_extern_function() {
         db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::ExternFunction
     );
-    let signature = db.extern_function_declaration_signature(extern_function_id).unwrap();
+    let signature = db.extern_function_signature(extern_function_id).unwrap();
     assert_eq!(
         format!("{:?}", signature.debug(db)),
         "Signature { params: [], return_type: (), implicits: [], panicable: false }"
