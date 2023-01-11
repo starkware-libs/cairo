@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FreeFunctionId, ModuleId, ModuleItemId};
+use cairo_lang_defs::ids::{FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic as semantic;
@@ -9,6 +9,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
 
+use crate::borrow_check::borrow_check;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::lower::lower;
 use crate::panic::lower_panics;
@@ -109,7 +110,13 @@ fn free_function_lowered_flat(
     free_function_id: FreeFunctionId,
 ) -> Maybe<Arc<FlatLowered>> {
     let structured = db.free_function_lowered_structured(free_function_id)?;
-    lower_panics(db, free_function_id, &structured).map(Arc::new)
+    let mut lowered = lower_panics(db, free_function_id, &structured)?;
+    borrow_check(
+        free_function_id.module_file_id(db.upcast()),
+        free_function_id.stable_ptr(db.upcast()).untyped(),
+        &mut lowered,
+    );
+    Ok(Arc::new(lowered))
 }
 
 fn module_lowering_diagnostics(
@@ -122,6 +129,11 @@ fn module_lowering_diagnostics(
             ModuleItemId::FreeFunction(free_function) => {
                 diagnostics.extend(
                     db.free_function_lowered_structured(*free_function)
+                        .map(|lowered| lowered.diagnostics.clone())
+                        .unwrap_or_default(),
+                );
+                diagnostics.extend(
+                    db.free_function_lowered_flat(*free_function)
                         .map(|lowered| lowered.diagnostics.clone())
                         .unwrap_or_default(),
                 );

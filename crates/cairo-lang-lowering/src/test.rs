@@ -1,4 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -13,6 +14,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/test_data",
     {
         assignment :"assignment",
+        borrow_check :"borrow_check",
         call :"call",
         enums :"enums",
         error_propagate :"error_propagate",
@@ -44,11 +46,15 @@ fn test_function_lowering(
     let structured_lowered =
         db.free_function_lowered_structured(test_function.function_id).unwrap();
     let flat_lowered = db.free_function_lowered_flat(test_function.function_id).unwrap();
+    let mut diagnostics = DiagnosticsBuilder::default();
+    diagnostics.extend(structured_lowered.diagnostics.clone());
+    diagnostics.extend(flat_lowered.diagnostics.clone());
+    let diagnostics = diagnostics.build();
 
     let lowered_formatter = LoweredFormatter { db, variables: &flat_lowered.variables };
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
-        ("lowering_diagnostics".into(), structured_lowered.diagnostics.format(db)),
+        ("lowering_diagnostics".into(), diagnostics.format(db)),
         (
             "lowering_structured".into(),
             format!("{:?}", structured_lowered.debug(&lowered_formatter)),

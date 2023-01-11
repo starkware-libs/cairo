@@ -32,6 +32,7 @@ pub fn lower_panics(
     // Skip this phase for non panicable functions.
     if !db.free_function_may_panic(free_function_id)? {
         return Ok(FlatLowered {
+            diagnostics: Default::default(),
             root: lowered.root,
             variables: ctx.variables,
             blocks: Blocks(
@@ -77,7 +78,12 @@ pub fn lower_panics(
         ctx = block_ctx.handle_end(block.inputs, block.end);
     }
 
-    Ok(FlatLowered { variables: ctx.ctx.variables, blocks: ctx.flat_blocks, root: lowered.root })
+    Ok(FlatLowered {
+        diagnostics: Default::default(),
+        variables: ctx.ctx.variables,
+        blocks: ctx.flat_blocks,
+        root: lowered.root,
+    })
 }
 
 struct PanicLoweringContext<'a> {
