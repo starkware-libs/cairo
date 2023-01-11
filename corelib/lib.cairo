@@ -49,6 +49,7 @@ impl FeltDrop of Drop::<felt>;
 extern fn felt_add(a: felt, b: felt) -> felt nopanic;
 extern fn felt_sub(a: felt, b: felt) -> felt nopanic;
 extern fn felt_mul(a: felt, b: felt) -> felt nopanic;
+#[inline(always)]
 fn felt_neg(a: felt) -> felt nopanic {
     a * felt_const::<-1>()
 }
