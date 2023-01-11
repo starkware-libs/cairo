@@ -540,6 +540,9 @@ impl<'db> Resolver<'db> {
         module_item: ModuleItemId,
     ) -> Maybe<ResolvedGenericItem> {
         Ok(match module_item {
+            ModuleItemId::Const(_) => {
+                unimplemented!("Constant declaration is not supported yet.");
+            }
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
             ModuleItemId::Use(id) => {
                 // TODO(spapini): Before the last change, we called priv_use_semantic_data()
