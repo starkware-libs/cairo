@@ -8,7 +8,7 @@ use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, Item, ItemEnum, ItemExternFunction,
     ItemExternFunctionPtr, ItemExternType, ItemFreeFunction, ItemFreeFunctionPtr, ItemImpl,
     ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItemFunctionPtr,
+    TokenIdentifierGreen, TraitItemFunction, TraitItemFunctionPtr,
 };
 use super::db::SyntaxGroup;
 use super::Terminal;
@@ -216,6 +216,17 @@ impl QueryAttrs for ItemEnum {
     }
 }
 impl QueryAttrs for ItemTypeAlias {
+    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
+    }
+    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        match self.attributes(db).elements(db).last() {
+            None => false,
+            Some(last_attr) => last_attr.attr(db).text(db) == attr,
+        }
+    }
+}
+impl QueryAttrs for TraitItemFunction {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }

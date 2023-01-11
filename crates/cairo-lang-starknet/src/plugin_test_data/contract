@@ -18,6 +18,13 @@ mod TestContract {
     #[external]
     fn set_something(ref arg: felt, num: felt) {
     }
+
+    #[event]
+    fn awesome_event(x: felt, y: u128) {
+    }
+    #[event]
+    fn best_event_ever() {
+    }
 }
 
 //! > generated_cairo_code
@@ -40,6 +47,11 @@ mod TestContract {
     trait __abi {
         fn get_something(ref arg: felt, num: felt) -> felt;
         fn set_something(ref arg: felt, num: felt);
+        
+        #[event]
+        fn awesome_event(x: felt, y: u128);
+        #[event]
+        fn best_event_ever();
         
     }
 
@@ -133,6 +145,27 @@ mod TestContract {
             arr
         }
         
+        
+        #[event]
+        fn awesome_event(x: felt, y: u128) {
+            let mut keys = array_new::<felt>();
+            array_append::<felt>(keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
+            let mut data = array_new::<felt>();
+            serde::serialize_felt(data, x);
+            serde::serialize_u128(data, y);
+            
+            starknet::emit_event_syscall(keys, data);
+        }
+            
+        #[event]
+        fn best_event_ever() {
+            let mut keys = array_new::<felt>();
+            array_append::<felt>(keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
+            let mut data = array_new::<felt>();
+            
+            starknet::emit_event_syscall(keys, data);
+        }
+            
     }
 }
 
