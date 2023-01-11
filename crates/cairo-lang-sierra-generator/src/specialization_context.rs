@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::GenericFunctionId;
+use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_sierra::extensions::lib_func::{SierraApChange, SignatureSpecializationContext};
 use cairo_lang_sierra::extensions::type_specialization_context::TypeSpecializationContext;
@@ -56,13 +56,15 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
             .function;
         match concrete_function.generic_function {
             GenericFunctionId::Free(free_function_id) => {
-                self.0.get_ap_change(free_function_id).to_option()
+                self.0.get_ap_change(FunctionWithBodyId::Free(free_function_id)).to_option()
+            }
+            GenericFunctionId::ImplFunction(impl_function_id) => {
+                self.0.get_ap_change(FunctionWithBodyId::Impl(impl_function_id)).to_option()
             }
             GenericFunctionId::Extern(_) | GenericFunctionId::TraitFunction(_) => panic!(
                 "Internal compiler error: get_function_ap_change() should only be used for user \
                  defined functions."
             ),
-            GenericFunctionId::ImplFunction(_) => todo!(),
         }
     }
 }

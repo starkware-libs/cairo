@@ -2,7 +2,6 @@ use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
 use cairo_lang_defs as defs;
-use cairo_lang_defs::ids::FreeFunctionId;
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
@@ -13,6 +12,7 @@ use cairo_lang_sierra::program;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use defs::ids::FunctionWithBodyId;
 use itertools::chain;
 
 use crate::db::SierraGenGroup;
@@ -124,18 +124,18 @@ fn collect_used_types(
 
 pub fn get_sierra_program_for_functions(
     db: &dyn SierraGenGroup,
-    requested_function_ids: Vec<FreeFunctionId>,
+    requested_function_ids: Vec<FunctionWithBodyId>,
 ) -> Maybe<Arc<cairo_lang_sierra::program::Program>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
-    let mut processed_function_ids = UnorderedHashSet::<FreeFunctionId>::default();
-    let mut function_id_queue: VecDeque<FreeFunctionId> =
+    let mut processed_function_ids = UnorderedHashSet::<FunctionWithBodyId>::default();
+    let mut function_id_queue: VecDeque<FunctionWithBodyId> =
         requested_function_ids.into_iter().collect();
     while let Some(function_id) = function_id_queue.pop_front() {
         if !processed_function_ids.insert(function_id) {
             continue;
         }
-        let function: Arc<pre_sierra::Function> = db.free_function_sierra(function_id)?;
+        let function: Arc<pre_sierra::Function> = db.function_with_body_sierra(function_id)?;
         functions.push(function.clone());
         statements.extend_from_slice(&function.body[0..function.prolog_size]);
         if !matches!(db.get_ap_change(function_id), Ok(SierraApChange::Known { .. })) {
@@ -145,7 +145,7 @@ pub fn get_sierra_program_for_functions(
         }
         statements.extend_from_slice(&function.body[function.prolog_size..]);
         for statement in &function.body {
-            if let Ok(related_function_id) = try_get_free_function_id(db, statement) {
+            if let Ok(related_function_id) = try_get_function_with_body_id(db, statement) {
                 function_id_queue.push_back(related_function_id);
             }
         }
@@ -178,11 +178,11 @@ pub fn get_sierra_program_for_functions(
     }))
 }
 
-/// Tries extracting a free function id from a pre-Sierra statement.
-fn try_get_free_function_id(
+/// Tries extracting a FunctionWithBodyId from a pre-Sierra statement.
+fn try_get_function_with_body_id(
     db: &dyn SierraGenGroup,
     statement: &pre_sierra::Statement,
-) -> Maybe<FreeFunctionId> {
+) -> Maybe<FunctionWithBodyId> {
     let invc = try_extract_matches!(
         try_extract_matches!(statement, pre_sierra::Statement::Sierra).to_maybe()?,
         program::GenStatement::Invocation
@@ -205,7 +205,16 @@ fn try_get_free_function_id(
         )
         .function;
     assert!(function.generic_args.is_empty(), "Generic args are not yet supported");
-    try_extract_matches!(function.generic_function, defs::ids::GenericFunctionId::Free).to_maybe()
+    match function.generic_function {
+        defs::ids::GenericFunctionId::Free(free_function_id) => {
+            Ok(FunctionWithBodyId::Free(free_function_id))
+        }
+        defs::ids::GenericFunctionId::ImplFunction(impl_function_id) => {
+            Ok(FunctionWithBodyId::Impl(impl_function_id))
+        }
+        defs::ids::GenericFunctionId::Extern(_)
+        | defs::ids::GenericFunctionId::TraitFunction(_) => Err(skip_diagnostic()),
+    }
 }
 
 pub fn get_sierra_program(
@@ -216,7 +225,7 @@ pub fn get_sierra_program(
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {
             for (free_func_id, _) in db.module_free_functions(*module_id)? {
-                requested_function_ids.push(free_func_id)
+                requested_function_ids.push(FunctionWithBodyId::Free(free_func_id))
             }
         }
     }

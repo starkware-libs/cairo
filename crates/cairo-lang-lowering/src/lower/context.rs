@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, LanguageElementId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
@@ -26,9 +26,8 @@ use crate::VariableId;
 /// Builds a Lowering context.
 pub struct LoweringContextBuilder<'db> {
     pub db: &'db dyn LoweringGroup,
-    // TODO(yuval): change to FunctionWithBodyId
-    pub free_function_id: FreeFunctionId,
-    pub function_def: Arc<semantic::FreeFunctionDefinition>,
+    pub function_id: FunctionWithBodyId,
+    pub function_def: Arc<semantic::items::function_with_body::FunctionBody>,
     /// Semantic signature for current function.
     pub signature: semantic::Signature,
     // TODO(spapini): Document. (excluding implicits).
@@ -37,12 +36,10 @@ pub struct LoweringContextBuilder<'db> {
     pub implicits: Vec<semantic::TypeId>,
 }
 impl<'db> LoweringContextBuilder<'db> {
-    // TODO(yuval): change to FunctionWithBodyId
-    pub fn new(db: &'db dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<Self> {
-        let function_def = db.free_function_definition(free_function_id)?;
-        let signature = db.free_function_declaration_signature(free_function_id)?;
-        let implicits =
-            db.function_with_body_all_implicits_vec(FunctionWithBodyId::Free(free_function_id))?;
+    pub fn new(db: &'db dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
+        let function_def = db.function_body(function_id)?;
+        let signature = db.function_with_body_signature(function_id)?;
+        let implicits = db.function_with_body_all_implicits_vec(function_id)?;
         let ref_params = signature
             .params
             .iter()
@@ -51,7 +48,7 @@ impl<'db> LoweringContextBuilder<'db> {
             .collect();
         Ok(LoweringContextBuilder {
             db,
-            free_function_id,
+            function_id,
             function_def,
             signature,
             ref_params,
@@ -59,29 +56,23 @@ impl<'db> LoweringContextBuilder<'db> {
         })
     }
     pub fn ctx<'a: 'db>(&'a self) -> Maybe<LoweringContext<'db>> {
-        let generic_params =
-            self.db.free_function_declaration_generic_params(self.free_function_id)?;
+        let generic_params = self.db.function_with_body_generic_params(self.function_id)?;
         Ok(LoweringContext {
             db: self.db,
             function_def: &self.function_def,
             signature: &self.signature,
-            diagnostics: LoweringDiagnostics::new(
-                self.free_function_id.module_file(self.db.upcast()),
-            ),
+            diagnostics: LoweringDiagnostics::new(self.function_id.module_file(self.db.upcast())),
             variables: Arena::default(),
             blocks: StructuredBlocks::new(),
             semantic_defs: UnorderedHashMap::default(),
             ref_params: &self.ref_params,
             implicits: &self.implicits,
             lookup_context: ImplLookupContext {
-                module_id: self.free_function_id.parent_module(self.db.upcast()),
+                module_id: self.function_id.parent_module(self.db.upcast()),
                 extra_modules: vec![],
                 generic_params,
             },
-            expr_formatter: ExprFormatter {
-                db: self.db.upcast(),
-                free_function_id: self.free_function_id,
-            },
+            expr_formatter: ExprFormatter { db: self.db.upcast(), function_id: self.function_id },
         })
     }
 }
@@ -89,8 +80,8 @@ impl<'db> LoweringContextBuilder<'db> {
 /// Context for the lowering phase of a free function.
 pub struct LoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
-    /// Semantic model for current function definition.
-    pub function_def: &'db semantic::FreeFunctionDefinition,
+    /// Semantic model for current function body.
+    pub function_def: &'db semantic::items::function_with_body::FunctionBody,
     // Semantic signature for current function.
     pub signature: &'db semantic::Signature,
     /// Current emitted diagnostics.

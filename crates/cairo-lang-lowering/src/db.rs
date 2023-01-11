@@ -1,9 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{
-    FreeFunctionId, FunctionWithBodyId, LanguageElementId, ModuleId, ModuleItemId,
-};
+use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic as semantic;
@@ -20,14 +18,17 @@ use crate::{FlatLowered, StructuredLowered};
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
 pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
-    /// Computed the lowered representation of a free function.
-    fn free_function_lowered_structured(
+    /// Computes the lowered representation of a function with a body.
+    fn function_with_body_lowered_structured(
         &self,
-        free_function: FreeFunctionId,
+        function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<StructuredLowered>>;
 
-    /// Computed the lowered representation of a free function.
-    fn free_function_lowered_flat(&self, free_function: FreeFunctionId) -> Maybe<Arc<FlatLowered>>;
+    /// Computes the lowered representation of a function with a body.
+    fn function_with_body_lowered_flat(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
 
     /// Aggregates module level semantic diagnostics.
     fn module_lowering_diagnostics(
@@ -106,22 +107,22 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct SCCRepresentative(pub FunctionWithBodyId);
 
-fn free_function_lowered_structured(
+fn function_with_body_lowered_structured(
     db: &dyn LoweringGroup,
-    free_function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<StructuredLowered>> {
-    Ok(Arc::new(lower(db.upcast(), free_function_id)?))
+    Ok(Arc::new(lower(db.upcast(), function_id)?))
 }
 
-fn free_function_lowered_flat(
+fn function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
-    free_function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let structured = db.free_function_lowered_structured(free_function_id)?;
-    let mut lowered = lower_panics(db, free_function_id, &structured)?;
+    let structured = db.function_with_body_lowered_structured(function_id)?;
+    let mut lowered = lower_panics(db, function_id, &structured)?;
     borrow_check(
-        free_function_id.module_file_id(db.upcast()),
-        free_function_id.stable_ptr(db.upcast()).untyped(),
+        function_id.module_file_id(db.upcast()),
+        function_id.stable_ptr(db.upcast()).untyped(),
         &mut lowered,
     );
     Ok(Arc::new(lowered))
@@ -135,13 +136,14 @@ fn module_lowering_diagnostics(
     for item in db.module_items(module_id)?.iter() {
         match item {
             ModuleItemId::FreeFunction(free_function) => {
+                let function_id = FunctionWithBodyId::Free(*free_function);
                 diagnostics.extend(
-                    db.free_function_lowered_structured(*free_function)
+                    db.function_with_body_lowered_structured(function_id)
                         .map(|lowered| lowered.diagnostics.clone())
                         .unwrap_or_default(),
                 );
                 diagnostics.extend(
-                    db.free_function_lowered_flat(*free_function)
+                    db.function_with_body_lowered_flat(function_id)
                         .map(|lowered| lowered.diagnostics.clone())
                         .unwrap_or_default(),
                 );
