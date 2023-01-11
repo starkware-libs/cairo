@@ -262,6 +262,7 @@ pub struct ModuleFileId(pub ModuleId, pub FileIndex);
 define_language_element_id_as_enum! {
     /// Id for direct children of a module.
     pub enum ModuleItemId {
+        Const(ConstId),
         Submodule(SubmoduleId),
         Use(UseId),
         FreeFunction(FreeFunctionId),
@@ -282,6 +283,7 @@ define_language_element_id!(
     name
 );
 
+define_language_element_id!(ConstId, ConstLongId, ast::ItemConst, lookup_intern_const, name);
 define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use, name);
 define_language_element_id!(
     FreeFunctionId,
@@ -551,7 +553,8 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
         match item {
             ModuleItemId::FreeFunction(id) => Some(GenericFunctionId::Free(id)),
             ModuleItemId::ExternFunction(id) => Some(GenericFunctionId::Extern(id)),
-            ModuleItemId::Submodule(_)
+            ModuleItemId::Const(_)
+            | ModuleItemId::Submodule(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::Trait(_)
             | ModuleItemId::Impl(_)
@@ -570,7 +573,8 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             ModuleItemId::Struct(id) => Some(GenericTypeId::Struct(id)),
             ModuleItemId::Enum(id) => Some(GenericTypeId::Enum(id)),
             ModuleItemId::ExternType(id) => Some(GenericTypeId::Extern(id)),
-            ModuleItemId::Submodule(_)
+            ModuleItemId::Const(_)
+            | ModuleItemId::Submodule(_)
             | ModuleItemId::TypeAlias(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::FreeFunction(_)
