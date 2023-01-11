@@ -26,21 +26,21 @@ Initial refs:
 Statements:
   (v3: core::felt) <- 3u
 End:
-  Callsite(v3)
+  Callsite(v3 ->v5)
 
 blk1:
 Inputs: v4: ()
 Initial refs:
 Statements:
 End:
-  Callsite(v1)
+  Callsite(v1 ->v5)
 
 blk2 (root):
 Inputs: v0: core::bool
 Initial refs:
 Statements:
   (v1: core::felt) <- 2u
-  (v5: core::felt) <- match_enum(v0) {
+  () <- match_enum(v0) {
     bool::False => blk1,
     bool::True => blk0,
   }
@@ -53,19 +53,19 @@ Inputs: v2: ()
 Statements:
   (v3: core::felt) <- 3u
 End:
-  Callsite(v3)
+  Callsite(v3 ->v5)
 
 blk1:
 Inputs: v4: ()
 Statements:
 End:
-  Callsite(v1)
+  Callsite(v1 ->v5)
 
 blk2 (root):
 Inputs: v0: core::bool
 Statements:
   (v1: core::felt) <- 2u
-  (v5: core::felt) <- match_enum(v0) {
+  () <- match_enum(v0) {
     bool::False => blk1,
     bool::True => blk0,
   }

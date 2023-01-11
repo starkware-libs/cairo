@@ -13,7 +13,7 @@ use crate::blocks::{Blocks, FlatBlocks};
 use crate::db::LoweringGroup;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, RefIndex, Statement, StatementCall,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, RefIndex, Remapping, Statement, StatementCall,
     StatementEnumConstruct, StatementMatchEnum, StructuredBlock, StructuredBlockEnd,
     StructuredLowered, StructuredStatement, Variable, VariableId,
 };
@@ -183,7 +183,9 @@ impl<'a> PanicBlockLoweringContext<'a> {
             initial_refs: self.current_refs.clone(),
             inputs: vec![inner_ok_value],
             statements: vec![],
-            end: StructuredBlockEnd::Callsite(vec![inner_ok_value]),
+            end: StructuredBlockEnd::Callsite(Remapping {
+                remapping: [(inner_ok_value, original_return_var)].into_iter().collect(),
+            }),
         });
 
         // Prepare Err() match arm block.
@@ -197,10 +199,9 @@ impl<'a> PanicBlockLoweringContext<'a> {
 
         // Emit the match statement.
         self.statements.push(Statement::MatchEnum(StatementMatchEnum {
-            concrete_enum: call_ok_variant.concrete_enum_id,
+            concrete_enum_id: call_ok_variant.concrete_enum_id,
             input: panic_result_var,
             arms: vec![(call_ok_variant, block_ok), (call_err_variant, block_err)],
-            outputs: vec![original_return_var],
         }));
     }
 

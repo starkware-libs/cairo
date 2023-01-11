@@ -26,24 +26,24 @@ blk0:
 Inputs:
 Initial refs:
 Statements:
-  (v2: core::felt) <- 1u
-  (v3: core::felt) <- core::felt_add(v0, v2)
+  (v3: core::felt) <- 1u
+  (v4: core::felt) <- core::felt_add(v0, v3)
 End:
-  Callsite(v3)
+  Callsite(v4 ->v5)
 
 blk1:
-Inputs: v4: core::NonZero::<core::felt>
+Inputs: v2: core::NonZero::<core::felt>
 Initial refs:
 Statements:
 End:
-  Callsite(v1)
+  Callsite(v1 ->v5)
 
 blk2 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
   (v1: core::felt) <- 7u
-  (v5: core::felt) <- match core::felt_jump_nz(v1) {
+  () <- match core::felt_jump_nz(v1) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,
   }
@@ -54,22 +54,22 @@ End:
 blk0:
 Inputs:
 Statements:
-  (v2: core::felt) <- 1u
-  (v3: core::felt) <- core::felt_add(v0, v2)
+  (v3: core::felt) <- 1u
+  (v4: core::felt) <- core::felt_add(v0, v3)
 End:
-  Callsite(v3)
+  Callsite(v4 ->v5)
 
 blk1:
-Inputs: v4: core::NonZero::<core::felt>
+Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite(v1)
+  Callsite(v1 ->v5)
 
 blk2 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
-  (v5: core::felt) <- match core::felt_jump_nz(v1) {
+  () <- match core::felt_jump_nz(v1) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,
   }
@@ -85,11 +85,14 @@ test_function_lowering
 
 //! > function
 fn foo() -> felt {
-    let x = 7;
-    match x {
-        12 => x,
-        _ => 7,
-    }
+  let x = 10;
+  match x {
+      0 => 3,
+      _ => {
+          let y = 4;
+          y
+      }
+  }
 }
 
 //! > function_name
@@ -100,14 +103,76 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match with a non-zero value is not supported.
- --> lib.cairo:4:9
-        12 => x,
-        ^^
 
 //! > lowering_structured
+blk0:
+Inputs:
+Initial refs:
+Statements:
+  (v3: core::felt) <- 4u
+End:
+  Callsite(v3 ->v4)
+
+blk1:
+Inputs:
+Initial refs:
+Statements:
+  (v2: core::felt) <- 3u
+End:
+  Callsite(v2 ->v5)
+
+blk2:
+Inputs: v1: core::NonZero::<core::felt>
+Initial refs:
+Statements:
+  () <- blk0()
+End:
+  Callsite(v4 ->v5)
+
+blk3 (root):
+Inputs:
+Initial refs:
+Statements:
+  (v0: core::felt) <- 10u
+  () <- match core::felt_jump_nz(v0) {
+    JumpNzResult::Zero => blk1,
+    JumpNzResult::NonZero => blk2,
+  }
+End:
+  Return(v5)
 
 //! > lowering_flat
+blk0:
+Inputs:
+Statements:
+  (v3: core::felt) <- 4u
+End:
+  Callsite(v3 ->v4)
+
+blk1:
+Inputs:
+Statements:
+  (v2: core::felt) <- 3u
+End:
+  Callsite(v2 ->v5)
+
+blk2:
+Inputs: v1: core::NonZero::<core::felt>
+Statements:
+  () <- blk0()
+End:
+  Callsite(v4 ->v5)
+
+blk3 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 10u
+  () <- match core::felt_jump_nz(v0) {
+    JumpNzResult::Zero => blk1,
+    JumpNzResult::NonZero => blk2,
+  }
+End:
+  Return(v5)
 
 //! > ==========================================================================
 
