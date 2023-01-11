@@ -10,7 +10,7 @@ use crate::objects::{
 };
 use crate::{
     FlatBlock, FlatBlockEnd, FlatLowered, StatementEnumConstruct, StatementMatchEnum,
-    StatementStructConstruct, StructuredLowered, StructuredStatement, Variable,
+    StatementStructConstruct, StructuredLowered, StructuredStatement, VarRemapping, Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
@@ -71,12 +71,26 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
     }
 }
 
+impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        let mut remapping = self.iter().peekable();
+        while let Some((dst, src)) = remapping.next() {
+            src.fmt(f, ctx)?;
+            write!(f, " -> ")?;
+            dst.fmt(f, ctx)?;
+            if remapping.peek().is_some() {
+                write!(f, ", ")?;
+            }
+        }
+        Ok(())
+    }
+}
+
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let outputs = match &self {
-            StructuredBlockEnd::Callsite(outputs) => {
-                write!(f, "  Callsite(")?;
-                outputs.clone()
+        let outputs: Vec<VariableId> = match &self {
+            StructuredBlockEnd::Callsite(remapping) => {
+                return write!(f, "  Callsite({:?})", remapping.debug(ctx));
             }
             StructuredBlockEnd::Return { refs, returns } => {
                 write!(f, "  Return(")?;
@@ -145,9 +159,8 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
 impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs = match &self {
-            FlatBlockEnd::Callsite(outputs) => {
-                write!(f, "  Callsite(")?;
-                outputs
+            FlatBlockEnd::Callsite(remapping) => {
+                return write!(f, "  Callsite({:?})", remapping.debug(ctx));
             }
             FlatBlockEnd::Return(returns) => {
                 write!(f, "  Return(")?;
