@@ -1,4 +1,4 @@
-//! > box libfunc
+//! > into_box libfunc for felt (size 1)
 
 //! > test_function_name
 run_small_e2e_test
@@ -28,3 +28,108 @@ rename<Box<felt>>([1]) -> ([2]);
 return([2]);
 
 test::foo@0([0]: felt) -> (Box<felt>);
+
+//! > ==========================================================================
+
+//! > unbox libfunc for felt (size 1)
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(x: Box::<felt>) -> felt {
+    unbox::<felt>(x)
+}
+
+//! > casm
+[ap + 0] = [[fp + -3] + 0], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 1})
+
+//! > sierra_code
+type felt = felt;
+type Box<felt> = Box<felt>;
+
+libfunc unbox<felt> = unbox<felt>;
+libfunc store_temp<felt> = store_temp<felt>;
+libfunc rename<felt> = rename<felt>;
+
+unbox<felt>([0]) -> ([1]);
+store_temp<felt>([1]) -> ([1]);
+rename<felt>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: Box<felt>) -> (felt);
+
+//! > ==========================================================================
+
+//! > into_box libfunc for u256 (size 2)
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(x: u256) -> Box::<u256> {
+    into_box::<u256>(x)
+}
+
+//! > casm
+%{ memory[ap + 0] = segments.add() %}
+[fp + -4] = [[ap + 0] + 0], ap++;
+[fp + -3] = [[ap + -1] + 1];
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 2})
+
+//! > sierra_code
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type Box<core::integer::u256> = Box<core::integer::u256>;
+
+libfunc into_box<core::integer::u256> = into_box<core::integer::u256>;
+libfunc rename<Box<core::integer::u256>> = rename<Box<core::integer::u256>>;
+
+into_box<core::integer::u256>([0]) -> ([1]);
+rename<Box<core::integer::u256>>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: core::integer::u256) -> (Box<core::integer::u256>);
+
+//! > ==========================================================================
+
+//! > unbox libfunc for u256 (size 2)
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(x: Box::<u256>) -> u256 {
+    unbox::<u256>(x)
+}
+
+//! > casm
+[ap + 0] = [[fp + -3] + 0], ap++;
+[ap + 0] = [[fp + -3] + 1], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 2})
+
+//! > sierra_code
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type Box<core::integer::u256> = Box<core::integer::u256>;
+
+libfunc unbox<core::integer::u256> = unbox<core::integer::u256>;
+libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
+libfunc rename<core::integer::u256> = rename<core::integer::u256>;
+
+unbox<core::integer::u256>([0]) -> ([1]);
+store_temp<core::integer::u256>([1]) -> ([1]);
+rename<core::integer::u256>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
