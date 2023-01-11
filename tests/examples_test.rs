@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use assert_matches::assert_matches;
+use cairo_felt::{self as felt, felt_str, Felt, FeltOps};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
@@ -11,7 +12,6 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::test_utils::build_metadata;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_utils::extract_matches;
-use num_bigint::BigInt;
 use test_case::test_case;
 
 /// Setups the cairo lowering to sierra db for the matching example.
@@ -118,86 +118,86 @@ fn lowering_test(name: &str) {
 
 #[test_case(
     "fib",
-    &[1, 1, 7].map(BigInt::from), None, None =>
-    RunResultValue::Success(vec![BigInt::from(21)]);
+    &[1, 1, 7].map(Felt::from), None, None =>
+    RunResultValue::Success(vec![Felt::from(21)]);
     "fib"
 )]
 #[test_case(
     "fib_counter",
-    &[1, 1, 8].map(BigInt::from), None, None =>
-    RunResultValue::Success([34, 8].map(BigInt::from).into_iter().collect());
+    &[1, 1, 8].map(Felt::from), None, None =>
+    RunResultValue::Success([34, 8].map(Felt::from).into_iter().collect());
     "fib_counter"
 )]
 #[test_case(
     "fib_struct",
-    &[1, 1, 9].map(BigInt::from), None, None =>
-    RunResultValue::Success([55, 9].map(BigInt::from).into_iter().collect());
+    &[1, 1, 9].map(Felt::from), None, None =>
+    RunResultValue::Success([55, 9].map(Felt::from).into_iter().collect());
     "fib_struct"
 )]
 #[test_case(
     "fib_u128_checked",
-    &[1, 1, 10].map(BigInt::from), None, None =>
-    RunResultValue::Success([/*ok*/0, /*fib*/89].map(BigInt::from).into_iter().collect());
+    &[1, 1, 10].map(Felt::from), None, None =>
+    RunResultValue::Success([/*ok*/0, /*fib*/89].map(Felt::from).into_iter().collect());
     "fib_u128_checked"
 )]
 #[test_case(
     "fib_u128_checked",
-    &[1, 1, 200].map(BigInt::from), None, None =>
-    RunResultValue::Success([/*err*/1, /*padding*/0].map(BigInt::from).into_iter().collect());
+    &[1, 1, 200].map(Felt::from), None, None =>
+    RunResultValue::Success([/*err*/1, /*padding*/0].map(Felt::from).into_iter().collect());
     "fib_u128_checked_overflow"
 )]
 #[test_case(
     "fib_gas",
-    &[1, 1, 10].map(BigInt::from), Some(200000), None =>
-    RunResultValue::Success([89].map(BigInt::from).into_iter().collect());
+    &[1, 1, 10].map(Felt::from), Some(200000), None =>
+    RunResultValue::Success([89].map(Felt::from).into_iter().collect());
     "fib_gas"
 )]
 #[test_case(
     "fib_gas",
-    &[1, 1, 10].map(BigInt::from), Some(20000), None =>
-    RunResultValue::Panic(vec![BigInt::from_bytes_be(num_bigint::Sign::Plus, b"OOG")]);
+    &[1, 1, 10].map(Felt::from), Some(20000), None =>
+    RunResultValue::Panic(vec![Felt::from_bytes_be(b"OOG")]);
     "fib_gas_out_of_gas"
 )]
 #[test_case(
     "fib_u128",
-    &[1, 1, 10].map(BigInt::from), None, None =>
-    RunResultValue::Success(vec![BigInt::from(89)]);
+    &[1, 1, 10].map(Felt::from), None, None =>
+    RunResultValue::Success(vec![Felt::from(89)]);
     "fib_u128"
 )]
 #[test_case(
     "fib_u128",
-    &[1, 1, 200].map(BigInt::from), None, None =>
-    RunResultValue::Panic(vec![BigInt::from_bytes_be(num_bigint::Sign::Plus, b"u128_add OF")]);
+    &[1, 1, 200].map(Felt::from), None, None =>
+    RunResultValue::Panic(vec![Felt::from_bytes_be(b"u128_add OF")]);
     "fib_u128_overflow"
 )]
 #[test_case(
     "fib_local",
-    &[6].map(BigInt::from), None, None =>
-    RunResultValue::Success(vec![BigInt::from(13)]);
+    &[6].map(Felt::from), None, None =>
+    RunResultValue::Success(vec![Felt::from(13)]);
     "fib_local"
 )]
 #[test_case(
     "fib_unary",
-    &[7].map(BigInt::from), None, None =>
-    RunResultValue::Success(vec![BigInt::from(21)]);
+    &[7].map(Felt::from), None, None =>
+    RunResultValue::Success(vec![Felt::from(21)]);
     "fib_unary"
 )]
 #[test_case(
     "hash_chain",
-    &[3].map(BigInt::from), None, None =>
-    RunResultValue::Success(vec![BigInt::parse_bytes(
-        b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()]);
+    &[3].map(Felt::from), None, None =>
+    RunResultValue::Success(vec![felt_str!(
+        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]);
     "hash_chain")]
 #[test_case(
     "hash_chain_gas",
-    &[3].map(BigInt::from), Some(100000), Some(9631 + 3 * DUMMY_BUILTIN_GAS_COST) =>
-    RunResultValue::Success(vec![BigInt::parse_bytes(
-        b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()]);
+    &[3].map(Felt::from), Some(100000), Some(9631 + 3 * DUMMY_BUILTIN_GAS_COST) =>
+    RunResultValue::Success(vec![felt_str!(
+        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]);
     "hash_chain_gas")]
 #[test_case("testing", &[], None, None => RunResultValue::Success(vec![]); "testing")]
 fn run_function_test(
     name: &str,
-    params: &[BigInt],
+    params: &[Felt],
     available_gas: Option<usize>,
     expected_cost: Option<usize>,
 ) -> RunResultValue {
@@ -207,10 +207,7 @@ fn run_function_test(
         .run_function(/* find first */ "", params, available_gas)
         .expect("Failed running the function.");
     if let Some(expected_cost) = expected_cost {
-        assert_eq!(
-            available_gas.unwrap() - result.gas_counter.unwrap(),
-            BigInt::from(expected_cost)
-        );
+        assert_eq!(available_gas.unwrap() - result.gas_counter.unwrap(), Felt::from(expected_cost));
     }
     result.value
 }
@@ -227,9 +224,9 @@ fn run_function_test(
 fn run_fib_array_len(n: usize, last: usize) {
     assert_matches!(
         &extract_matches!(
-            run_function_test("fib_array", &[n].map(BigInt::from), None, None),
+            run_function_test("fib_array", &[n].map(Felt::from), None, None),
             RunResultValue::Success
         )[..],
-        [_, _, actual_last, actual_len] if actual_last == &BigInt::from(last) && actual_len == &BigInt::from(n)
+        [_, _, actual_last, actual_len] if actual_last == &Felt::from(last) && actual_len == &Felt::from(n)
     );
 }
