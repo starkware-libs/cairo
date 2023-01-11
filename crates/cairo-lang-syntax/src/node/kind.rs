@@ -94,122 +94,122 @@ pub enum SyntaxKind {
     TerminalLiteralNumber,
     TokenShortString,
     TerminalShortString,
-    TokenFalse,
-    TerminalFalse,
-    TokenTrue,
-    TerminalTrue,
-    TokenExtern,
-    TerminalExtern,
-    TokenType,
-    TerminalType,
-    TokenFunction,
-    TerminalFunction,
-    TokenModule,
-    TerminalModule,
-    TokenEnum,
-    TerminalEnum,
-    TokenStruct,
-    TerminalStruct,
-    TokenTrait,
-    TerminalTrait,
-    TokenImpl,
-    TerminalImpl,
-    TokenOf,
-    TerminalOf,
-    TokenLet,
-    TerminalLet,
-    TokenReturn,
-    TerminalReturn,
-    TokenMatch,
-    TerminalMatch,
-    TokenIf,
-    TerminalIf,
     TokenElse,
     TerminalElse,
-    TokenUse,
-    TerminalUse,
+    TokenEnum,
+    TerminalEnum,
+    TokenExtern,
+    TerminalExtern,
+    TokenFalse,
+    TerminalFalse,
+    TokenFunction,
+    TerminalFunction,
+    TokenIf,
+    TerminalIf,
+    TokenImpl,
+    TerminalImpl,
     TokenImplicits,
     TerminalImplicits,
-    TokenRef,
-    TerminalRef,
+    TokenLet,
+    TerminalLet,
+    TokenMatch,
+    TerminalMatch,
+    TokenModule,
+    TerminalModule,
     TokenMut,
     TerminalMut,
     TokenNoPanic,
     TerminalNoPanic,
+    TokenOf,
+    TerminalOf,
+    TokenRef,
+    TerminalRef,
+    TokenReturn,
+    TerminalReturn,
+    TokenStruct,
+    TerminalStruct,
+    TokenTrait,
+    TerminalTrait,
+    TokenTrue,
+    TerminalTrue,
+    TokenType,
+    TerminalType,
+    TokenUse,
+    TerminalUse,
     TokenAnd,
     TerminalAnd,
     TokenAndAnd,
     TerminalAndAnd,
-    TokenOr,
-    TerminalOr,
-    TokenOrOr,
-    TerminalOrOr,
-    TokenXor,
-    TerminalXor,
-    TokenEqEq,
-    TerminalEqEq,
-    TokenNeq,
-    TerminalNeq,
-    TokenGE,
-    TerminalGE,
-    TokenGT,
-    TerminalGT,
-    TokenLE,
-    TerminalLE,
-    TokenLT,
-    TerminalLT,
-    TokenNot,
-    TerminalNot,
-    TokenPlus,
-    TerminalPlus,
-    TokenMinus,
-    TerminalMinus,
-    TokenMul,
-    TerminalMul,
-    TokenDiv,
-    TerminalDiv,
-    TokenMod,
-    TerminalMod,
+    TokenArrow,
+    TerminalArrow,
+    TokenBadCharacters,
+    TerminalBadCharacters,
     TokenColon,
     TerminalColon,
     TokenColonColon,
     TerminalColonColon,
     TokenComma,
     TerminalComma,
+    TokenDiv,
+    TerminalDiv,
     TokenDot,
     TerminalDot,
     TokenDotDot,
     TerminalDotDot,
+    TokenEndOfFile,
+    TerminalEndOfFile,
     TokenEq,
     TerminalEq,
-    TokenSemicolon,
-    TerminalSemicolon,
-    TokenQuestionMark,
-    TerminalQuestionMark,
-    TokenUnderscore,
-    TerminalUnderscore,
+    TokenEqEq,
+    TerminalEqEq,
+    TokenGE,
+    TerminalGE,
+    TokenGT,
+    TerminalGT,
     TokenHash,
     TerminalHash,
     TokenLBrace,
     TerminalLBrace,
-    TokenRBrace,
-    TerminalRBrace,
     TokenLBrack,
     TerminalLBrack,
-    TokenRBrack,
-    TerminalRBrack,
+    TokenLE,
+    TerminalLE,
     TokenLParen,
     TerminalLParen,
-    TokenRParen,
-    TerminalRParen,
-    TokenArrow,
-    TerminalArrow,
+    TokenLT,
+    TerminalLT,
     TokenMatchArrow,
     TerminalMatchArrow,
-    TokenEndOfFile,
-    TerminalEndOfFile,
-    TokenBadCharacters,
-    TerminalBadCharacters,
+    TokenMinus,
+    TerminalMinus,
+    TokenMod,
+    TerminalMod,
+    TokenMul,
+    TerminalMul,
+    TokenNeq,
+    TerminalNeq,
+    TokenNot,
+    TerminalNot,
+    TokenOr,
+    TerminalOr,
+    TokenOrOr,
+    TerminalOrOr,
+    TokenPlus,
+    TerminalPlus,
+    TokenQuestionMark,
+    TerminalQuestionMark,
+    TokenRBrace,
+    TerminalRBrace,
+    TokenRBrack,
+    TerminalRBrack,
+    TokenRParen,
+    TerminalRParen,
+    TokenSemicolon,
+    TerminalSemicolon,
+    TokenUnderscore,
+    TerminalUnderscore,
+    TokenXor,
+    TerminalXor,
     SyntaxFile,
     TokenSingleLineComment,
     TokenWhitespace,
@@ -224,64 +224,64 @@ impl SyntaxKind {
             SyntaxKind::TokenIdentifier
                 | SyntaxKind::TokenLiteralNumber
                 | SyntaxKind::TokenShortString
-                | SyntaxKind::TokenFalse
-                | SyntaxKind::TokenTrue
-                | SyntaxKind::TokenExtern
-                | SyntaxKind::TokenType
-                | SyntaxKind::TokenFunction
-                | SyntaxKind::TokenModule
-                | SyntaxKind::TokenEnum
-                | SyntaxKind::TokenStruct
-                | SyntaxKind::TokenTrait
-                | SyntaxKind::TokenImpl
-                | SyntaxKind::TokenOf
-                | SyntaxKind::TokenLet
-                | SyntaxKind::TokenReturn
-                | SyntaxKind::TokenMatch
-                | SyntaxKind::TokenIf
                 | SyntaxKind::TokenElse
-                | SyntaxKind::TokenUse
+                | SyntaxKind::TokenEnum
+                | SyntaxKind::TokenExtern
+                | SyntaxKind::TokenFalse
+                | SyntaxKind::TokenFunction
+                | SyntaxKind::TokenIf
+                | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
-                | SyntaxKind::TokenRef
+                | SyntaxKind::TokenLet
+                | SyntaxKind::TokenMatch
+                | SyntaxKind::TokenModule
                 | SyntaxKind::TokenMut
                 | SyntaxKind::TokenNoPanic
+                | SyntaxKind::TokenOf
+                | SyntaxKind::TokenRef
+                | SyntaxKind::TokenReturn
+                | SyntaxKind::TokenStruct
+                | SyntaxKind::TokenTrait
+                | SyntaxKind::TokenTrue
+                | SyntaxKind::TokenType
+                | SyntaxKind::TokenUse
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd
-                | SyntaxKind::TokenOr
-                | SyntaxKind::TokenOrOr
-                | SyntaxKind::TokenXor
-                | SyntaxKind::TokenEqEq
-                | SyntaxKind::TokenNeq
-                | SyntaxKind::TokenGE
-                | SyntaxKind::TokenGT
-                | SyntaxKind::TokenLE
-                | SyntaxKind::TokenLT
-                | SyntaxKind::TokenNot
-                | SyntaxKind::TokenPlus
-                | SyntaxKind::TokenMinus
-                | SyntaxKind::TokenMul
-                | SyntaxKind::TokenDiv
-                | SyntaxKind::TokenMod
+                | SyntaxKind::TokenArrow
+                | SyntaxKind::TokenBadCharacters
                 | SyntaxKind::TokenColon
                 | SyntaxKind::TokenColonColon
                 | SyntaxKind::TokenComma
+                | SyntaxKind::TokenDiv
                 | SyntaxKind::TokenDot
                 | SyntaxKind::TokenDotDot
+                | SyntaxKind::TokenEndOfFile
                 | SyntaxKind::TokenEq
-                | SyntaxKind::TokenSemicolon
-                | SyntaxKind::TokenQuestionMark
-                | SyntaxKind::TokenUnderscore
+                | SyntaxKind::TokenEqEq
+                | SyntaxKind::TokenGE
+                | SyntaxKind::TokenGT
                 | SyntaxKind::TokenHash
                 | SyntaxKind::TokenLBrace
-                | SyntaxKind::TokenRBrace
                 | SyntaxKind::TokenLBrack
-                | SyntaxKind::TokenRBrack
+                | SyntaxKind::TokenLE
                 | SyntaxKind::TokenLParen
-                | SyntaxKind::TokenRParen
-                | SyntaxKind::TokenArrow
+                | SyntaxKind::TokenLT
                 | SyntaxKind::TokenMatchArrow
-                | SyntaxKind::TokenEndOfFile
-                | SyntaxKind::TokenBadCharacters
+                | SyntaxKind::TokenMinus
+                | SyntaxKind::TokenMod
+                | SyntaxKind::TokenMul
+                | SyntaxKind::TokenNeq
+                | SyntaxKind::TokenNot
+                | SyntaxKind::TokenOr
+                | SyntaxKind::TokenOrOr
+                | SyntaxKind::TokenPlus
+                | SyntaxKind::TokenQuestionMark
+                | SyntaxKind::TokenRBrace
+                | SyntaxKind::TokenRBrack
+                | SyntaxKind::TokenRParen
+                | SyntaxKind::TokenSemicolon
+                | SyntaxKind::TokenUnderscore
+                | SyntaxKind::TokenXor
                 | SyntaxKind::TokenSingleLineComment
                 | SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
@@ -295,116 +295,116 @@ impl SyntaxKind {
             SyntaxKind::TerminalIdentifier
                 | SyntaxKind::TerminalLiteralNumber
                 | SyntaxKind::TerminalShortString
-                | SyntaxKind::TerminalFalse
-                | SyntaxKind::TerminalTrue
-                | SyntaxKind::TerminalExtern
-                | SyntaxKind::TerminalType
-                | SyntaxKind::TerminalFunction
-                | SyntaxKind::TerminalModule
-                | SyntaxKind::TerminalEnum
-                | SyntaxKind::TerminalStruct
-                | SyntaxKind::TerminalTrait
-                | SyntaxKind::TerminalImpl
-                | SyntaxKind::TerminalOf
-                | SyntaxKind::TerminalLet
-                | SyntaxKind::TerminalReturn
-                | SyntaxKind::TerminalMatch
-                | SyntaxKind::TerminalIf
                 | SyntaxKind::TerminalElse
-                | SyntaxKind::TerminalUse
+                | SyntaxKind::TerminalEnum
+                | SyntaxKind::TerminalExtern
+                | SyntaxKind::TerminalFalse
+                | SyntaxKind::TerminalFunction
+                | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
-                | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalMatch
+                | SyntaxKind::TerminalModule
                 | SyntaxKind::TerminalMut
                 | SyntaxKind::TerminalNoPanic
+                | SyntaxKind::TerminalOf
+                | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalReturn
+                | SyntaxKind::TerminalStruct
+                | SyntaxKind::TerminalTrait
+                | SyntaxKind::TerminalTrue
+                | SyntaxKind::TerminalType
+                | SyntaxKind::TerminalUse
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
-                | SyntaxKind::TerminalOr
-                | SyntaxKind::TerminalOrOr
-                | SyntaxKind::TerminalXor
-                | SyntaxKind::TerminalEqEq
-                | SyntaxKind::TerminalNeq
-                | SyntaxKind::TerminalGE
-                | SyntaxKind::TerminalGT
-                | SyntaxKind::TerminalLE
-                | SyntaxKind::TerminalLT
-                | SyntaxKind::TerminalNot
-                | SyntaxKind::TerminalPlus
-                | SyntaxKind::TerminalMinus
-                | SyntaxKind::TerminalMul
-                | SyntaxKind::TerminalDiv
-                | SyntaxKind::TerminalMod
+                | SyntaxKind::TerminalArrow
+                | SyntaxKind::TerminalBadCharacters
                 | SyntaxKind::TerminalColon
                 | SyntaxKind::TerminalColonColon
                 | SyntaxKind::TerminalComma
+                | SyntaxKind::TerminalDiv
                 | SyntaxKind::TerminalDot
                 | SyntaxKind::TerminalDotDot
+                | SyntaxKind::TerminalEndOfFile
                 | SyntaxKind::TerminalEq
-                | SyntaxKind::TerminalSemicolon
-                | SyntaxKind::TerminalQuestionMark
-                | SyntaxKind::TerminalUnderscore
+                | SyntaxKind::TerminalEqEq
+                | SyntaxKind::TerminalGE
+                | SyntaxKind::TerminalGT
                 | SyntaxKind::TerminalHash
                 | SyntaxKind::TerminalLBrace
-                | SyntaxKind::TerminalRBrace
                 | SyntaxKind::TerminalLBrack
-                | SyntaxKind::TerminalRBrack
+                | SyntaxKind::TerminalLE
                 | SyntaxKind::TerminalLParen
-                | SyntaxKind::TerminalRParen
-                | SyntaxKind::TerminalArrow
+                | SyntaxKind::TerminalLT
                 | SyntaxKind::TerminalMatchArrow
-                | SyntaxKind::TerminalEndOfFile
-                | SyntaxKind::TerminalBadCharacters
+                | SyntaxKind::TerminalMinus
+                | SyntaxKind::TerminalMod
+                | SyntaxKind::TerminalMul
+                | SyntaxKind::TerminalNeq
+                | SyntaxKind::TerminalNot
+                | SyntaxKind::TerminalOr
+                | SyntaxKind::TerminalOrOr
+                | SyntaxKind::TerminalPlus
+                | SyntaxKind::TerminalQuestionMark
+                | SyntaxKind::TerminalRBrace
+                | SyntaxKind::TerminalRBrack
+                | SyntaxKind::TerminalRParen
+                | SyntaxKind::TerminalSemicolon
+                | SyntaxKind::TerminalUnderscore
+                | SyntaxKind::TerminalXor
         )
     }
     pub fn is_keyword_token(&self) -> bool {
         matches!(
             *self,
-            SyntaxKind::TokenFalse
-                | SyntaxKind::TokenTrue
-                | SyntaxKind::TokenExtern
-                | SyntaxKind::TokenType
-                | SyntaxKind::TokenFunction
-                | SyntaxKind::TokenModule
+            SyntaxKind::TokenElse
                 | SyntaxKind::TokenEnum
-                | SyntaxKind::TokenStruct
-                | SyntaxKind::TokenTrait
-                | SyntaxKind::TokenImpl
-                | SyntaxKind::TokenOf
-                | SyntaxKind::TokenLet
-                | SyntaxKind::TokenReturn
-                | SyntaxKind::TokenMatch
+                | SyntaxKind::TokenExtern
+                | SyntaxKind::TokenFalse
+                | SyntaxKind::TokenFunction
                 | SyntaxKind::TokenIf
-                | SyntaxKind::TokenElse
-                | SyntaxKind::TokenUse
+                | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
-                | SyntaxKind::TokenRef
+                | SyntaxKind::TokenLet
+                | SyntaxKind::TokenMatch
+                | SyntaxKind::TokenModule
                 | SyntaxKind::TokenMut
                 | SyntaxKind::TokenNoPanic
+                | SyntaxKind::TokenOf
+                | SyntaxKind::TokenRef
+                | SyntaxKind::TokenReturn
+                | SyntaxKind::TokenStruct
+                | SyntaxKind::TokenTrait
+                | SyntaxKind::TokenTrue
+                | SyntaxKind::TokenType
+                | SyntaxKind::TokenUse
         )
     }
     pub fn is_keyword_terminal(&self) -> bool {
         matches!(
             *self,
-            SyntaxKind::TerminalFalse
-                | SyntaxKind::TerminalTrue
-                | SyntaxKind::TerminalExtern
-                | SyntaxKind::TerminalType
-                | SyntaxKind::TerminalFunction
-                | SyntaxKind::TerminalModule
+            SyntaxKind::TerminalElse
                 | SyntaxKind::TerminalEnum
-                | SyntaxKind::TerminalStruct
-                | SyntaxKind::TerminalTrait
-                | SyntaxKind::TerminalImpl
-                | SyntaxKind::TerminalOf
-                | SyntaxKind::TerminalLet
-                | SyntaxKind::TerminalReturn
-                | SyntaxKind::TerminalMatch
+                | SyntaxKind::TerminalExtern
+                | SyntaxKind::TerminalFalse
+                | SyntaxKind::TerminalFunction
                 | SyntaxKind::TerminalIf
-                | SyntaxKind::TerminalElse
-                | SyntaxKind::TerminalUse
+                | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
-                | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalMatch
+                | SyntaxKind::TerminalModule
                 | SyntaxKind::TerminalMut
                 | SyntaxKind::TerminalNoPanic
+                | SyntaxKind::TerminalOf
+                | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalReturn
+                | SyntaxKind::TerminalStruct
+                | SyntaxKind::TerminalTrait
+                | SyntaxKind::TerminalTrue
+                | SyntaxKind::TerminalType
+                | SyntaxKind::TerminalUse
         )
     }
 }
