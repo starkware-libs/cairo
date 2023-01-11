@@ -408,6 +408,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NameDefinedMultipleTimes { name } => {
                 format!("The name `{name}` is defined multiple times.")
             }
+            SemanticDiagnosticKind::NamedArgumentsAreNotSupported => {
+                "Named arguments are not supported in this context.".into()
+            }
+            SemanticDiagnosticKind::UnnamedArgumentFollowsNamed => {
+                "Unnamed arguments cannot follow named arguments.".into()
+            }
+            SemanticDiagnosticKind::NamedArgumentMismatch { expected, found } => {
+                format!("Unexpected argument name. Expected: '{expected}', found '{found}'.")
+            }
         }
     }
 
@@ -612,6 +621,12 @@ pub enum SemanticDiagnosticKind {
     },
     NameDefinedMultipleTimes {
         name: SmolStr,
+    },
+    NamedArgumentsAreNotSupported,
+    UnnamedArgumentFollowsNamed,
+    NamedArgumentMismatch {
+        expected: SmolStr,
+        found: SmolStr,
     },
 }
 
