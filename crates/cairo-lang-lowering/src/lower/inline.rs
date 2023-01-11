@@ -1,0 +1,272 @@
+use std::collections::HashMap;
+
+use cairo_lang_defs::ids::{FreeFunctionId, LanguageElementId};
+use cairo_lang_diagnostics::DiagnosticAdded;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+
+use super::context::{LoweringContext, LoweringContextBuilder};
+use super::StructuredLowered;
+use crate::db::LoweringGroup;
+use crate::diagnostic::LoweringDiagnosticKind::InliningFailed;
+use crate::lower::Maybe;
+use crate::{
+    BlockId, Statement, StatementCall, StatementCallBlock, StatementEnumConstruct,
+    StatementLiteral, StatementMatchEnum, StatementMatchExtern, StatementStructConstruct,
+    StatementStructDestructure, StructuredBlock, StructuredBlockEnd, StructuredStatement,
+    VariableId,
+};
+
+// TODO(ilya): Add Rewriter trait.
+
+// A rewriter that inlines functions annotated with #[inline].
+pub struct FunctionInlinerRewriter<'db> {
+    // The LoweringContext were we are building the new blocks.
+    ctx: LoweringContext<'db>,
+    renamed_vars: HashMap<(FreeFunctionId, VariableId), VariableId>,
+    renamed_blocks: HashMap<(FreeFunctionId, BlockId), BlockId>,
+}
+
+impl<'db> FunctionInlinerRewriter<'db> {
+    fn rewrite(
+        &mut self,
+        &free_function_id: &FreeFunctionId,
+        statement: &StructuredStatement,
+    ) -> Maybe<StructuredStatement> {
+        if let Statement::Call(stmt) = &statement.statement {
+            if let Some(called_free_function_id) =
+                stmt.function.try_get_free_function_id(self.ctx.db.upcast())
+            {
+                let inline = self
+                    .ctx
+                    .db
+                    .free_function_declaration_attributes(called_free_function_id)?
+                    .iter()
+                    .any(|attr| attr.id == "inline");
+
+                if inline {
+                    let block = self.inline_function(called_free_function_id)?;
+
+                    return Ok(StructuredStatement {
+                        statement: Statement::CallBlock(StatementCallBlock {
+                            block,
+                            outputs: stmt.outputs.clone(),
+                        }),
+                        ref_updates: statement.ref_updates.clone(),
+                    });
+                }
+            }
+        }
+
+        Ok(StructuredStatement {
+            statement: rebuild_statement(
+                &statement.statement,
+                |var_id: &VariableId| *var_id,
+                |block_id: &BlockId| self.renamed_blocks[&(free_function_id, *block_id)],
+            ),
+            ref_updates: statement.ref_updates.clone(),
+        })
+    }
+
+    /// Inlines a function and returns the StructuredBlock that needs to be called.
+    pub fn inline_function(&mut self, free_function_id: FreeFunctionId) -> Maybe<BlockId> {
+        let lowered = self.ctx.db.free_function_lowered_structured(free_function_id)?;
+        let root_block_id = lowered.root?;
+
+        if !lowered.blocks[root_block_id].initial_refs.is_empty() {
+            return Err(self.ctx.diagnostics.report(
+                free_function_id.untyped_stable_ptr(self.ctx.db.upcast()),
+                InliningFailed {
+                    reason: "Cannot inline a function with ref arguments.".to_string(),
+                },
+            ));
+        }
+
+        for (block_id, block) in lowered.blocks.iter() {
+            let mut statements = vec![];
+
+            let new_block = {
+                let mut rename_var = |old_var_id: &VariableId| {
+                    *self
+                        .renamed_vars
+                        .entry((free_function_id, *old_var_id))
+                        .or_insert_with(|| self.ctx.new_var(lowered.variables[*old_var_id].ty))
+                };
+
+                for stmt in &block.statements {
+                    if !stmt.ref_updates.is_empty() {
+                        panic!("Cannot inline code with ref updates.")
+                    }
+
+                    let rename_block = |old_block_id: &BlockId| {
+                        self.renamed_blocks[&(free_function_id, *old_block_id)]
+                    };
+
+                    statements.push(StructuredStatement {
+                        statement: rebuild_statement(
+                            &stmt.statement,
+                            &mut rename_var,
+                            rename_block,
+                        ),
+                        ref_updates: OrderedHashMap::default(),
+                    });
+                }
+
+                let end = match &block.end {
+                    StructuredBlockEnd::Callsite(outputs) => {
+                        StructuredBlockEnd::Callsite(outputs.iter().map(&mut rename_var).collect())
+                    }
+                    StructuredBlockEnd::Return { refs, returns } => {
+                        if block_id != root_block_id {
+                            return Err(self.ctx.diagnostics.report(
+                                free_function_id.untyped_stable_ptr(self.ctx.db.upcast()),
+                                InliningFailed {
+                                    reason: "Cannot inline a function an early return.".to_string(),
+                                },
+                            ));
+                        }
+                        if !refs.is_empty() {
+                            panic!("Can't inline funcitons with refs.")
+                        }
+
+                        StructuredBlockEnd::Callsite(returns.iter().map(&mut rename_var).collect())
+                    }
+                    _ => panic!("Unexpected block end."),
+                };
+
+                StructuredBlock {
+                    inputs: block.inputs.iter().map(&mut rename_var).collect(),
+                    statements,
+                    end,
+                    initial_refs: block.initial_refs.clone(),
+                }
+            };
+
+            let new_block_block_id = self.ctx.blocks.alloc(new_block);
+            self.renamed_blocks.insert((free_function_id, block_id), new_block_block_id);
+        }
+
+        Ok(self.renamed_blocks[&(free_function_id, root_block_id)])
+    }
+
+    fn apply(
+        lowering_info: &'db LoweringContextBuilder<'db>,
+        structured_lower: &StructuredLowered,
+    ) -> Maybe<StructuredLowered> {
+        let mut rewritter = Self {
+            ctx: lowering_info.ctx()?,
+            renamed_vars: HashMap::default(),
+            renamed_blocks: HashMap::default(),
+        };
+        let orig_root = structured_lower.root?;
+        rewritter.ctx.variables = structured_lower.variables.clone();
+
+        let free_function_id = lowering_info.free_function_id;
+
+        for (block_id, block) in &structured_lower.blocks {
+            let mut statements = vec![];
+            for stmt in &block.statements {
+                if let Ok(stmt) = rewritter.rewrite(&free_function_id, stmt) {
+                    statements.push(stmt);
+                }
+            }
+            let new_block_id = rewritter.ctx.blocks.alloc(StructuredBlock {
+                inputs: block.inputs.clone(),
+                statements,
+                end: block.end.clone(),
+                initial_refs: block.initial_refs.clone(),
+            });
+            rewritter.renamed_blocks.insert((free_function_id, block_id), new_block_id);
+        }
+
+        let diagnostics = rewritter.ctx.diagnostics.build();
+        let root = if diagnostics.is_empty() {
+            Ok(rewritter.renamed_blocks[&(free_function_id, orig_root)])
+        } else {
+            Err(DiagnosticAdded)
+        };
+
+        // TODO(ilya): Consider Returning empty variables and blocks if there are diagnostics?
+        Ok(StructuredLowered {
+            diagnostics,
+            root,
+            variables: rewritter.ctx.variables,
+            blocks: rewritter.ctx.blocks,
+        })
+    }
+}
+
+pub fn apply_inlining(
+    db: &dyn LoweringGroup,
+    free_function_id: FreeFunctionId,
+    structured_lower: &StructuredLowered,
+) -> Maybe<StructuredLowered> {
+    let lowering_info = LoweringContextBuilder::new(db, free_function_id)?;
+    FunctionInlinerRewriter::apply(&lowering_info, structured_lower)
+}
+
+// Rebuilds the statement with renamed var and block ids.
+fn rebuild_statement<VarRenamer, BlockRenamer>(
+    stmt: &Statement,
+    mut rename_var: VarRenamer,
+    rename_block: BlockRenamer,
+) -> Statement
+where
+    VarRenamer: FnMut(&VariableId) -> VariableId,
+    BlockRenamer: Fn(&BlockId) -> BlockId,
+{
+    match &stmt {
+        Statement::Literal(stmt) => Statement::Literal(StatementLiteral {
+            value: stmt.value.clone(),
+            output: rename_var(&stmt.output),
+        }),
+        Statement::Call(stmt) => Statement::Call(StatementCall {
+            function: stmt.function,
+            inputs: stmt.inputs.iter().map(&mut rename_var).collect(),
+            outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
+        }),
+
+        Statement::CallBlock(stmt) => Statement::CallBlock(StatementCallBlock {
+            block: stmt.block,
+            outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
+        }),
+        Statement::MatchExtern(stmt) => Statement::MatchExtern(StatementMatchExtern {
+            function: stmt.function,
+            inputs: stmt.inputs.iter().map(&mut rename_var).collect(),
+            arms: stmt
+                .arms
+                .iter()
+                .map(|(concrete_variant, block_id)| {
+                    (concrete_variant.clone(), rename_block(block_id))
+                })
+                .collect(),
+            outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
+        }),
+        Statement::StructConstruct(stmt) => Statement::StructConstruct(StatementStructConstruct {
+            inputs: stmt.inputs.iter().map(&mut rename_var).collect(),
+            output: rename_var(&stmt.output),
+        }),
+        Statement::StructDestructure(stmt) => {
+            Statement::StructDestructure(StatementStructDestructure {
+                input: rename_var(&stmt.input),
+                outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
+            })
+        }
+        Statement::EnumConstruct(stmt) => Statement::EnumConstruct(StatementEnumConstruct {
+            variant: stmt.variant.clone(),
+            input: rename_var(&stmt.input),
+            output: rename_var(&stmt.output),
+        }),
+        Statement::MatchEnum(stmt) => Statement::MatchEnum(StatementMatchEnum {
+            concrete_enum: stmt.concrete_enum,
+            input: rename_var(&stmt.input),
+            arms: stmt
+                .arms
+                .iter()
+                .map(|(concrete_variant, block_id)| {
+                    (concrete_variant.clone(), rename_block(block_id))
+                })
+                .collect(),
+            outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
+        }),
+    }
+}
