@@ -148,9 +148,9 @@ pub struct FreeFunctionDefinition {
     pub exprs: Arena<semantic::Expr>,
     pub statements: Arena<semantic::Statement>,
     pub body: semantic::ExprId,
-    /// The set of direct callees of the free function (user functions and libfuncs that are called
-    /// from this free function). The items in the vector are unique.
-    pub direct_callees: Vec<FunctionId>,
+    /// The (unordered) set of direct callees of the free function (user functions and libfuncs
+    /// that are called from this free function).
+    pub direct_callees: HashSet<FunctionId>,
 }
 
 // --- Selectors ---
@@ -177,7 +177,7 @@ pub fn free_function_definition_body(
 pub fn free_function_definition_direct_callees(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Maybe<Vec<FunctionId>> {
+) -> Maybe<HashSet<FunctionId>> {
     Ok(db.priv_free_function_definition_data(free_function_id)?.definition.direct_callees.clone())
 }
 
@@ -186,7 +186,7 @@ pub fn free_function_definition_direct_callees(
 pub fn free_function_definition_direct_free_function_callees(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Maybe<Vec<FreeFunctionId>> {
+) -> Maybe<HashSet<FreeFunctionId>> {
     Ok(db
         .free_function_definition_direct_callees(free_function_id)?
         .into_iter()
@@ -270,12 +270,7 @@ pub fn priv_free_function_definition_data(
         diagnostics: diagnostics.build(),
         expr_lookup,
         resolved_lookback,
-        definition: Arc::new(FreeFunctionDefinition {
-            exprs,
-            statements,
-            body,
-            direct_callees: direct_callees.into_iter().collect(),
-        }),
+        definition: Arc::new(FreeFunctionDefinition { exprs, statements, body, direct_callees }),
     })
 }
 

@@ -69,6 +69,9 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(6), ops.const_cost(6)],
         Ec(EcConcreteLibfunc::FinalizeState(_)) => vec![ops.const_cost(13), ops.const_cost(6)],
         Ec(EcConcreteLibfunc::InitState(_)) => vec![ops.const_cost(8)],
+        Ec(EcConcreteLibfunc::Op(_)) => {
+            vec![ops.add(ops.const_cost(5), ops.const_cost_token(1, CostTokenType::EcOp))]
+        }
         Ec(EcConcreteLibfunc::UnwrapPoint(_)) => vec![ops.const_cost(0)],
         Gas(GetGas(_)) => {
             vec![
@@ -110,16 +113,23 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             vec![ops.const_cost(0)]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::New(_)) => {
-            vec![ops.const_cost(7)]
+            // 7 for dict_new + 90 for the fixed cost of dict_squash (see below).
+            vec![ops.const_cost(97)]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Read(_)) => {
-            vec![ops.const_cost(4)]
+            // 4 for the dict_read + 100 for the variable cost of dict_squash (see below).
+            vec![ops.const_cost(104)]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Write(_)) => {
-            vec![ops.const_cost(4)]
+            // 4 for the dict_write + 100 for the variable cost of dict_squash (see below).
+            vec![ops.const_cost(104)]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Squash(_)) => {
-            // TODO(Gil): add the cost to new/read/write once the casm is added.
+            // Dict squash have a fixed cost of 90 + 100 for each dict access. The fixed cost is
+            // precharged in dict_new to for pay dict_squash in case of out of gas.
+            // The 100 gas cost of each read/write consists of a fixed cost of 88 per key + 12 for
+            // each access of the key.
+            // TODO(Gil): Refund 88 gas per access which is not the first access for the key.
             vec![ops.const_cost(0)]
         }
         Pedersen(_) => {

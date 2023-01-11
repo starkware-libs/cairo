@@ -3,6 +3,7 @@ use std::fmt::Display;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
+use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
@@ -36,6 +37,8 @@ pub enum CompilationError {
     ReferencesError(#[from] ReferencesError),
     #[error("#{statement_idx}: Invocation mismatched to libfunc")]
     LibfuncInvocationMismatch { statement_idx: StatementIdx },
+    #[error("{var_id} is dangling at #{statement_idx}.")]
+    DanglingReferences { statement_idx: StatementIdx, var_id: VarId },
 }
 
 /// The casm program representation.
@@ -129,11 +132,10 @@ pub fn compile(
                     .get_annotations_after_take_args(statement_idx, ref_ids.iter())?;
 
                 if let Some(var_id) = annotations.refs.keys().next() {
-                    return Err(ReferencesError::DanglingReferences {
+                    return Err(CompilationError::DanglingReferences {
                         statement_idx,
                         var_id: var_id.clone(),
-                    }
-                    .into());
+                    });
                 };
 
                 program_annotations.validate_final_annotations(

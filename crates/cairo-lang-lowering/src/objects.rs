@@ -6,7 +6,7 @@
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::{Arena, Id};
 use itertools::chain;
 use num_bigint::BigInt;
@@ -17,6 +17,9 @@ use self::blocks::{FlatBlocks, StructuredBlocks};
 use crate::diagnostic::LoweringDiagnostic;
 
 pub type VariableId = Id<Variable>;
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+pub struct RefIndex(pub usize);
 
 /// A lowered function code.
 #[derive(Debug, PartialEq, Eq)]
@@ -34,8 +37,6 @@ pub struct StructuredLowered {
 /// A lowered function code using flat blocks.
 #[derive(Debug, PartialEq, Eq)]
 pub struct FlatLowered {
-    /// Diagnostics produced while lowering.
-    pub diagnostics: Diagnostics<LoweringDiagnostic>,
     /// Block id for the start of the lowered function.
     pub root: Maybe<BlockId>,
     /// Arena of allocated lowered variables.
@@ -62,7 +63,7 @@ pub struct StructuredBlock {
     /// Note: Inner blocks might end with a `return`, which will exit the function in the middle.
     /// Note: Match is a possible statement, which means it has control flow logic inside, but
     /// after its execution is completed, the flow returns to the following statement of the block.
-    pub statements: Vec<Statement>,
+    pub statements: Vec<StructuredStatement>,
     /// Describes how this block ends: returns to the caller or exits the function.
     pub end: StructuredBlockEnd,
 }
@@ -114,7 +115,7 @@ impl TryFrom<StructuredBlock> for FlatBlock {
     fn try_from(value: StructuredBlock) -> Result<Self, Self::Error> {
         Ok(FlatBlock {
             inputs: value.inputs,
-            statements: value.statements,
+            statements: value.statements.into_iter().map(|s| s.statement).collect(),
             end: value.end.try_into()?,
         })
     }
@@ -142,12 +143,22 @@ pub struct Variable {
     pub droppable: bool,
     /// Can the type be (trivially) duplicated.
     pub duplicatable: bool,
-    /// If this variable is a used as a reference variable (including implicits) of the current
-    /// function, what are the indices of said reference variables?
-    /// Note that a lowered variable might be assigned to multiple reference variables.
-    pub ref_indices: OrderedHashSet<usize>,
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StructuredStatement {
+    pub statement: Statement,
+    /// Updates to the variable ids bound to the ref variables (including implicits), from the last
+    /// update until exactly after this statement.
+    pub ref_updates: OrderedHashMap<RefIndex, VariableId>,
+}
+
+impl From<Statement> for StructuredStatement {
+    fn from(statement: Statement) -> Self {
+        StructuredStatement { statement, ref_updates: Default::default() }
+    }
 }
 
 /// Lowered statement.
@@ -200,8 +211,6 @@ impl Statement {
 /// A statement that binds a literal value to a variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementLiteral {
-    /// The type of the literal.
-    pub ty: semantic::TypeId,
     /// The value of the literal.
     pub value: BigInt,
     /// The variable to bind the value to.

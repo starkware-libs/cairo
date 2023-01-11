@@ -71,7 +71,7 @@ Statements:
   (v1: core::felt) <- 1u
   (v2: core::felt) <- 5u
 End:
-  Callsite(v2)
+  Return(v2)
 
 //! > lowering_flat
 blk0 (root):
@@ -80,7 +80,7 @@ Statements:
   (v1: core::felt) <- 1u
   (v2: core::felt) <- 5u
 End:
-  Callsite(v2)
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -169,7 +169,7 @@ Statements:
   (v17: core::felt) <- core::felt_mul(v12, v16)
   (v18: core::felt) <- core::felt_add(v11, v17)
 End:
-  Callsite(v18)
+  Return(v18)
 
 //! > lowering_flat
 blk0:
@@ -228,7 +228,7 @@ Statements:
   (v17: core::felt) <- core::felt_mul(v12, v16)
   (v18: core::felt) <- core::felt_add(v11, v17)
 End:
-  Callsite(v18)
+  Return(v18)
 
 //! > ==========================================================================
 
@@ -318,7 +318,7 @@ Statements:
     MyEnum::C => blk5,
   }
 End:
-  Callsite(v8)
+  Return(v8)
 
 //! > lowering_flat
 blk0:
@@ -371,7 +371,7 @@ Statements:
     MyEnum::C => blk5,
   }
 End:
-  Callsite(v8)
+  Return(v8)
 
 //! > ==========================================================================
 
@@ -402,7 +402,7 @@ Initial refs:
 Statements:
   (v1: core::felt) <- core::felt_const<Literal(LiteralLongId { value: 17 }),>()
 End:
-  Callsite(v1)
+  Return(v1)
 
 //! > lowering_flat
 blk0 (root):
@@ -410,4 +410,4 @@ Inputs: v0: test::Array::<core::felt, 5>
 Statements:
   (v1: core::felt) <- core::felt_const<Literal(LiteralLongId { value: 17 }),>()
 End:
-  Callsite(v1)
+  Return(v1)

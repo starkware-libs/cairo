@@ -21,6 +21,7 @@ cairo_lang_test_utils::test_file_test!(
         if_ :"if",
         match_ :"match",
         panic :"panic",
+        rebindings :"rebindings",
         struct_ :"struct",
         tests :"tests",
         tuple :"tuple",

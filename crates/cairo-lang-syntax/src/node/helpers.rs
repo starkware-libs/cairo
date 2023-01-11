@@ -11,7 +11,6 @@ use super::ast::{
     TokenIdentifierGreen, TraitItemFunctionPtr,
 };
 use super::db::SyntaxGroup;
-use super::kind::SyntaxKind;
 use super::Terminal;
 use crate::node::green::GreenNodeDetails;
 
@@ -51,21 +50,6 @@ impl GetIdentifier for ast::ExprPath {
         self.elements(db).last().cloned().unwrap().identifier(db)
     }
 }
-impl GetIdentifier for ast::ParamNameGreen {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = db.lookup_intern_green(self.0);
-
-        match green_node.details {
-            GreenNodeDetails::Token(_) => "Unexpected token".into(),
-            GreenNodeDetails::Node { .. } => match green_node.kind {
-                SyntaxKind::TerminalIdentifier => TerminalIdentifierGreen(self.0).identifier(db),
-                // All '_' params will be named with the same name...
-                SyntaxKind::TerminalUnderscore => "_".into(),
-                _ => "Unexpected identifier for param name".into(),
-            },
-        }
-    }
-}
 
 /// Helper trait for ast::PathSegment.
 pub trait PathSegmentEx {
@@ -84,14 +68,6 @@ impl GetIdentifier for ast::PathSegment {
     /// Retrieves the text of the segment (without the generic args).
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
         self.identifier_ast(db).text(db)
-    }
-}
-impl GetIdentifier for ast::ParamName {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        match self {
-            ast::ParamName::Underscore(_) => "_".into(),
-            ast::ParamName::Name(name) => name.text(db),
-        }
     }
 }
 impl GetIdentifier for ast::Modifier {

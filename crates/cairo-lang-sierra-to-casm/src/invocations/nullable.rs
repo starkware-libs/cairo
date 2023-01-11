@@ -1,10 +1,11 @@
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::lib_func::SignatureAndTypeConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::build_jump_nz;
-use crate::references::{CellExpression, ReferenceExpression};
+use crate::references::ReferenceExpression;
 
 /// Builds Casm instructions for Nullable operations.
 pub fn build(
@@ -50,7 +51,11 @@ fn build_nullable_from_nullable(
         "Nullable<> cannot be used for types of size 0."
     );
 
-    builder.refs[0].expression.try_unpack_single()?.to_deref()?;
+    builder.refs[0]
+        .expression
+        .try_unpack_single()?
+        .to_deref()
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     build_jump_nz(builder)
 }

@@ -29,7 +29,7 @@ Statements:
   (v6: core::felt) <- core::felt_add(v3, v5)
   (v7: core::felt) <- 1234u
 End:
-  Callsite(v2)
+  Return(v2)
 
 //! > last_use
 ((BlockId(0), 6), 0)

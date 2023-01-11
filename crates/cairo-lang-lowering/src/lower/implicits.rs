@@ -154,7 +154,6 @@ pub fn free_function_may_panic(
     // Find the SCC representative.
     let scc_representative = db.function_scc_representative(free_function);
 
-    // TODO(spapini): Add something that actually panics.
     // For each direct callee, find if it may panic.
     for direct_callee in db.free_function_definition_direct_callees(free_function)? {
         match db.lookup_intern_function(direct_callee).function.generic_function {

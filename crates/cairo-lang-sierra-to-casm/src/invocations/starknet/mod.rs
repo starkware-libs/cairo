@@ -1,14 +1,14 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::ResOperand;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use num_bigint::BigInt;
 
 use self::interoperability::{build_call_contract, build_contract_address_const};
 use super::{CompiledInvocation, CompiledInvocationBuilder};
-use crate::invocations::InvocationError;
-use crate::references::{CellExpression, ReferenceExpression};
+use crate::invocations::{add_input_variables, InvocationError};
+use crate::references::ReferenceExpression;
 
 mod storage;
 use storage::{build_storage_read, build_storage_write};
@@ -56,12 +56,12 @@ fn build_storage_address_from_felt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound: BigInt = (BigInt::from(1) << 251) - 256;
-    let [range_check_expr, addr_expr] = builder.try_get_refs()?;
-    let range_check = range_check_expr.try_unpack_single()?.to_buffer(2)?;
-    let addr = addr_expr.try_unpack_single()?.to_deref()?;
+    let [range_check, addr] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
-    let range_check = casm_builder.add_var(range_check);
-    let addr = casm_builder.add_var(ResOperand::Deref(addr));
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref addr;
+    };
     // For both checks later:
     // We show that a number is in the range [0, bound) by writing it as:
     //   A * x + y,

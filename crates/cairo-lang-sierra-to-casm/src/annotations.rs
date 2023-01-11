@@ -47,8 +47,9 @@ pub enum AnnotationError {
     FrameStateError(#[from] FrameStateError),
     #[error(transparent)]
     GasWalletError(#[from] GasWalletError),
-    #[error(transparent)]
-    ReferencesError(#[from] ReferencesError),
+
+    #[error("#{statement_idx}: {error}")]
+    ReferencesError { statement_idx: StatementIdx, error: ReferencesError },
 
     #[error(
         "#{source_statement_idx}->#{destination_statement_idx}: Got '{error}' error while moving \
@@ -149,7 +150,9 @@ impl ProgramAnnotations {
             annotations.set_or_assert(
                 func.entry_point,
                 StatementAnnotations {
-                    refs: build_function_arguments_refs(func, type_sizes)?,
+                    refs: build_function_arguments_refs(func, type_sizes).map_err(|error| {
+                        AnnotationError::ReferencesError { statement_idx: func.entry_point, error }
+                    })?,
                     return_annotation,
                     environment: if gas_usage_check {
                         Environment::new(GasWallet::Value(
@@ -305,7 +308,8 @@ impl ProgramAnnotations {
         }
 
         // Checks that the list of return reference contains has the expected types.
-        check_types_match(return_refs, &return_properties.return_types)?;
+        check_types_match(return_refs, &return_properties.return_types)
+            .map_err(|error| AnnotationError::ReferencesError { statement_idx, error })?;
         Ok(())
     }
 
