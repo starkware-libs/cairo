@@ -91,8 +91,8 @@ fn get_function_code(
     // Generate the return statement if necessary.
     let return_statement_location: StatementLocation = (block_id, block.statements.len());
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(returned_variables)
-        | lowering::FlatBlockEnd::Return(returned_variables) => {
+        lowering::FlatBlockEnd::Callsite(_) => panic!("Root block may not end with callsite."),
+        lowering::FlatBlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(
                 &mut context,
                 returned_variables,
