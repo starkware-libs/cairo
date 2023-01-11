@@ -27,7 +27,7 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite(v2)
+  Callsite(v2 -> v5)
 
 blk1:
 Inputs:
@@ -35,16 +35,16 @@ Statements:
   (v2: core::felt) <- core::felt_add(v1, v1)
   (v3: core::felt) <- 1u
   (v4: core::felt) <- core::felt_add(v1, v3)
-  (v5: core::felt) <- blk0()
+  () <- blk0()
   (v6: core::felt) <- 20u
 End:
-  Callsite(v6)
+  Callsite(v6 -> v7)
 
 blk2 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
-  (v7: core::felt) <- blk1()
+  () <- blk1()
 End:
   Return(v7)
 
