@@ -7,6 +7,7 @@ use std::vec;
 
 use cairo_lang_filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
+use substring::Substring;
 
 use self::ast::TriviaGreen;
 use self::db::SyntaxGroup;
@@ -177,6 +178,30 @@ impl SyntaxNode {
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text(self, db: &dyn SyntaxGroup) -> String {
         format!("{}", NodeTextFormatter { node: &self, db })
+    }
+
+    /// Returns all the text under the syntax node, without the outmost trivia (the leading trivia
+    /// of the first token and the trailing trivia of the last token).
+    ///
+    /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
+    pub fn get_text_without_trivia(self, db: &dyn SyntaxGroup) -> String {
+        let trimmed_span = self.span_without_trivia(db);
+
+        self.get_text_of_span(db, trimmed_span)
+    }
+
+    /// Returns the text under the syntax node, according to the given span.
+    ///
+    /// `span` is assumed to be contained within the span of self.
+    ///
+    /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
+    pub fn get_text_of_span(self, db: &dyn SyntaxGroup, span: TextSpan) -> String {
+        let orig_span = self.span(db);
+        assert!(orig_span.contains(span));
+
+        let left_offset = span.start - orig_span.start;
+        let right_offset = span.end - orig_span.start;
+        self.get_text(db).substring(left_offset, right_offset).to_string()
     }
 }
 pub struct SyntaxNodeChildIterator<'db> {

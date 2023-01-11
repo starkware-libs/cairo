@@ -176,20 +176,14 @@ impl<'a> PatchBuilder<'a> {
     }
 
     pub fn add_trimmed_node(&mut self, node: SyntaxNode) {
-        let orig_span = node.span(self.db);
+        let origin_span = node.span_without_trivia(self.db);
+        let text = node.get_text_of_span(self.db, origin_span);
         let start = TextOffset(self.code.len());
-        self.patches.patches.push(Patch {
-            span: TextSpan { start, end: start.add(orig_span.end - orig_span.start) },
-            origin_span: node.span(self.db),
-        });
-        let orig_trimmed_span = node.span_without_trivia(self.db);
 
-        let trimmed_left_offset = orig_trimmed_span.start - orig_span.start;
-        let trimmed_right_offset = orig_trimmed_span.end - orig_span.start;
-        self.code += &node.get_text(self.db).as_str()[trimmed_left_offset..trimmed_right_offset];
-        self.patches.patches.push(Patch {
-            span: TextSpan { start, end: start.add(orig_span.end - orig_span.start) },
-            origin_span: orig_trimmed_span,
-        });
+        self.code += &text;
+
+        self.patches
+            .patches
+            .push(Patch { span: TextSpan { start, end: start.add(text.len()) }, origin_span });
     }
 }
