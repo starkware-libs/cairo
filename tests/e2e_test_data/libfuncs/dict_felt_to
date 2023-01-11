@@ -37,7 +37,7 @@ memory[memory[memory[fp + -3] + 0] + n_dicts * 3] = (
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 99})
+test::foo: OrderedHashMap({Step: 101})
 
 //! > sierra_code
 type DictManager = DictManager;
@@ -87,7 +87,7 @@ dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 105})
+test::foo: OrderedHashMap({Step: 87})
 
 //! > sierra_code
 type felt = felt;
@@ -139,7 +139,7 @@ dict_tracker.current_ptr += 3
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 106})
+test::foo: OrderedHashMap({Step: 88})
 
 //! > sierra_code
 type felt = felt;
@@ -175,11 +175,13 @@ fn foo(dict: DictFeltTo::<felt>) -> SquashedDictFeltTo::<felt> {
 }
 
 //! > casm
-[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -6], ap++;
 [ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 247;
+jmp rel 257;
+[fp + 2] = [fp + -5], ap++;
 %{
 expected_segment_index = memory[fp + -3].segment_index
 for i in range(memory[memory[fp + -4]]):
@@ -189,30 +191,37 @@ for i in range(memory[memory[fp + -4]]):
 else:
     raise Exception(f"Dict with end pointer was not found.")
 %}
-[fp + 1] = [[fp + -4] + 0], ap++;
-[fp + 2] = [[fp + -4] + 1], ap++;
-[fp + 3] = [[fp + -4] + 2], ap++;
-[fp + 0] = [[fp + -5] + 0], ap++;
-[fp + 2] = [ap + 0] + 1, ap++;
-[ap + -1] = [ap + 0] + [fp + 0], ap++;
-[ap + -1] = [[fp + -5] + 1];
+[fp + 3] = [[fp + -4] + 0], ap++;
+[fp + 4] = [[fp + -4] + 1], ap++;
+[fp + 5] = [[fp + -4] + 2], ap++;
+[fp + 0] = [[fp + -6] + 0], ap++;
+[fp + 4] = [ap + 1] + 1, ap++;
+[ap + 0] = [ap + 1] + [fp + 0], ap++;
+[ap + 0] = [[fp + -6] + 1], ap++;
 [ap + 0] = [fp + 0] * 3, ap++;
-[ap + 0] = [fp + 1] + [ap + -1], ap++;
-[fp + 3] = [[ap + -1] + 2];
+[ap + 0] = [fp + 3] + [ap + -1], ap++;
+[fp + 5] = [[ap + -1] + 2];
 [fp + -3] = [[ap + -1] + 1];
-[fp + 1] = [[fp + -4] + 3];
-[fp + 2] = [[fp + -4] + 4];
-[ap + 0] = [fp + 3] + 1, ap++;
+[fp + 3] = [[fp + -4] + 3];
+[fp + 4] = [[fp + -4] + 4];
+[ap + 0] = [fp + 5] + 1, ap++;
 [ap + -1] = [[fp + -4] + 5];
-[ap + 0] = [fp + -5] + 2, ap++;
-[ap + 0] = [[ap + -3] + 0], ap++;
+[ap + 0] = [[ap + -2] + 0], ap++;
+[fp + -3] = [fp + 1] + [ap + -1];
+[ap + 0] = [fp + -6] + 2, ap++;
+[ap + 0] = [[ap + -4] + 0], ap++;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = 0, ap++;
-call rel 8;
-[ap + 0] = [ap + -3], ap++;
+call rel 15;
+[ap + -1] = [ap + 0] + [ap + -2], ap++;
+[fp + 1] = [ap + 0] + [ap + -1], ap++;
+[ap + -1] = [ap + 0] * 3, ap++;
+[ap + 0] = [ap + -1] * 70, ap++;
+[ap + 0] = [ap + -7], ap++;
+[ap + 0] = [fp + 2] + [ap + -2], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
-[ap + 0] = [ap + -4], ap++;
-[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -9], ap++;
+[ap + 0] = [ap + -9], ap++;
 ret;
 ap += 3;
 [ap + 0] = [fp + -6], ap++;
@@ -457,13 +466,19 @@ ret;
 [ap + -4] = [fp + -4] * [ap + -1];
 [ap + 0] = [fp + -5] + 4, ap++;
 ret;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({})
+test::foo: OrderedHashMap({Step: 5})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
+type GasBuiltin = GasBuiltin;
 type DictManager = DictManager;
 type felt = felt;
 type DictFeltTo<felt> = DictFeltTo<felt>;
@@ -471,15 +486,17 @@ type SquashedDictFeltTo<felt> = SquashedDictFeltTo<felt>;
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc dict_felt_to_squash<felt> = dict_felt_to_squash<felt>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<DictManager> = rename<DictManager>;
-libfunc rename<SquashedDictFeltTo<felt>> = rename<SquashedDictFeltTo<felt>>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<DictManager> = store_temp<DictManager>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<SquashedDictFeltTo<felt>> = store_temp<SquashedDictFeltTo<felt>>;
 
 revoke_ap_tracking() -> ();
-dict_felt_to_squash<felt>([0], [1], [2]) -> ([3], [4], [5]);
-rename<RangeCheck>([3]) -> ([6]);
-rename<DictManager>([4]) -> ([7]);
-rename<SquashedDictFeltTo<felt>>([5]) -> ([8]);
-return([6], [7], [8]);
+dict_felt_to_squash<felt>([0], [2], [1], [3]) -> ([4], [5], [6], [7]);
+store_temp<RangeCheck>([4]) -> ([8]);
+store_temp<DictManager>([6]) -> ([9]);
+store_temp<GasBuiltin>([5]) -> ([10]);
+store_temp<SquashedDictFeltTo<felt>>([7]) -> ([11]);
+return([8], [9], [10], [11]);
 
-test::foo@0([0]: RangeCheck, [1]: DictManager, [2]: DictFeltTo<felt>) -> (RangeCheck, DictManager, SquashedDictFeltTo<felt>);
+test::foo@0([0]: RangeCheck, [1]: DictManager, [2]: GasBuiltin, [3]: DictFeltTo<felt>) -> (RangeCheck, DictManager, GasBuiltin, SquashedDictFeltTo<felt>);
