@@ -102,49 +102,39 @@ pub fn build_cell_eq(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let mut casm_builder = CasmBuilder::default();
-    let [expr_a, expr_b] = builder.try_get_refs()?;
-    let a = expr_a.try_unpack_single()?;
-    let b = expr_b.try_unpack_single()?;
+    let [a, b] = builder.try_get_single_cells()?;
 
     // The target line to jump to if a != b.
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
-
-    let (a, b) = match (a, b) {
-        (CellExpression::Deref(cell_expr_a), CellExpression::Deref(cell_expr_b)) => {
-            (CellExpression::Deref(*cell_expr_a), CellExpression::Deref(*cell_expr_b))
-        }
-        (CellExpression::Deref(cell_expr_a), CellExpression::Immediate(big_int_b)) => {
-            (CellExpression::Deref(*cell_expr_a), CellExpression::Immediate(big_int_b.clone()))
-        }
-        // The casm line 'tempvar diff = a - b;' won't work if a is an immediate.
-        // So if a is an immediate and b is a deref: switch them.
-        // If a, b are both immediates, alternative cairo code will be used.
-        (CellExpression::Immediate(big_int_a), CellExpression::Deref(cell_expr_b)) => {
-            (CellExpression::Deref(*cell_expr_b), CellExpression::Immediate(big_int_a.clone()))
-        }
-        (CellExpression::Immediate(big_int_a), CellExpression::Immediate(big_int_b)) => {
-            casm_build_extend! {casm_builder,
-                const difference = big_int_a - big_int_b;
-                tempvar diff = difference;
-                // diff = a - b => (diff == 0) <==> (a == b)
-                jump NotEqual if diff != 0;
-                jump Equal;
-            NotEqual:
-            };
-            return Ok(builder.build_from_casm_builder(
-                casm_builder,
-                [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
-            ));
-        }
-        _ => {
-            return Err(InvocationError::InvalidReferenceExpressionForArgument);
-        }
+    let diff = if matches!(a, CellExpression::Deref(_)) {
+        add_input_variables! {casm_builder,
+            deref a;
+            deref_or_immediate b;
+        };
+        casm_build_extend!(casm_builder, tempvar diff = a - b;);
+        diff
+    } else if matches!(b, CellExpression::Deref(_)) {
+        // If `a` is an immediate the previous `a - b` wouldn't be a legal command, so we do `b - a`
+        // instead.
+        add_input_variables! {casm_builder,
+            deref b;
+            deref_or_immediate a;
+        };
+        casm_build_extend!(casm_builder, tempvar diff = b - a;);
+        diff
+    } else if let (CellExpression::Immediate(a), CellExpression::Immediate(b)) = (a, b) {
+        // If both `a` an `b` are immediates we do the diff calculation of code, but simulate the
+        // same flow to conform on AP changes.
+        casm_build_extend! {casm_builder,
+            const diff_imm = a - b;
+            tempvar diff = diff_imm;
+        };
+        diff
+    } else {
+        return Err(InvocationError::InvalidReferenceExpressionForArgument);
     };
-
-    let (a, b) = (casm_builder.add_var(a), casm_builder.add_var(b));
     casm_build_extend! {casm_builder,
         // diff = a - b => (diff == 0) <==> (a == b)
-        tempvar diff = a - b;
         jump NotEqual if diff != 0;
         jump Equal;
     NotEqual:
