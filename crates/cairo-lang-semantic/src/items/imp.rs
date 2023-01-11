@@ -237,9 +237,11 @@ pub fn priv_impl_definition_data(
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
             match item {
-                Item::Constant(_) => {
-                    unimplemented!("Constant declaration is not supported yet.");
-                }
+                Item::Constant(constant) => report_invalid_in_impl(
+                    syntax_db,
+                    &mut diagnostics,
+                    constant.const_kw(syntax_db),
+                ),
                 Item::Module(module) => {
                     report_invalid_in_impl(syntax_db, &mut diagnostics, module.module_kw(syntax_db))
                 }
