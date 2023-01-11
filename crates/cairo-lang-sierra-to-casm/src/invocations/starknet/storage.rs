@@ -16,12 +16,7 @@ pub fn build_storage_read(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, "StorageRead".as_bytes());
 
-    let [expr_gas_builtin, expr_system, expr_address_domain, expr_address] =
-        builder.try_get_refs()?;
-    let gas_builtin = expr_gas_builtin.try_unpack_single()?;
-    let system = expr_system.try_unpack_single()?;
-    let address_domain = expr_address_domain.try_unpack_single()?;
-    let storage_address = expr_address.try_unpack_single()?;
+    let [gas_builtin, system, address_domain, storage_address] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
@@ -66,13 +61,8 @@ pub fn build_storage_write(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, "StorageWrite".as_bytes());
 
-    let [expr_gas_builtin, expr_system, expr_address_domain, expr_address, expr_value] =
-        builder.try_get_refs()?;
-    let gas_builtin = expr_gas_builtin.try_unpack_single()?;
-    let system = expr_system.try_unpack_single()?;
-    let address_domain = expr_address_domain.try_unpack_single()?;
-    let storage_address = expr_address.try_unpack_single()?;
-    let value = expr_value.try_unpack_single()?;
+    let [gas_builtin, system, address_domain, storage_address, value] =
+        builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
