@@ -39,7 +39,7 @@ Statements:
   (v7: core::felt) <- 2u
   (v8: test::MyEnum) <- MyEnum::A(v7)
 End:
-  Callsite(v8)
+  Callsite(v8 -> v9)
 
 blk1:
 Inputs:
@@ -48,7 +48,7 @@ Statements:
   (v12: core::felt) <- core::felt_add(v11, v2)
   (v13: test::MyEnum) <- MyEnum::A(v12)
 End:
-  Callsite(v13)
+  Callsite(v13 -> v14)
 
 blk2:
 Inputs:
@@ -56,34 +56,34 @@ Statements:
   (v18: (core::felt, core::felt)) <- struct_construct(v2, v3)
   (v19: test::MyEnum) <- MyEnum::C(v18)
 End:
-  Callsite(v19)
+  Callsite(v19 -> v20)
 
 blk3:
 Inputs: v4: core::felt
 Statements:
-  (v9: test::MyEnum) <- blk0()
+  () <- blk0()
 End:
-  Callsite(v9)
+  Callsite(v9 -> v21)
 
 blk4:
 Inputs: v10: core::felt
 Statements:
-  (v14: test::MyEnum) <- blk1()
+  () <- blk1()
 End:
-  Callsite(v14)
+  Callsite(v14 -> v21)
 
 blk5:
 Inputs: v15: (core::felt, core::felt)
 Statements:
   (v16: core::felt, v17: core::felt) <- struct_destructure(v15)
-  (v20: test::MyEnum) <- blk2()
+  () <- blk2()
 End:
-  Callsite(v20)
+  Callsite(v20 -> v21)
 
 blk6 (root):
 Inputs: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
-  (v21: test::MyEnum) <- match_enum(v0) {
+  () <- match_enum(v0) {
     MyEnum::A => blk3,
     MyEnum::B => blk4,
     MyEnum::C => blk5,
