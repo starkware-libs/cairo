@@ -320,6 +320,9 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 continue;
             }
             match item_ast {
+                ast::Item::Const(_) => {
+                    unimplemented!("Constant declaration is not supported yet.");
+                }
                 ast::Item::Module(module) => {
                     let item_id =
                         db.intern_submodule(SubmoduleLongId(module_file_id, module.stable_ptr()));

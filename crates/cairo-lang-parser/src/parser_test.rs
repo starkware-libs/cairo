@@ -290,6 +290,7 @@ cairo_lang_test_utils::test_file_test!(
     partial_parser_tree,
     "src/parser_test_data",
     {
+        const_: "const",
         enum_: "enum",
         item_free_function: "item_free_function",
         function_signature: "function_signature",

@@ -163,6 +163,7 @@ impl<'a> Lexer<'a> {
         self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
 
         match self.peek_span_text() {
+            "const" => TokenKind::Const,
             "false" => TokenKind::False,
             "true" => TokenKind::True,
             "extern" => TokenKind::Extern,
@@ -308,6 +309,7 @@ enum TokenKind {
     ShortString,
 
     // Keywords.
+    Const,
     False,
     True,
     Extern,
@@ -377,6 +379,7 @@ enum TokenKind {
 
 fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
     match kind {
+        TokenKind::Const => SyntaxKind::TerminalConst,
         TokenKind::Identifier => SyntaxKind::TerminalIdentifier,
         TokenKind::LiteralNumber => SyntaxKind::TerminalLiteralNumber,
         TokenKind::ShortString => SyntaxKind::TerminalShortString,
