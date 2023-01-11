@@ -1,13 +1,11 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::uint::IntOperator;
 use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use num_bigint::BigInt;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
-use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra u128 operations.
 pub fn build(
@@ -25,10 +23,7 @@ pub fn build(
             }
         },
         Uint128Concrete::JumpNotZero(_) => misc::build_jump_nz(builder),
-        Uint128Concrete::Const(libfunc) => Ok(builder.build_only_reference_changes(
-            [ReferenceExpression::from_cell(CellExpression::Immediate(BigInt::from(libfunc.c)))]
-                .into_iter(),
-        )),
+        Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),
         Uint128Concrete::FromFelt(_) => build_u128_from_felt(builder),
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
         Uint128Concrete::LessThan(_) => build_u128_lt(builder),
