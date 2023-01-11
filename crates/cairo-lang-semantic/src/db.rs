@@ -665,6 +665,9 @@ fn module_semantic_diagnostics(
 
     for item in db.module_items(module_id)?.iter() {
         match item {
+            ModuleItemId::Const(_) => {
+                unimplemented!("Constant declaration is not supported yet.");
+            }
             // Add signature diagnostics.
             ModuleItemId::Use(use_id) => {
                 diagnostics.extend(db.use_semantic_diagnostics(*use_id));
@@ -821,6 +824,9 @@ pub fn lookup_resolved_concrete_item_by_ptr(
 fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<ResolvedLookback>> {
     match id {
         LookupItemId::ModuleItem(module_item) => match module_item {
+            ModuleItemId::Const(_) => {
+                unimplemented!("Constant declaration is not supported yet.");
+            }
             ModuleItemId::Submodule(_) => vec![],
             ModuleItemId::Use(id) => vec![db.use_resolved_lookback(id)],
             ModuleItemId::FreeFunction(id) => vec![
