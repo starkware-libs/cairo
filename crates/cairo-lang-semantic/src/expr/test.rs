@@ -21,6 +21,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/expr/test_data",
     {
         assignment: "assignment",
+        constant: "constant",
         enum_: "enum",
         error_propagate: "error_propagate",
         function_call: "function_call",
