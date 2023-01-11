@@ -73,10 +73,20 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let outputs = match &self {
-            StructuredBlockEnd::Callsite(outputs) => {
+        let outputs: Vec<VariableId> = match &self {
+            StructuredBlockEnd::Callsite(remapping) => {
                 write!(f, "  Callsite(")?;
-                outputs.clone()
+                let mut remapping = remapping.remapping.iter().peekable();
+                while let Some((var_a, var_b)) = remapping.next() {
+                    var_a.fmt(f, ctx)?;
+                    write!(f, " -> ")?;
+                    var_b.fmt(f, ctx)?;
+                    if remapping.peek().is_some() {
+                        write!(f, ", ")?;
+                    }
+                }
+                write!(f, ")")?;
+                return Ok(());
             }
             StructuredBlockEnd::Return { refs, returns } => {
                 write!(f, "  Return(")?;
@@ -145,9 +155,19 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
 impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs = match &self {
-            FlatBlockEnd::Callsite(outputs) => {
+            FlatBlockEnd::Callsite(remapping) => {
                 write!(f, "  Callsite(")?;
-                outputs
+                let mut remapping = remapping.remapping.iter().peekable();
+                while let Some((var_a, var_b)) = remapping.next() {
+                    var_a.fmt(f, ctx)?;
+                    write!(f, " -> ")?;
+                    var_b.fmt(f, ctx)?;
+                    if remapping.peek().is_some() {
+                        write!(f, ", ")?;
+                    }
+                }
+                write!(f, ")")?;
+                return Ok(());
             }
             FlatBlockEnd::Return(returns) => {
                 write!(f, "  Return(")?;

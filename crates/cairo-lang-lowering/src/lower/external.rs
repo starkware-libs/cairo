@@ -1,8 +1,8 @@
 use cairo_lang_semantic as semantic;
 
 use super::context::LoweringContext;
-use super::variables::LivingVar;
 use super::LoweredExpr;
+use crate::VariableId;
 
 /// Given a return type of an external function, gets the real output variable types for that call.
 /// For example, an external function that returns a tuple, has an output variable for each tuple
@@ -25,7 +25,7 @@ pub fn extern_facade_return_tys(
 pub fn extern_facade_expr(
     ctx: &mut LoweringContext<'_>,
     ty: semantic::TypeId,
-    returns: Vec<LivingVar>,
+    returns: Vec<VariableId>,
 ) -> LoweredExpr {
     if let semantic::TypeLongId::Tuple(subtypes) = ctx.db.lookup_intern_type(ty) {
         assert_eq!(returns.len(), subtypes.len());

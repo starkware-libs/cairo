@@ -34,14 +34,14 @@ Statements:
   (v3: core::felt) <- test::revoke_ap()
   (v4: core::felt) <- core::felt_add(v1, v1)
 End:
-  Callsite(v4)
+  Callsite(v4 -> v5)
 
 blk1 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
   (v2: core::felt) <- core::felt_add(v1, v1)
-  (v5: core::felt) <- blk0()
+  () <- blk0()
   (v6: core::felt) <- core::felt_add(v1, v2)
   (v7: core::felt) <- test::revoke_ap()
   (v8: core::felt) <- core::felt_add(v1, v5)
