@@ -5,9 +5,12 @@ use std::collections::HashMap;
 
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::ConcreteType;
+use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use core_libfunc_cost_base::InvocationCostInfoProvider;
 use cost_expr::Var;
 use gas_info::GasInfo;
 use thiserror::Error;
@@ -34,6 +37,12 @@ pub enum CostError {
     SolvingGasEquationFailed,
 }
 
+impl InvocationCostInfoProvider for ProgramRegistry<CoreType, CoreLibfunc> {
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize {
+        self.get_type(ty).unwrap().info().size as usize
+    }
+}
+
 /// Calculates gas information for a given program.
 pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
@@ -43,7 +52,12 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registery creation would have already failed.");
-            core_libfunc_cost_expr::core_libfunc_cost_expr(statement_future_cost, idx, libfunc)
+            core_libfunc_cost_expr::core_libfunc_cost_expr(
+                statement_future_cost,
+                idx,
+                libfunc,
+                &registry,
+            )
         },
     )?;
 

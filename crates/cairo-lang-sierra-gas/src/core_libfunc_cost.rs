@@ -4,6 +4,7 @@ use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
+pub use crate::core_libfunc_cost_base::InvocationCostInfoProvider;
 use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations};
 use crate::gas_info::GasInfo;
 
@@ -45,10 +46,11 @@ impl CostOperations for Ops<'_> {
 
 /// Returns the gas usage for a core libfunc.
 /// Values with unknown values will return as None.
-pub fn core_libfunc_cost(
+pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     gas_info: &GasInfo,
     idx: &StatementIdx,
     libfunc: &CoreConcreteLibfunc,
+    info_provider: &InfoProvider,
 ) -> Vec<Option<OrderedHashMap<CostTokenType, i64>>> {
-    core_libfunc_cost_base(&mut Ops { gas_info, idx: *idx }, libfunc)
+    core_libfunc_cost_base(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider)
 }

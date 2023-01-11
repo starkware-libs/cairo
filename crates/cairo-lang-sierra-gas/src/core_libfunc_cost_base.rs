@@ -23,6 +23,7 @@ use cairo_lang_sierra::extensions::strct::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint128::{
     IntOperator, Uint128Concrete, Uint128OperationConcreteLibfunc,
 };
+use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
@@ -45,11 +46,19 @@ pub trait CostOperations {
     fn sub(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType;
 }
 
+/// Trait for providing extra information required for calculating costs for a specific libfunc
+/// invocation.
+pub trait InvocationCostInfoProvider {
+    /// Provides the sizes of types.
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize;
+}
+
 /// Returns some cost value for a libfunc - a helper function to implement costing both for creating
 /// gas equations and getting actual gas usage after having a solution.
-pub fn core_libfunc_cost_base<Ops: CostOperations>(
+pub fn core_libfunc_cost_base<Ops: CostOperations, InfoProvider: InvocationCostInfoProvider>(
     ops: &mut Ops,
     libfunc: &CoreConcreteLibfunc,
+    info_provider: &InfoProvider,
 ) -> Vec<Ops::CostType> {
     match libfunc {
         // For the case of function calls - assumes a variable for the cost of running from a
@@ -87,7 +96,9 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             vec![ops.add(cost.unwrap(), ops.const_cost(1))]
         }
         Array(ArrayConcreteLibfunc::New(_)) => vec![ops.const_cost(1)],
-        Array(ArrayConcreteLibfunc::Append(_)) => vec![ops.const_cost(2)],
+        Array(ArrayConcreteLibfunc::Append(libfunc)) => {
+            vec![ops.const_cost(info_provider.type_size(&libfunc.ty) as i32)]
+        }
         Array(ArrayConcreteLibfunc::PopFront(_)) => vec![ops.const_cost(2), ops.const_cost(3)],
         Array(ArrayConcreteLibfunc::At(_)) => vec![ops.const_cost(4), ops.const_cost(3)],
         Array(ArrayConcreteLibfunc::Len(_)) => vec![ops.const_cost(0)],
@@ -103,8 +114,12 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             }
             BoxConcreteLibfunc::Unbox(_) => vec![ops.const_cost(0)],
         },
-        Mem(StoreLocal(_) | AllocLocal(_) | StoreTemp(_) | AlignTemps(_) | FinalizeLocals(_))
-        | UnconditionalJump(_) => vec![ops.const_cost(1)],
+        Mem(StoreLocal(libfunc) | StoreTemp(libfunc)) => {
+            vec![ops.const_cost(info_provider.type_size(&libfunc.ty) as i32)]
+        }
+        Mem(AllocLocal(_) | AlignTemps(_) | FinalizeLocals(_)) | UnconditionalJump(_) => {
+            vec![ops.const_cost(1)]
+        }
         Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.const_cost(1)],
         Enum(EnumConcreteLibfunc::Match(sig)) => {
             vec![ops.const_cost(1); sig.signature.branch_signatures.len()]
