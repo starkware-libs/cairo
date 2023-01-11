@@ -133,6 +133,14 @@ fn u128_or(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
 extern fn u128_jump_nz(a: u128) -> JumpNzResult::<u128> implicits() nopanic;
 
 #[derive(Copy, Drop)]
+extern type u8;
+extern fn u8_const<value>() -> u8 nopanic;
+
+extern fn u8_lt(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
+extern fn u8_eq(a: u8, b: u8) -> bool implicits() nopanic;
+extern fn u8_le(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
+
+#[derive(Copy, Drop)]
 struct u256 { low: u128, high: u128, }
 
 fn u256_overflow_add(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
