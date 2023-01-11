@@ -49,6 +49,10 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::VariableMoved => "Variable was previously moved.".into(),
             LoweringDiagnosticKind::UnsupportedMatch => "Unsupported match.".into(),
             LoweringDiagnosticKind::UnsupportedMatchArm => "Unsupported match arm.".into(),
+
+            LoweringDiagnosticKind::InliningFailed { reason } => {
+                format!("Inlining failed: {reason}")
+            }
         }
     }
 
@@ -76,4 +80,5 @@ pub enum LoweringDiagnosticKind {
     VariableMoved,
     UnsupportedMatch,
     UnsupportedMatchArm,
+    InliningFailed { reason: String },
 }
