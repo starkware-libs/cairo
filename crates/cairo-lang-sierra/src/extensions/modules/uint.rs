@@ -27,7 +27,7 @@ pub enum IntOperator {
 /// Trait for implementing unsigned integers.
 pub trait UintTraits: Default {
     /// The rust matching type to this type.
-    type UintType: TryFrom<BigInt>;
+    type UintType: TryFrom<BigInt> + Into<BigInt> + Copy;
     /// The generic type id for this type.
     const GENERIC_TYPE_ID: GenericTypeId;
     /// The generic libfunc id for getting a const of this type.
