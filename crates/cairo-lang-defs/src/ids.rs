@@ -348,16 +348,67 @@ impl Ord for ImplFunctionId {
 
 // TODO(yuval): remove PartialOrd, Ord once ordering stably in `function_scc_representative`.
 /// Represents a function that has a body.
-#[derive(Debug, Eq, PartialEq, Clone, Hash, PartialOrd, Ord)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash, PartialOrd, Ord)]
 pub enum FunctionWithBodyId {
     Free(FreeFunctionId),
     Impl(ImplFunctionId),
 }
 impl FunctionWithBodyId {
+    pub fn stable_ptr(
+        self,
+        db: &dyn DefsGroup,
+    ) -> <ast::ItemFreeFunction as TypedSyntaxNode>::StablePtr {
+        match self {
+            FunctionWithBodyId::Free(free_function_id) => free_function_id.stable_ptr(db),
+            FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.stable_ptr(db),
+        }
+    }
     pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         match self {
             FunctionWithBodyId::Free(free_function_id) => free_function_id.name(db),
             FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.name(db),
+        }
+    }
+}
+impl LanguageElementId for FunctionWithBodyId {
+    fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
+        match self {
+            FunctionWithBodyId::Free(free_function_id) => {
+                db.lookup_intern_free_function(*free_function_id).0
+            }
+            FunctionWithBodyId::Impl(impl_function_id) => {
+                db.lookup_intern_impl_function(*impl_function_id).0
+            }
+        }
+    }
+    fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId {
+        match self {
+            FunctionWithBodyId::Free(free_functino_id) => free_functino_id.module_file_id(db).0,
+            FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.module_file_id(db).0,
+        }
+    }
+    fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
+        match self {
+            FunctionWithBodyId::Free(free_functino_id) => free_functino_id.module_file_id(db).1,
+            FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.module_file_id(db).1,
+        }
+    }
+    fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
+        match self {
+            FunctionWithBodyId::Free(free_functino_id) => free_functino_id.stable_ptr(db).untyped(),
+            FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.stable_ptr(db).untyped(),
+        }
+    }
+}
+impl TopLevelLanguageElementId for FunctionWithBodyId {
+    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            FunctionWithBodyId::Free(free_function_id) => {
+                db.lookup_intern_free_function(*free_function_id).name(db)
+            }
+            FunctionWithBodyId::Impl(impl_function_id) => {
+                db.lookup_intern_impl_function(*impl_function_id).name(db)
+            }
         }
     }
 }
@@ -466,7 +517,9 @@ define_language_element_id_as_enum! {
     pub enum GenericFunctionId {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
+        // TODO(yuval): rename to Trait
         TraitFunction(TraitFunctionId),
+        // TODO(yuval): rename to Impl
         ImplFunction(ImplFunctionId),
     }
 }

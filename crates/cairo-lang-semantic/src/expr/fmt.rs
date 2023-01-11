@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::FreeFunctionId;
+use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_utils::Upcast;
 
 use crate::db::SemanticGroup;
@@ -8,7 +8,7 @@ use crate::db::SemanticGroup;
 /// Acts like a "db" for DebugWithDb.
 pub struct ExprFormatter<'a> {
     pub db: &'a (dyn SemanticGroup + 'static),
-    pub free_function_id: FreeFunctionId,
+    pub function_id: FunctionWithBodyId,
 }
 
 impl<'a> Upcast<dyn SemanticGroup + 'static> for ExprFormatter<'a> {

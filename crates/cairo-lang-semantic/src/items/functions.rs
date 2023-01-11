@@ -180,12 +180,8 @@ pub fn generic_function_signature(
     generic_function: GenericFunctionId,
 ) -> Maybe<Signature> {
     match generic_function {
-        GenericFunctionId::Free(free_function) => {
-            db.free_function_declaration_signature(free_function)
-        }
-        GenericFunctionId::Extern(extern_function) => {
-            db.extern_function_declaration_signature(extern_function)
-        }
+        GenericFunctionId::Free(free_function) => db.free_function_signature(free_function),
+        GenericFunctionId::Extern(extern_function) => db.extern_function_signature(extern_function),
         GenericFunctionId::TraitFunction(trait_function) => {
             db.trait_function_signature(trait_function)
         }
@@ -198,9 +194,7 @@ pub fn generic_function_generic_params(
     generic_function: GenericFunctionId,
 ) -> Maybe<Vec<GenericParamId>> {
     match generic_function {
-        GenericFunctionId::Free(free_function) => {
-            db.free_function_declaration_generic_params(free_function)
-        }
+        GenericFunctionId::Free(free_function) => db.free_function_generic_params(free_function),
         GenericFunctionId::Extern(extern_function) => {
             db.extern_function_declaration_generic_params(extern_function)
         }

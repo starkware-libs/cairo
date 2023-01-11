@@ -1,4 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -27,13 +28,13 @@ fn contains_cycles_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         .module_free_functions(test_module.module_id)
         .unwrap()
         .iter()
-        .map(|(function_id, _)| {
-            let name = db.lookup_intern_free_function(*function_id).name(db);
+        .map(|(free_function_id, _)| {
+            let function_id = FunctionWithBodyId::Free(*free_function_id);
             format!(
                 "{}: ap_change={:?}, has_cycles={:?}",
-                name,
-                db.get_ap_change(*function_id),
-                db.contains_cycle(*function_id),
+                function_id.name(db),
+                db.get_ap_change(function_id),
+                db.contains_cycle(function_id),
             )
         })
         .join("\n");

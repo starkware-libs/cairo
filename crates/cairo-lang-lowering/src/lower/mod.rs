@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{FreeFunctionId, LanguageElementId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe, ToMaybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{
@@ -37,14 +37,14 @@ mod semantic_map;
 mod variables;
 
 /// Lowers a semantic free function.
-pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<StructuredLowered> {
+pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<StructuredLowered> {
     log::trace!("Lowering a free function.");
     let is_empty_semantic_diagnostics =
-        db.free_function_declaration_diagnostics(free_function_id).is_empty()
-            && db.free_function_definition_diagnostics(free_function_id).is_empty();
+        db.function_with_body_declaration_diagnostics(function_id).is_empty()
+            && db.function_body_diagnostics(function_id).is_empty();
     // Params.
 
-    let lowering_builder = LoweringContextBuilder::new(db, free_function_id)?;
+    let lowering_builder = LoweringContextBuilder::new(db, function_id)?;
     let mut ctx = lowering_builder.ctx()?;
 
     let input_semantic_vars: Vec<semantic::Variable> =
@@ -62,8 +62,10 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Maybe<
 
     let root = if is_empty_semantic_diagnostics {
         // Fetch body block expr.
-        let semantic_block =
-            extract_matches!(&ctx.function_def.exprs[ctx.function_def.body], semantic::Expr::Block);
+        let semantic_block = extract_matches!(
+            &ctx.function_def.exprs[ctx.function_def.body_expr],
+            semantic::Expr::Block
+        );
         // Lower block to a BlockSealed.
         let (block_sealed_opt, mut merger_finalized) =
             BlockFlowMerger::with_root(&mut ctx, ref_params, |ctx, merger| {
