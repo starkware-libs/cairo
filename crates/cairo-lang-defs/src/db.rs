@@ -523,36 +523,18 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<Module
     // TODO(ilya): Consider returning the items in ast order.
     Ok(Arc::new(
         chain!(
-            db.module_submodules(module_id)?
+            db.module_submodules_ids(module_id)?.into_iter().map(ModuleItemId::Submodule),
+            db.module_uses_ids(module_id)?.into_iter().map(ModuleItemId::Use),
+            db.module_free_functions_ids(module_id)?.into_iter().map(ModuleItemId::FreeFunction),
+            db.module_extern_functions_ids(module_id)?
                 .into_iter()
-                .map(|(submodule_id, _syntax)| ModuleItemId::Submodule(submodule_id)),
-            db.module_uses(module_id)?
-                .into_iter()
-                .map(|(use_id, _syntax)| ModuleItemId::Use(use_id)),
-            db.module_free_functions(module_id)?
-                .into_iter()
-                .map(|(free_function_id, _syntax)| ModuleItemId::FreeFunction(free_function_id)),
-            db.module_extern_functions(module_id)?.into_iter().map(
-                |(extern_function_id, _syntax)| ModuleItemId::ExternFunction(extern_function_id)
-            ),
-            db.module_extern_types(module_id)?
-                .into_iter()
-                .map(|(extern_type_id, _syntax)| ModuleItemId::ExternType(extern_type_id)),
-            db.module_structs(module_id)?
-                .into_iter()
-                .map(|(struct_id, _syntax)| ModuleItemId::Struct(struct_id)),
-            db.module_enums(module_id)?
-                .into_iter()
-                .map(|(enum_id, _syntax)| ModuleItemId::Enum(enum_id)),
-            db.module_type_aliases(module_id)?
-                .into_iter()
-                .map(|(type_alias_id, _syntax)| ModuleItemId::TypeAlias(type_alias_id)),
-            db.module_traits(module_id)?
-                .into_iter()
-                .map(|(trait_id, _syntax)| ModuleItemId::Trait(trait_id)),
-            db.module_impls(module_id)?
-                .into_iter()
-                .map(|(impl_id, _syntax)| ModuleItemId::Impl(impl_id)),
+                .map(ModuleItemId::ExternFunction),
+            db.module_extern_types_ids(module_id)?.into_iter().map(ModuleItemId::ExternType),
+            db.module_structs_ids(module_id)?.into_iter().map(ModuleItemId::Struct),
+            db.module_enums_ids(module_id)?.into_iter().map(ModuleItemId::Enum),
+            db.module_type_aliases_ids(module_id)?.into_iter().map(ModuleItemId::TypeAlias),
+            db.module_traits_ids(module_id)?.into_iter().map(ModuleItemId::Trait),
+            db.module_impls_ids(module_id)?.into_iter().map(ModuleItemId::Impl),
         )
         .collect(),
     ))
