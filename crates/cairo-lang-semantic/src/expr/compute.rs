@@ -193,7 +193,7 @@ fn compute_expr_unary_semantic(
         }
         Ok(function) => function,
     };
-    expr_function_call(ctx, function, vec![expr], syntax.stable_ptr().into())
+    expr_function_call(ctx, function, vec![(expr, None)], syntax.stable_ptr().into())
 }
 
 fn compute_expr_binary_semantic(
@@ -237,7 +237,7 @@ fn compute_expr_binary_semantic(
         }
         Ok(function) => function,
     };
-    expr_function_call(ctx, function, vec![lexpr, rexpr], stable_ptr)
+    expr_function_call(ctx, function, vec![(lexpr, None), (rexpr, None)], stable_ptr)
 }
 
 fn compute_expr_tuple_semantic(
@@ -272,24 +272,27 @@ fn compute_expr_function_call_semantic(
     let item =
         ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path, NotFoundItemType::Function)?;
     let args_syntax = syntax.arguments(syntax_db);
-    let arg_exprs: Vec<_> = args_syntax
+    let named_args: Vec<(Expr, Option<ast::TerminalIdentifier>)> = args_syntax
         .args(syntax_db)
         .elements(syntax_db)
         .into_iter()
-        .map(|arg_syntax| compute_expr_semantic(ctx, &arg_syntax.value(syntax_db)))
+        .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax))
         .collect();
     match item {
         ResolvedConcreteItem::Function(function) => {
-            expr_function_call(ctx, function, arg_exprs, syntax.stable_ptr().into())
+            expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
         }
         ResolvedConcreteItem::Variant(concrete_variant) => {
-            if arg_exprs.len() != 1 {
+            if named_args.len() != 1 {
                 return Err(ctx.diagnostics.report(
                     &args_syntax,
-                    WrongNumberOfArguments { expected: 1, actual: arg_exprs.len() },
+                    WrongNumberOfArguments { expected: 1, actual: named_args.len() },
                 ));
             }
-            let arg = arg_exprs[0].clone();
+            let (arg, name_terminal) = named_args[0].clone();
+            if let Some(name_terminal) = name_terminal {
+                ctx.diagnostics.report(&name_terminal, NamedArgumentsAreNotSupported);
+            }
             if concrete_variant.ty != arg.ty() {
                 return Err(ctx.diagnostics.report(
                     &args_syntax,
@@ -306,6 +309,26 @@ fn compute_expr_function_call_semantic(
         }
         _ => Err(ctx.diagnostics.report(&path, NotAFunction)),
     }
+}
+
+/// Computes the semantic model of an expression of type [ast::Arg].
+///
+/// Returns the value and the optional argument name.
+pub fn compute_named_argument_clause(
+    ctx: &mut ComputationContext<'_>,
+    arg_syntax: ast::Arg,
+) -> (Expr, Option<ast::TerminalIdentifier>) {
+    let syntax_db = ctx.db.upcast();
+
+    let arg_name_identifier = if let ast::OptionArgNameClause::ArgNameClause(arg_name_clause) =
+        arg_syntax.name(syntax_db)
+    {
+        Some(arg_name_clause.name(syntax_db))
+    } else {
+        None
+    };
+
+    (compute_expr_semantic(ctx, &arg_syntax.value(syntax_db)), arg_name_identifier)
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprBlock].
@@ -1011,7 +1034,7 @@ pub fn resolve_variable_by_name(
 fn expr_function_call(
     ctx: &mut ComputationContext<'_>,
     function_id: FunctionId,
-    arg_exprs: Vec<Expr>,
+    named_args: Vec<(Expr, Option<ast::TerminalIdentifier>)>,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
@@ -1021,10 +1044,10 @@ fn expr_function_call(
         .concrete_function_signature(function_id)
         .map_err(|_| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnknownFunction))?;
 
-    if arg_exprs.len() != signature.params.len() {
+    if named_args.len() != signature.params.len() {
         return Err(ctx.diagnostics.report_by_ptr(
             stable_ptr.untyped(),
-            WrongNumberOfArguments { expected: signature.params.len(), actual: arg_exprs.len() },
+            WrongNumberOfArguments { expected: signature.params.len(), actual: named_args.len() },
         ));
     }
 
@@ -1033,10 +1056,12 @@ fn expr_function_call(
         return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
     }
 
-    // Check argument types.
+    // Check argument names and types.
+    check_named_arguments(&named_args, &signature, ctx)?;
+
     let mut ref_args = Vec::new();
     let mut args = Vec::new();
-    for (arg, param) in arg_exprs.into_iter().zip(signature.params.iter()) {
+    for ((arg, _name), param) in named_args.into_iter().zip(signature.params.iter()) {
         let arg_typ = arg.ty();
         let param_typ = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
@@ -1070,6 +1095,41 @@ fn expr_function_call(
         ty: signature.return_type,
         stable_ptr,
     }))
+}
+
+/// Checks the correctness of the named arguments, and outputs diagnostics on errors.
+fn check_named_arguments(
+    named_args: &[(Expr, Option<ast::TerminalIdentifier>)],
+    signature: &Signature,
+    ctx: &mut ComputationContext<'_>,
+) -> Maybe<()> {
+    let mut res: Maybe<()> = Ok(());
+
+    // Indicates whether we saw a named argument. Used to report a diagnostic if an unnamed argument
+    // will follow it.
+    let mut seen_named_arguments: bool = false;
+    // Indicates whether a [UnnamedArgumentFollowsNamed] diagnostic was reported. Used to prevent
+    // multiple similar diagnostics.
+    let mut reported_unnamed_argument_follows_named: bool = false;
+    for ((arg, name_opt), param) in named_args.iter().zip(signature.params.iter()) {
+        // Check name.
+        if let Some(name_terminal) = name_opt {
+            seen_named_arguments = true;
+            let name = name_terminal.text(ctx.db.upcast());
+            if param.name != name.clone() {
+                res = Err(ctx.diagnostics.report_by_ptr(
+                    name_terminal.stable_ptr().untyped(),
+                    NamedArgumentMismatch { expected: param.name.clone(), found: name },
+                ));
+            }
+        } else if seen_named_arguments && !reported_unnamed_argument_follows_named {
+            reported_unnamed_argument_follows_named = true;
+            res = Err(ctx
+                .diagnostics
+                .report_by_ptr(arg.stable_ptr().untyped(), UnnamedArgumentFollowsNamed));
+        }
+    }
+    res
 }
 
 /// Computes the semantic model of a statement.
