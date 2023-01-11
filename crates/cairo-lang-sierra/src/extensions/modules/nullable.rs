@@ -29,7 +29,10 @@ impl GenericTypeArgGenericType for NullableTypeWrapped {
         long_id: crate::program::ConcreteTypeLongId,
         wrapped_info: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        if !wrapped_info.storable {
+        // Not allowing 0 sized - since we need to be able to differentiate between null and not
+        // null, and with size 0, it may point to nothing in intialization, since we don't write to
+        // it.
+        if !wrapped_info.storable || wrapped_info.size == 0 {
             Err(SpecializationError::UnsupportedGenericArg)
         } else {
             Ok(TypeInfo { long_id, size: 1, ..wrapped_info })
