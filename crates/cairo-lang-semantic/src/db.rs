@@ -4,9 +4,10 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId, GenericFunctionId,
-    GenericParamId, GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId,
-    ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId, VariantId,
+    ConstId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId,
+    GenericFunctionId, GenericParamId, GenericTypeId, ImplFunctionId, ImplId, LanguageElementId,
+    LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId,
+    VariantId,
 };
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
@@ -77,6 +78,15 @@ pub trait SemanticGroup:
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
     #[salsa::interned]
     fn intern_literal(&self, id: literals::LiteralLongId) -> literals::LiteralId;
+
+    // Const.
+    // ====
+    /// Private query to compute data about a constant declaration.
+    #[salsa::invoke(items::const_::priv_const_semantic_data)]
+    fn priv_const_semantic_data(&self, const_id: ConstId) -> Maybe<items::const_::ConstData>;
+    /// Returns the semantic diagnostics of a constant declaration.
+    #[salsa::invoke(items::const_::const_semantic_diagnostics)]
+    fn const_semantic_diagnostics(&self, const_id: ConstId) -> Diagnostics<SemanticDiagnostic>;
 
     // Use.
     // ====
@@ -665,8 +675,8 @@ fn module_semantic_diagnostics(
 
     for item in db.module_items(module_id)?.iter() {
         match item {
-            ModuleItemId::Const(_) => {
-                unimplemented!("Constant declaration is not supported yet.");
+            ModuleItemId::Const(const_id) => {
+                diagnostics.extend(db.const_semantic_diagnostics(*const_id));
             }
             // Add signature diagnostics.
             ModuleItemId::Use(use_id) => {

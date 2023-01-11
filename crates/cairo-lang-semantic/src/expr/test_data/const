@@ -1,0 +1,26 @@
+//! > Const
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let x = MyConst;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+const MyConst: felt = 0x1234;
+
+//! > expected_diagnostics
+error: Constant declarations are not supported yet.
+ --> lib.cairo:1:1
+const MyConst: felt = 0x1234;
+^***^
+
+error: Variable "MyConst" not found.
+ --> lib.cairo:3:13
+    let x = MyConst;
+            ^*****^
