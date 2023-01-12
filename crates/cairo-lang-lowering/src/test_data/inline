@@ -1,0 +1,51 @@
+//! > Test inlining diagnostics.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+#[inline(always)]
+#[inline(never)]
+#[inline]
+fn foo(ref a: felt, b: felt) -> felt {
+  foo(b, b);
+  b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > lowering_format
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > semantic_diagnostics
+error: ref argument must be a mutable variable.
+ --> lib.cairo:5:7
+  foo(b, b);
+      ^
+
+//! > lowering_diagnostics
+error: Inlining failed: Cannot inline a function that might call itself.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+error: Inlining failed: Cannot inline a function with ref parameters.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+error: Inlining failed: Unexpected inline parameter.
+ --> lib.cairo:2:10
+#[inline(never)]
+         ^***^
+
+error: Inlining failed: Unexpected inline configuration.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^

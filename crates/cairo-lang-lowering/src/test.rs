@@ -27,6 +27,7 @@ cairo_lang_test_utils::test_file_test!(
         struct_ :"struct",
         tests :"tests",
         tuple :"tuple",
+        inline :"inline",
     },
     test_function_lowering
 );
@@ -48,6 +49,7 @@ fn test_function_lowering(
     let flat_lowered = db.function_with_body_lowered_flat(test_function.function_id).unwrap();
     let mut diagnostics = DiagnosticsBuilder::default();
     diagnostics.extend(structured_lowered.diagnostics.clone());
+    diagnostics.extend((*db.inline_diagnostics(test_function.function_id).unwrap()).clone());
     diagnostics.extend(flat_lowered.diagnostics.clone());
     let diagnostics = diagnostics.build();
 

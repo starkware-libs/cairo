@@ -24,6 +24,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<StructuredLowered>>;
 
+    // Reports inlining diagnostics.
+    #[salsa::invoke(crate::lower::inline::inline_diagnostics)]
+    fn inline_diagnostics(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Arc<Diagnostics<LoweringDiagnostic>>>;
+
     /// Computes the lowered representation of a function with a body.
     fn function_with_body_lowered_flat(
         &self,
@@ -142,6 +149,13 @@ fn module_lowering_diagnostics(
                         .map(|lowered| lowered.diagnostics.clone())
                         .unwrap_or_default(),
                 );
+
+                diagnostics.extend(
+                    db.inline_diagnostics(function_id)
+                        .map(|diagnostics| (*diagnostics).clone())
+                        .unwrap_or_default(),
+                );
+
                 diagnostics.extend(
                     db.function_with_body_lowered_flat(function_id)
                         .map(|lowered| lowered.diagnostics.clone())
