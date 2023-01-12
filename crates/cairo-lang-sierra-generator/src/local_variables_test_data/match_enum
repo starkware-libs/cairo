@@ -9,7 +9,8 @@ foo
 //! > function_code
 fn foo() -> felt {
   let x = bar();
-  let w1 = 2;
+  let literal = 2;
+  let w1 = non_literal();
   let y = match x {
     MyEnum::A(a) => {
       revoke_ap()
@@ -22,6 +23,8 @@ fn foo() -> felt {
   };
   // 'w1' is revoked because of the revoke_ap() inside the match.
   let w2 = w1 + w1;
+  // 'literal' is not revoked since it is a const.
+  let w3 = literal + literal;
   revoke_ap();
   // 'y' is revoked.
   y
@@ -31,6 +34,10 @@ fn foo() -> felt {
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt {
     revoke_ap()
+}
+
+fn non_literal() -> felt {
+    1
 }
 
 fn bar() -> MyEnum {
@@ -46,49 +53,51 @@ enum MyEnum {
 blk0:
 Inputs:
 Statements:
-  (v3: core::felt) <- test::revoke_ap()
-  (v4: core::felt) <- core::felt_add(v2, v2)
+  (v4: core::felt) <- test::revoke_ap()
+  (v5: core::felt) <- core::felt_add(v3, v3)
 End:
-  Callsite(v4)
+  Callsite(v5)
 
 blk1:
 Inputs:
 Statements:
-  (v7: core::felt) <- core::felt_add(v6, v6)
-  (v8: core::felt) <- core::felt_add(v7, v6)
-End:
-  Callsite(v8)
-
-blk2:
-Inputs: v2: core::felt
-Statements:
-  (v5: core::felt) <- blk0()
-End:
-  Callsite(v5)
-
-blk3:
-Inputs: v6: core::felt
-Statements:
-  (v9: core::felt) <- blk1()
+  (v8: core::felt) <- core::felt_add(v7, v7)
+  (v9: core::felt) <- core::felt_add(v8, v7)
 End:
   Callsite(v9)
+
+blk2:
+Inputs: v3: core::felt
+Statements:
+  (v6: core::felt) <- blk0()
+End:
+  Callsite(v6)
+
+blk3:
+Inputs: v7: core::felt
+Statements:
+  (v10: core::felt) <- blk1()
+End:
+  Callsite(v10)
 
 blk4 (root):
 Inputs:
 Statements:
   (v0: test::MyEnum) <- test::bar()
   (v1: core::felt) <- 2u
-  (v10: core::felt) <- match_enum(v0) {
+  (v2: core::felt) <- test::non_literal()
+  (v11: core::felt) <- match_enum(v0) {
     MyEnum::A => blk2,
     MyEnum::B => blk3,
   }
-  (v11: core::felt) <- core::felt_add(v1, v1)
-  (v12: core::felt) <- test::revoke_ap()
+  (v12: core::felt) <- core::felt_add(v2, v2)
+  (v13: core::felt) <- core::felt_add(v1, v1)
+  (v14: core::felt) <- test::revoke_ap()
 End:
-  Return(v10)
+  Return(v11)
 
 //! > local_variables
-v0, v1, v10
+v0, v2, v11
 
 //! > ==========================================================================
 
