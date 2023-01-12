@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -17,10 +16,13 @@ pub fn build_metadata(program: &Program, calculate_gas_info: bool) -> Metadata {
     } else {
         Metadata {
             ap_change_info: calc_ap_changes(program, |_, _| 0).unwrap_or(ApChangeInfo {
-                function_ap_change: HashMap::default(),
-                variable_values: HashMap::default(),
+                function_ap_change: Default::default(),
+                variable_values: Default::default(),
             }),
-            gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
+            gas_info: GasInfo {
+                variable_values: Default::default(),
+                function_costs: Default::default(),
+            },
         }
     }
 }

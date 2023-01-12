@@ -14,9 +14,7 @@ pub fn function_scc_representative(
     db: &dyn LoweringGroup,
     function: FunctionWithBodyId,
 ) -> SCCRepresentative {
-    SCCRepresentative(
-        db.function_with_body_scc(function.clone()).into_iter().min().unwrap_or(function),
-    )
+    SCCRepresentative(db.function_with_body_scc(function).into_iter().min().unwrap_or(function))
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_scc_explicit_implicits].
@@ -65,7 +63,7 @@ pub fn function_with_body_all_implicits(
     function: FunctionWithBodyId,
 ) -> Maybe<HashSet<TypeId>> {
     // Find the SCC representative.
-    let scc_representative = db.function_scc_representative(function.clone());
+    let scc_representative = db.function_scc_representative(function);
 
     // Start with the explicit implicits of the SCC.
     let mut all_implicits = db.function_scc_explicit_implicits(scc_representative.clone())?;
@@ -150,9 +148,7 @@ impl<'a> GraphNode for FunctionWithBodyNode<'a> {
 
     fn get_neighbors(&self) -> Vec<Self> {
         self.db
-            .function_with_body_direct_function_with_body_callees(
-                self.function_with_body_id.clone(),
-            )
+            .function_with_body_direct_function_with_body_callees(self.function_with_body_id)
             .unwrap_or_default()
             .into_iter()
             .map(|function_with_body_id| FunctionWithBodyNode {
@@ -163,7 +159,7 @@ impl<'a> GraphNode for FunctionWithBodyNode<'a> {
     }
 
     fn get_id(&self) -> Self::NodeId {
-        self.function_with_body_id.clone()
+        self.function_with_body_id
     }
 }
 
@@ -177,7 +173,7 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
             db.function_with_body_may_panic(FunctionWithBodyId::Impl(impl_function))
         }
         GenericFunctionId::Extern(extern_function) => {
-            Ok(db.extern_function_declaration_signature(extern_function)?.panicable)
+            Ok(db.extern_function_signature(extern_function)?.panicable)
         }
         GenericFunctionId::TraitFunction(_) => unreachable!(),
     }
@@ -189,7 +185,7 @@ pub fn function_with_body_may_panic(
     function: FunctionWithBodyId,
 ) -> Maybe<bool> {
     // Find the SCC representative.
-    let scc_representative = db.function_scc_representative(function.clone());
+    let scc_representative = db.function_scc_representative(function);
 
     // For each direct callee, find if it may panic.
     for direct_callee in db.function_with_body_direct_callees(function)? {
@@ -204,7 +200,7 @@ pub fn function_with_body_may_panic(
                     function_scc_representative(db, FunctionWithBodyId::Impl(impl_function))
                 }
                 GenericFunctionId::Extern(extern_function) => {
-                    if db.extern_function_declaration_signature(extern_function)?.panicable {
+                    if db.extern_function_signature(extern_function)?.panicable {
                         return Ok(true);
                     }
                     continue;

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{ModuleId, ModuleItemId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
@@ -34,12 +34,12 @@ fn test_resolve_path() {
     .unwrap();
     let module_id = test_module.module_id;
 
-    let free_function_id = extract_matches!(
+    let function_id = FunctionWithBodyId::Free(extract_matches!(
         db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction
-    );
-    let expr_formatter = ExprFormatter { db, free_function_id };
-    let body = db.free_function_body(free_function_id);
+    ));
+    let expr_formatter = ExprFormatter { db, function_id };
+    let body = db.function_body_expr(function_id);
     assert_eq!(
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \

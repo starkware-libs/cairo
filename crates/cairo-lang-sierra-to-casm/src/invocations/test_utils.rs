@@ -252,10 +252,13 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
     let program_info = ProgramInfo {
         metadata: &Metadata {
             ap_change_info: ApChangeInfo {
-                variable_values: HashMap::default(),
-                function_ap_change: HashMap::default(),
+                variable_values: Default::default(),
+                function_ap_change: Default::default(),
             },
-            gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
+            gas_info: GasInfo {
+                variable_values: Default::default(),
+                function_costs: Default::default(),
+            },
         },
         type_sizes: &type_sizes,
     };

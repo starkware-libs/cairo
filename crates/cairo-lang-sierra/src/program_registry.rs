@@ -1,6 +1,7 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use thiserror::Error;
 
 use crate::extensions::lib_func::{
@@ -61,7 +62,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
     /// Create a registry for the program.
     pub fn with_ap_change(
         program: &Program,
-        function_ap_change: HashMap<FunctionId, usize>,
+        function_ap_change: OrderedHashMap<FunctionId, usize>,
     ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {
         let functions = get_functions(program)?;
         let (concrete_types, concrete_type_ids) = get_concrete_types_maps::<TType>(program)?;
@@ -80,7 +81,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
     pub fn new(
         program: &Program,
     ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {
-        Self::with_ap_change(program, HashMap::default())
+        Self::with_ap_change(program, Default::default())
     }
     /// Gets a function from the input program.
     pub fn get_function<'a>(
@@ -179,7 +180,7 @@ pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
     pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
     pub concrete_types: &'a TypeMap<TType::Concrete>,
     /// AP changes information for Sierra user functions.
-    pub function_ap_change: HashMap<FunctionId, usize>,
+    pub function_ap_change: OrderedHashMap<FunctionId, usize>,
 }
 impl<TType: GenericType> TypeSpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {

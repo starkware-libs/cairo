@@ -19,10 +19,7 @@ impl DebugWithDb<ExprFormatter<'_>> for ExprId {
         f: &mut std::fmt::Formatter<'_>,
         expr_formatter: &ExprFormatter<'_>,
     ) -> std::fmt::Result {
-        expr_formatter
-            .db
-            .expr_semantic(expr_formatter.free_function_id, *self)
-            .fmt(f, expr_formatter)
+        expr_formatter.db.expr_semantic(expr_formatter.function_id, *self).fmt(f, expr_formatter)
     }
 }
 impl DebugWithDb<ExprFormatter<'_>> for StatementId {
@@ -33,7 +30,7 @@ impl DebugWithDb<ExprFormatter<'_>> for StatementId {
     ) -> std::fmt::Result {
         expr_formatter
             .db
-            .statement_semantic(expr_formatter.free_function_id, *self)
+            .statement_semantic(expr_formatter.function_id, *self)
             .fmt(f, expr_formatter)
     }
 }
