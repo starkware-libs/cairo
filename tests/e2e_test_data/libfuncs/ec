@@ -117,8 +117,8 @@ ret;
 ret;
 
 //! > function_costs
-core::ec::ec_point_from_felts: OrderedHashMap({Step: 14})
 test::foo: OrderedHashMap({Step: 27})
+core::ec::ec_point_from_felts: OrderedHashMap({Step: 14})
 
 //! > sierra_code
 type felt = felt;

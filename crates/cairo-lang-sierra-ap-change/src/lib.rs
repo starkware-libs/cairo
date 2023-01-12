@@ -1,6 +1,4 @@
 //! Sierra AP change model.
-use std::collections::HashMap;
-
 use ap_change_info::ApChangeInfo;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
@@ -8,6 +6,7 @@ use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use core_libfunc_ap_change::InvocationApChangeInfoProvider;
 use generate_equations::{Effects, Var};
 use thiserror::Error;
@@ -98,8 +97,8 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
     let solution = cairo_lang_eq_solver::try_solve_equations(equations)
         .ok_or(ApChangeError::SolvingApChangeEquationFailed)?;
 
-    let mut variable_values = HashMap::<StatementIdx, usize>::default();
-    let mut function_ap_change = HashMap::<cairo_lang_sierra::ids::FunctionId, usize>::default();
+    let mut variable_values = OrderedHashMap::default();
+    let mut function_ap_change = OrderedHashMap::default();
     for (var, value) in solution {
         match var {
             Var::LibfuncImplicitApChangeVariable(idx) => {

@@ -320,7 +320,7 @@ impl SierraCasmRunner {
         let Some(available_gas) = available_gas else { return Ok(0); };
         // TODO(lior): Handle the other token types.
         let required_gas =
-            self.metadata.gas_info.function_costs[&func.id][CostTokenType::Step] as usize;
+            self.metadata.gas_info.function_costs[func.id.clone()][CostTokenType::Step] as usize;
         available_gas.checked_sub(required_gas).ok_or(RunnerError::NotEnoughGasToCall)
     }
 
@@ -348,7 +348,10 @@ fn create_metadata(
     } else {
         Ok(Metadata {
             ap_change_info: calc_ap_changes(sierra_program, |_, _| 0)?,
-            gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
+            gas_info: GasInfo {
+                variable_values: Default::default(),
+                function_costs: Default::default(),
+            },
         })
     }
 }
