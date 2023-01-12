@@ -526,6 +526,33 @@ fn simulate_u8_libfunc(
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
+        Uint8Concrete::LessThan(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
+                // "False" branch (branch 0) is the case a >= b.
+                // "True" branch (branch 1) is the case a < b.
+                Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint8Concrete::Equal(_) => match inputs {
+            [CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
+                // "False" branch (branch 0) is the case a != b.
+                // "True" branch (branch 1) is the case a == b.
+                Ok((vec![], usize::from(a == b)))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint8Concrete::LessThanOrEqual(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
+                // "False" branch (branch 0) is the case a > b.
+                // "True" branch (branch 1) is the case a <= b.
+                Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 

@@ -26,9 +26,9 @@ pub fn build(
         Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),
         Uint128Concrete::FromFelt(_) => build_u128_from_felt(builder),
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint128Concrete::LessThan(_) => build_u128_lt(builder),
+        Uint128Concrete::LessThan(_) => super::uint::build_less_than(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
-        Uint128Concrete::LessThanOrEqual(_) => build_u128_le(builder),
+        Uint128Concrete::LessThanOrEqual(_) => super::uint::build_less_than_or_equal(builder),
     }
 }
 
@@ -335,70 +335,6 @@ fn build_u128_from_felt(
         [
             ("Fallthrough", &[&[range_check], &[value]], None),
             ("FailureHandle", &[&[range_check], &[x], &[y]], Some(failure_handle_statement_id)),
-        ],
-    ))
-}
-
-fn build_u128_lt(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check, a, b] = builder.try_get_single_cells()?;
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        buffer(0) range_check;
-        deref a;
-        deref b;
-    };
-    casm_build_extend! {casm_builder,
-            tempvar a_ge_b;
-            tempvar a_minus_b = a - b;
-            const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-            hint TestLessThan {lhs: a_minus_b, rhs: u128_limit} into {dst: a_ge_b};
-            jump False if a_ge_b != 0;
-            tempvar wrapping_a_minus_b = a_minus_b + u128_limit;
-            assert wrapping_a_minus_b = *(range_check++);
-            jump True;
-        False:
-            assert a_minus_b = *(range_check++);
-    };
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [
-            ("Fallthrough", &[&[range_check]], None),
-            ("True", &[&[range_check]], Some(failure_handle_statement_id)),
-        ],
-    ))
-}
-
-fn build_u128_le(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check, a, b] = builder.try_get_single_cells()?;
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        buffer(0) range_check;
-        deref a;
-        deref b;
-    };
-    casm_build_extend! {casm_builder,
-            tempvar a_gt_b;
-            tempvar b_minus_a = b - a;
-            const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-            hint TestLessThanOrEqual {lhs: u128_limit, rhs: b_minus_a} into {dst: a_gt_b};
-            jump False if a_gt_b != 0;
-            assert b_minus_a = *(range_check++);
-            jump True;
-        False:
-            tempvar wrapping_a_minus_b = b_minus_a + u128_limit;
-            assert wrapping_a_minus_b = *(range_check++);
-    };
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [
-            ("Fallthrough", &[&[range_check]], None),
-            ("True", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
     ))
 }

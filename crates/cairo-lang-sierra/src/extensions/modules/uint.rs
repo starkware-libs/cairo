@@ -2,14 +2,15 @@ use std::marker::PhantomData;
 
 use num_bigint::BigInt;
 
+use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
-    SignatureSpecializationContext, SpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
-    NamedLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
-    SpecializationError,
+    NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
+    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
@@ -32,6 +33,12 @@ pub trait UintTraits: Default {
     const GENERIC_TYPE_ID: GenericTypeId;
     /// The generic libfunc id for getting a const of this type.
     const CONST: GenericLibfuncId;
+    /// The generic libfunc id for comparing equality.
+    const EQUAL: GenericLibfuncId;
+    /// The generic libfunc id for testing if less than.
+    const LESS_THAN: GenericLibfuncId;
+    /// The generic libfunc id for testing if less than or equal.
+    const LESS_THAN_OR_EQUAL: GenericLibfuncId;
 }
 
 #[derive(Default)]
@@ -102,6 +109,118 @@ impl<TUintTraits: UintTraits> SignatureBasedConcreteLibfunc
     }
 }
 
+/// Libfunc for comparing uints` equality.
+#[derive(Default)]
+pub struct UintEqualLibfunc<TUintTraits: UintTraits> {
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintEqualLibfunc<TUintTraits> {
+    const ID: GenericLibfuncId = TUintTraits::EQUAL;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let param_signatures = vec![
+            ParamSignature {
+                ty: ty.clone(),
+                allow_deferred: false,
+                allow_add_const: false,
+                allow_const: true,
+            },
+            ParamSignature { ty, allow_deferred: false, allow_add_const: false, allow_const: true },
+        ];
+        let branch_signatures = (0..2)
+            .map(|_| BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            })
+            .collect();
+        Ok(LibfuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
+    }
+}
+
+/// Libfunc for comparing uints.
+#[derive(Default)]
+pub struct UintLessThanLibfunc<TUintTraits: UintTraits> {
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintLessThanLibfunc<TUintTraits> {
+    const ID: GenericLibfuncId = TUintTraits::LESS_THAN;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let param_signatures = vec![
+            ParamSignature {
+                ty: range_check_type.clone(),
+                allow_deferred: false,
+                allow_add_const: true,
+                allow_const: false,
+            },
+            ParamSignature::new(ty.clone()),
+            ParamSignature::new(ty),
+        ];
+        let branch_signatures = (0..2)
+            .map(|_| BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty: range_check_type.clone(),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                }],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            })
+            .collect();
+        Ok(LibfuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
+    }
+}
+
+/// Libfunc for comparing u128s.
+#[derive(Default)]
+pub struct UintLessThanOrEqualLibfunc<TUintTraits: UintTraits> {
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc
+    for UintLessThanOrEqualLibfunc<TUintTraits>
+{
+    const ID: GenericLibfuncId = TUintTraits::LESS_THAN_OR_EQUAL;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let param_signatures = vec![
+            ParamSignature {
+                ty: range_check_type.clone(),
+                allow_deferred: false,
+                allow_add_const: true,
+                allow_const: false,
+            },
+            ParamSignature::new(ty.clone()),
+            ParamSignature::new(ty),
+        ];
+        let branch_signatures = (0..2)
+            .map(|_| BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty: range_check_type.clone(),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                }],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            })
+            .collect();
+        Ok(LibfuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
+    }
+}
+
 #[derive(Default)]
 pub struct Uint8Traits;
 
@@ -109,6 +228,9 @@ impl UintTraits for Uint8Traits {
     type UintType = u8;
     const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u8");
     const CONST: GenericLibfuncId = GenericLibfuncId::new_inline("u8_const");
+    const EQUAL: GenericLibfuncId = GenericLibfuncId::new_inline("u8_eq");
+    const LESS_THAN: GenericLibfuncId = GenericLibfuncId::new_inline("u8_lt");
+    const LESS_THAN_OR_EQUAL: GenericLibfuncId = GenericLibfuncId::new_inline("u8_le");
 }
 
 /// Type for u8.
@@ -117,5 +239,8 @@ pub type Uint8Type = UintType<Uint8Traits>;
 define_libfunc_hierarchy! {
     pub enum Uint8Libfunc {
         Const(UintConstLibfunc<Uint8Traits>),
+        LessThan(UintLessThanLibfunc<Uint8Traits>),
+        Equal(UintEqualLibfunc<Uint8Traits>),
+        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
     }, Uint8Concrete
 }
