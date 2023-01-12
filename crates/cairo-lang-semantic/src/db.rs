@@ -281,7 +281,7 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::impl_functions)]
     fn impl_functions(&self, impl_id: ImplId) -> Maybe<Vec<ImplFunctionId>>;
 
-    // impl function.
+    // Impl function.
     // ================
     /// Returns the signature of an impl function.
     #[salsa::invoke(items::imp::impl_function_signature)]
@@ -419,26 +419,8 @@ pub trait SemanticGroup:
         free_function_id: FreeFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the body of a free function.
-    #[salsa::invoke(items::free_function::free_function_definition_body)]
-    fn free_function_definition_body(
-        &self,
-        free_function_id: FreeFunctionId,
-    ) -> Maybe<semantic::ExprId>;
-    /// Returns the set of direct callees of a function with a body.
-    #[salsa::invoke(items::function_with_body::function_with_body_definition_direct_callees)]
-    fn function_with_body_definition_direct_callees(
-        &self,
-        function_id: FunctionWithBodyId,
-    ) -> Maybe<HashSet<FunctionId>>;
-    /// Returns the set of direct callees which are functions with body of a function with a body
-    /// (i.e. excluding libfunc callees).
-    #[salsa::invoke(
-        items::function_with_body::function_with_body_direct_function_with_body_callees
-    )]
-    fn function_with_body_direct_function_with_body_callees(
-        &self,
-        function_id: FunctionWithBodyId,
-    ) -> Maybe<HashSet<FunctionWithBodyId>>;
+    #[salsa::invoke(items::free_function::free_function_body)]
+    fn free_function_body(&self, free_function_id: FreeFunctionId) -> Maybe<semantic::ExprId>;
     /// Returns the definition of a free function.
     #[salsa::invoke(items::free_function::free_function_definition)]
     fn free_function_definition(
@@ -457,6 +439,24 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<items::free_function::FreeFunctionDefinitionData>;
+
+    // Function with body.
+    // ===================
+    /// Returns the set of direct callees of a function with a body.
+    #[salsa::invoke(items::function_with_body::function_with_body_direct_callees)]
+    fn function_with_body_direct_callees(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<HashSet<FunctionId>>;
+    /// Returns the set of direct callees which are functions with body of a function with a body
+    /// (i.e. excluding libfunc callees).
+    #[salsa::invoke(
+        items::function_with_body::function_with_body_direct_function_with_body_callees
+    )]
+    fn function_with_body_direct_function_with_body_callees(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<HashSet<FunctionWithBodyId>>;
 
     // Extern function.
     // ================
