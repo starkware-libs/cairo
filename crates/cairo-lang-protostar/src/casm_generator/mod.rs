@@ -98,11 +98,21 @@ impl SierraCasmGenerator {
     
     pub fn build_casm(&self) -> Result<ProtostarCasm, GeneratorError> {
         let tests = self.collect_tests();
+        let mut entry_codes_temp = Vec::new();
+        for test in &tests {
+            let func = self.find_function(test)?;
+            let initial_gas = 0; 
+            let (entry_code, _) = self.create_entry_code(func, &vec![], initial_gas, None)?;
+            println!("{:?}", entry_code);
+            entry_codes_temp.push(entry_code);
+        }
+        let entry_offset: usize = entry_codes_temp.iter().map(|a| a.len()).sum();
         let mut entry_codes = Vec::new();
         for test in &tests {
             let func = self.find_function(test)?;
             let initial_gas = 0; 
-            let (entry_code, _) = self.create_entry_code(func, &vec![], initial_gas)?;
+            let (entry_code, _) = self.create_entry_code(func, &vec![], initial_gas, Some(entry_offset))?;
+            println!("{:?}", entry_code);
             entry_codes.push(entry_code);
         }
 
@@ -113,6 +123,7 @@ impl SierraCasmGenerator {
             16,
         )
         .unwrap();
+        print!("{}", prime);
 
         let mut bytecode = vec![];
         let mut hints = vec![];
@@ -120,6 +131,7 @@ impl SierraCasmGenerator {
         for entry_code in &entry_codes {
             for instruction in entry_code {
                 if !instruction.hints.is_empty() {
+                    println!("XD1");
                     hints.push((
                         bytecode.len(),
                         instruction.hints.iter().map(|hint| hint.to_string()).collect(),
@@ -137,6 +149,7 @@ impl SierraCasmGenerator {
 
         for instruction in chain!( self.casm_program.instructions.iter(), footer.iter()) {
             if !instruction.hints.is_empty() {
+                println!("{}", bytecode.len());
                 hints.push((
                     bytecode.len(),
                     instruction.hints.iter().map(|hint| hint.to_string()).collect(),
@@ -183,6 +196,7 @@ impl SierraCasmGenerator {
         func: &Function,
         args: &[BigInt],
         initial_gas: usize,
+        entry_offset: Option<usize>,
     ) -> Result<(Vec<Instruction>, Vec<String>), GeneratorError> {
         let mut arg_iter = args.iter();
         let mut expected_arguments_size = 0;
@@ -252,8 +266,11 @@ impl SierraCasmGenerator {
         }
         let before_final_call = ctx.current_code_offset;
         let final_call_size = 3;
-        let offset = final_call_size
-            + self.casm_program.debug_info.sierra_statement_info[func.entry_point.0].code_offset;
+
+        let offset = match entry_offset {
+            None => final_call_size + self.casm_program.debug_info.sierra_statement_info[func.entry_point.0].code_offset,
+            Some(n) => n + self.casm_program.debug_info.sierra_statement_info[func.entry_point.0].code_offset
+        };
         casm_extend! {ctx,
             call rel offset;
             ret;
