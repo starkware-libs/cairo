@@ -544,7 +544,7 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<Module
     // TODO(ilya): Consider returning the items in ast order.
     Ok(Arc::new(
         chain!(
-            db.module_constants_ids(module_id)?.into_iter().map(ModuleItemId::Const),
+            db.module_constants_ids(module_id)?.into_iter().map(ModuleItemId::Constant),
             db.module_submodules_ids(module_id)?.into_iter().map(ModuleItemId::Submodule),
             db.module_uses_ids(module_id)?.into_iter().map(ModuleItemId::Use),
             db.module_free_functions_ids(module_id)?.into_iter().map(ModuleItemId::FreeFunction),
