@@ -23,23 +23,13 @@ fn test_impl() {
             #[Contract]
             impl Contract of IContract {
                 fn foo(a: felt) {
-                    return 1;
                 }
             }
         "},
     )
     .split();
 
-    assert_eq!(
-        diagnostics,
-        indoc::indoc! {"
-        error: impl body is not supported yet.
-         --> lib.cairo:8:28
-        impl Contract of IContract {
-                                   ^
-
-        "}
-    );
+    assert!(diagnostics.is_empty());
 
     let impl_id = extract_matches!(
         db.module_item_by_name(test_module.module_id, "Contract".into()).unwrap().unwrap(),
