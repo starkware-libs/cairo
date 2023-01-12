@@ -1,0 +1,174 @@
+//! > Test inlining attribute diagnostics.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+#[inline(always)]
+#[inline(never)]
+#[inline(always, never)]
+#[inline(1+1)]
+#[inline]
+fn foo(ref a: felt, b: felt) -> felt {
+  b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > lowering_format
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Initial refs: v0: core::felt
+Statements:
+End:
+  Return(v0, v1)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+End:
+  Return(v0, v1)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported `inline` arguments.
+ --> lib.cairo:2:9
+#[inline(never)]
+        ^*****^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:2:3
+#[inline(never)]
+  ^****^
+
+error: Unsupported `inline` arguments.
+ --> lib.cairo:3:9
+#[inline(always, never)]
+        ^*************^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:3:3
+#[inline(always, never)]
+  ^****^
+
+error: Unsupported `inline` arguments.
+ --> lib.cairo:4:9
+#[inline(1+1)]
+        ^***^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:4:3
+#[inline(1+1)]
+  ^****^
+
+error: `inline` without arguments is not supported.
+ --> lib.cairo:5:3
+#[inline]
+  ^****^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:5:3
+#[inline]
+  ^****^
+
+//! > ==========================================================================
+
+//! > Test inlining diagnostics due to compiler limitations.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+#[inline(always)]
+fn foo(ref a: felt, b: felt) -> felt {
+  if (b == 5) {
+    return b;
+  }
+  foo(a, b);
+  b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > lowering_format
+
+//! > lowering_structured
+blk0:
+Inputs:
+Initial refs: v0: core::felt
+Statements:
+End:
+  Return(v0, v1)
+
+blk1:
+Inputs: v4: core::NonZero::<core::felt>
+Initial refs: v0: core::felt
+Statements:
+End:
+  Callsite()
+
+blk2 (root):
+Inputs: v0: core::felt, v1: core::felt
+Initial refs: v0: core::felt
+Statements:
+  (v2: core::felt) <- 5u
+    Ref changes: r0 <- v0
+  (v3: core::felt) <- core::felt_sub(v1, v2)
+  () <- match core::felt_jump_nz(v3) {
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
+  }
+    Ref changes: r0 <- v0
+  (v6: core::felt, v5: core::felt) <- test::foo(v0, v1)
+    Ref changes: r0 <- v6
+End:
+  Return(v6, v1)
+
+//! > lowering_flat
+blk0:
+Inputs:
+Statements:
+End:
+  Return(v0, v1)
+
+blk1:
+Inputs: v4: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite()
+
+blk2 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v2: core::felt) <- 5u
+  (v3: core::felt) <- core::felt_sub(v1, v2)
+  () <- match core::felt_jump_nz(v3) {
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
+  }
+  (v6: core::felt, v5: core::felt) <- test::foo(v0, v1)
+End:
+  Return(v6, v1)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Cannot inline a function that might call itself.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+error: Inlining of function with an early return is not supported.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^

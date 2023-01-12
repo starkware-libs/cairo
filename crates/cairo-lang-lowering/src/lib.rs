@@ -5,6 +5,7 @@ pub mod borrow_check;
 pub mod db;
 pub mod diagnostic;
 pub mod fmt;
+pub mod inline;
 pub mod lower;
 pub mod objects;
 pub mod panic;
