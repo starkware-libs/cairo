@@ -13,7 +13,7 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionId,
+    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionId,
     FreeFunctionLongId, FunctionWithBodyId, ImplLongId, LanguageElementId, LookupItemId,
     ModuleFileId, ModuleId, ModuleItemId, StructLongId, TraitLongId, UseLongId,
 };
@@ -495,6 +495,12 @@ fn lookup_item_from_ast(
     let syntax_db = db.upcast();
     // TODO(spapini): Handle trait items.
     match node.kind(syntax_db) {
+        SyntaxKind::ItemConstant => Some(LookupItemId::ModuleItem(ModuleItemId::Constant(
+            db.intern_constant(ConstantLongId(
+                module_file_id,
+                ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(),
+            )),
+        ))),
         SyntaxKind::ItemFreeFunction => Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
             db.intern_free_function(FreeFunctionLongId(
                 module_file_id,

@@ -148,7 +148,7 @@ fn module_lowering_diagnostics(
                         .unwrap_or_default(),
                 );
             }
-            ModuleItemId::Const(_) => {}
+            ModuleItemId::Constant(_) => {}
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::Use(_) => {}
             ModuleItemId::Struct(_) => {}
