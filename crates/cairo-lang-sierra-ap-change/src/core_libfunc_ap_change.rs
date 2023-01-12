@@ -14,7 +14,8 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::strct::StructConcreteLibfunc;
-use cairo_lang_sierra::extensions::uint128::{IntOperator, Uint128Concrete};
+use cairo_lang_sierra::extensions::uint::{IntOperator, Uint8Concrete};
+use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use crate::ApChange;
@@ -93,6 +94,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Gas(libfunc) => match libfunc {
             GasConcreteLibfunc::GetGas(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             GasConcreteLibfunc::RefundGas(_) => vec![ApChange::Known(0)],
+        },
+        CoreConcreteLibfunc::Uint8(libfunc) => match libfunc {
+            Uint8Concrete::Const(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint128(libfunc) => match libfunc {
             Uint128Concrete::Operation(libfunc) => match libfunc.operator {
