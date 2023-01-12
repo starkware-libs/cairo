@@ -226,6 +226,12 @@ pub trait SemanticGroup:
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<semantic::Signature>;
+    /// Returns the attributes of a trait function.
+    #[salsa::invoke(items::trt::trait_function_attributes)]
+    fn trait_function_attributes(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<Vec<Attribute>>;
     /// Returns the generic params of a trait function.
     #[salsa::invoke(items::trt::trait_function_generic_params)]
     fn trait_function_generic_params(

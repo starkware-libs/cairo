@@ -15,6 +15,15 @@ fn test_abi() {
         indoc! {"
             trait MyAbi {
                 fn foo(a: felt, b: u128) -> Option::<()>;
+
+                #[external]
+                fn foo_external(a: felt, b: u128) -> Option::<()>;
+
+                #[view]
+                fn foo_view(a: felt, b: u128) -> Option::<()>;
+
+                #[event]
+                fn foo_event(a: felt, b: u128);
             }
         "},
     )
@@ -45,7 +54,54 @@ fn test_abi() {
                   "ty": "core::integer::u128"
                 }
               ],
-              "output_ty": "core::option::Option::<()>"
+              "output_ty": "core::option::Option::<()>",
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "foo_external",
+              "inputs": [
+                {
+                  "name": "a",
+                  "ty": "core::felt"
+                },
+                {
+                  "name": "b",
+                  "ty": "core::integer::u128"
+                }
+              ],
+              "output_ty": "core::option::Option::<()>",
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "foo_view",
+              "inputs": [
+                {
+                  "name": "a",
+                  "ty": "core::felt"
+                },
+                {
+                  "name": "b",
+                  "ty": "core::integer::u128"
+                }
+              ],
+              "output_ty": "core::option::Option::<()>",
+              "state_mutability": "view"
+            },
+            {
+              "type": "event",
+              "name": "foo_event",
+              "inputs": [
+                {
+                  "name": "a",
+                  "ty": "core::felt"
+                },
+                {
+                  "name": "b",
+                  "ty": "core::integer::u128"
+                }
+              ]
             }
           ]"#}
     );

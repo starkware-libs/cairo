@@ -3899,13 +3899,15 @@
           "ty": "core::felt"
         }
       ],
-      "output_ty": "core::felt"
+      "output_ty": "core::felt",
+      "state_mutability": "external"
     },
     {
       "type": "function",
       "name": "empty",
       "inputs": [],
-      "output_ty": "()"
+      "output_ty": "()",
+      "state_mutability": "external"
     }
   ]
 }
