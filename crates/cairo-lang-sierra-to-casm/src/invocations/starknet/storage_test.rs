@@ -25,22 +25,25 @@ fn test_storage_read() {
                 ref_expr!([ap + 3]),
                 // address.
                 ref_expr!([ap + 5]),
+                // offset.
+                ref_expr!([ap + 7]),
             ],
         ),
         ReducedCompiledInvocation {
             instructions: casm! {
                 [ap + 0] = 100890693370601760042082660u128, ap++;
-                [ap + -1] = [[fp + 1] + 3];
+                [ap + 0] = [ap + 4] + [ap + 6], ap++;
+                [ap + -2] = [[fp + 1] + 3];
                 [fp + 0] = [[fp + 1] + 4];
-                [ap + 2] = [[fp + 1] + 5];
-                [ap + 4] = [[fp + 1] + 6];
+                [ap + 1] = [[fp + 1] + 5];
+                [ap + -1] = [[fp + 1] + 6];
                 %{ syscall_handler.syscall(syscall_ptr=memory[fp + 1] + 3) %}
                 [ap + 0] = [[fp + 1] + 8], ap++;
                 jmp rel 0 if [ap + -1] != 0;
             }
             .instructions,
             relocations: vec![RelocationEntry {
-                instruction_idx: 6,
+                instruction_idx: 7,
                 relocation: Relocation::RelativeStatementId(StatementIdx(1,),),
             },],
             results: vec![
@@ -50,7 +53,7 @@ fn test_storage_read() {
                         ref_expr!([fp + 1] + 10),
                         ref_expr!([[fp + 1] + 9]),
                     ],
-                    ap_change: ApChange::Known(2)
+                    ap_change: ApChange::Known(3)
                 },
                 ReducedBranchChanges {
                     refs: vec![
@@ -58,7 +61,7 @@ fn test_storage_read() {
                         ref_expr!([fp + 1] + 10),
                         ref_expr!([ap - 1]),
                     ],
-                    ap_change: ApChange::Known(2)
+                    ap_change: ApChange::Known(3)
                 }
             ]
         }
@@ -79,6 +82,8 @@ fn test_storage_write() {
                 ref_expr!([ap + 3]),
                 // address.
                 ref_expr!([ap + 5]),
+                // offset.
+                ref_expr!([ap + 7]),
                 // value.
                 ref_expr!([ap + 6])
             ],
@@ -86,24 +91,25 @@ fn test_storage_write() {
         ReducedCompiledInvocation {
             instructions: casm! {
                 [ap + 0] = 25828017502874050592466629733u128, ap++;
-                [ap + -1] = [[fp + 2] + 0];
+                [ap + 0] = [ap + 4] + [ap + 6], ap++;
+                [ap + -2] = [[fp + 2] + 0];
                 [fp + 1] = [[fp + 2] + 1];
-                [ap + 2] = [[fp + 2] + 2];
-                [ap + 4] = [[fp + 2] + 3];
-                [ap + 5] = [[fp + 2] + 4];
+                [ap + 1] = [[fp + 2] + 2];
+                [ap - 1] = [[fp + 2] + 3];
+                [ap + 4] = [[fp + 2] + 4];
                 %{ syscall_handler.syscall(syscall_ptr=memory[fp + 2]) %}
                 [ap + 0] = [[fp + 2] + 6], ap++;
                 jmp rel 0 if [ap + -1] != 0;
             }
             .instructions,
             relocations: vec![RelocationEntry {
-                instruction_idx: 7,
+                instruction_idx: 8,
                 relocation: Relocation::RelativeStatementId(StatementIdx(1,),),
             },],
             results: vec![
                 ReducedBranchChanges {
                     refs: vec![ref_expr!([[fp + 2] + 5]), ref_expr!([fp + 2] + 7)],
-                    ap_change: ApChange::Known(2)
+                    ap_change: ApChange::Known(3)
                 },
                 ReducedBranchChanges {
                     refs: vec![
@@ -111,7 +117,7 @@ fn test_storage_write() {
                         ref_expr!([fp + 2] + 7),
                         ref_expr!([ap - 1])
                     ],
-                    ap_change: ApChange::Known(2)
+                    ap_change: ApChange::Known(3)
                 }
             ]
         }

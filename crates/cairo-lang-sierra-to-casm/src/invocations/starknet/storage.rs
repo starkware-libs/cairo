@@ -16,7 +16,8 @@ pub fn build_storage_read(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, "StorageRead".as_bytes());
 
-    let [gas_builtin, system, address_domain, storage_address] = builder.try_get_single_cells()?;
+    let [gas_builtin, system, address_domain, storage_address, storage_offset] =
+        builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
@@ -24,16 +25,18 @@ pub fn build_storage_read(
         buffer(3) system;
         deref address_domain;
         deref storage_address;
+        deref_or_immediate storage_offset;
     };
 
     casm_build_extend! {casm_builder,
         let original_system = system;
         const selector_imm = selector_imm;
         tempvar selector = selector_imm;
+        tempvar final_storage_address = storage_address + storage_offset;
         assert selector = *(system++);
         assert gas_builtin = *(system++);
         assert address_domain = *(system++);
-        assert storage_address = *(system++);
+        assert final_storage_address = *(system++);
         hint SystemCall { system: original_system };
         // `revert_reason` is 0 on success, nonzero on failure/revert.
         let updated_gas_builtin = *(system++);
@@ -61,7 +64,7 @@ pub fn build_storage_write(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, "StorageWrite".as_bytes());
 
-    let [gas_builtin, system, address_domain, storage_address, value] =
+    let [gas_builtin, system, address_domain, storage_address, storage_offset, value] =
         builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
@@ -70,16 +73,18 @@ pub fn build_storage_write(
         deref gas_builtin;
         deref address_domain;
         deref storage_address;
+        deref_or_immediate storage_offset;
         deref value;
     };
     casm_build_extend! {casm_builder,
         let original_system = system;
         const selector_imm = selector_imm;
         tempvar selector = selector_imm;
+        tempvar final_storage_address = storage_address + storage_offset;
         assert selector = *(system++);
         assert gas_builtin = *(system++);
         assert address_domain = *(system++);
-        assert storage_address = *(system++);
+        assert final_storage_address = *(system++);
         assert value = *(system++);
         hint SystemCall { system: original_system };
         let updated_gas_builtin = *(system++);

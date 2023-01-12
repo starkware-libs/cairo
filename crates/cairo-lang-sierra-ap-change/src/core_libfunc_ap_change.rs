@@ -158,9 +158,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             StarkNetConcreteLibfunc::CallContract(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
-            StarkNetConcreteLibfunc::StorageRead(_) => vec![ApChange::Known(2), ApChange::Known(2)],
+            StarkNetConcreteLibfunc::StorageRead(_) => vec![ApChange::Known(3), ApChange::Known(3)],
             StarkNetConcreteLibfunc::StorageWrite(_) => {
-                vec![ApChange::Known(2), ApChange::Known(2)]
+                vec![ApChange::Known(3), ApChange::Known(3)]
             }
             StarkNetConcreteLibfunc::StorageAddressConst(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibfunc::StorageAddressFromFelt(_) => vec![ApChange::Known(7)],

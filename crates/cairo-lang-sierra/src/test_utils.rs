@@ -8,6 +8,7 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     let mut elements = BiMap::new();
     elements.insert("T".into(), as_type_long_id("T", &[]));
     elements.insert("u128".into(), as_type_long_id("u128", &[]));
+    elements.insert("u8".into(), as_type_long_id("u8", &[]));
     elements.insert("felt".into(), as_type_long_id("felt", &[]));
     elements.insert("Tuple<>".into(), as_named_type_long_id("Struct", "Tuple", &[]));
     elements.insert(
