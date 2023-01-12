@@ -56,10 +56,7 @@ fn inner_find_local_variables(
         match statement {
             lowering::Statement::Literal(statement_literal) => {
                 // Treat literal as a temporary variable.
-                state.set_variable_status(
-                    statement_literal.output,
-                    VariableStatus::TemporaryVariable,
-                );
+                state.set_variable_status(statement_literal.output, VariableStatus::Constant);
             }
             lowering::Statement::Call(statement_call) => {
                 let (_, concrete_function_id) =
@@ -268,6 +265,7 @@ fn handle_function_call(
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum VariableStatus {
+    Constant,
     TemporaryVariable,
     Revoked,
     /// Indicates that the variable is essentially the same as another variable.
@@ -340,7 +338,7 @@ impl LocalVariablesState {
                 // Recursively visit `alias`.
                 self.use_variable(*alias, res);
             }
-            Some(VariableStatus::TemporaryVariable) | None => {}
+            Some(VariableStatus::TemporaryVariable | VariableStatus::Constant) | None => {}
         }
     }
 
