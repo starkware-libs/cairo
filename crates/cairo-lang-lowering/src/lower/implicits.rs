@@ -1,6 +1,7 @@
+use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId, LanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::TypeId;
@@ -15,7 +16,15 @@ pub fn function_scc_representative(
     function: FunctionWithBodyId,
 ) -> SCCRepresentative {
     SCCRepresentative(
-        db.function_with_body_scc(function.clone()).into_iter().min().unwrap_or(function),
+        db.function_with_body_scc(function.clone())
+            .into_iter()
+            .min_by(|x, y| match (x, y) {
+                (FunctionWithBodyId::Free(x), FunctionWithBodyId::Free(y)) => x.cmp(y),
+                (FunctionWithBodyId::Impl(x), FunctionWithBodyId::Impl(y)) => x.cmp(y),
+                (FunctionWithBodyId::Free(_), FunctionWithBodyId::Impl(_)) => Ordering::Less,
+                (FunctionWithBodyId::Impl(_), FunctionWithBodyId::Free(_)) => Ordering::Greater,
+            })
+            .unwrap_or(function),
     )
 }
 

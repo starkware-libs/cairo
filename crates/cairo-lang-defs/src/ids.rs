@@ -346,13 +346,14 @@ impl Ord for ImplFunctionId {
     }
 }
 
-// TODO(yuval): remove PartialOrd, Ord once ordering stably in `function_scc_representative`.
-/// Represents a function that has a body.
-#[derive(Debug, Eq, PartialEq, Clone, Hash, PartialOrd, Ord)]
-pub enum FunctionWithBodyId {
-    Free(FreeFunctionId),
-    Impl(ImplFunctionId),
+define_language_element_id_as_enum! {
+    /// Represents a function that has a body.
+    pub enum FunctionWithBodyId {
+        Free(FreeFunctionId),
+        Impl(ImplFunctionId),
+    }
 }
+
 impl FunctionWithBodyId {
     pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         match self {
