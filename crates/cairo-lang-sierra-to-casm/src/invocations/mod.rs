@@ -45,6 +45,7 @@ mod pedersen;
 mod starknet;
 
 mod strct;
+mod uint;
 mod uint128;
 
 #[cfg(test)]
@@ -396,6 +397,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Bitwise(_) => bitwise::build(builder),
         CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
         CoreConcreteLibfunc::Ec(libfunc) => ec::build(libfunc, builder),
+        CoreConcreteLibfunc::Uint8(libfunc) => uint::build_u8(libfunc, builder),
         CoreConcreteLibfunc::Uint128(libfunc) => uint128::build(libfunc, builder),
         CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
         CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),

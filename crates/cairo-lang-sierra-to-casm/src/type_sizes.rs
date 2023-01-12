@@ -24,6 +24,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::BuiltinCosts(_)
             | CoreTypeConcrete::EcOp(_)
             | CoreTypeConcrete::Nullable(_)
+            | CoreTypeConcrete::Uint8(_)
             | CoreTypeConcrete::Uint128(_)
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)

@@ -25,6 +25,7 @@ use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
 use super::strct::{StructLibfunc, StructType};
+use super::uint::{Uint8Libfunc, Uint8Type};
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -40,6 +41,7 @@ define_type_hierarchy! {
         GasBuiltin(GasBuiltinType),
         BuiltinCosts(BuiltinCostsType),
         Uint128(Uint128Type),
+        Uint8(Uint8Type),
         NonZero(NonZeroType),
         Nullable(NullableType),
         RangeCheck(RangeCheckType),
@@ -70,6 +72,7 @@ define_libfunc_hierarchy! {
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
         Uint128(Uint128Libfunc),
+        Uint8(Uint8Libfunc),
         Mem(MemLibfunc),
         Nullable(NullableLibfunc),
         UnwrapNonZero(UnwrapNonZeroLibfunc),
