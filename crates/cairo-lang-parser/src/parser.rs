@@ -133,6 +133,7 @@ impl<'a> Parser<'a> {
         );
 
         match self.peek().kind {
+            SyntaxKind::TerminalConst => Some(self.expect_const(attributes).into()),
             SyntaxKind::TerminalModule => Some(self.expect_module(attributes).into()),
             SyntaxKind::TerminalStruct => Some(self.expect_struct(attributes).into()),
             SyntaxKind::TerminalEnum => Some(self.expect_enum(attributes).into()),
@@ -260,6 +261,21 @@ impl<'a> Parser<'a> {
             implicits_clause,
             optional_no_panic,
         )
+    }
+
+    /// Assumes the current token is [TerminalConst].
+    /// Expected pattern: `const <Identifier> = <Expr>;`
+    fn expect_const(&mut self, attributes: AttributeListGreen) -> ItemConstGreen {
+        let const_kw = self.take::<TerminalConst>();
+        let name = self.parse_identifier();
+        let type_clause = self.parse_type_clause(ErrorRecovery {
+            should_stop: is_of_kind!(eq, semicolon, top_level),
+        });
+        let eq = self.parse_token::<TerminalEq>();
+        let expr = self.parse_expr();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+
+        ItemConst::new_green(self.db, attributes, const_kw, name, type_clause, eq, expr, semicolon)
     }
 
     /// Assumes the current token is Extern.

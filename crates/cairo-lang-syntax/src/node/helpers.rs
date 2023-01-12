@@ -5,10 +5,11 @@ mod test;
 use smol_str::SmolStr;
 
 use super::ast::{
-    self, FunctionDeclaration, FunctionDeclarationGreen, Item, ItemEnum, ItemExternFunction,
-    ItemExternFunctionPtr, ItemExternType, ItemFreeFunction, ItemFreeFunctionPtr, ItemImpl,
-    ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItemFunction, TraitItemFunctionPtr,
+    self, FunctionDeclaration, FunctionDeclarationGreen, Item, ItemConst, ItemEnum,
+    ItemExternFunction, ItemExternFunctionPtr, ItemExternType, ItemFreeFunction,
+    ItemFreeFunctionPtr, ItemImpl, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse,
+    Modifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction,
+    TraitItemFunctionPtr,
 };
 use super::db::SyntaxGroup;
 use super::Terminal;
@@ -115,6 +116,17 @@ impl NameGreen for TraitItemFunctionPtr {
 pub trait QueryAttrs {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
     fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
+}
+impl QueryAttrs for ItemConst {
+    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
+    }
+    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        match self.attributes(db).elements(db).last() {
+            None => false,
+            Some(last_attr) => last_attr.attr(db).text(db) == attr,
+        }
+    }
 }
 impl QueryAttrs for ItemModule {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
@@ -241,6 +253,7 @@ impl QueryAttrs for TraitItemFunction {
 impl QueryAttrs for Item {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         match self {
+            ast::Item::Const(item) => item.has_attr(db, attr),
             ast::Item::Module(item) => item.has_attr(db, attr),
             ast::Item::FreeFunction(item) => item.has_attr(db, attr),
             ast::Item::Use(item) => item.has_attr(db, attr),
@@ -256,6 +269,7 @@ impl QueryAttrs for Item {
 
     fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         match self {
+            ast::Item::Const(item) => item.last_attr(db, attr),
             ast::Item::Module(item) => item.last_attr(db, attr),
             ast::Item::FreeFunction(item) => item.last_attr(db, attr),
             ast::Item::Use(item) => item.last_attr(db, attr),
