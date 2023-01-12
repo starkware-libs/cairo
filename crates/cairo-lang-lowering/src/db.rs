@@ -147,6 +147,7 @@ fn module_lowering_diagnostics(
                         .map(|lowered| lowered.diagnostics.clone())
                         .unwrap_or_default(),
                 );
+                Constant
             }
             ModuleItemId::Const(_) => {}
             ModuleItemId::Submodule(_) => {}
