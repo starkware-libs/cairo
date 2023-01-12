@@ -87,6 +87,8 @@ pub trait SemanticGroup:
     /// Returns the semantic diagnostics of a constant declaration.
     #[salsa::invoke(items::const_::const_semantic_diagnostics)]
     fn const_semantic_diagnostics(&self, const_id: ConstId) -> Diagnostics<SemanticDiagnostic>;
+    #[salsa::invoke(items::const_::const_resolved_lookback)]
+    fn const_resolved_lookback(&self, use_id: ConstId) -> Maybe<Arc<ResolvedLookback>>;
 
     // Use.
     // ====
@@ -834,9 +836,7 @@ pub fn lookup_resolved_concrete_item_by_ptr(
 fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<ResolvedLookback>> {
     match id {
         LookupItemId::ModuleItem(module_item) => match module_item {
-            ModuleItemId::Const(_) => {
-                unimplemented!("Constant declaration is not supported yet.");
-            }
+            ModuleItemId::Const(id) => vec![db.const_resolved_lookback(id)],
             ModuleItemId::Submodule(_) => vec![],
             ModuleItemId::Use(id) => vec![db.use_resolved_lookback(id)],
             ModuleItemId::FreeFunction(id) => vec![

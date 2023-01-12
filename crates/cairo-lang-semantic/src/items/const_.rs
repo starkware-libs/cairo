@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::ids::{ConstId, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -5,6 +7,8 @@ use cairo_lang_proc_macros::DebugWithDb;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::types::resolve_type;
 use crate::SemanticDiagnostic;
 
 // TODO(lior): Add a test.
@@ -16,6 +20,7 @@ use crate::SemanticDiagnostic;
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ConstData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
+    resolved_lookback: Arc<ResolvedLookback>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::const_semantic_diagnostics].
@@ -37,8 +42,26 @@ pub fn priv_const_semantic_data(db: &dyn SemanticGroup, const_id: ConstId) -> Ma
     let const_ast = module_constants.get(&const_id).to_maybe()?;
     let syntax_db = db.upcast();
 
+    let mut resolver = Resolver::new(db, module_file_id, &[]);
+
+    let _const_type = resolve_type(
+        db,
+        &mut diagnostics,
+        &mut resolver,
+        &const_ast.type_clause(syntax_db).ty(syntax_db),
+    );
+
     // TODO(lior): Implement constants.
     diagnostics.report(&const_ast.const_kw(syntax_db), ConstantsAreNotSupported);
 
-    Ok(ConstData { diagnostics: diagnostics.build() })
+    let resolved_lookback = Arc::new(resolver.lookback);
+    Ok(ConstData { diagnostics: diagnostics.build(), resolved_lookback })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::const_resolved_lookback].
+pub fn const_resolved_lookback(
+    db: &dyn SemanticGroup,
+    const_id: ConstId,
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_const_semantic_data(const_id)?.resolved_lookback)
 }
