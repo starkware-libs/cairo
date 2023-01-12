@@ -120,6 +120,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             SyntaxKind::StatementLet
             | SyntaxKind::StatementExpr
             | SyntaxKind::StatementReturn
+            | SyntaxKind::ItemConst
             | SyntaxKind::ItemFreeFunction
             | SyntaxKind::ItemExternFunction
             | SyntaxKind::ItemExternType
