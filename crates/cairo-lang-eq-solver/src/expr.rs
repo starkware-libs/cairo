@@ -1,9 +1,8 @@
-use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use cairo_lang_utils::collection_arithmetics::HasZero;
-use itertools::chain;
+use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps, HasZero};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 #[cfg(test)]
 #[path = "expr_test.rs"]
@@ -15,17 +14,17 @@ pub struct Expr<Var: Clone + Debug + PartialEq + Eq + Hash> {
     /// The constant term of the expression.
     pub const_term: i32,
     /// The coefficient for every variable in the expression.
-    pub var_to_coef: HashMap<Var, i64>,
+    pub var_to_coef: OrderedHashMap<Var, i64>,
 }
 impl<Var: Clone + Debug + PartialEq + Eq + Hash> Expr<Var> {
     /// Creates a cost expression based on const value only.
     pub fn from_const(const_term: i32) -> Self {
-        Self { const_term, var_to_coef: HashMap::default() }
+        Self { const_term, var_to_coef: Default::default() }
     }
 
     /// Creates a cost expression based on variable only.
     pub fn from_var(var: Var) -> Self {
-        Self { const_term: 0, var_to_coef: HashMap::from([(var, 1)]) }
+        Self { const_term: 0, var_to_coef: [(var, 1)].into_iter().collect() }
     }
 }
 
@@ -41,17 +40,7 @@ impl<Var: Clone + Debug + PartialEq + Eq + Hash> std::ops::Add for Expr<Var> {
     fn add(self, other: Self) -> Self {
         Self {
             const_term: self.const_term + other.const_term,
-            var_to_coef: chain!(
-                self.var_to_coef
-                    .iter()
-                    .map(|(k, v1)| (k.clone(), v1 + other.var_to_coef.get(k).unwrap_or(&0))),
-                other
-                    .var_to_coef
-                    .iter()
-                    .map(|(k, v2)| (k.clone(), self.var_to_coef.get(k).unwrap_or(&0) + v2))
-            )
-            .filter(|(_, v)| *v != 0)
-            .collect(),
+            var_to_coef: add_maps(self.var_to_coef, other.var_to_coef),
         }
     }
 }
@@ -61,17 +50,7 @@ impl<Var: Clone + Debug + PartialEq + Eq + Hash> std::ops::Sub for Expr<Var> {
     fn sub(self, other: Self) -> Self {
         Self {
             const_term: self.const_term - other.const_term,
-            var_to_coef: chain!(
-                self.var_to_coef
-                    .iter()
-                    .map(|(k, v1)| (k.clone(), v1 - other.var_to_coef.get(k).unwrap_or(&0))),
-                other
-                    .var_to_coef
-                    .iter()
-                    .map(|(k, v2)| (k.clone(), self.var_to_coef.get(k).unwrap_or(&0) - v2))
-            )
-            .filter(|(_, v)| *v != 0)
-            .collect(),
+            var_to_coef: sub_maps(self.var_to_coef, other.var_to_coef),
         }
     }
 }

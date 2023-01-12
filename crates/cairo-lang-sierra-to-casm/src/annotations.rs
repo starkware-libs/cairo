@@ -156,7 +156,7 @@ impl ProgramAnnotations {
                     return_annotation,
                     environment: if gas_usage_check {
                         Environment::new(GasWallet::Value(
-                            metadata.gas_info.function_costs[&func.id].clone(),
+                            metadata.gas_info.function_costs[func.id.clone()].clone(),
                         ))
                     } else {
                         Environment::new(GasWallet::Disabled)

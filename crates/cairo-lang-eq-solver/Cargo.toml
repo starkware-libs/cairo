@@ -7,9 +7,10 @@ license-file.workspace = true
 description = "Equation solving for Sierra generation."
 
 [dependencies]
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
 good_lp.workspace = true
 itertools.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+indexmap.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true
