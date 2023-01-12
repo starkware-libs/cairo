@@ -7,6 +7,7 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
+use crate::extensions::uint::Uint8Type;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -86,6 +87,7 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let u8_ty = context.get_concrete_type(Uint8Type::id(), &[])?;
 
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -102,6 +104,13 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
                 ParamSignature::new(felt_ty.clone()),
                 // Address
                 ParamSignature::new(addr_ty),
+                // Offset
+                ParamSignature {
+                    ty: u8_ty,
+                    allow_deferred: false,
+                    allow_add_const: false,
+                    allow_const: true,
+                },
             ],
             branch_signatures: vec![
                 // Success branch.
@@ -170,6 +179,7 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let u8_ty = context.get_concrete_type(Uint8Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -185,6 +195,13 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
                 ParamSignature::new(felt_ty.clone()),
                 // Address
                 ParamSignature::new(addr_ty),
+                // Offset
+                ParamSignature {
+                    ty: u8_ty,
+                    allow_deferred: false,
+                    allow_add_const: false,
+                    allow_const: true,
+                },
                 // Value
                 ParamSignature::new(felt_ty.clone()),
             ],

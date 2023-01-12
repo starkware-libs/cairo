@@ -622,7 +622,7 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
         fn read() -> $type_name$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(address_domain, address()) {{
+            match starknet::storage_read_syscall(address_domain, address(), 0_u8) {{
                 Result::Ok(value) => {convert_to},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
@@ -634,7 +634,12 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
         fn write(value: $type_name$) {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(address_domain, address(), {convert_from}) {{
+            match starknet::storage_write_syscall(
+                address_domain,
+                address(),
+                0_u8,
+                {convert_from},
+            ) {{
                 Result::Ok(()) => {{}},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
@@ -669,7 +674,7 @@ fn handle_mapping_storage_var(
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(address_domain, address(key)) {{
+            match starknet::storage_read_syscall(address_domain, address(key), 0_u8) {{
                 Result::Ok(value) => {value_convert_to},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
@@ -684,6 +689,7 @@ fn handle_mapping_storage_var(
             match starknet::storage_write_syscall(
                 address_domain,
                 address(key),
+                0_u8,
                 {value_convert_from},
             ) {{
                 Result::Ok(()) => {{}},

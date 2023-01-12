@@ -41,6 +41,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
         if id == "T".into()
             || id == "felt".into()
             || id == "u128".into()
+            || id == "u8".into()
             || id == "Option".into()
             || id == "NonZeroFelt".into()
             || id == "NonZeroInt".into()

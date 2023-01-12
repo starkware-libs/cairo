@@ -16,10 +16,10 @@ extern fn storage_addr_from_felt(addr: felt) -> StorageAddress implicits(RangeCh
 // This parameter is going to be used to access address spaces with different
 // data availability guarantees.
 extern fn storage_read_syscall(
-    address_domain: felt, address: StorageAddress,
+    address_domain: felt, address: StorageAddress, offset: u8,
 ) -> Result::<felt, felt> implicits(GasBuiltin, System) nopanic;
 extern fn storage_write_syscall(
-    address_domain: felt, address: StorageAddress, value: felt
+    address_domain: felt, address: StorageAddress, offset: u8, value: felt,
 ) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;
 
 // Interoperability.

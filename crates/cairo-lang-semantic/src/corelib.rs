@@ -435,10 +435,13 @@ pub fn try_get_const_libfunc_name_by_type(
 ) -> Result<String, SemanticDiagnosticKind> {
     let felt_ty = core_felt_ty(db);
     let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
+    let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
     if ty == felt_ty {
         Ok("felt_const".into())
     } else if ty == u128_ty {
         Ok("u128_const".into())
+    } else if ty == u8_ty {
+        Ok("u8_const".into())
     } else {
         Err(SemanticDiagnosticKind::NoLiteralFunctionFound)
     }
