@@ -4,7 +4,7 @@ use anyhow::Context;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
-use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
@@ -82,7 +82,8 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
         }
     };
 
-    let external_functions = get_external_functions(db, contract)?;
+    let external_functions: Vec<_> =
+        get_external_functions(db, contract)?.into_iter().map(FunctionWithBodyId::Free).collect();
     let sierra_program = db
         .get_sierra_program_for_functions(external_functions.clone())
         .to_option()
@@ -109,22 +110,27 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
 /// Returns the entry points given their IDs.
 fn get_entry_points(
     db: &mut RootDatabase,
-    external_functions: &[FreeFunctionId],
+    external_functions: &[FunctionWithBodyId],
     replacer: &CanonicalReplacer,
 ) -> Result<ContractEntryPoints, anyhow::Error> {
     let mut entry_points_by_type = ContractEntryPoints::default();
-    for free_func_id in external_functions {
-        let func_id = db.intern_function(FunctionLongId {
+    for function_with_body_id in external_functions {
+        let function_id = db.intern_function(FunctionLongId {
             function: ConcreteFunction {
-                generic_function: GenericFunctionId::Free(*free_func_id),
+                generic_function: match *function_with_body_id {
+                    FunctionWithBodyId::Free(free_func_id) => GenericFunctionId::Free(free_func_id),
+                    FunctionWithBodyId::Impl(impl_func_id) => {
+                        GenericFunctionId::ImplFunction(impl_func_id)
+                    }
+                },
                 generic_args: vec![],
             },
         });
 
-        let sierra_id = db.intern_sierra_function(func_id);
+        let sierra_id = db.intern_sierra_function(function_id);
 
         entry_points_by_type.external.push(ContractEntryPoint {
-            selector: starknet_keccak(free_func_id.name(db).as_bytes()),
+            selector: starknet_keccak(function_with_body_id.name(db).as_bytes()),
             function_idx: replacer.replace_function_id(&sierra_id).id as usize,
         });
     }

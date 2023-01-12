@@ -44,8 +44,8 @@ fn test_function_lowering(
     )
     .split();
     let structured_lowered =
-        db.free_function_lowered_structured(test_function.function_id).unwrap();
-    let flat_lowered = db.free_function_lowered_flat(test_function.function_id).unwrap();
+        db.function_with_body_lowered_structured(test_function.function_id).unwrap();
+    let flat_lowered = db.function_with_body_lowered_flat(test_function.function_id).unwrap();
     let mut diagnostics = DiagnosticsBuilder::default();
     diagnostics.extend(structured_lowered.diagnostics.clone());
     diagnostics.extend(flat_lowered.diagnostics.clone());

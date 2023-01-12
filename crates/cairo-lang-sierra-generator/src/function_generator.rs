@@ -4,7 +4,7 @@ mod test;
 
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -27,29 +27,29 @@ pub struct SierraFreeFunctionData {
     pub function: Maybe<Arc<pre_sierra::Function>>,
 }
 
-/// Query implementation of [SierraGenGroup::priv_free_function_sierra_data].
-pub fn priv_free_function_sierra_data(
+/// Query implementation of [SierraGenGroup::priv_function_with_body_sierra_data].
+pub fn priv_function_with_body_sierra_data(
     db: &dyn SierraGenGroup,
-    function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
 ) -> SierraFreeFunctionData {
     let function = get_function_code(db, function_id);
     SierraFreeFunctionData { function }
 }
 
-/// Query implementation of [SierraGenGroup::free_function_sierra].
-pub fn free_function_sierra(
+/// Query implementation of [SierraGenGroup::function_with_body_sierra].
+pub fn function_with_body_sierra(
     db: &dyn SierraGenGroup,
-    function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    db.priv_free_function_sierra_data(function_id).function
+    db.priv_function_with_body_sierra_data(function_id).function
 }
 
 fn get_function_code(
     db: &dyn SierraGenGroup,
-    function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = db.free_function_declaration_signature(function_id)?;
-    let lowered_function = &*db.free_function_lowered_flat(function_id)?;
+    let signature = db.function_with_body_signature(function_id)?;
+    let lowered_function = &*db.function_with_body_lowered_flat(function_id)?;
     let block_id = lowered_function.root?;
     let block = &lowered_function.blocks[block_id];
 
@@ -116,7 +116,14 @@ fn get_function_code(
     Ok(pre_sierra::Function {
         id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
             function: semantic::ConcreteFunction {
-                generic_function: GenericFunctionId::Free(function_id),
+                generic_function: match function_id {
+                    FunctionWithBodyId::Free(free_function_id) => {
+                        GenericFunctionId::Free(free_function_id)
+                    }
+                    FunctionWithBodyId::Impl(impl_function_id) => {
+                        GenericFunctionId::ImplFunction(impl_function_id)
+                    }
+                },
                 // TODO(lior): Add generic arguments.
                 generic_args: vec![],
             },
