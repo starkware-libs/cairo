@@ -16,6 +16,7 @@ cairo_lang_test_utils::test_file_test!(
         box_: "box",
         builtin_costs: "builtin_costs",
         dict_felt_to: "dict_felt_to",
+        ec: "ec",
         get_gas_all: "get_gas_all",
         nullable: "nullable",
         u128: "u128",
@@ -51,6 +52,7 @@ fn run_small_e2e_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap
         .function_costs
         .iter()
         .map(|(func_id, cost)| format!("{func_id}: {cost:?}"))
+        .sorted()
         .join("\n");
 
     // Compile to casm.
