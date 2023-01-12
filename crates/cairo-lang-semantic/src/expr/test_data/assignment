@@ -9,6 +9,8 @@ fn foo(p: felt) {
     a = 1 + 2;
     let b = 1;
     let c : felt = (b = 5);
+    let mut x = 1;
+    x = true;
 }
 
 //! > function_name
@@ -42,3 +44,8 @@ error: Unexpected argument type. Expected: "core::felt", found: "()".
  --> lib.cairo:6:20
     let c : felt = (b = 5);
                    ^*****^
+
+error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
+ --> lib.cairo:8:9
+    x = true;
+        ^**^

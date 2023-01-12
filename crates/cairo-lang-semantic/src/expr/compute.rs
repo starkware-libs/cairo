@@ -218,6 +218,12 @@ fn compute_expr_binary_semantic(
                 // The semantic_var must be valid as 'lexpr' is a result of compute_expr_semantic.
                 let semantic_var = ctx.semantic_defs.get(&var).unwrap();
 
+                if semantic_var.ty() != rexpr.ty() {
+                    return Err(ctx.diagnostics.report(
+                        &rhs_syntax,
+                        WrongArgumentType { expected_ty: semantic_var.ty(), actual_ty: rexpr.ty() },
+                    ));
+                }
                 if !semantic_var.is_mut() {
                     ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
                 }
