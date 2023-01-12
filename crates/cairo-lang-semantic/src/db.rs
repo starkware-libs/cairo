@@ -457,6 +457,12 @@ pub trait SemanticGroup:
         &self,
         function_id: FunctionWithBodyId,
     ) -> Maybe<HashSet<FunctionWithBodyId>>;
+    /// Returns the signature of the function.
+    #[salsa::invoke(items::function_with_body::function_with_body_signature)]
+    fn function_with_body_signature(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<semantic::Signature>;
 
     // Extern function.
     // ================

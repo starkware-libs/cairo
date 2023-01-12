@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
 use cairo_lang_diagnostics::Maybe;
 
 use crate::db::SemanticGroup;
-use crate::FunctionId;
+use crate::{semantic, FunctionId};
 
 /// Query implementation of
 /// [crate::db::SemanticGroup::function_with_body_direct_callees].
@@ -48,4 +48,18 @@ pub fn function_with_body_direct_function_with_body_callees(
             }
         })
         .collect())
+}
+
+/// Query implementation of
+/// [crate::db::SemanticGroup::function_with_body_signature].
+pub fn function_with_body_signature(
+    db: &dyn SemanticGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<semantic::Signature> {
+    match function_id {
+        FunctionWithBodyId::Free(free_function_id) => {
+            db.free_function_declaration_signature(free_function_id)
+        }
+        FunctionWithBodyId::Impl(impl_function_id) => db.impl_function_signature(impl_function_id),
+    }
 }
