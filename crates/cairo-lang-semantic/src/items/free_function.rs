@@ -136,10 +136,11 @@ pub fn priv_free_function_declaration_data(
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct FreeFunctionDefinitionData {
+    /// Only the diagnostics from the body, excluding the declaration.
     diagnostics: Diagnostics<SemanticDiagnostic>,
     expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
     resolved_lookback: Arc<ResolvedLookback>,
-    definition: Arc<FreeFunctionDefinition>,
+    pub definition: Arc<FreeFunctionDefinition>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -173,32 +174,6 @@ pub fn free_function_definition_body(
     Ok(db.priv_free_function_definition_data(free_function_id)?.definition.body)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_definition_direct_callees].
-pub fn free_function_definition_direct_callees(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<HashSet<FunctionId>> {
-    Ok(db.priv_free_function_definition_data(free_function_id)?.definition.direct_callees.clone())
-}
-
-/// Query implementation of
-/// [crate::db::SemanticGroup::free_function_definition_direct_free_function_callees].
-pub fn free_function_definition_direct_free_function_callees(
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Maybe<HashSet<FreeFunctionId>> {
-    Ok(db
-        .free_function_definition_direct_callees(free_function_id)?
-        .into_iter()
-        .filter_map(|function_id| {
-            match db.lookup_intern_function(function_id).function.generic_function {
-                GenericFunctionId::Free(free_function) => Some(free_function),
-                _ => None,
-            }
-        })
-        .collect())
-}
-
 /// Query implementation of [crate::db::SemanticGroup::free_function_definition].
 pub fn free_function_definition(
     db: &dyn SemanticGroup,
@@ -215,7 +190,7 @@ pub fn free_function_definition_resolved_lookback(
     Ok(db.priv_free_function_definition_data(free_function_id)?.resolved_lookback)
 }
 
-// ---Computation ---
+// --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_free_function_definition_data].
 pub fn priv_free_function_definition_data(
@@ -225,8 +200,8 @@ pub fn priv_free_function_definition_data(
     let module_file_id = free_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_free_functions = db.module_free_functions(module_file_id.0)?;
-    let syntax = module_free_functions.get(&free_function_id).to_maybe()?.clone();
-    // Compute signature semantic.
+    let function_syntax = module_free_functions.get(&free_function_id).to_maybe()?.clone();
+    // Compute declaration semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;
     let resolver = Resolver::new(db, module_file_id, &declaration.generic_params);
     let environment = declaration.environment;
@@ -238,18 +213,19 @@ pub fn priv_free_function_definition_data(
         &declaration.signature,
         environment,
     );
-    let expr = compute_expr_block_semantic(&mut ctx, &syntax.body(db.upcast()))?;
+    let function_body = function_syntax.body(db.upcast());
+    let expr = compute_expr_block_semantic(&mut ctx, &function_body)?;
     let expr_ty = expr.ty();
-    let signature_return_ty = declaration.signature.return_type;
-    if expr_ty != signature_return_ty
+    let return_type = declaration.signature.return_type;
+    if expr_ty != return_type
         && !expr_ty.is_missing(db)
-        && !signature_return_ty.is_missing(db)
+        && !return_type.is_missing(db)
         && expr_ty != never_ty(db)
     {
         ctx.diagnostics.report(
-            &syntax.body(db.upcast()),
+            &function_body,
             SemanticDiagnosticKind::WrongReturnType {
-                expected_ty: signature_return_ty,
+                expected_ty: return_type,
                 actual_ty: expr_ty,
             },
         );

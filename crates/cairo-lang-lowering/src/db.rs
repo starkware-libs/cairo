@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId};
+use cairo_lang_defs::ids::{
+    FreeFunctionId, FunctionWithBodyId, LanguageElementId, ModuleId, ModuleItemId,
+};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic as semantic;
@@ -41,7 +43,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the representative of the function's strongly connected component. The
     /// representative is consistently chosen for all the functions in the same SCC.
     #[salsa::invoke(crate::lower::implicits::function_scc_representative)]
-    fn function_scc_representative(&self, function: FreeFunctionId) -> SCCRepresentative;
+    fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
 
     /// Returns the explicit implicits required by all the functions in the SCC of this function.
     /// These are all the implicit parameters that are explicitly declared in the functions of
@@ -61,29 +63,35 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::lower::implicits::function_all_implicits)]
     fn function_all_implicits(&self, function: semantic::FunctionId) -> Maybe<Vec<TypeId>>;
 
-    /// Returns all the implicit parameters that the free function requires (according to both its
-    /// signature and the functions it calls).
-    #[salsa::invoke(crate::lower::implicits::free_function_all_implicits)]
-    fn free_function_all_implicits(&self, function: FreeFunctionId) -> Maybe<HashSet<TypeId>>;
+    /// Returns all the implicit parameters that a function with a body requires (according to both
+    /// its signature and the functions it calls).
+    #[salsa::invoke(crate::lower::implicits::function_with_body_all_implicits)]
+    fn function_with_body_all_implicits(
+        &self,
+        function: FunctionWithBodyId,
+    ) -> Maybe<HashSet<TypeId>>;
 
-    /// Returns all the implicit parameters that the free function requires (according to both its
-    /// signature and the functions it calls). The items in the returned vector are unique and the
-    /// order is consistent, but not necessarily related to the order of the explicit implicits in
-    /// the signature of the function.
-    #[salsa::invoke(crate::lower::implicits::free_function_all_implicits_vec)]
-    fn free_function_all_implicits_vec(&self, function: FreeFunctionId) -> Maybe<Vec<TypeId>>;
+    /// Returns all the implicit parameters that a function with a body requires (according to both
+    /// its signature and the functions it calls). The items in the returned vector are unique
+    /// and the order is consistent, but not necessarily related to the order of the explicit
+    /// implicits in the signature of the function.
+    #[salsa::invoke(crate::lower::implicits::function_with_body_all_implicits_vec)]
+    fn function_with_body_all_implicits_vec(
+        &self,
+        function: FunctionWithBodyId,
+    ) -> Maybe<Vec<TypeId>>;
 
     /// Returns whether the function may panic.
     #[salsa::invoke(crate::lower::implicits::function_may_panic)]
     fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
 
     /// Returns whether the function may panic.
-    #[salsa::invoke(crate::lower::implicits::free_function_may_panic)]
-    fn free_function_may_panic(&self, free_function: FreeFunctionId) -> Maybe<bool>;
+    #[salsa::invoke(crate::lower::implicits::function_with_body_may_panic)]
+    fn function_with_body_may_panic(&self, function: FunctionWithBodyId) -> Maybe<bool>;
 
     /// Returns all the functions in the same strongly connected component as the given function.
-    #[salsa::invoke(crate::lower::implicits::function_scc)]
-    fn function_scc(&self, function_id: FreeFunctionId) -> Vec<FreeFunctionId>;
+    #[salsa::invoke(crate::lower::implicits::function_with_body_scc)]
+    fn function_with_body_scc(&self, function_id: FunctionWithBodyId) -> Vec<FunctionWithBodyId>;
 
     /// An array that sets the precedence of implicit types.
     #[salsa::input]
@@ -96,7 +104,7 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct SCCRepresentative(pub FreeFunctionId);
+pub struct SCCRepresentative(pub FunctionWithBodyId);
 
 fn free_function_lowered_structured(
     db: &dyn LoweringGroup,
