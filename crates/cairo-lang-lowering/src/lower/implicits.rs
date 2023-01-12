@@ -1,6 +1,7 @@
+use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId, UnstableSalsaId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::TypeId;
@@ -14,7 +15,21 @@ pub fn function_scc_representative(
     db: &dyn LoweringGroup,
     function: FunctionWithBodyId,
 ) -> SCCRepresentative {
-    SCCRepresentative(db.function_with_body_scc(function).into_iter().min().unwrap_or(function))
+    SCCRepresentative(
+        db.function_with_body_scc(function)
+            .into_iter()
+            .min_by(|x, y| match (x, y) {
+                (FunctionWithBodyId::Free(x), FunctionWithBodyId::Free(y)) => {
+                    x.get_internal_id().cmp(y.get_internal_id())
+                }
+                (FunctionWithBodyId::Impl(x), FunctionWithBodyId::Impl(y)) => {
+                    x.get_internal_id().cmp(y.get_internal_id())
+                }
+                (FunctionWithBodyId::Free(_), FunctionWithBodyId::Impl(_)) => Ordering::Less,
+                (FunctionWithBodyId::Impl(_), FunctionWithBodyId::Free(_)) => Ordering::Greater,
+            })
+            .unwrap_or(function),
+    )
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_scc_explicit_implicits].

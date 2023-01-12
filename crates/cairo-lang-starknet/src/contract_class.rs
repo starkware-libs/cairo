@@ -4,7 +4,7 @@ use anyhow::Context;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId, TopLevelLanguageElementId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
