@@ -216,6 +216,14 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(vm, x, Felt::from(x_bigint))?;
                 insert_value_to_cellref!(vm, y, Felt::from(y_bigint))?;
             }
+            Hint::FieldSqrt { val, sqrt } => {
+                let val = Fq::from(get_val(val)?.to_biguint());
+                insert_value_to_cellref!(vm, sqrt, {
+                    let res = (if val.legendre().is_qr() { val } else { val * 3 }).sqrt();
+                    let res_big_uint: BigUint = res.unwrap().into_bigint().into();
+                    Felt::from(res_big_uint)
+                })?;
+            }
             Hint::SystemCall { system } => {
                 let starknet_exec_scope =
                     match exec_scopes.get_mut_ref::<StarknetExecScope>("starknet_exec_scope") {
