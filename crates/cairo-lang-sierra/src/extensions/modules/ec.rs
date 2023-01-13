@@ -54,7 +54,8 @@ define_libfunc_hierarchy! {
     }, EcConcreteLibfunc
 }
 
-/// Libfunc for creating an EC point. Inputs are verified to be on the curve.
+/// Libfunc for creating an EC point from its coordinates `x` and `y`.
+/// If `(x, y)` is not on the curve, nothing is returned.
 #[derive(Default)]
 pub struct EcCreatePointLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {

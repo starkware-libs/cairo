@@ -73,14 +73,16 @@ pub fn core_libfunc_cost_base<Ops: CostOperations, InfoProvider: InvocationCostI
         Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.const_cost(2), ops.const_cost(2)],
-        Ec(EcConcreteLibfunc::AddToState(_)) => vec![ops.const_cost(9)],
-        Ec(EcConcreteLibfunc::CreatePoint(_)) => vec![ops.const_cost(6), ops.const_cost(6)],
-        Ec(EcConcreteLibfunc::FinalizeState(_)) => vec![ops.const_cost(13), ops.const_cost(6)],
-        Ec(EcConcreteLibfunc::InitState(_)) => vec![ops.const_cost(8)],
-        Ec(EcConcreteLibfunc::Op(_)) => {
-            vec![ops.add(ops.const_cost(5), ops.const_cost_token(1, CostTokenType::EcOp))]
-        }
-        Ec(EcConcreteLibfunc::UnwrapPoint(_)) => vec![ops.const_cost(0)],
+        Ec(libfunc) => match libfunc {
+            EcConcreteLibfunc::AddToState(_) => vec![ops.const_cost(9)],
+            EcConcreteLibfunc::CreatePoint(_) => vec![ops.const_cost(6), ops.const_cost(6)],
+            EcConcreteLibfunc::FinalizeState(_) => vec![ops.const_cost(13), ops.const_cost(6)],
+            EcConcreteLibfunc::InitState(_) => vec![ops.const_cost(8)],
+            EcConcreteLibfunc::Op(_) => {
+                vec![ops.add(ops.const_cost(5), ops.const_cost_token(1, CostTokenType::EcOp))]
+            }
+            EcConcreteLibfunc::UnwrapPoint(_) => vec![ops.const_cost(0)],
+        },
         Gas(GetGas(_)) => {
             vec![
                 ops.sub(ops.const_cost(3), ops.statement_var_cost(CostTokenType::Step)),

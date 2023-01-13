@@ -88,9 +88,9 @@ pub fn simulate<
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Ec(FinalizeState(_)) => todo!(),
-        Ec(InitState(_)) => todo!(),
-        Ec(Op(_)) => todo!(),
+        Ec(FinalizeState(_)) => unimplemented!(),
+        Ec(InitState(_)) => unimplemented!(),
+        Ec(Op(_)) => unimplemented!(),
         Ec(UnwrapPoint(_)) => match &inputs[..] {
             [CoreValue::EcPoint(x, y)] => {
                 Ok((vec![CoreValue::Felt(x.clone()), CoreValue::Felt(y.clone())], 0))
@@ -292,7 +292,7 @@ pub fn simulate<
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }
         CoreConcreteLibfunc::BuiltinCost(_) => {
-            todo!("Simulation of the builtin cost functionality is not implemented yet.")
+            unimplemented!("Simulation of the builtin cost functionality is not implemented yet.")
         }
         CoreConcreteLibfunc::StarkNet(_) => {
             unimplemented!("Simulation of the StarkNet functionalities is not implemented yet.")
