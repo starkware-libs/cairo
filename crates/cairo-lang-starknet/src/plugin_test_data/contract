@@ -45,7 +45,9 @@ mod TestContract {
 
     
     trait __abi {
+        #[view]
         fn get_something(ref arg: felt, num: felt) -> felt;
+        #[external]
         fn set_something(ref arg: felt, num: felt);
         
         #[event]

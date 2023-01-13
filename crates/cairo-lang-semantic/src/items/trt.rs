@@ -154,6 +154,13 @@ pub fn trait_function_signature(
 ) -> Maybe<semantic::Signature> {
     Ok(db.priv_trait_function_data(trait_function_id)?.signature)
 }
+/// Query implementation of [crate::db::SemanticGroup::trait_function_attributes].
+pub fn trait_function_attributes(
+    db: &dyn SemanticGroup,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_trait_function_data(trait_function_id)?.attributes)
+}
 /// Query implementation of [crate::db::SemanticGroup::trait_function_generic_params].
 pub fn trait_function_generic_params(
     db: &dyn SemanticGroup,
@@ -161,7 +168,6 @@ pub fn trait_function_generic_params(
 ) -> Maybe<Vec<GenericParamId>> {
     Ok(db.priv_trait_function_data(trait_function_id)?.generic_params)
 }
-
 /// Query implementation of [crate::db::SemanticGroup::trait_function_resolved_lookback].
 pub fn trait_function_resolved_lookback(
     db: &dyn SemanticGroup,

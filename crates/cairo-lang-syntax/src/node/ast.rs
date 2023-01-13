@@ -6176,7 +6176,7 @@ impl TypedSyntaxNode for MemberList {
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Item {
-    Const(ItemConst),
+    Constant(ItemConstant),
     Module(ItemModule),
     Use(ItemUse),
     FreeFunction(ItemFreeFunction),
@@ -6195,8 +6195,8 @@ impl ItemPtr {
         self.0
     }
 }
-impl From<ItemConstPtr> for ItemPtr {
-    fn from(value: ItemConstPtr) -> Self {
+impl From<ItemConstantPtr> for ItemPtr {
+    fn from(value: ItemConstantPtr) -> Self {
         Self(value.0)
     }
 }
@@ -6250,8 +6250,8 @@ impl From<ItemTypeAliasPtr> for ItemPtr {
         Self(value.0)
     }
 }
-impl From<ItemConstGreen> for ItemGreen {
-    fn from(value: ItemConstGreen) -> Self {
+impl From<ItemConstantGreen> for ItemGreen {
+    fn from(value: ItemConstantGreen) -> Self {
         Self(value.0)
     }
 }
@@ -6317,7 +6317,7 @@ impl TypedSyntaxNode for Item {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::ItemConst => Item::Const(ItemConst::from_syntax_node(db, node)),
+            SyntaxKind::ItemConstant => Item::Constant(ItemConstant::from_syntax_node(db, node)),
             SyntaxKind::ItemModule => Item::Module(ItemModule::from_syntax_node(db, node)),
             SyntaxKind::ItemUse => Item::Use(ItemUse::from_syntax_node(db, node)),
             SyntaxKind::ItemFreeFunction => {
@@ -6339,7 +6339,7 @@ impl TypedSyntaxNode for Item {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
-            Item::Const(x) => x.as_syntax_node(),
+            Item::Constant(x) => x.as_syntax_node(),
             Item::Module(x) => x.as_syntax_node(),
             Item::Use(x) => x.as_syntax_node(),
             Item::FreeFunction(x) => x.as_syntax_node(),
@@ -7184,11 +7184,11 @@ impl TypedSyntaxNode for FunctionDeclaration {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ItemConst {
+pub struct ItemConstant {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl ItemConst {
+impl ItemConstant {
     pub const INDEX_ATTRIBUTES: usize = 0;
     pub const INDEX_CONST_KW: usize = 1;
     pub const INDEX_NAME: usize = 2;
@@ -7205,17 +7205,17 @@ impl ItemConst {
         eq: TerminalEqGreen,
         value: ExprGreen,
         semicolon: TerminalSemicolonGreen,
-    ) -> ItemConstGreen {
+    ) -> ItemConstantGreen {
         let children: Vec<GreenId> =
             vec![attributes.0, const_kw.0, name.0, type_clause.0, eq.0, value.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        ItemConstGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ItemConst,
+        ItemConstantGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ItemConstant,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl ItemConst {
+impl ItemConstant {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
         AttributeList::from_syntax_node(db, self.children[0].clone())
     }
@@ -7239,8 +7239,8 @@ impl ItemConst {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemConstPtr(pub SyntaxStablePtrId);
-impl ItemConstPtr {
+pub struct ItemConstantPtr(pub SyntaxStablePtrId);
+impl ItemConstantPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
@@ -7254,14 +7254,14 @@ impl ItemConstPtr {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemConstGreen(pub GreenId);
-impl TypedSyntaxNode for ItemConst {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemConst);
-    type StablePtr = ItemConstPtr;
-    type Green = ItemConstGreen;
+pub struct ItemConstantGreen(pub GreenId);
+impl TypedSyntaxNode for ItemConstant {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemConstant);
+    type StablePtr = ItemConstantPtr;
+    type Green = ItemConstantGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ItemConstGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ItemConst,
+        ItemConstantGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ItemConstant,
             details: GreenNodeDetails::Node {
                 children: vec![
                     AttributeList::missing(db).0,
@@ -7280,10 +7280,10 @@ impl TypedSyntaxNode for ItemConst {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ItemConst,
+            SyntaxKind::ItemConstant,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ItemConst
+            SyntaxKind::ItemConstant
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -7295,7 +7295,7 @@ impl TypedSyntaxNode for ItemConst {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemConstPtr(self.node.0.stable_ptr)
+        ItemConstantPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

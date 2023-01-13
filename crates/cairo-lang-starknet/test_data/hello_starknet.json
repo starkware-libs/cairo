@@ -3624,13 +3624,15 @@
           "ty": "core::felt"
         }
       ],
-      "output_ty": "()"
+      "output_ty": "()",
+      "state_mutability": "external"
     },
     {
       "type": "function",
       "name": "get_balance",
       "inputs": [],
-      "output_ty": "core::felt"
+      "output_ty": "core::felt",
+      "state_mutability": "view"
     }
   ]
 }

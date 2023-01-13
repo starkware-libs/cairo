@@ -34,8 +34,8 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
 
     // Lower code.
     let lowered_structured =
-        db.free_function_lowered_structured(test_function.function_id).unwrap();
-    let lowered = db.free_function_lowered_flat(test_function.function_id).unwrap();
+        db.function_with_body_lowered_structured(test_function.function_id).unwrap();
+    let lowered = db.function_with_body_lowered_flat(test_function.function_id).unwrap();
 
     if lowered.root.is_err() {
         return OrderedHashMap::from([

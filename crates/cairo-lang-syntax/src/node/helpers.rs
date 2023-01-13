@@ -5,7 +5,7 @@ mod test;
 use smol_str::SmolStr;
 
 use super::ast::{
-    self, FunctionDeclaration, FunctionDeclarationGreen, Item, ItemConst, ItemEnum,
+    self, FunctionDeclaration, FunctionDeclarationGreen, Item, ItemConstant, ItemEnum,
     ItemExternFunction, ItemExternFunctionPtr, ItemExternType, ItemFreeFunction,
     ItemFreeFunctionPtr, ItemImpl, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse,
     Modifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction,
@@ -117,7 +117,7 @@ pub trait QueryAttrs {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
     fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
 }
-impl QueryAttrs for ItemConst {
+impl QueryAttrs for ItemConstant {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }
@@ -253,7 +253,7 @@ impl QueryAttrs for TraitItemFunction {
 impl QueryAttrs for Item {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         match self {
-            ast::Item::Const(item) => item.has_attr(db, attr),
+            ast::Item::Constant(item) => item.has_attr(db, attr),
             ast::Item::Module(item) => item.has_attr(db, attr),
             ast::Item::FreeFunction(item) => item.has_attr(db, attr),
             ast::Item::Use(item) => item.has_attr(db, attr),
@@ -269,7 +269,7 @@ impl QueryAttrs for Item {
 
     fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         match self {
-            ast::Item::Const(item) => item.last_attr(db, attr),
+            ast::Item::Constant(item) => item.last_attr(db, attr),
             ast::Item::Module(item) => item.last_attr(db, attr),
             ast::Item::FreeFunction(item) => item.last_attr(db, attr),
             ast::Item::Use(item) => item.last_attr(db, attr),

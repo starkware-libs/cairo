@@ -14,8 +14,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionId,
-    FreeFunctionLongId, ImplLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
-    ModuleItemId, StructLongId, TraitLongId, UseLongId,
+    FreeFunctionLongId, FunctionWithBodyId, ImplLongId, LanguageElementId, LookupItemId,
+    ModuleFileId, ModuleId, ModuleItemId, StructLongId, TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
@@ -30,7 +30,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::free_function::SemanticExprLookup;
+use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::resolve_path::ResolvedGenericItem;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -380,14 +380,18 @@ impl LanguageServer for Backend {
         eprintln!("Hover {}", file_uri);
         let file = self.file(&db, file_uri);
         let position = params.text_document_position_params.position;
-        let Some((node, lookup_items)) = get_node_and_lookup_items(&*db, file, position) else {return Ok(None)};
+        let Some((node, lookup_items)) =
+            get_node_and_lookup_items(&*db, file, position) else { return Ok(None); };
+        // TODO(yuval): add support for impl functions.
         let Some(
             LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id))
         ) = lookup_items.into_iter().next() else  {return Ok(None)};
 
         // Build texts.
         let mut hints = Vec::new();
-        if let Some(hint) = get_expr_hint(&*db, free_function_id, node.clone()) {
+        if let Some(hint) =
+            get_expr_hint(&*db, FunctionWithBodyId::Free(free_function_id), node.clone())
+        {
             hints.push(MarkedString::String(hint));
         };
         if let Some(hint) = get_identifier_hint(&*db, free_function_id, node) {
@@ -647,7 +651,7 @@ fn get_identifier_hint(
 /// If the node is an expression, retrieves a hover hint for it.
 fn get_expr_hint(
     db: &(dyn SemanticGroup + 'static),
-    free_function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
     mut node: SyntaxNode,
 ) -> Option<String> {
     let syntax_db = db.upcast();
@@ -657,13 +661,11 @@ fn get_expr_hint(
     }
     let expr_node = ast::Expr::from_syntax_node(syntax_db, node);
     // Lookup semantic expression.
-    let expr_id = db
-        .lookup_expr_by_ptr(free_function_id, expr_node.stable_ptr())
-        .to_option()
-        .on_none(|| {
+    let expr_id =
+        db.lookup_expr_by_ptr(function_id, expr_node.stable_ptr()).to_option().on_none(|| {
             eprintln!("Hover failed. Semantic model not found for expression.");
         })?;
-    let semantic_expr = db.expr_semantic(free_function_id, expr_id);
+    let semantic_expr = db.expr_semantic(function_id, expr_id);
     // Format the hover text.
     Some(format!("Type: `{}`", semantic_expr.ty().format(db)))
 }

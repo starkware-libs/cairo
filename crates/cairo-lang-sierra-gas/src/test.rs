@@ -16,14 +16,14 @@ fn get_example_program(name: &str) -> Program {
     cairo_lang_sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
 }
 
-#[test_case("fib_jumps" =>
+#[test_case("fib_jumps",
             Ok(GasInfo {
                 variable_values: [
-                    ((StatementIdx(3), CostTokenType::Step), 13),
-                    ((StatementIdx(13), CostTokenType::Step), 11),
-                    ((StatementIdx(27), CostTokenType::Step), 8),
                     ((StatementIdx(40), CostTokenType::Step), 4),
+                    ((StatementIdx(27), CostTokenType::Step), 8),
                     ((StatementIdx(49), CostTokenType::Step), 0),
+                    ((StatementIdx(13), CostTokenType::Step), 11),
+                    ((StatementIdx(3), CostTokenType::Step), 13),
                 ].into_iter().collect(),
                 function_costs: [(
                     "Fibonacci".into(),
@@ -31,20 +31,21 @@ fn get_example_program(name: &str) -> Program {
                 )].into_iter().collect()
             });
             "fib_jumps")]
-#[test_case("fib_recursive" =>
+#[test_case("fib_recursive",
             Ok(GasInfo {
                 variable_values: [
-                    ((StatementIdx(9), CostTokenType::Step), 6),
-                    ((StatementIdx(20), CostTokenType::Step), 4),
                     ((StatementIdx(27), CostTokenType::Step), 39),
                     ((StatementIdx(40), CostTokenType::Step), 0),
                     ((StatementIdx(49), CostTokenType::Step), 0),
+                    ((StatementIdx(20), CostTokenType::Step), 4),
+                    ((StatementIdx(9), CostTokenType::Step), 6),
                 ].into_iter().collect(),
                 function_costs: [(
                     "Fibonacci".into(),
                     [(CostTokenType::Step, 14)].into_iter().collect()
                 )].into_iter().collect()
-            }))]
-fn solve_gas(path: &str) -> Result<GasInfo, CostError> {
-    calc_gas_info(&get_example_program(path))
+            });
+            "fib_recursive")]
+fn solve_gas(path: &str, expected: Result<GasInfo, CostError>) {
+    pretty_assertions::assert_eq!(calc_gas_info(&get_example_program(path)), expected);
 }

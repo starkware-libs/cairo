@@ -286,7 +286,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_separated_list("MemberList", "Member", "TerminalComma")
     // --- Items ---
     .add_enum(EnumBuilder::new("Item")
-        .node("Const")
+        .node("Constant")
         .node("Module")
         .node("Use")
         .node("FreeFunction")
@@ -335,7 +335,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("generic_params", "OptionWrappedGenericParamList")
         .node("signature", "FunctionSignature")
     )
-    .add_struct(StructBuilder::new("ItemConst")
+    .add_struct(StructBuilder::new("ItemConstant")
         .node("attributes" ,"AttributeList")
         .node("const_kw", "TerminalConst")
         .key_node("name", "TerminalIdentifier")

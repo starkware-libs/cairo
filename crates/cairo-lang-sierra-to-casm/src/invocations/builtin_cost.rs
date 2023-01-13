@@ -48,10 +48,10 @@ fn build_builtin_get_gas(
     // The actual number of writes for calculating the requested gas amount.
     let optimized_out_writes = (BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i64)
         - (BuiltinCostGetGasLibfunc::cost_computation_steps(|token_type| {
-            variable_values[&(builder.idx, token_type)] as usize
+            variable_values[(builder.idx, token_type)] as usize
         }) as i64);
 
-    let requested_steps = variable_values[&(builder.idx, CostTokenType::Step)];
+    let requested_steps = variable_values[(builder.idx, CostTokenType::Step)];
     // The cost of this libfunc is computed assuming all the cost types are used (and all are > 1).
     // Since in practice this is rarely the case, refund according to the actual number of steps
     // produced by the libfunc.
@@ -67,7 +67,7 @@ fn build_builtin_get_gas(
         if *token_type == CostTokenType::Step {
             continue;
         }
-        let requested_count = variable_values[&(builder.idx, *token_type)];
+        let requested_count = variable_values[(builder.idx, *token_type)];
         if requested_count == 0 {
             continue;
         }

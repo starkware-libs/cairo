@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::FreeFunctionId;
+use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_semantic::TypeId;
@@ -18,7 +18,7 @@ use crate::pre_sierra;
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
     lowered: &'a FlatLowered,
-    function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
     // TODO(lior): Remove `allow(dead_code)` once this field is used.
     #[allow(dead_code)]
     lifetime: &'a VariableLifetimeResult,
@@ -32,7 +32,7 @@ impl<'a> ExprGeneratorContext<'a> {
     pub fn new(
         db: &'a dyn SierraGenGroup,
         lowered: &'a FlatLowered,
-        function_id: FreeFunctionId,
+        function_id: FunctionWithBodyId,
         lifetime: &'a VariableLifetimeResult,
     ) -> Self {
         ExprGeneratorContext {

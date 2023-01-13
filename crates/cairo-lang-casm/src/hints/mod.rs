@@ -274,16 +274,9 @@ impl Display for Hint {
                     f,
                     "
 
-                        def try_sample_point() -> Tuple[int, int]:
-                            x = random.randrange(PRIME)
-                            y2 = x**3 + ALPHA * x + BETA
-                            return x, sympy.ntheory.residue_ntheory.sqrt_mod(
-                                y2, PRIME, all_roots=True
-                            )
-                        x, y = try_sample_point()
-                        while y is None:
-                            x, y = try_sample_point()
-                        (memory{x}, memory{y}) = x, y
+                        from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
+                        from starkware.python.math_utils import random_ec_point
+                        (memory{x}, memory{y}) = random_ec_point(FIELD_PRIME, ALPHA, BETA)
                     "
                 )
             }

@@ -265,7 +265,7 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is [TerminalConst].
     /// Expected pattern: `const <Identifier> = <Expr>;`
-    fn expect_const(&mut self, attributes: AttributeListGreen) -> ItemConstGreen {
+    fn expect_const(&mut self, attributes: AttributeListGreen) -> ItemConstantGreen {
         let const_kw = self.take::<TerminalConst>();
         let name = self.parse_identifier();
         let type_clause = self.parse_type_clause(ErrorRecovery {
@@ -275,7 +275,16 @@ impl<'a> Parser<'a> {
         let expr = self.parse_expr();
         let semicolon = self.parse_token::<TerminalSemicolon>();
 
-        ItemConst::new_green(self.db, attributes, const_kw, name, type_clause, eq, expr, semicolon)
+        ItemConstant::new_green(
+            self.db,
+            attributes,
+            const_kw,
+            name,
+            type_clause,
+            eq,
+            expr,
+            semicolon,
+        )
     }
 
     /// Assumes the current token is Extern.

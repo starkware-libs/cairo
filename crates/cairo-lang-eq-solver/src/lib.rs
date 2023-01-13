@@ -1,25 +1,25 @@
 //! Equation solving for Sierra generation.
 pub mod expr;
 
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 pub use expr::Expr;
 use good_lp::{default_solver, variable, variables, Expression, Solution, SolverModel};
+use indexmap::map::Entry;
 
 /// Solving a set of equations and returning the values of the symbols contained in them.
 /// # Arguments
 /// * `equations` - The equations to solve.
 /// # Returns
-/// * `Some(HashMap<Var, i64>)` - The solutions to the equations.
+/// * `Some(OrderedHashMap<Var, i64>)` - The solutions to the equations.
 /// * `None` - The equations are unsolvable.
 pub fn try_solve_equations<Var: Clone + Debug + PartialEq + Eq + Hash>(
     equations: Vec<Expr<Var>>,
-) -> Option<HashMap<Var, i64>> {
+) -> Option<OrderedHashMap<Var, i64>> {
     let mut vars = variables!();
-    let mut orig_to_solver_var = HashMap::new();
+    let mut orig_to_solver_var = OrderedHashMap::default();
     // Add all variables to structure and map.
     for eq in &equations {
         for var in eq.var_to_coef.keys() {

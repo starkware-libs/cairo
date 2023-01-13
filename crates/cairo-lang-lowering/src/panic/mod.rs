@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, GenericFunctionId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{get_enum_concrete_variant, get_panic_ty};
@@ -22,15 +22,15 @@ use crate::{
 /// with PanicResult<>.
 pub fn lower_panics(
     db: &dyn LoweringGroup,
-    free_function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
     lowered: &StructuredLowered,
 ) -> Maybe<FlatLowered> {
-    let lowering_info = LoweringContextBuilder::new(db, free_function_id)?;
+    let lowering_info = LoweringContextBuilder::new(db, function_id)?;
     let mut ctx = lowering_info.ctx()?;
     ctx.variables = lowered.variables.clone();
 
     // Skip this phase for non panicable functions.
-    if !db.function_with_body_may_panic(FunctionWithBodyId::Free(free_function_id))? {
+    if !db.function_with_body_may_panic(function_id)? {
         return Ok(FlatLowered {
             diagnostics: Default::default(),
             root: lowered.root,
