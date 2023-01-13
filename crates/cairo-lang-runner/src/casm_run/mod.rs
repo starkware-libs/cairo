@@ -216,6 +216,9 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(vm, x, Felt::from(x_bigint))?;
                 insert_value_to_cellref!(vm, y, Felt::from(y_bigint))?;
             }
+            Hint::FieldSqrt { .. } => {
+                unimplemented!();
+            }
             Hint::SystemCall { system } => {
                 let starknet_exec_scope =
                     match exec_scopes.get_mut_ref::<StarknetExecScope>("starknet_exec_scope") {
