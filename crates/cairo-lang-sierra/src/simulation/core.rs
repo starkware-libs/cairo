@@ -15,7 +15,7 @@ use crate::extensions::core::CoreConcreteLibfunc::{
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use crate::extensions::ec::EcConcreteLibfunc::{
-    AddToState, CreatePoint, FinalizeState, InitState, Op, UnwrapPoint,
+    AddToState, CreatePoint, FinalizeState, InitState, Op, PointFromX, UnwrapPoint,
 };
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt::{
@@ -91,6 +91,7 @@ pub fn simulate<
         Ec(FinalizeState(_)) => unimplemented!(),
         Ec(InitState(_)) => unimplemented!(),
         Ec(Op(_)) => unimplemented!(),
+        Ec(PointFromX(_)) => unimplemented!(),
         Ec(UnwrapPoint(_)) => match &inputs[..] {
             [CoreValue::EcPoint(x, y)] => {
                 Ok((vec![CoreValue::Felt(x.clone()), CoreValue::Felt(y.clone())], 0))
