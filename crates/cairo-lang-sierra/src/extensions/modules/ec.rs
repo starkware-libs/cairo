@@ -50,6 +50,7 @@ define_libfunc_hierarchy! {
         FinalizeState(EcFinalizeStateLibfunc),
         InitState(EcInitStateLibfunc),
         Op(EcOpLibfunc),
+        PointFromX(EcPointFromXLibfunc),
         UnwrapPoint(EcUnwrapPointLibfunc),
     }, EcConcreteLibfunc
 }
@@ -72,6 +73,7 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
                 ParamSignature::new(felt_ty),
             ],
             branch_signatures: vec![
+                // Success.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: context.get_concrete_type(EcPointType::id(), &[])?,
@@ -79,6 +81,43 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Failure.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+/// Libfunc for creating an EC point from its x coordinate.
+/// If there exists `y` such that `(x, y)` is on the curve, either `(x, y)` or `(x, -y)` (both
+/// constitute valid points on the curve) is returned.
+/// Otherwise, nothing is returned.
+#[derive(Default)]
+pub struct EcPointFromXLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
+    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_point_from_x");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(felt_ty)],
+            branch_signatures: vec![
+                // Success.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: context.get_concrete_type(EcPointType::id(), &[])?,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Failure.
                 BranchSignature {
                     vars: vec![],
                     ap_change: SierraApChange::Known { new_vars_only: false },
