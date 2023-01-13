@@ -42,8 +42,8 @@ pub enum ApChangeError {
     StatementOutOfBounds(StatementIdx),
     #[error("found an illegal statement index during ap change calculations")]
     StatementOutOfOrder(StatementIdx),
-    #[error("found an illegal invocation during cost calculations")]
-    IllegalInvocation(StatementIdx),
+    #[error("Wrong number of libfunc branches in ap-change information")]
+    WrongNumApChangeBranches(StatementIdx),
     #[error("failed solving the ap changes")]
     SolvingApChangeEquationFailed,
 }
