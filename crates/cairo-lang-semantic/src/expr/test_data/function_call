@@ -4,10 +4,10 @@
 test_function_diagnostics
 
 //! > function
-fn foo() {
-    // Valid (except for one wrong type).
-    bar(0, 1, 2, d: false, e: 4);
-    // Invalid.
+fn foo(d: bool) {
+    // Valid names (one wrong type).
+    bar(0, 1, 2, :d, e: 0);
+    // Invalid name.
     // Note that a diagnostic is not reported for the wrong type when the name is wrong.
     bar(x: 0, 1, y: 2, 3, false);
     MyEnum::A(x: 0);
@@ -26,9 +26,9 @@ enum MyEnum {
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
- --> lib.cairo:9:21
-    bar(0, 1, 2, d: false, e: 4);
-                    ^***^
+ --> lib.cairo:9:19
+    bar(0, 1, 2, :d, e: 0);
+                  ^
 
 error: Unexpected argument name. Expected: 'a', found 'x'.
  --> lib.cairo:12:9
