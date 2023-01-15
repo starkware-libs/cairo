@@ -119,9 +119,7 @@ fn get_entry_points(
             function: ConcreteFunction {
                 generic_function: match *function_with_body_id {
                     FunctionWithBodyId::Free(free_func_id) => GenericFunctionId::Free(free_func_id),
-                    FunctionWithBodyId::Impl(impl_func_id) => {
-                        GenericFunctionId::ImplFunction(impl_func_id)
-                    }
+                    FunctionWithBodyId::Impl(impl_func_id) => GenericFunctionId::Impl(impl_func_id),
                 },
                 generic_args: vec![],
             },

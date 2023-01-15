@@ -185,7 +185,7 @@ pub fn function_with_body_direct_function_with_body_callees(
                 GenericFunctionId::Free(free_function) => {
                     Some(FunctionWithBodyId::Free(free_function))
                 }
-                GenericFunctionId::ImplFunction(impl_function) => {
+                GenericFunctionId::Impl(impl_function) => {
                     Some(FunctionWithBodyId::Impl(impl_function))
                 }
                 _ => None,

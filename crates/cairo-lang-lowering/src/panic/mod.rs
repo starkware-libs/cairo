@@ -140,7 +140,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     {
                         self.handle_stmt_call(call)
                     }
-                    GenericFunctionId::ImplFunction(impl_callee)
+                    GenericFunctionId::Impl(impl_callee)
                         if self.db().function_with_body_may_panic(FunctionWithBodyId::Impl(
                             impl_callee,
                         ))? =>

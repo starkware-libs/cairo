@@ -525,10 +525,8 @@ define_language_element_id_as_enum! {
     pub enum GenericFunctionId {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
-        // TODO(yuval): rename to Trait
-        TraitFunction(TraitFunctionId),
-        // TODO(yuval): rename to Impl
-        ImplFunction(ImplFunctionId),
+        Trait(TraitFunctionId),
+        Impl(ImplFunctionId),
     }
 }
 impl GenericFunctionId {

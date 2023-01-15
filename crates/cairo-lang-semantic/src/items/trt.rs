@@ -203,7 +203,7 @@ pub fn priv_trait_function_data(
         db,
         &mut resolver,
         &signature_syntax,
-        GenericFunctionId::TraitFunction(trait_function_id),
+        GenericFunctionId::Trait(trait_function_id),
         &mut environment,
     );
 

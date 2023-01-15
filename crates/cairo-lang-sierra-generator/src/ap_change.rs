@@ -25,13 +25,13 @@ pub fn contains_cycle(db: &dyn SierraGenGroup, function_id: FunctionWithBodyId) 
                             return Ok(true);
                         }
                     }
-                    defs::ids::GenericFunctionId::ImplFunction(impl_function_id) => {
+                    defs::ids::GenericFunctionId::Impl(impl_function_id) => {
                         if db.contains_cycle(FunctionWithBodyId::Impl(impl_function_id))? {
                             return Ok(true);
                         }
                     }
                     defs::ids::GenericFunctionId::Extern(_) => {}
-                    defs::ids::GenericFunctionId::TraitFunction(_) => {
+                    defs::ids::GenericFunctionId::Trait(_) => {
                         panic!("Trait function should be replaced with concrete functions.")
                     }
                 }

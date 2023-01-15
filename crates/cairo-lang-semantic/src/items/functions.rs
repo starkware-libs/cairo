@@ -182,10 +182,8 @@ pub fn generic_function_signature(
     match generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_signature(free_function),
         GenericFunctionId::Extern(extern_function) => db.extern_function_signature(extern_function),
-        GenericFunctionId::TraitFunction(trait_function) => {
-            db.trait_function_signature(trait_function)
-        }
-        GenericFunctionId::ImplFunction(impl_function) => db.impl_function_signature(impl_function),
+        GenericFunctionId::Trait(trait_function) => db.trait_function_signature(trait_function),
+        GenericFunctionId::Impl(impl_function) => db.impl_function_signature(impl_function),
     }
 }
 /// Query implementation of [crate::db::SemanticGroup::generic_function_generic_params].
@@ -198,12 +196,10 @@ pub fn generic_function_generic_params(
         GenericFunctionId::Extern(extern_function) => {
             db.extern_function_declaration_generic_params(extern_function)
         }
-        GenericFunctionId::TraitFunction(trait_function) => {
+        GenericFunctionId::Trait(trait_function) => {
             db.trait_function_generic_params(trait_function)
         }
-        GenericFunctionId::ImplFunction(impl_function) => {
-            db.impl_function_generic_params(impl_function)
-        }
+        GenericFunctionId::Impl(impl_function) => db.impl_function_generic_params(impl_function),
     }
 }
 
