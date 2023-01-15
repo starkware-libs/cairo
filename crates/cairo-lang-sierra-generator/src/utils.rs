@@ -234,7 +234,9 @@ pub fn get_concrete_libfunc_id(
     // Check if this is a user-defined function or a libfunc.
     let concrete_function = db.lookup_intern_function(function).function;
     match concrete_function.generic_function {
-        GenericFunctionId::Free(_) => (concrete_function, function_call_libfunc_id(db, function)),
+        GenericFunctionId::Free(_) | GenericFunctionId::Impl(_) => {
+            (concrete_function, function_call_libfunc_id(db, function))
+        }
         GenericFunctionId::Extern(extern_id) => {
             let mut generic_args = vec![];
             for generic_arg in &concrete_function.generic_args {
@@ -255,7 +257,6 @@ pub fn get_concrete_libfunc_id(
 
             (concrete_function, generic_libfunc_id(db, extern_id, generic_args))
         }
-        GenericFunctionId::Impl(_) => todo!(),
     }
 }
 

@@ -70,6 +70,11 @@ pub trait SemanticGroup:
         id: items::trt::ConcreteTraitLongId,
     ) -> items::trt::ConcreteTraitId;
     #[salsa::interned]
+    fn intern_concrete_trait_function(
+        &self,
+        id: items::trt::ConcreteTraitFunctionLongId,
+    ) -> items::trt::ConcreteTraitFunctionId;
+    #[salsa::interned]
     fn intern_concrete_impl(
         &self,
         id: items::imp::ConcreteImplLongId,
@@ -223,6 +228,13 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::trt::trait_functions)]
     fn trait_functions(&self, trait_id: TraitId)
     -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>>;
+    /// Returns the function with the given name of the given trait, if exists.
+    #[salsa::invoke(items::trt::trait_function_by_name)]
+    fn trait_function_by_name(
+        &self,
+        trait_id: TraitId,
+        name: SmolStr,
+    ) -> Maybe<Option<TraitFunctionId>>;
 
     // Trait function.
     // ================
@@ -304,6 +316,16 @@ pub trait SemanticGroup:
     /// Returns the functions in the impl.
     #[salsa::invoke(items::imp::impl_functions)]
     fn impl_functions(&self, impl_id: ImplId) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>>;
+    /// Returns the impl function that matches the given trait function, if exists.
+    /// Note that a function that doesn't exist in the impl doesn't necessarily indicate an error,
+    /// as, e.g., a trait function that has a default implementation doesn't have to be
+    /// implemented in the impl.
+    #[salsa::invoke(items::imp::impl_function_by_trait_function)]
+    fn impl_function_by_trait_function(
+        &self,
+        impl_id: ImplId,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<Option<ImplFunctionId>>;
 
     // Impl function.
     // ================
