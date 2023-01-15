@@ -326,15 +326,17 @@ pub fn compute_named_argument_clause(
 ) -> (Expr, Option<ast::TerminalIdentifier>) {
     let syntax_db = ctx.db.upcast();
 
-    let arg_name_identifier = if let ast::OptionArgNameClause::ArgNameClause(arg_name_clause) =
-        arg_syntax.name(syntax_db)
-    {
-        Some(arg_name_clause.name(syntax_db))
-    } else {
-        None
+    let (expr, arg_name_identifier) = match arg_syntax {
+        ast::Arg::Unnamed(arg_unnamed) => {
+            (compute_expr_semantic(ctx, &arg_unnamed.value(syntax_db)), None)
+        }
+        ast::Arg::Named(arg_named) => (
+            compute_expr_semantic(ctx, &arg_named.value(syntax_db)),
+            Some(arg_named.name(syntax_db)),
+        ),
     };
 
-    (compute_expr_semantic(ctx, &arg_syntax.value(syntax_db)), arg_name_identifier)
+    (expr, arg_name_identifier)
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprBlock].

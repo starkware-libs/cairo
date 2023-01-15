@@ -732,8 +732,8 @@ impl<'a> Parser<'a> {
     /// of the argument.
     ///
     /// Possible patterns:
-    /// * `<Expr>`
-    /// * `<Identifier>: <Expr>`
+    /// * `<Expr>` (unnamed).
+    /// * `<Identifier>: <Expr>` (named).
     fn parse_function_argument(&mut self) -> Option<ArgGreen> {
         // Read an expression.
         let expr_or_argname = self.try_parse_expr()?;
@@ -744,19 +744,11 @@ impl<'a> Parser<'a> {
             if let Some(argname) = self.try_extract_identifier(expr_or_argname) {
                 let colon = self.take::<TerminalColon>();
                 let expr = self.try_parse_expr()?;
-                return Some(Arg::new_green(
-                    self.db,
-                    ArgNameClause::new_green(self.db, argname, colon).into(),
-                    expr,
-                ));
+                return Some(ArgNamed::new_green(self.db, argname, colon, expr).into());
             }
         }
 
-        Some(Arg::new_green(
-            self.db,
-            OptionArgNameClauseEmpty::new_green(self.db).into(),
-            expr_or_argname,
-        ))
+        Some(ArgUnnamed::new_green(self.db, expr_or_argname).into())
     }
 
     /// If the given `expr` is a simple identifier, returns the corresponding green node.
