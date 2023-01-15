@@ -93,6 +93,8 @@ pub trait SemanticGroup:
         &self,
         const_id: ConstantId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    #[salsa::invoke(items::constant::constant_resolved_lookback)]
+    fn constant_resolved_lookback(&self, use_id: ConstantId) -> Maybe<Arc<ResolvedLookback>>;
 
     // Use.
     // ====
@@ -687,7 +689,7 @@ fn module_semantic_diagnostics(
 
     for item in db.module_items(module_id)?.iter() {
         match item {
-            ModuleItemId::Const(const_id) => {
+            ModuleItemId::Constant(const_id) => {
                 diagnostics.extend(db.constant_semantic_diagnostics(*const_id));
             }
             // Add signature diagnostics.
@@ -846,9 +848,7 @@ pub fn lookup_resolved_concrete_item_by_ptr(
 fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<ResolvedLookback>> {
     match id {
         LookupItemId::ModuleItem(module_item) => match module_item {
-            ModuleItemId::Const(_) => {
-                unimplemented!("Constant definition is not supported yet.");
-            }
+            ModuleItemId::Constant(id) => vec![db.constant_resolved_lookback(id)],
             ModuleItemId::Submodule(_) => vec![],
             ModuleItemId::Use(id) => vec![db.use_resolved_lookback(id)],
             ModuleItemId::FreeFunction(id) => vec![

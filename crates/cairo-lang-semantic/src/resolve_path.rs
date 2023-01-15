@@ -540,7 +540,7 @@ impl<'db> Resolver<'db> {
         module_item: ModuleItemId,
     ) -> Maybe<ResolvedGenericItem> {
         Ok(match module_item {
-            ModuleItemId::Const(_) => {
+            ModuleItemId::Constant(_) => {
                 unimplemented!("Constant definition is not supported yet.");
             }
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
