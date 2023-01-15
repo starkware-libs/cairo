@@ -7,7 +7,8 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use super::attribute::ast_attributes_to_semantic;
-use super::function_with_body::{FunctionBody, FunctionBodyData, FunctionWithBodyDeclarationData};
+use super::function_with_body::{FunctionBody, FunctionBodyData};
+use super::functions::FunctionDeclarationData;
 use super::generics::semantic_generic_params;
 use crate::corelib::never_ty;
 use crate::db::SemanticGroup;
@@ -72,7 +73,7 @@ pub fn free_function_declaration_resolved_lookback(
 pub fn priv_free_function_declaration_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Maybe<FunctionWithBodyDeclarationData> {
+) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
     let module_file_id = free_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
@@ -98,15 +99,13 @@ pub fn priv_free_function_declaration_data(
         &mut environment,
     );
 
-    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
-    let resolved_lookback = Arc::new(resolver.lookback);
-    Ok(FunctionWithBodyDeclarationData {
+    Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
-        generic_params,
         environment,
-        attributes,
-        resolved_lookback,
+        generic_params,
+        attributes: ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db)),
+        resolved_lookback: Arc::new(resolver.lookback),
     })
 }
 

@@ -39,9 +39,8 @@ mod variables;
 /// Lowers a semantic free function.
 pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<StructuredLowered> {
     log::trace!("Lowering a free function.");
-    let is_empty_semantic_diagnostics =
-        db.function_with_body_declaration_diagnostics(function_id).is_empty()
-            && db.function_body_diagnostics(function_id).is_empty();
+    let is_empty_semantic_diagnostics = db.function_declaration_diagnostics(function_id).is_empty()
+        && db.function_body_diagnostics(function_id).is_empty();
     // Params.
 
     let lowering_builder = LoweringContextBuilder::new(db, function_id)?;

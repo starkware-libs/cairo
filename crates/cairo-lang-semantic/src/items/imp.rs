@@ -22,7 +22,8 @@ use itertools::izip;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
-use super::function_with_body::{FunctionBody, FunctionBodyData, FunctionWithBodyDeclarationData};
+use super::function_with_body::{FunctionBody, FunctionBodyData};
+use super::functions::FunctionDeclarationData;
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
 use crate::corelib::{copy_trait, drop_trait, never_ty};
@@ -467,7 +468,7 @@ pub fn impl_function_resolved_lookback(
 pub fn priv_impl_function_declaration_data(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
-) -> Maybe<FunctionWithBodyDeclarationData> {
+) -> Maybe<FunctionDeclarationData> {
     let module_file_id = impl_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let impl_id = impl_function_id.impl_id(db.upcast());
@@ -508,7 +509,7 @@ pub fn priv_impl_function_declaration_data(
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
 
-    Ok(FunctionWithBodyDeclarationData {
+    Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         generic_params,
