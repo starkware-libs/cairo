@@ -13,8 +13,8 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionId,
-    FreeFunctionLongId, FunctionWithBodyId, ImplLongId, LanguageElementId, LookupItemId,
+    EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionLongId,
+    FunctionWithBodyId, ImplFunctionLongId, ImplLongId, LanguageElementId, LookupItemId,
     ModuleFileId, ModuleId, ModuleItemId, StructLongId, TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
@@ -382,19 +382,27 @@ impl LanguageServer for Backend {
         let position = params.text_document_position_params.position;
         let Some((node, lookup_items)) =
             get_node_and_lookup_items(&*db, file, position) else { return Ok(None); };
-        // TODO(yuval): add support for impl functions.
-        let Some(
-            LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id))
-        ) = lookup_items.into_iter().next() else  {return Ok(None)};
+        let Some(lookup_item_id) = lookup_items.into_iter().next() else {
+                return Ok(None);
+            };
+        let function_id = match lookup_item_id {
+            LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
+                FunctionWithBodyId::Free(free_function_id)
+            }
+            LookupItemId::ImplFunction(impl_function_id) => {
+                FunctionWithBodyId::Impl(impl_function_id)
+            }
+            _ => {
+                return Ok(None);
+            }
+        };
 
         // Build texts.
         let mut hints = Vec::new();
-        if let Some(hint) =
-            get_expr_hint(&*db, FunctionWithBodyId::Free(free_function_id), node.clone())
-        {
+        if let Some(hint) = get_expr_hint(&*db, function_id, node.clone()) {
             hints.push(MarkedString::String(hint));
         };
-        if let Some(hint) = get_identifier_hint(&*db, free_function_id, node) {
+        if let Some(hint) = get_identifier_hint(&*db, lookup_item_id, node) {
             hints.push(MarkedString::String(hint));
         };
 
@@ -495,12 +503,21 @@ fn lookup_item_from_ast(
     let syntax_db = db.upcast();
     // TODO(spapini): Handle trait items.
     match node.kind(syntax_db) {
-        SyntaxKind::ItemFreeFunction => Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
-            db.intern_free_function(FreeFunctionLongId(
-                module_file_id,
-                ast::ItemFreeFunction::from_syntax_node(syntax_db, node).stable_ptr(),
-            )),
-        ))),
+        SyntaxKind::ItemFreeFunction => {
+            if node.parent()?.parent()?.kind(syntax_db) == SyntaxKind::ImplBody {
+                Some(LookupItemId::ImplFunction(db.intern_impl_function(ImplFunctionLongId(
+                    module_file_id,
+                    ast::ItemFreeFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+                ))))
+            } else {
+                Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
+                    FreeFunctionLongId(
+                        module_file_id,
+                        ast::ItemFreeFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+                    ),
+                ))))
+            }
+        }
         SyntaxKind::ItemExternFunction => Some(LookupItemId::ModuleItem(
             ModuleItemId::ExternFunction(db.intern_extern_function(ExternFunctionLongId(
                 module_file_id,
@@ -630,7 +647,7 @@ fn find_node_module(
 /// If the node is an identifier, retrieves a hover hint for it.
 fn get_identifier_hint(
     db: &(dyn SemanticGroup + 'static),
-    free_function_id: FreeFunctionId,
+    lookup_item_id: LookupItemId,
     node: SyntaxNode,
 ) -> Option<String> {
     let syntax_db = db.upcast();
@@ -638,10 +655,7 @@ fn get_identifier_hint(
         return None;
     }
     let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-    let item = db.lookup_resolved_generic_item_by_ptr(
-        LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)),
-        identifier.stable_ptr(),
-    )?;
+    let item = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())?;
 
     // TODO(spapini): Also include concrete item hints.
     // TODO(spapini): Format this better.
