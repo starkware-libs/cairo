@@ -491,7 +491,7 @@ pub fn priv_impl_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        GenericFunctionId::ImplFunction(impl_function_id),
+        GenericFunctionId::Impl(impl_function_id),
         &mut environment,
     );
 

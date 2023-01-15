@@ -121,7 +121,7 @@ fn get_function_code(
                         GenericFunctionId::Free(free_function_id)
                     }
                     FunctionWithBodyId::Impl(impl_function_id) => {
-                        GenericFunctionId::ImplFunction(impl_function_id)
+                        GenericFunctionId::Impl(impl_function_id)
                     }
                 },
                 // TODO(lior): Add generic arguments.

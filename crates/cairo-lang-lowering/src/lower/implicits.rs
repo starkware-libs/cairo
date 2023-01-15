@@ -50,10 +50,10 @@ pub fn function_all_implicits(
         GenericFunctionId::Extern(extern_function) => {
             db.extern_function_declaration_implicits(extern_function)
         }
-        GenericFunctionId::ImplFunction(impl_function) => {
+        GenericFunctionId::Impl(impl_function) => {
             db.function_with_body_all_implicits_vec(FunctionWithBodyId::Impl(impl_function))
         }
-        GenericFunctionId::TraitFunction(_) => unreachable!(),
+        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -83,7 +83,7 @@ pub fn function_with_body_all_implicits(
                     }
                     db.function_with_body_all_implicits(direct_callee_representative.0)?
                 }
-                GenericFunctionId::ImplFunction(impl_function) => {
+                GenericFunctionId::Impl(impl_function) => {
                     // For an impl function, call this method recursively. To avoid cycles, first
                     // check that the callee is not in this function's SCC.
                     let direct_callee_representative =
@@ -98,7 +98,7 @@ pub fn function_with_body_all_implicits(
                     // All implicits of a libfunc are explicit implicits.
                     db.extern_function_declaration_implicits(extern_function)?.into_iter().collect()
                 }
-                GenericFunctionId::TraitFunction(_) => unreachable!(),
+                GenericFunctionId::Trait(_) => unreachable!(),
             };
         all_implicits.extend(&current_implicits);
     }
@@ -169,13 +169,13 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
         GenericFunctionId::Free(free_function) => {
             db.function_with_body_may_panic(FunctionWithBodyId::Free(free_function))
         }
-        GenericFunctionId::ImplFunction(impl_function) => {
+        GenericFunctionId::Impl(impl_function) => {
             db.function_with_body_may_panic(FunctionWithBodyId::Impl(impl_function))
         }
         GenericFunctionId::Extern(extern_function) => {
             Ok(db.extern_function_signature(extern_function)?.panicable)
         }
-        GenericFunctionId::TraitFunction(_) => unreachable!(),
+        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -196,7 +196,7 @@ pub fn function_with_body_may_panic(
                 GenericFunctionId::Free(free_function) => {
                     function_scc_representative(db, FunctionWithBodyId::Free(free_function))
                 }
-                GenericFunctionId::ImplFunction(impl_function) => {
+                GenericFunctionId::Impl(impl_function) => {
                     function_scc_representative(db, FunctionWithBodyId::Impl(impl_function))
                 }
                 GenericFunctionId::Extern(extern_function) => {
@@ -205,7 +205,7 @@ pub fn function_with_body_may_panic(
                     }
                     continue;
                 }
-                GenericFunctionId::TraitFunction(_) => unreachable!(),
+                GenericFunctionId::Trait(_) => unreachable!(),
             };
         if direct_callee_representative == scc_representative {
             // We already have the implicits of this SCC - do nothing.

@@ -272,10 +272,10 @@ fn generate_statement_call_code(
             statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
             Ok(statements)
         }
-        GenericFunctionId::TraitFunction(_) => {
+        GenericFunctionId::Trait(_) => {
             panic!("Trait function should be replaced with concrete functions.")
         }
-        GenericFunctionId::ImplFunction(_) => todo!(),
+        GenericFunctionId::Impl(_) => todo!(),
     }
 }
 

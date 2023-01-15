@@ -254,9 +254,9 @@ pub fn get_concrete_libfunc_id(
 
             (concrete_function, generic_libfunc_id(db, extern_id, generic_args))
         }
-        GenericFunctionId::TraitFunction(_) => {
+        GenericFunctionId::Trait(_) => {
             panic!("Trait function should be replaced with concrete functions.")
         }
-        GenericFunctionId::ImplFunction(_) => todo!(),
+        GenericFunctionId::Impl(_) => todo!(),
     }
 }

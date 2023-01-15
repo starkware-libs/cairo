@@ -209,11 +209,12 @@ fn try_get_function_with_body_id(
         defs::ids::GenericFunctionId::Free(free_function_id) => {
             Ok(FunctionWithBodyId::Free(free_function_id))
         }
-        defs::ids::GenericFunctionId::ImplFunction(impl_function_id) => {
+        defs::ids::GenericFunctionId::Impl(impl_function_id) => {
             Ok(FunctionWithBodyId::Impl(impl_function_id))
         }
-        defs::ids::GenericFunctionId::Extern(_)
-        | defs::ids::GenericFunctionId::TraitFunction(_) => Err(skip_diagnostic()),
+        defs::ids::GenericFunctionId::Extern(_) | defs::ids::GenericFunctionId::Trait(_) => {
+            Err(skip_diagnostic())
+        }
     }
 }
 
