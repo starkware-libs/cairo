@@ -734,7 +734,21 @@ impl<'a> Parser<'a> {
     /// Possible patterns:
     /// * `<Expr>` (unnamed).
     /// * `<Identifier>: <Expr>` (named).
+    /// * `:<Identifier>` (Field init shorthand - syntactic sugar for `a: a`).
     fn parse_function_argument(&mut self) -> Option<ArgGreen> {
+        if self.peek().kind == SyntaxKind::TerminalColon {
+            let colon = self.take::<TerminalColon>();
+            let argname = self.parse_identifier();
+            return Some(
+                ArgFieldInitShorthand::new_green(
+                    self.db,
+                    colon,
+                    ExprFieldInitShorthand::new_green(self.db, argname),
+                )
+                .into(),
+            );
+        }
+
         // Read an expression.
         let expr_or_argname = self.try_parse_expr()?;
 

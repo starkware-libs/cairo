@@ -12,6 +12,8 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::OptionArgNameClauseEmpty => vec![],
         SyntaxKind::ArgNamed => vec![],
         SyntaxKind::ArgUnnamed => vec![],
+        SyntaxKind::ArgFieldInitShorthand => vec![],
+        SyntaxKind::ExprFieldInitShorthand => vec![],
         SyntaxKind::ArgList => vec![],
         SyntaxKind::ExprMissing => vec![],
         SyntaxKind::PathSegmentSimple => vec![],

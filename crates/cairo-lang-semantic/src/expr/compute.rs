@@ -175,7 +175,9 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
-        ast::Expr::Missing(_) => Err(ctx.diagnostics.report(syntax, Unsupported)),
+        ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
+            Err(ctx.diagnostics.report(syntax, Unsupported))
+        }
     }
 }
 fn compute_expr_unary_semantic(
@@ -334,6 +336,9 @@ pub fn compute_named_argument_clause(
             compute_expr_semantic(ctx, &arg_named.value(syntax_db)),
             Some(arg_named.name(syntax_db)),
         ),
+        ast::Arg::FieldInitShorthand(_) => {
+            unimplemented!("Field init shorthand for arguments is not implemented yet.")
+        }
     };
 
     (expr, arg_name_identifier)
