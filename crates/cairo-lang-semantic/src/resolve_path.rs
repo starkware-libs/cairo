@@ -16,6 +16,7 @@ use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -25,8 +26,10 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
-use crate::items::functions::GenericFunctionId;
-use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
+use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
+use crate::items::imp::{
+    find_single_impl_in_context, ConcreteImplId, ConcreteImplLongId, ImplLookupContext,
+};
 use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
 use crate::literals::LiteralLongId;
 use crate::types::{resolve_type, substitute_generics};
@@ -136,7 +139,7 @@ pub struct Resolver<'db> {
     // Current module in which to resolve the path.
     pub module_file_id: ModuleFileId,
     // Generic parameters accessible to the resolver.
-    generic_params: UnorderedHashMap<SmolStr, GenericParamId>,
+    generic_params: OrderedHashMap<SmolStr, GenericParamId>,
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
     pub lookback: ResolvedLookback,
 }
@@ -423,6 +426,44 @@ impl<'db> Resolver<'db> {
                 } else {
                     Err(diagnostics.report(identifier, InvalidPath))
                 }
+            }
+            ResolvedConcreteItem::Trait(concrete_trait_id) => {
+                // No need to check that the function exists in the trait, it is previously verified
+                // that the impl implements exactly all the functions of its trait.
+
+                // Find the relevant impl of the trait.
+                let long_trait_id = self.db.lookup_intern_concrete_trait(*concrete_trait_id);
+                let trait_id = long_trait_id.trait_id;
+                let lookup_context = ImplLookupContext {
+                    module_id: self.module_file_id.0,
+                    extra_modules: vec![trait_id.module_file_id(self.db.upcast()).0],
+                    generic_params: self.generic_params.values().copied().collect(),
+                };
+                let concrete_impl_id = find_single_impl_in_context(
+                    self.db,
+                    diagnostics,
+                    &lookup_context,
+                    *concrete_trait_id,
+                    identifier,
+                )?;
+
+                // Find the relevant function in the impl.
+                let long_impl_id = self.db.lookup_intern_concrete_impl(concrete_impl_id);
+                let impl_id = long_impl_id.impl_id;
+                let Some(impl_function_id) = self.db.impl_function_by_name(impl_id, ident)? else {
+                    return Err(diagnostics.report(identifier, InvalidPath));
+                };
+
+                Ok(ResolvedConcreteItem::Function(self.db.intern_function(FunctionLongId {
+                    function: ConcreteFunction {
+                        generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
+                            concrete_impl: concrete_impl_id,
+                            function: impl_function_id,
+                        }),
+                        // TODO(yuval): Add generic arguments.
+                        generic_args: vec![],
+                    },
+                })))
             }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }

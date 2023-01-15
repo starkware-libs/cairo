@@ -13,6 +13,7 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -252,6 +253,16 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
+            }
+            SemanticDiagnosticKind::NoImplsOfTrait { trait_id } => {
+                let trait_path = trait_id.full_path(db.upcast());
+                format!(r#"Trait "{trait_path}" has no impl in the context."#)
+            }
+            SemanticDiagnosticKind::MultipleImplsOfTrait { trait_id, all_impl_ids } => {
+                let trait_path = trait_id.full_path(db.upcast());
+                let impls_str =
+                    all_impl_ids.iter().map(|imp| imp.full_path(db.upcast())).join(", ");
+                format!(r#"Trait "{trait_path}" has multiple impls in the context: {impls_str}"#,)
             }
             SemanticDiagnosticKind::VariableNotFound { name } => {
                 format!(r#"Variable "{name}" not found."#)
@@ -528,6 +539,13 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
+    },
+    NoImplsOfTrait {
+        trait_id: TraitId,
+    },
+    MultipleImplsOfTrait {
+        trait_id: TraitId,
+        all_impl_ids: Vec<ImplId>,
     },
     VariableNotFound {
         name: SmolStr,

@@ -16,9 +16,10 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionHelper};
-use itertools::izip;
+use itertools::{izip, Itertools};
 use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
@@ -234,6 +235,8 @@ pub fn priv_impl_definition_data(
     // Ignore the result.
     .ok();
 
+    // TODO(yuval): verify that all functions of `concrete_trait` appear in this impl.
+
     let mut function_asts = OrderedHashMap::default();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
@@ -304,6 +307,20 @@ pub fn impl_functions(
             (function_long_id.name(db.upcast()), *function_id)
         })
         .collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_by_name].
+pub fn impl_function_by_name(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+    name: SmolStr,
+) -> Maybe<Option<ImplFunctionId>> {
+    for impl_function_id in db.priv_impl_definition_data(impl_id)?.function_asts.keys() {
+        if db.lookup_intern_impl_function(*impl_function_id).name(db.upcast()) == name {
+            return Ok(Some(*impl_function_id));
+        }
+    }
+    Ok(None)
 }
 
 /// Handle special cases such as Copy and Drop checking.
@@ -407,13 +424,13 @@ pub struct ImplLookupContext {
     pub generic_params: Vec<GenericParamId>,
 }
 
-/// Finds all the implementations for a concrete trait, in a specific lookup context.
+/// Finds all the implementations of a concrete trait, in a specific lookup context.
 pub fn find_impls_at_context(
     db: &dyn SemanticGroup,
     lookup_context: &ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
-) -> Maybe<Vec<ConcreteImplId>> {
-    let mut res = Vec::new();
+) -> Maybe<OrderedHashSet<ConcreteImplId>> {
+    let mut res = OrderedHashSet::default();
     // TODO(spapini): Lookup in generic_params once impl generic params are supported.
     res.extend(find_impls_at_module(db, lookup_context.module_id, concrete_trait_id)?);
     for module_id in &lookup_context.extra_modules {
@@ -430,6 +447,35 @@ pub fn find_impls_at_context(
         }
     }
     Ok(res)
+}
+
+pub fn find_single_impl_in_context<TNode: TypedSyntaxNode>(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    lookup_context: &ImplLookupContext,
+    concrete_trait_id: ConcreteTraitId,
+    node_for_diagnostic: &TNode,
+) -> Maybe<ConcreteImplId> {
+    match &find_impls_at_context(db, lookup_context, concrete_trait_id)?.into_iter().collect_vec()[..]
+    {
+        &[] => Err(diagnostics.report(
+            node_for_diagnostic,
+            NoImplsOfTrait {
+                trait_id: db.lookup_intern_concrete_trait(concrete_trait_id).trait_id,
+            },
+        )),
+        &[concrete_impl_id] => Ok(concrete_impl_id),
+        concrete_impls => Err(diagnostics.report(
+            node_for_diagnostic,
+            MultipleImplsOfTrait {
+                trait_id: db.lookup_intern_concrete_trait(concrete_trait_id).trait_id,
+                all_impl_ids: concrete_impls
+                    .iter()
+                    .map(|imp| db.lookup_intern_concrete_impl(*imp).impl_id)
+                    .collect(),
+            },
+        )),
+    }
 }
 
 // === Declaration ===

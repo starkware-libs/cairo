@@ -304,6 +304,13 @@ pub trait SemanticGroup:
     /// Returns the functions in the impl.
     #[salsa::invoke(items::imp::impl_functions)]
     fn impl_functions(&self, impl_id: ImplId) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>>;
+    /// Returns the function with the given name of the given impl, if exists.
+    #[salsa::invoke(items::imp::impl_function_by_name)]
+    fn impl_function_by_name(
+        &self,
+        impl_id: ImplId,
+        name: SmolStr,
+    ) -> Maybe<Option<ImplFunctionId>>;
 
     // Impl function.
     // ================
