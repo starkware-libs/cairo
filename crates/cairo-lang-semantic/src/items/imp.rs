@@ -4,7 +4,7 @@ use std::vec;
 
 use cairo_lang_defs::ids::{
     FunctionSignatureId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
-    LanguageElementId, ModuleId,
+    LanguageElementId, ModuleId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -16,6 +16,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionHelper};
 use itertools::izip;
@@ -234,6 +235,8 @@ pub fn priv_impl_definition_data(
     // Ignore the result.
     .ok();
 
+    // TODO(yuval): verify that all functions of `concrete_trait` appear in this impl.
+
     let mut function_asts = OrderedHashMap::default();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
@@ -304,6 +307,22 @@ pub fn impl_functions(
             (function_long_id.name(db.upcast()), *function_id)
         })
         .collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_by_trait_function].
+pub fn impl_function_by_trait_function(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<Option<ImplFunctionId>> {
+    let defs_db = db.upcast();
+    let name = trait_function_id.name(defs_db);
+    for impl_function_id in db.priv_impl_definition_data(impl_id)?.function_asts.keys() {
+        if db.lookup_intern_impl_function(*impl_function_id).name(defs_db) == name {
+            return Ok(Some(*impl_function_id));
+        }
+    }
+    Ok(None)
 }
 
 /// Handle special cases such as Copy and Drop checking.
@@ -407,13 +426,13 @@ pub struct ImplLookupContext {
     pub generic_params: Vec<GenericParamId>,
 }
 
-/// Finds all the implementations for a concrete trait, in a specific lookup context.
+/// Finds all the implementations of a concrete trait, in a specific lookup context.
 pub fn find_impls_at_context(
     db: &dyn SemanticGroup,
     lookup_context: &ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
-) -> Maybe<Vec<ConcreteImplId>> {
-    let mut res = Vec::new();
+) -> Maybe<OrderedHashSet<ConcreteImplId>> {
+    let mut res = OrderedHashSet::default();
     // TODO(spapini): Lookup in generic_params once impl generic params are supported.
     res.extend(find_impls_at_module(db, lookup_context.module_id, concrete_trait_id)?);
     for module_id in &lookup_context.extra_modules {
