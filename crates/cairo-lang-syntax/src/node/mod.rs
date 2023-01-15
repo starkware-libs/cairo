@@ -18,8 +18,6 @@ use self::kind::SyntaxKind;
 use self::stable_ptr::SyntaxStablePtr;
 
 pub mod ast;
-#[cfg(test)]
-mod ast_test;
 pub mod db;
 pub mod element_list;
 pub mod green;
@@ -28,6 +26,10 @@ pub mod ids;
 pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
+pub mod utils;
+
+#[cfg(test)]
+mod ast_test;
 #[cfg(test)]
 mod test_utils;
 
