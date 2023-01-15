@@ -85,7 +85,7 @@ fn test_expr_lookup() {
         ]
     );
 
-    let attributes = db.function_with_body_attributes(function_id).unwrap();
+    let attributes = db.function_attributes(function_id).unwrap();
     assert_eq!(
         format!("{:?}", attributes.debug(db)),
         "[Attribute { id: \"external\" }, Attribute { id: \"my_attr\" }]"

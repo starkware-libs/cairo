@@ -38,7 +38,7 @@ pub struct LoweringContextBuilder<'db> {
 impl<'db> LoweringContextBuilder<'db> {
     pub fn new(db: &'db dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
         let function_def = db.function_body(function_id)?;
-        let signature = db.function_with_body_signature(function_id)?;
+        let signature = db.function_signature(function_id)?;
         let implicits = db.function_with_body_all_implicits_vec(function_id)?;
         let ref_params = signature
             .params
@@ -56,7 +56,7 @@ impl<'db> LoweringContextBuilder<'db> {
         })
     }
     pub fn ctx<'a: 'db>(&'a self) -> Maybe<LoweringContext<'db>> {
-        let generic_params = self.db.function_with_body_generic_params(self.function_id)?;
+        let generic_params = self.db.function_generic_params(self.function_id)?;
         Ok(LoweringContext {
             db: self.db,
             function_def: &self.function_def,

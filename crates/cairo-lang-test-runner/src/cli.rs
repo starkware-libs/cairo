@@ -258,9 +258,7 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
 
             for item in module_items.iter() {
                 if let ModuleItemId::FreeFunction(func_id) = item {
-                    if let Ok(attrs) =
-                        db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id))
-                    {
+                    if let Ok(attrs) = db.function_attributes(FunctionWithBodyId::Free(*func_id)) {
                         let mut is_test = false;
                         let mut available_gas = None;
                         let mut ignored = false;
