@@ -108,9 +108,8 @@ pub fn core_libfunc_cost_base<Ops: CostOperations, InfoProvider: InvocationCostI
             vec![ops.const_cost(0)]
         }
         Box(libfunc) => match libfunc {
-            BoxConcreteLibfunc::Into(_) => {
-                // TODO(lior): Fix to sizeof(T) once sizes != 1 are supported.
-                vec![ops.const_cost(1)]
+            BoxConcreteLibfunc::Into(libfunc) => {
+                vec![ops.const_cost(info_provider.type_size(&libfunc.ty).try_into().unwrap())]
             }
             BoxConcreteLibfunc::Unbox(_) => vec![ops.const_cost(0)],
         },
