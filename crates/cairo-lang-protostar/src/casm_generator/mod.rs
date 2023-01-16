@@ -98,22 +98,28 @@ impl SierraCasmGenerator {
     
     pub fn build_casm(&self) -> Result<ProtostarCasm, GeneratorError> {
         let tests = self.collect_tests();
-        let mut entry_codes_temp = Vec::new();
+        let mut entry_codes_offsets = Vec::new();
         for test in &tests {
             let func = self.find_function(test)?;
-            let initial_gas = 0; 
-            let (entry_code, _) = self.create_entry_code(func, &vec![], initial_gas, None)?;
-            println!("{:?}", entry_code);
-            entry_codes_temp.push(entry_code);
+            let initial_gas = 0;
+            let (_, _, offset) = self.create_entry_code(func, &vec![], initial_gas, 0)?;
+            entry_codes_offsets.push(offset);
         }
-        let entry_offset: usize = entry_codes_temp.iter().map(|a| a.len()).sum();
+
         let mut entry_codes = Vec::new();
+        let mut acc = entry_codes_offsets.iter().sum();
+        acc -= entry_codes_offsets[0];
+        let mut i = 0;
+
         for test in &tests {
             let func = self.find_function(test)?;
             let initial_gas = 0; 
-            let (entry_code, _) = self.create_entry_code(func, &vec![], initial_gas, Some(entry_offset))?;
-            println!("{:?}", entry_code);
-            entry_codes.push(entry_code);
+            let (proper_entry_code, _, offset) = self.create_entry_code(func, &vec![], initial_gas, acc)?;
+            if entry_codes_offsets.len() > i+1 {
+                acc -= entry_codes_offsets[i+1];
+                i+=1;
+            }
+            entry_codes.push(proper_entry_code);
         }
 
 
@@ -123,7 +129,6 @@ impl SierraCasmGenerator {
             16,
         )
         .unwrap();
-        print!("{}", prime);
 
         let mut bytecode = vec![];
         let mut hints = vec![];
@@ -131,7 +136,6 @@ impl SierraCasmGenerator {
         for entry_code in &entry_codes {
             for instruction in entry_code {
                 if !instruction.hints.is_empty() {
-                    println!("XD1");
                     hints.push((
                         bytecode.len(),
                         instruction.hints.iter().map(|hint| hint.to_string()).collect(),
@@ -149,7 +153,6 @@ impl SierraCasmGenerator {
 
         for instruction in chain!( self.casm_program.instructions.iter(), footer.iter()) {
             if !instruction.hints.is_empty() {
-                println!("{}", bytecode.len());
                 hints.push((
                     bytecode.len(),
                     instruction.hints.iter().map(|hint| hint.to_string()).collect(),
@@ -166,12 +169,12 @@ impl SierraCasmGenerator {
 
         let mut test_entry_points = Vec::new();
         let mut acc = 0;
-        for (test, entry_code) in tests.iter().zip(entry_codes.iter()) {
+        for (test, entry_code_offset) in tests.iter().zip(entry_codes_offsets.iter()) {
             test_entry_points.push(TestEntrypoint {
                 offset: acc,
                 name: test.to_string()
             });
-            acc += entry_code.len();
+            acc += entry_code_offset;
         }
         Ok(ProtostarCasm { prime: prime, bytecode: bytecode, hints: hints, test_entry_points: test_entry_points })
     }
@@ -196,8 +199,8 @@ impl SierraCasmGenerator {
         func: &Function,
         args: &[BigInt],
         initial_gas: usize,
-        entry_offset: Option<usize>,
-    ) -> Result<(Vec<Instruction>, Vec<String>), GeneratorError> {
+        entry_offset: usize,
+    ) -> Result<(Vec<Instruction>, Vec<String>, usize), GeneratorError> {
         let mut arg_iter = args.iter();
         let mut expected_arguments_size = 0;
         let mut ctx = casm! {};
@@ -267,16 +270,17 @@ impl SierraCasmGenerator {
         let before_final_call = ctx.current_code_offset;
         let final_call_size = 3;
 
-        let offset = match entry_offset {
-            None => final_call_size + self.casm_program.debug_info.sierra_statement_info[func.entry_point.0].code_offset,
-            Some(n) => n + self.casm_program.debug_info.sierra_statement_info[func.entry_point.0].code_offset
-        };
+        let offset = final_call_size + entry_offset + self.casm_program.debug_info.sierra_statement_info[func.entry_point.0].code_offset;
+        
+
         casm_extend! {ctx,
             call rel offset;
             ret;
         }
         assert_eq!(before_final_call + final_call_size, ctx.current_code_offset);
-        Ok((ctx.instructions, builtins))
+        println!("{}", ctx.current_code_offset);
+        println!("{:?}", ctx.instructions);
+        Ok((ctx.instructions, builtins, ctx.current_code_offset))
     }
 
     // Copied from crates/cairo-lang-runner/src/lib.rs
