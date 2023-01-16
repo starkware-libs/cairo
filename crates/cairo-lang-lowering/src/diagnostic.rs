@@ -27,6 +27,13 @@ impl LoweringDiagnostics {
             kind,
         })
     }
+    pub fn report_by_location(
+        &mut self,
+        stable_location: StableLocation,
+        kind: LoweringDiagnosticKind,
+    ) -> DiagnosticAdded {
+        self.diagnostics.add(LoweringDiagnostic { stable_location, kind })
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
