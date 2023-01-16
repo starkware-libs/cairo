@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::FunctionWithBodyId;
+use cairo_lang_defs::ids::{FunctionWithBodyId, TopLevelLanguageElementId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
