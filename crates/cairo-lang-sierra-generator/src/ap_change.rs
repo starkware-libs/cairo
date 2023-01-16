@@ -31,9 +31,6 @@ pub fn contains_cycle(db: &dyn SierraGenGroup, function_id: FunctionWithBodyId) 
                         }
                     }
                     defs::ids::GenericFunctionId::Extern(_) => {}
-                    defs::ids::GenericFunctionId::Trait(_) => {
-                        panic!("Trait function should be replaced with concrete functions.")
-                    }
                 }
             }
         }

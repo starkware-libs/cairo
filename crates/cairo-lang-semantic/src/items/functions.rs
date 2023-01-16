@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, ParamLongId};
+use cairo_lang_defs::ids::{
+    ExternFunctionId, FunctionSignatureId, GenericFunctionId, GenericParamId, ParamLongId,
+};
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
@@ -91,7 +93,7 @@ impl Signature {
         db: &dyn SemanticGroup,
         resolver: &mut Resolver<'_>,
         signature_syntax: &ast::FunctionSignature,
-        function_id: GenericFunctionId,
+        function_signature_id: FunctionSignatureId,
         environment: &mut Environment,
     ) -> Self {
         let return_type =
@@ -101,7 +103,7 @@ impl Signature {
             db,
             resolver,
             signature_syntax,
-            function_id,
+            function_signature_id,
             environment,
         );
         let implicits =
@@ -166,7 +168,7 @@ pub fn function_signature_params(
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
     sig: &ast::FunctionSignature,
-    function_id: GenericFunctionId,
+    function_signature_id: FunctionSignatureId,
     env: &mut Environment,
 ) -> Vec<semantic::Parameter> {
     let syntax_db = db.upcast();
@@ -175,37 +177,39 @@ pub fn function_signature_params(
         db,
         resolver,
         &sig.parameters(syntax_db).elements(syntax_db),
-        function_id,
+        function_signature_id,
         env,
     )
 }
 
-/// Query implementation of [crate::db::SemanticGroup::generic_function_signature].
-pub fn generic_function_signature(
+/// Query implementation of [crate::db::SemanticGroup::function_signature_signature].
+pub fn function_signature_signature(
     db: &dyn SemanticGroup,
-    generic_function: GenericFunctionId,
+    function_signature_id: FunctionSignatureId,
 ) -> Maybe<Signature> {
-    match generic_function {
-        GenericFunctionId::Free(free_function) => db.free_function_signature(free_function),
-        GenericFunctionId::Extern(extern_function) => db.extern_function_signature(extern_function),
-        GenericFunctionId::Trait(trait_function) => db.trait_function_signature(trait_function),
-        GenericFunctionId::Impl(impl_function) => db.impl_function_signature(impl_function),
+    match function_signature_id {
+        FunctionSignatureId::Free(free_function) => db.free_function_signature(free_function),
+        FunctionSignatureId::Extern(extern_function) => {
+            db.extern_function_signature(extern_function)
+        }
+        FunctionSignatureId::Trait(trait_function) => db.trait_function_signature(trait_function),
+        FunctionSignatureId::Impl(impl_function) => db.impl_function_signature(impl_function),
     }
 }
-/// Query implementation of [crate::db::SemanticGroup::generic_function_generic_params].
-pub fn generic_function_generic_params(
+/// Query implementation of [crate::db::SemanticGroup::function_signature_generic_params].
+pub fn function_signature_generic_params(
     db: &dyn SemanticGroup,
-    generic_function: GenericFunctionId,
+    function_signature_id: FunctionSignatureId,
 ) -> Maybe<Vec<GenericParamId>> {
-    match generic_function {
-        GenericFunctionId::Free(free_function) => db.free_function_generic_params(free_function),
-        GenericFunctionId::Extern(extern_function) => {
+    match function_signature_id {
+        FunctionSignatureId::Free(free_function) => db.free_function_generic_params(free_function),
+        FunctionSignatureId::Extern(extern_function) => {
             db.extern_function_declaration_generic_params(extern_function)
         }
-        GenericFunctionId::Trait(trait_function) => {
+        FunctionSignatureId::Trait(trait_function) => {
             db.trait_function_generic_params(trait_function)
         }
-        GenericFunctionId::Impl(impl_function) => db.impl_function_generic_params(impl_function),
+        FunctionSignatureId::Impl(impl_function) => db.impl_function_generic_params(impl_function),
     }
 }
 
@@ -216,16 +220,16 @@ pub fn concrete_function_signature(
 ) -> Maybe<Signature> {
     let ConcreteFunction { generic_function, generic_args, .. } =
         db.lookup_intern_function(function_id).function;
-    let generic_params = db.generic_function_generic_params(generic_function)?;
+    let generic_params = db.function_signature_generic_params(generic_function.into())?;
     if generic_params.len() != generic_args.len() {
         // TODO(spapini): Uphold the invariant that constructed ConcreteFunction instances
-        //   always have the correct number of generic arguemnts.
+        //   always have the correct number of generic arguments.
         return Err(skip_diagnostic());
     }
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
     let substitution_map = generic_params.into_iter().zip(generic_args.into_iter()).collect();
-    let generic_signature = db.generic_function_signature(generic_function)?;
+    let generic_signature = db.function_signature_signature(generic_function.into())?;
     let concretize_param = |param: semantic::Parameter| Parameter {
         id: param.id,
         name: param.name,
@@ -249,14 +253,17 @@ fn update_env_with_ast_params(
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
     ast_params: &[ast::Param],
-    function_id: GenericFunctionId,
+    function_signature_id: FunctionSignatureId,
     env: &mut Environment,
 ) -> Vec<semantic::Parameter> {
     let mut semantic_params = Vec::new();
     for ast_param in ast_params.iter() {
         let semantic_param = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
 
-        if env.add_param(diagnostics, semantic_param.clone(), ast_param, function_id).is_ok() {
+        if env
+            .add_param(diagnostics, semantic_param.clone(), ast_param, function_signature_id)
+            .is_ok()
+        {
             semantic_params.push(semantic_param);
         }
     }

@@ -458,23 +458,44 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
     }
 }
 
-// TODO(yuval/shahar): We should not have trait functions after semantic. To fix this, we need to
-// split the current `GenericFunctionId` to 2 enums. One for describing functions that can be
-// concretized (does not include trait functions) and one for types of function signatures (includes
-// trait functions).
+/// The ID of a generic function that can be concretized.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GenericFunctionId {
+    /// A generic free function.
+    Free(FreeFunctionId),
+    /// A generic extern function.
+    Extern(ExternFunctionId),
+    /// A generic function of a concrete impl.
+    Impl(ImplFunctionId),
+}
+impl GenericFunctionId {
+    pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
+        FunctionSignatureId::from(*self).format(db)
+    }
+}
+
 define_language_element_id_as_enum! {
     #[toplevel]
-    /// Generic function ids enum.
-    pub enum GenericFunctionId {
+    /// The ID of a function's signature in the code.
+    pub enum FunctionSignatureId {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
         Trait(TraitFunctionId),
         Impl(ImplFunctionId),
     }
 }
-impl GenericFunctionId {
+impl FunctionSignatureId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
         format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
+    }
+}
+impl From<GenericFunctionId> for FunctionSignatureId {
+    fn from(value: GenericFunctionId) -> Self {
+        match value {
+            GenericFunctionId::Free(id) => FunctionSignatureId::Free(id),
+            GenericFunctionId::Extern(id) => FunctionSignatureId::Extern(id),
+            GenericFunctionId::Impl(id) => FunctionSignatureId::Impl(id),
+        }
     }
 }
 

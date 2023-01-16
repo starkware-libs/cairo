@@ -664,7 +664,7 @@ pub fn specialize_function(
 ) -> Maybe<FunctionId> {
     // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
     let generic_params = db
-        .generic_function_generic_params(generic_function)
+        .function_signature_generic_params(generic_function.into())
         .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
 
     conform_generic_args(db, diagnostics, &generic_params, &mut generic_args, stable_ptr);

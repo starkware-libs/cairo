@@ -68,7 +68,6 @@ pub fn function_all_implicits(
         GenericFunctionId::Impl(impl_function) => {
             db.function_with_body_all_implicits_vec(FunctionWithBodyId::Impl(impl_function))
         }
-        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -113,7 +112,6 @@ pub fn function_with_body_all_implicits(
                     // All implicits of a libfunc are explicit implicits.
                     db.extern_function_declaration_implicits(extern_function)?.into_iter().collect()
                 }
-                GenericFunctionId::Trait(_) => unreachable!(),
             };
         all_implicits.extend(&current_implicits);
     }
@@ -190,7 +188,6 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
         GenericFunctionId::Extern(extern_function) => {
             Ok(db.extern_function_signature(extern_function)?.panicable)
         }
-        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -220,7 +217,6 @@ pub fn function_with_body_may_panic(
                     }
                     continue;
                 }
-                GenericFunctionId::Trait(_) => unreachable!(),
             };
         if direct_callee_representative == scc_representative {
             // We already have the implicits of this SCC - do nothing.

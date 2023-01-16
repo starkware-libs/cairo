@@ -14,8 +14,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionId,
-    FreeFunctionLongId, FunctionWithBodyId, ImplLongId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, StructLongId, TraitLongId, UseLongId,
+    FreeFunctionLongId, FunctionSignatureId, FunctionWithBodyId, ImplLongId, LanguageElementId,
+    LookupItemId, ModuleFileId, ModuleId, ModuleItemId, StructLongId, TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
@@ -425,11 +425,14 @@ impl LanguageServer for Backend {
                 ResolvedGenericItem::Module(item) => {
                     (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
                 }
-                ResolvedGenericItem::GenericFunction(item) => (
-                    item.parent_module(defs_db),
-                    item.file_index(defs_db),
-                    item.untyped_stable_ptr(defs_db),
-                ),
+                ResolvedGenericItem::GenericFunction(item) => {
+                    let sig = FunctionSignatureId::from(item);
+                    (
+                        sig.parent_module(defs_db),
+                        sig.file_index(defs_db),
+                        sig.untyped_stable_ptr(defs_db),
+                    )
+                }
                 ResolvedGenericItem::GenericType(generic_type) => (
                     generic_type.parent_module(defs_db),
                     generic_type.file_index(defs_db),
