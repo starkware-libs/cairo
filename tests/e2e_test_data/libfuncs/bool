@@ -37,6 +37,46 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
 //! > ==========================================================================
 
+//! > bool_or libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(a: bool, b: bool) -> bool {
+    // TODO(orizi): When inlining is supported move to calling `bool_or` directly.
+    let (r,) = bool_or_impl(a, b);
+    r
+}
+
+//! > casm
+[ap + 0] = [fp + -4] + [fp + -3], ap++;
+[ap + 0] = [fp + -4] * [fp + -3], ap++;
+[ap + -2] = [ap + 0] + [ap + -1], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 3})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple>;
+type core::bool = Enum<ut@core::bool, Unit, Unit>;
+
+libfunc bool_or_impl = bool_or_impl;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc rename<core::bool> = rename<core::bool>;
+
+bool_or_impl([0], [1]) -> ([2]);
+store_temp<core::bool>([2]) -> ([2]);
+rename<core::bool>([2]) -> ([3]);
+return([3]);
+
+test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
+
+//! > ==========================================================================
+
 //! > bool_and libfunc
 
 //! > test_comments

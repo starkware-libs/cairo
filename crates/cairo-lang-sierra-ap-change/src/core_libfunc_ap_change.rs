@@ -56,6 +56,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoolConcreteLibfunc::And(_) => vec![ApChange::Known(0)],
             BoolConcreteLibfunc::Not(_) => vec![ApChange::Known(1)],
             BoolConcreteLibfunc::Xor(_) => vec![ApChange::Known(1)],
+            BoolConcreteLibfunc::Or(_) => vec![ApChange::Known(2)],
             BoolConcreteLibfunc::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
         },
         CoreConcreteLibfunc::Box(libfunc) => match libfunc {

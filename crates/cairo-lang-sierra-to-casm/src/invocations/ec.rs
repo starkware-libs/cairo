@@ -38,9 +38,21 @@ fn verify_ec_point(
     computed_lhs: Var,
     computed_rhs: Var,
 ) {
+    compute_lhs(casm_builder, y, computed_lhs);
+    compute_rhs(casm_builder, x, computed_rhs);
+}
+
+/// Computes the left-hand side of the EC equation, namely `y^2`.
+fn compute_lhs(casm_builder: &mut CasmBuilder, y: Var, computed_lhs: Var) {
+    casm_build_extend! {casm_builder,
+        assert computed_lhs = y * y;
+    };
+}
+
+/// Computes the right-hand side of the EC equation, namely `x^3 + x + BETA`.
+fn compute_rhs(casm_builder: &mut CasmBuilder, x: Var, computed_rhs: Var) {
     casm_build_extend! {casm_builder,
         const beta = (get_beta());
-        assert computed_lhs = y * y;
         tempvar x2 = x * x;
         tempvar x3 = x2 * x;
         tempvar alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
@@ -90,7 +102,7 @@ fn build_ec_point_try_create(
         deref y;
     };
 
-    // Assert (x,y) is on the curve.
+    // Check if `(x, y)` is on the curve, by computing `y^2` and `x^3 + x + beta`.
     casm_build_extend! {casm_builder,
         tempvar y2;
         tempvar expected_y2;

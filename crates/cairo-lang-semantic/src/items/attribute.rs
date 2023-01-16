@@ -12,7 +12,9 @@ use crate::db::SemanticGroup;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Attribute {
     pub id: SmolStr,
+    pub id_stable_ptr: ast::TerminalIdentifierPtr,
     pub args: Vec<ast::Expr>,
+    pub args_stable_ptr: ast::OptionAttributeArgsPtr,
 }
 
 impl DebugWithDb<dyn SemanticGroup> for Attribute {
@@ -42,14 +44,21 @@ pub fn ast_attributes_to_semantic(
     attributes
         .elements(syntax_db)
         .into_iter()
-        .map(|attribute| Attribute {
-            id: attribute.attr(syntax_db).text(syntax_db),
-            args: match attribute.args(syntax_db) {
-                OptionAttributeArgs::AttributeArgs(attribute_args) => {
-                    attribute_args.arg_list(syntax_db).elements(syntax_db)
-                }
-                OptionAttributeArgs::Empty(_) => vec![],
-            },
+        .map(|attribute| {
+            let attr_id = attribute.attr(syntax_db);
+            let attr_args = attribute.args(syntax_db);
+
+            Attribute {
+                id: attr_id.text(syntax_db),
+                id_stable_ptr: attr_id.stable_ptr(),
+                args: match attr_args {
+                    OptionAttributeArgs::AttributeArgs(ref attribute_args) => {
+                        attribute_args.arg_list(syntax_db).elements(syntax_db)
+                    }
+                    OptionAttributeArgs::Empty(_) => vec![],
+                },
+                args_stable_ptr: attr_args.stable_ptr(),
+            }
         })
         .collect()
 }

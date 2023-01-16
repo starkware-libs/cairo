@@ -28,6 +28,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, OptionFrom};
+use salsa;
 use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
@@ -232,6 +233,13 @@ macro_rules! toplevel_enum {
     }
 }
 
+/// A trait for getting the internal salsa::InternId of a short id object.
+/// This id is unstable across runs and should not be used to anything that is externally visible.
+/// This is currently used to pick representative for strongly connected components.
+pub trait UnstableSalsaId {
+    fn get_internal_id(&self) -> &salsa::InternId;
+}
+
 /// Id for a module. Either the root module of a crate, or a submodule.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ModuleId {
@@ -298,24 +306,11 @@ define_language_element_id!(
     lookup_intern_free_function,
     name
 );
-// TODO(yuval): remove once ordering stably in `function_scc_representative`.
-impl PartialOrd for FreeFunctionId {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.0.partial_cmp(&other.0)
-    }
-}
-impl Ord for FreeFunctionId {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.0.cmp(&other.0)
-    }
-}
 
-struct St;
-trait Bla {
-    fn foo(x: u32);
-}
-impl Bla for St {
-    fn foo(_: u32) {}
+impl UnstableSalsaId for FreeFunctionId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
 }
 
 define_language_element_id!(
@@ -342,72 +337,20 @@ impl ImplFunctionId {
         db.intern_impl(ImplLongId(module_file_id, impl_ptr))
     }
 }
-// TODO(yuval): remove once ordering stably in `function_scc_representative`.
-impl PartialOrd for ImplFunctionId {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.0.partial_cmp(&other.0)
-    }
-}
-impl Ord for ImplFunctionId {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.0.cmp(&other.0)
+impl UnstableSalsaId for ImplFunctionId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
     }
 }
 
-// TODO(yuval): remove PartialOrd, Ord once ordering stably in `function_scc_representative`.
-/// Represents a function that has a body.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash, PartialOrd, Ord)]
-pub enum FunctionWithBodyId {
-    Free(FreeFunctionId),
-    Impl(ImplFunctionId),
-}
-impl FunctionWithBodyId {
-    pub fn stable_ptr(
-        self,
-        db: &dyn DefsGroup,
-    ) -> <ast::ItemFreeFunction as TypedSyntaxNode>::StablePtr {
-        match self {
-            FunctionWithBodyId::Free(free_function_id) => free_function_id.stable_ptr(db),
-            FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.stable_ptr(db),
-        }
-    }
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-        match self {
-            FunctionWithBodyId::Free(free_function_id) => free_function_id.name(db),
-            FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.name(db),
-        }
+define_language_element_id_as_enum! {
+    /// Represents a function that has a body.
+    pub enum FunctionWithBodyId {
+        Free(FreeFunctionId),
+        Impl(ImplFunctionId),
     }
 }
-impl LanguageElementId for FunctionWithBodyId {
-    fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
-        match self {
-            FunctionWithBodyId::Free(free_function_id) => {
-                db.lookup_intern_free_function(*free_function_id).0
-            }
-            FunctionWithBodyId::Impl(impl_function_id) => {
-                db.lookup_intern_impl_function(*impl_function_id).0
-            }
-        }
-    }
-    fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId {
-        match self {
-            FunctionWithBodyId::Free(free_functino_id) => free_functino_id.module_file_id(db).0,
-            FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.module_file_id(db).0,
-        }
-    }
-    fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
-        match self {
-            FunctionWithBodyId::Free(free_functino_id) => free_functino_id.module_file_id(db).1,
-            FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.module_file_id(db).1,
-        }
-    }
-    fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
-        match self {
-            FunctionWithBodyId::Free(free_functino_id) => free_functino_id.stable_ptr(db).untyped(),
-            FunctionWithBodyId::Impl(impl_function_id) => impl_function_id.stable_ptr(db).untyped(),
-        }
-    }
-}
+
 impl TopLevelLanguageElementId for FunctionWithBodyId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         match self {

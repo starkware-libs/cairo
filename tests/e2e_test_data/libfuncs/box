@@ -1,4 +1,4 @@
-//! > box libfunc
+//! > into_box libfunc for felt (size 1)
 
 //! > test_function_name
 run_small_e2e_test
@@ -28,3 +28,251 @@ rename<Box<felt>>([1]) -> ([2]);
 return([2]);
 
 test::foo@0([0]: felt) -> (Box<felt>);
+
+//! > ==========================================================================
+
+//! > unbox libfunc for felt (size 1)
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(x: Box::<felt>) -> felt {
+    unbox::<felt>(x)
+}
+
+//! > casm
+[ap + 0] = [[fp + -3] + 0], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 1})
+
+//! > sierra_code
+type felt = felt;
+type Box<felt> = Box<felt>;
+
+libfunc unbox<felt> = unbox<felt>;
+libfunc store_temp<felt> = store_temp<felt>;
+libfunc rename<felt> = rename<felt>;
+
+unbox<felt>([0]) -> ([1]);
+store_temp<felt>([1]) -> ([1]);
+rename<felt>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: Box<felt>) -> (felt);
+
+//! > ==========================================================================
+
+//! > into_box libfunc for u256 (size 2)
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(x: u256) -> Box::<u256> {
+    into_box::<u256>(x)
+}
+
+//! > casm
+%{ memory[ap + 0] = segments.add() %}
+[fp + -4] = [[ap + 0] + 0], ap++;
+[fp + -3] = [[ap + -1] + 1];
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 2})
+
+//! > sierra_code
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type Box<core::integer::u256> = Box<core::integer::u256>;
+
+libfunc into_box<core::integer::u256> = into_box<core::integer::u256>;
+libfunc rename<Box<core::integer::u256>> = rename<Box<core::integer::u256>>;
+
+into_box<core::integer::u256>([0]) -> ([1]);
+rename<Box<core::integer::u256>>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: core::integer::u256) -> (Box<core::integer::u256>);
+
+//! > ==========================================================================
+
+//! > unbox libfunc for u256 (size 2)
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(x: Box::<u256>) -> u256 {
+    unbox::<u256>(x)
+}
+
+//! > casm
+[ap + 0] = [[fp + -3] + 0], ap++;
+[ap + 0] = [[fp + -3] + 1], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 2})
+
+//! > sierra_code
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type Box<core::integer::u256> = Box<core::integer::u256>;
+
+libfunc unbox<core::integer::u256> = unbox<core::integer::u256>;
+libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
+libfunc rename<core::integer::u256> = rename<core::integer::u256>;
+
+unbox<core::integer::u256>([0]) -> ([1]);
+store_temp<core::integer::u256>([1]) -> ([1]);
+rename<core::integer::u256>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
+
+//! > ==========================================================================
+
+//! > into_box libfunc for unit type (size 0)
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo() -> Box::<()> {
+    into_box::<()>(())
+}
+
+//! > casm
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple>;
+type Box<Unit> = Box<Unit>;
+
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+libfunc into_box<Unit> = into_box<Unit>;
+libfunc rename<Box<Unit>> = rename<Box<Unit>>;
+
+struct_construct<Unit>() -> ([0]);
+store_temp<Unit>([0]) -> ([0]);
+into_box<Unit>([0]) -> ([1]);
+rename<Box<Unit>>([1]) -> ([2]);
+return([2]);
+
+test::foo@0() -> (Box<Unit>);
+
+//! > ==========================================================================
+
+//! > unbox libfunc for unit type (size 0)
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(x: Box::<()>) {
+    // TODO(orizi): Add an unbox when support for returning unit-type from an extern libfunc does
+    // not cause a signature mismatch.
+}
+
+//! > casm
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple>;
+type Box<Unit> = Box<Unit>;
+
+libfunc drop<Box<Unit>> = drop<Box<Unit>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+libfunc rename<Unit> = rename<Unit>;
+
+drop<Box<Unit>>([0]) -> ();
+struct_construct<Unit>() -> ([1]);
+store_temp<Unit>([1]) -> ([1]);
+rename<Unit>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: Box<Unit>) -> (Unit);
+
+//! > ==========================================================================
+
+//! > into_box libfunc for empty struct (size 0)
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+struct Empty {}
+fn foo() -> Box::<Empty> {
+    into_box::<Empty>(Empty{})
+}
+
+//! > casm
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({})
+
+//! > sierra_code
+type test::Empty = Struct<ut@test::Empty>;
+type Box<test::Empty> = Box<test::Empty>;
+
+libfunc struct_construct<test::Empty> = struct_construct<test::Empty>;
+libfunc store_temp<test::Empty> = store_temp<test::Empty>;
+libfunc into_box<test::Empty> = into_box<test::Empty>;
+libfunc rename<Box<test::Empty>> = rename<Box<test::Empty>>;
+
+struct_construct<test::Empty>() -> ([0]);
+store_temp<test::Empty>([0]) -> ([0]);
+into_box<test::Empty>([0]) -> ([1]);
+rename<Box<test::Empty>>([1]) -> ([2]);
+return([2]);
+
+test::foo@0() -> (Box<test::Empty>);
+
+//! > ==========================================================================
+
+//! > unbox libfunc for empty struct (size 0)
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+struct Empty {}
+fn foo(x: Box::<Empty>) -> Empty {
+    unbox::<Empty>(x)
+}
+
+//! > casm
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({})
+
+//! > sierra_code
+type test::Empty = Struct<ut@test::Empty>;
+type Box<test::Empty> = Box<test::Empty>;
+
+libfunc unbox<test::Empty> = unbox<test::Empty>;
+libfunc store_temp<test::Empty> = store_temp<test::Empty>;
+libfunc rename<test::Empty> = rename<test::Empty>;
+
+unbox<test::Empty>([0]) -> ([1]);
+store_temp<test::Empty>([1]) -> ([1]);
+rename<test::Empty>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: Box<test::Empty>) -> (test::Empty);
