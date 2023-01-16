@@ -5,6 +5,7 @@
 
 use std::ops::{Deref, DerefMut};
 
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
@@ -168,6 +169,8 @@ pub struct Variable {
     pub duplicatable: bool,
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
+    /// Location of the variable.
+    pub location: StableLocation,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
