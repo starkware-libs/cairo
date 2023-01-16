@@ -13,6 +13,7 @@ pub use crate::expr::pattern::{
     PatternVariable,
 };
 pub use crate::items::enm::{ConcreteVariant, Variant};
+pub use crate::items::function_with_body::FunctionBody;
 pub use crate::items::functions::{ConcreteFunction, FunctionId, FunctionLongId, Signature};
 pub use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
 pub use crate::items::strct::Member;

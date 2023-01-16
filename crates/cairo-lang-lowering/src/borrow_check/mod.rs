@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use cairo_lang_defs::ids::ModuleFileId;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 
 pub use self::demand::Demand;
 use crate::diagnostic::LoweringDiagnosticKind::*;
@@ -30,8 +29,6 @@ pub struct BorrowChecker<'a> {
     diagnostics: &'a mut LoweringDiagnostics,
     lowered: &'a FlatLowered,
     cache: HashMap<RealBlock, Demand>,
-    // TODO(spapini): Remove when variables carry their stable pointers.
-    dummy_stable_ptr: SyntaxStablePtrId,
 }
 
 impl<'a> BorrowChecker<'a> {
@@ -162,9 +159,10 @@ impl<'a> BorrowChecker<'a> {
                     // Variable demanded only on some branches. It should be dropped in other.
                     // If it's not drop, that is an issue.
                     // Currently disabled, since Drop is not properly implemented everywhere.
+                    let var = &self.lowered.variables[*var];
                     #[allow(clippy::overly_complex_bool_expr)]
-                    if false && !self.lowered.variables[*var].droppable {
-                        self.diagnostics.report(self.dummy_stable_ptr, VariableNotDropped);
+                    if false && !var.droppable {
+                        self.diagnostics.report_by_location(var.location, VariableNotDropped);
                     }
                     // Report only once per variable.
                     break;
@@ -176,21 +174,13 @@ impl<'a> BorrowChecker<'a> {
 }
 
 /// Report borrow checking diagnostics.
-pub fn borrow_check(
-    module_file_id: ModuleFileId,
-    dummy_stable_ptr: SyntaxStablePtrId,
-    lowered: &mut FlatLowered,
-) {
+pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
     let mut diagnostics = LoweringDiagnostics::new(module_file_id);
     diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
 
     if let Ok(root) = lowered.root {
-        let mut checker = BorrowChecker {
-            diagnostics: &mut diagnostics,
-            lowered,
-            cache: Default::default(),
-            dummy_stable_ptr,
-        };
+        let mut checker =
+            BorrowChecker { diagnostics: &mut diagnostics, lowered, cache: Default::default() };
         let root_demand = checker.get_demand(None, RealBlock(root, 0));
         assert!(root_demand.vars.is_empty(), "Undefined variable should not happen at this stage");
     }
