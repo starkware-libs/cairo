@@ -72,6 +72,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations, InfoProvider: InvocationCostI
         Bool(BoolConcreteLibfunc::And(_)) => vec![ops.const_cost(0)],
         Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.const_cost(1)],
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.const_cost(1)],
+        Bool(BoolConcreteLibfunc::Or(_)) => vec![ops.const_cost(2)],
         Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.const_cost(2), ops.const_cost(2)],
         Ec(libfunc) => match libfunc {
             EcConcreteLibfunc::AddToState(_) => vec![ops.const_cost(9)],
