@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic as semantic;
@@ -57,7 +58,8 @@ impl<'db> LoweringContextBuilder<'db> {
         let generic_params = self.db.function_with_body_generic_params(self.function_id)?;
         Ok(LoweringContext {
             db: self.db,
-            function_def: &self.function_def,
+            function_id: self.function_id,
+            function_body: &self.function_def,
             signature: &self.signature,
             diagnostics: LoweringDiagnostics::new(self.function_id.module_file(self.db.upcast())),
             variables: Arena::default(),
@@ -78,9 +80,11 @@ impl<'db> LoweringContextBuilder<'db> {
 /// Context for the lowering phase of a free function.
 pub struct LoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
+    /// Id for the current function being lowered.
+    pub function_id: FunctionWithBodyId,
     /// Semantic model for current function body.
-    pub function_def: &'db semantic::items::function_with_body::FunctionBody,
-    // Semantic signature for current function.
+    pub function_body: &'db semantic::FunctionBody,
+    /// Semantic signature for current function.
     pub signature: &'db semantic::Signature,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
@@ -101,14 +105,26 @@ pub struct LoweringContext<'db> {
     pub expr_formatter: ExprFormatter<'db>,
 }
 impl<'db> LoweringContext<'db> {
-    pub fn new_var(&mut self, ty: semantic::TypeId) -> VariableId {
-        let ty_info = self.db.type_info(self.lookup_context.clone(), ty).unwrap_or_default();
+    pub fn new_var(&mut self, req: VarRequest) -> VariableId {
+        let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty).unwrap_or_default();
         self.variables.alloc(Variable {
             duplicatable: ty_info.duplicatable,
             droppable: ty_info.droppable,
-            ty,
+            ty: req.ty,
+            location: req.location,
         })
     }
+
+    /// Retrieves the StableLocation of a stable syntax pointer in the current function file.
+    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> StableLocation {
+        StableLocation::new(self.function_id.module_file_id(self.db.upcast()), stable_ptr)
+    }
+}
+
+/// Request for a lowered variable allocation.
+pub struct VarRequest {
+    pub ty: semantic::TypeId,
+    pub location: StableLocation,
 }
 
 /// Representation of the value of a computed expression.
@@ -117,7 +133,7 @@ pub enum LoweredExpr {
     /// The expression value lies in a variable.
     AtVariable(VariableId),
     /// The expression value is a tuple.
-    Tuple(Vec<LoweredExpr>),
+    Tuple { exprs: Vec<LoweredExpr>, location: StableLocation },
     /// The expression value is an enum result from an extern call.
     ExternEnum(LoweredExprExternEnum),
 }
@@ -129,14 +145,14 @@ impl LoweredExpr {
     ) -> Result<VariableId, LoweringFlowError> {
         match self {
             LoweredExpr::AtVariable(var_id) => Ok(var_id),
-            LoweredExpr::Tuple(exprs) => {
+            LoweredExpr::Tuple { exprs, location } => {
                 let inputs: Vec<_> = exprs
                     .into_iter()
                     .map(|expr| expr.var(ctx, scope))
                     .collect::<Result<Vec<_>, _>>()?;
                 let tys = inputs.iter().map(|var| ctx.variables[*var].ty).collect();
                 let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
-                Ok(generators::StructConstruct { inputs, ty }.add(ctx, scope))
+                Ok(generators::StructConstruct { inputs, ty, location }.add(ctx, scope))
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
         }
@@ -144,7 +160,7 @@ impl LoweredExpr {
     pub fn ty(&self, ctx: &mut LoweringContext<'_>) -> semantic::TypeId {
         match self {
             LoweredExpr::AtVariable(var) => ctx.variables[*var].ty,
-            LoweredExpr::Tuple(exprs) => ctx.db.intern_type(semantic::TypeLongId::Tuple(
+            LoweredExpr::Tuple { exprs, .. } => ctx.db.intern_type(semantic::TypeLongId::Tuple(
                 exprs.iter().map(|expr| expr.ty(ctx)).collect(),
             )),
             LoweredExpr::ExternEnum(extern_enum) => {
@@ -165,7 +181,7 @@ pub struct LoweredExprExternEnum {
     pub ref_args: Vec<semantic::VarId>,
     /// The implicits used/changed by the function.
     pub implicits: Vec<semantic::TypeId>,
-    pub stable_ptr: SyntaxStablePtrId,
+    pub location: StableLocation,
 }
 impl LoweredExprExternEnum {
     pub fn var(
@@ -185,34 +201,46 @@ impl LoweredExprExternEnum {
 
                 // Bind implicits.
                 for ty in &self.implicits {
-                    let var = subscope.add_input(ctx, *ty);
+                    let var =
+                        subscope.add_input(ctx, VarRequest { ty: *ty, location: self.location });
                     subscope.put_implicit(ctx, *ty, var);
                 }
                 // Bind the ref parameters.
                 for semantic in &self.ref_args {
-                    let var = subscope.add_input(ctx, ctx.semantic_defs[*semantic].ty());
+                    let var = subscope.add_input(
+                        ctx,
+                        VarRequest {
+                            ty: ctx.semantic_defs[*semantic].ty(),
+                            location: self.location,
+                        },
+                    );
                     subscope.put_semantic(ctx, *semantic, var);
                 }
                 subscope.bind_refs();
 
                 let variant_vars = extern_facade_return_tys(ctx, concrete_variant.ty)
                     .into_iter()
-                    .map(|ty| subscope.add_input(ctx, ty))
+                    .map(|ty| subscope.add_input(ctx, VarRequest { ty, location: self.location }))
                     .collect();
-                let maybe_input = extern_facade_expr(ctx, concrete_variant.ty, variant_vars)
-                    .var(ctx, &mut subscope);
+                let maybe_input =
+                    extern_facade_expr(ctx, concrete_variant.ty, variant_vars, self.location)
+                        .var(ctx, &mut subscope);
                 let input = match maybe_input {
                     Ok(var) => var,
                     Err(err) => return lowering_flow_error_to_sealed_block(ctx, subscope, err),
                 };
-                let result = generators::EnumConstruct { input, variant: concrete_variant }
-                    .add(ctx, &mut subscope);
+                let result = generators::EnumConstruct {
+                    input,
+                    variant: concrete_variant,
+                    location: self.location,
+                }
+                .add(ctx, &mut subscope);
                 Ok(subscope.goto_callsite(Some(result)))
             })
             .collect::<Maybe<_>>()
             .map_err(LoweringFlowError::Failed)?;
 
-        let merged = merge_sealed(ctx, scope, sealed_blocks);
+        let merged = merge_sealed(ctx, scope, sealed_blocks, self.location);
         let arms = zip_eq(concrete_variants, merged.blocks).collect();
         // Emit the statement.
         scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {

@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(x: ACopy, y:ADrop) {
+fn foo(x: ACopy, y: ADrop) {
   if true {
     use_a_copy(x);
     use_a_drop(y);
@@ -101,7 +101,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(x: ACopy, y:ADrop) {
+fn foo(x: ACopy, y: ADrop) {
   if true {
     use_a_copy(x);
     use_a_drop(y);
@@ -126,9 +126,9 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:8:1
-fn foo(x: ACopy, y:ADrop) {
-^*************************^
+ --> lib.cairo:8:18
+fn foo(x: ACopy, y: ADrop) {
+                 ^
 
 //! > lowering_structured
 blk0:
@@ -227,9 +227,9 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:8:1
+ --> lib.cairo:8:12
 fn foo(ref x: ADrop, y: ADrop) {
-^******************************^
+           ^
 
 //! > lowering_structured
 blk0 (root):
