@@ -411,3 +411,37 @@ Statements:
   (v1: core::felt) <- core::felt_const<Literal(LiteralLongId { value: 17 }),>()
 End:
   Return(v1)
+
+//! > ==========================================================================
+
+//! > Test passing same argument as two ref params.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(mut a : felt) -> felt {
+  bar(a, a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(ref a: felt, ref b: felt) -> felt nopanic  {
+  a = 0;
+  b = 1;
+  a + b
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:7:3
+  bar(a, a)
+  ^*******^
+
+//! > lowering_structured
+
+//! > lowering_flat
