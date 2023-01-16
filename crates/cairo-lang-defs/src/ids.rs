@@ -458,21 +458,17 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
     }
 }
 
-// TODO(yuval/shahar): We should not have trait functions after semantic. To fix this, we need to
-// split the current `GenericFunctionId` to 2 enums. One for describing functions that can be
-// concretized (does not include trait functions) and one for types of function signatures (includes
-// trait functions).
 define_language_element_id_as_enum! {
     #[toplevel]
-    /// Generic function ids enum.
-    pub enum GenericFunctionId {
+    /// The ID of a function's signature in the code.
+    pub enum FunctionSignatureId {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
         Trait(TraitFunctionId),
         Impl(ImplFunctionId),
     }
 }
-impl GenericFunctionId {
+impl FunctionSignatureId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
         format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
     }
@@ -491,25 +487,6 @@ define_language_element_id_as_enum! {
 impl GenericTypeId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
         format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
-    }
-}
-
-/// Conversion from ModuleItemId to GenericFunctionId.
-impl OptionFrom<ModuleItemId> for GenericFunctionId {
-    fn option_from(item: ModuleItemId) -> Option<Self> {
-        match item {
-            ModuleItemId::FreeFunction(id) => Some(GenericFunctionId::Free(id)),
-            ModuleItemId::ExternFunction(id) => Some(GenericFunctionId::Extern(id)),
-            ModuleItemId::Constant(_)
-            | ModuleItemId::Submodule(_)
-            | ModuleItemId::Use(_)
-            | ModuleItemId::Trait(_)
-            | ModuleItemId::Impl(_)
-            | ModuleItemId::Struct(_)
-            | ModuleItemId::Enum(_)
-            | ModuleItemId::TypeAlias(_)
-            | ModuleItemId::ExternType(_) => None,
-        }
     }
 }
 

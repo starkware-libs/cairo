@@ -4,14 +4,17 @@ use anyhow::Context;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId, TopLevelLanguageElementId};
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::{FunctionWithBodyId, TopLevelLanguageElementId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
+use cairo_lang_semantic::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
+use cairo_lang_semantic::{ConcreteFunction, ConcreteImplLongId, FunctionLongId};
 use cairo_lang_sierra::{self};
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
+use cairo_lang_utils::Upcast;
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -119,7 +122,20 @@ fn get_entry_points(
             function: ConcreteFunction {
                 generic_function: match *function_with_body_id {
                     FunctionWithBodyId::Free(free_func_id) => GenericFunctionId::Free(free_func_id),
-                    FunctionWithBodyId::Impl(impl_func_id) => GenericFunctionId::Impl(impl_func_id),
+                    FunctionWithBodyId::Impl(impl_func_id) => {
+                        GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
+                            concrete_impl: db.intern_concrete_impl(ConcreteImplLongId {
+                                impl_id: impl_func_id.impl_id(<RootDatabase as Upcast<
+                                    (dyn DefsGroup + 'static),
+                                >>::upcast(
+                                    db
+                                )),
+                                // TODO(yuval): Add generic arguments.
+                                generic_args: vec![],
+                            }),
+                            function: impl_func_id,
+                        })
+                    }
                 },
                 generic_args: vec![],
             },

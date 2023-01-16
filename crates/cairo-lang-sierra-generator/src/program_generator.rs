@@ -4,6 +4,7 @@ use std::sync::Arc;
 use cairo_lang_defs as defs;
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe};
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
@@ -206,15 +207,11 @@ fn try_get_function_with_body_id(
         .function;
     assert!(function.generic_args.is_empty(), "Generic args are not yet supported");
     match function.generic_function {
-        defs::ids::GenericFunctionId::Free(free_function_id) => {
-            Ok(FunctionWithBodyId::Free(free_function_id))
+        GenericFunctionId::Free(free_function_id) => Ok(FunctionWithBodyId::Free(free_function_id)),
+        GenericFunctionId::Impl(impl_function_id) => {
+            Ok(FunctionWithBodyId::Impl(impl_function_id.function))
         }
-        defs::ids::GenericFunctionId::Impl(impl_function_id) => {
-            Ok(FunctionWithBodyId::Impl(impl_function_id))
-        }
-        defs::ids::GenericFunctionId::Extern(_) | defs::ids::GenericFunctionId::Trait(_) => {
-            Err(skip_diagnostic())
-        }
+        GenericFunctionId::Extern(_) => Err(skip_diagnostic()),
     }
 }
 

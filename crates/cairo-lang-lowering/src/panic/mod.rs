@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
+use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{get_enum_concrete_variant, get_panic_ty};
@@ -8,6 +8,7 @@ use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::Arena;
 use itertools::chain;
+use semantic::items::functions::GenericFunctionId;
 
 use crate::blocks::{Blocks, FlatBlocks};
 use crate::db::LoweringGroup;
@@ -142,7 +143,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     }
                     GenericFunctionId::Impl(impl_callee)
                         if self.db().function_with_body_may_panic(FunctionWithBodyId::Impl(
-                            impl_callee,
+                            impl_callee.function,
                         ))? =>
                     {
                         self.handle_stmt_call(call)

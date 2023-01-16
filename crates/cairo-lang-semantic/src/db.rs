@@ -4,8 +4,8 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId,
-    GenericFunctionId, GenericParamId, GenericTypeId, ImplFunctionId, ImplId, LanguageElementId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionSignatureId,
+    FunctionWithBodyId, GenericParamId, GenericTypeId, ImplFunctionId, ImplId, LanguageElementId,
     LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId,
     VariantId,
 };
@@ -550,22 +550,22 @@ pub trait SemanticGroup:
         extern_type_id: ExternTypeId,
     ) -> Maybe<Vec<GenericParamId>>;
 
-    // Generic function.
+    // Function Signature.
     // =================
-    /// Returns the signature of a generic function. This include free functions, extern functions,
-    /// etc...
-    #[salsa::invoke(items::functions::generic_function_signature)]
-    fn generic_function_signature(
+    /// Returns the signature of the given FunctionSignatureId. This include free functions, extern
+    /// functions, etc...
+    #[salsa::invoke(items::functions::function_signature_signature)]
+    fn function_signature_signature(
         &self,
-        generic_function: GenericFunctionId,
+        function_signature_id: FunctionSignatureId,
     ) -> Maybe<semantic::Signature>;
 
-    /// Returns the signature of a generic function. This include free functions, extern functions,
-    /// etc...
-    #[salsa::invoke(items::functions::generic_function_generic_params)]
-    fn generic_function_generic_params(
+    /// Returns the generic parameters of the given FunctionSignatureId. This include free
+    /// functions, extern functions, etc...
+    #[salsa::invoke(items::functions::function_signature_generic_params)]
+    fn function_signature_generic_params(
         &self,
-        generic_function: GenericFunctionId,
+        function_signature_id: FunctionSignatureId,
     ) -> Maybe<Vec<GenericParamId>>;
 
     // Concrete function.

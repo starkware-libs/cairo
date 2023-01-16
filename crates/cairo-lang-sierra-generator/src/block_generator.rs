@@ -2,8 +2,8 @@
 #[path = "block_generator_test.rs"]
 mod test;
 
-use cairo_lang_defs::ids::GenericFunctionId;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
 use sierra::program;
@@ -270,9 +270,6 @@ fn generate_statement_call_code(
 
             statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
             Ok(statements)
-        }
-        GenericFunctionId::Trait(_) => {
-            panic!("Trait function should be replaced with concrete functions.")
         }
         GenericFunctionId::Impl(_) => todo!(),
     }

@@ -1,4 +1,3 @@
-use cairo_lang_defs::ids::GenericFunctionId;
 use cairo_lang_semantic::corelib::get_const_libfunc_name_by_type;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::LibfuncSignature;
@@ -7,6 +6,7 @@ use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use itertools::Itertools;
 use num_bigint::BigInt;
+use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
@@ -254,9 +254,6 @@ pub fn get_concrete_libfunc_id(
             }
 
             (concrete_function, generic_libfunc_id(db, extern_id, generic_args))
-        }
-        GenericFunctionId::Trait(_) => {
-            panic!("Trait function should be replaced with concrete functions.")
         }
         GenericFunctionId::Impl(_) => todo!(),
     }

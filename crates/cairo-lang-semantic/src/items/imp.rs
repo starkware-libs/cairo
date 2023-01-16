@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::vec;
 
 use cairo_lang_defs::ids::{
-    GenericFunctionId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
+    FunctionSignatureId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
     LanguageElementId, ModuleId,
 };
 use cairo_lang_diagnostics::{
@@ -504,7 +504,7 @@ pub fn priv_impl_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        GenericFunctionId::Impl(impl_function_id),
+        FunctionSignatureId::Impl(impl_function_id),
         &mut environment,
     );
 
