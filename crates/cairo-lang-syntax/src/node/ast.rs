@@ -3967,7 +3967,7 @@ impl TypedSyntaxNode for PatternList {
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum PatternStructParam {
-    Single(TerminalIdentifier),
+    Single(PatternIdentifier),
     WithExpr(PatternStructParamWithExpr),
     Tail(TerminalDotDot),
 }
@@ -3978,8 +3978,8 @@ impl PatternStructParamPtr {
         self.0
     }
 }
-impl From<TerminalIdentifierPtr> for PatternStructParamPtr {
-    fn from(value: TerminalIdentifierPtr) -> Self {
+impl From<PatternIdentifierPtr> for PatternStructParamPtr {
+    fn from(value: PatternIdentifierPtr) -> Self {
         Self(value.0)
     }
 }
@@ -3993,8 +3993,8 @@ impl From<TerminalDotDotPtr> for PatternStructParamPtr {
         Self(value.0)
     }
 }
-impl From<TerminalIdentifierGreen> for PatternStructParamGreen {
-    fn from(value: TerminalIdentifierGreen) -> Self {
+impl From<PatternIdentifierGreen> for PatternStructParamGreen {
+    fn from(value: PatternIdentifierGreen) -> Self {
         Self(value.0)
     }
 }
@@ -4020,8 +4020,8 @@ impl TypedSyntaxNode for PatternStructParam {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalIdentifier => {
-                PatternStructParam::Single(TerminalIdentifier::from_syntax_node(db, node))
+            SyntaxKind::PatternIdentifier => {
+                PatternStructParam::Single(PatternIdentifier::from_syntax_node(db, node))
             }
             SyntaxKind::PatternStructParamWithExpr => {
                 PatternStructParam::WithExpr(PatternStructParamWithExpr::from_syntax_node(db, node))
@@ -4055,16 +4055,18 @@ pub struct PatternStructParamWithExpr {
     children: Vec<SyntaxNode>,
 }
 impl PatternStructParamWithExpr {
-    pub const INDEX_NAME: usize = 0;
-    pub const INDEX_COLON: usize = 1;
-    pub const INDEX_PATTERN: usize = 2;
+    pub const INDEX_MODIFIERS: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_COLON: usize = 2;
+    pub const INDEX_PATTERN: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        modifiers: ModifierListGreen,
         name: TerminalIdentifierGreen,
         colon: TerminalColonGreen,
         pattern: PatternGreen,
     ) -> PatternStructParamWithExprGreen {
-        let children: Vec<GreenId> = vec![name.0, colon.0, pattern.0];
+        let children: Vec<GreenId> = vec![modifiers.0, name.0, colon.0, pattern.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         PatternStructParamWithExprGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::PatternStructParamWithExpr,
@@ -4073,14 +4075,17 @@ impl PatternStructParamWithExpr {
     }
 }
 impl PatternStructParamWithExpr {
+    pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
+        ModifierList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[1].clone())
+        TerminalColon::from_syntax_node(db, self.children[2].clone())
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[2].clone())
+        Pattern::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4101,6 +4106,7 @@ impl TypedSyntaxNode for PatternStructParamWithExpr {
             kind: SyntaxKind::PatternStructParamWithExpr,
             details: GreenNodeDetails::Node {
                 children: vec![
+                    ModifierList::missing(db).0,
                     TerminalIdentifier::missing(db).0,
                     TerminalColon::missing(db).0,
                     Pattern::missing(db).0,

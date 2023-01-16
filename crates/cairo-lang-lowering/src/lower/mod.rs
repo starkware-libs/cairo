@@ -264,7 +264,11 @@ fn lower_single_pattern(
     log::trace!("Lowering a single pattern.");
     match pattern {
         semantic::Pattern::Literal(_) => unreachable!(),
-        semantic::Pattern::Variable(semantic::PatternVariable { name: _, var: sem_var }) => {
+        semantic::Pattern::Variable(semantic::PatternVariable {
+            name: _,
+            var: sem_var,
+            stable_ptr: _,
+        }) => {
             let sem_var = semantic::Variable::Local(sem_var.clone());
             // Deposit the owned variable in the semantic variables store.
             let var = lowered_expr.var(ctx, scope)?;
@@ -288,7 +292,7 @@ fn lower_single_pattern(
                 }
             }
         }
-        semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty }) => {
+        semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty, stable_ptr: _ }) => {
             let outputs = if let LoweredExpr::Tuple(exprs) = lowered_expr {
                 exprs
             } else {

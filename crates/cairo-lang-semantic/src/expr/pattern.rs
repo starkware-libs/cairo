@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::StructId;
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax::node::ast;
 use smol_str::SmolStr;
 
 use super::fmt::ExprFormatter;
@@ -56,6 +57,17 @@ impl Pattern {
             Pattern::Literal(_) | Pattern::Otherwise(_) => vec![],
         }
     }
+
+    pub fn stable_ptr(&self) -> ast::PatternPtr {
+        match self {
+            Pattern::Literal(pat) => pat.stable_ptr,
+            Pattern::Variable(pat) => pat.stable_ptr,
+            Pattern::Struct(pat) => pat.stable_ptr.into(),
+            Pattern::Tuple(pat) => pat.stable_ptr.into(),
+            Pattern::EnumVariant(pat) => pat.stable_ptr.into(),
+            Pattern::Otherwise(pat) => pat.stable_ptr.into(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -63,6 +75,8 @@ impl Pattern {
 pub struct PatternLiteral {
     pub literal: ExprLiteral,
     pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::PatternPtr,
 }
 
 /// A pattern that binds the matched value to a variable.
@@ -70,6 +84,7 @@ pub struct PatternLiteral {
 pub struct PatternVariable {
     pub name: SmolStr,
     pub var: LocalVariable,
+    pub stable_ptr: ast::PatternPtr,
 }
 impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, _db: &ExprFormatter<'_>) -> std::fmt::Result {
@@ -85,6 +100,8 @@ pub struct PatternStruct {
     // TODO(spapini): This should be ConcreteMember, when available.
     pub field_patterns: Vec<(semantic::Member, Box<Pattern>)>,
     pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::PatternStructPtr,
 }
 
 /// A pattern that destructures a tuple to its fields.
@@ -93,6 +110,8 @@ pub struct PatternStruct {
 pub struct PatternTuple {
     pub field_patterns: Vec<Box<Pattern>>,
     pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::PatternTuplePtr,
 }
 
 /// A pattern that destructures a specific variant of an enum to its inner value.
@@ -102,10 +121,14 @@ pub struct PatternEnumVariant {
     pub variant: semantic::ConcreteVariant,
     pub inner_pattern: Box<Pattern>,
     pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::PatternEnumPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternOtherwise {
     pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::TerminalUnderscorePtr,
 }
