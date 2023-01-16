@@ -303,7 +303,7 @@ pub trait SemanticGroup:
     ) -> Maybe<Vec<ConcreteImplId>>;
     /// Returns the functions in the impl.
     #[salsa::invoke(items::imp::impl_functions)]
-    fn impl_functions(&self, impl_id: ImplId) -> Maybe<Vec<ImplFunctionId>>;
+    fn impl_functions(&self, impl_id: ImplId) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>>;
 
     // Impl function.
     // ================
