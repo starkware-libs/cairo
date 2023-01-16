@@ -13,7 +13,7 @@ use itertools::{izip, zip_eq};
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
-use crate::lower::context::{LoweringContext, LoweringContextBuilder};
+use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall, StatementCallBlock,
     StatementEnumConstruct, StatementLiteral, StatementMatchEnum, StatementMatchExtern,
@@ -238,9 +238,12 @@ impl<'db> FunctionInlinerRewriter<'db> {
             let mut statements = vec![];
 
             let mut rename_var = |old_var_id: &VariableId| {
-                *renamed_vars
-                    .entry(*old_var_id)
-                    .or_insert_with(|| self.ctx.new_var(lowered.variables[*old_var_id].ty))
+                *renamed_vars.entry(*old_var_id).or_insert_with(|| {
+                    self.ctx.new_var(VarRequest {
+                        ty: lowered.variables[*old_var_id].ty,
+                        location: lowered.variables[*old_var_id].location,
+                    })
+                })
             };
             for stmt in &block.statements {
                 statements.push(rebuild_statement(stmt, &mut rename_var, &renamed_blocks));
