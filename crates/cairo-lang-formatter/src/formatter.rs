@@ -284,13 +284,6 @@ impl LineBuilder {
             })
             .collect()
     }
-    /// Returns a vector of the positions of all the break line point children which have the
-    /// highest precedence from within all the break line point children.
-    fn get_current_break_positions(&self) -> Option<(Vec<usize>, BreakLinePointProperties)> {
-        self.get_next_break_properties().map(|properties| {
-            (self.get_break_point_indices_by_precedence(properties.precedence), properties)
-        })
-    }
     /// Recursively calls break_line_tree until no break_line_point or protected zone exists in the
     /// tree. Returns a vec of strings, each one represents a line.
     fn break_line_tree(&self, max_line_width: usize, tab_size: usize) -> Vec<String> {
@@ -331,9 +324,11 @@ impl LineBuilder {
         max_line_width: usize,
         tab_size: usize,
     ) -> Vec<LineBuilder> {
-        let Some((mut breaking_positions, break_line_point_properties)) = self.get_current_break_positions() else {
+        let Some(break_line_point_properties) = self.get_next_break_properties() else {
             return vec![self.clone()];
         };
+        let mut breaking_positions =
+            self.get_break_point_indices_by_precedence(break_line_point_properties.precedence);
         if self.width() <= max_line_width && break_line_point_properties.is_optional {
             return vec![self.remove_all_optional_break_line_points()];
         }
