@@ -14,8 +14,6 @@ use crate::detect::detect_corelib;
 use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
 use crate::span::{FileSummary, TextOffset};
 
-pub const CORELIB_CRATE_NAME: &str = "core";
-
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
 pub trait FilesGroup {
@@ -51,15 +49,12 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     db.set_file_overrides(Arc::new(HashMap::new()));
     db.set_crate_roots(Arc::new(HashMap::new()));
 
-    // Set builtin core config if detected.
-    match detect_corelib() {
-        Some(path) => {
-            let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
-            let core_root_dir = Directory(path);
-            db.set_crate_root(core_crate, Some(core_root_dir));
-        }
-        None => {}
-    }
+    // Set core config.
+    let core_crate = db.intern_crate(CrateLongId("core".into()));
+    // TODO(spapini): find the correct path.
+    let path = detect_corelib();
+    let core_root_dir = Directory(path);
+    db.set_crate_root(core_crate, Some(core_root_dir));
 }
 
 impl AsFilesGroupMut for dyn FilesGroup {

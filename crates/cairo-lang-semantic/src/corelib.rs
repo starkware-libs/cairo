@@ -65,15 +65,7 @@ pub fn get_core_ty_by_name(
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> TypeId {
-    match try_get_core_ty_by_name(db, name, generic_args) {
-        Ok(value) => value,
-        _ => {
-            panic!(
-                "Corelib not found! You can provide custom path to corelib by placing \"core\" \
-                 crate in the cairo project toml file."
-            )
-        }
-    }
+    try_get_core_ty_by_name(db, name, generic_args).unwrap()
 }
 
 pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
