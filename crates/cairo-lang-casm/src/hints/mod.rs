@@ -136,6 +136,15 @@ pub enum Hint {
         x: CellRef,
         y: CellRef,
     },
+    /// Computes the square root of `val`, if `val` is a quadratic residue, and of `3 * val`
+    /// otherwise.
+    ///
+    /// Since 3 is not a quadratic residue, exactly one of `val` and `3 * val` is a quadratic
+    /// residue (unless `val` is 0). This allows proving that `val` is not a quadratic residue.
+    FieldSqrt {
+        val: ResOperand,
+        sqrt: CellRef,
+    },
     /// Represents a hint that triggers a system call.
     SystemCall {
         system: ResOperand,
@@ -278,6 +287,23 @@ impl Display for Hint {
                         from starkware.python.math_utils import random_ec_point
                         (memory{x}, memory{y}) = random_ec_point(FIELD_PRIME, ALPHA, BETA)
                     "
+                )
+            }
+            Hint::FieldSqrt { val, sqrt } => {
+                writedoc!(
+                    f,
+                    "
+
+                        from starkware.crypto.signature.signature import FIELD_PRIME
+                        from starkware.python.math_utils import is_quad_residue, sqrt
+
+                        val = {}
+                        if is_quad_residue(val, FIELD_PRIME):
+                            memory{sqrt} = sqrt(val, FIELD_PRIME)
+                        else:
+                            memory{sqrt} = sqrt(val * 3, FIELD_PRIME)
+                        ",
+                    ResOperandFormatter(val)
                 )
             }
             Hint::SystemCall { system } => {
