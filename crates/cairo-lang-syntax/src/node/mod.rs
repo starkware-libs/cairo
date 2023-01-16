@@ -176,8 +176,8 @@ impl SyntaxNode {
 
     /// Returns all the text under the syntax node.
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text(self, db: &dyn SyntaxGroup) -> String {
-        format!("{}", NodeTextFormatter { node: &self, db })
+    pub fn get_text(&self, db: &dyn SyntaxGroup) -> String {
+        format!("{}", NodeTextFormatter { node: self, db })
     }
 
     /// Returns all the text under the syntax node, without the outmost trivia (the leading trivia

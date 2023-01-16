@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::ops::Deref;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId, ModuleId, ModuleItemId};
@@ -11,6 +12,7 @@ use cairo_lang_utils::Upcast;
 
 use crate::borrow_check::borrow_check;
 use crate::diagnostic::LoweringDiagnostic;
+use crate::inline::PrivInlineData;
 use crate::lower::lower;
 use crate::panic::lower_panics;
 use crate::{FlatLowered, StructuredLowered};
@@ -24,12 +26,21 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<StructuredLowered>>;
 
+    // Reports inlining diagnostics.
+    #[salsa::invoke(crate::inline::priv_inline_data)]
+    fn priv_inline_data(&self, function_id: FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
+
     /// Computes the lowered representation of a function with a body.
     fn function_with_body_lowered_flat(
         &self,
         function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
+    /// Aggregates function level semantic diagnostics.
+    fn function_with_body_lowering_diagnostics(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Arc<Diagnostics<LoweringDiagnostic>>>;
     /// Aggregates module level semantic diagnostics.
     fn module_lowering_diagnostics(
         &self,
@@ -129,6 +140,31 @@ fn function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
+fn function_with_body_lowering_diagnostics(
+    db: &dyn LoweringGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<Arc<Diagnostics<LoweringDiagnostic>>> {
+    let mut diagnostics = DiagnosticsBuilder::default();
+    diagnostics.extend(
+        db.function_with_body_lowered_structured(function_id)
+            .map(|lowered| lowered.diagnostics.clone())
+            .unwrap_or_default(),
+    );
+
+    diagnostics.extend(
+        db.priv_inline_data(function_id)
+            .map(|inline_data| inline_data.diagnostics.clone())
+            .unwrap_or_default(),
+    );
+
+    diagnostics.extend(
+        db.function_with_body_lowered_flat(function_id)
+            .map(|lowered| lowered.diagnostics.clone())
+            .unwrap_or_default(),
+    );
+    Ok(Arc::new(diagnostics.build()))
+}
+
 fn module_lowering_diagnostics(
     db: &dyn LoweringGroup,
     module_id: ModuleId,
@@ -139,14 +175,7 @@ fn module_lowering_diagnostics(
             ModuleItemId::FreeFunction(free_function) => {
                 let function_id = FunctionWithBodyId::Free(*free_function);
                 diagnostics.extend(
-                    db.function_with_body_lowered_structured(function_id)
-                        .map(|lowered| lowered.diagnostics.clone())
-                        .unwrap_or_default(),
-                );
-                diagnostics.extend(
-                    db.function_with_body_lowered_flat(function_id)
-                        .map(|lowered| lowered.diagnostics.clone())
-                        .unwrap_or_default(),
+                    db.function_with_body_lowering_diagnostics(function_id)?.deref().clone(),
                 );
             }
             ModuleItemId::Constant(_) => {}
