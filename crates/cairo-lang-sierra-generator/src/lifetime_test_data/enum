@@ -39,7 +39,7 @@ Statements:
   (v7: core::felt) <- 2u
   (v8: test::MyEnum) <- MyEnum::A(v7)
 End:
-  Callsite(v8 -> v9)
+  Callsite()
 
 blk1:
 Inputs:
@@ -48,7 +48,7 @@ Statements:
   (v12: core::felt) <- core::felt_add(v11, v2)
   (v13: test::MyEnum) <- MyEnum::A(v12)
 End:
-  Callsite(v13 -> v14)
+  Callsite()
 
 blk2:
 Inputs:
@@ -56,21 +56,21 @@ Statements:
   (v18: (core::felt, core::felt)) <- struct_construct(v2, v3)
   (v19: test::MyEnum) <- MyEnum::C(v18)
 End:
-  Callsite(v19 -> v20)
+  Callsite()
 
 blk3:
 Inputs: v4: core::felt
 Statements:
   () <- blk0()
 End:
-  Callsite(v9 -> v21)
+  Callsite()
 
 blk4:
 Inputs: v10: core::felt
 Statements:
   () <- blk1()
 End:
-  Callsite(v14 -> v21)
+  Callsite()
 
 blk5:
 Inputs: v15: (core::felt, core::felt)
@@ -78,7 +78,7 @@ Statements:
   (v16: core::felt, v17: core::felt) <- struct_destructure(v15)
   () <- blk2()
 End:
-  Callsite(v20 -> v21)
+  Callsite()
 
 blk6 (root):
 Inputs: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt
@@ -93,27 +93,23 @@ End:
 
 //! > last_use
 ((BlockId(6), 1), 0)
-((BlockId(3), 1), 0)
-((BlockId(0), 4), 0)
 ((BlockId(0), 3), 0)
 ((BlockId(0), 1), 0)
-((BlockId(4), 1), 0)
-((BlockId(1), 3), 0)
 ((BlockId(1), 2), 0)
 ((BlockId(1), 1), 1)
 ((BlockId(1), 1), 0)
 ((BlockId(1), 0), 1)
 ((BlockId(1), 0), 0)
-((BlockId(5), 2), 0)
-((BlockId(2), 2), 0)
 ((BlockId(2), 1), 0)
 ((BlockId(2), 0), 0)
 ((BlockId(5), 0), 0)
 ((BlockId(6), 0), 0)
 
 //! > drops
-PostStatement((BlockId(6), 0)): v21
+PostStatement((BlockId(0), 3)): v8
 PostStatement((BlockId(0), 1)): v6
 BeginningOfBlock(BlockId(3)): v4, v2, v1
+PostStatement((BlockId(1), 2)): v13
+PostStatement((BlockId(2), 1)): v19
 PostStatement((BlockId(5), 0)): v16, v17
 BeginningOfBlock(BlockId(5)): v1
