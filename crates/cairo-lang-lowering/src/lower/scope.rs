@@ -1,10 +1,11 @@
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::chain;
 
-use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
+use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use crate::{
     BlockId, RefIndex, Statement, StructuredBlock, StructuredBlockEnd, StructuredStatement,
     VarRemapping, VariableId,
@@ -78,8 +79,8 @@ impl BlockBuilder {
     }
 
     /// Adds an input to the block.
-    pub fn add_input(&mut self, ctx: &mut LoweringContext<'_>, ty: semantic::TypeId) -> VariableId {
-        let var_id = ctx.new_var(ty);
+    pub fn add_input(&mut self, ctx: &mut LoweringContext<'_>, req: VarRequest) -> VariableId {
+        let var_id = ctx.new_var(req);
         self.inputs.push(var_id);
         var_id
     }
@@ -322,6 +323,7 @@ pub fn merge_sealed(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockBuilder,
     sealed_blocks: Vec<SealedBlockBuilder>,
+    location: StableLocation,
 ) -> MergedBlocks {
     // TODO(spapini): When adding Gotos, include the callsite target in the required information to
     // merge.
@@ -381,7 +383,7 @@ pub fn merge_sealed(
     let expr = match semantic_remapping.expr {
         _ if n_reachable_blocks == 0 => Err(LoweringFlowError::Unreachable),
         Some(var) => Ok(LoweredExpr::AtVariable(var)),
-        None => Ok(LoweredExpr::Tuple(vec![])),
+        None => Ok(LoweredExpr::Tuple { exprs: vec![], location }),
     };
     MergedBlocks { expr, blocks }
 }

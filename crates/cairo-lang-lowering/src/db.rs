@@ -129,14 +129,9 @@ fn function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let defs_db = db.upcast();
     let structured = db.function_with_body_lowered_structured(function_id)?;
     let mut lowered = lower_panics(db, function_id, &structured)?;
-    borrow_check(
-        function_id.module_file_id(defs_db),
-        function_id.untyped_stable_ptr(defs_db),
-        &mut lowered,
-    );
+    borrow_check(function_id.module_file_id(db.upcast()), &mut lowered);
     Ok(Arc::new(lowered))
 }
 
