@@ -1007,13 +1007,20 @@ impl<'a> Parser<'a> {
         Some(match self.peek().kind {
             SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
             _ => {
-                let name = self.try_parse_identifier()?;
+                let modifier_list = self.parse_modifier_list();
+                let name = if modifier_list.is_empty() {
+                    self.try_parse_identifier()?
+                } else {
+                    self.parse_identifier()
+                };
+                let modifiers = ModifierList::new_green(self.db, modifier_list);
                 if self.peek().kind == SyntaxKind::TerminalColon {
                     let colon = self.take::<TerminalColon>();
                     let pattern = self.parse_pattern();
-                    PatternStructParamWithExpr::new_green(self.db, name, colon, pattern).into()
+                    PatternStructParamWithExpr::new_green(self.db, modifiers, name, colon, pattern)
+                        .into()
                 } else {
-                    name.into()
+                    PatternIdentifier::new_green(self.db, modifiers, name).into()
                 }
             }
         })

@@ -43,6 +43,8 @@ pub struct Parameter {
     pub name: SmolStr,
     pub ty: TypeId,
     pub mutability: Mutability,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::TerminalIdentifierPtr,
 }
 
 /// The mutability attribute of a variable.
