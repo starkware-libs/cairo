@@ -81,6 +81,8 @@ pub struct Signature {
     /// implicit parameters
     pub implicits: Vec<semantic::TypeId>,
     pub panicable: bool,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::FunctionSignaturePtr,
 }
 
 impl Signature {
@@ -108,7 +110,8 @@ impl Signature {
             ast::OptionTerminalNoPanic::Empty(_) => true,
             ast::OptionTerminalNoPanic::TerminalNoPanic(_) => false,
         };
-        semantic::Signature { params, return_type, implicits, panicable }
+        let stable_ptr = signature_syntax.stable_ptr();
+        semantic::Signature { params, return_type, implicits, panicable, stable_ptr }
     }
 }
 
@@ -228,12 +231,14 @@ pub fn concrete_function_signature(
         name: param.name,
         ty: substitute_generics(db, &substitution_map, param.ty),
         mutability: param.mutability,
+        stable_ptr: param.stable_ptr,
     };
     Ok(Signature {
         params: generic_signature.params.into_iter().map(concretize_param).collect(),
         return_type: substitute_generics(db, &substitution_map, generic_signature.return_type),
         implicits: generic_signature.implicits,
         panicable: generic_signature.panicable,
+        stable_ptr: generic_signature.stable_ptr,
     })
 }
 
@@ -279,7 +284,13 @@ fn ast_param_to_semantic(
         &ast_param.modifiers(syntax_db).elements(syntax_db),
     );
 
-    semantic::Parameter { id, name, ty, mutability }
+    semantic::Parameter {
+        id,
+        name,
+        ty,
+        mutability,
+        stable_ptr: ast_param.name(syntax_db).stable_ptr(),
+    }
 }
 
 // === Function Declaration ===

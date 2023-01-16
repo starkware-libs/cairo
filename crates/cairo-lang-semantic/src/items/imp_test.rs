@@ -1,3 +1,4 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_utils::extract_matches;
 use pretty_assertions::assert_eq;
@@ -42,9 +43,9 @@ fn test_impl() {
     assert_eq!(format!("{:?}", db.impl_functions(impl_id).unwrap()), "[ImplFunctionId(0)]");
 
     assert_eq!(
-        format!("{:?}", db.impl_function_signature(func_ids[0]).unwrap()),
-        "Signature { params: [Parameter { id: ParamId(1), name: \"a\", ty: TypeId(1), mutability: \
-         Immutable }], return_type: TypeId(0), implicits: [], panicable: true }"
+        format!("{:?}", db.impl_function_signature(func_ids[0]).unwrap().debug(db)),
+        "Signature { params: [Parameter { id: ParamId(test::a), name: \"a\", ty: core::felt, \
+         mutability: Immutable }], return_type: (), implicits: [], panicable: true }"
     );
 
     assert_eq!(format!("{:?}", db.impl_trait(impl_id).unwrap()), "ConcreteTraitId(0)");
