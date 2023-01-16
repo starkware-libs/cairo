@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{bail, Context, Result};
-use cairo_lang_filesystem::db::FilesGroupEx;
+use cairo_lang_filesystem::db::{init_dev_corelib_crate, FilesGroupEx};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -72,6 +72,7 @@ pub fn compile(
     let mut db = RootDatabase::default();
     db.with_project_config(project_config.clone());
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
+    init_dev_corelib_crate(&mut db);
 
     compile_prepared_db(db, main_crate_ids, compiler_config)
 }
