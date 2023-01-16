@@ -1,5 +1,6 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_lang_filesystem::db::init_dev_corelib_crate;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
@@ -37,6 +38,8 @@ cairo_lang_test_utils::test_file_test!(
 
 fn run_small_e2e_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
     let db = &mut RootDatabase::default();
+    init_dev_corelib_crate(db);
+
     // Parse code and create semantic model.
     let test_module = setup_test_module(db, inputs["cairo"].as_str()).unwrap();
     assert!(!check_and_eprint_diagnostics(db));

@@ -5,7 +5,8 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId, ModuleId};
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_dev_corelib_crate, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
+    FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_parser::db::ParserDatabase;
@@ -26,6 +27,7 @@ impl Default for SemanticDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
+        init_dev_corelib_crate(&mut res);
         res.set_semantic_plugins(vec![]);
         res
     }

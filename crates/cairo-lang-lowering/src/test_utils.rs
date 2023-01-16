@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::plugin::MacroPlugin;
-use cairo_lang_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
+use cairo_lang_filesystem::db::{
+    init_dev_corelib_crate, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
+};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
@@ -27,6 +29,7 @@ impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
+        init_dev_corelib_crate(&mut res);
         init_lowering_group(&mut res);
         res.set_semantic_plugins(get_default_plugins());
         res
