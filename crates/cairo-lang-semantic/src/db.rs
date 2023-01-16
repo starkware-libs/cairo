@@ -342,7 +342,7 @@ pub trait SemanticGroup:
     fn priv_impl_function_declaration_data(
         &self,
         impl_function_id: ImplFunctionId,
-    ) -> Maybe<items::function_with_body::FunctionWithBodyDeclarationData>;
+    ) -> Maybe<items::functions::FunctionDeclarationData>;
 
     /// Returns the semantic diagnostics of an impl function definition (declaration + body).
     #[salsa::invoke(items::imp::impl_function_body_diagnostics)]
@@ -404,7 +404,7 @@ pub trait SemanticGroup:
     fn priv_free_function_declaration_data(
         &self,
         function_id: FreeFunctionId,
-    ) -> Maybe<items::function_with_body::FunctionWithBodyDeclarationData>;
+    ) -> Maybe<items::functions::FunctionDeclarationData>;
 
     /// Returns the semantic diagnostics of a free function's body.
     #[salsa::invoke(items::free_function::free_function_body_diagnostics)]
@@ -428,8 +428,8 @@ pub trait SemanticGroup:
     // Function with body.
     // ===================
     /// Returns the semantic diagnostics of a declaration (signature) of a function with a body.
-    #[salsa::invoke(items::function_with_body::function_with_body_declaration_diagnostics)]
-    fn function_with_body_declaration_diagnostics(
+    #[salsa::invoke(items::function_with_body::function_declaration_diagnostics)]
+    fn function_declaration_diagnostics(
         &self,
         function_id: FunctionWithBodyId,
     ) -> Diagnostics<SemanticDiagnostic>;
@@ -488,7 +488,7 @@ pub trait SemanticGroup:
     fn priv_extern_function_declaration_data(
         &self,
         function_id: ExternFunctionId,
-    ) -> Maybe<items::extern_function::ExternFunctionDeclarationData>;
+    ) -> Maybe<items::functions::FunctionDeclarationData>;
     /// Returns the semantic diagnostics of an extern function declaration. An extern function has
     /// no body, and thus only has a declaration.
     #[salsa::invoke(items::extern_function::extern_function_declaration_diagnostics)]

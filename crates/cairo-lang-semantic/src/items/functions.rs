@@ -1,19 +1,22 @@
+use std::sync::Arc;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, ParamLongId};
-use cairo_lang_diagnostics::{skip_diagnostic, Maybe};
+use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches};
 
+use super::attribute::Attribute;
 use super::modifiers;
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
-use crate::resolve_path::Resolver;
+use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::types::{resolve_type, substitute_generics};
-use crate::{semantic, Parameter};
+use crate::{semantic, Parameter, SemanticDiagnostic};
 
 /// Function instance.
 /// For example: `ImplA::foo<A, B>`, or `bar<A>`.
@@ -277,4 +280,18 @@ fn ast_param_to_semantic(
     );
 
     semantic::Parameter { id, name, ty, mutability }
+}
+
+// === Function Declaration ===
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct FunctionDeclarationData {
+    pub diagnostics: Diagnostics<SemanticDiagnostic>,
+    pub signature: semantic::Signature,
+    /// The environment induced by the function's signature.
+    pub environment: Environment,
+    pub generic_params: Vec<GenericParamId>,
+    pub attributes: Vec<Attribute>,
+    pub resolved_lookback: Arc<ResolvedLookback>,
 }
