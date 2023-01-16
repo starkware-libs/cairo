@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId, GenericParamId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, GenericParamId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast;
@@ -10,6 +10,7 @@ use cairo_lang_utils::Upcast;
 use id_arena::Arena;
 
 use super::attribute::Attribute;
+use super::functions::GenericFunctionId;
 use crate::db::SemanticGroup;
 use crate::resolve_path::ResolvedLookback;
 use crate::{semantic, ExprId, FunctionId, SemanticDiagnostic};
@@ -171,7 +172,7 @@ pub fn function_with_body_direct_function_with_body_callees(
                     Some(FunctionWithBodyId::Free(free_function))
                 }
                 GenericFunctionId::Impl(impl_function) => {
-                    Some(FunctionWithBodyId::Impl(impl_function))
+                    Some(FunctionWithBodyId::Impl(impl_function.function))
                 }
                 _ => None,
             }

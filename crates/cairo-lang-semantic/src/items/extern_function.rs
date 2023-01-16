@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    ExternFunctionId, GenericFunctionId, GenericParamId, LanguageElementId,
+    ExternFunctionId, FunctionSignatureId, GenericParamId, LanguageElementId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_utils::extract_matches;
 
 use super::attribute::ast_attributes_to_semantic;
-use super::functions::FunctionDeclarationData;
+use super::functions::{FunctionDeclarationData, GenericFunctionId};
 use super::generics::semantic_generic_params;
 use crate::corelib::get_core_generic_function_id;
 use crate::db::SemanticGroup;
@@ -105,7 +105,7 @@ pub fn priv_extern_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        GenericFunctionId::Extern(extern_function_id),
+        FunctionSignatureId::Extern(extern_function_id),
         &mut environment,
     );
 
