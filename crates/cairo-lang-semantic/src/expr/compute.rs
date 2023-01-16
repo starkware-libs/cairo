@@ -569,7 +569,9 @@ fn compute_pattern_semantic(
     // TODO(spapini): Check for missing type, and don't reemit an error.
     let syntax_db = ctx.db.upcast();
     Ok(match pattern_syntax {
-        ast::Pattern::Underscore(_) => Pattern::Otherwise(PatternOtherwise { ty }),
+        ast::Pattern::Underscore(otherwise_pattern) => {
+            Pattern::Otherwise(PatternOtherwise { ty, stable_ptr: otherwise_pattern.stable_ptr() })
+        }
         ast::Pattern::Literal(literal_pattern) => {
             let literal = literal_to_semantic(ctx, &literal_pattern)?;
             if ty != core_felt_ty(ctx.db) {
@@ -577,7 +579,11 @@ fn compute_pattern_semantic(
                     .diagnostics
                     .report(&literal_pattern, UnexpectedLiteralPattern { ty }));
             }
-            Pattern::Literal(PatternLiteral { literal, ty })
+            Pattern::Literal(PatternLiteral {
+                literal,
+                ty,
+                stable_ptr: literal_pattern.stable_ptr().into(),
+            })
         }
         ast::Pattern::ShortString(short_string_pattern) => {
             let literal = short_string_to_semantic(ctx, &short_string_pattern)?;
@@ -586,7 +592,11 @@ fn compute_pattern_semantic(
                     .diagnostics
                     .report(&short_string_pattern, UnexpectedLiteralPattern { ty }));
             }
-            Pattern::Literal(PatternLiteral { literal, ty })
+            Pattern::Literal(PatternLiteral {
+                literal,
+                ty,
+                stable_ptr: short_string_pattern.stable_ptr().into(),
+            })
         }
         ast::Pattern::Enum(enum_pattern) => {
             // Check that type is an enum, and get the concrete enum from it.
@@ -638,6 +648,7 @@ fn compute_pattern_semantic(
                 variant: concrete_variant,
                 inner_pattern,
                 ty,
+                stable_ptr: enum_pattern.stable_ptr(),
             })
         }
         ast::Pattern::Path(path) => {
@@ -648,13 +659,14 @@ fn compute_pattern_semantic(
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
             let identifier = path.elements(syntax_db)[0].identifier_ast(syntax_db);
-            create_variable_pattern(ctx, identifier, &[], ty)
+            create_variable_pattern(ctx, identifier, &[], ty, path.stable_ptr().into())
         }
         ast::Pattern::Identifier(identifier) => create_variable_pattern(
             ctx,
             identifier.name(syntax_db),
             &identifier.modifiers(syntax_db).elements(syntax_db),
             ty,
+            identifier.stable_ptr().into(),
         ),
         ast::Pattern::Struct(pattern_struct) => {
             // Check that type is an struct, and get the concrete struct from it.
@@ -694,8 +706,15 @@ fn compute_pattern_semantic(
             for pattern_param_ast in pattern_param_asts {
                 match pattern_param_ast {
                     PatternStructParam::Single(single) => {
-                        let member = get_member(ctx, single.text(syntax_db)).to_maybe()?;
-                        let pattern = create_variable_pattern(ctx, single, &[], member.ty);
+                        let name = single.name(syntax_db);
+                        let member = get_member(ctx, name.text(syntax_db)).to_maybe()?;
+                        let pattern = create_variable_pattern(
+                            ctx,
+                            name,
+                            &single.modifiers(syntax_db).elements(syntax_db),
+                            member.ty,
+                            single.stable_ptr().into(),
+                        );
                         field_patterns.push((member, Box::new(pattern)));
                     }
                     PatternStructParam::WithExpr(with_expr) => {
@@ -715,7 +734,12 @@ fn compute_pattern_semantic(
                     ctx.diagnostics.report(&pattern_struct, MissingMember { member_name });
                 }
             }
-            Pattern::Struct(PatternStruct { id: struct_id, field_patterns, ty })
+            Pattern::Struct(PatternStruct {
+                id: struct_id,
+                field_patterns,
+                ty,
+                stable_ptr: pattern_struct.stable_ptr(),
+            })
         }
         ast::Pattern::Tuple(pattern_tuple) => {
             let tys = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Tuple)
@@ -740,7 +764,11 @@ fn compute_pattern_semantic(
             // If all are Some, collect into a Vec.
             let field_patterns: Vec<_> = pattern_options.collect::<Maybe<_>>()?;
 
-            Pattern::Tuple(PatternTuple { field_patterns, ty })
+            Pattern::Tuple(PatternTuple {
+                field_patterns,
+                ty,
+                stable_ptr: pattern_tuple.stable_ptr(),
+            })
         }
     })
 }
@@ -751,6 +779,7 @@ fn create_variable_pattern(
     identifier: ast::TerminalIdentifier,
     modifier_list: &[ast::Modifier],
     ty: TypeId,
+    stable_ptr: ast::PatternPtr,
 ) -> Pattern {
     let syntax_db = ctx.db.upcast();
     let var_id = ctx
@@ -768,6 +797,7 @@ fn create_variable_pattern(
     Pattern::Variable(PatternVariable {
         name: identifier.text(syntax_db),
         var: LocalVariable { id: var_id, ty, is_mut },
+        stable_ptr,
     })
 }
 
