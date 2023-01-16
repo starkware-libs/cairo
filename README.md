@@ -83,7 +83,7 @@ Follow the instructions in [vscode-cairo](./vscode-cairo/README.md).
 
 ## Roadmap
 
-The next milestone is it to reach feature parity with the old Cairo version.
+The next milestone is to reach feature parity with the old Cairo version.
 You can track the exact progress [here](./docs/FEATURE_PARITY.md).
 
 ## Support
