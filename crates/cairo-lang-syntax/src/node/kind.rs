@@ -8,6 +8,8 @@ pub enum SyntaxKind {
     OptionArgNameClauseEmpty,
     ArgNamed,
     ArgUnnamed,
+    ArgFieldInitShorthand,
+    ExprFieldInitShorthand,
     ArgList,
     ExprMissing,
     PathSegmentSimple,

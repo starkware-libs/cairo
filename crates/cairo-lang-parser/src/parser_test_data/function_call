@@ -59,7 +59,7 @@ test_partial_parser_tree
 
 //! > cairo_code
 fn test() {
-    f(12, y: a + 3);
+    f(12, y: a + 3, :z);
 }
 
 //! > top_level_kind
@@ -80,13 +80,18 @@ ExprFunctionCall
         │   ├── item #0 (kind: ArgUnnamed)
         │   │   └── value (kind: TokenLiteralNumber): '12'
         │   ├── separator #0 (kind: TokenComma): ','
-        │   └── item #1 (kind: ArgNamed)
-        │       ├── name (kind: TokenIdentifier): 'y'
+        │   ├── item #1 (kind: ArgNamed)
+        │   │   ├── name (kind: TokenIdentifier): 'y'
+        │   │   ├── colon (kind: TokenColon): ':'
+        │   │   └── value (kind: ExprBinary)
+        │   │       ├── lhs (kind: ExprPath)
+        │   │       │   └── item #0 (kind: PathSegmentSimple)
+        │   │       │       └── ident (kind: TokenIdentifier): 'a'
+        │   │       ├── op (kind: TokenPlus): '+'
+        │   │       └── rhs (kind: TokenLiteralNumber): '3'
+        │   ├── separator #1 (kind: TokenComma): ','
+        │   └── item #2 (kind: ArgFieldInitShorthand)
         │       ├── colon (kind: TokenColon): ':'
-        │       └── value (kind: ExprBinary)
-        │           ├── lhs (kind: ExprPath)
-        │           │   └── item #0 (kind: PathSegmentSimple)
-        │           │       └── ident (kind: TokenIdentifier): 'a'
-        │           ├── op (kind: TokenPlus): '+'
-        │           └── rhs (kind: TokenLiteralNumber): '3'
+        │       └── name (kind: ExprFieldInitShorthand)
+        │           └── name (kind: TokenIdentifier): 'z'
         └── rparen (kind: TokenRParen): ')'
