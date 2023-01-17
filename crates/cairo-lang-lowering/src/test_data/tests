@@ -128,7 +128,7 @@ Initial refs:
 Statements:
   (v6: core::felt) <- 6u
 End:
-  Callsite(v6)
+  Callsite(v6 -> v9)
 
 blk3:
 Inputs: v7: core::NonZero::<core::felt>
@@ -136,7 +136,7 @@ Initial refs:
 Statements:
   (v8: core::felt) <- 7u
 End:
-  Callsite(v8)
+  Callsite(v8 -> v9)
 
 blk4:
 Inputs:
@@ -146,7 +146,7 @@ Statements:
   (v14: core::felt) <- 0u
   (v15: core::felt) <- core::felt_add(v0, v14)
 End:
-  Callsite(v15)
+  Callsite(v15 -> v16)
 
 blk5 (root):
 Inputs: v0: core::felt
@@ -158,14 +158,14 @@ Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
   (v5: core::felt) <- core::felt_sub(v3, v4)
-  (v9: core::felt) <- match core::felt_jump_nz(v5) {
+  () <- match core::felt_jump_nz(v5) {
     JumpNzResult::Zero => blk2,
     JumpNzResult::NonZero => blk3,
   }
   (v10: core::felt) <- 3u
   (v11: core::felt) <- test::foo(v10)
   (v12: core::felt) <- 5u
-  (v16: core::felt) <- blk4()
+  () <- blk4()
   (v17: core::felt) <- core::felt_mul(v12, v16)
   (v18: core::felt) <- core::felt_add(v11, v17)
 End:
@@ -190,14 +190,14 @@ Inputs:
 Statements:
   (v6: core::felt) <- 6u
 End:
-  Callsite(v6)
+  Callsite(v6 -> v9)
 
 blk3:
 Inputs: v7: core::NonZero::<core::felt>
 Statements:
   (v8: core::felt) <- 7u
 End:
-  Callsite(v8)
+  Callsite(v8 -> v9)
 
 blk4:
 Inputs:
@@ -206,7 +206,7 @@ Statements:
   (v14: core::felt) <- 0u
   (v15: core::felt) <- core::felt_add(v0, v14)
 End:
-  Callsite(v15)
+  Callsite(v15 -> v16)
 
 blk5 (root):
 Inputs: v0: core::felt
@@ -217,14 +217,14 @@ Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
   (v5: core::felt) <- core::felt_sub(v3, v4)
-  (v9: core::felt) <- match core::felt_jump_nz(v5) {
+  () <- match core::felt_jump_nz(v5) {
     JumpNzResult::Zero => blk2,
     JumpNzResult::NonZero => blk3,
   }
   (v10: core::felt) <- 3u
   (v11: core::felt) <- test::foo(v10)
   (v12: core::felt) <- 5u
-  (v16: core::felt) <- blk4()
+  () <- blk4()
   (v17: core::felt) <- core::felt_mul(v12, v16)
   (v18: core::felt) <- core::felt_add(v11, v17)
 End:
@@ -274,7 +274,7 @@ Inputs:
 Initial refs:
 Statements:
 End:
-  Callsite(v3)
+  Callsite(v3 -> v4)
 
 blk2:
 Inputs:
@@ -282,7 +282,7 @@ Initial refs:
 Statements:
   (v6: core::felt) <- 7u
 End:
-  Callsite(v6)
+  Callsite(v6 -> v7)
 
 blk3:
 Inputs: v1: ()
@@ -296,23 +296,23 @@ blk4:
 Inputs: v3: core::felt
 Initial refs:
 Statements:
-  (v4: core::felt) <- blk1()
+  () <- blk1()
 End:
-  Callsite(v4)
+  Callsite(v4 -> v8)
 
 blk5:
 Inputs: v5: core::box::Box::<((), core::felt)>
 Initial refs:
 Statements:
-  (v7: core::felt) <- blk2()
+  () <- blk2()
 End:
-  Callsite(v7)
+  Callsite(v7 -> v8)
 
 blk6 (root):
 Inputs: v0: test::MyEnum
 Initial refs:
 Statements:
-  (v8: core::felt) <- match_enum(v0) {
+  () <- match_enum(v0) {
     MyEnum::A => blk3,
     MyEnum::B => blk4,
     MyEnum::C => blk5,
@@ -332,14 +332,14 @@ blk1:
 Inputs:
 Statements:
 End:
-  Callsite(v3)
+  Callsite(v3 -> v4)
 
 blk2:
 Inputs:
 Statements:
   (v6: core::felt) <- 7u
 End:
-  Callsite(v6)
+  Callsite(v6 -> v7)
 
 blk3:
 Inputs: v1: ()
@@ -351,21 +351,21 @@ End:
 blk4:
 Inputs: v3: core::felt
 Statements:
-  (v4: core::felt) <- blk1()
+  () <- blk1()
 End:
-  Callsite(v4)
+  Callsite(v4 -> v8)
 
 blk5:
 Inputs: v5: core::box::Box::<((), core::felt)>
 Statements:
-  (v7: core::felt) <- blk2()
+  () <- blk2()
 End:
-  Callsite(v7)
+  Callsite(v7 -> v8)
 
 blk6 (root):
 Inputs: v0: test::MyEnum
 Statements:
-  (v8: core::felt) <- match_enum(v0) {
+  () <- match_enum(v0) {
     MyEnum::A => blk3,
     MyEnum::B => blk4,
     MyEnum::C => blk5,
@@ -416,6 +416,9 @@ End:
 
 //! > Test passing same argument as two ref params.
 
+//! > Comments
+TODO(spapini): Make this a semantic diagnostic.
+
 //! > test_function_name
 test_function_lowering
 
@@ -437,11 +440,20 @@ fn bar(ref a: felt, ref b: felt) -> felt nopanic  {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
- --> lib.cairo:7:3
-  bar(a, a)
-  ^*******^
 
 //! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v2: core::felt, v3: core::felt, v1: core::felt) <- test::bar(v0, v0)
+End:
+  Return(v1)
 
 //! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v2: core::felt, v3: core::felt, v1: core::felt) <- test::bar(v0, v0)
+End:
+  Return(v1)
