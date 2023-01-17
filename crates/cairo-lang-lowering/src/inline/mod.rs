@@ -40,7 +40,7 @@ pub fn priv_inline_data(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<PrivInlineData>> {
-    let mut diagnostics = LoweringDiagnostics::new(function_id.module_file(db.upcast()));
+    let mut diagnostics = LoweringDiagnostics::new(function_id.module_file_id(db.upcast()));
     let config = parse_inline_attribute(db, &mut diagnostics, function_id)?;
 
     // If the the function is marked as #[inline(always)], we need to report
