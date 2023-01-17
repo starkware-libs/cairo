@@ -13,6 +13,7 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -381,6 +382,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
                 format!("`{}` is not allowed inside impl.", item_kw)
             }
+            SemanticDiagnosticKind::MissingItemsInImpl { item_names } => {
+                format!(
+                    "Not all trait items are implemented. Missing: {}.",
+                    item_names.iter().map(|name| format!("'{}'", name)).join(", ")
+                )
+            }
             SemanticDiagnosticKind::PassPanicAsNopanic { impl_function_id, trait_id } => {
                 let name = impl_function_id.name(db.upcast());
                 let trait_name = trait_id.name(db.upcast());
@@ -606,6 +613,9 @@ pub enum SemanticDiagnosticKind {
     InvalidDropTraitImpl,
     InvalidImplItem {
         item_kw: SmolStr,
+    },
+    MissingItemsInImpl {
+        item_names: Vec<SmolStr>,
     },
     PassPanicAsNopanic {
         impl_function_id: ImplFunctionId,
