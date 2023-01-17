@@ -44,12 +44,12 @@ fn test_function_lowering(
     )
     .split();
     let structured_lowered =
-        db.function_with_body_lowered_structured(test_function.function_id).unwrap();
-    let flat_lowered = db.function_with_body_lowered_flat(test_function.function_id).unwrap();
+        db.priv_function_with_body_lowered_structured(test_function.function_id).unwrap();
+    let lowered = db.function_with_body_lowered(test_function.function_id).unwrap();
     let diagnostics =
         db.function_with_body_lowering_diagnostics(test_function.function_id).unwrap();
 
-    let lowered_formatter = LoweredFormatter { db, variables: &flat_lowered.variables };
+    let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), diagnostics.format(db)),
@@ -57,6 +57,6 @@ fn test_function_lowering(
             "lowering_structured".into(),
             format!("{:?}", structured_lowered.debug(&lowered_formatter)),
         ),
-        ("lowering_flat".into(), format!("{:?}", flat_lowered.debug(&lowered_formatter))),
+        ("lowering_flat".into(), format!("{:?}", lowered.debug(&lowered_formatter))),
     ])
 }
