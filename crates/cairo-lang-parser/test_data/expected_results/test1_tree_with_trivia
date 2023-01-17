@@ -43,7 +43,7 @@
     │   │       ├── token (kind: TokenSemicolon): ';'
     │   │       └── trailing_trivia (kind: Trivia)
     │   │           └── child #0 (kind: TokenNewline).
-    │   ├── child #2 (kind: ItemFreeFunction)
+    │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
@@ -949,7 +949,7 @@
     │   │           ├── leading_trivia (kind: Trivia) []
     │   │           ├── token: Missing
     │   │           └── trailing_trivia (kind: Trivia) []
-    │   ├── child #3 (kind: ItemFreeFunction)
+    │   ├── child #3 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)

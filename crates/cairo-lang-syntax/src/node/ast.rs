@@ -6489,7 +6489,7 @@ pub enum Item {
     Constant(ItemConstant),
     Module(ItemModule),
     Use(ItemUse),
-    FreeFunction(ItemFreeFunction),
+    FreeFunction(FunctionWithBody),
     ExternFunction(ItemExternFunction),
     ExternType(ItemExternType),
     Trait(ItemTrait),
@@ -6520,8 +6520,8 @@ impl From<ItemUsePtr> for ItemPtr {
         Self(value.0)
     }
 }
-impl From<ItemFreeFunctionPtr> for ItemPtr {
-    fn from(value: ItemFreeFunctionPtr) -> Self {
+impl From<FunctionWithBodyPtr> for ItemPtr {
+    fn from(value: FunctionWithBodyPtr) -> Self {
         Self(value.0)
     }
 }
@@ -6575,8 +6575,8 @@ impl From<ItemUseGreen> for ItemGreen {
         Self(value.0)
     }
 }
-impl From<ItemFreeFunctionGreen> for ItemGreen {
-    fn from(value: ItemFreeFunctionGreen) -> Self {
+impl From<FunctionWithBodyGreen> for ItemGreen {
+    fn from(value: FunctionWithBodyGreen) -> Self {
         Self(value.0)
     }
 }
@@ -6630,8 +6630,8 @@ impl TypedSyntaxNode for Item {
             SyntaxKind::ItemConstant => Item::Constant(ItemConstant::from_syntax_node(db, node)),
             SyntaxKind::ItemModule => Item::Module(ItemModule::from_syntax_node(db, node)),
             SyntaxKind::ItemUse => Item::Use(ItemUse::from_syntax_node(db, node)),
-            SyntaxKind::ItemFreeFunction => {
-                Item::FreeFunction(ItemFreeFunction::from_syntax_node(db, node))
+            SyntaxKind::FunctionWithBody => {
+                Item::FreeFunction(FunctionWithBody::from_syntax_node(db, node))
             }
             SyntaxKind::ItemExternFunction => {
                 Item::ExternFunction(ItemExternFunction::from_syntax_node(db, node))
@@ -7609,11 +7609,11 @@ impl TypedSyntaxNode for ItemConstant {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ItemFreeFunction {
+pub struct FunctionWithBody {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl ItemFreeFunction {
+impl FunctionWithBody {
     pub const INDEX_ATTRIBUTES: usize = 0;
     pub const INDEX_DECLARATION: usize = 1;
     pub const INDEX_BODY: usize = 2;
@@ -7622,16 +7622,16 @@ impl ItemFreeFunction {
         attributes: AttributeListGreen,
         declaration: FunctionDeclarationGreen,
         body: ExprBlockGreen,
-    ) -> ItemFreeFunctionGreen {
+    ) -> FunctionWithBodyGreen {
         let children: Vec<GreenId> = vec![attributes.0, declaration.0, body.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        ItemFreeFunctionGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ItemFreeFunction,
+        FunctionWithBodyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::FunctionWithBody,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl ItemFreeFunction {
+impl FunctionWithBody {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
         AttributeList::from_syntax_node(db, self.children[0].clone())
     }
@@ -7643,8 +7643,8 @@ impl ItemFreeFunction {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemFreeFunctionPtr(pub SyntaxStablePtrId);
-impl ItemFreeFunctionPtr {
+pub struct FunctionWithBodyPtr(pub SyntaxStablePtrId);
+impl FunctionWithBodyPtr {
     pub fn declaration_green(self, db: &dyn SyntaxGroup) -> FunctionDeclarationGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
@@ -7658,14 +7658,14 @@ impl ItemFreeFunctionPtr {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemFreeFunctionGreen(pub GreenId);
-impl TypedSyntaxNode for ItemFreeFunction {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemFreeFunction);
-    type StablePtr = ItemFreeFunctionPtr;
-    type Green = ItemFreeFunctionGreen;
+pub struct FunctionWithBodyGreen(pub GreenId);
+impl TypedSyntaxNode for FunctionWithBody {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::FunctionWithBody);
+    type StablePtr = FunctionWithBodyPtr;
+    type Green = FunctionWithBodyGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ItemFreeFunctionGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ItemFreeFunction,
+        FunctionWithBodyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::FunctionWithBody,
             details: GreenNodeDetails::Node {
                 children: vec![
                     AttributeList::missing(db).0,
@@ -7680,10 +7680,10 @@ impl TypedSyntaxNode for ItemFreeFunction {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ItemFreeFunction,
+            SyntaxKind::FunctionWithBody,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ItemFreeFunction
+            SyntaxKind::FunctionWithBody
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -7695,7 +7695,7 @@ impl TypedSyntaxNode for ItemFreeFunction {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemFreeFunctionPtr(self.node.0.stable_ptr)
+        FunctionWithBodyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

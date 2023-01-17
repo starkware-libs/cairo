@@ -302,7 +302,7 @@ define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use, n
 define_language_element_id!(
     FreeFunctionId,
     FreeFunctionLongId,
-    ast::ItemFreeFunction,
+    ast::FunctionWithBody,
     lookup_intern_free_function,
     name
 );
@@ -316,7 +316,7 @@ impl UnstableSalsaId for FreeFunctionId {
 define_language_element_id!(
     ImplFunctionId,
     ImplFunctionLongId,
-    ast::ItemFreeFunction,
+    ast::FunctionWithBody,
     lookup_intern_impl_function,
     name
 );
