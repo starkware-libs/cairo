@@ -24,7 +24,7 @@ use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use num_bigint::BigUint;
-use num_traits::{ToPrimitive, Zero};
+use num_traits::{FromPrimitive, ToPrimitive, Zero};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
@@ -215,6 +215,15 @@ impl HintProcessor for CairoHintProcessor {
                 let y_bigint: BigUint = random_y_squared.sqrt().unwrap().into_bigint().into();
                 insert_value_to_cellref!(vm, x, Felt::from(x_bigint))?;
                 insert_value_to_cellref!(vm, y, Felt::from(y_bigint))?;
+            }
+            Hint::FieldSqrt { val, sqrt } => {
+                let val = Fq::from(get_val(val)?.to_biguint());
+                insert_value_to_cellref!(vm, sqrt, {
+                    let three_fq = Fq::from(BigUint::from_usize(3).unwrap());
+                    let res = (if val.legendre().is_qr() { val } else { val * three_fq }).sqrt();
+                    let res_big_uint: BigUint = res.unwrap().into_bigint().into();
+                    Felt::from(res_big_uint)
+                })?;
             }
             Hint::SystemCall { system } => {
                 let starknet_exec_scope =

@@ -82,6 +82,10 @@ pub fn core_libfunc_cost_base<Ops: CostOperations, InfoProvider: InvocationCostI
             EcConcreteLibfunc::Op(_) => {
                 vec![ops.add(ops.const_cost(5), ops.const_cost_token(1, CostTokenType::EcOp))]
             }
+            EcConcreteLibfunc::PointFromX(_) => vec![
+                ops.const_cost(8), // Success.
+                ops.const_cost(9), // Failure.
+            ],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ops.const_cost(0)],
         },
         Gas(GetGas(_)) => {
