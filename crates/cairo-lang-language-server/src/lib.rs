@@ -434,11 +434,14 @@ impl LanguageServer for Backend {
                 ResolvedGenericItem::Module(item) => {
                     (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
                 }
-                ResolvedGenericItem::GenericFunction(item) => (
-                    item.parent_module(defs_db),
-                    item.file_index(defs_db),
-                    item.untyped_stable_ptr(defs_db),
-                ),
+                ResolvedGenericItem::GenericFunction(item) => {
+                    let sig = item.signature();
+                    (
+                        sig.parent_module(defs_db),
+                        sig.file_index(defs_db),
+                        sig.untyped_stable_ptr(defs_db),
+                    )
+                }
                 ResolvedGenericItem::GenericType(generic_type) => (
                     generic_type.parent_module(defs_db),
                     generic_type.file_index(defs_db),

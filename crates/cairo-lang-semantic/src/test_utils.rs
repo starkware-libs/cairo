@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId, ModuleId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
@@ -15,6 +15,7 @@ use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
 use pretty_assertions::assert_eq;
 
 use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use crate::items::functions::GenericFunctionId;
 use crate::{semantic, SemanticDiagnostic};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]

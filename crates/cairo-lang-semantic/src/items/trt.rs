@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    GenericFunctionId, GenericParamId, LanguageElementId, TraitFunctionId, TraitFunctionLongId,
+    FunctionSignatureId, GenericParamId, LanguageElementId, TraitFunctionId, TraitFunctionLongId,
     TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
@@ -203,7 +203,7 @@ pub fn priv_trait_function_data(
         db,
         &mut resolver,
         &signature_syntax,
-        GenericFunctionId::Trait(trait_function_id),
+        FunctionSignatureId::Trait(trait_function_id),
         &mut environment,
     );
 

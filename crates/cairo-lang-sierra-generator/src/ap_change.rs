@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::program::GenStatement;
 use defs::ids::FunctionWithBodyId;
@@ -20,20 +21,17 @@ pub fn contains_cycle(db: &dyn SierraGenGroup, function_id: FunctionWithBodyId) 
             if let lowering::Statement::Call(statement_call) = statement {
                 let concrete = db.lookup_intern_function(statement_call.function).function;
                 match concrete.generic_function {
-                    defs::ids::GenericFunctionId::Free(free_function_id) => {
+                    GenericFunctionId::Free(free_function_id) => {
                         if db.contains_cycle(FunctionWithBodyId::Free(free_function_id))? {
                             return Ok(true);
                         }
                     }
-                    defs::ids::GenericFunctionId::Impl(impl_function_id) => {
-                        if db.contains_cycle(FunctionWithBodyId::Impl(impl_function_id))? {
+                    GenericFunctionId::Impl(impl_function_id) => {
+                        if db.contains_cycle(FunctionWithBodyId::Impl(impl_function_id.function))? {
                             return Ok(true);
                         }
                     }
-                    defs::ids::GenericFunctionId::Extern(_) => {}
-                    defs::ids::GenericFunctionId::Trait(_) => {
-                        panic!("Trait function should be replaced with concrete functions.")
-                    }
+                    GenericFunctionId::Extern(_) => {}
                 }
             }
         }
