@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::ops::Deref;
 use std::sync::Arc;
+use crate::inline::apply_inlining;
 
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
@@ -32,6 +33,18 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Computes the lowered representation of a function with a body.
     fn function_with_body_lowered_flat(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the lowered representation (after inlining) of a function with a body .
+    fn function_with_body_lowered_flat_with_inlining(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the final lowered representation (after all the internal transformation).
+    fn function_with_body_lowered_final(
         &self,
         function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
@@ -138,6 +151,23 @@ fn function_with_body_lowered_flat(
         &mut lowered,
     );
     Ok(Arc::new(lowered))
+}
+
+
+fn function_with_body_lowered_flat_with_inlining(
+    db: &dyn LoweringGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    let lowered = db.function_with_body_lowered_flat(function_id)?;
+    
+    Ok(Arc::new(apply_inlining(db, function_id, &lowered)?))
+}
+
+fn function_with_body_lowered_final(
+    db: &dyn LoweringGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    db.function_with_body_lowered_flat_with_inlining(function_id)
 }
 
 fn function_with_body_lowering_diagnostics(
