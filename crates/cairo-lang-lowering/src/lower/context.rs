@@ -61,7 +61,9 @@ impl<'db> LoweringContextBuilder<'db> {
             function_id: self.function_id,
             function_body: &self.function_body,
             signature: &self.signature,
-            diagnostics: LoweringDiagnostics::new(self.function_id.module_file(self.db.upcast())),
+            diagnostics: LoweringDiagnostics::new(
+                self.function_id.module_file_id(self.db.upcast()),
+            ),
             variables: Arena::default(),
             blocks: StructuredBlocks::new(),
             semantic_defs: UnorderedHashMap::default(),

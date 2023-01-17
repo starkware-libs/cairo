@@ -754,7 +754,7 @@ fn module_semantic_diagnostics(
 
                         diagnostics.add(SemanticDiagnostic {
                             stable_location: StableLocation::new(
-                                submodule_id.module_file(db.upcast()),
+                                submodule_id.module_file_id(db.upcast()),
                                 submodule_id.stable_ptr(db.upcast()).untyped(),
                             ),
                             kind: SemanticDiagnosticKind::ModuleFileNotFound { path },

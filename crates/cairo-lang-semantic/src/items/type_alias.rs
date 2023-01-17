@@ -34,7 +34,7 @@ pub fn priv_type_alias_semantic_data(
     db: &(dyn SemanticGroup),
     type_alias_id: TypeAliasId,
 ) -> Maybe<TypeAliasData> {
-    let module_file_id = type_alias_id.module_file(db.upcast());
+    let module_file_id = type_alias_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -66,7 +66,7 @@ pub fn priv_type_alias_semantic_data_cycle(
     _cycle: &[String],
     type_alias_id: &TypeAliasId,
 ) -> Maybe<TypeAliasData> {
-    let module_file_id = type_alias_id.module_file(db.upcast());
+    let module_file_id = type_alias_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
     let type_alias_ast = module_type_aliases.get(type_alias_id).to_maybe()?;

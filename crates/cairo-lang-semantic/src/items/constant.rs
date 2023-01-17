@@ -38,7 +38,7 @@ pub fn priv_constant_semantic_data(
     db: &dyn SemanticGroup,
     const_id: ConstantId,
 ) -> Maybe<ConstantData> {
-    let module_file_id = const_id.module_file(db.upcast());
+    let module_file_id = const_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
