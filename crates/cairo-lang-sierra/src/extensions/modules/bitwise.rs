@@ -7,7 +7,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 
 /// Type representing the Bitwise builtin.
 #[derive(Default)]
@@ -25,7 +25,7 @@ impl NoGenericArgsGenericType for BitwiseType {
 #[derive(Default)]
 pub struct BitwiseLibfunc {}
 impl NoGenericArgsGenericLibfunc for BitwiseLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("bitwise");
+    const STR_ID: &'static str = "bitwise";
 
     fn specialize_signature(
         &self,
