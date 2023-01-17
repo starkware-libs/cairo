@@ -382,6 +382,9 @@ pub enum SierraApChange {
         /// [`BranchSignature::vars`]).
         new_vars_only: bool,
     },
+    /// The lib func aligns the `ap` change across branches.
+    /// The `ap` change is know during compilation.
+    ApAlign,
     /// Indicates that the value of ApChange was not assigned properly yet. Behaves as `Unknown`.
     /// This will be removed, once all places using it are fixed.
     // TODO(lior): Remove this value once it is no longer used.
