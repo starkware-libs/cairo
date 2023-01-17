@@ -111,26 +111,11 @@ blk0:
 Inputs:
 Initial refs:
 Statements:
-  (v1: core::felt) <- 7u
-End:
-  Callsite()
-
-blk1:
-Inputs:
-Initial refs:
-Statements:
-End:
-  Callsite()
-
-blk2:
-Inputs:
-Initial refs:
-Statements:
   (v6: core::felt) <- 6u
 End:
   Callsite(v6 -> v9)
 
-blk3:
+blk1:
 Inputs: v7: core::NonZero::<core::felt>
 Initial refs:
 Statements:
@@ -138,97 +123,67 @@ Statements:
 End:
   Callsite(v8 -> v9)
 
-blk4:
-Inputs:
-Initial refs:
-Statements:
-  (v13: core::felt) <- 3u
-  (v14: core::felt) <- 0u
-  (v15: core::felt) <- core::felt_add(v0, v14)
-End:
-  Callsite(v15 -> v16)
-
-blk5 (root):
+blk2 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
-  () <- blk0()
+  (v1: core::felt) <- 7u
   (v2: ()) <- struct_construct()
-  () <- blk1()
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
   (v5: core::felt) <- core::felt_sub(v3, v4)
   () <- match core::felt_jump_nz(v5) {
-    JumpNzResult::Zero => blk2,
-    JumpNzResult::NonZero => blk3,
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
   (v10: core::felt) <- 3u
   (v11: core::felt) <- test::foo(v10)
   (v12: core::felt) <- 5u
-  () <- blk4()
-  (v17: core::felt) <- core::felt_mul(v12, v16)
-  (v18: core::felt) <- core::felt_add(v11, v17)
+  (v13: core::felt) <- 3u
+  (v14: core::felt) <- 0u
+  (v15: core::felt) <- core::felt_add(v0, v14)
+  (v16: core::felt) <- core::felt_mul(v12, v15)
+  (v17: core::felt) <- core::felt_add(v11, v16)
 End:
-  Return(v18)
+  Return(v17)
 
 //! > lowering_flat
 blk0:
-Inputs:
-Statements:
-  (v1: core::felt) <- 7u
-End:
-  Callsite()
-
-blk1:
-Inputs:
-Statements:
-End:
-  Callsite()
-
-blk2:
 Inputs:
 Statements:
   (v6: core::felt) <- 6u
 End:
   Callsite()
 
-blk3:
+blk1:
 Inputs: v7: core::NonZero::<core::felt>
 Statements:
   (v8: core::felt) <- 7u
 End:
   Callsite()
 
-blk4:
-Inputs:
-Statements:
-  (v13: core::felt) <- 3u
-  (v14: core::felt) <- 0u
-  (v15: core::felt) <- core::felt_add(v0, v14)
-End:
-  Callsite(v15 -> v16)
-
-blk5 (root):
+blk2 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- blk0()
+  (v1: core::felt) <- 7u
   (v2: ()) <- struct_construct()
-  () <- blk1()
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
   (v5: core::felt) <- core::felt_sub(v3, v4)
   () <- match core::felt_jump_nz(v5) {
-    JumpNzResult::Zero => blk2,
-    JumpNzResult::NonZero => blk3,
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
   (v10: core::felt) <- 3u
   (v11: core::felt) <- test::foo(v10)
   (v12: core::felt) <- 5u
-  () <- blk4()
-  (v17: core::felt) <- core::felt_mul(v12, v16)
-  (v18: core::felt) <- core::felt_add(v11, v17)
+  (v13: core::felt) <- 3u
+  (v14: core::felt) <- 0u
+  (v15: core::felt) <- core::felt_add(v0, v14)
+  (v16: core::felt) <- core::felt_mul(v12, v15)
+  (v17: core::felt) <- core::felt_add(v11, v16)
 End:
-  Return(v18)
+  Return(v17)
 
 //! > ==========================================================================
 
@@ -262,7 +217,7 @@ enum MyEnum {
 
 //! > lowering_structured
 blk0:
-Inputs:
+Inputs: v1: ()
 Initial refs:
 Statements:
   (v2: core::felt) <- 5u
@@ -270,108 +225,63 @@ End:
   Return(v2)
 
 blk1:
-Inputs:
-Initial refs:
-Statements:
-End:
-  Callsite(v3 -> v4)
-
-blk2:
-Inputs:
-Initial refs:
-Statements:
-  (v6: core::felt) <- 7u
-End:
-  Callsite(v6 -> v7)
-
-blk3:
-Inputs: v1: ()
-Initial refs:
-Statements:
-  () <- blk0()
-End:
-  Unreachable
-
-blk4:
 Inputs: v3: core::felt
 Initial refs:
 Statements:
-  () <- blk1()
 End:
-  Callsite(v4 -> v8)
+  Callsite(v3 -> v6)
 
-blk5:
-Inputs: v5: core::box::Box::<((), core::felt)>
+blk2:
+Inputs: v4: core::box::Box::<((), core::felt)>
 Initial refs:
 Statements:
-  () <- blk2()
+  (v5: core::felt) <- 7u
 End:
-  Callsite(v7 -> v8)
+  Callsite(v5 -> v6)
 
-blk6 (root):
+blk3 (root):
 Inputs: v0: test::MyEnum
 Initial refs:
 Statements:
   () <- match_enum(v0) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
+    MyEnum::A => blk0,
+    MyEnum::B => blk1,
+    MyEnum::C => blk2,
   }
 End:
-  Return(v8)
+  Return(v6)
 
 //! > lowering_flat
 blk0:
-Inputs:
+Inputs: v1: ()
 Statements:
   (v2: core::felt) <- 5u
 End:
   Return(v2)
 
 blk1:
-Inputs:
-Statements:
-End:
-  Callsite(v3 -> v4)
-
-blk2:
-Inputs:
-Statements:
-  (v6: core::felt) <- 7u
-End:
-  Callsite(v6 -> v7)
-
-blk3:
-Inputs: v1: ()
-Statements:
-  () <- blk0()
-End:
-  Unreachable
-
-blk4:
 Inputs: v3: core::felt
 Statements:
-  () <- blk1()
 End:
-  Callsite(v4 -> v8)
+  Callsite(v3 -> v6)
 
-blk5:
-Inputs: v5: core::box::Box::<((), core::felt)>
+blk2:
+Inputs: v4: core::box::Box::<((), core::felt)>
 Statements:
-  () <- blk2()
+  (v5: core::felt) <- 7u
 End:
-  Callsite(v7 -> v8)
+  Callsite(v5 -> v6)
 
-blk6 (root):
+blk3 (root):
 Inputs: v0: test::MyEnum
 Statements:
   () <- match_enum(v0) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
+    MyEnum::A => blk0,
+    MyEnum::B => blk1,
+    MyEnum::C => blk2,
   }
 End:
-  Return(v8)
+  Return(v6)
 
 //! > ==========================================================================
 

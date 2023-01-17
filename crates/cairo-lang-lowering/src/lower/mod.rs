@@ -26,10 +26,7 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::{LoweringContextBuilder, LoweringResult, VarRequest};
 use crate::lower::scope::merge_sealed;
-use crate::{
-    Statement, StatementCallBlock, StatementMatchEnum, StatementMatchExtern, StructuredLowered,
-    VariableId,
-};
+use crate::{Statement, StatementMatchEnum, StatementMatchExtern, StructuredLowered, VariableId};
 pub mod generators;
 
 pub mod context;
@@ -112,12 +109,22 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<S
 fn lower_block(
     ctx: &mut LoweringContext<'_>,
     mut scope: BlockBuilder,
-    expr_block: &semantic::ExprBlock,
+    semantic_block: &semantic::ExprBlock,
 ) -> Maybe<SealedBlockBuilder> {
+    let block_expr = lower_expr_block(ctx, &mut scope, semantic_block);
+    lowered_expr_to_block_scope_end(ctx, scope, block_expr)
+}
+
+/// Lowers a semantic block.
+fn lower_expr_block(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockBuilder,
+    expr_block: &semantic::ExprBlock,
+) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a block.");
     for (i, stmt_id) in expr_block.statements.iter().enumerate() {
         let stmt = &ctx.function_body.statements[*stmt_id];
-        let Err(err) = lower_statement(ctx, &mut scope, stmt) else { continue; };
+        let Err(err) = lower_statement(ctx, scope, stmt) else { continue; };
         if err.is_unreachable() {
             // If flow is not reachable anymore, no need to continue emitting statements.
             // TODO(spapini): We might want to report unreachable for expr that abruptly
@@ -133,16 +140,14 @@ fn lower_block(
                 );
             }
         }
-        return lowering_flow_error_to_sealed_block(ctx, scope, err);
+        return Err(err);
     }
-
     // Determine correct block end.
     let location = ctx.get_location(expr_block.stable_ptr.untyped());
-    let lowered_expr = expr_block
+    expr_block
         .tail
-        .map(|expr| lower_expr(ctx, &mut scope, expr))
-        .unwrap_or_else(|| Ok(LoweredExpr::Tuple { exprs: vec![], location }));
-    lowered_expr_to_block_scope_end(ctx, scope, lowered_expr)
+        .map(|expr| lower_expr(ctx, scope, expr))
+        .unwrap_or_else(|| Ok(LoweredExpr::Tuple { exprs: vec![], location }))
 }
 
 /// Lowers an expression that is either a complete block, or the end (tail expression) of a
@@ -341,26 +346,6 @@ fn lower_expr_tuple(
         .map(|arg_expr_id| lower_expr(ctx, scope, *arg_expr_id))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(LoweredExpr::Tuple { exprs: inputs, location })
-}
-
-/// Lowers an expression of type [semantic::ExprBlock].
-fn lower_expr_block(
-    ctx: &mut LoweringContext<'_>,
-    scope: &mut BlockBuilder,
-    expr: &semantic::ExprBlock,
-) -> LoweringResult<LoweredExpr> {
-    log::trace!("Lowering a block expression: {:?}", expr.debug(&ctx.expr_formatter));
-    let location = ctx.get_location(expr.stable_ptr.untyped());
-
-    let subscope = scope.subscope_with_bound_refs();
-    let block_sealed = lower_block(ctx, subscope, expr).map_err(LoweringFlowError::Failed)?;
-    let merged = merge_sealed(ctx, scope, vec![block_sealed], location);
-
-    // Emit the statement.
-    scope.push_finalized_statement(Statement::CallBlock(StatementCallBlock {
-        block: merged.blocks[0],
-    }));
-    merged.expr
 }
 
 /// Lowers an expression of type [semantic::ExprFunctionCall].
