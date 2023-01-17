@@ -55,7 +55,7 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
 pub fn init_dev_corelib_crate(db: &mut (dyn FilesGroup + 'static)) {
     // Initialize corelib crate.
     let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
-    if db.crate_root_dir(core_crate) == None {
+    if db.crate_root_dir(core_crate).is_none() {
         let path = detect_corelib().expect("Corelib not found nor provided as crate.");
         let core_root_dir = Directory(path);
         db.set_crate_root(core_crate, Some(core_root_dir));
