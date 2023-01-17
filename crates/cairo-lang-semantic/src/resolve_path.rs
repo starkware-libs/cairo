@@ -5,8 +5,8 @@ mod test;
 use std::iter::Peekable;
 
 use cairo_lang_defs::ids::{
-    GenericFunctionId, GenericParamId, GenericTypeId, ImplId, LanguageElementId, ModuleFileId,
-    ModuleId, ModuleItemId, TraitId, TypeAliasId,
+    GenericParamId, GenericTypeId, ImplId, LanguageElementId, ModuleFileId, ModuleId, ModuleItemId,
+    TraitId, TypeAliasId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -25,6 +25,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
+use crate::items::functions::GenericFunctionId;
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
 use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
 use crate::literals::LiteralLongId;
@@ -664,7 +665,7 @@ pub fn specialize_function(
 ) -> Maybe<FunctionId> {
     // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
     let generic_params = db
-        .generic_function_generic_params(generic_function)
+        .function_signature_generic_params(generic_function.signature())
         .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
 
     conform_generic_args(db, diagnostics, &generic_params, &mut generic_args, stable_ptr);

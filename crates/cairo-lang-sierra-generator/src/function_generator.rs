@@ -4,11 +4,13 @@ mod test;
 
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
+use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use semantic::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
+use semantic::ConcreteImplLongId;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::block_generator::{generate_block_code, generate_return_code};
@@ -49,7 +51,7 @@ fn get_function_code(
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
     let signature = db.function_with_body_signature(function_id)?;
-    let lowered_function = &*db.function_with_body_lowered_flat(function_id)?;
+    let lowered_function = &*db.function_with_body_lowered(function_id)?;
     let block_id = lowered_function.root?;
     let block = &lowered_function.blocks[block_id];
 
@@ -91,8 +93,8 @@ fn get_function_code(
     // Generate the return statement if necessary.
     let return_statement_location: StatementLocation = (block_id, block.statements.len());
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(returned_variables)
-        | lowering::FlatBlockEnd::Return(returned_variables) => {
+        lowering::FlatBlockEnd::Callsite(_) => panic!("Root block may not end with callsite."),
+        lowering::FlatBlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(
                 &mut context,
                 returned_variables,
@@ -121,7 +123,14 @@ fn get_function_code(
                         GenericFunctionId::Free(free_function_id)
                     }
                     FunctionWithBodyId::Impl(impl_function_id) => {
-                        GenericFunctionId::Impl(impl_function_id)
+                        GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
+                            concrete_impl: db.intern_concrete_impl(ConcreteImplLongId {
+                                impl_id: impl_function_id.impl_id(db.upcast()),
+                                // TODO(yuval): Add generic arguments.
+                                generic_args: vec![],
+                            }),
+                            function: impl_function_id,
+                        })
                     }
                 },
                 // TODO(lior): Add generic arguments.

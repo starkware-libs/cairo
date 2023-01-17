@@ -650,6 +650,13 @@ of the libfunc or return statement.";
                 foo@0() -> ();
             "}, "#1: The functionality is supported only for sized types.";
             "store_temp<Uninitialized<felt>()")]
+#[test_case(indoc! {"
+                return ();
+
+                foo@0() -> ();
+                bar@0() -> ();
+            "}, "#0 Belongs to two different functions.";
+            "Statement in two functions")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(

@@ -4,7 +4,7 @@ mod test;
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
+    EnumId, FunctionSignatureId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -268,10 +268,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::ParamNameRedefinition { function_id, param_name } => {
+            SemanticDiagnosticKind::ParamNameRedefinition { function_signature_id, param_name } => {
                 format!(
                     r#"Redefinition of parameter name "{param_name}" in function "{}"."#,
-                    function_id.full_path(db.upcast())
+                    function_signature_id.full_path(db.upcast())
                 )
             }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
@@ -541,7 +541,7 @@ pub enum SemanticDiagnosticKind {
         variant_name: SmolStr,
     },
     ParamNameRedefinition {
-        function_id: GenericFunctionId,
+        function_signature_id: FunctionSignatureId,
         param_name: SmolStr,
     },
     IncompatibleMatchArms {

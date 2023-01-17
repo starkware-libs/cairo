@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use cairo_lang_defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
+use cairo_lang_defs::ids::{FunctionSignatureId, LocalVarLongId, MemberId};
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -116,13 +116,13 @@ impl Environment {
         diagnostics: &mut SemanticDiagnostics,
         semantic_param: Parameter,
         ast_param: &ast::Param,
-        function_id: GenericFunctionId,
+        function_signature_id: FunctionSignatureId,
     ) -> Maybe<()> {
         let name = &semantic_param.name;
         match self.variables.entry(name.clone()) {
             std::collections::hash_map::Entry::Occupied(_) => Err(diagnostics.report(
                 ast_param,
-                ParamNameRedefinition { function_id, param_name: name.clone() },
+                ParamNameRedefinition { function_signature_id, param_name: name.clone() },
             )),
             std::collections::hash_map::Entry::Vacant(entry) => {
                 entry.insert(Variable::Param(semantic_param));
@@ -134,10 +134,20 @@ impl Environment {
 
 /// Computes the semantic model of an expression.
 pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr) -> Expr {
-    maybe_compute_expr_semantic(ctx, syntax).unwrap_or_else(|diag_added| {
+    let expr = maybe_compute_expr_semantic(ctx, syntax);
+    wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr())
+}
+
+/// Converts `Maybe<Expr>` to a possibly [missing](ExprMissing) [Expr].
+fn wrap_maybe_with_missing(
+    ctx: &mut ComputationContext<'_>,
+    expr: Maybe<Expr>,
+    stable_ptr: ast::ExprPtr,
+) -> Expr {
+    expr.unwrap_or_else(|diag_added| {
         Expr::Missing(ExprMissing {
             ty: TypeId::missing(ctx.db, diag_added),
-            stable_ptr: syntax.stable_ptr(),
+            stable_ptr,
             diag_added,
         })
     })
@@ -175,7 +185,9 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
-        ast::Expr::Missing(_) => Err(ctx.diagnostics.report(syntax, Unsupported)),
+        ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
+            Err(ctx.diagnostics.report(syntax, Unsupported))
+        }
     }
 }
 fn compute_expr_unary_semantic(
@@ -326,15 +338,25 @@ pub fn compute_named_argument_clause(
 ) -> (Expr, Option<ast::TerminalIdentifier>) {
     let syntax_db = ctx.db.upcast();
 
-    let arg_name_identifier = if let ast::OptionArgNameClause::ArgNameClause(arg_name_clause) =
-        arg_syntax.name(syntax_db)
-    {
-        Some(arg_name_clause.name(syntax_db))
-    } else {
-        None
+    let (expr, arg_name_identifier) = match arg_syntax {
+        ast::Arg::Unnamed(arg_unnamed) => {
+            (compute_expr_semantic(ctx, &arg_unnamed.value(syntax_db)), None)
+        }
+        ast::Arg::Named(arg_named) => (
+            compute_expr_semantic(ctx, &arg_named.value(syntax_db)),
+            Some(arg_named.name(syntax_db)),
+        ),
+        ast::Arg::FieldInitShorthand(arg_field_init_shorthand) => {
+            let name_expr = arg_field_init_shorthand.name(syntax_db);
+            let stable_ptr: ast::ExprPtr = name_expr.stable_ptr().into();
+            let arg_name_identifier = name_expr.name(syntax_db);
+            let maybe_expr = resolve_variable_by_name(ctx, &arg_name_identifier, stable_ptr);
+            let expr = wrap_maybe_with_missing(ctx, maybe_expr, stable_ptr);
+            (expr, Some(arg_name_identifier))
+        }
     };
 
-    (compute_expr_semantic(ctx, &arg_syntax.value(syntax_db)), arg_name_identifier)
+    (expr, arg_name_identifier)
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprBlock].
@@ -845,7 +867,7 @@ fn struct_ctor_expr(
         // Extract expression.
         let arg_expr = match arg.arg_expr(syntax_db) {
             ast::OptionStructArgExpr::Empty(_) => {
-                resolve_variable_by_name(ctx, &arg_identifier, &path)?
+                resolve_variable_by_name(ctx, &arg_identifier, path.stable_ptr().into())?
             }
             ast::OptionStructArgExpr::StructArgExpr(arg_expr) => {
                 compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
@@ -1036,7 +1058,7 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> M
 
     match &segments[0] {
         PathSegment::Simple(ident_segment) => {
-            resolve_variable_by_name(ctx, &ident_segment.ident(syntax_db), path)
+            resolve_variable_by_name(ctx, &ident_segment.ident(syntax_db), path.stable_ptr().into())
         }
         PathSegment::WithGenericArgs(generic_args_segment) => {
             // TODO(ilya, 10/10/2022): Generics are not supported yet.
@@ -1049,17 +1071,13 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> M
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     identifier: &ast::TerminalIdentifier,
-    path: &ast::ExprPath,
+    stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
     let mut maybe_env = Some(&*ctx.environment);
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(&variable_name) {
-            return Ok(Expr::Var(ExprVar {
-                var: var.id(),
-                ty: var.ty(),
-                stable_ptr: path.stable_ptr().into(),
-            }));
+            return Ok(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }));
         }
         maybe_env = env.parent.as_deref();
     }

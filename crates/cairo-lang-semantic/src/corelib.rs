@@ -1,6 +1,4 @@
-use cairo_lang_defs::ids::{
-    EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, TraitId,
-};
+use cairo_lang_defs::ids::{EnumId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
@@ -11,6 +9,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::items::enm::SemanticEnumEx;
+use crate::items::functions::GenericFunctionId;
 use crate::items::trt::ConcreteTraitId;
 use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;

@@ -1,13 +1,14 @@
-use cairo_lang_defs::ids::GenericFunctionId;
 use cairo_lang_semantic::corelib::get_const_libfunc_name_by_type;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::LibfuncSignature;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
+use itertools::Itertools;
 use num_bigint::BigInt;
+use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
-use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
+use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -254,9 +255,38 @@ pub fn get_concrete_libfunc_id(
 
             (concrete_function, generic_libfunc_id(db, extern_id, generic_args))
         }
-        GenericFunctionId::Trait(_) => {
-            panic!("Trait function should be replaced with concrete functions.")
-        }
         GenericFunctionId::Impl(_) => todo!(),
     }
+}
+
+/// Gets the output variables from a statement, including branching statements.
+pub fn statement_outputs(
+    statement: &lowering::Statement,
+    lowered_function: &lowering::FlatLowered,
+) -> Vec<lowering::VariableId> {
+    match statement {
+        lowering::Statement::CallBlock(statement_call_block) => {
+            collect_outputs(lowered_function, &[statement_call_block.block])
+        }
+        lowering::Statement::MatchExtern(lowering::StatementMatchExtern { arms, .. })
+        | lowering::Statement::MatchEnum(lowering::StatementMatchEnum { arms, .. }) => {
+            let blocks = arms.iter().map(|(_, block)| *block).collect_vec();
+            collect_outputs(lowered_function, &blocks)
+        }
+        _ => statement.outputs(),
+    }
+}
+
+/// Collects output variables from multiple converging blocks.
+fn collect_outputs(
+    lowered_function: &lowering::FlatLowered,
+    blocks: &[lowering::BlockId],
+) -> Vec<id_arena::Id<lowering::Variable>> {
+    for block in blocks {
+        if let lowering::FlatBlockEnd::Callsite(remapping) = &lowered_function.blocks[*block].end {
+            // It is guaranteed by lowering phase that all of the variables mapped to are the same.
+            return remapping.keys().copied().collect();
+        }
+    }
+    vec![]
 }

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::vec;
 
 use cairo_lang_defs::ids::{
-    GenericFunctionId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
+    FunctionSignatureId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
     LanguageElementId, ModuleId,
 };
 use cairo_lang_diagnostics::{
@@ -19,6 +19,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionHelper};
 use itertools::izip;
+use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
@@ -290,8 +291,19 @@ pub fn priv_impl_definition_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_functions].
-pub fn impl_functions(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Vec<ImplFunctionId>> {
-    Ok(db.priv_impl_definition_data(impl_id)?.function_asts.keys().copied().collect())
+pub fn impl_functions(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>> {
+    Ok(db
+        .priv_impl_definition_data(impl_id)?
+        .function_asts
+        .keys()
+        .map(|function_id| {
+            let function_long_id = db.lookup_intern_impl_function(*function_id);
+            (function_long_id.name(db.upcast()), *function_id)
+        })
+        .collect())
 }
 
 /// Handle special cases such as Copy and Drop checking.
@@ -492,7 +504,7 @@ pub fn priv_impl_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        GenericFunctionId::Impl(impl_function_id),
+        FunctionSignatureId::Impl(impl_function_id),
         &mut environment,
     );
 
