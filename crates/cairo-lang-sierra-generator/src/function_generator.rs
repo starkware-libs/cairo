@@ -49,7 +49,7 @@ fn get_function_code(
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
     let signature = db.function_with_body_signature(function_id)?;
-    let lowered_function = &*db.function_with_body_lowered_flat(function_id)?;
+    let lowered_function = &*db.function_with_body_lowered(function_id)?;
     let block_id = lowered_function.root?;
     let block = &lowered_function.blocks[block_id];
 
