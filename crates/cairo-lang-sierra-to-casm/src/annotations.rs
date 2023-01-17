@@ -3,7 +3,7 @@ use std::iter;
 
 use cairo_lang_casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use cairo_lang_sierra::edit_state::{put_results, take_args};
-use cairo_lang_sierra::ids::{FunctionId, VarId};
+use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
 use itertools::zip_eq;
 use thiserror::Error;
@@ -74,8 +74,8 @@ pub enum AnnotationError {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StatementAnnotations {
     pub refs: StatementRefs,
-    // The function id that the statement belongs to.
-    pub function_id: FunctionId,
+    // The index of the function in the ProgramAnnotations.functions.
+    pub function_idx: usize,
     pub environment: Environment,
 }
 
@@ -102,14 +102,14 @@ impl ProgramAnnotations {
         type_sizes: &TypeSizeMap,
     ) -> Result<Self, AnnotationError> {
         let mut annotations = ProgramAnnotations::new(n_statements);
-        for func in functions {
+        for (function_idx, func) in functions.iter().enumerate() {
             annotations.set_or_assert(
                 func.entry_point,
                 StatementAnnotations {
                     refs: build_function_arguments_refs(func, type_sizes).map_err(|error| {
                         AnnotationError::ReferencesError { statement_idx: func.entry_point, error }
                     })?,
-                    function_id: func.id.clone(),
+                    function_idx,
                     environment: if gas_usage_check {
                         Environment::new(GasWallet::Value(
                             metadata.gas_info.function_costs[func.id.clone()].clone(),
@@ -139,7 +139,7 @@ impl ProgramAnnotations {
                 if expected_annotations.refs != annotations.refs {
                     return Err(AnnotationError::InconsistentReferencesAnnotation(statement_id));
                 }
-                if expected_annotations.function_id != annotations.function_id {
+                if expected_annotations.function_idx != annotations.function_idx {
                     return Err(AnnotationError::InconsistentFunctionId {
                         statement_idx: statement_id,
                     });
@@ -221,7 +221,7 @@ impl ProgramAnnotations {
                         destination_statement_idx,
                         var_id: error.var_id(),
                     })?,
-                    function_id: annotations.function_id.clone(),
+                    function_idx: annotations.function_idx.clone(),
                     environment: Environment {
                         ap_tracking: update_ap_tracking(
                             annotations.environment.ap_tracking,
@@ -255,8 +255,7 @@ impl ProgramAnnotations {
         metadata: &Metadata,
         return_refs: &[ReferenceValue],
     ) -> Result<(), AnnotationError> {
-        // TODO(ilya): Don't use linear search.
-        let func = &functions.iter().find(|func| func.id == annotations.function_id).unwrap();
+        let func = &functions[annotations.function_idx];
 
         let expected_ap_change = match metadata.ap_change_info.function_ap_change.get(&func.id) {
             Some(x) => ApChange::Known(*x),
