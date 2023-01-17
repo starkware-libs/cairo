@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, ParamLongId};
+use cairo_lang_defs::ids::{
+    ExternFunctionId, FunctionWithBodyId, GenericFunctionId, GenericParamId, ParamLongId,
+};
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
@@ -46,6 +48,23 @@ impl FunctionId {
             db.lookup_intern_function(*self).function.generic_function,
             GenericFunctionId::Extern
         )
+    }
+
+    /// Returns the FunctionWithBodyId if this is a function with body, otherwise returns None.
+    pub fn try_get_function_with_body_id(
+        &self,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> Option<FunctionWithBodyId> {
+        match db.lookup_intern_function(*self).function.generic_function {
+            GenericFunctionId::Free(free_function_id) => {
+                Some(FunctionWithBodyId::Free(free_function_id))
+            }
+            GenericFunctionId::Impl(impl_function_id) => {
+                Some(FunctionWithBodyId::Impl(impl_function_id))
+            }
+            GenericFunctionId::Extern(_) => None,
+            GenericFunctionId::Trait(_) => None,
+        }
     }
 }
 
