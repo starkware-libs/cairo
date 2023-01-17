@@ -12,7 +12,7 @@ use cairo_lang_utils::Upcast;
 
 use crate::borrow_check::borrow_check;
 use crate::diagnostic::LoweringDiagnostic;
-use crate::inline::PrivInlineData;
+use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
 use crate::panic::lower_panics;
 use crate::{FlatLowered, StructuredLowered};
@@ -32,6 +32,18 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Computes the lowered representation of a function with a body.
     fn function_with_body_lowered_flat(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the lowered representation (after inlining) of a function with a body .
+    fn function_with_body_lowered_flat_with_inlining(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the final lowered representation (after all the internal transformations).
+    fn function_with_body_lowered_final(
         &self,
         function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
@@ -138,6 +150,25 @@ fn function_with_body_lowered_flat(
         &mut lowered,
     );
     Ok(Arc::new(lowered))
+}
+
+fn function_with_body_lowered_flat_with_inlining(
+    db: &dyn LoweringGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    let lowered = db.function_with_body_lowered_flat(function_id)?;
+    Ok(if let Ok(lowered_with_inlining) = apply_inlining(db, function_id, &lowered) {
+        Arc::new(lowered_with_inlining)
+    } else {
+        lowered
+    })
+}
+
+fn function_with_body_lowered_final(
+    db: &dyn LoweringGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    db.function_with_body_lowered_flat_with_inlining(function_id)
 }
 
 fn function_with_body_lowering_diagnostics(
