@@ -33,12 +33,10 @@ ExprFunctionCall
     └── arguments (kind: ArgListParenthesized)
         ├── lparen (kind: TokenLParen): '('
         ├── args (kind: ArgList)
-        │   ├── item #0 (kind: Arg)
-        │   │   ├── name (kind: OptionArgNameClauseEmpty) []
+        │   ├── item #0 (kind: ArgUnnamed)
         │   │   └── value (kind: TokenLiteralNumber): '12'
         │   ├── separator #0 (kind: TokenComma): ','
-        │   ├── item #1 (kind: Arg)
-        │   │   ├── name (kind: OptionArgNameClauseEmpty) []
+        │   ├── item #1 (kind: ArgUnnamed)
         │   │   └── value (kind: ExprBinary)
         │   │       ├── lhs (kind: ExprPath)
         │   │       │   └── item #0 (kind: PathSegmentSimple)
@@ -46,8 +44,7 @@ ExprFunctionCall
         │   │       ├── op (kind: TokenPlus): '+'
         │   │       └── rhs (kind: TokenLiteralNumber): '3'
         │   ├── separator #1 (kind: TokenComma): ','
-        │   └── item #2 (kind: Arg)
-        │       ├── name (kind: OptionArgNameClauseEmpty) []
+        │   └── item #2 (kind: ArgUnnamed)
         │       └── value (kind: ExprPath)
         │           └── item #0 (kind: PathSegmentSimple)
         │               └── ident (kind: TokenIdentifier): 'b'
@@ -80,14 +77,12 @@ ExprFunctionCall
     └── arguments (kind: ArgListParenthesized)
         ├── lparen (kind: TokenLParen): '('
         ├── args (kind: ArgList)
-        │   ├── item #0 (kind: Arg)
-        │   │   ├── name (kind: OptionArgNameClauseEmpty) []
+        │   ├── item #0 (kind: ArgUnnamed)
         │   │   └── value (kind: TokenLiteralNumber): '12'
         │   ├── separator #0 (kind: TokenComma): ','
-        │   └── item #1 (kind: Arg)
-        │       ├── name (kind: ArgNameClause)
-        │       │   ├── name (kind: TokenIdentifier): 'y'
-        │       │   └── colon (kind: TokenColon): ':'
+        │   └── item #1 (kind: ArgNamed)
+        │       ├── name (kind: TokenIdentifier): 'y'
+        │       ├── colon (kind: TokenColon): ':'
         │       └── value (kind: ExprBinary)
         │           ├── lhs (kind: ExprPath)
         │           │   └── item #0 (kind: PathSegmentSimple)
