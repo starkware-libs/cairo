@@ -29,7 +29,7 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- blk1()
+  () <- blk1()
 End:
   Return(v1)
 
@@ -39,7 +39,7 @@ Statements:
   (v2: core::felt) <- core::felt_const<Literal(LiteralLongId { value: -1 }),>()
   (v3: core::felt) <- core::felt_mul(v0, v2)
 End:
-  Callsite(v3)
+  Callsite(v3 -> v1)
 
 //! > ==========================================================================
 
@@ -78,7 +78,7 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- blk1()
+  () <- blk1()
 End:
   Return(v1)
 
@@ -87,7 +87,7 @@ Inputs:
 Statements:
   (v2: core::felt) <- core::felt_add(v0, v0)
 End:
-  Callsite(v2)
+  Callsite(v2 -> v1)
 
 //! > ==========================================================================
 
@@ -133,29 +133,29 @@ blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v2: core::felt) <- core::felt_add(v0, v1)
-  (v3: core::felt) <- blk1()
+  () <- blk1()
 End:
   Return(v3)
 
 blk1:
 Inputs:
 Statements:
-  (v4: core::felt) <- blk2()
-  (v5: core::felt) <- blk3()
+  () <- blk2()
+  () <- blk3()
   (v6: core::felt) <- core::felt_add(v4, v5)
 End:
-  Callsite(v6)
+  Callsite(v6 -> v3)
 
 blk2:
 Inputs:
 Statements:
   (v7: core::felt) <- core::felt_mul(v2, v1)
 End:
-  Callsite(v7)
+  Callsite(v7 -> v4)
 
 blk3:
 Inputs:
 Statements:
   (v8: core::felt) <- core::felt_mul(v1, v2)
 End:
-  Callsite(v8)
+  Callsite(v8 -> v5)

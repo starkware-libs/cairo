@@ -7,7 +7,8 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_syntax::node::ast;
-use itertools::izip;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::{izip, zip_eq};
 
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
@@ -16,7 +17,7 @@ use crate::lower::context::{LoweringContext, LoweringContextBuilder};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall, StatementCallBlock,
     StatementEnumConstruct, StatementLiteral, StatementMatchEnum, StatementMatchExtern,
-    StatementStructConstruct, StatementStructDestructure, VariableId,
+    StatementStructConstruct, StatementStructDestructure, VarRemapping, VariableId,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -195,12 +196,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 let inline_data = self.ctx.db.priv_inline_data(function_id)?;
 
                 if inline_data.config == InlineConfiguration::Always && inline_data.is_inlineable {
-                    let block = self.inline_function(function_id, &stmt.inputs)?;
+                    let block = self.inline_function(function_id, &stmt.inputs, &stmt.outputs)?;
 
-                    return Ok(Statement::CallBlock(StatementCallBlock {
-                        block,
-                        outputs: stmt.outputs.clone(),
-                    }));
+                    return Ok(Statement::CallBlock(StatementCallBlock { block }));
                 }
             }
         }
@@ -214,13 +212,14 @@ impl<'db> FunctionInlinerRewriter<'db> {
         BlockId(self.flat_blocks.len() + self.block_queue.len())
     }
 
-    /// Inlines the given function, with the given input variables.
+    /// Inlines the given function, with the given input and outputs variables.
     ///
     /// Returns the block_id that should be called instead of the function.
     pub fn inline_function(
         &mut self,
         function_id: FunctionWithBodyId,
         inputs: &[VariableId],
+        outputs: &[VariableId],
     ) -> Maybe<BlockId> {
         let lowered = self.ctx.db.function_with_body_lowered_flat(function_id)?;
         let root_block_id = lowered.root?;
@@ -248,15 +247,24 @@ impl<'db> FunctionInlinerRewriter<'db> {
             }
 
             let end = match &block.end {
-                FlatBlockEnd::Callsite(outputs) => {
-                    FlatBlockEnd::Callsite(outputs.iter().map(&mut rename_var).collect())
+                FlatBlockEnd::Callsite(remapping) => {
+                    let remapping = VarRemapping {
+                        remapping: OrderedHashMap::from_iter(
+                            remapping.iter().map(|(dst, src)| (rename_var(dst), rename_var(src))),
+                        ),
+                    };
+                    FlatBlockEnd::Callsite(remapping)
                 }
                 FlatBlockEnd::Return(returns) => {
                     if block_id != root_block_id {
                         panic!("Cannot inline a function an early return.");
                     }
-
-                    FlatBlockEnd::Callsite(returns.iter().map(&mut rename_var).collect())
+                    let remapping = VarRemapping {
+                        remapping: OrderedHashMap::from_iter(
+                            zip_eq(outputs, returns).map(|(dst, src)| (*dst, rename_var(src))),
+                        ),
+                    };
+                    FlatBlockEnd::Callsite(remapping)
                 }
                 FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
             };
@@ -306,10 +314,9 @@ where
             outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
         }),
 
-        Statement::CallBlock(stmt) => Statement::CallBlock(StatementCallBlock {
-            block: stmt.block,
-            outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
-        }),
+        Statement::CallBlock(stmt) => {
+            Statement::CallBlock(StatementCallBlock { block: stmt.block })
+        }
         Statement::MatchExtern(stmt) => Statement::MatchExtern(StatementMatchExtern {
             function: stmt.function,
             inputs: stmt.inputs.iter().map(&mut rename_var).collect(),
@@ -320,7 +327,6 @@ where
                     (concrete_variant.clone(), renamed_blocks[block_id])
                 })
                 .collect(),
-            outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
         }),
         Statement::StructConstruct(stmt) => Statement::StructConstruct(StatementStructConstruct {
             inputs: stmt.inputs.iter().map(&mut rename_var).collect(),
@@ -338,7 +344,7 @@ where
             output: rename_var(&stmt.output),
         }),
         Statement::MatchEnum(stmt) => Statement::MatchEnum(StatementMatchEnum {
-            concrete_enum: stmt.concrete_enum,
+            concrete_enum_id: stmt.concrete_enum_id,
             input: rename_var(&stmt.input),
             arms: stmt
                 .arms
@@ -347,7 +353,6 @@ where
                     (concrete_variant.clone(), renamed_blocks[block_id])
                 })
                 .collect(),
-            outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
         }),
     }
 }
