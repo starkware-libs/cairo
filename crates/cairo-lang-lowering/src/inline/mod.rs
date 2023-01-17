@@ -318,7 +318,7 @@ where
         }),
 
         Statement::CallBlock(stmt) => {
-            Statement::CallBlock(StatementCallBlock { block: stmt.block })
+            Statement::CallBlock(StatementCallBlock { block: renamed_blocks[&stmt.block] })
         }
         Statement::MatchExtern(stmt) => Statement::MatchExtern(StatementMatchExtern {
             function: stmt.function,
