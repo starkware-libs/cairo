@@ -263,7 +263,7 @@ blk1:
 Inputs: v5: ()
 Statements:
 End:
-  Callsite(v5 -> v2)
+  Callsite()
 
 blk2:
 Inputs: v6: core::array::Array::<core::felt>
