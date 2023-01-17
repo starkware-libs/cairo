@@ -297,7 +297,7 @@ pub fn apply_inlining(
     FunctionInlinerRewriter::apply(lowering_builder.ctx()?, flat_lower)
 }
 
-// Rebuilds the statement with renamed var and block ids.
+/// Rebuilds the statement with renamed var and block ids.
 fn rebuild_statement<F>(
     statement: &Statement,
     mut rename_var: F,
@@ -318,7 +318,7 @@ where
         }),
 
         Statement::CallBlock(stmt) => {
-            Statement::CallBlock(StatementCallBlock { block: stmt.block })
+            Statement::CallBlock(StatementCallBlock { block: renamed_blocks[&stmt.block] })
         }
         Statement::MatchExtern(stmt) => Statement::MatchExtern(StatementMatchExtern {
             function: stmt.function,
