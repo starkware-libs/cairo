@@ -193,8 +193,9 @@ pub fn impl_semantic_definition_diagnostics(
     diagnostics.build()
 }
 
-/// An helper function to report diagnostics in priv_impl_definition_data.
-fn report_invalid_in_impl<Terminal: syntax::node::Terminal>(
+/// An helper function to report diagnostics of items in an impl (used in
+/// priv_impl_definition_data).
+fn report_invalid_impl_item<Terminal: syntax::node::Terminal>(
     syntax_db: &dyn SyntaxGroup,
     diagnostics: &mut SemanticDiagnostics,
     kw_terminal: Terminal,
@@ -210,7 +211,10 @@ pub fn priv_impl_definition_data(
     db: &dyn SemanticGroup,
     impl_id: ImplId,
 ) -> Maybe<ImplDefinitionData> {
-    let module_file_id = impl_id.module_file(db.upcast());
+    let defs_db = db.upcast();
+    let syntax_db = db.upcast();
+
+    let module_file_id = impl_id.module_file(defs_db);
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
 
     let declaration_data = db.priv_impl_declaration_data(impl_id)?;
@@ -218,7 +222,6 @@ pub fn priv_impl_definition_data(
 
     let module_impls = db.module_impls(module_file_id.0)?;
     let impl_ast = module_impls.get(&impl_id).to_maybe()?;
-    let syntax_db = db.upcast();
 
     let lookup_context = ImplLookupContext {
         module_id: module_file_id.0,
@@ -238,46 +241,53 @@ pub fn priv_impl_definition_data(
     // TODO(yuval): verify that all functions of `concrete_trait` appear in this impl.
 
     let mut function_asts = OrderedHashMap::default();
+    let mut impl_item_names = OrderedHashSet::default();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
             match item {
-                Item::Constant(constant) => report_invalid_in_impl(
+                Item::Constant(constant) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
                     constant.const_kw(syntax_db),
                 ),
-                Item::Module(module) => {
-                    report_invalid_in_impl(syntax_db, &mut diagnostics, module.module_kw(syntax_db))
-                }
+                Item::Module(module) => report_invalid_impl_item(
+                    syntax_db,
+                    &mut diagnostics,
+                    module.module_kw(syntax_db),
+                ),
 
-                Item::Use(use_item) => {
-                    report_invalid_in_impl(syntax_db, &mut diagnostics, use_item.use_kw(syntax_db))
-                }
-                Item::ExternFunction(extern_func) => report_invalid_in_impl(
+                Item::Use(use_item) => report_invalid_impl_item(
+                    syntax_db,
+                    &mut diagnostics,
+                    use_item.use_kw(syntax_db),
+                ),
+                Item::ExternFunction(extern_func) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
                     extern_func.extern_kw(syntax_db),
                 ),
-                Item::ExternType(extern_type) => report_invalid_in_impl(
+                Item::ExternType(extern_type) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
                     extern_type.extern_kw(syntax_db),
                 ),
                 Item::Trait(trt) => {
-                    report_invalid_in_impl(syntax_db, &mut diagnostics, trt.trait_kw(syntax_db))
+                    report_invalid_impl_item(syntax_db, &mut diagnostics, trt.trait_kw(syntax_db))
                 }
                 Item::Impl(imp) => {
-                    report_invalid_in_impl(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
+                    report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
                 }
-                Item::Struct(strct) => {
-                    report_invalid_in_impl(syntax_db, &mut diagnostics, strct.struct_kw(syntax_db))
-                }
+                Item::Struct(strct) => report_invalid_impl_item(
+                    syntax_db,
+                    &mut diagnostics,
+                    strct.struct_kw(syntax_db),
+                ),
                 Item::Enum(enm) => {
-                    report_invalid_in_impl(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
+                    report_invalid_impl_item(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
                 }
                 Item::TypeAlias(ty) => {
-                    report_invalid_in_impl(syntax_db, &mut diagnostics, ty.type_kw(syntax_db))
+                    report_invalid_impl_item(syntax_db, &mut diagnostics, ty.type_kw(syntax_db))
                 }
                 Item::FreeFunction(func) => {
                     let impl_function_id = db.intern_impl_function(ImplFunctionLongId(
@@ -285,9 +295,30 @@ pub fn priv_impl_definition_data(
                         func.stable_ptr(),
                     ));
                     function_asts.insert(impl_function_id, func);
+                    impl_item_names.insert(impl_function_id.name(defs_db));
                 }
             }
         }
+    }
+
+    // It is later verified that all items in this impl match items from `concrete_trait`.
+    // To ensure exact match (up to trait functions with default implementation), it is sufficient
+    // to verify here that all items in `concrete_trait` appear in this impl.
+    // TODO(yg): Once default implementation of trait functions is supported, filter such functions
+    // out.
+    let trait_item_names = db
+        .trait_functions(db.lookup_intern_concrete_trait(concrete_trait).trait_id)?
+        .into_keys()
+        .collect::<OrderedHashSet<_>>();
+    let missing_items_in_impl =
+        trait_item_names.difference(&impl_item_names).cloned().collect::<Vec<_>>();
+    if !missing_items_in_impl.is_empty() {
+        diagnostics.report(
+            // TODO(yuval): change this to point to impl declaration (need to add ImplDeclaration
+            // in cairo_spec).
+            &impl_ast.name(syntax_db),
+            SemanticDiagnosticKind::MissingItemsInImpl { item_names: missing_items_in_impl },
+        );
     }
 
     Ok(ImplDefinitionData { diagnostics: diagnostics.build(), function_asts })
