@@ -11,6 +11,7 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_filesystem::db::init_dev_corelib_crate;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_plugins::config::ConfigPlugin;
 use cairo_lang_plugins::derive::DerivePlugin;
@@ -74,6 +75,7 @@ fn main() -> anyhow::Result<()> {
     }
     let mut db_val = RootDatabase::new(plugins);
     let db = &mut db_val;
+    init_dev_corelib_crate(db);
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
