@@ -122,7 +122,7 @@ pub fn priv_impl_declaration_data_inner(
     impl_id: ImplId,
     resolve_trait: bool,
 ) -> Maybe<ImplDeclarationData> {
-    let module_file_id = impl_id.module_file(db.upcast());
+    let module_file_id = impl_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
 
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
@@ -214,7 +214,7 @@ pub fn priv_impl_definition_data(
     let defs_db = db.upcast();
     let syntax_db = db.upcast();
 
-    let module_file_id = impl_id.module_file(defs_db);
+    let module_file_id = impl_id.module_file_id(defs_db);
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
 
     let declaration_data = db.priv_impl_declaration_data(impl_id)?;
@@ -531,7 +531,7 @@ pub fn priv_impl_function_declaration_data(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
-    let module_file_id = impl_function_id.module_file(db.upcast());
+    let module_file_id = impl_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let impl_id = impl_function_id.impl_id(db.upcast());
     let data = db.priv_impl_definition_data(impl_id)?;
@@ -718,7 +718,7 @@ pub fn priv_impl_function_body_data(
     impl_function_id: ImplFunctionId,
 ) -> Maybe<FunctionBodyData> {
     let defs_db = db.upcast();
-    let module_file_id = impl_function_id.module_file(defs_db);
+    let module_file_id = impl_function_id.module_file_id(defs_db);
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let impl_id = impl_function_id.impl_id(defs_db);
     let data = db.priv_impl_definition_data(impl_id)?;
