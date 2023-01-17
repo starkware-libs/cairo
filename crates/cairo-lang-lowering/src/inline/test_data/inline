@@ -1,0 +1,161 @@
+//! > Test simple inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(n: felt) -> felt {
+  -n
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > inlining_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- core::felt_neg(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- blk1()
+End:
+  Return(v1)
+
+blk1:
+Inputs:
+Statements:
+  (v2: core::felt) <- core::felt_const<Literal(LiteralLongId { value: -1 }),>()
+  (v3: core::felt) <- core::felt_mul(v0, v2)
+End:
+  Callsite(v3)
+
+//! > ==========================================================================
+
+//! > Test inlining same arg twice.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(n: felt) -> felt {
+  bar(n, n)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar(a: felt, b: felt) -> felt nopanic  {
+  a + b
+}
+
+//! > semantic_diagnostics
+
+//! > inlining_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0, v0)
+End:
+  Return(v1)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- blk1()
+End:
+  Return(v1)
+
+blk1:
+Inputs:
+Statements:
+  (v2: core::felt) <- core::felt_add(v0, v0)
+End:
+  Callsite(v2)
+
+//! > ==========================================================================
+
+//! > Test inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt, b: felt) -> felt {
+  bar(a + b, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar(a: felt, b: felt) -> felt implicits() nopanic  {
+  bar2(a, b) + bar2(b, a)
+}
+
+#[inline(always)]
+fn bar2(a: felt, b: felt) -> felt implicits() nopanic  {
+   a * b
+}
+
+//! > semantic_diagnostics
+
+//! > inlining_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v2: core::felt) <- core::felt_add(v0, v1)
+  (v3: core::felt) <- test::bar(v2, v1)
+End:
+  Return(v3)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v2: core::felt) <- core::felt_add(v0, v1)
+  (v3: core::felt) <- blk1()
+End:
+  Return(v3)
+
+blk1:
+Inputs:
+Statements:
+  (v4: core::felt) <- blk2()
+  (v5: core::felt) <- blk3()
+  (v6: core::felt) <- core::felt_add(v4, v5)
+End:
+  Callsite(v6)
+
+blk2:
+Inputs:
+Statements:
+  (v7: core::felt) <- core::felt_mul(v2, v1)
+End:
+  Callsite(v7)
+
+blk3:
+Inputs:
+Statements:
+  (v8: core::felt) <- core::felt_mul(v1, v2)
+End:
+  Callsite(v8)
