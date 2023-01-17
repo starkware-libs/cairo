@@ -12,7 +12,7 @@ use cairo_lang_utils::Upcast;
 
 use crate::borrow_check::borrow_check;
 use crate::diagnostic::LoweringDiagnostic;
-use crate::inline::PrivInlineData;
+use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
 use crate::panic::lower_panics;
 use crate::{FlatLowered, StructuredLowered};
@@ -21,7 +21,7 @@ use crate::{FlatLowered, StructuredLowered};
 #[salsa::query_group(LoweringDatabase)]
 pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Computes the lowered representation of a function with a body.
-    fn function_with_body_lowered_structured(
+    fn priv_function_with_body_lowered_structured(
         &self,
         function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<StructuredLowered>>;
@@ -31,7 +31,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn priv_inline_data(&self, function_id: FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
 
     /// Computes the lowered representation of a function with a body.
-    fn function_with_body_lowered_flat(
+    fn priv_function_with_body_lowered_flat(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the final lowered representation (after all the internal transformations).
+    fn function_with_body_lowered(
         &self,
         function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
@@ -118,21 +124,33 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct SCCRepresentative(pub FunctionWithBodyId);
 
-fn function_with_body_lowered_structured(
+fn priv_function_with_body_lowered_structured(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<StructuredLowered>> {
     Ok(Arc::new(lower(db.upcast(), function_id)?))
 }
 
-fn function_with_body_lowered_flat(
+fn priv_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let structured = db.function_with_body_lowered_structured(function_id)?;
+    let structured = db.priv_function_with_body_lowered_structured(function_id)?;
     let mut lowered = lower_panics(db, function_id, &structured)?;
     borrow_check(function_id.module_file_id(db.upcast()), &mut lowered);
     Ok(Arc::new(lowered))
+}
+
+fn function_with_body_lowered(
+    db: &dyn LoweringGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
+    Ok(if let Ok(lowered_with_inlining) = apply_inlining(db, function_id, &lowered) {
+        Arc::new(lowered_with_inlining)
+    } else {
+        lowered
+    })
 }
 
 fn function_with_body_lowering_diagnostics(
@@ -141,7 +159,7 @@ fn function_with_body_lowering_diagnostics(
 ) -> Maybe<Arc<Diagnostics<LoweringDiagnostic>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
     diagnostics.extend(
-        db.function_with_body_lowered_structured(function_id)
+        db.priv_function_with_body_lowered_structured(function_id)
             .map(|lowered| lowered.diagnostics.clone())
             .unwrap_or_default(),
     );
@@ -153,7 +171,7 @@ fn function_with_body_lowering_diagnostics(
     );
 
     diagnostics.extend(
-        db.function_with_body_lowered_flat(function_id)
+        db.priv_function_with_body_lowered_flat(function_id)
             .map(|lowered| lowered.diagnostics.clone())
             .unwrap_or_default(),
     );

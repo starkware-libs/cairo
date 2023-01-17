@@ -14,7 +14,7 @@ use crate::utils::get_libfunc_signature;
 
 /// Query implementation of [SierraGenGroup::contains_cycle].
 pub fn contains_cycle(db: &dyn SierraGenGroup, function_id: FunctionWithBodyId) -> Maybe<bool> {
-    let lowered_function = &*db.function_with_body_lowered_flat(function_id)?;
+    let lowered_function = &*db.function_with_body_lowered(function_id)?;
     for (_, block) in &lowered_function.blocks {
         for statement in &block.statements {
             if let lowering::Statement::Call(statement_call) = statement {

@@ -76,7 +76,7 @@ fn check_inlinable(
         return Ok(false);
     }
 
-    let lowered = db.function_with_body_lowered_flat(function_id)?;
+    let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
     let root_block_id = lowered.root?;
     for (block_id, block) in lowered.blocks.iter() {
         match block.end {
@@ -221,7 +221,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         inputs: &[VariableId],
         outputs: &[VariableId],
     ) -> Maybe<BlockId> {
-        let lowered = self.ctx.db.function_with_body_lowered_flat(function_id)?;
+        let lowered = self.ctx.db.priv_function_with_body_lowered_flat(function_id)?;
         let root_block_id = lowered.root?;
 
         // As the block_ids and variable_ids are per function, we need to rename all
