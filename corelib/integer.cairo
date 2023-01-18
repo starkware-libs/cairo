@@ -103,14 +103,17 @@ extern fn u128_lt(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic;
 extern fn u128_eq(a: u128, b: u128) -> bool implicits() nopanic;
 extern fn u128_le(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic;
 
+#[inline(always)]
 fn u128_gt(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic {
     u128_lt(b, a)
 }
 
+#[inline(always)]
 fn u128_ge(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic {
     u128_le(b, a)
 }
 
+#[inline(always)]
 fn u128_ne(a: u128, b: u128) -> bool implicits() nopanic {
     !(a == b)
 }
