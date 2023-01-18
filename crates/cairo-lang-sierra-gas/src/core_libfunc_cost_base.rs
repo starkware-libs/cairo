@@ -185,6 +185,14 @@ pub fn core_libfunc_cost_base<Ops: CostOperations, InfoProvider: InvocationCostI
 fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> Vec<Ops::CostType> {
     match libfunc {
         Uint8Concrete::Const(_) => vec![ops.const_cost(0)],
+        Uint8Concrete::Operation(libfunc) => match libfunc.operator {
+            IntOperator::OverflowingAdd => {
+                vec![ops.const_cost(4), ops.const_cost(4)]
+            }
+            IntOperator::OverflowingSub => {
+                vec![ops.const_cost(3), ops.const_cost(5)]
+            }
+        },
         Uint8Concrete::LessThan(_) => {
             vec![ops.const_cost(4), ops.const_cost(3)]
         }
