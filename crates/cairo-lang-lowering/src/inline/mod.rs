@@ -51,8 +51,8 @@ pub fn priv_inline_data(
     Ok(Arc::new(PrivInlineData { diagnostics: diagnostics.build(), config, is_inlineable }))
 }
 
-// Checks if the given function can be inlined.
-// If report_diagnostics is true, adds a diagnostics with the reason that prevents inlining.
+/// Checks if the given function can be inlined.
+/// If report_diagnostics is true, adds a diagnostics with the reason that prevents inlining.
 fn check_inlinable(
     db: &dyn LoweringGroup,
     diagnostics: &mut LoweringDiagnostics,
@@ -96,7 +96,7 @@ fn check_inlinable(
     Ok(true)
 }
 
-// Parses the inline attributes for a given function.
+/// Parses the inline attributes for a given function.
 fn parse_inline_attribute(
     db: &dyn LoweringGroup,
     diagnostics: &mut LoweringDiagnostics,
@@ -147,10 +147,109 @@ fn parse_inline_attribute(
 pub struct FunctionInlinerRewriter<'db> {
     /// The LoweringContext were we are building the new blocks.
     ctx: LoweringContext<'db>,
-    /// A Queue of structured blocks on which we want to apply the FunctionInlinerRewriter.
+    /// A Queue of blocks on which we want to apply the FunctionInlinerRewriter.
+    block_queue: BlockQueue,
+}
+pub struct BlockQueue {
+    /// A Queue of blocks that require processing.
     block_queue: VecDeque<FlatBlock>,
     /// The new blocks that are were created during the inlining.
     flat_blocks: FlatBlocks,
+}
+impl BlockQueue {
+    /// Enqueues the block for processing and returns the block_id that this
+    /// block is going to get in self.flat_blocks.
+    fn enqueue_block(&mut self, block: FlatBlock) -> BlockId {
+        self.block_queue.push_back(block);
+        BlockId(self.flat_blocks.len() + self.block_queue.len())
+    }
+    //. Pops a block from the queue.
+    fn dequeue(&mut self) -> Option<FlatBlock> {
+        self.block_queue.pop_front()
+    }
+    /// Finalizes a block.
+    fn finalize(&mut self, block: FlatBlock) -> BlockId {
+        self.flat_blocks.alloc(block)
+    }
+}
+
+/// Context for mapping ids from `lowered` to a new `FlatLowered` object.
+pub struct Mapper<'a, 'b> {
+    ctx: &'a mut LoweringContext<'b>,
+    lowered: &'a FlatLowered,
+
+    renamed_vars: HashMap<VariableId, VariableId>,
+    renamed_blocks: HashMap<BlockId, BlockId>,
+}
+impl<'a, 'b> Mapper<'a, 'b> {
+    /// Renames a var from lowered.variable, if the variable wasn't assigned an id yet,
+    /// a new id is assigned and stored for future renames.
+    pub fn rename_var(&mut self, old_var_id: &VariableId) -> VariableId {
+        *self.renamed_vars.entry(*old_var_id).or_insert_with(|| {
+            self.ctx.new_var(VarRequest {
+                ty: self.lowered.variables[*old_var_id].ty,
+                location: self.lowered.variables[*old_var_id].location,
+            })
+        })
+    }
+
+    /// Rebuilds the statement with renamed var and block ids.
+    fn rebuild_statement(&mut self, statement: &Statement) -> Statement {
+        match statement {
+            Statement::Literal(stmt) => Statement::Literal(StatementLiteral {
+                value: stmt.value.clone(),
+                output: self.rename_var(&stmt.output),
+            }),
+            Statement::Call(stmt) => Statement::Call(StatementCall {
+                function: stmt.function,
+                inputs: stmt.inputs.iter().map(|v| self.rename_var(v)).collect(),
+                outputs: stmt.outputs.iter().map(|v| self.rename_var(v)).collect(),
+            }),
+
+            Statement::CallBlock(stmt) => {
+                Statement::CallBlock(StatementCallBlock { block: self.renamed_blocks[&stmt.block] })
+            }
+            Statement::MatchExtern(stmt) => Statement::MatchExtern(StatementMatchExtern {
+                function: stmt.function,
+                inputs: stmt.inputs.iter().map(|v| self.rename_var(v)).collect(),
+                arms: stmt
+                    .arms
+                    .iter()
+                    .map(|(concrete_variant, block_id)| {
+                        (concrete_variant.clone(), self.renamed_blocks[block_id])
+                    })
+                    .collect(),
+            }),
+            Statement::StructConstruct(stmt) => {
+                Statement::StructConstruct(StatementStructConstruct {
+                    inputs: stmt.inputs.iter().map(|v| self.rename_var(v)).collect(),
+                    output: self.rename_var(&stmt.output),
+                })
+            }
+            Statement::StructDestructure(stmt) => {
+                Statement::StructDestructure(StatementStructDestructure {
+                    input: self.rename_var(&stmt.input),
+                    outputs: stmt.outputs.iter().map(|v| self.rename_var(v)).collect(),
+                })
+            }
+            Statement::EnumConstruct(stmt) => Statement::EnumConstruct(StatementEnumConstruct {
+                variant: stmt.variant.clone(),
+                input: self.rename_var(&stmt.input),
+                output: self.rename_var(&stmt.output),
+            }),
+            Statement::MatchEnum(stmt) => Statement::MatchEnum(StatementMatchEnum {
+                concrete_enum_id: stmt.concrete_enum_id,
+                input: self.rename_var(&stmt.input),
+                arms: stmt
+                    .arms
+                    .iter()
+                    .map(|(concrete_variant, block_id)| {
+                        (concrete_variant.clone(), self.renamed_blocks[block_id])
+                    })
+                    .collect(),
+            }),
+        }
+    }
 }
 
 impl<'db> FunctionInlinerRewriter<'db> {
@@ -158,19 +257,21 @@ impl<'db> FunctionInlinerRewriter<'db> {
         let orig_root = flat_lower.root?;
         let mut rewriter = Self {
             ctx,
-            block_queue: VecDeque::from(flat_lower.blocks.0.clone()),
-            flat_blocks: FlatBlocks::new(),
+            block_queue: BlockQueue {
+                block_queue: VecDeque::from(flat_lower.blocks.0.clone()),
+                flat_blocks: FlatBlocks::new(),
+            },
         };
 
         rewriter.ctx.variables = flat_lower.variables.clone();
-        while let Some(block) = rewriter.block_queue.pop_front() {
+        while let Some(block) = rewriter.block_queue.dequeue() {
             let mut statements = vec![];
             for stmt in &block.statements {
                 if let Ok(stmt) = rewriter.rewrite(stmt) {
                     statements.push(stmt);
                 }
             }
-            rewriter.flat_blocks.alloc(FlatBlock {
+            rewriter.block_queue.finalize(FlatBlock {
                 inputs: block.inputs.clone(),
                 statements,
                 end: block.end.clone(),
@@ -178,13 +279,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
         }
 
         assert!(rewriter.ctx.diagnostics.build().is_empty());
-
-        // TODO(ilya): Consider returning empty variables and blocks if there are diagnostics?
         Ok(FlatLowered {
             diagnostics: flat_lower.diagnostics.clone(),
             root: Ok(orig_root),
             variables: rewriter.ctx.variables,
-            blocks: rewriter.flat_blocks,
+            blocks: rewriter.block_queue.flat_blocks,
         })
     }
 
@@ -205,13 +304,6 @@ impl<'db> FunctionInlinerRewriter<'db> {
         Ok(statement.clone())
     }
 
-    /// Enqueues the block for processing and returns the block_id that this
-    /// block is going to get in self.ctx.blocks.
-    fn enqueue_block(&mut self, block: FlatBlock) -> BlockId {
-        self.block_queue.push_back(block);
-        BlockId(self.flat_blocks.len() + self.block_queue.len())
-    }
-
     /// Inlines the given function, with the given input and outputs variables.
     ///
     /// Returns the block_id that should be called instead of the function.
@@ -229,33 +321,30 @@ impl<'db> FunctionInlinerRewriter<'db> {
         // we are inlining.
 
         // The input variables need to be renamed to match the inputs to the function call.
-        let mut renamed_vars = HashMap::<VariableId, VariableId>::from_iter(izip!(
-            lowered.blocks[root_block_id].inputs.iter().cloned(),
-            inputs.iter().cloned()
-        ));
-        let mut renamed_blocks = HashMap::new();
+        let mut mapper = Mapper {
+            ctx: &mut self.ctx,
+            lowered: &lowered,
+            renamed_vars: HashMap::<VariableId, VariableId>::from_iter(izip!(
+                lowered.blocks[root_block_id].inputs.iter().cloned(),
+                inputs.iter().cloned()
+            )),
+            renamed_blocks: HashMap::new(),
+        };
         for (block_id, block) in lowered.blocks.iter() {
             let mut statements = vec![];
 
-            let mut rename_var = |old_var_id: &VariableId| {
-                *renamed_vars.entry(*old_var_id).or_insert_with(|| {
-                    self.ctx.new_var(VarRequest {
-                        ty: lowered.variables[*old_var_id].ty,
-                        location: lowered.variables[*old_var_id].location,
-                    })
-                })
-            };
             for stmt in &block.statements {
-                statements.push(rebuild_statement(stmt, &mut rename_var, &renamed_blocks));
+                statements.push(mapper.rebuild_statement(stmt));
             }
 
             let end = match &block.end {
                 FlatBlockEnd::Callsite(remapping) => {
-                    let remapping = VarRemapping {
-                        remapping: OrderedHashMap::from_iter(
-                            remapping.iter().map(|(dst, src)| (rename_var(dst), rename_var(src))),
-                        ),
-                    };
+                    let remapping =
+                        VarRemapping {
+                            remapping: OrderedHashMap::from_iter(remapping.iter().map(
+                                |(dst, src)| (mapper.rename_var(dst), mapper.rename_var(src)),
+                            )),
+                        };
                     FlatBlockEnd::Callsite(remapping)
                 }
                 FlatBlockEnd::Return(returns) => {
@@ -264,7 +353,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     }
                     let remapping = VarRemapping {
                         remapping: OrderedHashMap::from_iter(
-                            zip_eq(outputs, returns).map(|(dst, src)| (*dst, rename_var(src))),
+                            zip_eq(outputs, returns)
+                                .map(|(dst, src)| (*dst, mapper.rename_var(src))),
                         ),
                     };
                     FlatBlockEnd::Callsite(remapping)
@@ -277,14 +367,14 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 // taken from the caller rather than created in this block.
                 vec![]
             } else {
-                block.inputs.iter().map(&mut rename_var).collect()
+                block.inputs.iter().map(|v| mapper.rename_var(v)).collect()
             };
 
             let new_block = FlatBlock { inputs, statements, end };
-            renamed_blocks.insert(block_id, self.enqueue_block(new_block));
+            mapper.renamed_blocks.insert(block_id, self.block_queue.enqueue_block(new_block));
         }
 
-        Ok(renamed_blocks[&root_block_id])
+        Ok(mapper.renamed_blocks[&root_block_id])
     }
 }
 
@@ -295,67 +385,4 @@ pub fn apply_inlining(
 ) -> Maybe<FlatLowered> {
     let lowering_builder = LoweringContextBuilder::new(db, function_id)?;
     FunctionInlinerRewriter::apply(lowering_builder.ctx()?, flat_lower)
-}
-
-// Rebuilds the statement with renamed var and block ids.
-fn rebuild_statement<F>(
-    statement: &Statement,
-    mut rename_var: F,
-    renamed_blocks: &HashMap<BlockId, BlockId>,
-) -> Statement
-where
-    F: FnMut(&VariableId) -> VariableId,
-{
-    match statement {
-        Statement::Literal(stmt) => Statement::Literal(StatementLiteral {
-            value: stmt.value.clone(),
-            output: rename_var(&stmt.output),
-        }),
-        Statement::Call(stmt) => Statement::Call(StatementCall {
-            function: stmt.function,
-            inputs: stmt.inputs.iter().map(&mut rename_var).collect(),
-            outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
-        }),
-
-        Statement::CallBlock(stmt) => {
-            Statement::CallBlock(StatementCallBlock { block: stmt.block })
-        }
-        Statement::MatchExtern(stmt) => Statement::MatchExtern(StatementMatchExtern {
-            function: stmt.function,
-            inputs: stmt.inputs.iter().map(&mut rename_var).collect(),
-            arms: stmt
-                .arms
-                .iter()
-                .map(|(concrete_variant, block_id)| {
-                    (concrete_variant.clone(), renamed_blocks[block_id])
-                })
-                .collect(),
-        }),
-        Statement::StructConstruct(stmt) => Statement::StructConstruct(StatementStructConstruct {
-            inputs: stmt.inputs.iter().map(&mut rename_var).collect(),
-            output: rename_var(&stmt.output),
-        }),
-        Statement::StructDestructure(stmt) => {
-            Statement::StructDestructure(StatementStructDestructure {
-                input: rename_var(&stmt.input),
-                outputs: stmt.outputs.iter().map(&mut rename_var).collect(),
-            })
-        }
-        Statement::EnumConstruct(stmt) => Statement::EnumConstruct(StatementEnumConstruct {
-            variant: stmt.variant.clone(),
-            input: rename_var(&stmt.input),
-            output: rename_var(&stmt.output),
-        }),
-        Statement::MatchEnum(stmt) => Statement::MatchEnum(StatementMatchEnum {
-            concrete_enum_id: stmt.concrete_enum_id,
-            input: rename_var(&stmt.input),
-            arms: stmt
-                .arms
-                .iter()
-                .map(|(concrete_variant, block_id)| {
-                    (concrete_variant.clone(), renamed_blocks[block_id])
-                })
-                .collect(),
-        }),
-    }
 }

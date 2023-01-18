@@ -8,12 +8,8 @@ use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
-#[cfg(test)]
-#[path = "storage_test.rs"]
-mod test;
-
-/// Handles the storage_address_const libfunc.
-pub fn build_storage_address_const(
+/// Handles the storage_base_address_const libfunc.
+pub fn build_storage_base_address_const(
     builder: CompiledInvocationBuilder<'_>,
     libfunc: &SignatureAndConstConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -27,8 +23,22 @@ pub fn build_storage_address_const(
     ))
 }
 
-/// Handles the storage_address_const libfunc.
-pub fn build_storage_address_from_felt(
+/// Handles the storage_address_from_base_and_offset libfunc.
+pub fn build_storage_address_from_base_and_offset(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [base, offset] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref base;
+        deref_or_immediate offset;
+    };
+    casm_build_extend!(casm_builder, let res = base + offset;);
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+}
+
+/// Handles the storage_base_address_const libfunc.
+pub fn build_storage_base_address_from_felt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound: BigInt = (BigInt::from(1) << 251) - 256;

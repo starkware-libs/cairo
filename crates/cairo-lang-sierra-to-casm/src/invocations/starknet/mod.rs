@@ -1,8 +1,11 @@
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
 use self::interoperability::{build_call_contract, build_contract_address_const};
-use self::storage::{build_storage_address_const, build_storage_address_from_felt};
-use super::{CompiledInvocation, CompiledInvocationBuilder};
+use self::storage::{
+    build_storage_address_from_base_and_offset, build_storage_base_address_const,
+    build_storage_base_address_from_felt,
+};
+use super::{misc, CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::InvocationError;
 
 mod storage;
@@ -22,11 +25,15 @@ pub fn build(
         }
         StarkNetConcreteLibfunc::StorageRead(_) => build_storage_read(builder),
         StarkNetConcreteLibfunc::StorageWrite(_) => build_storage_write(builder),
-        StarkNetConcreteLibfunc::StorageAddressConst(libfunc) => {
-            build_storage_address_const(builder, libfunc)
+        StarkNetConcreteLibfunc::StorageBaseAddressConst(libfunc) => {
+            build_storage_base_address_const(builder, libfunc)
         }
-        StarkNetConcreteLibfunc::StorageAddressFromFelt(_) => {
-            build_storage_address_from_felt(builder)
+        StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => {
+            build_storage_base_address_from_felt(builder)
+        }
+        StarkNetConcreteLibfunc::StorageAddressFromBase(_) => misc::build_identity(builder),
+        StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => {
+            build_storage_address_from_base_and_offset(builder)
         }
     }
 }
