@@ -27,6 +27,20 @@ pub fn build_storage_base_address_const(
     ))
 }
 
+/// Handles the storage_address_from_base_and_offset libfunc.
+pub fn build_storage_address_from_base_and_offset(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [base, offset] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref base;
+        deref_or_immediate offset;
+    };
+    casm_build_extend!(casm_builder, let res = base + offset;);
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+}
+
 /// Handles the storage_base_address_const libfunc.
 pub fn build_storage_base_address_from_felt(
     builder: CompiledInvocationBuilder<'_>,

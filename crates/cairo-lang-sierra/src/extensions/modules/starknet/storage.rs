@@ -7,6 +7,7 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
+use crate::extensions::uint::Uint8Type;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -34,6 +35,72 @@ impl ConstGenLibfunc for StorageBaseAddressConstLibfuncWrapped {
 
 pub type StorageBaseAddressConstLibfunc =
     WrapConstGenLibfunc<StorageBaseAddressConstLibfuncWrapped>;
+
+/// Type for StarkNet storage base address, a value in the range [0, 2 ** 251).
+#[derive(Default)]
+pub struct StorageAddressType {}
+impl NoGenericArgsGenericType for StorageAddressType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("StorageAddress");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const SIZE: i16 = 1;
+}
+
+/// Libfunc for converting a base address into a storage address.
+#[derive(Default)]
+pub struct StorageAddressFromBaseLibfunc {}
+impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseLibfunc {
+    const STR_ID: &'static str = "storage_address_from_base";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
+                allow_deferred: true,
+                allow_add_const: true,
+                allow_const: true,
+            }],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+/// Libfunc for converting a base address and offset into a storage address.
+#[derive(Default)]
+pub struct StorageAddressFromBaseAndOffsetLibfunc {}
+impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseAndOffsetLibfunc {
+    const STR_ID: &'static str = "storage_address_from_base_and_offset";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(context.get_concrete_type(StorageBaseAddressType::id(), &[])?),
+                ParamSignature {
+                    ty: context.get_concrete_type(Uint8Type::id(), &[])?,
+                    allow_deferred: false,
+                    allow_add_const: false,
+                    allow_const: true,
+                },
+            ],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
 
 /// Libfunc for converting a felt into a storage base address.
 #[derive(Default)]
