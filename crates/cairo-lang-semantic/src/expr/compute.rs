@@ -10,6 +10,7 @@ use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -32,7 +33,9 @@ use crate::corelib::{
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::diagnostic::{
+    NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
+};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::modifiers::compute_mutability;
 use crate::items::strct::SemanticStructEx;
@@ -47,7 +50,7 @@ pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
     pub diagnostics: &'ctx mut SemanticDiagnostics,
     pub resolver: Resolver<'ctx>,
-    signature: &'ctx Signature,
+    signature: Option<&'ctx Signature>,
     environment: Box<Environment>,
     pub exprs: Arena<semantic::Expr>,
     pub statements: Arena<semantic::Statement>,
@@ -59,7 +62,7 @@ impl<'ctx> ComputationContext<'ctx> {
         db: &'ctx dyn SemanticGroup,
         diagnostics: &'ctx mut SemanticDiagnostics,
         resolver: Resolver<'ctx>,
-        signature: &'ctx Signature,
+        signature: Option<&'ctx Signature>,
         environment: Environment,
     ) -> Self {
         let semantic_defs =
@@ -95,6 +98,21 @@ impl<'ctx> ComputationContext<'ctx> {
         let parent = self.environment.parent.take();
         self.environment = parent.unwrap();
         res
+    }
+
+    /// Returns [Self::signature] if it exists. Otherwise, reports a diagnostic and returns `Err`.
+    fn get_signature(
+        &mut self,
+        stable_ptr: SyntaxStablePtrId,
+        feature_name: UnsupportedOutsideOfFunctionFeatureName,
+    ) -> Maybe<&'ctx Signature> {
+        if let Some(signature) = self.signature {
+            return Ok(signature);
+        }
+
+        Err(self
+            .diagnostics
+            .report_by_ptr(stable_ptr, UnsupportedOutsideOfFunction { feature_name }))
     }
 }
 
@@ -546,20 +564,25 @@ fn compute_expr_error_propagate_semantic(
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
     let inner = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    inner.ty().check_not_missing(ctx.db)?;
     let (ok_variant, err_variant) =
         unwrap_error_propagation_type(ctx.db, inner.ty()).ok_or_else(|| {
             ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType { ty: inner.ty() })
         })?;
-    let (_, func_err_variant) = unwrap_error_propagation_type(ctx.db, ctx.signature.return_type)
+    let func_signature = ctx.get_signature(
+        syntax.stable_ptr().untyped(),
+        UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate,
+    )?;
+    let (_, func_err_variant) = unwrap_error_propagation_type(ctx.db, func_signature.return_type)
         .ok_or_else(|| {
-            ctx.diagnostics.report(
-                syntax,
-                IncompatibleErrorPropagateType {
-                    return_ty: ctx.signature.return_type,
-                    err_ty: err_variant.ty,
-                },
-            )
-        })?;
+        ctx.diagnostics.report(
+            syntax,
+            IncompatibleErrorPropagateType {
+                return_ty: func_signature.return_type,
+                err_ty: err_variant.ty,
+            },
+        )
+    })?;
     // TODO(orizi): When auto conversion of types is added, try to convert the error type.
     if func_err_variant.ty != err_variant.ty
         || func_err_variant.concrete_enum_id.enum_id(ctx.db)
@@ -568,7 +591,7 @@ fn compute_expr_error_propagate_semantic(
         ctx.diagnostics.report(
             syntax,
             IncompatibleErrorPropagateType {
-                return_ty: ctx.signature.return_type,
+                return_ty: func_signature.return_type,
                 err_ty: err_variant.ty,
             },
         );
@@ -1106,7 +1129,14 @@ fn expr_function_call(
     }
 
     // Check panicable.
-    if signature.panicable && !ctx.signature.panicable {
+    if signature.panicable
+        && !ctx
+            .get_signature(
+                stable_ptr.untyped(),
+                UnsupportedOutsideOfFunctionFeatureName::FunctionCall,
+            )?
+            .panicable
+    {
         return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
     }
 
@@ -1244,7 +1274,12 @@ pub fn compute_statement_semantic(
             let expr_syntax = return_syntax.expr(syntax_db);
             let expr = compute_expr_semantic(ctx, &expr_syntax);
             let expr_ty = expr.ty();
-            let expected_ty = ctx.signature.return_type;
+            let expected_ty = ctx
+                .get_signature(
+                    return_syntax.stable_ptr().untyped(),
+                    UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
+                )?
+                .return_type;
             if expr_ty != expected_ty && !expected_ty.is_missing(db) && !expr_ty.is_missing(db) {
                 ctx.diagnostics
                     .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
