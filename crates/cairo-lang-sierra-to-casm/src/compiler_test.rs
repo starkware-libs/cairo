@@ -97,7 +97,12 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
 
                 // box_and_back:
-                %{ memory[ap + 0] = segments.add() %}
+                %{
+                if '__boxed_segment' not in globals():
+                    __boxed_segment = segments.add()
+                memory[ap + 0] = __boxed_segment
+                __boxed_segment += 1
+                %}
                 [fp + -3] = [[ap + 0] + 0], ap++;
                 [ap + 0] = [ap + -1], ap++;
                 [ap + 0] = [[ap + -1] + 0], ap++;
