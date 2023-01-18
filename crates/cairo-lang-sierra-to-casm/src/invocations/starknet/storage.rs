@@ -12,8 +12,8 @@ use crate::references::ReferenceExpression;
 #[path = "storage_test.rs"]
 mod test;
 
-/// Handles the storage_address_const libfunc.
-pub fn build_storage_address_const(
+/// Handles the storage_base_address_const libfunc.
+pub fn build_storage_base_address_const(
     builder: CompiledInvocationBuilder<'_>,
     libfunc: &SignatureAndConstConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -27,8 +27,8 @@ pub fn build_storage_address_const(
     ))
 }
 
-/// Handles the storage_address_const libfunc.
-pub fn build_storage_address_from_felt(
+/// Handles the storage_base_address_const libfunc.
+pub fn build_storage_base_address_from_felt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound: BigInt = (BigInt::from(1) << 251) - 256;
