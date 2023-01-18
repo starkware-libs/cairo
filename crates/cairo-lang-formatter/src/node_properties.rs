@@ -66,7 +66,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 if matches!(
                     parent_kind(db, self),
                     Some(
-                        SyntaxKind::ItemFreeFunction
+                        SyntaxKind::FunctionWithBody
                             | SyntaxKind::ItemExternFunction
                             | SyntaxKind::ExprFunctionCall
                             | SyntaxKind::PatternEnum
@@ -124,7 +124,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::StatementExpr
             | SyntaxKind::StatementReturn
             | SyntaxKind::ItemConstant
-            | SyntaxKind::ItemFreeFunction
+            | SyntaxKind::FunctionWithBody
             | SyntaxKind::ItemExternFunction
             | SyntaxKind::ItemExternType
             | SyntaxKind::ItemTrait

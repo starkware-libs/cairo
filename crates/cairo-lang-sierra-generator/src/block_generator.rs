@@ -231,7 +231,7 @@ fn generate_statement_call_code(
         get_concrete_libfunc_id(context.get_db(), statement.function);
 
     match function_long_id.generic_function {
-        GenericFunctionId::Free(_) => {
+        GenericFunctionId::Free(_) | GenericFunctionId::Impl(_) => {
             // Create [pre_sierra::PushValue] instances for the arguments.
             let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
             let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
@@ -271,7 +271,6 @@ fn generate_statement_call_code(
             statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
             Ok(statements)
         }
-        GenericFunctionId::Impl(_) => todo!(),
     }
 }
 
