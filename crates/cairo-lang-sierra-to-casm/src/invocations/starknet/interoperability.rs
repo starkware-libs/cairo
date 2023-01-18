@@ -8,10 +8,6 @@ use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
-#[cfg(test)]
-#[path = "interoperability_test.rs"]
-mod test;
-
 /// Builds instructions for StarkNet call contract system call.
 pub fn build_call_contract(
     builder: CompiledInvocationBuilder<'_>,
