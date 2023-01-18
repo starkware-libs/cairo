@@ -7,7 +7,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(addr: felt) -> starknet::StorageAddress {
-    starknet::storage_addr_from_felt(addr)
+    starknet::storage_address_from_felt(addr)
 }
 
 //! > casm
@@ -57,12 +57,12 @@ type RangeCheck = RangeCheck;
 type felt = felt;
 type StorageAddress = StorageAddress;
 
-libfunc storage_addr_from_felt = storage_addr_from_felt;
+libfunc storage_address_from_felt = storage_address_from_felt;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
 
-storage_addr_from_felt([0], [1]) -> ([2], [3]);
+storage_address_from_felt([0], [1]) -> ([2], [3]);
 store_temp<RangeCheck>([2]) -> ([2]);
 rename<RangeCheck>([2]) -> ([4]);
 store_temp<StorageAddress>([3]) -> ([5]);

@@ -33,7 +33,7 @@ use crate::extensions::{
     args_as_single_type, ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo,
     SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericLibfuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing an enum.
@@ -176,7 +176,7 @@ impl EnumInitLibfunc {
 }
 impl NamedLibfunc for EnumInitLibfunc {
     type Concrete = EnumInitConcreteLibfunc;
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("enum_init");
+    const STR_ID: &'static str = "enum_init";
 
     fn specialize_signature(
         &self,
@@ -199,7 +199,7 @@ impl NamedLibfunc for EnumInitLibfunc {
 #[derive(Default)]
 pub struct EnumMatchLibfunc {}
 impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("enum_match");
+    const STR_ID: &'static str = "enum_match";
 
     fn specialize_signature(
         &self,

@@ -666,7 +666,7 @@ fn handle_mapping_storage_var(
         "
     mod $storage_var_name$ {{
         fn address(key: $key_type$) -> starknet::StorageAddress {{
-            starknet::storage_addr_from_felt(pedersen({address}, {key_convert_to}))
+            starknet::storage_address_from_felt(pedersen({address}, {key_convert_to}))
         }}
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
