@@ -212,7 +212,6 @@ fn find_type_specialization(
             => Err(WrongNumberOfGenericArgs); "felt_jump_nz<int>")]
 #[test_case("u128_overflowing_add", vec![] => Ok(()); "u128_overflowing_add")]
 #[test_case("u128_overflowing_sub", vec![] => Ok(()); "u128_overflowing_sub")]
-#[test_case("u128_overflowing_mul", vec![] => Ok(()); "u128_overflowing_mul")]
 #[test_case("u128_safe_divmod", vec![] => Ok(()); "u128_safe_divmod")]
 #[test_case("u128_const", vec![value_arg(8)] => Ok(()); "u128_const<8>")]
 #[test_case("u128_const", vec![] => Err(UnsupportedGenericArg); "u128_const")]

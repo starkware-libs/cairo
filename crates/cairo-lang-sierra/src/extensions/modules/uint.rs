@@ -20,9 +20,6 @@ use crate::program::GenericArg;
 pub enum IntOperator {
     OverflowingAdd,
     OverflowingSub,
-    OverflowingMul,
-    DivMod,
-    WideMul,
 }
 
 /// Trait for implementing unsigned integers.

@@ -146,15 +146,9 @@ fn simulate(
 #[test_case("u128_overflowing_sub", vec![], vec![RangeCheck, Uint128(5), Uint128(3)]
              => Ok((vec![RangeCheck, Uint128(2)], 0));
             "u128_overflowing_sub(5, 3)")]
-#[test_case("u128_overflowing_mul", vec![], vec![RangeCheck, Uint128(5), Uint128(3)]
-             => Ok((vec![RangeCheck, Uint128(15)], 0));
-            "u128_overflowing_mul(5, 3)")]
 #[test_case("u128_overflowing_sub", vec![], vec![RangeCheck, Uint128(3), Uint128(5)]
              => Ok((vec![RangeCheck, Uint128(u128::MAX - 1)], 1));
             "u128_overflowing_sub(3, 5)")]
-#[test_case("u128_overflowing_mul", vec![], vec![RangeCheck, Uint128(u128::MAX), Uint128(u128::MAX)]
-             => Ok((vec![RangeCheck, Uint128(1)], 1));
-            "u128_overflowing_mul(-1, -1)")]
 fn simulate_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -215,8 +209,6 @@ fn simulate_none_branch(
             "u128_overflowing_add(1)")]
 #[test_case("u128_overflowing_sub", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs;
             "u128_overflowing_sub(1)")]
-#[test_case("u128_overflowing_mul", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs;
-            "u128_overflowing_mul(1)")]
 #[test_case("u128_safe_divmod", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs;
             "u128_safe_divmod(1)")]
 #[test_case("u128_const", vec![value_arg(3)], vec![Uint128(1)] => WrongNumberOfArgs;
