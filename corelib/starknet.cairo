@@ -37,3 +37,8 @@ felt, Array::<felt>
 )>; extern fn call_contract_syscall(
     address: ContractAddress, calldata: Array::<felt>
 ) -> CallContractResult implicits(GasBuiltin, System) nopanic;
+
+// Events.
+extern fn emit_event_syscall(
+    keys: Array::<felt>, data: Array::<felt>
+) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;

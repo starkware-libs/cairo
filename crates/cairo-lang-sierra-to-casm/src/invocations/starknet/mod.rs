@@ -13,6 +13,9 @@ use storage::{build_storage_read, build_storage_write};
 
 mod interoperability;
 
+mod emit_event;
+use emit_event::build_emit_event;
+
 /// Builds instructions for Sierra array operations.
 pub fn build(
     libfunc: &StarkNetConcreteLibfunc,
@@ -35,5 +38,6 @@ pub fn build(
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => {
             build_storage_address_from_base_and_offset(builder)
         }
+        StarkNetConcreteLibfunc::EmitEvent(_) => build_emit_event(builder),
     }
 }
