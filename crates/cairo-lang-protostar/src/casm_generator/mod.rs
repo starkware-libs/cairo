@@ -90,7 +90,7 @@ impl SierraCasmGenerator {
         .map(|f| 
             f.id.debug_name.as_ref().expect("Expected name")
         )
-        .collect::<Vec<&SmolStr>>()
+        .collect()
     }
     
     pub fn build_casm(&self) -> Result<ProtostarCasm, GeneratorError> {
