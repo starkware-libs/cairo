@@ -20,5 +20,6 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
         StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => vec![ops.const_cost(10)],
         StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ops.const_cost(0)],
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ops.const_cost(0)],
+        StarkNetConcreteLibfunc::EmitEvent(_) => vec![ops.const_cost(50), ops.const_cost(50)],
     }
 }
