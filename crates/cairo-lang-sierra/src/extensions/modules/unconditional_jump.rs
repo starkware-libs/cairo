@@ -2,12 +2,11 @@ use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibfunc, SpecializationError};
-use crate::ids::GenericLibfuncId;
 
 #[derive(Default)]
 pub struct UnconditionalJumpLibfunc {}
 impl NoGenericArgsGenericLibfunc for UnconditionalJumpLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("jump");
+    const STR_ID: &'static str = "jump";
 
     fn specialize_signature(
         &self,

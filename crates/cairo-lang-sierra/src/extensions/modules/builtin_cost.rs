@@ -11,7 +11,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 
 /// Represents different type of costs.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -106,7 +106,7 @@ impl BuiltinCostGetGasLibfunc {
 }
 
 impl NoGenericArgsGenericLibfunc for BuiltinCostGetGasLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("get_gas_all");
+    const STR_ID: &'static str = "get_gas_all";
 
     fn specialize_signature(
         &self,
@@ -171,7 +171,7 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostGetGasLibfunc {
 pub struct BuiltinCostGetBuiltinCostsLibfunc {}
 
 impl NoGenericArgsGenericLibfunc for BuiltinCostGetBuiltinCostsLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("get_builtin_costs");
+    const STR_ID: &'static str = "get_builtin_costs";
 
     fn specialize_signature(
         &self,

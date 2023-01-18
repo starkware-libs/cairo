@@ -11,7 +11,7 @@ use crate::extensions::{
     GenericLibfunc, NamedLibfunc, NamedType, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::{id_from_string, GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
 
@@ -38,7 +38,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct FeltTraits {}
 impl JumpNotZeroTraits for FeltTraits {
-    const JUMP_NOT_ZERO: GenericLibfuncId = GenericLibfuncId::new_inline("felt_jump_nz");
+    const JUMP_NOT_ZERO: &'static str = "felt_jump_nz";
     const GENERIC_TYPE_ID: GenericTypeId = <FeltType as NamedType>::ID;
 }
 pub type FeltJumpNotZeroLibfunc = JumpNotZeroLibfunc<FeltTraits>;
@@ -65,15 +65,15 @@ impl GenericLibfunc for FeltBinaryOperationLibfunc {
     type Concrete = FeltBinaryOperationConcreteLibfunc;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        const ADD: GenericLibfuncId = GenericLibfuncId::new_inline("felt_add");
-        const SUB: GenericLibfuncId = GenericLibfuncId::new_inline("felt_sub");
-        const MUL: GenericLibfuncId = GenericLibfuncId::new_inline("felt_mul");
-        const DIV: GenericLibfuncId = GenericLibfuncId::new_inline("felt_div");
-        match id {
-            id if id == &ADD => Some(Self::new(FeltBinaryOperator::Add)),
-            id if id == &SUB => Some(Self::new(FeltBinaryOperator::Sub)),
-            id if id == &MUL => Some(Self::new(FeltBinaryOperator::Mul)),
-            id if id == &DIV => Some(Self::new(FeltBinaryOperator::Div)),
+        const ADD: u64 = id_from_string("felt_add");
+        const SUB: u64 = id_from_string("felt_sub");
+        const MUL: u64 = id_from_string("felt_mul");
+        const DIV: u64 = id_from_string("felt_div");
+        match id.id {
+            ADD => Some(Self::new(FeltBinaryOperator::Add)),
+            SUB => Some(Self::new(FeltBinaryOperator::Sub)),
+            MUL => Some(Self::new(FeltBinaryOperator::Mul)),
+            DIV => Some(Self::new(FeltBinaryOperator::Div)),
             _ => None,
         }
     }
@@ -187,7 +187,7 @@ impl SignatureBasedConcreteLibfunc for FeltOperationWithConstConcreteLibfunc {
 pub struct FeltConstLibfunc {}
 impl NamedLibfunc for FeltConstLibfunc {
     type Concrete = FeltConstConcreteLibfunc;
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("felt_const");
+    const STR_ID: &'static str = "felt_const";
 
     fn specialize_signature(
         &self,

@@ -14,7 +14,6 @@ impl SyntaxNodeFormat for SyntaxNode {
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
         match self.kind(db) {
             SyntaxKind::TokenDot
-            | SyntaxKind::TokenColon
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenComma
             | SyntaxKind::TokenSemicolon
@@ -26,6 +25,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                     grandparent_kind(db, self),
                     Some(SyntaxKind::FunctionSignature | SyntaxKind::AttributeArgs)
                 ) =>
+            {
+                true
+            }
+            SyntaxKind::TokenColon
+                if grandparent_kind(db, self) != Some(SyntaxKind::ArgFieldInitShorthand) =>
             {
                 true
             }
@@ -84,6 +88,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                             | SyntaxKind::WrappedGenericParamList
                     )
                 ) =>
+            {
+                true
+            }
+            SyntaxKind::TokenColon
+                if grandparent_kind(db, self) == Some(SyntaxKind::ArgFieldInitShorthand) =>
             {
                 true
             }

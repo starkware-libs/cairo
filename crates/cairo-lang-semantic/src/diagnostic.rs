@@ -417,6 +417,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ConstantsAreNotSupported => {
                 "Constant definitions are not supported yet.".into()
             }
+            SemanticDiagnosticKind::UnsupportedOutsideOfFunction { feature_name } => {
+                let feature_name_str = match feature_name {
+                    UnsupportedOutsideOfFunctionFeatureName::FunctionCall => "Function call",
+                    UnsupportedOutsideOfFunctionFeatureName::ReturnStatement => "Return statement",
+                    UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate => "The '?' operator",
+                };
+                format!("{feature_name_str} is not supported outside of functions.")
+            }
         }
     }
 
@@ -629,6 +637,9 @@ pub enum SemanticDiagnosticKind {
     },
     // TODO(lior): Remove once constants are supported.
     ConstantsAreNotSupported,
+    UnsupportedOutsideOfFunction {
+        feature_name: UnsupportedOutsideOfFunctionFeatureName,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -638,4 +649,11 @@ pub enum NotFoundItemType {
     Type,
     Trait,
     Impl,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum UnsupportedOutsideOfFunctionFeatureName {
+    FunctionCall,
+    ReturnStatement,
+    ErrorPropagate,
 }

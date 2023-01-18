@@ -4,6 +4,7 @@ mod test;
 
 use std::collections::HashMap;
 
+use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::modules::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
@@ -12,6 +13,7 @@ use cairo_lang_sierra::extensions::NoGenericArgsGenericType;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, MetadataError};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use convert_case::{Case, Casing};
 use num_bigint::BigUint;
 use num_integer::Integer;
@@ -22,6 +24,9 @@ use thiserror::Error;
 
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
+
+/// The expected gas cost of an entrypoint that begins with get_gas() immediately.
+const ENTRY_POINT_COST: i64 = 15;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum StarknetSierraCompilationError {
@@ -65,11 +70,9 @@ impl CasmContractClass {
         let program = sierra_from_felts(&contract_class.sierra_program)?;
 
         let gas_usage_check = true;
-        let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
-            &program,
-            &calc_metadata(&program)?,
-            gas_usage_check,
-        )?;
+        let metadata = calc_metadata(&program)?;
+        let cairo_program =
+            cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
 
         let mut bytecode = vec![];
         let mut hints = vec![];
@@ -152,6 +155,11 @@ impl CasmContractClass {
                 .get(statement_id.0)
                 .ok_or(StarknetSierraCompilationError::EntryPointError)?
                 .code_offset;
+            assert_eq!(
+                metadata.gas_info.function_costs[function.id.clone()],
+                OrderedHashMap::from_iter([(CostTokenType::Step, ENTRY_POINT_COST)]),
+                "Unexpected entry point cost."
+            );
             Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {
                 selector: contract_entry_point.selector,
                 offset: code_offset,
