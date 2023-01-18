@@ -16,7 +16,7 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
         StarkNetConcreteLibfunc::StorageRead(_) => vec![ops.const_cost(50), ops.const_cost(50)],
         // TODO(yuval): Revisit the real cost.
         StarkNetConcreteLibfunc::StorageWrite(_) => vec![ops.const_cost(50), ops.const_cost(50)],
-        StarkNetConcreteLibfunc::StorageAddressConst(_) => vec![ops.const_cost(0)],
-        StarkNetConcreteLibfunc::StorageAddressFromFelt(_) => vec![ops.const_cost(10)],
+        StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ops.const_cost(0)],
+        StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => vec![ops.const_cost(10)],
     }
 }

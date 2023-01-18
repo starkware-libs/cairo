@@ -46,7 +46,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
             || id == "NonZeroInt".into()
             || id == "Tuple<>".into()
             || id == "U128AndFelt".into()
-            || id == "StorageAddress".into()
+            || id == "StorageBaseAddress".into()
             || id == "ContractAddress".into()
         {
             Some(TypeInfo {
@@ -173,7 +173,7 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("Struct", vec![type_arg("u128"), type_arg("felt")] => Err(UnsupportedGenericArg);
             "Struct<u128, felt>")]
 #[test_case("System", vec![] => Ok(()); "System")]
-#[test_case("StorageAddress", vec![] => Ok(()); "StorageAddress")]
+#[test_case("StorageBaseAddress", vec![] => Ok(()); "StorageBaseAddress")]
 fn find_type_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -216,9 +216,9 @@ fn find_type_specialization(
 #[test_case("u128_safe_divmod", vec![] => Ok(()); "u128_safe_divmod")]
 #[test_case("u128_const", vec![value_arg(8)] => Ok(()); "u128_const<8>")]
 #[test_case("u128_const", vec![] => Err(UnsupportedGenericArg); "u128_const")]
-#[test_case("storage_address_const", vec![value_arg(8)] => Ok(()); "storage_address_const<8>")]
-#[test_case("storage_address_const", vec![] => Err(UnsupportedGenericArg);
-"storage_address_const")]
+#[test_case("storage_base_address_const", vec![value_arg(8)] => Ok(()); "storage_base_address_const<8>")]
+#[test_case("storage_base_address_const", vec![] => Err(UnsupportedGenericArg);
+"storage_base_address_const")]
 #[test_case("contract_address_const", vec![value_arg(8)] => Ok(()); "contract_address_const<8>")]
 #[test_case("contract_address_const", vec![] => Err(UnsupportedGenericArg);
 "contract_address_const")]

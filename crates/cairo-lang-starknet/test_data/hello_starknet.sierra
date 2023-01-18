@@ -10,7 +10,7 @@ type u128 = [10698497612269247729];
 type core::bool = [13541382263491645792]<ut@[3793205241841896302], Unit, Unit>;
 type core::PanicResult::<()> = [13541382263491645792]<ut@[4402360851894814679], Unit, Array<felt>>;
 type core::PanicResult::<core::felt> = [13541382263491645792]<ut@[1524352590277322868], felt, Array<felt>>;
-type StorageAddress = [10305685254771266766];
+type StorageBaseAddress = [2132017555851609289];
 
 libfunc get_gas = [4611715306201585493];
 libfunc branch_align = [3328301606880823183];
@@ -82,8 +82,8 @@ libfunc storage_read_syscall = [12295842071461382413];
 libfunc rename<GasBuiltin> = [2258343417258958163]<GasBuiltin>;
 libfunc rename<System> = [2258343417258958163]<System>;
 libfunc storage_write_syscall = [8399278132967288488];
-libfunc storage_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401> = [16604063526727990457]<916907772491729262376534102982219947830828984996257231353398618781993312401>;
-libfunc store_temp<StorageAddress> = [7850406844354634005]<StorageAddress>;
+libfunc storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401> = [14221151123667565881]<916907772491729262376534102982219947830828984996257231353398618781993312401>;
+libfunc store_temp<StorageBaseAddress> = [7850406844354634005]<StorageBaseAddress>;
 
 get_gas([0], [1]) { fallthrough([4], [5]) 6([6], [7]) };
 branch_align() -> ();
@@ -417,8 +417,8 @@ rename<System>([11]) -> ([21]);
 store_temp<core::PanicResult::<()>>([19]) -> ([19]);
 rename<core::PanicResult::<()>>([19]) -> ([22]);
 return([20], [21], [22]);
-storage_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([0]);
-store_temp<StorageAddress>([0]) -> ([1]);
+storage_base_address_const<916907772491729262376534102982219947830828984996257231353398618781993312401>() -> ([0]);
+store_temp<StorageBaseAddress>([0]) -> ([1]);
 return([1]);
 
 hello_starknet::hello_starknet::HelloStarknet::__external::increase_balance@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: Array<felt>) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<core::array::Array::<core::felt>>);
@@ -432,4 +432,4 @@ core::serde::serialize_felt@264([0]: Array<felt>, [1]: felt) -> (Array<felt>, Un
 core::bool_not@271([0]: core::bool) -> (core::bool);
 hello_starknet::hello_starknet::HelloStarknet::balance::read@275([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::PanicResult::<core::felt>);
 hello_starknet::hello_starknet::HelloStarknet::balance::write@304([0]: GasBuiltin, [1]: System, [2]: felt) -> (GasBuiltin, System, core::PanicResult::<()>);
-hello_starknet::hello_starknet::HelloStarknet::balance::address@332() -> (StorageAddress);
+hello_starknet::hello_starknet::HelloStarknet::balance::address@332() -> (StorageBaseAddress);

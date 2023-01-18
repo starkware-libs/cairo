@@ -29,7 +29,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_))
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageAddress(_))
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageBaseAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
             | CoreTypeConcrete::Pedersen(_)
             | CoreTypeConcrete::DictFeltTo(_)

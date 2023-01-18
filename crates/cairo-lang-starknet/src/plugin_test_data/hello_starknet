@@ -39,8 +39,8 @@ mod HelloStarknet {
 
     
     mod balance {
-        fn address() -> starknet::StorageAddress {
-            starknet::storage_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+        fn address() -> starknet::StorageBaseAddress {
+            starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
         }
         fn read() -> felt {
             // Only address_domain 0 is currently supported.

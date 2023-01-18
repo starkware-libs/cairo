@@ -2,7 +2,7 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 pub mod storage;
 use storage::{
-    StorageAddressConstLibfunc, StorageAddressType, StorageReadLibfunc, StorageWriteLibfunc,
+    StorageBaseAddressConstLibfunc, StorageBaseAddressType, StorageReadLibfunc, StorageWriteLibfunc,
 };
 
 pub mod syscalls;
@@ -11,12 +11,12 @@ use syscalls::SystemType;
 pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
 
-use self::storage::StorageAddressFromFeltLibfunc;
+use self::storage::StorageBaseAddressFromFeltLibfunc;
 
 define_type_hierarchy! {
     pub enum StarkNetType {
         ContractAddress(ContractAddressType),
-        StorageAddress(StorageAddressType),
+        StorageBaseAddress(StorageBaseAddressType),
         System(SystemType),
     }, StarkNetTypeConcrete
 }
@@ -27,7 +27,7 @@ define_libfunc_hierarchy! {
          ContractAddressConst(ContractAddressConstLibfunc),
          StorageRead(StorageReadLibfunc),
          StorageWrite(StorageWriteLibfunc),
-         StorageAddressConst(StorageAddressConstLibfunc),
-         StorageAddressFromFelt(StorageAddressFromFeltLibfunc),
+         StorageBaseAddressConst(StorageBaseAddressConstLibfunc),
+         StorageBaseAddressFromFelt(StorageBaseAddressFromFeltLibfunc),
     }, StarkNetConcreteLibfunc
 }

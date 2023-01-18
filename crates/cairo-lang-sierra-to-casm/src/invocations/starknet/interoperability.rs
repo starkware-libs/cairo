@@ -64,7 +64,7 @@ pub fn build_call_contract(
     ))
 }
 
-/// Handles the storage_address_const libfunc.
+/// Handles the contract_address_const libfunc.
 pub fn build_contract_address_const(
     builder: CompiledInvocationBuilder<'_>,
     libfunc: &SignatureAndConstConcreteLibfunc,
