@@ -14,7 +14,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_generics, ConcreteStructId};
+use crate::types::{resolve_type, substitute_generics, ConcreteStructId, GenericSubstitution};
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -133,14 +133,15 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let db = self.upcast();
         let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
         let generic_args = db.lookup_intern_concrete_struct(concrete_struct_id).generic_args;
-        let substitution = &generic_params.into_iter().zip(generic_args.into_iter()).collect();
+        let substitution =
+            GenericSubstitution(generic_params.into_iter().zip(generic_args.into_iter()).collect());
 
         let generic_members =
             self.upcast().struct_members(concrete_struct_id.struct_id(self.upcast()))?;
         Ok(generic_members
             .into_iter()
             .map(|(name, member)| {
-                let ty = substitute_generics(db, substitution, member.ty);
+                let ty = substitute_generics(db, &substitution, member.ty);
                 let member = semantic::Member { ty, ..member };
                 (name, member)
             })
