@@ -2,6 +2,8 @@ extern type System;
 #[derive(Copy, Drop)]
 extern type StorageBaseAddress;
 #[derive(Copy, Drop)]
+extern type StorageAddress;
+#[derive(Copy, Drop)]
 extern type ContractAddress;
 
 // An Helper function to force the inclusion of `System` in the list of implicits.
@@ -13,6 +15,10 @@ extern fn storage_base_address_const<address>() -> StorageBaseAddress nopanic;
 extern fn storage_base_address_from_felt(
     addr: felt
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
+extern fn storage_address_from_base_and_offset(
+    base: StorageBaseAddress, offset: u8
+) -> StorageAddress nopanic;
+extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
 // Only address_domain 0 is currently supported.
 // This parameter is going to be used to access address spaces with different
