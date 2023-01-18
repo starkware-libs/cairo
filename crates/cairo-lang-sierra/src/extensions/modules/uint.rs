@@ -12,7 +12,7 @@ use crate::extensions::{
     NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
 
 /// Operators for integers.
@@ -32,13 +32,13 @@ pub trait UintTraits: Default {
     /// The generic type id for this type.
     const GENERIC_TYPE_ID: GenericTypeId;
     /// The generic libfunc id for getting a const of this type.
-    const CONST: GenericLibfuncId;
+    const CONST: &'static str;
     /// The generic libfunc id for comparing equality.
-    const EQUAL: GenericLibfuncId;
+    const EQUAL: &'static str;
     /// The generic libfunc id for testing if less than.
-    const LESS_THAN: GenericLibfuncId;
+    const LESS_THAN: &'static str;
     /// The generic libfunc id for testing if less than or equal.
-    const LESS_THAN_OR_EQUAL: GenericLibfuncId;
+    const LESS_THAN_OR_EQUAL: &'static str;
 }
 
 #[derive(Default)]
@@ -59,7 +59,7 @@ pub struct UintConstLibfunc<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
 impl<TUintTraits: UintTraits> NamedLibfunc for UintConstLibfunc<TUintTraits> {
-    const ID: GenericLibfuncId = TUintTraits::CONST;
+    const STR_ID: &'static str = TUintTraits::CONST;
     type Concrete = UintConstConcreteLibfunc<TUintTraits>;
 
     fn specialize_signature(
@@ -115,7 +115,7 @@ pub struct UintEqualLibfunc<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
 impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintEqualLibfunc<TUintTraits> {
-    const ID: GenericLibfuncId = TUintTraits::EQUAL;
+    const STR_ID: &'static str = TUintTraits::EQUAL;
 
     fn specialize_signature(
         &self,
@@ -147,7 +147,7 @@ pub struct UintLessThanLibfunc<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
 impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintLessThanLibfunc<TUintTraits> {
-    const ID: GenericLibfuncId = TUintTraits::LESS_THAN;
+    const STR_ID: &'static str = TUintTraits::LESS_THAN;
 
     fn specialize_signature(
         &self,
@@ -188,7 +188,7 @@ pub struct UintLessThanOrEqualLibfunc<TUintTraits: UintTraits> {
 impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc
     for UintLessThanOrEqualLibfunc<TUintTraits>
 {
-    const ID: GenericLibfuncId = TUintTraits::LESS_THAN_OR_EQUAL;
+    const STR_ID: &'static str = TUintTraits::LESS_THAN_OR_EQUAL;
 
     fn specialize_signature(
         &self,
@@ -227,10 +227,10 @@ pub struct Uint8Traits;
 impl UintTraits for Uint8Traits {
     type UintType = u8;
     const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u8");
-    const CONST: GenericLibfuncId = GenericLibfuncId::new_inline("u8_const");
-    const EQUAL: GenericLibfuncId = GenericLibfuncId::new_inline("u8_eq");
-    const LESS_THAN: GenericLibfuncId = GenericLibfuncId::new_inline("u8_lt");
-    const LESS_THAN_OR_EQUAL: GenericLibfuncId = GenericLibfuncId::new_inline("u8_le");
+    const CONST: &'static str = "u8_const";
+    const EQUAL: &'static str = "u8_eq";
+    const LESS_THAN: &'static str = "u8_lt";
+    const LESS_THAN_OR_EQUAL: &'static str = "u8_le";
 }
 
 /// Type for u8.

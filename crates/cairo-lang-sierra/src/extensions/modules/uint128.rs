@@ -15,7 +15,7 @@ use crate::extensions::{
     GenericLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
     SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::{id_from_string, GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type for u128.
@@ -40,14 +40,14 @@ pub struct Uint128Traits;
 impl UintTraits for Uint128Traits {
     type UintType = u128;
     const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u128");
-    const CONST: GenericLibfuncId = GenericLibfuncId::new_inline("u128_const");
-    const EQUAL: GenericLibfuncId = GenericLibfuncId::new_inline("u128_eq");
-    const LESS_THAN: GenericLibfuncId = GenericLibfuncId::new_inline("u128_lt");
-    const LESS_THAN_OR_EQUAL: GenericLibfuncId = GenericLibfuncId::new_inline("u128_le");
+    const CONST: &'static str = "u128_const";
+    const EQUAL: &'static str = "u128_eq";
+    const LESS_THAN: &'static str = "u128_lt";
+    const LESS_THAN_OR_EQUAL: &'static str = "u128_le";
 }
 
 impl JumpNotZeroTraits for Uint128Traits {
-    const JUMP_NOT_ZERO: GenericLibfuncId = GenericLibfuncId::new_inline("u128_jump_nz");
+    const JUMP_NOT_ZERO: &'static str = "u128_jump_nz";
     const GENERIC_TYPE_ID: GenericTypeId = <Uint128Type as NamedType>::ID;
 }
 
@@ -64,17 +64,17 @@ impl GenericLibfunc for Uint128OperationLibfunc {
     type Concrete = Uint128OperationConcreteLibfunc;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        const OVERFLOWING_ADD: GenericLibfuncId = GenericLibfuncId::new_inline("u128_overflow_add");
-        const OVERFLOWING_SUB: GenericLibfuncId = GenericLibfuncId::new_inline("u128_overflow_sub");
-        const OVERFLOWING_MUL: GenericLibfuncId = GenericLibfuncId::new_inline("u128_overflow_mul");
-        const DIVMOD: GenericLibfuncId = GenericLibfuncId::new_inline("u128_safe_divmod");
-        const WIDE_MUL: GenericLibfuncId = GenericLibfuncId::new_inline("u128_wide_mul");
-        match id {
-            id if id == &OVERFLOWING_ADD => Some(Self::new(IntOperator::OverflowingAdd)),
-            id if id == &OVERFLOWING_SUB => Some(Self::new(IntOperator::OverflowingSub)),
-            id if id == &OVERFLOWING_MUL => Some(Self::new(IntOperator::OverflowingMul)),
-            id if id == &DIVMOD => Some(Self::new(IntOperator::DivMod)),
-            id if id == &WIDE_MUL => Some(Self::new(IntOperator::WideMul)),
+        const OVERFLOWING_ADD: u64 = id_from_string("u128_overflow_add");
+        const OVERFLOWING_SUB: u64 = id_from_string("u128_overflow_sub");
+        const OVERFLOWING_MUL: u64 = id_from_string("u128_overflow_mul");
+        const DIVMOD: u64 = id_from_string("u128_safe_divmod");
+        const WIDE_MUL: u64 = id_from_string("u128_wide_mul");
+        match id.id {
+            OVERFLOWING_ADD => Some(Self::new(IntOperator::OverflowingAdd)),
+            OVERFLOWING_SUB => Some(Self::new(IntOperator::OverflowingSub)),
+            OVERFLOWING_MUL => Some(Self::new(IntOperator::OverflowingMul)),
+            DIVMOD => Some(Self::new(IntOperator::DivMod)),
+            WIDE_MUL => Some(Self::new(IntOperator::WideMul)),
             _ => None,
         }
     }
@@ -229,7 +229,7 @@ pub struct Uint128sFromFeltLibfunc {}
 impl NoGenericArgsGenericLibfunc for Uint128sFromFeltLibfunc {
     // TODO(lior): Rename to split_felt and remove the branches. Add a separate u128_from_felt()
     //   for the conversion.
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("u128s_from_felt");
+    const STR_ID: &'static str = "u128s_from_felt";
 
     fn specialize_signature(
         &self,
@@ -291,7 +291,7 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFeltLibfunc {
 #[derive(Default)]
 pub struct Uint128ToFeltLibfunc {}
 impl NoGenericArgsGenericLibfunc for Uint128ToFeltLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("u128_to_felt");
+    const STR_ID: &'static str = "u128_to_felt";
 
     fn specialize_signature(
         &self,
