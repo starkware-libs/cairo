@@ -2,12 +2,11 @@ use std::str::FromStr;
 
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::ResOperand;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::get_non_fallthrough_statement_id;
+use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 
 /// Returns the Beta value of the Starkware elliptic curve.
 fn get_beta() -> BigInt {
@@ -25,6 +24,8 @@ pub fn build(
         EcConcreteLibfunc::CreatePoint(_) => build_ec_point_try_create(builder),
         EcConcreteLibfunc::FinalizeState(_) => build_ec_try_finalize_state(builder),
         EcConcreteLibfunc::InitState(_) => build_ec_init_state(builder),
+        EcConcreteLibfunc::Op(_) => build_ec_op_builtin(builder),
+        EcConcreteLibfunc::PointFromX(_) => build_ec_point_from_x(builder),
         EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
     }
 }
@@ -38,9 +39,21 @@ fn verify_ec_point(
     computed_lhs: Var,
     computed_rhs: Var,
 ) {
+    compute_lhs(casm_builder, y, computed_lhs);
+    compute_rhs(casm_builder, x, computed_rhs);
+}
+
+/// Computes the left-hand side of the EC equation, namely `y^2`.
+fn compute_lhs(casm_builder: &mut CasmBuilder, y: Var, computed_lhs: Var) {
+    casm_build_extend! {casm_builder,
+        assert computed_lhs = y * y;
+    };
+}
+
+/// Computes the right-hand side of the EC equation, namely `x^3 + x + BETA`.
+fn compute_rhs(casm_builder: &mut CasmBuilder, x: Var, computed_rhs: Var) {
     casm_build_extend! {casm_builder,
         const beta = (get_beta());
-        assert computed_lhs = y * y;
         tempvar x2 = x * x;
         tempvar x3 = x2 * x;
         tempvar alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
@@ -66,11 +79,7 @@ fn add_ec_points(
     let (x0, y0) = p0;
 
     casm_build_extend! {casm_builder,
-        // TODO(dorimedini): Once PrimeDiv is removed, instead of the next 3 lines just do
-        // `tempvar slope = numerator / denominator;`.
-        tempvar slope;
-        hint PrimeDiv { lhs: numerator, rhs: denominator } into { result: slope };
-        assert slope = numerator / denominator;
+        tempvar slope = numerator / denominator;
         tempvar slope2 = slope * slope;
         tempvar sum_x = x0 + x1;
         tempvar result_x = slope2 - sum_x;
@@ -86,15 +95,15 @@ fn add_ec_points(
 fn build_ec_point_try_create(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_x, expr_y] = builder.try_get_refs()?;
-    let x = expr_x.try_unpack_single()?.to_deref()?;
-    let y = expr_y.try_unpack_single()?.to_deref()?;
+    let [x, y] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let x = casm_builder.add_var(ResOperand::Deref(x));
-    let y = casm_builder.add_var(ResOperand::Deref(y));
+    add_input_variables! {casm_builder,
+        deref x;
+        deref y;
+    };
 
-    // Assert (x,y) is on the curve.
+    // Check if `(x, y)` is on the curve, by computing `y^2` and `x^3 + x + beta`.
     casm_build_extend! {casm_builder,
         tempvar y2;
         tempvar expected_y2;
@@ -112,16 +121,68 @@ fn build_ec_point_try_create(
     ))
 }
 
+/// Handles instruction for creating an EC point.
+fn build_ec_point_from_x(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [x] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref x;
+    };
+
+    casm_build_extend! {casm_builder,
+        tempvar rhs;
+    };
+    compute_rhs(&mut casm_builder, x, rhs);
+
+    // Guess y, by either computing the square root of `rhs`, or of `3 * rhs`.
+    casm_build_extend! {casm_builder,
+        tempvar y;
+        hint FieldSqrt {val: rhs} into {sqrt: y};
+        tempvar lhs;
+    };
+    compute_lhs(&mut casm_builder, y, lhs);
+
+    casm_build_extend! {casm_builder,
+        tempvar diff = lhs - rhs;
+        // If `(x, y)` is on the curve, return it.
+        jump VerifyNotOnCurve if diff != 0;
+        jump OnCurve;
+        VerifyNotOnCurve:
+        // Check that `y^2 = 3 * rhs`.
+        const three = (3);
+        assert lhs = rhs * three;
+        // Note that `rhs != 0`: otherwise `y^2 = 3 * rhs = 0` implies `y = 0` and we would have
+        // `y^2 = rhs` so this branch wouldn't have been chosen.
+        // Alternatively, note that `rhs = 0` is not possible in curves of odd order (such as this
+        // curve).
+        // Since 3 is not a quadratic residue in the field, it will follow that `rhs` is not a
+        // quadratic residue, which implies that there is no `y` such that `(x, y)` is on the curve.
+        jump NotOnCurve;
+        OnCurve:
+        // Fallthrough - success.
+    };
+
+    let not_on_curve = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(not_on_curve))],
+    ))
+}
+
 /// Handles instruction for unwrapping an EC point.
 fn build_ec_point_unwrap(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_point] = builder.try_get_refs()?;
-    let [x, y] = expr_point.try_unpack()?;
+    let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let x = casm_builder.add_var(ResOperand::Deref(x.to_deref()?));
-    let y = casm_builder.add_var(ResOperand::Deref(y.to_deref()?));
+    add_input_variables! {casm_builder,
+        deref x;
+        deref y;
+    };
 
     Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[x], &[y]], None)]))
 }
@@ -167,11 +228,13 @@ fn build_ec_add_to_state(
     let [px, py] = expr_point.try_unpack()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let px = casm_builder.add_var(ResOperand::Deref(px.to_deref()?));
-    let py = casm_builder.add_var(ResOperand::Deref(py.to_deref()?));
-    let sx = casm_builder.add_var(ResOperand::Deref(sx.to_deref()?));
-    let sy = casm_builder.add_var(ResOperand::Deref(sy.to_deref()?));
-    let random_ptr = casm_builder.add_var(ResOperand::Deref(random_ptr.to_deref()?));
+    add_input_variables! {casm_builder,
+        deref px;
+        deref py;
+        deref sx;
+        deref sy;
+        deref random_ptr;
+    };
 
     casm_build_extend! {casm_builder,
         // If the X coordinate is the same, either the points are equal or their sum is the point at
@@ -198,13 +261,14 @@ fn build_ec_add_to_state(
 fn build_ec_try_finalize_state(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_state] = builder.try_get_refs()?;
-    let [x, y, random_ptr] = expr_state.try_unpack()?;
+    let [x, y, random_ptr] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let x = casm_builder.add_var(ResOperand::Deref(x.to_deref()?));
-    let y = casm_builder.add_var(ResOperand::Deref(y.to_deref()?));
-    let random_ptr = casm_builder.add_var(ResOperand::Deref(random_ptr.to_deref()?));
+    add_input_variables! {casm_builder,
+        deref x;
+        deref y;
+        deref random_ptr;
+    };
 
     // We want to return the point `(x, y) - (random_x, random_y)`, or in other words,
     // `(x, y) + (random_x, -random_y)`.
@@ -237,5 +301,41 @@ fn build_ec_try_finalize_state(
             ("Fallthrough", &[&[result_x, result_y]], None),
             ("SumIsInfinity", &[], Some(failure_handle)),
         ],
+    ))
+}
+
+/// Handles instruction for computing `S + M * Q` where `S` is an EC state, `M` is a scalar (felt)
+/// and `Q` is an EC point.
+fn build_ec_op_builtin(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [ec_builtin_expr, expr_state, expr_m, expr_point] = builder.try_get_refs()?;
+    let ec_builtin = ec_builtin_expr.try_unpack_single()?;
+    let [sx, sy, random_ptr] = expr_state.try_unpack()?;
+    let [m] = expr_m.try_unpack()?;
+    let [px, py] = expr_point.try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(6) ec_builtin;
+        deref sx;
+        deref sy;
+        deref random_ptr;
+        deref px;
+        deref py;
+        deref m;
+    };
+    casm_build_extend! {casm_builder,
+        assert sx = *(ec_builtin++);
+        assert sy = *(ec_builtin++);
+        assert px = *(ec_builtin++);
+        assert py = *(ec_builtin++);
+        assert m = *(ec_builtin++);
+        let result_x = *(ec_builtin++);
+        let result_y = *(ec_builtin++);
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[ec_builtin], &[result_x, result_y, random_ptr]], None)],
     ))
 }

@@ -30,6 +30,7 @@ ExprPath
     │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │   │   ├── params (kind: PatternStructParamList)
     │   │   │   │   └── item #0 (kind: PatternStructParamWithExpr)
+    │   │   │   │       ├── modifiers (kind: ModifierList) []
     │   │   │   │       ├── name (kind: TokenIdentifier): 'a'
     │   │   │   │       ├── colon (kind: TokenColon): ':'
     │   │   │   │       └── pattern (kind: PatternIdentifier)

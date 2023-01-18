@@ -15,7 +15,7 @@
     │   │   │   └── item #1 (kind: PathSegmentSimple)
     │   │   │       └── ident (kind: TokenIdentifier): 'something'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   ├── child #2 (kind: ItemFreeFunction)
+    │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
@@ -253,22 +253,19 @@
     │   │       │   │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │   │       ├── args (kind: ArgList)
-    │   │       │   │   │   │       │   ├── item #0 (kind: Arg)
-    │   │       │   │   │   │       │   │   ├── name (kind: OptionArgNameClauseEmpty) []
+    │   │       │   │   │   │       │   ├── item #0 (kind: ArgUnnamed)
     │   │       │   │   │   │       │   │   └── value (kind: ExprPath)
     │   │       │   │   │   │       │   │       └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       │   │           └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │   │       │   ├── separator #0 (kind: TokenComma): ','
-    │   │       │   │   │   │       │   ├── item #1 (kind: Arg)
-    │   │       │   │   │   │       │   │   ├── name (kind: OptionArgNameClauseEmpty) []
+    │   │       │   │   │   │       │   ├── item #1 (kind: ArgUnnamed)
     │   │       │   │   │   │       │   │   └── value (kind: ExprErrorPropagate)
     │   │       │   │   │   │       │   │       ├── expr (kind: ExprPath)
     │   │       │   │   │   │       │   │       │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       │   │       │       └── ident (kind: TokenIdentifier): 'y'
     │   │       │   │   │   │       │   │       └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   │   │       │   ├── separator #1 (kind: TokenComma): ','
-    │   │       │   │   │   │       │   └── item #2 (kind: Arg)
-    │   │       │   │   │   │       │       ├── name (kind: OptionArgNameClauseEmpty) []
+    │   │       │   │   │   │       │   └── item #2 (kind: ArgUnnamed)
     │   │       │   │   │   │       │       └── value (kind: ExprPath)
     │   │       │   │   │   │       │           └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       │               └── ident (kind: TokenIdentifier): 'z'
@@ -300,8 +297,7 @@
     │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │       ├── args (kind: ArgList)
-    │   │       │   │   │       │   └── item #0 (kind: Arg)
-    │   │       │   │   │       │       ├── name (kind: OptionArgNameClauseEmpty) []
+    │   │       │   │   │       │   └── item #0 (kind: ArgUnnamed)
     │   │       │   │   │       │       └── value (kind: ExprPath)
     │   │       │   │   │       │           └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       │               └── ident (kind: TokenIdentifier): 'x'
@@ -323,8 +319,7 @@
     │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │       ├── args (kind: ArgList)
-    │   │       │   │   │       │   └── item #0 (kind: Arg)
-    │   │       │   │   │       │       ├── name (kind: OptionArgNameClauseEmpty) []
+    │   │       │   │   │       │   └── item #0 (kind: ArgUnnamed)
     │   │       │   │   │       │       └── value (kind: ExprPath)
     │   │       │   │   │       │           └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       │               └── ident (kind: TokenIdentifier): 'x'
@@ -337,7 +332,7 @@
     │   │       │       │       └── ident (kind: TokenIdentifier): 'x'
     │   │       │       └── semicolon (kind: TokenSemicolon): ';'
     │   │       └── rbrace: Missing
-    │   ├── child #3 (kind: ItemFreeFunction)
+    │   ├── child #3 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'

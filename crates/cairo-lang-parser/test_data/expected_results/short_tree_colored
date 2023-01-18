@@ -10,7 +10,7 @@
     │   │   │   └── [36mitem #1[0m (kind: PathSegmentSimple)
     │   │   │       └── [34mident[0m (kind: TokenIdentifier): '[1;32mformat[0m'
     │   │   └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
-    │   └── [36mchild #1[0m (kind: ItemFreeFunction)
+    │   └── [36mchild #1[0m (kind: FunctionWithBody)
     │       ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
     │       ├── [36mdeclaration[0m (kind: FunctionDeclaration)
     │       │   ├── [34mfunction_kw[0m (kind: TokenFunction): '[1;32mfn[0m'

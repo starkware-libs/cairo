@@ -1,0 +1,39 @@
+//! > Test rebindings.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(ref a: felt, b: felt, c: felt) -> felt {
+    a = b;
+    a = bar()
+    c
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar() -> felt nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt, v2: core::felt
+Initial refs: v0: core::felt
+Statements:
+  (v3: core::felt) <- test::bar()
+    Ref changes: r0 <- v1
+End:
+  Return(v3, v2)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt, v2: core::felt
+Statements:
+  (v3: core::felt) <- test::bar()
+End:
+  Return(v3, v2)

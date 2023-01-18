@@ -32,6 +32,7 @@ pub mod range_check;
 pub mod squashed_dict_felt_to;
 pub mod starknet;
 pub mod strct;
+pub mod uint;
 pub mod uint128;
 pub mod unconditional_jump;
 pub mod uninitialized;

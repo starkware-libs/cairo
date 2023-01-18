@@ -43,7 +43,7 @@
     │   │       ├── token (kind: TokenSemicolon): ';'
     │   │       └── trailing_trivia (kind: Trivia)
     │   │           └── child #0 (kind: TokenNewline).
-    │   ├── child #2 (kind: ItemFreeFunction)
+    │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
@@ -741,8 +741,7 @@
     │   │       │   │   │   │       │   ├── token (kind: TokenLParen): '('
     │   │       │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │   │       ├── args (kind: ArgList)
-    │   │       │   │   │   │       │   ├── item #0 (kind: Arg)
-    │   │       │   │   │   │       │   │   ├── name (kind: OptionArgNameClauseEmpty) []
+    │   │       │   │   │   │       │   ├── item #0 (kind: ArgUnnamed)
     │   │       │   │   │   │       │   │   └── value (kind: ExprPath)
     │   │       │   │   │   │       │   │       └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       │   │           └── ident (kind: TerminalIdentifier)
@@ -754,8 +753,7 @@
     │   │       │   │   │   │       │   │   ├── token (kind: TokenComma): ','
     │   │       │   │   │   │       │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │       │   ├── item #1 (kind: Arg)
-    │   │       │   │   │   │       │   │   ├── name (kind: OptionArgNameClauseEmpty) []
+    │   │       │   │   │   │       │   ├── item #1 (kind: ArgUnnamed)
     │   │       │   │   │   │       │   │   └── value (kind: ExprErrorPropagate)
     │   │       │   │   │   │       │   │       ├── expr (kind: ExprPath)
     │   │       │   │   │   │       │   │       │   └── item #0 (kind: PathSegmentSimple)
@@ -772,8 +770,7 @@
     │   │       │   │   │   │       │   │   ├── token (kind: TokenComma): ','
     │   │       │   │   │   │       │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │       │   └── item #2 (kind: Arg)
-    │   │       │   │   │   │       │       ├── name (kind: OptionArgNameClauseEmpty) []
+    │   │       │   │   │   │       │   └── item #2 (kind: ArgUnnamed)
     │   │       │   │   │   │       │       └── value (kind: ExprPath)
     │   │       │   │   │   │       │           └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       │               └── ident (kind: TerminalIdentifier)
@@ -866,8 +863,7 @@
     │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │       ├── args (kind: ArgList)
-    │   │       │   │   │       │   └── item #0 (kind: Arg)
-    │   │       │   │   │       │       ├── name (kind: OptionArgNameClauseEmpty) []
+    │   │       │   │   │       │   └── item #0 (kind: ArgUnnamed)
     │   │       │   │   │       │       └── value (kind: ExprPath)
     │   │       │   │   │       │           └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       │               └── ident (kind: TerminalIdentifier)
@@ -918,8 +914,7 @@
     │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │       ├── args (kind: ArgList)
-    │   │       │   │   │       │   └── item #0 (kind: Arg)
-    │   │       │   │   │       │       ├── name (kind: OptionArgNameClauseEmpty) []
+    │   │       │   │   │       │   └── item #0 (kind: ArgUnnamed)
     │   │       │   │   │       │       └── value (kind: ExprPath)
     │   │       │   │   │       │           └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       │               └── ident (kind: TerminalIdentifier)
@@ -954,7 +949,7 @@
     │   │           ├── leading_trivia (kind: Trivia) []
     │   │           ├── token: Missing
     │   │           └── trailing_trivia (kind: Trivia) []
-    │   ├── child #3 (kind: ItemFreeFunction)
+    │   ├── child #3 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)

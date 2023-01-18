@@ -1,12 +1,12 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId};
 use cairo_lang_utils::extract_matches;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
-use crate::items::free_function::SemanticExprLookup;
+use crate::items::function_with_body::SemanticExprLookup;
 use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 
 #[test]
@@ -30,15 +30,14 @@ fn test_expr_lookup() {
     .unwrap();
     let module_id = test_module.module_id;
 
-    let free_function_id = extract_matches!(
+    let function_id = FunctionWithBodyId::Free(extract_matches!(
         db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction
-    );
-    let expr_formatter = ExprFormatter { db, free_function_id };
-    let definition_data = db.priv_free_function_definition_data(free_function_id).unwrap();
+    ));
+    let expr_formatter = ExprFormatter { db, function_id };
     let mut expr_debugs = Vec::new();
-    for (expr_id, expr) in &definition_data.definition.exprs {
-        assert_eq!(db.lookup_expr_by_ptr(free_function_id, expr.stable_ptr()), Ok(expr_id));
+    for (expr_id, expr) in &db.function_body(function_id).unwrap().exprs {
+        assert_eq!(db.lookup_expr_by_ptr(function_id, expr.stable_ptr()), Ok(expr_id));
         expr_debugs.push(format!("{:?}", expr.debug(&expr_formatter)));
     }
     expr_debugs.sort();
@@ -86,7 +85,7 @@ fn test_expr_lookup() {
         ]
     );
 
-    let attributes = db.free_function_declaration_attributes(free_function_id).unwrap();
+    let attributes = db.function_with_body_attributes(function_id).unwrap();
     assert_eq!(
         format!("{:?}", attributes.debug(db)),
         "[Attribute { id: \"external\" }, Attribute { id: \"my_attr\" }]"

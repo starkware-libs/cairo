@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::try_extract_matches;
 use indoc::indoc;
@@ -119,16 +119,17 @@ fn test_only_include_dependecies(func_name: &str, sierra_used_funcs: &[&str]) {
         fn f5() { f6(); }
         fn f6() { f6(); }
     "});
-    let func_id = db
-        .crate_modules(crate_id)
-        .iter()
-        .find_map(|module_id| {
-            try_extract_matches!(
-                db.module_item_by_name(*module_id, func_name.into()).unwrap().unwrap(),
-                ModuleItemId::FreeFunction
-            )
-        })
-        .unwrap();
+    let func_id = FunctionWithBodyId::Free(
+        db.crate_modules(crate_id)
+            .iter()
+            .find_map(|module_id| {
+                try_extract_matches!(
+                    db.module_item_by_name(*module_id, func_name.into()).unwrap().unwrap(),
+                    ModuleItemId::FreeFunction
+                )
+            })
+            .unwrap(),
+    );
     let program = db.get_sierra_program_for_functions(vec![func_id]).unwrap();
     assert_eq!(
         replace_sierra_ids_in_program(&db, &program)

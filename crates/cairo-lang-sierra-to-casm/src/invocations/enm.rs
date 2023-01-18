@@ -1,3 +1,4 @@
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::CellRef;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
@@ -12,7 +13,7 @@ use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
 };
 use crate::invocations::ProgramInfo;
-use crate::references::{CellExpression, ReferenceExpression, ReferencesError};
+use crate::references::{ReferenceExpression, ReferencesError};
 use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra enum operations.

@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use crate::db::DefsGroup;
 use crate::ids::ModuleFileId;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StableLocation {
     pub module_file_id: ModuleFileId,
     pub stable_ptr: SyntaxStablePtrId,

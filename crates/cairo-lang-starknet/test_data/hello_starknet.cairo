@@ -12,5 +12,6 @@ mod HelloStarknet {
     #[view]
     fn get_balance() -> felt {
         balance::read()
+        0
     }
 }

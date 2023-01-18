@@ -27,6 +27,7 @@ pub fn priv_module_items_data(
     let mut items = OrderedHashMap::default();
     for item in db.module_items(module_id)?.iter() {
         let name = match item {
+            ModuleItemId::Constant(item_id) => item_id.name(def_db),
             ModuleItemId::Submodule(item_id) => item_id.name(def_db),
             ModuleItemId::Use(item_id) => item_id.name(def_db),
             ModuleItemId::FreeFunction(item_id) => item_id.name(def_db),

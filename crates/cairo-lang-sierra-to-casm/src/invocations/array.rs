@@ -1,11 +1,10 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::operand::{DerefOrImmediate, ResOperand};
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::get_non_fallthrough_statement_id;
+use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -42,14 +41,14 @@ fn build_array_append(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_arr, elem] = builder.try_get_refs()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let arr_start = arr_start.to_buffer(0)?;
-    let arr_end = arr_end.to_buffer(elem.cells.len() as i16)?;
 
     let mut casm_builder = CasmBuilder::default();
-    let arr_start = casm_builder.add_var(arr_start);
-    let arr_end = casm_builder.add_var(arr_end);
+    add_input_variables! {casm_builder,
+        buffer(0) arr_start;
+        buffer(elem.cells.len() as i16) arr_end;
+    };
     for cell in &elem.cells {
-        let cell = casm_builder.add_var(ResOperand::Deref(cell.to_deref()?));
+        add_input_variables!(casm_builder, deref cell;);
         casm_build_extend!(casm_builder, assert cell = *(arr_end++););
     }
     Ok(builder
@@ -62,13 +61,13 @@ fn build_pop_front(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
-    let arr_start = arr_start.to_deref()?;
-    let arr_end = arr_end.to_deref()?;
     let element_size = builder.program_info.type_sizes[elem_ty];
 
     let mut casm_builder = CasmBuilder::default();
-    let arr_start = casm_builder.add_var(ResOperand::Deref(arr_start));
-    let arr_end = casm_builder.add_var(ResOperand::Deref(arr_end));
+    add_input_variables! {casm_builder,
+        deref arr_start;
+        deref arr_end;
+    };
     casm_build_extend! {casm_builder,
         tempvar is_non_empty = arr_end - arr_start;
         jump NonEmpty if is_non_empty != 0;
@@ -95,29 +94,26 @@ fn build_array_at(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_range_check, expr_arr, expr_index] = builder.try_get_refs()?;
-    let range_check = expr_range_check.try_unpack_single()?.to_deref()?;
+    let range_check = expr_range_check.try_unpack_single()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let arr_start = arr_start.to_deref()?;
-    let arr_end = arr_end.to_deref()?;
-    let index = expr_index.try_unpack_single()?.to_deref_or_immediate()?;
+    let index = expr_index.try_unpack_single()?;
 
     let element_size = builder.program_info.type_sizes[elem_ty];
 
     let mut casm_builder = CasmBuilder::default();
-    let index = casm_builder.add_var(match index {
-        DerefOrImmediate::Immediate(imm) => ResOperand::Immediate(imm),
-        DerefOrImmediate::Deref(cell) => ResOperand::Deref(cell),
-    });
-    let arr_start = casm_builder.add_var(ResOperand::Deref(arr_start));
-    let arr_end = casm_builder.add_var(ResOperand::Deref(arr_end));
-    let range_check = casm_builder.add_var(ResOperand::Deref(range_check));
+    add_input_variables! {casm_builder,
+        deref_or_immediate index;
+        deref arr_start;
+        deref arr_end;
+        deref range_check;
+    };
     casm_build_extend! {casm_builder,
         // Compute the length of the array (in felts).
         tempvar array_cell_size = arr_end - arr_start;
     };
-    // TODO(orizi): Optimize with `element_offset = index` in case `element_size == 1` once it is
-    // easier to do ap-changes according to type size.
-    let element_offset = {
+    let element_offset = if element_size == 1 {
+        index
+    } else {
         casm_build_extend! {casm_builder,
             const element_size = element_size;
             // Compute the length of the array (in felts).
@@ -135,9 +131,9 @@ fn build_array_at(
         // Index out of bounds. Compute offset - length.
         tempvar offset_length_diff = element_offset - array_cell_size;
     };
-    // TODO(orizi): Optimize with `array_length = array_cell_size` in case `element_size == 1` once
-    // it is easier to do ap-changes according to type size.
-    let array_length = {
+    let array_length = if element_size == 1 {
+        array_cell_size
+    } else {
         casm_build_extend! {casm_builder,
             // Divide by element size. We assume the length is divisible by element size, and by
             // construction, so is the offset.
@@ -179,25 +175,28 @@ fn build_array_len(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_arr] = builder.try_get_refs()?;
-    let [arr_start, arr_end] = expr_arr.try_unpack()?;
-    let arr_start = arr_start.to_deref()?;
-    let arr_end = arr_end.to_deref()?;
-
+    let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     let element_size = builder.program_info.type_sizes[elem_ty];
-    // TODO(orizi): Do element_size = 1 optimization once it is easier to do ap-changes according to
-    // type size.
     let mut casm_builder = CasmBuilder::default();
-    let start = casm_builder.add_var(ResOperand::Deref(arr_start));
-    let end = casm_builder.add_var(ResOperand::Deref(arr_end));
-    casm_build_extend! {casm_builder,
-        tempvar end_total_offset = end - start;
-        const element_size = element_size;
-        // TODO(orizi): Return a ref to length instead of tempvar when casm builder supports division.
-        tempvar length = end_total_offset / element_size;
+    add_input_variables! {casm_builder,
+        deref arr_start;
+        deref arr_end;
+    };
+    let length = if element_size == 1 {
+        casm_build_extend! {casm_builder,
+            let length = arr_end - arr_start;
+        };
+        length
+    } else {
+        casm_build_extend! {casm_builder,
+            tempvar end_total_offset = arr_end - arr_start;
+            const element_size = element_size;
+            let length = end_total_offset / element_size;
+        };
+        length
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[start, end], &[length]], None)],
+        [("Fallthrough", &[&[arr_start, arr_end], &[length]], None)],
     ))
 }

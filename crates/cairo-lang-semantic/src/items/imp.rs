@@ -1,9 +1,10 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::vec;
 
 use cairo_lang_defs::ids::{
-    GenericFunctionId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
-    LanguageElementId, ModuleId,
+    FunctionSignatureId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
+    LanguageElementId, ModuleId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -15,22 +16,27 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionHelper};
 use itertools::izip;
+use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
+use super::function_with_body::{FunctionBody, FunctionBodyData};
+use super::functions::FunctionDeclarationData;
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
-use crate::corelib::{copy_trait, drop_trait};
+use crate::corelib::{copy_trait, drop_trait, never_ty};
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind::*;
+use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use crate::expr::compute::Environment;
+use crate::expr::compute::{compute_expr_block_semantic, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::{
-    semantic, ConcreteTraitId, ConcreteTraitLongId, GenericArgumentId, Mutability,
-    SemanticDiagnostic, TypeId, TypeLongId,
+    semantic, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId, GenericArgumentId,
+    Mutability, SemanticDiagnostic, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -149,12 +155,6 @@ pub fn priv_impl_declaration_data_inner(
     }
     .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait));
 
-    // TODO(ilya): Remove once compilation of impl body is supported.
-    if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
-        diagnostics
-            .report_by_ptr(body.lbrace(syntax_db).stable_ptr().untyped(), ImplBodyIsNotSupported);
-    }
-
     let attributes = ast_attributes_to_semantic(syntax_db, impl_ast.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
     Ok(ImplDeclarationData {
@@ -170,7 +170,7 @@ pub fn priv_impl_declaration_data_inner(
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    function_asts: OrderedHashMap<ImplFunctionId, ast::ItemFreeFunction>,
+    function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_semantic_definition_diagnostics].
@@ -187,6 +187,7 @@ pub fn impl_semantic_definition_diagnostics(
     diagnostics.extend(data.diagnostics);
     for impl_function_id in data.function_asts.keys() {
         diagnostics.extend(db.impl_function_declaration_diagnostics(*impl_function_id));
+        diagnostics.extend(db.impl_function_body_diagnostics(*impl_function_id));
     }
 
     diagnostics.build()
@@ -234,11 +235,18 @@ pub fn priv_impl_definition_data(
     // Ignore the result.
     .ok();
 
+    // TODO(yuval): verify that all functions of `concrete_trait` appear in this impl.
+
     let mut function_asts = OrderedHashMap::default();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
             match item {
+                Item::Constant(constant) => report_invalid_in_impl(
+                    syntax_db,
+                    &mut diagnostics,
+                    constant.const_kw(syntax_db),
+                ),
                 Item::Module(module) => {
                     report_invalid_in_impl(syntax_db, &mut diagnostics, module.module_kw(syntax_db))
                 }
@@ -286,8 +294,35 @@ pub fn priv_impl_definition_data(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_functions].
-pub fn impl_functions(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Vec<ImplFunctionId>> {
-    Ok(db.priv_impl_definition_data(impl_id)?.function_asts.keys().copied().collect())
+pub fn impl_functions(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>> {
+    Ok(db
+        .priv_impl_definition_data(impl_id)?
+        .function_asts
+        .keys()
+        .map(|function_id| {
+            let function_long_id = db.lookup_intern_impl_function(*function_id);
+            (function_long_id.name(db.upcast()), *function_id)
+        })
+        .collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_by_trait_function].
+pub fn impl_function_by_trait_function(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<Option<ImplFunctionId>> {
+    let defs_db = db.upcast();
+    let name = trait_function_id.name(defs_db);
+    for impl_function_id in db.priv_impl_definition_data(impl_id)?.function_asts.keys() {
+        if db.lookup_intern_impl_function(*impl_function_id).name(defs_db) == name {
+            return Ok(Some(*impl_function_id));
+        }
+    }
+    Ok(None)
 }
 
 /// Handle special cases such as Copy and Drop checking.
@@ -391,13 +426,13 @@ pub struct ImplLookupContext {
     pub generic_params: Vec<GenericParamId>,
 }
 
-/// Finds all the implementations for a concrete trait, in a specific lookup context.
+/// Finds all the implementations of a concrete trait, in a specific lookup context.
 pub fn find_impls_at_context(
     db: &dyn SemanticGroup,
     lookup_context: &ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
-) -> Maybe<Vec<ConcreteImplId>> {
-    let mut res = Vec::new();
+) -> Maybe<OrderedHashSet<ConcreteImplId>> {
+    let mut res = OrderedHashSet::default();
     // TODO(spapini): Lookup in generic_params once impl generic params are supported.
     res.extend(find_impls_at_module(db, lookup_context.module_id, concrete_trait_id)?);
     for module_id in &lookup_context.extra_modules {
@@ -416,17 +451,7 @@ pub fn find_impls_at_context(
     Ok(res)
 }
 
-// Declaration.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ImplFunctionDeclarationData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    signature: semantic::Signature,
-    generic_params: Vec<GenericParamId>,
-    // TODO(ilya): Do we need Environment like in a free function?
-    attributes: Vec<Attribute>,
-    resolved_lookback: Arc<ResolvedLookback>,
-}
+// === Declaration ===
 
 /// Query implementation of [crate::db::SemanticGroup::impl_function_signature].
 pub fn impl_function_signature(
@@ -434,6 +459,14 @@ pub fn impl_function_signature(
     impl_function_id: ImplFunctionId,
 ) -> Maybe<semantic::Signature> {
     Ok(db.priv_impl_function_declaration_data(impl_function_id)?.signature)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_implicits].
+pub fn impl_function_declaration_implicits(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Maybe<Vec<TypeId>> {
+    Ok(db.priv_impl_function_declaration_data(impl_function_id)?.signature.implicits)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_function_generic_params].
@@ -466,7 +499,7 @@ pub fn impl_function_resolved_lookback(
 pub fn priv_impl_function_declaration_data(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
-) -> Maybe<ImplFunctionDeclarationData> {
+) -> Maybe<FunctionDeclarationData> {
     let module_file_id = impl_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let impl_id = impl_function_id.impl_id(db.upcast());
@@ -490,7 +523,7 @@ pub fn priv_impl_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        GenericFunctionId::ImplFunction(impl_function_id),
+        FunctionSignatureId::Impl(impl_function_id),
         &mut environment,
     );
 
@@ -507,10 +540,11 @@ pub fn priv_impl_function_declaration_data(
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
 
-    Ok(ImplFunctionDeclarationData {
+    Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         generic_params,
+        environment,
         attributes,
         resolved_lookback,
     })
@@ -523,7 +557,7 @@ fn validate_impl_function_signature(
     impl_function_id: ImplFunctionId,
     signature_syntax: &ast::FunctionSignature,
     signature: &semantic::Signature,
-    function_syntax: &ast::ItemFreeFunction,
+    function_syntax: &ast::FunctionWithBody,
 ) {
     let syntax_db = db.upcast();
     let Ok(declaraton_data) = db.priv_impl_declaration_data(impl_id) else {
@@ -613,4 +647,101 @@ fn validate_impl_function_signature(
             WrongReturnTypeForImpl { impl_id, impl_function_id, trait_id, expected_ty, actual_ty },
         );
     }
+}
+
+// === Body ===
+
+// --- Selectors ---
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_body_diagnostics].
+pub fn impl_function_body_diagnostics(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_impl_function_body_data(impl_function_id)
+        .map(|data| data.diagnostics)
+        .unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_body].
+pub fn impl_function_body(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Maybe<Arc<FunctionBody>> {
+    Ok(db.priv_impl_function_body_data(impl_function_id)?.body)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_body_resolved_lookback].
+pub fn impl_function_body_resolved_lookback(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_impl_function_body_data(impl_function_id)?.resolved_lookback)
+}
+
+// --- Computation ---
+
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_body_data].
+pub fn priv_impl_function_body_data(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Maybe<FunctionBodyData> {
+    let defs_db = db.upcast();
+    let module_file_id = impl_function_id.module_file(defs_db);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let impl_id = impl_function_id.impl_id(defs_db);
+    let data = db.priv_impl_definition_data(impl_id)?;
+    let function_syntax = &data.function_asts[impl_function_id];
+    // Compute declaration semantic.
+    let declaration = db.priv_impl_function_declaration_data(impl_function_id)?;
+    let resolver = Resolver::new(db, module_file_id, &declaration.generic_params);
+    let environment = declaration.environment;
+    // Compute body semantic expr.
+    let mut ctx = ComputationContext::new(
+        db,
+        &mut diagnostics,
+        resolver,
+        Some(&declaration.signature),
+        environment,
+    );
+    let function_body = function_syntax.body(db.upcast());
+    let expr = compute_expr_block_semantic(&mut ctx, &function_body)?;
+    let expr_ty = expr.ty();
+    let return_type = declaration.signature.return_type;
+    if expr_ty != return_type
+        && !expr_ty.is_missing(db)
+        && !return_type.is_missing(db)
+        && expr_ty != never_ty(db)
+    {
+        ctx.diagnostics.report(
+            &function_body,
+            SemanticDiagnosticKind::WrongReturnType {
+                expected_ty: return_type,
+                actual_ty: expr_ty,
+            },
+        );
+    }
+    let body_expr = ctx.exprs.alloc(expr);
+    let ComputationContext { exprs, statements, resolver, .. } = ctx;
+
+    let direct_callees: HashSet<FunctionId> = exprs
+        .iter()
+        .filter_map(|(_id, expr)| try_extract_matches!(expr, Expr::FunctionCall))
+        .map(|f| f.function)
+        .collect();
+
+    let expr_lookup: UnorderedHashMap<_, _> =
+        exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
+    let resolved_lookback = Arc::new(resolver.lookback);
+    Ok(FunctionBodyData {
+        diagnostics: diagnostics.build(),
+        expr_lookup,
+        resolved_lookback,
+        body: Arc::new(FunctionBody {
+            exprs,
+            statements,
+            body_expr,
+            direct_callees: direct_callees.into_iter().collect(),
+        }),
+    })
 }

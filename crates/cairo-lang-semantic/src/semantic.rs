@@ -4,6 +4,7 @@ use cairo_lang_defs::ids::LocalVarId;
 pub use cairo_lang_defs::ids::{ParamId, VarId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast;
+use smol_str::SmolStr;
 
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
@@ -12,7 +13,7 @@ pub use crate::expr::pattern::{
     PatternVariable,
 };
 pub use crate::items::enm::{ConcreteVariant, Variant};
-pub use crate::items::free_function::FreeFunctionDefinition;
+pub use crate::items::function_with_body::FunctionBody;
 pub use crate::items::functions::{ConcreteFunction, FunctionId, FunctionLongId, Signature};
 pub use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
 pub use crate::items::strct::Member;
@@ -40,8 +41,11 @@ impl LocalVariable {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Parameter {
     pub id: ParamId,
+    pub name: SmolStr,
     pub ty: TypeId,
     pub mutability: Mutability,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::TerminalIdentifierPtr,
 }
 
 /// The mutability attribute of a variable.

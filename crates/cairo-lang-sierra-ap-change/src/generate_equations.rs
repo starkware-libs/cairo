@@ -48,7 +48,7 @@ struct StatementInfo {
 /// Generates a set of equations from a program, and a function to extract cost expressions from a
 /// library function id.
 pub fn generate_equations<
-    GetApChange: Fn(&ConcreteLibfuncId) -> Result<Vec<Effects>, ApChangeError>,
+    GetApChange: Fn(StatementIdx, &ConcreteLibfuncId) -> Result<Vec<Effects>, ApChangeError>,
 >(
     program: &Program,
     get_effects: GetApChange,
@@ -80,9 +80,9 @@ pub fn generate_equations<
                 )?;
             }
             cairo_lang_sierra::program::Statement::Invocation(invocation) => {
-                let libfunc_effects = get_effects(&invocation.libfunc_id)?;
+                let libfunc_effects = get_effects(idx, &invocation.libfunc_id)?;
                 if invocation.branches.len() != libfunc_effects.len() {
-                    return Err(ApChangeError::IllegalInvocation(idx));
+                    return Err(ApChangeError::WrongNumApChangeBranches(idx));
                 }
                 for (branch, branch_effects) in zip_eq(&invocation.branches, libfunc_effects) {
                     let branch_ap_change = match branch_effects.ap_change {
@@ -97,8 +97,7 @@ pub fn generate_equations<
                         ApChange::FinalizeLocals => {
                             Some(Expr::from_const(base_info.past_locals as i32))
                         }
-                        ApChange::KnownByTypeSize(_)
-                        | ApChange::AtLocalsFinalizationByTypeSize(_) => {
+                        ApChange::AtLocalsFinalization(_) => {
                             unreachable!(
                                 "These arms are translated to `ApChange::Known` in the \
                                  `get_effects` call."

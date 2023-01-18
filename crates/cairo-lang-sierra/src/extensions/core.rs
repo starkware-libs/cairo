@@ -10,7 +10,7 @@ use super::dict_felt_to::{DictFeltToLibfunc, DictFeltToType};
 use super::dict_manager::DictManagerType;
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
-use super::ec::{EcLibfunc, EcPointType, EcStateType};
+use super::ec::{EcLibfunc, EcOpType, EcPointType, EcStateType};
 use super::enm::{EnumLibfunc, EnumType};
 use super::modules::boxing::{BoxLibfunc, BoxType};
 use super::modules::felt::{FeltLibfunc, FeltType};
@@ -26,6 +26,7 @@ use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
 use super::strct::{StructLibfunc, StructType};
+use super::uint::{Uint8Libfunc, Uint8Type};
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -34,12 +35,14 @@ define_type_hierarchy! {
         Array(ArrayType),
         Bitwise(BitwiseType),
         Box(BoxType),
+        EcOp(EcOpType),
         EcPoint(EcPointType),
         EcState(EcStateType),
         Felt(FeltType),
         GasBuiltin(GasBuiltinType),
         BuiltinCosts(BuiltinCostsType),
         Uint128(Uint128Type),
+        Uint8(Uint8Type),
         NonZero(NonZeroType),
         Nullable(NullableType),
         RangeCheck(RangeCheckType),
@@ -70,6 +73,7 @@ define_libfunc_hierarchy! {
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
         Uint128(Uint128Libfunc),
+        Uint8(Uint8Libfunc),
         Mem(MemLibfunc),
         Nullable(NullableLibfunc),
         UnwrapNonZero(UnwrapNonZeroLibfunc),

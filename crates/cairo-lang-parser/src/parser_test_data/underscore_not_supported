@@ -231,7 +231,7 @@ fn f(ref _: felt) {}
 
 //! > ==========================================================================
 
-//! > Param name without modifiers - underscore *is* supported
+//! > Param name without modifiers
 
 //! > test_function_name
 get_diagnostics
@@ -240,6 +240,10 @@ get_diagnostics
 fn f(_: felt) {}
 
 //! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:6
+fn f(_: felt) {}
+     ^
 
 //! > ==========================================================================
 

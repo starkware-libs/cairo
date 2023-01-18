@@ -10,7 +10,7 @@
     │   │   │   └── item #1 (kind: PathSegmentSimple)
     │   │   │       └── ident (kind: TokenIdentifier): 'format'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   └── child #1 (kind: ItemFreeFunction)
+    │   └── child #1 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
     │       ├── declaration (kind: FunctionDeclaration)
     │       │   ├── function_kw (kind: TokenFunction): 'fn'

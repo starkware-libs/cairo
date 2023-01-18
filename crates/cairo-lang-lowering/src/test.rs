@@ -13,6 +13,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/test_data",
     {
         assignment :"assignment",
+        borrow_check :"borrow_check",
         call :"call",
         enums :"enums",
         error_propagate :"error_propagate",
@@ -21,9 +22,11 @@ cairo_lang_test_utils::test_file_test!(
         if_ :"if",
         match_ :"match",
         panic :"panic",
+        rebindings :"rebindings",
         struct_ :"struct",
         tests :"tests",
         tuple :"tuple",
+        inline_diagnostics :"inline_diagnostics",
     },
     test_function_lowering
 );
@@ -41,17 +44,19 @@ fn test_function_lowering(
     )
     .split();
     let structured_lowered =
-        db.free_function_lowered_structured(test_function.function_id).unwrap();
-    let flat_lowered = db.free_function_lowered_flat(test_function.function_id).unwrap();
+        db.priv_function_with_body_lowered_structured(test_function.function_id).unwrap();
+    let lowered = db.function_with_body_lowered(test_function.function_id).unwrap();
+    let diagnostics =
+        db.function_with_body_lowering_diagnostics(test_function.function_id).unwrap();
 
-    let lowered_formatter = LoweredFormatter { db, variables: &flat_lowered.variables };
+    let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
-        ("lowering_diagnostics".into(), structured_lowered.diagnostics.format(db)),
+        ("lowering_diagnostics".into(), diagnostics.format(db)),
         (
             "lowering_structured".into(),
             format!("{:?}", structured_lowered.debug(&lowered_formatter)),
         ),
-        ("lowering_flat".into(), format!("{:?}", flat_lowered.debug(&lowered_formatter))),
+        ("lowering_flat".into(), format!("{:?}", lowered.debug(&lowered_formatter))),
     ])
 }

@@ -1,12 +1,13 @@
 //! Sierra AP change model.
-use std::collections::HashMap;
-
 use ap_change_info::ApChangeInfo;
+use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use core_libfunc_ap_change::InvocationApChangeInfoProvider;
 use generate_equations::{Effects, Var};
 use thiserror::Error;
 
@@ -24,14 +25,11 @@ pub enum ApChange {
     /// The libfunc changes `ap` by a known size, provided in the metadata. Currently this only
     /// includes `branch_align` libfunc.
     FromMetadata,
-    /// The libfunc changes `ap` by a known size, which is the size of the given type at locals
-    /// finalization stage.
-    AtLocalsFinalizationByTypeSize(ConcreteTypeId),
-    /// The libfunc changes `ap` by a known size, which is the size of the given type.
-    KnownByTypeSize(ConcreteTypeId),
+    /// The libfunc changes `ap` by a known size at locals finalization stage.
+    AtLocalsFinalization(usize),
     /// The libfunc is a function call - it changes according to the given function and call cost.
     FunctionCall(FunctionId),
-    // The libfunc allocates locals, the `ap` change depends on the environment.
+    /// The libfunc allocates locals, the `ap` change depends on the environment.
     FinalizeLocals,
 }
 
@@ -44,39 +42,63 @@ pub enum ApChangeError {
     StatementOutOfBounds(StatementIdx),
     #[error("found an illegal statement index during ap change calculations")]
     StatementOutOfOrder(StatementIdx),
-    #[error("found an illegal invocation during cost calculations")]
-    IllegalInvocation(StatementIdx),
+    #[error("Wrong number of libfunc branches in ap-change information")]
+    WrongNumApChangeBranches(StatementIdx),
     #[error("failed solving the ap changes")]
     SolvingApChangeEquationFailed,
 }
 
+/// Helper to implement the `InvocationApChangeInfoProvider` for the equation generation.
+struct InvocationApChangeInfoProviderForEqGen<'a, TokenUsages: Fn(CostTokenType) -> usize> {
+    /// Registry for providing the sizes of the types.
+    registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
+    /// Closure providing the token usages for the invocation.
+    token_usages: TokenUsages,
+}
+
+impl<'a, TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
+    for InvocationApChangeInfoProviderForEqGen<'a, TokenUsages>
+{
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize {
+        self.registry.get_type(ty).unwrap().info().size as usize
+    }
+
+    fn token_usages(&self, token_type: CostTokenType) -> usize {
+        (self.token_usages)(token_type)
+    }
+}
+
 /// Calculates gas information for a given program.
-pub fn calc_ap_changes(program: &Program) -> Result<ApChangeInfo, ApChangeError> {
+pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
+    program: &Program,
+    token_usages: TokenUsages,
+) -> Result<ApChangeInfo, ApChangeError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let equations = generate_equations::generate_equations(program, |libfunc_id| {
+    let equations = generate_equations::generate_equations(program, |idx, libfunc_id| {
         let libfunc = registry.get_libfunc(libfunc_id)?;
-        core_libfunc_ap_change::core_libfunc_ap_change(libfunc)
-            .into_iter()
-            .map(|ap_change| {
-                Ok(match ap_change {
-                    ApChange::KnownByTypeSize(ty) => Effects {
-                        ap_change: ApChange::Known(registry.get_type(&ty)?.info().size as usize),
-                        locals: 0,
-                    },
-                    ApChange::AtLocalsFinalizationByTypeSize(ty) => Effects {
-                        ap_change: ApChange::Known(0),
-                        locals: registry.get_type(&ty)?.info().size as usize,
-                    },
-                    _ => Effects { ap_change, locals: 0 },
-                })
+        core_libfunc_ap_change::core_libfunc_ap_change(
+            libfunc,
+            &InvocationApChangeInfoProviderForEqGen {
+                registry: &registry,
+                token_usages: |token_type| token_usages(idx, token_type),
+            },
+        )
+        .into_iter()
+        .map(|ap_change| {
+            Ok(match ap_change {
+                ApChange::AtLocalsFinalization(known) => {
+                    Effects { ap_change: ApChange::Known(0), locals: known }
+                }
+                _ => Effects { ap_change, locals: 0 },
             })
-            .collect::<Result<Vec<_>, _>>()
+        })
+        .collect::<Result<Vec<_>, _>>()
     })?;
     let solution = cairo_lang_eq_solver::try_solve_equations(equations)
         .ok_or(ApChangeError::SolvingApChangeEquationFailed)?;
 
-    let mut variable_values = HashMap::<StatementIdx, usize>::default();
-    let mut function_ap_change = HashMap::<cairo_lang_sierra::ids::FunctionId, usize>::default();
+    let mut variable_values = OrderedHashMap::default();
+    let mut function_ap_change = OrderedHashMap::default();
     for (var, value) in solution {
         match var {
             Var::LibfuncImplicitApChangeVariable(idx) => {

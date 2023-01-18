@@ -3,10 +3,13 @@
 //! assigned once. It is also normal form: each function argument is a variable, rather than a
 //! compound expression.
 
+use std::ops::{Deref, DerefMut};
+
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::{Arena, Id};
 use itertools::chain;
 use num_bigint::BigInt;
@@ -17,6 +20,9 @@ use self::blocks::{FlatBlocks, StructuredBlocks};
 use crate::diagnostic::LoweringDiagnostic;
 
 pub type VariableId = Id<Variable>;
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+pub struct RefIndex(pub usize);
 
 /// A lowered function code.
 #[derive(Debug, PartialEq, Eq)]
@@ -62,16 +68,35 @@ pub struct StructuredBlock {
     /// Note: Inner blocks might end with a `return`, which will exit the function in the middle.
     /// Note: Match is a possible statement, which means it has control flow logic inside, but
     /// after its execution is completed, the flow returns to the following statement of the block.
-    pub statements: Vec<Statement>,
+    pub statements: Vec<StructuredStatement>,
     /// Describes how this block ends: returns to the caller or exits the function.
     pub end: StructuredBlockEnd,
+}
+
+/// Remapping of lowered variable ids. Useful for convergence of branches.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct VarRemapping {
+    /// Map from new_var to old_var (since new_var cannot appear twice, but old_var can).
+    pub remapping: OrderedHashMap<VariableId, VariableId>,
+}
+impl Deref for VarRemapping {
+    type Target = OrderedHashMap<VariableId, VariableId>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.remapping
+    }
+}
+impl DerefMut for VarRemapping {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.remapping
+    }
 }
 
 /// Describes what happens to the program flow at the end of a [`StructuredBlock`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StructuredBlockEnd {
-    /// This block returns to the call-site, outputting variables to the call-site.
-    Callsite(Vec<VariableId>),
+    /// This block returns to the call-site, remapping variables to the call-site.
+    Callsite(VarRemapping),
     /// This block ends with a `return` statement, exiting the function.
     Return { refs: Vec<VariableId>, returns: Vec<VariableId> },
     /// This block ends with a `panic` statement, exiting the function.
@@ -100,7 +125,7 @@ pub struct FlatBlock {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FlatBlockEnd {
     /// This block returns to the call-site, outputting variables to the call-site.
-    Callsite(Vec<VariableId>),
+    Callsite(VarRemapping),
     /// This block ends with a `return` statement, exiting the function.
     Return(Vec<VariableId>),
     /// The last statement ended the flow (e.g., match will all arms ending in return),
@@ -114,7 +139,7 @@ impl TryFrom<StructuredBlock> for FlatBlock {
     fn try_from(value: StructuredBlock) -> Result<Self, Self::Error> {
         Ok(FlatBlock {
             inputs: value.inputs,
-            statements: value.statements,
+            statements: value.statements.into_iter().map(|s| s.statement).collect(),
             end: value.end.try_into()?,
         })
     }
@@ -142,12 +167,24 @@ pub struct Variable {
     pub droppable: bool,
     /// Can the type be (trivially) duplicated.
     pub duplicatable: bool,
-    /// If this variable is a used as a reference variable (including implicits) of the current
-    /// function, what are the indices of said reference variables?
-    /// Note that a lowered variable might be assigned to multiple reference variables.
-    pub ref_indices: OrderedHashSet<usize>,
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
+    /// Location of the variable.
+    pub location: StableLocation,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StructuredStatement {
+    pub statement: Statement,
+    /// Updates to the variable ids bound to the ref variables (including implicits), from the last
+    /// update until exactly after this statement.
+    pub ref_updates: OrderedHashMap<RefIndex, VariableId>,
+}
+
+impl From<Statement> for StructuredStatement {
+    fn from(statement: Statement) -> Self {
+        StructuredStatement { statement, ref_updates: Default::default() }
+    }
 }
 
 /// Lowered statement.
@@ -187,12 +224,12 @@ impl Statement {
         match &self {
             Statement::Literal(stmt) => vec![stmt.output],
             Statement::Call(stmt) => stmt.outputs.clone(),
-            Statement::CallBlock(stmt) => stmt.outputs.clone(),
-            Statement::MatchExtern(stmt) => stmt.outputs.clone(),
+            Statement::CallBlock(_) => vec![],
+            Statement::MatchExtern(_) => vec![],
             Statement::StructConstruct(stmt) => vec![stmt.output],
             Statement::StructDestructure(stmt) => stmt.outputs.clone(),
             Statement::EnumConstruct(stmt) => vec![stmt.output],
-            Statement::MatchEnum(stmt) => stmt.outputs.clone(),
+            Statement::MatchEnum(_) => vec![],
         }
     }
 }
@@ -223,8 +260,6 @@ pub struct StatementCall {
 pub struct StatementCallBlock {
     /// A block to "call".
     pub block: BlockId,
-    /// New variables to be introduced into the current scope, moved from the callee block outputs.
-    pub outputs: Vec<VariableId>,
 }
 
 /// A statement that calls an extern function with branches, and "calls" a possibly different block
@@ -239,8 +274,6 @@ pub struct StatementMatchExtern {
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
-    /// New variables to be introduced into the current scope from the arm outputs.
-    pub outputs: Vec<VariableId>,
 }
 
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
@@ -257,14 +290,12 @@ pub struct StatementEnumConstruct {
 /// A statement that matches an enum, and "calls" a possibly different block for each branch.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementMatchEnum {
-    pub concrete_enum: ConcreteEnumId,
+    pub concrete_enum_id: ConcreteEnumId,
     /// A living variable in current scope to match on.
     pub input: VariableId,
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
-    /// New variables to be introduced into the current scope from the arm outputs.
-    pub outputs: Vec<VariableId>,
 }
 
 /// A statement that constructs a struct (tuple included) into a new variable.

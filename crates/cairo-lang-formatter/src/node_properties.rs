@@ -3,24 +3,17 @@
 
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::utils::{grandparent_kind, parent_kind};
 use cairo_lang_syntax::node::SyntaxNode;
 
 use crate::formatter::{
     BreakLinePointIndentation, BreakLinePointProperties, SyntaxNodeFormat, WrappingBreakLinePoints,
 };
 
-fn parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
-    Some(syntax_node.parent()?.kind(db))
-}
-fn parent_parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
-    Some(syntax_node.parent()?.parent()?.kind(db))
-}
-
 impl SyntaxNodeFormat for SyntaxNode {
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
         match self.kind(db) {
             SyntaxKind::TokenDot
-            | SyntaxKind::TokenColon
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenComma
             | SyntaxKind::TokenSemicolon
@@ -29,20 +22,25 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenRBrack => true,
             SyntaxKind::TokenLParen
                 if matches!(
-                    parent_parent_kind(db, self),
+                    grandparent_kind(db, self),
                     Some(SyntaxKind::FunctionSignature | SyntaxKind::AttributeArgs)
                 ) =>
             {
                 true
             }
+            SyntaxKind::TokenColon
+                if grandparent_kind(db, self) != Some(SyntaxKind::ArgFieldInitShorthand) =>
+            {
+                true
+            }
             SyntaxKind::TokenLBrack
-                if matches!(parent_parent_kind(db, self), Some(SyntaxKind::Attribute)) =>
+                if matches!(grandparent_kind(db, self), Some(SyntaxKind::Attribute)) =>
             {
                 true
             }
             SyntaxKind::TokenLT | SyntaxKind::TokenGT
                 if matches!(
-                    parent_parent_kind(db, self),
+                    grandparent_kind(db, self),
                     Some(
                         SyntaxKind::PathSegmentWithGenericArgs
                             | SyntaxKind::GenericArgs
@@ -68,7 +66,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 if matches!(
                     parent_kind(db, self),
                     Some(
-                        SyntaxKind::ItemFreeFunction
+                        SyntaxKind::FunctionWithBody
                             | SyntaxKind::ItemExternFunction
                             | SyntaxKind::ExprFunctionCall
                             | SyntaxKind::PatternEnum
@@ -79,17 +77,22 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenMinus => {
-                matches!(parent_parent_kind(db, self), Some(SyntaxKind::ExprUnary))
+                matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprUnary))
             }
             SyntaxKind::TokenLT
                 if matches!(
-                    parent_parent_kind(db, self),
+                    grandparent_kind(db, self),
                     Some(
                         SyntaxKind::PathSegmentWithGenericArgs
                             | SyntaxKind::GenericArgs
                             | SyntaxKind::WrappedGenericParamList
                     )
                 ) =>
+            {
+                true
+            }
+            SyntaxKind::TokenColon
+                if grandparent_kind(db, self) == Some(SyntaxKind::ArgFieldInitShorthand) =>
             {
                 true
             }
@@ -120,7 +123,8 @@ impl SyntaxNodeFormat for SyntaxNode {
             SyntaxKind::StatementLet
             | SyntaxKind::StatementExpr
             | SyntaxKind::StatementReturn
-            | SyntaxKind::ItemFreeFunction
+            | SyntaxKind::ItemConstant
+            | SyntaxKind::FunctionWithBody
             | SyntaxKind::ItemExternFunction
             | SyntaxKind::ItemExternType
             | SyntaxKind::ItemTrait

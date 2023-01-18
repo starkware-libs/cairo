@@ -283,6 +283,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
 
 [[package]]
+name = "cairo-felt"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "445e0fdaf20ab3e1597c1e9ef3bd6965b468acc1ce0b196c290864ffae25029b"
+dependencies = [
+ "lazy_static",
+ "num-bigint",
+ "num-integer",
+ "num-traits 0.2.15",
+ "serde",
+]
+
+[[package]]
 name = "cairo-lang-casm"
 version = "0.1.0"
 dependencies = [
@@ -291,6 +304,7 @@ dependencies = [
  "indoc",
  "itertools",
  "num-bigint",
+ "num-traits 0.2.15",
  "pretty_assertions",
  "test-case",
  "test-log",
@@ -374,6 +388,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "good_lp",
+ "indexmap",
  "indoc",
  "itertools",
  "test-case",
@@ -543,6 +558,7 @@ dependencies = [
  "anyhow",
  "ark-ff 0.4.0-alpha.7",
  "ark-std 0.3.0",
+ "cairo-felt",
  "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-diagnostics",
@@ -644,6 +660,7 @@ dependencies = [
  "env_logger",
  "indoc",
  "itertools",
+ "pretty_assertions",
  "test-case",
  "test-log",
  "thiserror",
@@ -754,6 +771,7 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "smol_str",
+ "substring",
  "test-log",
 ]
 
@@ -774,6 +792,7 @@ name = "cairo-lang-test-runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cairo-felt",
  "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-debug",
@@ -820,18 +839,18 @@ dependencies = [
  "indexmap",
  "itertools",
  "log",
- "num-bigint",
  "test-case",
  "test-log",
 ]
 
 [[package]]
 name = "cairo-vm"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0db448207a281d6ec29c4de24422fba5d52f0a0b9424dd7a758d995f5a89e40e"
+checksum = "c5c9338e2637a4f3598061f3466192156e7873a70ec9904693755d88537855a0"
 dependencies = [
  "bincode",
+ "cairo-felt",
  "clap 3.2.23",
  "generic-array",
  "hex",
@@ -2506,6 +2525,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
+name = "substring"
+version = "1.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42ee6433ecef213b2e72f587ef64a2f5943e7cd16fbd82dbe8bc07486c534c86"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
 name = "subtle"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2592,6 +2620,7 @@ name = "tests"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
+ "cairo-felt",
  "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-defs",

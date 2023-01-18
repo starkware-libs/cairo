@@ -5,13 +5,12 @@ mod test;
 use smol_str::SmolStr;
 
 use super::ast::{
-    self, FunctionDeclaration, FunctionDeclarationGreen, Item, ItemEnum, ItemExternFunction,
-    ItemExternFunctionPtr, ItemExternType, ItemFreeFunction, ItemFreeFunctionPtr, ItemImpl,
-    ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItemFunctionPtr,
+    self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
+    Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
+    ItemImpl, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction, TraitItemFunctionPtr,
 };
 use super::db::SyntaxGroup;
-use super::kind::SyntaxKind;
 use super::Terminal;
 use crate::node::green::GreenNodeDetails;
 
@@ -51,21 +50,6 @@ impl GetIdentifier for ast::ExprPath {
         self.elements(db).last().cloned().unwrap().identifier(db)
     }
 }
-impl GetIdentifier for ast::ParamNameGreen {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let green_node = db.lookup_intern_green(self.0);
-
-        match green_node.details {
-            GreenNodeDetails::Token(_) => "Unexpected token".into(),
-            GreenNodeDetails::Node { .. } => match green_node.kind {
-                SyntaxKind::TerminalIdentifier => TerminalIdentifierGreen(self.0).identifier(db),
-                // All '_' params will be named with the same name...
-                SyntaxKind::TerminalUnderscore => "_".into(),
-                _ => "Unexpected identifier for param name".into(),
-            },
-        }
-    }
-}
 
 /// Helper trait for ast::PathSegment.
 pub trait PathSegmentEx {
@@ -84,14 +68,6 @@ impl GetIdentifier for ast::PathSegment {
     /// Retrieves the text of the segment (without the generic args).
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
         self.identifier_ast(db).text(db)
-    }
-}
-impl GetIdentifier for ast::ParamName {
-    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        match self {
-            ast::ParamName::Underscore(_) => "_".into(),
-            ast::ParamName::Name(name) => name.text(db),
-        }
     }
 }
 impl GetIdentifier for ast::Modifier {
@@ -117,7 +93,7 @@ impl NameGreen for FunctionDeclarationGreen {
     }
 }
 
-impl NameGreen for ItemFreeFunctionPtr {
+impl NameGreen for FunctionWithBodyPtr {
     fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         self.declaration_green(db).name_green(db)
     }
@@ -140,6 +116,17 @@ pub trait QueryAttrs {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
     fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
 }
+impl QueryAttrs for ItemConstant {
+    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
+    }
+    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        match self.attributes(db).elements(db).last() {
+            None => false,
+            Some(last_attr) => last_attr.attr(db).text(db) == attr,
+        }
+    }
+}
 impl QueryAttrs for ItemModule {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
@@ -151,7 +138,7 @@ impl QueryAttrs for ItemModule {
         }
     }
 }
-impl QueryAttrs for ItemFreeFunction {
+impl QueryAttrs for FunctionWithBody {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }
@@ -250,10 +237,22 @@ impl QueryAttrs for ItemTypeAlias {
         }
     }
 }
+impl QueryAttrs for TraitItemFunction {
+    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
+    }
+    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        match self.attributes(db).elements(db).last() {
+            None => false,
+            Some(last_attr) => last_attr.attr(db).text(db) == attr,
+        }
+    }
+}
 
 impl QueryAttrs for Item {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         match self {
+            ast::Item::Constant(item) => item.has_attr(db, attr),
             ast::Item::Module(item) => item.has_attr(db, attr),
             ast::Item::FreeFunction(item) => item.has_attr(db, attr),
             ast::Item::Use(item) => item.has_attr(db, attr),
@@ -269,6 +268,7 @@ impl QueryAttrs for Item {
 
     fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         match self {
+            ast::Item::Constant(item) => item.last_attr(db, attr),
             ast::Item::Module(item) => item.last_attr(db, attr),
             ast::Item::FreeFunction(item) => item.last_attr(db, attr),
             ast::Item::Use(item) => item.last_attr(db, attr),

@@ -68,9 +68,9 @@ impl SemanticTokensTraverser {
                             SemanticTokenKind::Parameter,
                         );
                     }
-                    SyntaxKind::ItemFreeFunction => {
+                    SyntaxKind::FunctionWithBody => {
                         self.mark_future_token(
-                            ast::ItemFreeFunction::from_syntax_node(db, node)
+                            ast::FunctionWithBody::from_syntax_node(db, node)
                                 .declaration(db)
                                 .name(db)
                                 .as_syntax_node()
