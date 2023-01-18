@@ -10,7 +10,7 @@ use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, try_extract_matches};
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
 use cairo_vm::serde::deserialize_program::{
     ApTracking, FlowTrackingData, HintParams, ReferenceManager,
@@ -112,6 +112,12 @@ macro_rules! insert_value_to_cellref {
 struct StarknetExecScope {
     /// The values of addresses in the simulated storage.
     storage: HashMap<Felt, Felt>,
+}
+
+/// Execution scope for boxed variables memory management.
+struct BoxMemoryExecScope {
+    /// The first free address for boxed variables.
+    free_address: Relocatable,
 }
 
 impl HintProcessor for CairoHintProcessor {
@@ -533,7 +539,23 @@ impl HintProcessor for CairoHintProcessor {
                 }
                 println!();
             }
-            Hint::AllocBoxed { .. } => todo!(),
+            Hint::AllocBoxed { size, dst } => {
+                let size = get_val(size)?.to_usize().expect("Object size too large.");
+                let boxed_segment_exec_scope = match exec_scopes
+                    .get_mut_ref::<BoxMemoryExecScope>("boxed_segment_exec_scope")
+                {
+                    Ok(boxed_segment_exec_scope) => boxed_segment_exec_scope,
+                    Err(_) => {
+                        exec_scopes.assign_or_update_variable(
+                            "boxed_segment_exec_scope",
+                            Box::new(BoxMemoryExecScope { free_address: vm.add_memory_segment() }),
+                        );
+                        exec_scopes.get_mut_ref::<BoxMemoryExecScope>("boxed_segment_exec_scope")?
+                    }
+                };
+                insert_value_to_cellref!(vm, dst, boxed_segment_exec_scope.free_address)?;
+                boxed_segment_exec_scope.free_address.offset += size;
+            }
         };
         Ok(())
     }
