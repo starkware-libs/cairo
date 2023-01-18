@@ -155,6 +155,12 @@ pub enum Hint {
         start: ResOperand,
         end: ResOperand,
     },
+    /// Returns the first free address on the boxed variables segment and sets the next free
+    /// address according to the boxed variable size.
+    AllocBoxed {
+        object_size: ResOperand,
+        dst: CellRef,
+    },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -494,6 +500,18 @@ impl Display for Hint {
                 ResOperandFormatter(start),
                 ResOperandFormatter(end),
             ),
+            Hint::AllocBoxed { object_size: size, dst } => {
+                writedoc!(
+                    f,
+                    "
+                    
+                        if '__boxed_segment' not in globals():
+                            __boxed_segment = segments.add()
+                        memory{dst} = __boxed_segment
+                        __boxed_segment += {size}
+                    "
+                )
+            }
         }
     }
 }

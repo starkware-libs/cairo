@@ -533,6 +533,7 @@ impl HintProcessor for CairoHintProcessor {
                 }
                 println!();
             }
+            Hint::AllocBoxed { .. } => todo!(),
         };
         Ok(())
     }

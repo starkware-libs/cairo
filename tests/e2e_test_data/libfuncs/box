@@ -9,7 +9,12 @@ fn foo(x: felt) -> Box::<felt> {
 }
 
 //! > casm
-%{ memory[ap + 0] = segments.add() %}
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 0] = __boxed_segment
+__boxed_segment += 1
+%}
 [fp + -3] = [[ap + 0] + 0], ap++;
 ret;
 
@@ -76,7 +81,12 @@ fn foo(x: u256) -> Box::<u256> {
 }
 
 //! > casm
-%{ memory[ap + 0] = segments.add() %}
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 0] = __boxed_segment
+__boxed_segment += 2
+%}
 [fp + -4] = [[ap + 0] + 0], ap++;
 [fp + -3] = [[ap + -1] + 1];
 ret;
