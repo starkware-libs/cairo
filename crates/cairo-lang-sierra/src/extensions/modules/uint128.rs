@@ -4,7 +4,8 @@ use super::non_zero::NonZeroType;
 use super::range_check::RangeCheckType;
 use super::uint::{
     IntOperator, UintConstLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
-    UintLessThanOrEqualLibfunc, UintTraits, UintType,
+    UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc, UintTraits,
+    UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -13,7 +14,7 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::{
     GenericLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibfunc, SpecializationError,
+    SpecializationError,
 };
 use crate::ids::{id_from_string, GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
@@ -23,7 +24,7 @@ pub type Uint128Type = UintType<Uint128Traits>;
 
 define_libfunc_hierarchy! {
     pub enum Uint128Libfunc {
-        Operation(Uint128OperationLibfunc),
+        Operation(UintOperationLibfunc<Uint128Traits>),
         DivMod(Uint128DivModLibfunc),
         WideMul(Uint128WideMulLibfunc),
         LessThan(UintLessThanLibfunc<Uint128Traits>),
@@ -46,6 +47,8 @@ impl UintTraits for Uint128Traits {
     const EQUAL: &'static str = "u128_eq";
     const LESS_THAN: &'static str = "u128_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u128_le";
+    const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";
+    const OVERFLOWING_SUB: &'static str = "u128_overflowing_sub";
 }
 
 impl JumpNotZeroTraits for Uint128Traits {
@@ -63,7 +66,7 @@ impl Uint128OperationLibfunc {
     }
 }
 impl GenericLibfunc for Uint128OperationLibfunc {
-    type Concrete = Uint128OperationConcreteLibfunc;
+    type Concrete = UintOperationConcreteLibfunc;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
         const OVERFLOWING_ADD: u64 = id_from_string("u128_overflowing_add");
@@ -137,20 +140,10 @@ impl GenericLibfunc for Uint128OperationLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(Uint128OperationConcreteLibfunc {
+        Ok(UintOperationConcreteLibfunc {
             operator: self.operator,
             signature: self.specialize_signature(context.upcast(), args)?,
         })
-    }
-}
-
-pub struct Uint128OperationConcreteLibfunc {
-    pub operator: IntOperator,
-    pub signature: LibfuncSignature,
-}
-impl SignatureBasedConcreteLibfunc for Uint128OperationConcreteLibfunc {
-    fn signature(&self) -> &LibfuncSignature {
-        &self.signature
     }
 }
 
