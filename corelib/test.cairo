@@ -99,6 +99,10 @@ fn test_felt_operators() {
 fn test_u8_operators() {
     assert(1_u8 == 1_u8, '1 == 1');
     assert(1_u8 != 2_u8, '1 != 2');
+    assert(1_u8 + 3_u8 == 4_u8, '1 + 3 == 4');
+    assert(3_u8 + 6_u8 == 9_u8, '3 + 6 == 9');
+    assert(3_u8 - 1_u8 == 2_u8, '3 - 1 == 2');
+    assert(231_u8 - 131_u8 == 100_u8, '231-131=100');
     assert(1_u8 < 4_u8, '1 < 4');
     assert(1_u8 <= 4_u8, '1 <= 4');
     assert(!(4_u8 < 4_u8), '!(4 < 4)');
@@ -107,6 +111,42 @@ fn test_u8_operators() {
     assert(5_u8 >= 2_u8, '5 >= 2');
     assert(!(3_u8 > 3_u8), '!(3 > 3)');
     assert(3_u8 >= 3_u8, '3 >= 3');
+}
+
+#[test]
+#[should_panic]
+fn test_u8_sub_overflow_1() {
+    0_u8 - 1_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_sub_overflow_2() {
+    0_u8 - 3_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_sub_overflow_3() {
+    1_u8 - 3_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_sub_overflow_4() {
+    100_u8 - 250_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_add_overflow_1() {
+    128_u8 + 128_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_add_overflow_2() {
+    200_u8 + 60_u8;
 }
 
 #[test]
