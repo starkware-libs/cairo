@@ -215,12 +215,12 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 type RangeCheck = RangeCheck;
 
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
-                libfunc u128_overflow_add = u128_overflow_add;
+                libfunc u128_overflowing_add = u128_overflowing_add;
                 libfunc drop<u128> = drop<u128>;
                 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 
                 revoke_ap_tracking() -> ();
-                u128_overflow_add([1], [2], [3]) {fallthrough([1], [2]) 5([1], [2]) };
+                u128_overflowing_add([1], [2], [3]) {fallthrough([1], [2]) 5([1], [2]) };
                 drop<u128>([2]) -> ();
                 store_temp<RangeCheck>([1]) -> ([1]);
                 return ([1]);
