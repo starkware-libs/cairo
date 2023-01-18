@@ -96,6 +96,20 @@ fn test_felt_operators() {
 }
 
 #[test]
+fn test_u8_operators() {
+    assert(1_u8 == 1_u8, '1 == 1');
+    assert(1_u8 != 2_u8, '1 != 2');
+    assert(1_u8 < 4_u8, '1 < 4');
+    assert(1_u8 <= 4_u8, '1 <= 4');
+    assert(!(4_u8 < 4_u8), '!(4 < 4)');
+    assert(4_u8 <= 4_u8, '4 <= 4');
+    assert(5_u8 > 2_u8, '5 > 2');
+    assert(5_u8 >= 2_u8, '5 >= 2');
+    assert(!(3_u8 > 3_u8), '!(3 > 3)');
+    assert(3_u8 >= 3_u8, '3 >= 3');
+}
+
+#[test]
 fn test_u128_operators() {
     assert(1_u128 == 1_u128, '1 == 1');
     assert(!(1_u128 == 2_u128), '!(1 == 2)');
