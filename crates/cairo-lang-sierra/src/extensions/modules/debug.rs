@@ -5,7 +5,6 @@ use crate::extensions::lib_func::{
     LibfuncSignature, SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::{NamedType, NoGenericArgsGenericLibfunc, SpecializationError};
-use crate::ids::GenericLibfuncId;
 
 define_libfunc_hierarchy! {
     pub enum DebugLibfunc {
@@ -17,7 +16,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct PrintLibfunc {}
 impl NoGenericArgsGenericLibfunc for PrintLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("print");
+    const STR_ID: &'static str = "print";
 
     fn specialize_signature(
         &self,

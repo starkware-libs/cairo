@@ -11,7 +11,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 
 /// Type for StarkNet storage address, a value in the range [0, 2 ** 251 - 256).
 #[derive(Default)]
@@ -28,7 +28,7 @@ impl NoGenericArgsGenericType for StorageAddressType {
 #[derive(Default)]
 pub struct StorageAddressConstLibfuncWrapped {}
 impl ConstGenLibfunc for StorageAddressConstLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_address_const");
+    const STR_ID: &'static str = ("storage_address_const");
     const GENERIC_TYPE_ID: GenericTypeId = <StorageAddressType as NoGenericArgsGenericType>::ID;
 }
 
@@ -38,7 +38,7 @@ pub type StorageAddressConstLibfunc = WrapConstGenLibfunc<StorageAddressConstLib
 #[derive(Default)]
 pub struct StorageAddressFromFeltLibfunc {}
 impl NoGenericArgsGenericLibfunc for StorageAddressFromFeltLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_addr_from_felt");
+    const STR_ID: &'static str = "storage_address_from_felt";
 
     fn specialize_signature(
         &self,
@@ -76,7 +76,7 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromFeltLibfunc {
 #[derive(Default)]
 pub struct StorageReadLibfunc {}
 impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_read_syscall");
+    const STR_ID: &'static str = "storage_read_syscall";
 
     fn specialize_signature(
         &self,
@@ -160,7 +160,7 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
 #[derive(Default)]
 pub struct StorageWriteLibfunc {}
 impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_write_syscall");
+    const STR_ID: &'static str = "storage_write_syscall";
 
     fn specialize_signature(
         &self,

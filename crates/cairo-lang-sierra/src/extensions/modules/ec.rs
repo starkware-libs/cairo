@@ -8,7 +8,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 
 // Type representing the EcOp builtin.
 #[derive(Default)]
@@ -60,7 +60,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct EcCreatePointLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_point_try_create");
+    const STR_ID: &'static str = "ec_point_try_create";
 
     fn specialize_signature(
         &self,
@@ -99,7 +99,7 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
 #[derive(Default)]
 pub struct EcPointFromXLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_point_from_x");
+    const STR_ID: &'static str = "ec_point_from_x";
 
     fn specialize_signature(
         &self,
@@ -132,7 +132,7 @@ impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
 #[derive(Default)]
 pub struct EcUnwrapPointLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_point_unwrap");
+    const STR_ID: &'static str = "ec_point_unwrap";
 
     fn specialize_signature(
         &self,
@@ -160,7 +160,7 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
 #[derive(Default)]
 pub struct EcInitStateLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcInitStateLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_init_state");
+    const STR_ID: &'static str = "ec_init_state";
 
     fn specialize_signature(
         &self,
@@ -181,7 +181,7 @@ impl NoGenericArgsGenericLibfunc for EcInitStateLibfunc {
 #[derive(Default)]
 pub struct EcAddToStateLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcAddToStateLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_add_to_state");
+    const STR_ID: &'static str = "ec_add_to_state";
 
     fn specialize_signature(
         &self,
@@ -203,7 +203,7 @@ impl NoGenericArgsGenericLibfunc for EcAddToStateLibfunc {
 #[derive(Default)]
 pub struct EcFinalizeStateLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcFinalizeStateLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_try_finalize_state");
+    const STR_ID: &'static str = "ec_try_finalize_state";
 
     fn specialize_signature(
         &self,
@@ -236,7 +236,7 @@ impl NoGenericArgsGenericLibfunc for EcFinalizeStateLibfunc {
 #[derive(Default)]
 pub struct EcOpLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcOpLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_op_builtin");
+    const STR_ID: &'static str = "ec_op_builtin";
 
     fn specialize_signature(
         &self,

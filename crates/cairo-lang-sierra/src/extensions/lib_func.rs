@@ -1,7 +1,7 @@
 use super::args_as_single_type;
 use super::error::{ExtensionError, SpecializationError};
 use super::type_specialization_context::TypeSpecializationContext;
-use crate::ids::{ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId};
+use crate::ids::{id_from_string, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
 /// Trait for the specialization of libfunc signatures.
@@ -151,7 +151,7 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
 /// Trait for implementing a specialization generator with a simple id.
 pub trait NamedLibfunc: Default {
     type Concrete: ConcreteLibfunc;
-    const ID: GenericLibfuncId;
+    const STR_ID: &'static str;
 
     /// Creates the specialization of the libfunc's signature with the template arguments.
     fn specialize_signature(
@@ -171,7 +171,7 @@ impl<TNamedLibfunc: NamedLibfunc> GenericLibfunc for TNamedLibfunc {
     type Concrete = <Self as NamedLibfunc>::Concrete;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        if &Self::ID == id { Some(Self::default()) } else { None }
+        if id_from_string(Self::STR_ID) == id.id { Some(Self::default()) } else { None }
     }
 
     fn specialize_signature(
@@ -193,7 +193,7 @@ impl<TNamedLibfunc: NamedLibfunc> GenericLibfunc for TNamedLibfunc {
 
 /// Trait for implementing a specialization generator not holding anything more than a signature.
 pub trait SignatureOnlyGenericLibfunc: Default {
-    const ID: GenericLibfuncId;
+    const STR_ID: &'static str;
 
     fn specialize_signature(
         &self,
@@ -204,7 +204,7 @@ pub trait SignatureOnlyGenericLibfunc: Default {
 
 impl<T: SignatureOnlyGenericLibfunc> NamedLibfunc for T {
     type Concrete = SignatureOnlyConcreteLibfunc;
-    const ID: GenericLibfuncId = <Self as SignatureOnlyGenericLibfunc>::ID;
+    const STR_ID: &'static str = <Self as SignatureOnlyGenericLibfunc>::STR_ID;
 
     fn specialize_signature(
         &self,
@@ -228,7 +228,7 @@ impl<T: SignatureOnlyGenericLibfunc> NamedLibfunc for T {
 /// Trait for implementing a specialization generator expecting a single generic param type, and
 /// creating a concrete libfunc containing that type as well.
 pub trait SignatureAndTypeGenericLibfunc: Default {
-    const ID: GenericLibfuncId;
+    const STR_ID: &'static str;
 
     fn specialize_signature(
         &self,
@@ -243,7 +243,7 @@ pub struct WrapSignatureAndTypeGenericLibfunc<T: SignatureAndTypeGenericLibfunc>
 
 impl<T: SignatureAndTypeGenericLibfunc> NamedLibfunc for WrapSignatureAndTypeGenericLibfunc<T> {
     type Concrete = SignatureAndTypeConcreteLibfunc;
-    const ID: GenericLibfuncId = <T as SignatureAndTypeGenericLibfunc>::ID;
+    const STR_ID: &'static str = <T as SignatureAndTypeGenericLibfunc>::STR_ID;
 
     fn specialize_signature(
         &self,
@@ -268,7 +268,7 @@ impl<T: SignatureAndTypeGenericLibfunc> NamedLibfunc for WrapSignatureAndTypeGen
 
 /// Trait for implementing a specialization generator with no generic arguments.
 pub trait NoGenericArgsGenericLibfunc: Default {
-    const ID: GenericLibfuncId;
+    const STR_ID: &'static str;
 
     fn specialize_signature(
         &self,
@@ -276,7 +276,7 @@ pub trait NoGenericArgsGenericLibfunc: Default {
     ) -> Result<LibfuncSignature, SpecializationError>;
 }
 impl<T: NoGenericArgsGenericLibfunc> SignatureOnlyGenericLibfunc for T {
-    const ID: GenericLibfuncId = <Self as NoGenericArgsGenericLibfunc>::ID;
+    const STR_ID: &'static str = <Self as NoGenericArgsGenericLibfunc>::STR_ID;
 
     fn specialize_signature(
         &self,

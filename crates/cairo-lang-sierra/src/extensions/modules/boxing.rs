@@ -8,7 +8,7 @@ use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{NamedType, OutputVarReferenceInfo, SpecializationError};
-use crate::ids::{ConcreteTypeId, GenericLibfuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 
 /// Type wrapping a value.
 #[derive(Default)]
@@ -41,7 +41,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct IntoBoxLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for IntoBoxLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("into_box");
+    const STR_ID: &'static str = "into_box";
 
     fn specialize_signature(
         &self,
@@ -64,7 +64,7 @@ pub type IntoBoxLibfunc = WrapSignatureAndTypeGenericLibfunc<IntoBoxLibfuncWrapp
 #[derive(Default)]
 pub struct UnboxLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for UnboxLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("unbox");
+    const STR_ID: &'static str = "unbox";
 
     fn specialize_signature(
         &self,
