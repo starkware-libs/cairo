@@ -46,7 +46,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
             || id == "NonZeroInt".into()
             || id == "Tuple<>".into()
             || id == "U128AndFelt".into()
-            || id == "StorageBaseAddress".into()
+            || id == "StorageAddress".into()
             || id == "ContractAddress".into()
         {
             Some(TypeInfo {

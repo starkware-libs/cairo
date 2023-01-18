@@ -152,7 +152,7 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
-        let addr_ty = context.get_concrete_type(StorageBaseAddressType::id(), &[])?;
+        let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
 
         Ok(LibfuncSignature {
@@ -236,7 +236,7 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
-        let addr_ty = context.get_concrete_type(StorageBaseAddressType::id(), &[])?;
+        let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![

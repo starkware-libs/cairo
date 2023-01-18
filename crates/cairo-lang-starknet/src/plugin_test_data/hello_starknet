@@ -45,7 +45,10 @@ mod HelloStarknet {
         fn read() -> felt {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(address_domain, address()) {
+            match starknet::storage_read_syscall(
+                address_domain,
+                starknet::storage_address_from_base(address()),
+            ) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
                     let mut err_data = array_new::<felt>();
@@ -57,7 +60,11 @@ mod HelloStarknet {
         fn write(value: felt) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(address_domain, address(), value) {
+            match starknet::storage_write_syscall(
+                address_domain,
+                starknet::storage_address_from_base(address()),
+                value,
+            ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
                     let mut err_data = array_new::<felt>();
