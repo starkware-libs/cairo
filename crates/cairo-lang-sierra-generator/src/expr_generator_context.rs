@@ -1,7 +1,6 @@
-use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
-use cairo_lang_semantic::TypeId;
+use cairo_lang_semantic::{ConcreteFunctionWithBody, TypeId};
 use cairo_lang_sierra::extensions::uninitialized::UninitializedType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
@@ -18,7 +17,7 @@ use crate::pre_sierra;
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
     lowered: &'a FlatLowered,
-    function_id: FunctionWithBodyId,
+    function_id: ConcreteFunctionWithBody,
     // TODO(lior): Remove `allow(dead_code)` once this field is used.
     #[allow(dead_code)]
     lifetime: &'a VariableLifetimeResult,
@@ -32,7 +31,7 @@ impl<'a> ExprGeneratorContext<'a> {
     pub fn new(
         db: &'a dyn SierraGenGroup,
         lowered: &'a FlatLowered,
-        function_id: FunctionWithBodyId,
+        function_id: ConcreteFunctionWithBody,
         lifetime: &'a VariableLifetimeResult,
     ) -> Self {
         ExprGeneratorContext {
@@ -84,7 +83,7 @@ impl<'a> ExprGeneratorContext<'a> {
     // TODO(lior): Consider using stable ids, instead of allocating sequential ids.
     pub fn new_label(&mut self) -> (pre_sierra::Statement, pre_sierra::LabelId) {
         let id = self.db.intern_label_id(pre_sierra::LabelLongId {
-            parent: self.function_id,
+            parent: self.function_id.clone(),
             id: self.label_id_allocator.allocate(),
         });
         (pre_sierra::Statement::Label(pre_sierra::Label { id }), id)

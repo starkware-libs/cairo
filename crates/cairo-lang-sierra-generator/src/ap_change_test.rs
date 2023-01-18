@@ -1,7 +1,7 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{FunctionWithBodyId, TopLevelLanguageElementId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_semantic::ConcreteFunctionWithBody;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
@@ -29,11 +29,11 @@ fn contains_cycles_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         .unwrap()
         .iter()
         .map(|(free_function_id, _)| {
-            let function_id = FunctionWithBodyId::Free(*free_function_id);
+            let function_id = ConcreteFunctionWithBody::from_no_generics_free(*free_function_id);
             format!(
                 "{}: ap_change={:?}, has_cycles={:?}",
-                function_id.name(db),
-                db.get_ap_change(function_id),
+                free_function_id.name(db),
+                db.get_ap_change(function_id.clone()),
                 db.contains_cycle(function_id),
             )
         })
