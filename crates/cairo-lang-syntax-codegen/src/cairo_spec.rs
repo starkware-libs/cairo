@@ -307,7 +307,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("Constant")
         .node("Module")
         .node("Use")
-        .node("FreeFunction")
+        .node_with_explicit_kind("FreeFunction", "FunctionWithBody")
         .node("ExternFunction")
         .node("ExternType")
         .node("Trait")
@@ -362,7 +362,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("value", "Expr")
         .node("semicolon", "TerminalSemicolon")
     )
-    .add_struct(StructBuilder::new("ItemFreeFunction")
+    .add_struct(StructBuilder::new("FunctionWithBody")
         .node("attributes" ,"AttributeList")
          // TODO(ilya): Use only the name as key node.
         .key_node("declaration", "FunctionDeclaration")

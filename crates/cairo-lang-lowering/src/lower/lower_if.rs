@@ -9,10 +9,10 @@ use semantic::TypeId;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
 use super::scope::{BlockBuilder, SealedBlockBuilder};
-use super::{lower_block, lower_expr, lowered_expr_to_block_scope_end};
+use super::{lower_expr, lowered_expr_to_block_scope_end};
 use crate::lower::context::VarRequest;
-use crate::lower::generators;
 use crate::lower::scope::merge_sealed;
+use crate::lower::{generators, lower_block};
 use crate::{Statement, StatementMatchEnum, StatementMatchExtern};
 
 #[allow(dead_code)]

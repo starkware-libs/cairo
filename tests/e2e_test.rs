@@ -31,6 +31,7 @@ cairo_lang_test_utils::test_file_test!(
     "e2e_test_data/libfuncs/starknet",
     {
         storage: "storage",
+        interoperability: "interoperability",
     },
     run_small_e2e_test
 );

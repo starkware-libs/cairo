@@ -170,7 +170,7 @@ pub fn priv_impl_declaration_data_inner(
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    function_asts: OrderedHashMap<ImplFunctionId, ast::ItemFreeFunction>,
+    function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_semantic_definition_diagnostics].
@@ -557,7 +557,7 @@ fn validate_impl_function_signature(
     impl_function_id: ImplFunctionId,
     signature_syntax: &ast::FunctionSignature,
     signature: &semantic::Signature,
-    function_syntax: &ast::ItemFreeFunction,
+    function_syntax: &ast::FunctionWithBody,
 ) {
     let syntax_db = db.upcast();
     let Ok(declaraton_data) = db.priv_impl_declaration_data(impl_id) else {
@@ -701,7 +701,7 @@ pub fn priv_impl_function_body_data(
         db,
         &mut diagnostics,
         resolver,
-        &declaration.signature,
+        Some(&declaration.signature),
         environment,
     );
     let function_body = function_syntax.body(db.upcast());

@@ -6,24 +6,28 @@ use traits::Drop;
 enum bool { False: (), True: (), }
 
 extern fn bool_and_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+#[inline(always)]
 fn bool_and(a: bool, b: bool) -> bool implicits() nopanic {
     let (r,) = bool_and_impl(a, b);
     r
 }
 
 extern fn bool_or_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+#[inline(always)]
 fn bool_or(a: bool, b: bool) -> bool implicits() nopanic {
     let (r,) = bool_or_impl(a, b);
     r
 }
 
 extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;
+#[inline(always)]
 fn bool_not(a: bool) -> bool implicits() nopanic {
     let (r,) = bool_not_impl(a);
     r
 }
 
 extern fn bool_xor_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+#[inline(always)]
 fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
     let (r,) = bool_xor_impl(a, b);
     r
@@ -31,6 +35,7 @@ fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
 
 extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
 
+#[inline(always)]
 fn bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
     !(a == b)
 }
@@ -64,28 +69,34 @@ impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
 extern fn felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
 
 // TODO(orizi): Change to extern when added.
+#[inline(always)]
 fn felt_eq(a: felt, b: felt) -> bool nopanic {
     match a - b {
         0 => bool::True(()),
         _ => bool::False(()),
     }
 }
+#[inline(always)]
 fn felt_ne(a: felt, b: felt) -> bool nopanic {
     !(a == b)
 }
 
+#[inline(always)]
 fn felt_lt(a: felt, b: felt) -> bool implicits(RangeCheck) {
     u256_from_felt(a) < u256_from_felt(b)
 }
 
+#[inline(always)]
 fn felt_gt(a: felt, b: felt) -> bool implicits(RangeCheck) {
     b < a
 }
 
+#[inline(always)]
 fn felt_le(a: felt, b: felt) -> bool implicits(RangeCheck) {
     !(b < a)
 }
 
+#[inline(always)]
 fn felt_ge(a: felt, b: felt) -> bool implicits(RangeCheck) {
     !(a < b)
 }

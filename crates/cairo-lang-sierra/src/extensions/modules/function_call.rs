@@ -3,7 +3,6 @@ use crate::extensions::lib_func::{
     SpecializationContext,
 };
 use crate::extensions::{NamedLibfunc, OutputVarReferenceInfo, SpecializationError};
-use crate::ids::GenericLibfuncId;
 use crate::program::{Function, GenericArg};
 
 /// Libfunc used to call user functions.
@@ -11,7 +10,7 @@ use crate::program::{Function, GenericArg};
 pub struct FunctionCallLibfunc {}
 impl NamedLibfunc for FunctionCallLibfunc {
     type Concrete = FunctionCallConcreteLibfunc;
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("function_call");
+    const STR_ID: &'static str = "function_call";
 
     fn specialize_signature(
         &self,

@@ -433,10 +433,10 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Function.
     /// Expected pattern: `<FunctionDeclaration><Block>`
-    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> ItemFreeFunctionGreen {
+    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> FunctionWithBodyGreen {
         let declaration = self.expect_function_declaration();
         let function_body = self.parse_block();
-        ItemFreeFunction::new_green(self.db, attributes, declaration, function_body)
+        FunctionWithBody::new_green(self.db, attributes, declaration, function_body)
     }
 
     /// Assumes the current token is Trait.

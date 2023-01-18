@@ -7,13 +7,20 @@ use cairo_lang_proc_macros::DebugWithDb;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::types::resolve_type;
-use crate::SemanticDiagnostic;
+use crate::{Expr, SemanticDiagnostic};
 
 #[cfg(test)]
 #[path = "constant_test.rs"]
 mod test;
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct Constant {
+    value: Expr,
+}
 
 /// Information about a constant definition.
 ///
@@ -22,6 +29,7 @@ mod test;
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ConstantData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
+    constant: Constant,
     resolved_lookback: Arc<ResolvedLookback>,
 }
 
@@ -48,11 +56,19 @@ pub fn priv_constant_semantic_data(
         &const_ast.type_clause(syntax_db).ty(syntax_db),
     );
 
-    // TODO(lior): Implement constants.
-    diagnostics.report(&const_ast.const_kw(syntax_db), ConstantsAreNotSupported);
+    let mut ctx =
+        ComputationContext::new(db, &mut diagnostics, resolver, None, Environment::default());
+    let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
 
-    let resolved_lookback = Arc::new(resolver.lookback);
-    Ok(ConstantData { diagnostics: diagnostics.build(), resolved_lookback })
+    // TODO(lior): Check that the type of the expression matches the expected type.
+    // TODO(lior): Check that the value is a literal.
+
+    // TODO(lior): Implement constants.
+    ctx.diagnostics.report(&const_ast.const_kw(syntax_db), ConstantsAreNotSupported);
+
+    let constant = Constant { value };
+    let resolved_lookback = Arc::new(ctx.resolver.lookback);
+    Ok(ConstantData { diagnostics: diagnostics.build(), constant, resolved_lookback })
 }
 
 /// Query implementation of [SemanticGroup::constant_semantic_diagnostics].

@@ -153,7 +153,7 @@ pub fn priv_free_function_body_data(
         db,
         &mut diagnostics,
         resolver,
-        &declaration.signature,
+        Some(&declaration.signature),
         environment,
     );
     let function_body = function_syntax.body(db.upcast());
