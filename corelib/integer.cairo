@@ -155,6 +155,40 @@ fn u8_ne(a: u8, b: u8) -> bool implicits() nopanic {
     !(a == b)
 }
 
+extern fn u8_overflowing_add(a: u8, b: u8) -> Result::<u8, u8> implicits(RangeCheck) nopanic;
+extern fn u8_overflowing_sub(a: u8, b: u8) -> Result::<u8, u8> implicits(RangeCheck) nopanic;
+
+fn u8_wrapping_add(a: u8, b: u8) -> u8 implicits(RangeCheck) nopanic {
+    match u8_overflowing_add(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u8_wrapping_sub(a: u8, b: u8) -> u8 implicits(RangeCheck) nopanic {
+    match u8_overflowing_sub(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+#[panic_with('u8_add Overflow', u8_add)]
+fn u8_checked_add(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
+    match u8_overflowing_add(a, b) {
+        Result::Ok(r) => Option::<u8>::Some(r),
+        Result::Err(r) => Option::<u8>::None(()),
+    }
+}
+
+#[panic_with('u8_sub Overflow', u8_sub)]
+fn u8_checked_sub(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
+    match u8_overflowing_sub(a, b) {
+        Result::Ok(r) => Option::<u8>::Some(r),
+        Result::Err(r) => Option::<u8>::None(()),
+    }
+}
+
+
 #[derive(Copy, Drop)]
 struct u256 { low: u128, high: u128, }
 

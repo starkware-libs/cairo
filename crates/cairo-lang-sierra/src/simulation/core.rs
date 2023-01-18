@@ -532,6 +532,17 @@ fn simulate_u8_libfunc(
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
+        Uint8Concrete::Operation(libfunc) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint8(lhs), CoreValue::Uint8(rhs)] => {
+                let (value, overflow) = match libfunc.operator {
+                    IntOperator::OverflowingAdd => lhs.overflowing_add(*rhs),
+                    IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
+                };
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint8(value)], usize::from(overflow)))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint8Concrete::LessThan(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
                 // "False" branch (branch 0) is the case a >= b.
