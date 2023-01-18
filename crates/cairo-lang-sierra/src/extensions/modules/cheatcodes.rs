@@ -3,7 +3,6 @@ use crate::extensions::lib_func::{
     LibfuncSignature, SignatureSpecializationContext, SierraApChange, OutputVarInfo, ParamSignature, BranchSignature,
 };
 use crate::extensions::{SpecializationError, NoGenericArgsGenericLibfunc, NamedType, OutputVarReferenceInfo};
-use crate::ids::{GenericLibfuncId};
 
 use super::felt::FeltType;
 
@@ -17,7 +16,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct RollLibFunc {}
 impl NoGenericArgsGenericLibfunc for RollLibFunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("cheat_roll");
+    const STR_ID: &'static str = "cheat_roll";
 
     fn specialize_signature(
         &self,

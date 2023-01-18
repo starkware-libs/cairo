@@ -8,10 +8,9 @@ use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::program::{Function};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
-use cairo_lang_sierra_gas::calc_gas_info;
+use cairo_lang_sierra_to_casm::metadata::{calc_metadata, Metadata, MetadataError};
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
-use cairo_lang_sierra_to_casm::metadata::Metadata;
 use cairo_lang_starknet::casm_contract_class::{serialize_big_uint, deserialize_big_uint, BigIntAsHex};
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use itertools::chain;
@@ -289,15 +288,23 @@ impl SierraCasmGenerator {
         .instructions
     }
 }
+
 fn create_metadata(
     sierra_program: &cairo_lang_sierra::program::Program,
     calc_gas: bool,
 ) -> Result<Metadata, GeneratorError> {
-    let gas_info = if calc_gas {
-        calc_gas_info(sierra_program).map_err(|_| GeneratorError::FailedGasCalculation)?
+    if calc_gas {
+        calc_metadata(sierra_program).map_err(|err| match err {
+            MetadataError::ApChangeError(err) => GeneratorError::ApChangeError(err),
+            MetadataError::CostError(_) => GeneratorError::FailedGasCalculation,
+        })
     } else {
-        GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() }
-    };
-    let metadata = Metadata { ap_change_info: calc_ap_changes(sierra_program)?, gas_info };
-    Ok(metadata)
+        Ok(Metadata {
+            ap_change_info: calc_ap_changes(sierra_program, |_, _| 0)?,
+            gas_info: GasInfo {
+                variable_values: Default::default(),
+                function_costs: Default::default(),
+            },
+        })
+    }
 }
