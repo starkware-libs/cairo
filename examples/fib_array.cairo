@@ -5,13 +5,13 @@ fn fib(n: u128) -> (Array::<felt>, felt, u128) {
     array_append::<felt>(arr, 1);
     array_append::<felt>(arr, 1);
     let mut arr = fib_inner(:n, :arr);
-    let len = array_len::<felt>(arr);
+    let len = my_array_len::<felt>(arr);
     let last = unchecked_array_at(arr, len - 1_u128);
     return (arr, last, len);
 }
 
 fn fib_inner(n: u128, mut arr: Array::<felt>) -> Array::<felt> {
-    let length = array_len::<felt>(arr);
+    let length = my_array_len::<felt>(arr);
     if n <= length {
         return arr;
     }
@@ -31,4 +31,8 @@ fn unchecked_array_at(ref arr: Array::<felt>, idx: u128) -> felt {
             panic(data)
         },
     }
+}
+
+fn my_array_len<T>(ref arr: Array::<T>) -> u128 {
+    array_len::<T>(arr)
 }

@@ -20,7 +20,7 @@ use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::plugin::SemanticPlugin;
-use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
+use cairo_lang_semantic::{ConcreteFunction, ConcreteFunctionWithBodyId, FunctionLongId};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
@@ -83,7 +83,10 @@ fn main() -> anyhow::Result<()> {
     let all_tests = find_all_tests(db, main_crate_ids);
     let sierra_program = db
         .get_sierra_program_for_functions(
-            all_tests.iter().map(|t| FunctionWithBodyId::Free(t.func_id)).collect(),
+            all_tests
+                .iter()
+                .flat_map(|t| ConcreteFunctionWithBodyId::from_no_generics_free(db, t.func_id))
+                .collect(),
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;

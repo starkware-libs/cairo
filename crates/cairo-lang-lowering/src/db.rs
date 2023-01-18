@@ -9,8 +9,10 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
+use semantic::items::functions::ConcreteFunctionWithBodyId;
 
 use crate::borrow_check::borrow_check;
+use crate::concretize::concretize_lowered;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
@@ -37,9 +39,9 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     ) -> Maybe<Arc<FlatLowered>>;
 
     /// Computes the final lowered representation (after all the internal transformations).
-    fn function_with_body_lowered(
+    fn concrete_function_with_body_lowered(
         &self,
-        function_id: FunctionWithBodyId,
+        function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
     /// Aggregates function level semantic diagnostics.
@@ -141,16 +143,19 @@ fn priv_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
-fn function_with_body_lowered(
+fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
-    function_id: FunctionWithBodyId,
+    function: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
-    Ok(if let Ok(lowered_with_inlining) = apply_inlining(db, function_id, &lowered) {
-        Arc::new(lowered_with_inlining)
-    } else {
-        lowered
-    })
+    let semantic_db = db.upcast();
+    let mut lowered = (*db
+        .priv_function_with_body_lowered_flat(function.function_with_body_id(semantic_db))?)
+    .clone();
+    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?);
+    // TODO(spapini): passing function.function_with_body_id might be weird here.
+    // It's not really needed for inlining, so try to remove.
+    apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
+    Ok(Arc::new(lowered))
 }
 
 fn function_with_body_lowering_diagnostics(
