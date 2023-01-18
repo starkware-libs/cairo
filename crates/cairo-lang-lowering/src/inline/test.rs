@@ -31,8 +31,10 @@ fn test_function_inlining(
         inputs["module_code"].as_str(),
     )
     .split();
-    let before = db.priv_function_with_body_lowered_flat(test_function.function_id).unwrap();
-    let after = apply_inlining(db, test_function.function_id, &before).unwrap();
+    let before =
+        (*db.priv_function_with_body_lowered_flat(test_function.function_id).unwrap()).clone();
+    let mut after = before.clone();
+    apply_inlining(db, test_function.function_id, &mut after).unwrap();
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
