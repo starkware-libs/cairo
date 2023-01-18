@@ -13,32 +13,33 @@ use crate::extensions::{
 };
 use crate::ids::GenericTypeId;
 
-/// Type for StarkNet storage address, a value in the range [0, 2 ** 251 - 256).
+/// Type for StarkNet storage base address, a value in the range [0, 2 ** 251 - 256).
 #[derive(Default)]
-pub struct StorageAddressType {}
-impl NoGenericArgsGenericType for StorageAddressType {
-    const ID: GenericTypeId = GenericTypeId::new_inline("StorageAddress");
+pub struct StorageBaseAddressType {}
+impl NoGenericArgsGenericType for StorageBaseAddressType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("StorageBaseAddress");
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
     const SIZE: i16 = 1;
 }
 
-/// Libfunc for creating a constant storage address.
+/// Libfunc for creating a constant storage base address.
 #[derive(Default)]
-pub struct StorageAddressConstLibfuncWrapped {}
-impl ConstGenLibfunc for StorageAddressConstLibfuncWrapped {
-    const STR_ID: &'static str = ("storage_address_const");
-    const GENERIC_TYPE_ID: GenericTypeId = <StorageAddressType as NoGenericArgsGenericType>::ID;
+pub struct StorageBaseAddressConstLibfuncWrapped {}
+impl ConstGenLibfunc for StorageBaseAddressConstLibfuncWrapped {
+    const STR_ID: &'static str = ("storage_base_address_const");
+    const GENERIC_TYPE_ID: GenericTypeId = <StorageBaseAddressType as NoGenericArgsGenericType>::ID;
 }
 
-pub type StorageAddressConstLibfunc = WrapConstGenLibfunc<StorageAddressConstLibfuncWrapped>;
+pub type StorageBaseAddressConstLibfunc =
+    WrapConstGenLibfunc<StorageBaseAddressConstLibfuncWrapped>;
 
-/// Libfunc for converting a felt into a storage address.
+/// Libfunc for converting a felt into a storage base address.
 #[derive(Default)]
-pub struct StorageAddressFromFeltLibfunc {}
-impl NoGenericArgsGenericLibfunc for StorageAddressFromFeltLibfunc {
-    const STR_ID: &'static str = "storage_address_from_felt";
+pub struct StorageBaseAddressFromFeltLibfunc {}
+impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFeltLibfunc {
+    const STR_ID: &'static str = "storage_base_address_from_felt";
 
     fn specialize_signature(
         &self,
@@ -63,7 +64,7 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromFeltLibfunc {
                     }),
                 },
                 OutputVarInfo {
-                    ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
+                    ty: context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 },
             ],
@@ -84,7 +85,7 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
-        let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
+        let addr_ty = context.get_concrete_type(StorageBaseAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
 
         Ok(LibfuncSignature {
@@ -168,7 +169,7 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
-        let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
+        let addr_ty = context.get_concrete_type(StorageBaseAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![

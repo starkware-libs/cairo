@@ -10,7 +10,7 @@ type u128 = [10698497612269247729];
 type core::bool = [13541382263491645792]<ut@[3793205241841896302], Unit, Unit>;
 type core::PanicResult::<core::felt> = [13541382263491645792]<ut@[1524352590277322868], felt, Array<felt>>;
 type core::PanicResult::<()> = [13541382263491645792]<ut@[4402360851894814679], Unit, Array<felt>>;
-type StorageAddress = [10305685254771266766];
+type StorageBaseAddress = [2132017555851609289];
 
 libfunc get_gas = [4611715306201585493];
 libfunc branch_align = [3328301606880823183];
@@ -85,8 +85,8 @@ libfunc enum_init<core::PanicResult::<()>, 1> = [15969095509350138539]<core::Pan
 libfunc store_temp<core::PanicResult::<()>> = [7850406844354634005]<core::PanicResult::<()>>;
 libfunc rename<core::PanicResult::<()>> = [2258343417258958163]<core::PanicResult::<()>>;
 libfunc enum_init<core::PanicResult::<()>, 0> = [15969095509350138539]<core::PanicResult::<()>, 0>;
-libfunc storage_address_const<521780245902522698637863835114646400086704280925471510886115468919502353704> = [16604063526727990457]<521780245902522698637863835114646400086704280925471510886115468919502353704>;
-libfunc store_temp<StorageAddress> = [7850406844354634005]<StorageAddress>;
+libfunc storage_base_address_const<521780245902522698637863835114646400086704280925471510886115468919502353704> = [14221151123667565881]<521780245902522698637863835114646400086704280925471510886115468919502353704>;
+libfunc store_temp<StorageBaseAddress> = [7850406844354634005]<StorageBaseAddress>;
 
 get_gas([0], [1]) { fallthrough([4], [5]) 6([6], [7]) };
 branch_align() -> ();
@@ -453,8 +453,8 @@ return([20], [21], [22]);
 felt_const<1>() -> ([0]);
 store_temp<felt>([0]) -> ([1]);
 return([1]);
-storage_address_const<521780245902522698637863835114646400086704280925471510886115468919502353704>() -> ([0]);
-store_temp<StorageAddress>([0]) -> ([1]);
+storage_base_address_const<521780245902522698637863835114646400086704280925471510886115468919502353704>() -> ([0]);
+store_temp<StorageBaseAddress>([0]) -> ([1]);
 return([1]);
 
 test_contract::test_contract::TestContract::__external::test@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: Array<felt>) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<core::array::Array::<core::felt>>);
@@ -469,4 +469,4 @@ core::bool_not@301([0]: core::bool) -> (core::bool);
 test_contract::test_contract::TestContract::my_storage_var::read@305([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::PanicResult::<core::felt>);
 test_contract::test_contract::TestContract::my_storage_var::write@334([0]: GasBuiltin, [1]: System, [2]: felt) -> (GasBuiltin, System, core::PanicResult::<()>);
 test_contract::test_contract::TestContract::internal_func@362() -> (felt);
-test_contract::test_contract::TestContract::my_storage_var::address@365() -> (StorageAddress);
+test_contract::test_contract::TestContract::my_storage_var::address@365() -> (StorageBaseAddress);

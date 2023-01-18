@@ -618,8 +618,8 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
     Some(format!(
         "
     mod $storage_var_name$ {{
-        fn address() -> starknet::StorageAddress {{
-            starknet::storage_address_const::<{address}>()
+        fn address() -> starknet::StorageBaseAddress {{
+            starknet::storage_base_address_const::<{address}>()
         }}
         fn read() -> $type_name$ {{
             // Only address_domain 0 is currently supported.
@@ -665,8 +665,8 @@ fn handle_mapping_storage_var(
     Some(format!(
         "
     mod $storage_var_name$ {{
-        fn address(key: $key_type$) -> starknet::StorageAddress {{
-            starknet::storage_address_from_felt(pedersen({address}, {key_convert_to}))
+        fn address(key: $key_type$) -> starknet::StorageBaseAddress {{
+            starknet::storage_base_address_from_felt(pedersen({address}, {key_convert_to}))
         }}
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
