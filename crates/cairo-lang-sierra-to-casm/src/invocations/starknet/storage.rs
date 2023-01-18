@@ -8,10 +8,6 @@ use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
-#[cfg(test)]
-#[path = "storage_test.rs"]
-mod test;
-
 /// Handles the storage_base_address_const libfunc.
 pub fn build_storage_base_address_const(
     builder: CompiledInvocationBuilder<'_>,
