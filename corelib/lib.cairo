@@ -188,6 +188,8 @@ use integer::u128_xor;
 use integer::u128_jump_nz;
 use integer::u8;
 use integer::u8_const;
+use integer::u8_add;
+use integer::u8_sub;
 use integer::u8_eq;
 use integer::u8_ne;
 use integer::u8_lt;
