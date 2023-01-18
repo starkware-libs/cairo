@@ -13,6 +13,7 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -251,6 +252,26 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::NoImplementationOfTraitFunction { trait_id, function_name } => {
+                let trait_path = trait_id.full_path(db.upcast());
+                format!(
+                    "Function `{function_name}` of trait `{trait_path}` has has no implementation \
+                     in the context."
+                )
+            }
+            SemanticDiagnosticKind::MultipleImplementationOfTraitFunction {
+                trait_id,
+                all_impl_ids,
+                function_name,
+            } => {
+                let trait_path = trait_id.full_path(db.upcast());
+                let impls_str =
+                    all_impl_ids.iter().map(|imp| imp.full_path(db.upcast())).join(", ");
+                format!(
+                    "Function `{function_name}` of trait `{trait_path}` has multiple \
+                     implementations, in: {impls_str}",
                 )
             }
             SemanticDiagnosticKind::VariableNotFound { name } => {
@@ -536,6 +557,15 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
+    },
+    NoImplementationOfTraitFunction {
+        trait_id: TraitId,
+        function_name: SmolStr,
+    },
+    MultipleImplementationOfTraitFunction {
+        trait_id: TraitId,
+        all_impl_ids: Vec<ImplId>,
+        function_name: SmolStr,
     },
     VariableNotFound {
         name: SmolStr,

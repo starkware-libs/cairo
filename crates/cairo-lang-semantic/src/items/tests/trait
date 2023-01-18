@@ -317,3 +317,61 @@ error: Trait function `MyTrait::foo` has a body. Trait functions with body are n
  --> lib.cairo:2:13
    fn foo() {}
             ^^
+
+//! > ==========================================================================
+
+//! > Test no impls of trait.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   MyTrait::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+   fn foo();
+}
+
+//! > expected_diagnostics
+error: Function `foo` of trait `test::MyTrait` has has no implementation in the context.
+ --> lib.cairo:5:4
+   MyTrait::foo()
+   ^**********^
+
+//! > ==========================================================================
+
+//! > Test multiple impls of trait.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   MyTrait::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+   fn foo();
+}
+impl MyImpl1 of MyTrait {
+   fn foo() {}
+}
+impl MyImpl2 of MyTrait {
+   fn foo() {}
+}
+
+//! > expected_diagnostics
+error: Function `foo` of trait `test::MyTrait` has multiple implementations, in: test::MyImpl1, test::MyImpl2
+ --> lib.cairo:11:4
+   MyTrait::foo()
+   ^**********^

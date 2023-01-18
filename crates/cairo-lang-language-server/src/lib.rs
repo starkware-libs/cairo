@@ -467,6 +467,11 @@ impl LanguageServer for Backend {
                     imp.file_index(defs_db),
                     imp.stable_ptr(defs_db).untyped(),
                 ),
+                ResolvedGenericItem::TraitFunction(trait_function) => (
+                    trait_function.parent_module(defs_db),
+                    trait_function.file_index(defs_db),
+                    trait_function.stable_ptr(defs_db).untyped(),
+                ),
             };
 
             let file = if let Ok(files) = db.module_files(module_id) {
