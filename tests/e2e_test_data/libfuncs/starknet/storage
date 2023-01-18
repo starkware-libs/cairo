@@ -69,3 +69,38 @@ store_temp<StorageBaseAddress>([3]) -> ([5]);
 return([4], [5]);
 
 test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, StorageBaseAddress);
+
+//! > ==========================================================================
+
+//! > storage_address_from_base_and_offset libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(base: starknet::StorageBaseAddress, offset: u8) -> starknet::StorageAddress {
+    starknet::storage_address_from_base_and_offset(base, offset)
+}
+
+//! > casm
+[ap + 0] = [fp + -4] + [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 1})
+
+//! > sierra_code
+type StorageBaseAddress = StorageBaseAddress;
+type u8 = u8;
+type StorageAddress = StorageAddress;
+
+libfunc storage_address_from_base_and_offset = storage_address_from_base_and_offset;
+libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
+
+storage_address_from_base_and_offset([0], [1]) -> ([2]);
+store_temp<StorageAddress>([2]) -> ([3]);
+return([3]);
+
+test::foo@0([0]: StorageBaseAddress, [1]: u8) -> (StorageAddress);
