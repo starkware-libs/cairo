@@ -114,6 +114,12 @@ struct StarknetExecScope {
     storage: HashMap<Felt, Felt>,
 }
 
+/// Execution scope for boxed variables memory management.
+struct BoxMemoryExecScope {
+    /// The first free address for boxed variables.
+    free_address: Relocatable,
+}
+
 impl HintProcessor for CairoHintProcessor {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
@@ -533,7 +539,23 @@ impl HintProcessor for CairoHintProcessor {
                 }
                 println!();
             }
-            Hint::AllocBoxed { .. } => todo!(),
+            Hint::AllocBoxed { object_size, dst } => {
+                let object_size = get_val(object_size)?.to_usize().expect("Object size too large.");
+                let boxed_segment_exec_scope = match exec_scopes
+                    .get_mut_ref::<BoxMemoryExecScope>("boxed_segment_exec_scope")
+                {
+                    Ok(boxed_segment_exec_scope) => boxed_segment_exec_scope,
+                    Err(_) => {
+                        exec_scopes.assign_or_update_variable(
+                            "boxed_segment_exec_scope",
+                            Box::new(BoxMemoryExecScope { free_address: vm.add_memory_segment() }),
+                        );
+                        exec_scopes.get_mut_ref::<BoxMemoryExecScope>("boxed_segment_exec_scope")?
+                    }
+                };
+                insert_value_to_cellref!(vm, dst, boxed_segment_exec_scope.free_address)?;
+                boxed_segment_exec_scope.free_address.offset += object_size;
+            }
         };
         Ok(())
     }

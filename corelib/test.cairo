@@ -409,3 +409,42 @@ fn test_dict_write_read() {
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');
 }
+
+#[test]
+fn test_box_unbox() {
+    let x = 10;
+    let boxed_x = into_box::<felt>(x);
+    let mut arr = array_new::<felt>();
+    array_append::<felt>(arr, 11);
+    array_append::<felt>(arr, 12);
+    let boxed_arr = into_box::<Array::<felt>>(arr);
+    let y = 13;
+    let boxed_y = into_box::<felt>(y);
+    assert(unbox::<felt>(boxed_x)==10, 'x == 10');
+    let mut unboxed_arr = unbox::<Array::<felt>>(boxed_arr);
+    match array_at::<felt>(unboxed_arr, 0_u128) {
+        Option::Some(x) => {assert(x == 11, 'arr[0] == 11');},
+        Option::None(()) => {
+            let mut data = array_new::<felt>();
+            array_append::<felt>(data, 'array index OOB');
+            panic(data)
+        },   
+    }
+    match array_at::<felt>(unboxed_arr, 1_u128) {
+        Option::Some(x) => {assert(x == 12, 'arr[0] == 12');},
+        Option::None(()) => {
+            let mut data = array_new::<felt>();
+            array_append::<felt>(data, 'array index OOB');
+            panic(data)
+        },   
+    }
+    match array_at::<felt>(unboxed_arr, 2_u128) {
+        Option::Some(x) => {
+            let mut data = array_new::<felt>();
+            array_append::<felt>(data, 'array index not OOB');
+            panic(data)
+        },   
+        Option::None(()) => {},
+    }
+    assert(unbox::<felt>(boxed_y)==13, 'y == 13');
+}
