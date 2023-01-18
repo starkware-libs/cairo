@@ -513,17 +513,17 @@ fn lookup_item_from_ast(
                 ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
         ))),
-        SyntaxKind::ItemFreeFunction => {
+        SyntaxKind::FunctionWithBody => {
             if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
                 Some(LookupItemId::ImplFunction(db.intern_impl_function(ImplFunctionLongId(
                     module_file_id,
-                    ast::ItemFreeFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+                    ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
                 ))))
             } else {
                 Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
                     FreeFunctionLongId(
                         module_file_id,
-                        ast::ItemFreeFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+                        ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
                     ),
                 ))))
             }

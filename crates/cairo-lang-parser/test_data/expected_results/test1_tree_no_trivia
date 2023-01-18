@@ -15,7 +15,7 @@
     │   │   │   └── item #1 (kind: PathSegmentSimple)
     │   │   │       └── ident (kind: TokenIdentifier): 'something'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   ├── child #2 (kind: ItemFreeFunction)
+    │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
@@ -332,7 +332,7 @@
     │   │       │       │       └── ident (kind: TokenIdentifier): 'x'
     │   │       │       └── semicolon (kind: TokenSemicolon): ';'
     │   │       └── rbrace: Missing
-    │   ├── child #3 (kind: ItemFreeFunction)
+    │   ├── child #3 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'

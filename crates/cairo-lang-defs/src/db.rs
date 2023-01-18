@@ -94,7 +94,7 @@ pub trait DefsGroup:
     fn module_free_functions(
         &self,
         module_id: ModuleId,
-    ) -> Maybe<OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>>;
+    ) -> Maybe<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>>;
     fn module_free_functions_ids(&self, module_id: ModuleId) -> Maybe<Vec<FreeFunctionId>>;
     fn module_items(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ModuleItemId>>>;
     fn module_uses(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<UseId, ast::ItemUse>>;
@@ -234,7 +234,7 @@ pub struct ModuleData {
     constants: OrderedHashMap<ConstantId, ast::ItemConstant>,
     submodules: OrderedHashMap<SubmoduleId, ast::ItemModule>,
     uses: OrderedHashMap<UseId, ast::ItemUse>,
-    free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
+    free_functions: OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>,
     structs: OrderedHashMap<StructId, ast::ItemStruct>,
     enums: OrderedHashMap<EnumId, ast::ItemEnum>,
     type_aliases: OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>,
@@ -420,7 +420,7 @@ fn module_submodules_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<S
 pub fn module_free_functions(
     db: &dyn DefsGroup,
     module_id: ModuleId,
-) -> Maybe<OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>> {
+) -> Maybe<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>> {
     Ok(db.priv_module_data(module_id)?.free_functions)
 }
 pub fn module_free_functions_ids(

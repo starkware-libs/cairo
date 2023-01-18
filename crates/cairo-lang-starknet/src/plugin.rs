@@ -15,7 +15,7 @@ use cairo_lang_semantic::plugin::{
 };
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_syntax::node::ast::{
-    ItemFreeFunction, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause, Param,
+    FunctionWithBody, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause, Param,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -407,7 +407,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 /// declaration. On failure returns None. In addition, returns diagnostics.
 fn handle_event(
     db: &dyn SyntaxGroup,
-    function_ast: ast::ItemFreeFunction,
+    function_ast: ast::FunctionWithBody,
 ) -> (Option<(RewriteNode, RewriteNode)>, Vec<PluginDiagnostic>) {
     let mut diagnostics = vec![];
     let declaration = function_ast.declaration(db);
@@ -727,7 +727,7 @@ fn get_type_serde_funcs(name: &str) -> Option<(&str, &str)> {
 /// Generates Cairo code for an entry point wrapper.
 fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
-    function: &ItemFreeFunction,
+    function: &FunctionWithBody,
 ) -> Result<RewriteNode, Vec<PluginDiagnostic>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);

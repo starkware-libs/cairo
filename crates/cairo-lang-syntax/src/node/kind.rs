@@ -73,7 +73,7 @@ pub enum SyntaxKind {
     AttributeArgList,
     FunctionDeclaration,
     ItemConstant,
-    ItemFreeFunction,
+    FunctionWithBody,
     ItemExternFunction,
     ItemExternType,
     ItemTrait,

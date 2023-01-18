@@ -15,7 +15,7 @@ impl FooImpl<S> of Foo::<S> {
 SyntaxFile
 
 //! > ignored_kinds
-ItemFreeFunction
+FunctionWithBody
 
 //! > expected_diagnostics
 
@@ -58,7 +58,7 @@ ItemFreeFunction
     │       └── body (kind: ImplBody)
     │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── items (kind: ItemList)
-    │           │   └── child #0 (kind: ItemFreeFunction) <ignored>
+    │           │   └── child #0 (kind: FunctionWithBody) <ignored>
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
 
