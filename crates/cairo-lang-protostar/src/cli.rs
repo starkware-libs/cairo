@@ -1,6 +1,6 @@
 //! Compiles and runs a Cairo program.
 
-use anyhow::{Context};
+use anyhow::Context;
 use cairo_lang_sierra::ProgramParser;
 use cairo_lang_sierra::program::Program;
 use casm_generator::SierraCasmGenerator;
@@ -29,12 +29,9 @@ fn main() -> anyhow::Result<()> {
         Ok(casm_generator) => casm_generator,
         Err(e) => panic!("{}", e)
     };
-    let protostar_casm = match casm_generator.build_casm() {
-       Ok(pc) => pc, 
-       Err(e) => panic!("{}", e)
-    };
+    let protostar_casm = casm_generator.build_casm().context("Failed to build CASM")?;
     let res =
-        serde_json::to_string_pretty(&protostar_casm).with_context(|| "Serialization failed.")?;
+        serde_json::to_string_pretty(&protostar_casm).context("Serialization failed.")?;
 
     match args.output {
         Some(path) => fs::write(path, res).with_context(|| "Failed to write output.")?,
