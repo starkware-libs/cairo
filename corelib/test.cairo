@@ -409,3 +409,16 @@ fn test_dict_write_read() {
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');
 }
+
+#[test]
+fn test_box_unbox() {
+    let x = 10;
+    let boxed_x = into_box::<felt>(x);
+    let y = as_u256(1_u128, 0_u128);
+    let boxed_y = into_box::<u256>(y);
+    let z = 11;
+    let boxed_z = into_box::<felt>(z);
+    assert(unbox::<felt>(boxed_x) == 10, 'x == 10');
+    assert(unbox::<u256>(boxed_y) == as_u256(1_u128, 0_u128), 'unbox u256');
+    assert(unbox::<felt>(boxed_z) == 11, 'z == 11');
+}
