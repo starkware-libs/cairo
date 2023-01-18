@@ -1,10 +1,9 @@
-use cairo_lang_casm::{builder::{CasmBuilder, CasmBuildResult}, operand::ResOperand, casm_build_extend};
+use cairo_lang_casm::{builder::{CasmBuilder}, operand::ResOperand, casm_build_extend};
 
 use crate::{references::{
-    ReferenceValue, ReferenceExpression, CellExpression,
+    ReferenceValue,
 }, invocations::get_non_fallthrough_statement_id};
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use cairo_lang_sierra_ap_change::core_libfunc_ap_change;
 
 pub fn build_roll(
     builder: CompiledInvocationBuilder<'_>,
@@ -45,8 +44,4 @@ pub fn build_roll(
         ],
     ))
 
-    // assert_eq!(
-    //     core_libfunc_ap_change::core_libfunc_ap_change(builder.libfunc),
-    //     [sierra_ap_change::ApChange::Known(fallthrough_state.ap_change)]
-    // );
 }
