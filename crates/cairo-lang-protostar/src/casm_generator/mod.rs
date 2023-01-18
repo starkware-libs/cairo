@@ -111,7 +111,7 @@ impl SierraCasmGenerator {
         for test in &tests {
             let func = self.find_function(test)?;
             let initial_gas = 0; 
-            let (proper_entry_code, _, offset) = self.create_entry_code(func, &vec![], initial_gas, acc)?;
+            let (proper_entry_code, _, _) = self.create_entry_code(func, &vec![], initial_gas, acc)?;
             if entry_codes_offsets.len() > i+1 {
                 acc -= entry_codes_offsets[i+1];
                 i+=1;
