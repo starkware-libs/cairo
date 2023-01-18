@@ -381,8 +381,13 @@ impl<'db> FunctionInlinerRewriter<'db> {
 pub fn apply_inlining(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
-    flat_lower: &FlatLowered,
-) -> Maybe<FlatLowered> {
+    flat_lowered: &mut FlatLowered,
+) -> Maybe<()> {
     let lowering_builder = LoweringContextBuilder::new(db, function_id)?;
-    FunctionInlinerRewriter::apply(lowering_builder.ctx()?, flat_lower)
+    if let Ok(new_flat_lowered) =
+        FunctionInlinerRewriter::apply(lowering_builder.ctx()?, flat_lowered)
+    {
+        *flat_lowered = new_flat_lowered;
+    }
+    Ok(())
 }
