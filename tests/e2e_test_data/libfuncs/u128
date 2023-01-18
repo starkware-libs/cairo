@@ -1,4 +1,4 @@
-//! > u128_overflow_add libfunc
+//! > u128_overflowing_add libfunc
 
 //! > test_comments
 
@@ -7,7 +7,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(a: u128, b: u128) -> Result::<u128, u128> {
-    integer::u128_overflow_add(a, b)
+    integer::u128_overflowing_add(a, b)
 }
 
 //! > casm
@@ -36,7 +36,7 @@ type RangeCheck = RangeCheck;
 type u128 = u128;
 type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128>;
 
-libfunc u128_overflow_add = u128_overflow_add;
+libfunc u128_overflowing_add = u128_overflowing_add;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -46,7 +46,7 @@ libfunc rename<core::result::Result::<core::integer::u128, core::integer::u128>>
 libfunc jump = jump;
 libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>;
 
-u128_overflow_add([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) };
+u128_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) };
 branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>([4]) -> ([7]);
 store_temp<RangeCheck>([3]) -> ([3]);
@@ -68,7 +68,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 
 //! > ==========================================================================
 
-//! > u128_overflow_sub libfunc
+//! > u128_overflowing_sub libfunc
 
 //! > test_comments
 
@@ -77,7 +77,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(a: u128, b: u128) -> Result::<u128, u128> {
-    integer::u128_overflow_sub(a, b)
+    integer::u128_overflowing_sub(a, b)
 }
 
 //! > casm
@@ -106,7 +106,7 @@ type RangeCheck = RangeCheck;
 type u128 = u128;
 type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128>;
 
-libfunc u128_overflow_sub = u128_overflow_sub;
+libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -116,7 +116,7 @@ libfunc rename<core::result::Result::<core::integer::u128, core::integer::u128>>
 libfunc jump = jump;
 libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>;
 
-u128_overflow_sub([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) };
+u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) };
 branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>([4]) -> ([7]);
 store_temp<RangeCheck>([3]) -> ([3]);
