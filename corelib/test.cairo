@@ -409,3 +409,25 @@ fn test_dict_write_read() {
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');
 }
+
+#[test]
+fn test_box_unbox_felts() {
+    let x = 10;
+    let boxed_x = into_box::<felt>(x);
+    let y = 11;
+    let boxed_y = into_box::<felt>(y);
+    assert(unbox::<felt>(boxed_x) == 10, 'x == 10');
+    assert(unbox::<felt>(boxed_y) == 11, 'y == 11');
+}
+
+
+// Test objects of size>1.
+#[test]
+fn test_box_unbox_u256() {
+    let x = as_u256(1_u128, 0_u128);
+    let boxed_x = into_box::<u256>(x);
+    let y = as_u256(1_u128, 1_u128);
+    let boxed_y = into_box::<u256>(y);
+    assert(unbox::<u256>(boxed_x) == as_u256(1_u128, 0_u128), 'unbox u256 x');
+    assert(unbox::<u256>(boxed_y) == as_u256(1_u128, 1_u128), 'unbox u256 y');
+}
