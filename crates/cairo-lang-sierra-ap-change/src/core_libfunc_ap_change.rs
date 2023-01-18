@@ -108,10 +108,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
                     vec![ApChange::Known(2), ApChange::Known(3)]
                 }
-                IntOperator::OverflowingMul => todo!(),
-                IntOperator::DivMod => vec![ApChange::Known(7)],
-                IntOperator::WideMul => vec![ApChange::Known(17)],
             },
+            Uint128Concrete::DivMod(_) => vec![ApChange::Known(7)],
+            Uint128Concrete::WideMul(_) => vec![ApChange::Known(17)],
             Uint128Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
             Uint128Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Uint128Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],

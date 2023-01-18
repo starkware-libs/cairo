@@ -206,19 +206,13 @@ fn u128_libfunc_cost<Ops: CostOperations>(
     match libfunc {
         Uint128Concrete::Operation(Uint128OperationConcreteLibfunc { operator, .. }) => {
             match operator {
-                IntOperator::DivMod => {
-                    vec![ops.const_cost(7)]
-                }
-                IntOperator::WideMul => {
-                    vec![ops.const_cost(25)]
-                }
-                IntOperator::OverflowingAdd
-                | IntOperator::OverflowingSub
-                | IntOperator::OverflowingMul => {
+                IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
                     vec![ops.const_cost(3), ops.const_cost(4)]
                 }
             }
         }
+        Uint128Concrete::DivMod(_) => vec![ops.const_cost(7)],
+        Uint128Concrete::WideMul(_) => vec![ops.const_cost(25)],
         Uint128Concrete::Const(_) | Uint128Concrete::ToFelt(_) => {
             vec![ops.const_cost(0)]
         }

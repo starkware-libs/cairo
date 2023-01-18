@@ -16,12 +16,9 @@ pub fn build(
         Uint128Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => build_u128_overflowing_add(builder),
             IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
-            IntOperator::DivMod => build_u128_divmod(builder),
-            IntOperator::WideMul => build_u128_widemul(builder),
-            IntOperator::OverflowingMul => {
-                Err(InvocationError::NotImplemented(builder.invocation.clone()))
-            }
         },
+        Uint128Concrete::DivMod(_) => build_u128_divmod(builder),
+        Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
         Uint128Concrete::JumpNotZero(_) => misc::build_jump_nz(builder),
         Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),
         Uint128Concrete::FromFelt(_) => build_u128_from_felt(builder),

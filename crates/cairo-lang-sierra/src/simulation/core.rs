@@ -428,62 +428,57 @@ fn simulate_u128_libfunc(
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint128Concrete::Operation(Uint128OperationConcreteLibfunc { operator, .. }) => {
-            match (inputs, operator) {
-                (
-                    [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)],
-                    IntOperator::DivMod,
-                ) => {
-                    if let CoreValue::Uint128(rhs) = **non_zero {
-                        Ok((
-                            vec![
-                                CoreValue::RangeCheck,
-                                CoreValue::Uint128(lhs / rhs),
-                                CoreValue::Uint128(lhs % rhs),
-                            ],
-                            0,
-                        ))
-                    } else {
-                        Err(LibfuncSimulationError::MemoryLayoutMismatch)
-                    }
-                }
-                (
-                    [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
-                    IntOperator::WideMul,
-                ) => {
-                    let result = BigInt::from(*lhs) * BigInt::from(*rhs);
-                    let u128_limit = BigInt::from(u128::MAX) + BigInt::from(1);
-                    Ok((
-                        vec![
-                            CoreValue::RangeCheck,
-                            CoreValue::Uint128(
-                                (result.clone() / u128_limit.clone()).to_u128().unwrap(),
-                            ),
-                            CoreValue::Uint128((result % u128_limit).to_u128().unwrap()),
-                        ],
-                        0,
-                    ))
-                }
-                (
-                    [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
-                    IntOperator::OverflowingAdd
-                    | IntOperator::OverflowingSub
-                    | IntOperator::OverflowingMul,
-                ) => {
+            match inputs {
+                [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)] => {
                     let (value, overflow) = match operator {
                         IntOperator::OverflowingAdd => lhs.overflowing_add(*rhs),
                         IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
-                        IntOperator::OverflowingMul => lhs.overflowing_mul(*rhs),
-                        _ => unreachable!("Arm only handles these cases."),
                     };
                     Ok((
                         vec![CoreValue::RangeCheck, CoreValue::Uint128(value)],
                         usize::from(overflow),
                     ))
                 }
-                ([_, _, _], _) => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
+        Uint128Concrete::DivMod(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)] => {
+                if let CoreValue::Uint128(rhs) = **non_zero {
+                    Ok((
+                        vec![
+                            CoreValue::RangeCheck,
+                            CoreValue::Uint128(lhs / rhs),
+                            CoreValue::Uint128(lhs % rhs),
+                        ],
+                        0,
+                    ))
+                } else {
+                    Err(LibfuncSimulationError::MemoryLayoutMismatch)
+                }
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint128Concrete::WideMul(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)] => {
+                let result = BigInt::from(*lhs) * BigInt::from(*rhs);
+                let u128_limit = BigInt::from(u128::MAX) + BigInt::from(1);
+                Ok((
+                    vec![
+                        CoreValue::RangeCheck,
+                        CoreValue::Uint128(
+                            (result.clone() / u128_limit.clone()).to_u128().unwrap(),
+                        ),
+                        CoreValue::Uint128((result % u128_limit).to_u128().unwrap()),
+                    ],
+                    0,
+                ))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint128Concrete::JumpNotZero(_) => {
             match inputs {
                 [CoreValue::Uint128(value)] if *value == 0 => {
