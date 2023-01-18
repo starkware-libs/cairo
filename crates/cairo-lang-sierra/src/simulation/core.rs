@@ -29,7 +29,7 @@ use crate::extensions::mem::MemConcreteLibfunc::{
 };
 use crate::extensions::strct::StructConcreteLibfunc;
 use crate::extensions::uint::{IntOperator, Uint8Concrete, UintConstConcreteLibfunc};
-use crate::extensions::uint128::{Uint128Concrete, Uint128OperationConcreteLibfunc};
+use crate::extensions::uint128::Uint128Concrete;
 use crate::ids::FunctionId;
 
 // TODO(orizi): This def is duplicated.
@@ -427,22 +427,17 @@ fn simulate_u128_libfunc(
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::Operation(Uint128OperationConcreteLibfunc { operator, .. }) => {
-            match inputs {
-                [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)] => {
-                    let (value, overflow) = match operator {
-                        IntOperator::OverflowingAdd => lhs.overflowing_add(*rhs),
-                        IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
-                    };
-                    Ok((
-                        vec![CoreValue::RangeCheck, CoreValue::Uint128(value)],
-                        usize::from(overflow),
-                    ))
-                }
-                [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        Uint128Concrete::Operation(libfunc) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)] => {
+                let (value, overflow) = match libfunc.operator {
+                    IntOperator::OverflowingAdd => lhs.overflowing_add(*rhs),
+                    IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
+                };
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(value)], usize::from(overflow)))
             }
-        }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint128Concrete::DivMod(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)] => {
                 if let CoreValue::Uint128(rhs) = **non_zero {

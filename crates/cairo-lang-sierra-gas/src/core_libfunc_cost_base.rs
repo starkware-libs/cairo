@@ -21,7 +21,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::strct::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{IntOperator, Uint8Concrete};
-use cairo_lang_sierra::extensions::uint128::{Uint128Concrete, Uint128OperationConcreteLibfunc};
+use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 
@@ -204,13 +204,11 @@ fn u128_libfunc_cost<Ops: CostOperations>(
 ) -> Vec<Ops::CostType> {
     // TODO(orizi): When sierra_to_casm actually supports integers - fix costs.
     match libfunc {
-        Uint128Concrete::Operation(Uint128OperationConcreteLibfunc { operator, .. }) => {
-            match operator {
-                IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
-                    vec![ops.const_cost(3), ops.const_cost(4)]
-                }
+        Uint128Concrete::Operation(libfunc) => match libfunc.operator {
+            IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
+                vec![ops.const_cost(3), ops.const_cost(4)]
             }
-        }
+        },
         Uint128Concrete::DivMod(_) => vec![ops.const_cost(7)],
         Uint128Concrete::WideMul(_) => vec![ops.const_cost(25)],
         Uint128Concrete::Const(_) | Uint128Concrete::ToFelt(_) => {
