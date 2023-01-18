@@ -48,16 +48,31 @@ macro_rules! comma {
 }
 pub(crate) use comma;
 
+macro_rules! semicolon {
+    () => {
+        SyntaxKind::TerminalSemicolon
+    };
+}
+pub(crate) use semicolon;
+
+macro_rules! eq {
+    () => {
+        SyntaxKind::TerminalEq
+    };
+}
+pub(crate) use eq;
+
 macro_rules! top_level {
     () => {
-        SyntaxKind::TerminalExtern
-            | SyntaxKind::TerminalType
+        SyntaxKind::TerminalConst
             | SyntaxKind::TerminalEnum
-            | SyntaxKind::TerminalTrait
-            | SyntaxKind::TerminalImpl
+            | SyntaxKind::TerminalExtern
             | SyntaxKind::TerminalFunction
+            | SyntaxKind::TerminalImpl
             | SyntaxKind::TerminalModule
             | SyntaxKind::TerminalStruct
+            | SyntaxKind::TerminalTrait
+            | SyntaxKind::TerminalType
             | SyntaxKind::TerminalUse
     };
 }

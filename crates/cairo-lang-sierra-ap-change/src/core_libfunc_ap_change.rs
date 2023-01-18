@@ -14,7 +14,8 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::strct::StructConcreteLibfunc;
-use cairo_lang_sierra::extensions::uint128::{IntOperator, Uint128Concrete};
+use cairo_lang_sierra::extensions::uint::{IntOperator, Uint8Concrete};
+use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use crate::ApChange;
@@ -55,6 +56,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoolConcreteLibfunc::And(_) => vec![ApChange::Known(0)],
             BoolConcreteLibfunc::Not(_) => vec![ApChange::Known(1)],
             BoolConcreteLibfunc::Xor(_) => vec![ApChange::Known(1)],
+            BoolConcreteLibfunc::Or(_) => vec![ApChange::Known(2)],
             BoolConcreteLibfunc::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
         },
         CoreConcreteLibfunc::Box(libfunc) => match libfunc {
@@ -80,6 +82,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             EcConcreteLibfunc::FinalizeState(_) => vec![ApChange::Known(11), ApChange::Known(3)],
             EcConcreteLibfunc::InitState(_) => vec![ApChange::Known(8)],
             EcConcreteLibfunc::Op(_) => vec![ApChange::Known(0)],
+            EcConcreteLibfunc::PointFromX(_) => vec![ApChange::Known(7), ApChange::Known(7)],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Drop(_) | CoreConcreteLibfunc::Dup(_) => vec![ApChange::Known(0)],
@@ -93,6 +96,12 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Gas(libfunc) => match libfunc {
             GasConcreteLibfunc::GetGas(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             GasConcreteLibfunc::RefundGas(_) => vec![ApChange::Known(0)],
+        },
+        CoreConcreteLibfunc::Uint8(libfunc) => match libfunc {
+            Uint8Concrete::Const(_) => vec![ApChange::Known(0)],
+            Uint8Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
+            Uint8Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+            Uint8Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
         },
         CoreConcreteLibfunc::Uint128(libfunc) => match libfunc {
             Uint128Concrete::Operation(libfunc) => match libfunc.operator {
@@ -155,8 +164,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             StarkNetConcreteLibfunc::StorageWrite(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
-            StarkNetConcreteLibfunc::StorageAddressConst(_) => vec![ApChange::Known(0)],
-            StarkNetConcreteLibfunc::StorageAddressFromFelt(_) => vec![ApChange::Known(7)],
+            StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ApChange::Known(0)],
+            StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => vec![ApChange::Known(7)],
+            StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ApChange::Known(0)],
+            StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],

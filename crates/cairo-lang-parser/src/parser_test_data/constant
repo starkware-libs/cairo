@@ -1,0 +1,69 @@
+//! > Test const
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+const X: NonZero::<felt> = 0x1234;
+
+//! > top_level_kind
+ItemConstant
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemConstant
+    ├── attributes (kind: AttributeList) []
+    ├── const_kw (kind: TokenConst): 'const'
+    ├── name (kind: TokenIdentifier): 'X'
+    ├── type_clause (kind: TypeClause)
+    │   ├── colon (kind: TokenColon): ':'
+    │   └── ty (kind: ExprPath)
+    │       └── item #0 (kind: PathSegmentWithGenericArgs)
+    │           ├── ident (kind: TokenIdentifier): 'NonZero'
+    │           ├── separator (kind: TokenColonColon): '::'
+    │           └── generic_args (kind: GenericArgs)
+    │               ├── langle (kind: TokenLT): '<'
+    │               ├── generic_args (kind: GenericArgList)
+    │               │   └── item #0 (kind: ExprPath)
+    │               │       └── item #0 (kind: PathSegmentSimple)
+    │               │           └── ident (kind: TokenIdentifier): 'felt'
+    │               └── rangle (kind: TokenGT): '>'
+    ├── eq (kind: TokenEq): '='
+    ├── value (kind: TokenLiteralNumber): '0x1234'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Missing type
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+const X = 0x1234;
+
+//! > top_level_kind
+ItemConstant
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Unexpected token, expected ':' followed by a type.
+ --> dummy_file.cairo:1:8
+const X = 0x1234;
+       ^
+
+//! > expected_tree
+└── Top level kind: ItemConstant
+    ├── attributes (kind: AttributeList) []
+    ├── const_kw (kind: TokenConst): 'const'
+    ├── name (kind: TokenIdentifier): 'X'
+    ├── type_clause (kind: TypeClause)
+    │   ├── colon: Missing
+    │   └── ty: Missing []
+    ├── eq (kind: TokenEq): '='
+    ├── value (kind: TokenLiteralNumber): '0x1234'
+    └── semicolon (kind: TokenSemicolon): ';'

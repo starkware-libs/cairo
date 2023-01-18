@@ -15,7 +15,6 @@ env_logger.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
 log.workspace = true
-num-bigint.workspace = true
 
 [dev-dependencies]
 test-case.workspace = true

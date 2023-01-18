@@ -11,11 +11,11 @@ use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt, FunctionCall,
-    Gas, Mem, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
+    Gas, Mem, Struct, Uint128, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use crate::extensions::ec::EcConcreteLibfunc::{
-    AddToState, CreatePoint, FinalizeState, InitState, Op, UnwrapPoint,
+    AddToState, CreatePoint, FinalizeState, InitState, Op, PointFromX, UnwrapPoint,
 };
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt::{
@@ -28,9 +28,8 @@ use crate::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::strct::StructConcreteLibfunc;
-use crate::extensions::uint128::{
-    IntOperator, Uint128Concrete, Uint128ConstConcreteLibfunc, Uint128OperationConcreteLibfunc,
-};
+use crate::extensions::uint::{IntOperator, Uint8Concrete, UintConstConcreteLibfunc};
+use crate::extensions::uint128::{Uint128Concrete, Uint128OperationConcreteLibfunc};
 use crate::ids::FunctionId;
 
 // TODO(orizi): This def is duplicated.
@@ -89,9 +88,10 @@ pub fn simulate<
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Ec(FinalizeState(_)) => todo!(),
-        Ec(InitState(_)) => todo!(),
-        Ec(Op(_)) => todo!(),
+        Ec(FinalizeState(_)) => unimplemented!(),
+        Ec(InitState(_)) => unimplemented!(),
+        Ec(Op(_)) => unimplemented!(),
+        Ec(PointFromX(_)) => unimplemented!(),
         Ec(UnwrapPoint(_)) => match &inputs[..] {
             [CoreValue::EcPoint(x, y)] => {
                 Ok((vec![CoreValue::Felt(x.clone()), CoreValue::Felt(y.clone())], 0))
@@ -188,7 +188,8 @@ pub fn simulate<
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128(libfunc) => simulate_integer_libfunc(libfunc, &inputs),
+        Uint8(libfunc) => simulate_u8_libfunc(libfunc, &inputs),
+        Uint128(libfunc) => simulate_u128_libfunc(libfunc, &inputs),
         Bool(libfunc) => simulate_bool_libfunc(libfunc, &inputs),
         Felt(libfunc) => simulate_felt_libfunc(libfunc, &inputs),
         UnwrapNonZero(_) => match &inputs[..] {
@@ -292,7 +293,7 @@ pub fn simulate<
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }
         CoreConcreteLibfunc::BuiltinCost(_) => {
-            todo!("Simulation of the builtin cost functionality is not implemented yet.")
+            unimplemented!("Simulation of the builtin cost functionality is not implemented yet.")
         }
         CoreConcreteLibfunc::StarkNet(_) => {
             unimplemented!("Simulation of the StarkNet functionalities is not implemented yet.")
@@ -372,6 +373,21 @@ fn simulate_bool_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        BoolConcreteLibfunc::Or(_) => match inputs {
+            [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
+                let (a, b) = (*a_index, *b_index);
+                // The variant index defines the true/false "value". Index zero is false.
+                Ok((
+                    vec![CoreValue::Enum {
+                        value: Box::new(CoreValue::Struct(vec![])),
+                        index: usize::from(a + b > 0),
+                    }],
+                    0,
+                ))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         BoolConcreteLibfunc::Equal(_) => match inputs {
             [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
                 // The variant index defines the true/false "value". Index zero is false.
@@ -383,13 +399,13 @@ fn simulate_bool_libfunc(
     }
 }
 
-/// Simulate integer library functions.
-fn simulate_integer_libfunc(
+/// Simulate u128 library functions.
+fn simulate_u128_libfunc(
     libfunc: &Uint128Concrete,
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint128Concrete::Const(Uint128ConstConcreteLibfunc { c, .. }) => {
+        Uint128Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint128(*c)], 0))
             } else {
@@ -503,6 +519,49 @@ fn simulate_integer_libfunc(
         },
         Uint128Concrete::LessThanOrEqual(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(a), CoreValue::Uint128(b)] => {
+                // "False" branch (branch 0) is the case a > b.
+                // "True" branch (branch 1) is the case a <= b.
+                Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+    }
+}
+
+/// Simulate u8 library functions.
+fn simulate_u8_libfunc(
+    libfunc: &Uint8Concrete,
+    inputs: &[CoreValue],
+) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
+    match libfunc {
+        Uint8Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+            if inputs.is_empty() {
+                Ok((vec![CoreValue::Uint8(*c)], 0))
+            } else {
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
+            }
+        }
+        Uint8Concrete::LessThan(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
+                // "False" branch (branch 0) is the case a >= b.
+                // "True" branch (branch 1) is the case a < b.
+                Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint8Concrete::Equal(_) => match inputs {
+            [CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
+                // "False" branch (branch 0) is the case a != b.
+                // "True" branch (branch 1) is the case a == b.
+                Ok((vec![], usize::from(a == b)))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint8Concrete::LessThanOrEqual(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
                 // "False" branch (branch 0) is the case a > b.
                 // "True" branch (branch 1) is the case a <= b.
                 Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))

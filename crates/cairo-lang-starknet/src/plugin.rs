@@ -15,7 +15,7 @@ use cairo_lang_semantic::plugin::{
 };
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_syntax::node::ast::{
-    ItemFreeFunction, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause, Param,
+    FunctionWithBody, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause, Param,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -28,8 +28,8 @@ use crate::contract::starknet_keccak;
 const ABI_ATTR: &str = "abi";
 const CONTRACT_ATTR: &str = "contract";
 const EXTERNAL_ATTR: &str = "external";
-const VIEW_ATTR: &str = "view";
-const EVENT_ATTR: &str = "event";
+pub const VIEW_ATTR: &str = "view";
+pub const EVENT_ATTR: &str = "event";
 pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
@@ -290,9 +290,11 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 if item_function.has_attr(db, EXTERNAL_ATTR)
                     || item_function.has_attr(db, VIEW_ATTR) =>
             {
-                // TODO(yuval): keep track of whether the function is external/view.
+                let attr =
+                    if item_function.has_attr(db, EXTERNAL_ATTR) { "external" } else { "view" };
                 abi_functions.push(RewriteNode::Modified(ModifiedNode {
                     children: vec![
+                        RewriteNode::Text(format!("#[{attr}]\n        ")),
                         RewriteNode::Trimmed(item_function.declaration(db).as_syntax_node()),
                         RewriteNode::Text(";\n        ".to_string()),
                     ],
@@ -405,7 +407,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 /// declaration. On failure returns None. In addition, returns diagnostics.
 fn handle_event(
     db: &dyn SyntaxGroup,
-    function_ast: ast::ItemFreeFunction,
+    function_ast: ast::FunctionWithBody,
 ) -> (Option<(RewriteNode, RewriteNode)>, Vec<PluginDiagnostic>) {
     let mut diagnostics = vec![];
     let declaration = function_ast.declaration(db);
@@ -616,13 +618,16 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
     Some(format!(
         "
     mod $storage_var_name$ {{
-        fn address() -> starknet::StorageAddress {{
-            starknet::storage_address_const::<{address}>()
+        fn address() -> starknet::StorageBaseAddress {{
+            starknet::storage_base_address_const::<{address}>()
         }}
         fn read() -> $type_name$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(address_domain, address()) {{
+            match starknet::storage_read_syscall(
+                address_domain,
+                starknet::storage_address_from_base(address()),
+            ) {{
                 Result::Ok(value) => {convert_to},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
@@ -634,7 +639,11 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
         fn write(value: $type_name$) {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(address_domain, address(), {convert_from}) {{
+            match starknet::storage_write_syscall(
+                address_domain,
+                starknet::storage_address_from_base(address()),
+                {convert_from},
+            ) {{
                 Result::Ok(()) => {{}},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
@@ -663,13 +672,16 @@ fn handle_mapping_storage_var(
     Some(format!(
         "
     mod $storage_var_name$ {{
-        fn address(key: $key_type$) -> starknet::StorageAddress {{
-            starknet::storage_addr_from_felt(pedersen({address}, {key_convert_to}))
+        fn address(key: $key_type$) -> starknet::StorageBaseAddress {{
+            starknet::storage_base_address_from_felt(pedersen({address}, {key_convert_to}))
         }}
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(address_domain, address(key)) {{
+            match starknet::storage_read_syscall(
+                address_domain,
+                starknet::storage_address_from_base(address(key)),
+            ) {{
                 Result::Ok(value) => {value_convert_to},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
@@ -683,7 +695,7 @@ fn handle_mapping_storage_var(
             let address_domain = 0;
             match starknet::storage_write_syscall(
                 address_domain,
-                address(key),
+                starknet::storage_address_from_base(address(key)),
                 {value_convert_from},
             ) {{
                 Result::Ok(()) => {{}},
@@ -715,7 +727,7 @@ fn get_type_serde_funcs(name: &str) -> Option<(&str, &str)> {
 /// Generates Cairo code for an entry point wrapper.
 fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
-    function: &ItemFreeFunction,
+    function: &FunctionWithBody,
 ) -> Result<RewriteNode, Vec<PluginDiagnostic>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);

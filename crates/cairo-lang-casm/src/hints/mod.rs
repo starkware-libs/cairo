@@ -136,6 +136,15 @@ pub enum Hint {
         x: CellRef,
         y: CellRef,
     },
+    /// Computes the square root of `val`, if `val` is a quadratic residue, and of `3 * val`
+    /// otherwise.
+    ///
+    /// Since 3 is not a quadratic residue, exactly one of `val` and `3 * val` is a quadratic
+    /// residue (unless `val` is 0). This allows proving that `val` is not a quadratic residue.
+    FieldSqrt {
+        val: ResOperand,
+        sqrt: CellRef,
+    },
     /// Represents a hint that triggers a system call.
     SystemCall {
         system: ResOperand,
@@ -146,12 +155,10 @@ pub enum Hint {
         start: ResOperand,
         end: ResOperand,
     },
-    /// TODO(orizi): Remove this hint when division bug is fixed.
-    /// Computes the field division of two field elements.
-    PrimeDiv {
-        lhs: ResOperand,
-        rhs: ResOperand,
-        result: CellRef,
+    /// Returns an address with `size` free locations afterwards.
+    AllocConstantSize {
+        size: ResOperand,
+        dst: CellRef,
     },
 }
 
@@ -281,25 +288,29 @@ impl Display for Hint {
                     f,
                     "
 
-                        def try_sample_point() -> Tuple[int, int]:
-                            x = random.randrange(PRIME)
-                            y2 = x**3 + ALPHA * x + BETA
-                            return x, sympy.ntheory.residue_ntheory.sqrt_mod(
-                                y2, PRIME, all_roots=True
-                            )
-                        x, y = try_sample_point()
-                        while y is None:
-                            x, y = try_sample_point()
-                        (memory{x}, memory{y}) = x, y
+                        from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
+                        from starkware.python.math_utils import random_ec_point
+                        (memory{x}, memory{y}) = random_ec_point(FIELD_PRIME, ALPHA, BETA)
                     "
                 )
             }
-            Hint::PrimeDiv { lhs, rhs, result } => write!(
-                f,
-                "memory{result} = fdiv({}, {})",
-                ResOperandFormatter(lhs),
-                ResOperandFormatter(rhs),
-            ),
+            Hint::FieldSqrt { val, sqrt } => {
+                writedoc!(
+                    f,
+                    "
+
+                        from starkware.crypto.signature.signature import FIELD_PRIME
+                        from starkware.python.math_utils import is_quad_residue, sqrt
+
+                        val = {}
+                        if is_quad_residue(val, FIELD_PRIME):
+                            memory{sqrt} = sqrt(val, FIELD_PRIME)
+                        else:
+                            memory{sqrt} = sqrt(val * 3, FIELD_PRIME)
+                        ",
+                    ResOperandFormatter(val)
+                )
+            }
             Hint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
@@ -488,6 +499,19 @@ impl Display for Hint {
                 ResOperandFormatter(start),
                 ResOperandFormatter(end),
             ),
+            Hint::AllocConstantSize { size, dst } => {
+                writedoc!(
+                    f,
+                    "
+
+                        if '__boxed_segment' not in globals():
+                            __boxed_segment = segments.add()
+                        memory{dst} = __boxed_segment
+                        __boxed_segment += {}
+                    ",
+                    ResOperandFormatter(size)
+                )
+            }
         }
     }
 }

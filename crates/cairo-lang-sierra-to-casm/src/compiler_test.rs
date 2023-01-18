@@ -97,7 +97,12 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
 
                 // box_and_back:
-                %{ memory[ap + 0] = segments.add() %}
+                %{
+                if '__boxed_segment' not in globals():
+                    __boxed_segment = segments.add()
+                memory[ap + 0] = __boxed_segment
+                __boxed_segment += 1
+                %}
                 [fp + -3] = [[ap + 0] + 0], ap++;
                 [ap + 0] = [ap + -1], ap++;
                 [ap + 0] = [[ap + -1] + 0], ap++;
@@ -215,12 +220,12 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 type RangeCheck = RangeCheck;
 
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
-                libfunc u128_overflow_add = u128_overflow_add;
+                libfunc u128_overflowing_add = u128_overflowing_add;
                 libfunc drop<u128> = drop<u128>;
                 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 
                 revoke_ap_tracking() -> ();
-                u128_overflow_add([1], [2], [3]) {fallthrough([1], [2]) 5([1], [2]) };
+                u128_overflowing_add([1], [2], [3]) {fallthrough([1], [2]) 5([1], [2]) };
                 drop<u128>([2]) -> ();
                 store_temp<RangeCheck>([1]) -> ([1]);
                 return ([1]);
@@ -650,6 +655,13 @@ of the libfunc or return statement.";
                 foo@0() -> ();
             "}, "#1: The functionality is supported only for sized types.";
             "store_temp<Uninitialized<felt>()")]
+#[test_case(indoc! {"
+                return ();
+
+                foo@0() -> ();
+                bar@0() -> ();
+            "}, "#0 Belongs to two different functions.";
+            "Statement in two functions")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(

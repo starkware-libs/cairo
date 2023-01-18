@@ -141,6 +141,8 @@ pub fn compile(
                 program_annotations.validate_final_annotations(
                     statement_idx,
                     &annotations,
+                    &program.funcs,
+                    metadata,
                     &return_refs,
                 )?;
                 check_references_on_stack(&return_refs).map_err(|error| match error {

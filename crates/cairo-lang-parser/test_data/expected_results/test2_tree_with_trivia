@@ -1,6 +1,6 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemFreeFunction)
+    │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
@@ -389,7 +389,7 @@
     │           │   └── trailing_trivia (kind: Trivia)
     │           │       └── child #0 (kind: TokenNewline).
     │           ├── items (kind: ItemList)
-    │           │   ├── child #0 (kind: ItemFreeFunction)
+    │           │   ├── child #0 (kind: FunctionWithBody)
     │           │   │   ├── attributes (kind: AttributeList) []
     │           │   │   ├── declaration (kind: FunctionDeclaration)
     │           │   │   │   ├── function_kw (kind: TerminalFunction)
@@ -557,8 +557,7 @@
     │           │   │       │       │               │   ├── token (kind: TokenLParen): '('
     │           │   │       │       │               │   └── trailing_trivia (kind: Trivia) []
     │           │   │       │       │               ├── args (kind: ArgList)
-    │           │   │       │       │               │   ├── item #0 (kind: Arg)
-    │           │   │       │       │               │   │   ├── name (kind: OptionArgNameClauseEmpty) []
+    │           │   │       │       │               │   ├── item #0 (kind: ArgUnnamed)
     │           │   │       │       │               │   │   └── value (kind: TerminalLiteralNumber)
     │           │   │       │       │               │   │       ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │               │   │       ├── token (kind: TokenLiteralNumber): '1'
@@ -567,8 +566,7 @@
     │           │   │       │       │               │   │   ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │               │   │   ├── token (kind: TokenComma): ','
     │           │   │       │       │               │   │   └── trailing_trivia (kind: Trivia) []
-    │           │   │       │       │               │   └── item #1 (kind: Arg)
-    │           │   │       │       │               │       ├── name (kind: OptionArgNameClauseEmpty) []
+    │           │   │       │       │               │   └── item #1 (kind: ArgUnnamed)
     │           │   │       │       │               │       └── value (kind: TerminalLiteralNumber)
     │           │   │       │       │               │           ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │               │           ├── token (kind: TokenLiteralNumber): '3'

@@ -4,8 +4,8 @@ mod test;
 
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId};
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -27,29 +27,29 @@ pub struct SierraFreeFunctionData {
     pub function: Maybe<Arc<pre_sierra::Function>>,
 }
 
-/// Query implementation of [SierraGenGroup::priv_free_function_sierra_data].
-pub fn priv_free_function_sierra_data(
+/// Query implementation of [SierraGenGroup::priv_function_with_body_sierra_data].
+pub fn priv_function_with_body_sierra_data(
     db: &dyn SierraGenGroup,
-    function_id: FreeFunctionId,
+    function_id: ConcreteFunctionWithBodyId,
 ) -> SierraFreeFunctionData {
     let function = get_function_code(db, function_id);
     SierraFreeFunctionData { function }
 }
 
-/// Query implementation of [SierraGenGroup::free_function_sierra].
-pub fn free_function_sierra(
+/// Query implementation of [SierraGenGroup::function_with_body_sierra].
+pub fn function_with_body_sierra(
     db: &dyn SierraGenGroup,
-    function_id: FreeFunctionId,
+    function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    db.priv_free_function_sierra_data(function_id).function
+    db.priv_function_with_body_sierra_data(function_id).function
 }
 
 fn get_function_code(
     db: &dyn SierraGenGroup,
-    function_id: FreeFunctionId,
+    function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = db.free_function_declaration_signature(function_id)?;
-    let lowered_function = &*db.free_function_lowered_flat(function_id)?;
+    let signature = db.concrete_function_signature(function_id.function_id(db.upcast()))?;
+    let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
     let block_id = lowered_function.root?;
     let block = &lowered_function.blocks[block_id];
 
@@ -91,8 +91,8 @@ fn get_function_code(
     // Generate the return statement if necessary.
     let return_statement_location: StatementLocation = (block_id, block.statements.len());
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(returned_variables)
-        | lowering::FlatBlockEnd::Return(returned_variables) => {
+        lowering::FlatBlockEnd::Callsite(_) => panic!("Root block may not end with callsite."),
+        lowering::FlatBlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(
                 &mut context,
                 returned_variables,
@@ -115,11 +115,7 @@ fn get_function_code(
     // be regarded as private.
     Ok(pre_sierra::Function {
         id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
-            function: semantic::ConcreteFunction {
-                generic_function: GenericFunctionId::Free(function_id),
-                // TODO(lior): Add generic arguments.
-                generic_args: vec![],
-            },
+            function: function_id.concrete(db.upcast()),
         })),
         prolog_size,
         body: statements,

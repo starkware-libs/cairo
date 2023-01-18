@@ -12,7 +12,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericLibfuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type representing an array.
@@ -55,7 +55,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct ArrayNewLibfunc {}
 impl SignatureOnlyGenericLibfunc for ArrayNewLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("array_new");
+    const STR_ID: &'static str = "array_new";
 
     fn specialize_signature(
         &self,
@@ -78,7 +78,7 @@ impl SignatureOnlyGenericLibfunc for ArrayNewLibfunc {
 #[derive(Default)]
 pub struct ArrayLenLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("array_len");
+    const STR_ID: &'static str = "array_len";
 
     fn specialize_signature(
         &self,
@@ -108,7 +108,7 @@ pub type ArrayLenLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayLenLibfuncWra
 #[derive(Default)]
 pub struct ArrayAppendLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayAppendLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("array_append");
+    const STR_ID: &'static str = "array_append";
 
     fn specialize_signature(
         &self,
@@ -142,7 +142,7 @@ pub type ArrayAppendLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayAppendLibf
 #[derive(Default)]
 pub struct ArrayPopFrontLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("array_pop_front");
+    const STR_ID: &'static str = "array_pop_front";
 
     fn specialize_signature(
         &self,
@@ -186,7 +186,7 @@ pub type ArrayPopFrontLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayPopFront
 #[derive(Default)]
 pub struct ArrayAtLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayAtLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("array_at");
+    const STR_ID: &'static str = "array_at";
 
     fn specialize_signature(
         &self,

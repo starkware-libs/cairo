@@ -133,6 +133,7 @@ impl<'a> Parser<'a> {
         );
 
         match self.peek().kind {
+            SyntaxKind::TerminalConst => Some(self.expect_const(attributes).into()),
             SyntaxKind::TerminalModule => Some(self.expect_module(attributes).into()),
             SyntaxKind::TerminalStruct => Some(self.expect_struct(attributes).into()),
             SyntaxKind::TerminalEnum => Some(self.expect_enum(attributes).into()),
@@ -259,6 +260,30 @@ impl<'a> Parser<'a> {
             return_type_clause,
             implicits_clause,
             optional_no_panic,
+        )
+    }
+
+    /// Assumes the current token is [TerminalConst].
+    /// Expected pattern: `const <Identifier> = <Expr>;`
+    fn expect_const(&mut self, attributes: AttributeListGreen) -> ItemConstantGreen {
+        let const_kw = self.take::<TerminalConst>();
+        let name = self.parse_identifier();
+        let type_clause = self.parse_type_clause(ErrorRecovery {
+            should_stop: is_of_kind!(eq, semicolon, top_level),
+        });
+        let eq = self.parse_token::<TerminalEq>();
+        let expr = self.parse_expr();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+
+        ItemConstant::new_green(
+            self.db,
+            attributes,
+            const_kw,
+            name,
+            type_clause,
+            eq,
+            expr,
+            semicolon,
         )
     }
 
@@ -408,10 +433,10 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Function.
     /// Expected pattern: `<FunctionDeclaration><Block>`
-    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> ItemFreeFunctionGreen {
+    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> FunctionWithBodyGreen {
         let declaration = self.expect_function_declaration();
         let function_body = self.parse_block();
-        ItemFreeFunction::new_green(self.db, attributes, declaration, function_body)
+        FunctionWithBody::new_green(self.db, attributes, declaration, function_body)
     }
 
     /// Assumes the current token is Trait.
@@ -707,9 +732,23 @@ impl<'a> Parser<'a> {
     /// of the argument.
     ///
     /// Possible patterns:
-    /// * `<Expr>`
-    /// * `<Identifier>: <Expr>`
+    /// * `<Expr>` (unnamed).
+    /// * `<Identifier>: <Expr>` (named).
+    /// * `:<Identifier>` (Field init shorthand - syntactic sugar for `a: a`).
     fn parse_function_argument(&mut self) -> Option<ArgGreen> {
+        if self.peek().kind == SyntaxKind::TerminalColon {
+            let colon = self.take::<TerminalColon>();
+            let argname = self.parse_identifier();
+            return Some(
+                ArgFieldInitShorthand::new_green(
+                    self.db,
+                    colon,
+                    ExprFieldInitShorthand::new_green(self.db, argname),
+                )
+                .into(),
+            );
+        }
+
         // Read an expression.
         let expr_or_argname = self.try_parse_expr()?;
 
@@ -719,19 +758,11 @@ impl<'a> Parser<'a> {
             if let Some(argname) = self.try_extract_identifier(expr_or_argname) {
                 let colon = self.take::<TerminalColon>();
                 let expr = self.try_parse_expr()?;
-                return Some(Arg::new_green(
-                    self.db,
-                    ArgNameClause::new_green(self.db, argname, colon).into(),
-                    expr,
-                ));
+                return Some(ArgNamed::new_green(self.db, argname, colon, expr).into());
             }
         }
 
-        Some(Arg::new_green(
-            self.db,
-            OptionArgNameClauseEmpty::new_green(self.db).into(),
-            expr_or_argname,
-        ))
+        Some(ArgUnnamed::new_green(self.db, expr_or_argname).into())
     }
 
     /// If the given `expr` is a simple identifier, returns the corresponding green node.
@@ -982,13 +1013,20 @@ impl<'a> Parser<'a> {
         Some(match self.peek().kind {
             SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
             _ => {
-                let name = self.try_parse_identifier()?;
+                let modifier_list = self.parse_modifier_list();
+                let name = if modifier_list.is_empty() {
+                    self.try_parse_identifier()?
+                } else {
+                    self.parse_identifier()
+                };
+                let modifiers = ModifierList::new_green(self.db, modifier_list);
                 if self.peek().kind == SyntaxKind::TerminalColon {
                     let colon = self.take::<TerminalColon>();
                     let pattern = self.parse_pattern();
-                    PatternStructParamWithExpr::new_green(self.db, name, colon, pattern).into()
+                    PatternStructParamWithExpr::new_green(self.db, modifiers, name, colon, pattern)
+                        .into()
                 } else {
-                    name.into()
+                    PatternIdentifier::new_green(self.db, modifiers, name).into()
                 }
             }
         })

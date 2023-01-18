@@ -1,0 +1,71 @@
+//! > Const
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let x = MY_CONST;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+const MY_CONST: felt = 0x1234;
+
+//! > expected_diagnostics
+error: Constant definitions are not supported yet.
+ --> lib.cairo:1:1
+const MY_CONST: felt = 0x1234;
+^***^
+
+error: Variable "MY_CONST" not found.
+ --> lib.cairo:3:13
+    let x = MY_CONST;
+            ^******^
+
+//! > ==========================================================================
+
+//! > Const diagnostics
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() { }
+
+//! > function_name
+foo
+
+//! > module_code
+const MY_CONST: MissingType = {
+    return foo();
+    Option::<felt>::Some(0)?
+};
+
+//! > expected_diagnostics
+error: Type not found.
+ --> lib.cairo:1:17
+const MY_CONST: MissingType = {
+                ^*********^
+
+error: Function call is not supported outside of functions.
+ --> lib.cairo:2:12
+    return foo();
+           ^***^
+
+error: Return statement is not supported outside of functions.
+ --> lib.cairo:2:5
+    return foo();
+    ^***********^
+
+error: The '?' operator is not supported outside of functions.
+ --> lib.cairo:3:5
+    Option::<felt>::Some(0)?
+    ^**********************^
+
+error: Constant definitions are not supported yet.
+ --> lib.cairo:1:1
+const MY_CONST: MissingType = {
+^***^

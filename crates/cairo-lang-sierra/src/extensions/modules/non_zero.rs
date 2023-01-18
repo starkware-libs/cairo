@@ -8,7 +8,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
 
 /// Type wrapping a value as non zero.
@@ -35,7 +35,7 @@ pub type NonZeroType = GenericTypeArgGenericTypeWrapper<NonZeroTypeWrapped>;
 #[derive(Default)]
 pub struct UnwrapNonZeroLibfunc {}
 impl SignatureOnlyGenericLibfunc for UnwrapNonZeroLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("unwrap_nz");
+    const STR_ID: &'static str = "unwrap_nz";
 
     fn specialize_signature(
         &self,

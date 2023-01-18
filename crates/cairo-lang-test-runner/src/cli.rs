@@ -9,22 +9,23 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId, ModuleItemId};
+use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_plugins::config::ConfigPlugin;
 use cairo_lang_plugins::derive::DerivePlugin;
 use cairo_lang_plugins::panicable::PanicablePlugin;
+use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::plugin::SemanticPlugin;
-use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
+use cairo_lang_semantic::{ConcreteFunction, ConcreteFunctionWithBodyId, FunctionLongId};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_syntax::node::ast::Expr;
 use cairo_lang_syntax::node::Token;
-use cairo_lang_utils::short_string::as_cairo_short_string;
 use clap::Parser;
 use colored::Colorize;
 use itertools::Itertools;
@@ -81,7 +82,12 @@ fn main() -> anyhow::Result<()> {
     }
     let all_tests = find_all_tests(db, main_crate_ids);
     let sierra_program = db
-        .get_sierra_program_for_functions(all_tests.iter().map(|t| t.func_id).collect())
+        .get_sierra_program_for_functions(
+            all_tests
+                .iter()
+                .flat_map(|t| ConcreteFunctionWithBodyId::from_no_generics_free(db, t.func_id))
+                .collect(),
+        )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
     let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
@@ -256,7 +262,9 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
 
             for item in module_items.iter() {
                 if let ModuleItemId::FreeFunction(func_id) = item {
-                    if let Ok(attrs) = db.free_function_declaration_attributes(*func_id) {
+                    if let Ok(attrs) =
+                        db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id))
+                    {
                         let mut is_test = false;
                         let mut available_gas = None;
                         let mut ignored = false;

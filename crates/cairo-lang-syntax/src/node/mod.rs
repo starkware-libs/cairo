@@ -18,8 +18,6 @@ use self::kind::SyntaxKind;
 use self::stable_ptr::SyntaxStablePtr;
 
 pub mod ast;
-#[cfg(test)]
-mod ast_test;
 pub mod db;
 pub mod element_list;
 pub mod green;
@@ -28,6 +26,10 @@ pub mod ids;
 pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
+pub mod utils;
+
+#[cfg(test)]
+mod ast_test;
 #[cfg(test)]
 mod test_utils;
 
@@ -176,8 +178,8 @@ impl SyntaxNode {
 
     /// Returns all the text under the syntax node.
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text(self, db: &dyn SyntaxGroup) -> String {
-        format!("{}", NodeTextFormatter { node: &self, db })
+    pub fn get_text(&self, db: &dyn SyntaxGroup) -> String {
+        format!("{}", NodeTextFormatter { node: self, db })
     }
 
     /// Returns all the text under the syntax node, without the outmost trivia (the leading trivia

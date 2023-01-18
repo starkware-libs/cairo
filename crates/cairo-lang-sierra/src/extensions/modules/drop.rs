@@ -3,14 +3,13 @@ use crate::extensions::lib_func::{
     SignatureSpecializationContext,
 };
 use crate::extensions::{args_as_single_type, SpecializationError};
-use crate::ids::GenericLibfuncId;
 use crate::program::GenericArg;
 
 /// Libfunc for ignoring a plain old data object.
 #[derive(Default)]
 pub struct DropLibfunc {}
 impl SignatureOnlyGenericLibfunc for DropLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("drop");
+    const STR_ID: &'static str = "drop";
 
     fn specialize_signature(
         &self,

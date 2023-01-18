@@ -14,7 +14,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
 
 /// Type representing a dictionary from a felt to types of size one.
@@ -56,7 +56,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct DictFeltToNewLibfunc {}
 impl SignatureOnlyGenericLibfunc for DictFeltToNewLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("dict_felt_to_new");
+    const STR_ID: &'static str = "dict_felt_to_new";
 
     fn specialize_signature(
         &self,
@@ -86,7 +86,7 @@ impl SignatureOnlyGenericLibfunc for DictFeltToNewLibfunc {
 #[derive(Default)]
 pub struct DictFeltToWriteLibfunc {}
 impl SignatureOnlyGenericLibfunc for DictFeltToWriteLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("dict_felt_to_write");
+    const STR_ID: &'static str = "dict_felt_to_write";
 
     fn specialize_signature(
         &self,
@@ -111,7 +111,7 @@ impl SignatureOnlyGenericLibfunc for DictFeltToWriteLibfunc {
 #[derive(Default)]
 pub struct DictFeltToReadLibfunc {}
 impl SignatureOnlyGenericLibfunc for DictFeltToReadLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("dict_felt_to_read");
+    const STR_ID: &'static str = "dict_felt_to_read";
 
     fn specialize_signature(
         &self,
@@ -143,7 +143,7 @@ impl SignatureOnlyGenericLibfunc for DictFeltToReadLibfunc {
 #[derive(Default)]
 pub struct DictFeltToSquashLibfunc {}
 impl SignatureOnlyGenericLibfunc for DictFeltToSquashLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("dict_felt_to_squash");
+    const STR_ID: &'static str = "dict_felt_to_squash";
 
     fn specialize_signature(
         &self,

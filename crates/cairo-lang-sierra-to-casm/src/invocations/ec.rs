@@ -25,6 +25,7 @@ pub fn build(
         EcConcreteLibfunc::FinalizeState(_) => build_ec_try_finalize_state(builder),
         EcConcreteLibfunc::InitState(_) => build_ec_init_state(builder),
         EcConcreteLibfunc::Op(_) => build_ec_op_builtin(builder),
+        EcConcreteLibfunc::PointFromX(_) => build_ec_point_from_x(builder),
         EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
     }
 }
@@ -38,9 +39,21 @@ fn verify_ec_point(
     computed_lhs: Var,
     computed_rhs: Var,
 ) {
+    compute_lhs(casm_builder, y, computed_lhs);
+    compute_rhs(casm_builder, x, computed_rhs);
+}
+
+/// Computes the left-hand side of the EC equation, namely `y^2`.
+fn compute_lhs(casm_builder: &mut CasmBuilder, y: Var, computed_lhs: Var) {
+    casm_build_extend! {casm_builder,
+        assert computed_lhs = y * y;
+    };
+}
+
+/// Computes the right-hand side of the EC equation, namely `x^3 + x + BETA`.
+fn compute_rhs(casm_builder: &mut CasmBuilder, x: Var, computed_rhs: Var) {
     casm_build_extend! {casm_builder,
         const beta = (get_beta());
-        assert computed_lhs = y * y;
         tempvar x2 = x * x;
         tempvar x3 = x2 * x;
         tempvar alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
@@ -66,11 +79,7 @@ fn add_ec_points(
     let (x0, y0) = p0;
 
     casm_build_extend! {casm_builder,
-        // TODO(dorimedini): Once PrimeDiv is removed, instead of the next 3 lines just do
-        // `tempvar slope = numerator / denominator;`.
-        tempvar slope;
-        hint PrimeDiv { lhs: numerator, rhs: denominator } into { result: slope };
-        assert slope = numerator / denominator;
+        tempvar slope = numerator / denominator;
         tempvar slope2 = slope * slope;
         tempvar sum_x = x0 + x1;
         tempvar result_x = slope2 - sum_x;
@@ -94,7 +103,7 @@ fn build_ec_point_try_create(
         deref y;
     };
 
-    // Assert (x,y) is on the curve.
+    // Check if `(x, y)` is on the curve, by computing `y^2` and `x^3 + x + beta`.
     casm_build_extend! {casm_builder,
         tempvar y2;
         tempvar expected_y2;
@@ -109,6 +118,57 @@ fn build_ec_point_try_create(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(failure_handle))],
+    ))
+}
+
+/// Handles instruction for creating an EC point.
+fn build_ec_point_from_x(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [x] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref x;
+    };
+
+    casm_build_extend! {casm_builder,
+        tempvar rhs;
+    };
+    compute_rhs(&mut casm_builder, x, rhs);
+
+    // Guess y, by either computing the square root of `rhs`, or of `3 * rhs`.
+    casm_build_extend! {casm_builder,
+        tempvar y;
+        hint FieldSqrt {val: rhs} into {sqrt: y};
+        tempvar lhs;
+    };
+    compute_lhs(&mut casm_builder, y, lhs);
+
+    casm_build_extend! {casm_builder,
+        tempvar diff = lhs - rhs;
+        // If `(x, y)` is on the curve, return it.
+        jump VerifyNotOnCurve if diff != 0;
+        jump OnCurve;
+        VerifyNotOnCurve:
+        // Check that `y^2 = 3 * rhs`.
+        const three = (3);
+        assert lhs = rhs * three;
+        // Note that `rhs != 0`: otherwise `y^2 = 3 * rhs = 0` implies `y = 0` and we would have
+        // `y^2 = rhs` so this branch wouldn't have been chosen.
+        // Alternatively, note that `rhs = 0` is not possible in curves of odd order (such as this
+        // curve).
+        // Since 3 is not a quadratic residue in the field, it will follow that `rhs` is not a
+        // quadratic residue, which implies that there is no `y` such that `(x, y)` is on the curve.
+        jump NotOnCurve;
+        OnCurve:
+        // Fallthrough - success.
+    };
+
+    let not_on_curve = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(not_on_curve))],
     ))
 }
 

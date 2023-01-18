@@ -5,8 +5,8 @@ mod test;
 use std::iter::Peekable;
 
 use cairo_lang_defs::ids::{
-    GenericFunctionId, GenericParamId, GenericTypeId, ImplId, LanguageElementId, ModuleFileId,
-    ModuleId, ModuleItemId, TraitId, TypeAliasId,
+    GenericParamId, GenericTypeId, ImplId, LanguageElementId, ModuleFileId, ModuleId, ModuleItemId,
+    TraitFunctionId, TraitId, TypeAliasId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -16,6 +16,7 @@ use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -25,10 +26,15 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
-use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
-use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
+use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
+use crate::items::imp::{
+    find_impls_at_context, ConcreteImplId, ConcreteImplLongId, ImplLookupContext,
+};
+use crate::items::trt::{
+    ConcreteTraitFunctionId, ConcreteTraitFunctionLongId, ConcreteTraitId, ConcreteTraitLongId,
+};
 use crate::literals::LiteralLongId;
-use crate::types::{resolve_type, substitute_generics};
+use crate::types::{resolve_type, substitute_generics, GenericSubstitution};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
     TypeLongId, Variant,
@@ -42,6 +48,7 @@ use crate::{
 pub enum ResolvedConcreteItem {
     Module(ModuleId),
     Function(FunctionId),
+    TraitFunction(ConcreteTraitFunctionId),
     Type(TypeId),
     Variant(ConcreteVariant),
     Trait(ConcreteTraitId),
@@ -52,6 +59,7 @@ pub enum ResolvedConcreteItem {
 pub enum ResolvedGenericItem {
     Module(ModuleId),
     GenericFunction(GenericFunctionId),
+    TraitFunction(TraitFunctionId),
     GenericType(GenericTypeId),
     GenericTypeAlias(TypeAliasId),
     Variant(Variant),
@@ -65,6 +73,9 @@ impl ResolvedConcreteItem {
             ResolvedConcreteItem::Function(function) => ResolvedGenericItem::GenericFunction(
                 db.lookup_intern_function(*function).function.generic_function,
             ),
+            ResolvedConcreteItem::TraitFunction(trait_function) => {
+                ResolvedGenericItem::TraitFunction(trait_function.function_id(db))
+            }
             ResolvedConcreteItem::Type(ty) => {
                 if let TypeLongId::Concrete(concrete) = db.lookup_intern_type(*ty) {
                     ResolvedGenericItem::GenericType(concrete.generic_type(db))
@@ -135,7 +146,7 @@ pub struct Resolver<'db> {
     // Current module in which to resolve the path.
     pub module_file_id: ModuleFileId,
     // Generic parameters accessible to the resolver.
-    generic_params: UnorderedHashMap<SmolStr, GenericParamId>,
+    generic_params: OrderedHashMap<SmolStr, GenericParamId>,
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
     pub lookback: ResolvedLookback,
 }
@@ -423,8 +434,100 @@ impl<'db> Resolver<'db> {
                     Err(diagnostics.report(identifier, InvalidPath))
                 }
             }
+            ResolvedConcreteItem::Trait(concrete_trait_id) => {
+                // Find the relevant function in the trait.
+                let long_trait_id = self.db.lookup_intern_concrete_trait(*concrete_trait_id);
+                let trait_id = long_trait_id.trait_id;
+                let Some(trait_function_id) = self.db.trait_function_by_name(trait_id, ident)? else {
+                    return Err(diagnostics.report(identifier, InvalidPath));
+                };
+
+                let trait_function =
+                    self.db.intern_concrete_trait_function(ConcreteTraitFunctionLongId::new(
+                        self.db,
+                        *concrete_trait_id,
+                        trait_function_id,
+                    ));
+                Ok(ResolvedConcreteItem::TraitFunction(trait_function))
+            }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }
+    }
+
+    /// Given a trait function, resolves it to its implementation.
+    pub fn resolve_trait_function<TNode: TypedSyntaxNode>(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        concrete_trait_function_id: ConcreteTraitFunctionId,
+        node_for_diagnostic: &TNode,
+    ) -> Maybe<FunctionId> {
+        let defs_db = self.db.upcast();
+
+        let concrete_trait_id = concrete_trait_function_id.trait_id(self.db);
+        let function_id = concrete_trait_function_id.function_id(self.db);
+
+        // Find the relevant impl of the trait.
+        let trait_id = function_id.trait_id(defs_db);
+        let lookup_context = ImplLookupContext {
+            module_id: self.module_file_id.0,
+            extra_modules: vec![trait_id.module_file_id(defs_db).0],
+            generic_params: self.generic_params.values().copied().collect(),
+        };
+
+        // TODO(yuval): Support trait function default implementations.
+        let concrete_impl_id =
+            match &find_impls_at_context(self.db, &lookup_context, concrete_trait_id)?
+                .into_iter()
+                .collect_vec()[..]
+            {
+                &[] => {
+                    return Err(diagnostics.report(
+                        node_for_diagnostic,
+                        NoImplementationOfTraitFunction {
+                            trait_id,
+                            function_name: function_id.name(defs_db),
+                        },
+                    ));
+                }
+                &[concrete_impl_id] => concrete_impl_id,
+                concrete_impls => {
+                    return Err(diagnostics.report(
+                        node_for_diagnostic,
+                        MultipleImplementationOfTraitFunction {
+                            trait_id,
+                            all_impl_ids: concrete_impls
+                                .iter()
+                                .map(|imp| self.db.lookup_intern_concrete_impl(*imp).impl_id)
+                                .collect(),
+                            function_name: function_id.name(defs_db),
+                        },
+                    ));
+                }
+            };
+
+        // Find the relevant function in the impl.
+        let impl_id = self.db.lookup_intern_concrete_impl(concrete_impl_id).impl_id;
+        let Some(impl_function_id) =
+            self.db.impl_function_by_trait_function(impl_id, function_id)? else {
+                return Err(diagnostics.report(
+                    node_for_diagnostic,
+                    NoImplementationOfTraitFunction {
+                        trait_id,
+                        function_name: function_id.name(defs_db),
+                    },
+                ));
+            };
+
+        Ok(self.db.intern_function(FunctionLongId {
+            function: ConcreteFunction {
+                generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
+                    concrete_impl: concrete_impl_id,
+                    function: impl_function_id,
+                }),
+                // TODO(yuval): Add generic arguments.
+                generic_args: vec![],
+            },
+        }))
     }
 
     /// Specializes a ResolvedGenericItem that came from a ModuleItem.
@@ -475,13 +578,11 @@ impl<'db> Resolver<'db> {
                     &mut generic_args,
                     identifier.stable_ptr().untyped(),
                 );
-                let substitution =
-                    &generic_params.into_iter().zip(generic_args.into_iter()).collect();
+                let substitution = GenericSubstitution(
+                    generic_params.into_iter().zip(generic_args.into_iter()).collect(),
+                );
 
-                ResolvedConcreteItem::Type(substitute_generics(self.db, substitution, ty))
-            }
-            ResolvedGenericItem::Variant(_) => {
-                panic!("Variant is not a module item.")
+                ResolvedConcreteItem::Type(substitute_generics(self.db, &substitution, ty))
             }
             ResolvedGenericItem::Trait(trait_id) => ResolvedConcreteItem::Trait(specialize_trait(
                 self.db,
@@ -497,6 +598,8 @@ impl<'db> Resolver<'db> {
                 impl_id,
                 generic_args.unwrap_or_default(),
             )?),
+            ResolvedGenericItem::Variant(_) => panic!("Variant is not a module item."),
+            ResolvedGenericItem::TraitFunction(_) => panic!("TraitFunction is not a module item."),
         })
     }
 
@@ -540,6 +643,9 @@ impl<'db> Resolver<'db> {
         module_item: ModuleItemId,
     ) -> Maybe<ResolvedGenericItem> {
         Ok(match module_item {
+            ModuleItemId::Constant(_) => {
+                unimplemented!("Constant definition is not supported yet.");
+            }
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
             ModuleItemId::Use(id) => {
                 // TODO(spapini): Before the last change, we called priv_use_semantic_data()
@@ -660,8 +766,8 @@ pub fn specialize_function(
     mut generic_args: Vec<GenericArgumentId>,
 ) -> Maybe<FunctionId> {
     // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
-    let generic_params = db
-        .generic_function_generic_params(generic_function)
+    let generic_params: Vec<_> = db
+        .function_signature_generic_params(generic_function.signature())
         .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
 
     conform_generic_args(db, diagnostics, &generic_params, &mut generic_args, stable_ptr);

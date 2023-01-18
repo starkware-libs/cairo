@@ -1,6 +1,7 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
+use cairo_felt::{Felt, FeltOps};
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
@@ -15,10 +16,11 @@ use cairo_lang_sierra_to_casm::metadata::{calc_metadata, Metadata, MetadataError
 use cairo_lang_utils::extract_matches;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use itertools::chain;
-use num_bigint::BigInt;
+use num_traits::ToPrimitive;
 use thiserror::Error;
 
 mod casm_run;
+pub mod short_string;
 
 #[derive(Debug, Error)]
 pub enum RunnerError {
@@ -44,8 +46,8 @@ pub enum RunnerError {
 
 /// The full result of a run.
 pub struct RunResult {
-    pub gas_counter: Option<BigInt>,
-    pub memory: Vec<Option<BigInt>>,
+    pub gas_counter: Option<Felt>,
+    pub memory: Vec<Option<Felt>>,
     pub value: RunResultValue,
 }
 
@@ -53,9 +55,9 @@ pub struct RunResult {
 #[derive(Debug, Eq, PartialEq)]
 pub enum RunResultValue {
     /// Run ended successfully, returning the memory of the non-implicit returns.
-    Success(Vec<BigInt>),
+    Success(Vec<Felt>),
     /// Run panicked, returning the carried error data.
-    Panic(Vec<BigInt>),
+    Panic(Vec<Felt>),
 }
 
 // Dummy cost of a builtin invocation.
@@ -90,7 +92,7 @@ impl SierraCasmRunner {
     pub fn run_function(
         &self,
         name_suffix: &str,
-        args: &[BigInt],
+        args: &[Felt],
         available_gas: Option<usize>,
     ) -> Result<RunResult, RunnerError> {
         let func = self.find_function(name_suffix)?;
@@ -110,7 +112,7 @@ impl SierraCasmRunner {
                     }
                     vm.insert_value(
                         &(builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)),
-                        BigInt::from(DUMMY_BUILTIN_GAS_COST),
+                        Felt::from(DUMMY_BUILTIN_GAS_COST),
                     )?;
                 }
                 // Put a pointer to the builtin cost segment at the end of the program (after the
@@ -151,8 +153,8 @@ impl SierraCasmRunner {
     fn handle_main_return_value(
         &self,
         ty: cairo_lang_sierra::ids::ConcreteTypeId,
-        values: Vec<BigInt>,
-        cells: &[Option<BigInt>],
+        values: Vec<Felt>,
+        cells: &[Option<Felt>],
     ) -> Result<RunResultValue, RunnerError> {
         let info = self.sierra_program_registry.get_type(&ty)?.info();
         let long_id = &info.long_id;
@@ -161,10 +163,10 @@ impl SierraCasmRunner {
                 && matches!(&long_id.generic_args[0], GenericArg::UserType(ut) if ut.debug_name.as_ref().unwrap().starts_with("core::PanicResult::"))
             {
                 // The function includes a panic wrapper.
-                if values[0] != BigInt::from(0) {
+                if values[0] != Felt::from(0) {
                     // The run resulted in a panic, returning the error data.
-                    let err_data_start = usize::try_from(&values[1]).unwrap();
-                    let err_data_end = usize::try_from(&values[2]).unwrap();
+                    let err_data_start = values[1].to_usize().unwrap();
+                    let err_data_end = values[2].to_usize().unwrap();
                     RunResultValue::Panic(
                         cells[err_data_start..err_data_end]
                             .iter()
@@ -192,13 +194,13 @@ impl SierraCasmRunner {
     fn get_results_data(
         &self,
         func: &Function,
-        cells: &[Option<BigInt>],
+        cells: &[Option<Felt>],
         mut ap: usize,
-    ) -> Result<Vec<(cairo_lang_sierra::ids::ConcreteTypeId, Vec<BigInt>)>, RunnerError> {
+    ) -> Result<Vec<(cairo_lang_sierra::ids::ConcreteTypeId, Vec<Felt>)>, RunnerError> {
         let mut results_data = vec![];
         for ty in func.signature.ret_types.iter().rev() {
             let size = self.sierra_program_registry.get_type(ty)?.info().size as usize;
-            let values: Vec<BigInt> =
+            let values: Vec<Felt> =
                 cells[(ap - size)..ap].iter().cloned().map(|cell| cell.unwrap()).collect();
             ap -= size;
             results_data.push((ty.clone(), values));
@@ -222,7 +224,7 @@ impl SierraCasmRunner {
     fn create_entry_code(
         &self,
         func: &Function,
-        args: &[BigInt],
+        args: &[Felt],
         initial_gas: usize,
     ) -> Result<(Vec<Instruction>, Vec<String>), RunnerError> {
         let mut arg_iter = args.iter();
@@ -279,7 +281,7 @@ impl SierraCasmRunner {
                 for _ in 0..arg_size {
                     if let Some(value) = arg_iter.next() {
                         casm_extend! {ctx,
-                            [ap + 0] = (value.clone()), ap++;
+                            [ap + 0] = (value.to_bigint()), ap++;
                         }
                     }
                 }
@@ -318,7 +320,7 @@ impl SierraCasmRunner {
         let Some(available_gas) = available_gas else { return Ok(0); };
         // TODO(lior): Handle the other token types.
         let required_gas =
-            self.metadata.gas_info.function_costs[&func.id][CostTokenType::Step] as usize;
+            self.metadata.gas_info.function_costs[func.id.clone()][CostTokenType::Step] as usize;
         available_gas.checked_sub(required_gas).ok_or(RunnerError::NotEnoughGasToCall)
     }
 
@@ -346,7 +348,10 @@ fn create_metadata(
     } else {
         Ok(Metadata {
             ap_change_info: calc_ap_changes(sierra_program, |_, _| 0)?,
-            gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
+            gas_info: GasInfo {
+                variable_values: Default::default(),
+                function_costs: Default::default(),
+            },
         })
     }
 }

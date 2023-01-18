@@ -5,10 +5,10 @@ mod test;
 use smol_str::SmolStr;
 
 use super::ast::{
-    self, FunctionDeclaration, FunctionDeclarationGreen, Item, ItemEnum, ItemExternFunction,
-    ItemExternFunctionPtr, ItemExternType, ItemFreeFunction, ItemFreeFunctionPtr, ItemImpl,
-    ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItemFunction, TraitItemFunctionPtr,
+    self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
+    Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
+    ItemImpl, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction, TraitItemFunctionPtr,
 };
 use super::db::SyntaxGroup;
 use super::Terminal;
@@ -93,7 +93,7 @@ impl NameGreen for FunctionDeclarationGreen {
     }
 }
 
-impl NameGreen for ItemFreeFunctionPtr {
+impl NameGreen for FunctionWithBodyPtr {
     fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         self.declaration_green(db).name_green(db)
     }
@@ -116,6 +116,17 @@ pub trait QueryAttrs {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
     fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
 }
+impl QueryAttrs for ItemConstant {
+    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
+    }
+    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        match self.attributes(db).elements(db).last() {
+            None => false,
+            Some(last_attr) => last_attr.attr(db).text(db) == attr,
+        }
+    }
+}
 impl QueryAttrs for ItemModule {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
@@ -127,7 +138,7 @@ impl QueryAttrs for ItemModule {
         }
     }
 }
-impl QueryAttrs for ItemFreeFunction {
+impl QueryAttrs for FunctionWithBody {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }
@@ -241,6 +252,7 @@ impl QueryAttrs for TraitItemFunction {
 impl QueryAttrs for Item {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         match self {
+            ast::Item::Constant(item) => item.has_attr(db, attr),
             ast::Item::Module(item) => item.has_attr(db, attr),
             ast::Item::FreeFunction(item) => item.has_attr(db, attr),
             ast::Item::Use(item) => item.has_attr(db, attr),
@@ -256,6 +268,7 @@ impl QueryAttrs for Item {
 
     fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         match self {
+            ast::Item::Constant(item) => item.last_attr(db, attr),
             ast::Item::Module(item) => item.last_attr(db, attr),
             ast::Item::FreeFunction(item) => item.last_attr(db, attr),
             ast::Item::Use(item) => item.last_attr(db, attr),

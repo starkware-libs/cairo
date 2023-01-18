@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    ExternFunctionId, GenericFunctionId, GenericParamId, LanguageElementId,
+    ExternFunctionId, FunctionSignatureId, GenericParamId, LanguageElementId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::extract_matches;
 
+use super::attribute::ast_attributes_to_semantic;
+use super::functions::{FunctionDeclarationData, GenericFunctionId};
 use super::generics::semantic_generic_params;
 use crate::corelib::get_core_generic_function_id;
 use crate::db::SemanticGroup;
@@ -20,17 +21,8 @@ use crate::{semantic, Mutability, Parameter, SemanticDiagnostic, TypeId};
 #[path = "extern_function_test.rs"]
 mod test;
 
-// Declaration.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ExternFunctionDeclarationData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    signature: semantic::Signature,
-    generic_params: Vec<GenericParamId>,
-    resolved_lookback: Arc<ResolvedLookback>,
-}
+// --- Selectors ---
 
-// Selectors.
 // TODO(spapini): Remove declaration from the names.
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_diagnostics].
 pub fn extern_function_declaration_diagnostics(
@@ -41,8 +33,8 @@ pub fn extern_function_declaration_diagnostics(
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
-/// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_signature].
-pub fn extern_function_declaration_signature(
+/// Query implementation of [crate::db::SemanticGroup::extern_function_signature].
+pub fn extern_function_signature(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
 ) -> Maybe<semantic::Signature> {
@@ -86,12 +78,13 @@ pub fn extern_function_declaration_resolved_lookback(
     Ok(db.priv_extern_function_declaration_data(extern_function_id)?.resolved_lookback)
 }
 
-// Computation.
+// --- Computation ---
+
 /// Query implementation of [crate::db::SemanticGroup::priv_extern_function_declaration_data].
 pub fn priv_extern_function_declaration_data(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Maybe<ExternFunctionDeclarationData> {
+) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
     let module_file_id = extern_function_id.module_file(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
@@ -112,7 +105,7 @@ pub fn priv_extern_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        GenericFunctionId::Extern(extern_function_id),
+        FunctionSignatureId::Extern(extern_function_id),
         &mut environment,
     );
 
@@ -126,11 +119,12 @@ pub fn priv_extern_function_declaration_data(
         }
     }
 
-    let resolved_lookback = Arc::new(resolver.lookback);
-    Ok(ExternFunctionDeclarationData {
+    Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
+        environment,
         generic_params,
-        resolved_lookback,
+        attributes: ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db)),
+        resolved_lookback: Arc::new(resolver.lookback),
     })
 }

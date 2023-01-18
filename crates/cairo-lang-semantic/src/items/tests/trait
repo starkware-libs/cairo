@@ -51,11 +51,6 @@ error: Type not found.
     fn param_test(ref a: u128) -> bad_type nopanic;
                                   ^******^
 
-error: impl body is not supported yet.
- --> lib.cairo:8:33
-impl MyImpl2<T> of MyTrait::<T> {
-                                ^
-
 error: `mod` is not allowed inside impl.
  --> lib.cairo:9:5
     mod a;
@@ -125,6 +120,11 @@ error: Return type of impl function `MyImpl2::param_test` is incompatible with `
  --> lib.cairo:25:49
     fn param_test(a: felt, b: felt, c: felt) -> u128 {
                                                 ^**^
+
+error: Unexpected return type. Expected: "core::integer::u128", found: "()".
+ --> lib.cairo:25:54
+    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+                                                     ^
 
 error: Parameter of impl function MyImpl2::no_ret_ty is incompatible with MyTrait::no_ret_ty. It should not be a reference.
  --> lib.cairo:29:18
@@ -293,15 +293,6 @@ impl MyImpl2<T> of MyTrait::<T> {
 }
 
 //! > expected_diagnostics
-error: impl body is not supported yet.
- --> lib.cairo:4:32
-impl MyImpl<T> of MyTrait::<T> {
-                               ^
-
-error: impl body is not supported yet.
- --> lib.cairo:7:33
-impl MyImpl2<T> of MyTrait::<T> {
-                                ^
 
 //! > ==========================================================================
 
@@ -326,3 +317,61 @@ error: Trait function `MyTrait::foo` has a body. Trait functions with body are n
  --> lib.cairo:2:13
    fn foo() {}
             ^^
+
+//! > ==========================================================================
+
+//! > Test no impls of trait.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   MyTrait::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+   fn foo();
+}
+
+//! > expected_diagnostics
+error: Function `foo` of trait `test::MyTrait` has has no implementation in the context.
+ --> lib.cairo:5:4
+   MyTrait::foo()
+   ^**********^
+
+//! > ==========================================================================
+
+//! > Test multiple impls of trait.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   MyTrait::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+   fn foo();
+}
+impl MyImpl1 of MyTrait {
+   fn foo() {}
+}
+impl MyImpl2 of MyTrait {
+   fn foo() {}
+}
+
+//! > expected_diagnostics
+error: Function `foo` of trait `test::MyTrait` has multiple implementations, in: test::MyImpl1, test::MyImpl2
+ --> lib.cairo:11:4
+   MyTrait::foo()
+   ^**********^

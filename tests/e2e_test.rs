@@ -16,9 +16,11 @@ cairo_lang_test_utils::test_file_test!(
         box_: "box",
         builtin_costs: "builtin_costs",
         dict_felt_to: "dict_felt_to",
+        ec: "ec",
         get_gas_all: "get_gas_all",
         nullable: "nullable",
         u128: "u128",
+        u8: "u8",
         bool: "bool",
     },
     run_small_e2e_test
@@ -29,6 +31,7 @@ cairo_lang_test_utils::test_file_test!(
     "e2e_test_data/libfuncs/starknet",
     {
         storage: "storage",
+        interoperability: "interoperability",
     },
     run_small_e2e_test
 );

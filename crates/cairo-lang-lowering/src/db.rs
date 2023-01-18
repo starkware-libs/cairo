@@ -1,16 +1,20 @@
 use std::collections::HashSet;
+use std::ops::Deref;
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
+use semantic::items::functions::ConcreteFunctionWithBodyId;
 
 use crate::borrow_check::borrow_check;
+use crate::concretize::concretize_lowered;
 use crate::diagnostic::LoweringDiagnostic;
+use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
 use crate::panic::lower_panics;
 use crate::{FlatLowered, StructuredLowered};
@@ -18,15 +22,33 @@ use crate::{FlatLowered, StructuredLowered};
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
 pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
-    /// Computed the lowered representation of a free function.
-    fn free_function_lowered_structured(
+    /// Computes the lowered representation of a function with a body.
+    fn priv_function_with_body_lowered_structured(
         &self,
-        free_function: FreeFunctionId,
+        function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<StructuredLowered>>;
 
-    /// Computed the lowered representation of a free function.
-    fn free_function_lowered_flat(&self, free_function: FreeFunctionId) -> Maybe<Arc<FlatLowered>>;
+    // Reports inlining diagnostics.
+    #[salsa::invoke(crate::inline::priv_inline_data)]
+    fn priv_inline_data(&self, function_id: FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
 
+    /// Computes the lowered representation of a function with a body.
+    fn priv_function_with_body_lowered_flat(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the final lowered representation (after all the internal transformations).
+    fn concrete_function_with_body_lowered(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Aggregates function level semantic diagnostics.
+    fn function_with_body_lowering_diagnostics(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<Arc<Diagnostics<LoweringDiagnostic>>>;
     /// Aggregates module level semantic diagnostics.
     fn module_lowering_diagnostics(
         &self,
@@ -41,7 +63,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the representative of the function's strongly connected component. The
     /// representative is consistently chosen for all the functions in the same SCC.
     #[salsa::invoke(crate::lower::implicits::function_scc_representative)]
-    fn function_scc_representative(&self, function: FreeFunctionId) -> SCCRepresentative;
+    fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
 
     /// Returns the explicit implicits required by all the functions in the SCC of this function.
     /// These are all the implicit parameters that are explicitly declared in the functions of
@@ -61,29 +83,35 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::lower::implicits::function_all_implicits)]
     fn function_all_implicits(&self, function: semantic::FunctionId) -> Maybe<Vec<TypeId>>;
 
-    /// Returns all the implicit parameters that the free function requires (according to both its
-    /// signature and the functions it calls).
-    #[salsa::invoke(crate::lower::implicits::free_function_all_implicits)]
-    fn free_function_all_implicits(&self, function: FreeFunctionId) -> Maybe<HashSet<TypeId>>;
+    /// Returns all the implicit parameters that a function with a body requires (according to both
+    /// its signature and the functions it calls).
+    #[salsa::invoke(crate::lower::implicits::function_with_body_all_implicits)]
+    fn function_with_body_all_implicits(
+        &self,
+        function: FunctionWithBodyId,
+    ) -> Maybe<HashSet<TypeId>>;
 
-    /// Returns all the implicit parameters that the free function requires (according to both its
-    /// signature and the functions it calls). The items in the returned vector are unique and the
-    /// order is consistent, but not necessarily related to the order of the explicit implicits in
-    /// the signature of the function.
-    #[salsa::invoke(crate::lower::implicits::free_function_all_implicits_vec)]
-    fn free_function_all_implicits_vec(&self, function: FreeFunctionId) -> Maybe<Vec<TypeId>>;
+    /// Returns all the implicit parameters that a function with a body requires (according to both
+    /// its signature and the functions it calls). The items in the returned vector are unique
+    /// and the order is consistent, but not necessarily related to the order of the explicit
+    /// implicits in the signature of the function.
+    #[salsa::invoke(crate::lower::implicits::function_with_body_all_implicits_vec)]
+    fn function_with_body_all_implicits_vec(
+        &self,
+        function: FunctionWithBodyId,
+    ) -> Maybe<Vec<TypeId>>;
 
     /// Returns whether the function may panic.
     #[salsa::invoke(crate::lower::implicits::function_may_panic)]
     fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
 
     /// Returns whether the function may panic.
-    #[salsa::invoke(crate::lower::implicits::free_function_may_panic)]
-    fn free_function_may_panic(&self, free_function: FreeFunctionId) -> Maybe<bool>;
+    #[salsa::invoke(crate::lower::implicits::function_with_body_may_panic)]
+    fn function_with_body_may_panic(&self, function: FunctionWithBodyId) -> Maybe<bool>;
 
     /// Returns all the functions in the same strongly connected component as the given function.
-    #[salsa::invoke(crate::lower::implicits::function_scc)]
-    fn function_scc(&self, function_id: FreeFunctionId) -> Vec<FreeFunctionId>;
+    #[salsa::invoke(crate::lower::implicits::function_with_body_scc)]
+    fn function_with_body_scc(&self, function_id: FunctionWithBodyId) -> Vec<FunctionWithBodyId>;
 
     /// An array that sets the precedence of implicit types.
     #[salsa::input]
@@ -96,27 +124,63 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct SCCRepresentative(pub FreeFunctionId);
+pub struct SCCRepresentative(pub FunctionWithBodyId);
 
-fn free_function_lowered_structured(
+fn priv_function_with_body_lowered_structured(
     db: &dyn LoweringGroup,
-    free_function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<StructuredLowered>> {
-    Ok(Arc::new(lower(db.upcast(), free_function_id)?))
+    Ok(Arc::new(lower(db.upcast(), function_id)?))
 }
 
-fn free_function_lowered_flat(
+fn priv_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
-    free_function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let structured = db.free_function_lowered_structured(free_function_id)?;
-    let mut lowered = lower_panics(db, free_function_id, &structured)?;
-    borrow_check(
-        free_function_id.module_file_id(db.upcast()),
-        free_function_id.stable_ptr(db.upcast()).untyped(),
-        &mut lowered,
-    );
+    let structured = db.priv_function_with_body_lowered_structured(function_id)?;
+    let mut lowered = lower_panics(db, function_id, &structured)?;
+    borrow_check(function_id.module_file_id(db.upcast()), &mut lowered);
     Ok(Arc::new(lowered))
+}
+
+fn concrete_function_with_body_lowered(
+    db: &dyn LoweringGroup,
+    function: ConcreteFunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    let semantic_db = db.upcast();
+    let mut lowered = (*db
+        .priv_function_with_body_lowered_flat(function.function_with_body_id(semantic_db))?)
+    .clone();
+    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?);
+    // TODO(spapini): passing function.function_with_body_id might be weird here.
+    // It's not really needed for inlining, so try to remove.
+    apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
+    Ok(Arc::new(lowered))
+}
+
+fn function_with_body_lowering_diagnostics(
+    db: &dyn LoweringGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<Arc<Diagnostics<LoweringDiagnostic>>> {
+    let mut diagnostics = DiagnosticsBuilder::default();
+    diagnostics.extend(
+        db.priv_function_with_body_lowered_structured(function_id)
+            .map(|lowered| lowered.diagnostics.clone())
+            .unwrap_or_default(),
+    );
+
+    diagnostics.extend(
+        db.priv_inline_data(function_id)
+            .map(|inline_data| inline_data.diagnostics.clone())
+            .unwrap_or_default(),
+    );
+
+    diagnostics.extend(
+        db.priv_function_with_body_lowered_flat(function_id)
+            .map(|lowered| lowered.diagnostics.clone())
+            .unwrap_or_default(),
+    );
+    Ok(Arc::new(diagnostics.build()))
 }
 
 fn module_lowering_diagnostics(
@@ -127,17 +191,12 @@ fn module_lowering_diagnostics(
     for item in db.module_items(module_id)?.iter() {
         match item {
             ModuleItemId::FreeFunction(free_function) => {
+                let function_id = FunctionWithBodyId::Free(*free_function);
                 diagnostics.extend(
-                    db.free_function_lowered_structured(*free_function)
-                        .map(|lowered| lowered.diagnostics.clone())
-                        .unwrap_or_default(),
-                );
-                diagnostics.extend(
-                    db.free_function_lowered_flat(*free_function)
-                        .map(|lowered| lowered.diagnostics.clone())
-                        .unwrap_or_default(),
+                    db.function_with_body_lowering_diagnostics(function_id)?.deref().clone(),
                 );
             }
+            ModuleItemId::Constant(_) => {}
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::Use(_) => {}
             ModuleItemId::Struct(_) => {}

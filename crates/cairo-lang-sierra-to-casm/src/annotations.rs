@@ -1,10 +1,9 @@
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter;
 
 use cairo_lang_casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use cairo_lang_sierra::edit_state::{put_results, take_args};
-use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
+use cairo_lang_sierra::ids::{FunctionId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
 use itertools::zip_eq;
 use thiserror::Error;
@@ -29,8 +28,8 @@ pub enum AnnotationError {
     InconsistentReferencesAnnotation(StatementIdx),
     #[error("#{statement_idx}: {error}")]
     InconsistentEnvironments { statement_idx: StatementIdx, error: EnvironmentError },
-    #[error("Inconsistent return type annotation.")]
-    InconsistentReturnAnnotation(StatementIdx),
+    #[error("#{statement_idx} Belongs to two different functions.")]
+    InconsistentFunctionId { statement_idx: StatementIdx },
     #[error("InvalidStatementIdx")]
     InvalidStatementIdx,
     #[error("MissingAnnotationsForStatement")]
@@ -71,46 +70,24 @@ pub enum AnnotationError {
     InvalidApChangeAnnotation { statement_idx: StatementIdx, expected: ApChange, actual: ApChange },
 }
 
-/// An annotation that specifies the expected return properties at each statement.
-/// Used to propagate the return properties to return statements.
-/// Implemented as an index into ProgramAnnotations.return_properties.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ReturnAnnotation(usize);
-
 /// Annotation that represent the state at each program statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StatementAnnotations {
     pub refs: StatementRefs,
-    pub return_annotation: ReturnAnnotation,
+    /// The function id that the statement belongs to.
+    pub function_id: FunctionId,
     pub environment: Environment,
-}
-
-/// A set of properties that need to be validated in return statement.
-/// Each statement in the program is annotated with said properties in order to
-/// propagate them to return statements.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ReturnProperties {
-    /// The expected return types at a return statement.
-    return_types: Vec<ConcreteTypeId>,
-
-    /// The expected ap change at a return statement.
-    ap_change: ApChange,
 }
 
 /// Annotations of the program statements.
 /// See StatementAnnotations.
 pub struct ProgramAnnotations {
-    /// A vector of return properties.
-    /// ReturnAnnotation is an index in this vector.
-    return_properties: Vec<ReturnProperties>,
-
     /// Optional per statement annotation.
     per_statement_annotations: Vec<Option<StatementAnnotations>>,
 }
 impl ProgramAnnotations {
     fn new(n_statements: usize) -> Self {
         ProgramAnnotations {
-            return_properties: vec![],
             per_statement_annotations: iter::repeat_with(|| None).take(n_statements).collect(),
         }
     }
@@ -125,38 +102,17 @@ impl ProgramAnnotations {
         type_sizes: &TypeSizeMap,
     ) -> Result<Self, AnnotationError> {
         let mut annotations = ProgramAnnotations::new(n_statements);
-        let mut return_annotations: HashMap<ReturnProperties, ReturnAnnotation> = HashMap::new();
         for func in functions {
-            let ap_change = match metadata.ap_change_info.function_ap_change.get(&func.id) {
-                Some(x) => ApChange::Known(*x),
-                _ => ApChange::Unknown,
-            };
-
-            let return_properties =
-                ReturnProperties { return_types: (func.signature.ret_types.clone()), ap_change };
-
-            let return_annotation = match return_annotations.entry(return_properties) {
-                Entry::Occupied(entry) => entry.get().clone(),
-                Entry::Vacant(entry) => {
-                    let new_type_annotations =
-                        ReturnAnnotation(annotations.return_properties.len());
-
-                    annotations.return_properties.push(entry.key().clone());
-                    entry.insert(new_type_annotations.clone());
-                    new_type_annotations
-                }
-            };
-
             annotations.set_or_assert(
                 func.entry_point,
                 StatementAnnotations {
                     refs: build_function_arguments_refs(func, type_sizes).map_err(|error| {
                         AnnotationError::ReferencesError { statement_idx: func.entry_point, error }
                     })?,
-                    return_annotation,
+                    function_id: func.id.clone(),
                     environment: if gas_usage_check {
                         Environment::new(GasWallet::Value(
-                            metadata.gas_info.function_costs[&func.id].clone(),
+                            metadata.gas_info.function_costs[func.id.clone()].clone(),
                         ))
                     } else {
                         Environment::new(GasWallet::Disabled)
@@ -183,8 +139,10 @@ impl ProgramAnnotations {
                 if expected_annotations.refs != annotations.refs {
                     return Err(AnnotationError::InconsistentReferencesAnnotation(statement_id));
                 }
-                if expected_annotations.return_annotation != annotations.return_annotation {
-                    return Err(AnnotationError::InconsistentReturnAnnotation(statement_id));
+                if expected_annotations.function_id != annotations.function_id {
+                    return Err(AnnotationError::InconsistentFunctionId {
+                        statement_idx: statement_id,
+                    });
                 }
 
                 validate_environment_equality(
@@ -263,7 +221,7 @@ impl ProgramAnnotations {
                         destination_statement_idx,
                         var_id: error.var_id(),
                     })?,
-                    return_annotation: annotations.return_annotation.clone(),
+                    function_id: annotations.function_id.clone(),
                     environment: Environment {
                         ap_tracking: update_ap_tracking(
                             annotations.environment.ap_tracking,
@@ -293,22 +251,30 @@ impl ProgramAnnotations {
         &self,
         statement_idx: StatementIdx,
         annotations: &StatementAnnotations,
+        functions: &[Function],
+        metadata: &Metadata,
         return_refs: &[ReferenceValue],
     ) -> Result<(), AnnotationError> {
-        let return_properties = &self.return_properties[annotations.return_annotation.0];
+        // TODO(ilya): Don't use linear search.
+        let func = &functions.iter().find(|func| func.id == annotations.function_id).unwrap();
 
-        if return_properties.ap_change != ApChange::Unknown
-            && return_properties.ap_change != annotations.environment.ap_tracking
+        let expected_ap_change = match metadata.ap_change_info.function_ap_change.get(&func.id) {
+            Some(x) => ApChange::Known(*x),
+            _ => ApChange::Unknown,
+        };
+
+        if expected_ap_change != ApChange::Unknown
+            && expected_ap_change != annotations.environment.ap_tracking
         {
             return Err(AnnotationError::InvalidApChangeAnnotation {
                 statement_idx,
-                expected: return_properties.ap_change,
+                expected: expected_ap_change,
                 actual: annotations.environment.ap_tracking,
             });
         }
 
         // Checks that the list of return reference contains has the expected types.
-        check_types_match(return_refs, &return_properties.return_types)
+        check_types_match(return_refs, &func.signature.ret_types)
             .map_err(|error| AnnotationError::ReferencesError { statement_idx, error })?;
         Ok(())
     }
@@ -318,9 +284,17 @@ impl ProgramAnnotations {
         &self,
         statement_idx: StatementIdx,
         annotations: &StatementAnnotations,
+        functions: &[Function],
+        metadata: &Metadata,
         return_refs: &[ReferenceValue],
     ) -> Result<(), AnnotationError> {
-        self.validate_return_properties(statement_idx, annotations, return_refs)?;
+        self.validate_return_properties(
+            statement_idx,
+            annotations,
+            functions,
+            metadata,
+            return_refs,
+        )?;
         validate_final_environment(&annotations.environment)
             .map_err(|error| AnnotationError::InconsistentEnvironments { statement_idx, error })
     }

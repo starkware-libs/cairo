@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::ops::Deref;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use cairo_lang_syntax::node::ast;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{define_short_id, OptionFrom};
 use itertools::Itertools;
 
@@ -16,6 +17,23 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::items::imp::{find_impls_at_context, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{semantic, GenericArgumentId};
+
+/// A substitution of generic arguments in generic parameters. Used for concretization.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GenericSubstitution(pub OrderedHashMap<GenericParamId, GenericArgumentId>);
+impl Deref for GenericSubstitution {
+    type Target = OrderedHashMap<GenericParamId, GenericArgumentId>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+#[allow(clippy::derive_hash_xor_eq)]
+impl std::hash::Hash for GenericSubstitution {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.iter().collect_vec().hash(state);
+    }
+}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum TypeLongId {
@@ -267,8 +285,8 @@ pub fn generic_type_generic_params(
 
 pub fn substitute_generics(
     db: &dyn SemanticGroup,
-    substitution: &HashMap<GenericParamId, GenericArgumentId>,
-    ty: crate::TypeId,
+    substitution: &GenericSubstitution,
+    ty: TypeId,
 ) -> TypeId {
     match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete) => {

@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId};
+use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{get_enum_concrete_variant, get_panic_ty};
@@ -8,29 +8,30 @@ use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::Arena;
 use itertools::chain;
+use semantic::items::functions::GenericFunctionId;
 
 use crate::blocks::{Blocks, FlatBlocks};
 use crate::db::LoweringGroup;
-use crate::lower::context::{LoweringContext, LoweringContextBuilder};
+use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, RefIndex, Statement, StatementCall,
     StatementEnumConstruct, StatementMatchEnum, StructuredBlock, StructuredBlockEnd,
-    StructuredLowered, StructuredStatement, Variable, VariableId,
+    StructuredLowered, StructuredStatement, VarRemapping, Variable, VariableId,
 };
 
 /// Lowering phase that converts BlockEnd::Panic into BlockEnd::Return, and wraps necessary types
 /// with PanicResult<>.
 pub fn lower_panics(
     db: &dyn LoweringGroup,
-    free_function_id: FreeFunctionId,
+    function_id: FunctionWithBodyId,
     lowered: &StructuredLowered,
 ) -> Maybe<FlatLowered> {
-    let lowering_info = LoweringContextBuilder::new(db, free_function_id)?;
+    let lowering_info = LoweringContextBuilder::new(db, function_id)?;
     let mut ctx = lowering_info.ctx()?;
     ctx.variables = lowered.variables.clone();
 
     // Skip this phase for non panicable functions.
-    if !db.free_function_may_panic(free_function_id)? {
+    if !db.function_with_body_may_panic(function_id)? {
         return Ok(FlatLowered {
             diagnostics: Default::default(),
             root: lowered.root,
@@ -118,8 +119,8 @@ impl<'a> PanicBlockLoweringContext<'a> {
         &mut self.ctx.ctx.variables
     }
 
-    fn new_var(&mut self, ty: semantic::TypeId) -> VariableId {
-        self.ctx.ctx.new_var(ty)
+    fn new_var(&mut self, req: VarRequest) -> VariableId {
+        self.ctx.ctx.new_var(req)
     }
 
     fn update_refs(&mut self, ref_changes: &OrderedHashMap<RefIndex, VariableId>) {
@@ -133,8 +134,17 @@ impl<'a> PanicBlockLoweringContext<'a> {
             crate::Statement::Call(call) => {
                 let concerete_function = self.db().lookup_intern_function(call.function).function;
                 match concerete_function.generic_function {
-                    GenericFunctionId::Free(callee)
-                        if self.db().free_function_may_panic(callee)? =>
+                    GenericFunctionId::Free(free_callee)
+                        if self.db().function_with_body_may_panic(FunctionWithBodyId::Free(
+                            free_callee,
+                        ))? =>
+                    {
+                        self.handle_stmt_call(call)
+                    }
+                    GenericFunctionId::Impl(impl_callee)
+                        if self.db().function_with_body_may_panic(FunctionWithBodyId::Impl(
+                            impl_callee.function,
+                        ))? =>
                     {
                         self.handle_stmt_call(call)
                     }
@@ -155,13 +165,15 @@ impl<'a> PanicBlockLoweringContext<'a> {
         let mut outputs = call.outputs.clone();
         let original_return_var = outputs.pop().unwrap();
         let ty = self.variables_mut()[original_return_var].ty;
+        let location = self.ctx.ctx.variables[original_return_var].location;
 
         // Allocate 2 new variables.
         // panic_result_var - for the new return variable, with is actually of type PanicResult<ty>.
-        let panic_result_var = self.new_var(get_panic_ty(self.db().upcast(), ty));
+        let panic_result_var =
+            self.new_var(VarRequest { ty: get_panic_ty(self.db().upcast(), ty), location });
         outputs.push(panic_result_var);
         // inner_ok_value - for the Ok() match arm input.
-        let inner_ok_value = self.new_var(ty);
+        let inner_ok_value = self.new_var(VarRequest { ty, location });
 
         // Emit the new statement.
         self.statements.push(Statement::Call(StatementCall {
@@ -183,11 +195,13 @@ impl<'a> PanicBlockLoweringContext<'a> {
             initial_refs: self.current_refs.clone(),
             inputs: vec![inner_ok_value],
             statements: vec![],
-            end: StructuredBlockEnd::Callsite(vec![inner_ok_value]),
+            end: StructuredBlockEnd::Callsite(VarRemapping {
+                remapping: [(original_return_var, inner_ok_value)].into_iter().collect(),
+            }),
         });
 
         // Prepare Err() match arm block.
-        let data_var = self.new_var(self.ctx.panic_data_ty);
+        let data_var = self.new_var(VarRequest { ty: self.ctx.panic_data_ty, location });
         let block_err = self.ctx.enqueue_block(StructuredBlock {
             initial_refs: self.current_refs.clone(),
             inputs: vec![data_var],
@@ -197,10 +211,9 @@ impl<'a> PanicBlockLoweringContext<'a> {
 
         // Emit the match statement.
         self.statements.push(Statement::MatchEnum(StatementMatchEnum {
-            concrete_enum: call_ok_variant.concrete_enum_id,
+            concrete_enum_id: call_ok_variant.concrete_enum_id,
             input: panic_result_var,
             arms: vec![(call_ok_variant, block_ok), (call_err_variant, block_err)],
-            outputs: vec![original_return_var],
         }));
     }
 
@@ -213,9 +226,11 @@ impl<'a> PanicBlockLoweringContext<'a> {
             StructuredBlockEnd::Callsite(rets) => FlatBlockEnd::Callsite(rets),
             StructuredBlockEnd::Panic { refs, data } => {
                 // Wrap with PanicResult::Err.
-                let output = self.new_var(self.db().intern_type(semantic::TypeLongId::Concrete(
+                let ty = self.db().intern_type(semantic::TypeLongId::Concrete(
                     semantic::ConcreteTypeId::Enum(self.ctx.func_err_variant.concrete_enum_id),
-                )));
+                ));
+                let location = self.ctx.ctx.variables[data].location;
+                let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
                     variant: self.ctx.func_err_variant.clone(),
                     input: data,
@@ -230,11 +245,13 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     "Panicable functions should be non-extern and thus have only 1 expr variables"
                 );
                 let inner_value_var = returns.into_iter().next().unwrap();
+                let location = self.ctx.ctx.variables[inner_value_var].location;
 
                 // Wrap with PanicResult::Ok.
-                let output = self.new_var(self.db().intern_type(semantic::TypeLongId::Concrete(
+                let ty = self.db().intern_type(semantic::TypeLongId::Concrete(
                     semantic::ConcreteTypeId::Enum(self.ctx.func_ok_variant.concrete_enum_id),
-                )));
+                ));
+                let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
                     variant: self.ctx.func_ok_variant.clone(),
                     input: inner_value_var,

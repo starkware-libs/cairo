@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    GenericFunctionId, GenericParamId, LanguageElementId, TraitFunctionId, TraitFunctionLongId,
+    FunctionSignatureId, GenericParamId, LanguageElementId, TraitFunctionId, TraitFunctionLongId,
     TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
@@ -30,6 +30,49 @@ pub struct ConcreteTraitLongId {
     pub generic_args: Vec<GenericArgumentId>,
 }
 define_short_id!(ConcreteTraitId, ConcreteTraitLongId, SemanticGroup, lookup_intern_concrete_trait);
+impl ConcreteTraitId {
+    pub fn trait_id(&self, db: &dyn SemanticGroup) -> TraitId {
+        db.lookup_intern_concrete_trait(*self).trait_id
+    }
+}
+
+/// The ID of a generic function in a concrete trait.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ConcreteTraitFunctionLongId {
+    // Note the members are private to prevent direct call to the constructor.
+    trait_id: ConcreteTraitId,
+    function_id: TraitFunctionId,
+}
+impl ConcreteTraitFunctionLongId {
+    pub fn new(
+        db: &dyn SemanticGroup,
+        concrete_trait_id: ConcreteTraitId,
+        function_id: TraitFunctionId,
+    ) -> Self {
+        assert_eq!(
+            concrete_trait_id.trait_id(db),
+            function_id.trait_id(db.upcast()),
+            "Concrete trait a trait function must belong to the same generic trait."
+        );
+        Self { trait_id: concrete_trait_id, function_id }
+    }
+}
+define_short_id!(
+    ConcreteTraitFunctionId,
+    ConcreteTraitFunctionLongId,
+    SemanticGroup,
+    lookup_intern_concrete_trait_function
+);
+impl ConcreteTraitFunctionId {
+    pub fn function_id(&self, db: &dyn SemanticGroup) -> TraitFunctionId {
+        db.lookup_intern_concrete_trait_function(*self).function_id
+    }
+
+    pub fn trait_id(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+        db.lookup_intern_concrete_trait_function(*self).trait_id
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -86,6 +129,15 @@ pub fn trait_functions(
             (function_long_id.name(db.upcast()), *function_id)
         })
         .collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_function_by_name].
+pub fn trait_function_by_name(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+    name: SmolStr,
+) -> Maybe<Option<TraitFunctionId>> {
+    Ok(db.trait_functions(trait_id)?.get(&name).copied())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_data].
@@ -154,6 +206,13 @@ pub fn trait_function_signature(
 ) -> Maybe<semantic::Signature> {
     Ok(db.priv_trait_function_data(trait_function_id)?.signature)
 }
+/// Query implementation of [crate::db::SemanticGroup::trait_function_attributes].
+pub fn trait_function_attributes(
+    db: &dyn SemanticGroup,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_trait_function_data(trait_function_id)?.attributes)
+}
 /// Query implementation of [crate::db::SemanticGroup::trait_function_generic_params].
 pub fn trait_function_generic_params(
     db: &dyn SemanticGroup,
@@ -161,7 +220,6 @@ pub fn trait_function_generic_params(
 ) -> Maybe<Vec<GenericParamId>> {
     Ok(db.priv_trait_function_data(trait_function_id)?.generic_params)
 }
-
 /// Query implementation of [crate::db::SemanticGroup::trait_function_resolved_lookback].
 pub fn trait_function_resolved_lookback(
     db: &dyn SemanticGroup,
@@ -197,7 +255,7 @@ pub fn priv_trait_function_data(
         db,
         &mut resolver,
         &signature_syntax,
-        GenericFunctionId::TraitFunction(trait_function_id),
+        FunctionSignatureId::Trait(trait_function_id),
         &mut environment,
     );
 

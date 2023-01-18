@@ -69,24 +69,17 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-blk0:
-Inputs:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Return(v1)
-
-blk1 (root):
-Inputs: v0: core::felt, v1: core::felt
-Statements:
-  () <- blk0()
-End:
-  Unreachable
 
 //! > last_use
 ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(1)): v0
+BeginningOfBlock(BlockId(0)): v0
 
 //! > ==========================================================================
 
