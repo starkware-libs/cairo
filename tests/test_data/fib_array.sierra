@@ -72,7 +72,7 @@ libfunc enum_init<core::PanicResult::<core::integer::u128>, 1> = enum_init<core:
 libfunc store_temp<core::PanicResult::<core::integer::u128>> = store_temp<core::PanicResult::<core::integer::u128>>;
 libfunc rename<core::PanicResult::<core::integer::u128>> = rename<core::PanicResult::<core::integer::u128>>;
 libfunc enum_init<core::PanicResult::<core::integer::u128>, 0> = enum_init<core::PanicResult::<core::integer::u128>, 0>;
-libfunc u128_overflow_sub = u128_overflow_sub;
+libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc enum_init<core::option::Option::<core::integer::u128>, 0> = enum_init<core::option::Option::<core::integer::u128>, 0>;
 libfunc store_temp<core::option::Option::<core::integer::u128>> = store_temp<core::option::Option::<core::integer::u128>>;
 libfunc rename<core::option::Option::<core::integer::u128>> = rename<core::option::Option::<core::integer::u128>>;
@@ -323,7 +323,7 @@ store_temp<RangeCheck>([3]) -> ([18]);
 store_temp<core::PanicResult::<core::integer::u128>>([17]) -> ([17]);
 rename<core::PanicResult::<core::integer::u128>>([17]) -> ([19]);
 return([18], [19]);
-u128_overflow_sub([0], [1], [2]) { fallthrough([3], [4]) 253([5], [6]) };
+u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 253([5], [6]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::integer::u128>, 0>([4]) -> ([7]);
 store_temp<RangeCheck>([3]) -> ([3]);

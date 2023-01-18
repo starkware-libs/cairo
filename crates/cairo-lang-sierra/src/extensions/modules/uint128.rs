@@ -64,9 +64,9 @@ impl GenericLibfunc for Uint128OperationLibfunc {
     type Concrete = Uint128OperationConcreteLibfunc;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        const OVERFLOWING_ADD: u64 = id_from_string("u128_overflow_add");
-        const OVERFLOWING_SUB: u64 = id_from_string("u128_overflow_sub");
-        const OVERFLOWING_MUL: u64 = id_from_string("u128_overflow_mul");
+        const OVERFLOWING_ADD: u64 = id_from_string("u128_overflowing_add");
+        const OVERFLOWING_SUB: u64 = id_from_string("u128_overflowing_sub");
+        const OVERFLOWING_MUL: u64 = id_from_string("u128_overflowing_mul");
         const DIVMOD: u64 = id_from_string("u128_safe_divmod");
         const WIDE_MUL: u64 = id_from_string("u128_wide_mul");
         match id.id {

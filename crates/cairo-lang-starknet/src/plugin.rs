@@ -618,13 +618,16 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
     Some(format!(
         "
     mod $storage_var_name$ {{
-        fn address() -> starknet::StorageAddress {{
-            starknet::storage_address_const::<{address}>()
+        fn address() -> starknet::StorageBaseAddress {{
+            starknet::storage_base_address_const::<{address}>()
         }}
         fn read() -> $type_name$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(address_domain, address()) {{
+            match starknet::storage_read_syscall(
+                address_domain,
+                starknet::storage_address_from_base(address()),
+            ) {{
                 Result::Ok(value) => {convert_to},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
@@ -636,7 +639,11 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
         fn write(value: $type_name$) {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(address_domain, address(), {convert_from}) {{
+            match starknet::storage_write_syscall(
+                address_domain,
+                starknet::storage_address_from_base(address()),
+                {convert_from},
+            ) {{
                 Result::Ok(()) => {{}},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
@@ -665,13 +672,16 @@ fn handle_mapping_storage_var(
     Some(format!(
         "
     mod $storage_var_name$ {{
-        fn address(key: $key_type$) -> starknet::StorageAddress {{
-            starknet::storage_address_from_felt(pedersen({address}, {key_convert_to}))
+        fn address(key: $key_type$) -> starknet::StorageBaseAddress {{
+            starknet::storage_base_address_from_felt(pedersen({address}, {key_convert_to}))
         }}
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(address_domain, address(key)) {{
+            match starknet::storage_read_syscall(
+                address_domain,
+                starknet::storage_address_from_base(address(key)),
+            ) {{
                 Result::Ok(value) => {value_convert_to},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
@@ -685,7 +695,7 @@ fn handle_mapping_storage_var(
             let address_domain = 0;
             match starknet::storage_write_syscall(
                 address_domain,
-                address(key),
+                starknet::storage_address_from_base(address(key)),
                 {value_convert_from},
             ) {{
                 Result::Ok(()) => {{}},
