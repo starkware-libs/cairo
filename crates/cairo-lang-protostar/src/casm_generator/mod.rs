@@ -88,10 +88,7 @@ impl SierraCasmGenerator {
             if let Some(name) = &f.id.debug_name { name.contains("test_") } else { false }
         )
         .map(|f| 
-            match &f.id.debug_name {
-                Some(name) => name,
-                _ => panic!("Expected name")
-            } 
+            f.id.debug_name.as_ref().expect("Expected name")
         )
         .collect::<Vec<&SmolStr>>()
     }
@@ -278,8 +275,6 @@ impl SierraCasmGenerator {
             ret;
         }
         assert_eq!(before_final_call + final_call_size, ctx.current_code_offset);
-        println!("{}", ctx.current_code_offset);
-        println!("{:?}", ctx.instructions);
         Ok((ctx.instructions, builtins, ctx.current_code_offset))
     }
 
