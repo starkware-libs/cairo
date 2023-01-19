@@ -431,6 +431,11 @@ impl LanguageServer for Backend {
 
             let defs_db = (*db).upcast();
             let (module_id, file_index, stable_ptr) = match item {
+                ResolvedGenericItem::Constant(item) => (
+                    item.parent_module(defs_db),
+                    item.file_index(defs_db),
+                    item.untyped_stable_ptr(defs_db),
+                ),
                 ResolvedGenericItem::Module(item) => {
                     (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
                 }

@@ -187,7 +187,7 @@ pub fn maybe_compute_expr_semantic(
     let syntax_db = db.upcast();
     // TODO(spapini): When Expr holds the syntax pointer, add it here as well.
     match syntax {
-        ast::Expr::Path(path) => resolve_variable(ctx, path),
+        ast::Expr::Path(path) => resolve_expr_path(ctx, path),
         ast::Expr::Literal(literal_syntax) => {
             Ok(Expr::Literal(literal_to_semantic(ctx, literal_syntax)?))
         }
@@ -444,6 +444,7 @@ pub fn compute_root_expr(
     // Apply inference.
     for (_id, expr) in ctx.exprs.iter_mut() {
         match expr {
+            Expr::Constant(expr) => expr.ty = ctx.inference.reduce_ty(expr.ty),
             Expr::Tuple(expr) => expr.ty = ctx.inference.reduce_ty(expr.ty),
             Expr::Assignment(expr) => expr.ty = ctx.inference.reduce_ty(expr.ty),
             Expr::Block(expr) => expr.ty = ctx.inference.reduce_ty(expr.ty),
@@ -1194,8 +1195,11 @@ fn member_access_expr(
     }
 }
 
-/// Resolves a variable given a context and a path expression.
-fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> Maybe<Expr> {
+/// Resolves a variable or a constant given a context and a path expression.
+fn resolve_expr_path(
+    ctx: &mut ComputationContext<'_>,
+    path: &ast::ExprPath,
+) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
     let segments = path.elements(syntax_db);
@@ -1210,8 +1214,28 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> M
             if let Some(res) = get_variable_by_name(ctx, &variable_name, path.stable_ptr().into()) {
                 return Ok(res);
             }
+            // Check if this is a constant.
+            let resolved_item = ctx.resolver.resolve_concrete_path(
+                ctx.diagnostics,
+                &mut ctx.inference,
+                path,
+                NotFoundItemType::Identifier,
+            )?;
+            let ResolvedConcreteItem::Constant(constant_id) = resolved_item else {
+                return Err(
+                    ctx.diagnostics.report(path, UnexpectedElement{
+                        expected:vec![ElementKind::Variable,ElementKind::Constant] ,
+                        actual: (&resolved_item).into()
+                    })
+                );
+            };
 
-            Err(ctx.diagnostics.report(&identifier, VariableNotFound { name: variable_name }))
+            let ty = db.constant_semantic_data(constant_id)?.value.ty();
+            Ok(Expr::Constant(ExprConstant {
+                constant_id,
+                ty,
+                stable_ptr: path.stable_ptr().into(),
+            }))
         }
         PathSegment::WithGenericArgs(generic_args_segment) => {
             // TODO(ilya, 10/10/2022): Generics are not supported yet.

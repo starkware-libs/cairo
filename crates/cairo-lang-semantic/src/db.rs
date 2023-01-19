@@ -22,6 +22,7 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
+use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
 use crate::items::imp::{ConcreteImplId, ImplLookupContext};
 use crate::items::module::ModuleSemanticData;
@@ -103,6 +104,9 @@ pub trait SemanticGroup:
         &self,
         const_id: ConstantId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the semantic data of a constant definition.
+    #[salsa::invoke(items::constant::constant_semantic_data)]
+    fn constant_semantic_data(&self, use_id: ConstantId) -> Maybe<Constant>;
     #[salsa::invoke(items::constant::constant_resolved_lookback)]
     fn constant_resolved_lookback(&self, use_id: ConstantId) -> Maybe<Arc<ResolvedLookback>>;
 
