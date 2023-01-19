@@ -35,6 +35,7 @@ impl RootDatabase {
         res
     }
 }
+
 impl Default for RootDatabase {
     fn default() -> Self {
         // TODO(spapini): Consider taking from config.

@@ -4,13 +4,15 @@ mod test;
 
 use std::collections::HashMap;
 use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_utils::Upcast;
 
-use crate::detect::detect_corelib;
 use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
 use crate::span::{FileSummary, TextOffset};
+
+pub const CORELIB_CRATE_NAME: &str = "core";
 
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
@@ -46,11 +48,10 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     // Initialize inputs.
     db.set_file_overrides(Arc::new(HashMap::new()));
     db.set_crate_roots(Arc::new(HashMap::new()));
+}
 
-    // Set core config.
-    let core_crate = db.intern_crate(CrateLongId("core".into()));
-    // TODO(spapini): find the correct path.
-    let path = detect_corelib();
+pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), path: PathBuf) {
+    let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
     let core_root_dir = Directory(path);
     db.set_crate_root(core_crate, Some(core_root_dir));
 }
