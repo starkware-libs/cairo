@@ -363,7 +363,6 @@ dependencies = [
  "salsa",
  "smol_str",
  "test-log",
- "thiserror",
 ]
 
 [[package]]

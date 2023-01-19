@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::plugin::MacroPlugin;
-use cairo_lang_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
+use cairo_lang_filesystem::db::{
+    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
+};
+use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
@@ -29,6 +32,8 @@ impl Default for LoweringDatabaseForTesting {
         init_files_group(&mut res);
         init_lowering_group(&mut res);
         res.set_semantic_plugins(get_default_plugins());
+        let corelib_path = detect_corelib().expect("Corelib not found in default location.");
+        init_dev_corelib(&mut res, corelib_path);
         res
     }
 }
