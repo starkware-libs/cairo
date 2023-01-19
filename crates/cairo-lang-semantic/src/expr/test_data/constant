@@ -15,15 +15,6 @@ foo
 const MY_CONST: felt = 0x1234;
 
 //! > expected_diagnostics
-error: Constant definitions are not supported yet.
- --> lib.cairo:1:1
-const MY_CONST: felt = 0x1234;
-^***^
-
-error: Variable "MY_CONST" not found.
- --> lib.cairo:3:13
-    let x = MY_CONST;
-            ^******^
 
 //! > ==========================================================================
 
@@ -64,8 +55,3 @@ error: The '?' operator is not supported outside of functions.
  --> lib.cairo:3:5
     Option::<felt>::Some(0)?
     ^**********************^
-
-error: Constant definitions are not supported yet.
- --> lib.cairo:1:1
-const MY_CONST: MissingType = {
-^***^
