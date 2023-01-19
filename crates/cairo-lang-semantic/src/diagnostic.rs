@@ -88,6 +88,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NotAFunction(kind) => {
                 format!("Expected a function, found {kind}.")
             }
+            SemanticDiagnosticKind::NotAVariableOrConstant(kind) => {
+                format!("Expected a variable or constant, found {kind}.")
+            }
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
@@ -446,9 +449,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NamedArgumentMismatch { expected, found } => {
                 format!("Unexpected argument name. Expected: '{expected}', found '{found}'.")
             }
-            SemanticDiagnosticKind::ConstantsAreNotSupported => {
-                "Constant definitions are not supported yet.".into()
-            }
             SemanticDiagnosticKind::UnsupportedOutsideOfFunction { feature_name } => {
                 let feature_name_str = match feature_name {
                     UnsupportedOutsideOfFunctionFeatureName::FunctionCall => "Function call",
@@ -492,6 +492,7 @@ pub enum SemanticDiagnosticKind {
     UnknownTrait,
     UnknownImpl,
     NotAFunction(ResolvedConcreteItemKind),
+    NotAVariableOrConstant(ResolvedConcreteItemKind),
     UnknownType,
     UnknownStruct,
     UnknownEnum,
@@ -679,8 +680,6 @@ pub enum SemanticDiagnosticKind {
         expected: SmolStr,
         found: SmolStr,
     },
-    // TODO(lior): Remove once constants are supported.
-    ConstantsAreNotSupported,
     UnsupportedOutsideOfFunction {
         feature_name: UnsupportedOutsideOfFunctionFeatureName,
     },
@@ -704,6 +703,7 @@ pub enum UnsupportedOutsideOfFunctionFeatureName {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ResolvedConcreteItemKind {
+    Constant,
     Module,
     Function,
     TraitFunction,
@@ -715,6 +715,7 @@ pub enum ResolvedConcreteItemKind {
 impl From<&ResolvedConcreteItem> for ResolvedConcreteItemKind {
     fn from(val: &ResolvedConcreteItem) -> Self {
         match val {
+            ResolvedConcreteItem::Constant(_) => ResolvedConcreteItemKind::Constant,
             ResolvedConcreteItem::Module(_) => ResolvedConcreteItemKind::Module,
             ResolvedConcreteItem::Function(_) => ResolvedConcreteItemKind::Function,
             ResolvedConcreteItem::TraitFunction(_) => ResolvedConcreteItemKind::TraitFunction,
@@ -728,6 +729,7 @@ impl From<&ResolvedConcreteItem> for ResolvedConcreteItemKind {
 impl Display for ResolvedConcreteItemKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let res = match self {
+            ResolvedConcreteItemKind::Constant => "constant",
             ResolvedConcreteItemKind::Module => "module",
             ResolvedConcreteItemKind::Function => "function",
             ResolvedConcreteItemKind::TraitFunction => "function",

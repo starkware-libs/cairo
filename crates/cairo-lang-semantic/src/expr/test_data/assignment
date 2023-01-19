@@ -25,7 +25,7 @@ error: Cannot assign to an immutable variable.
     p = 7;
     ^***^
 
-error: Variable "a" not found.
+error: Identifier not found.
  --> lib.cairo:4:5
     a = 1 + 2;
     ^
