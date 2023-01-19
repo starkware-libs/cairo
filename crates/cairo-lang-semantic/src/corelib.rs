@@ -283,10 +283,12 @@ pub fn core_binary_operator(
     };
     let function_name = match binary_op {
         BinaryOperator::Plus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_add",
         BinaryOperator::Plus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_add",
         BinaryOperator::Plus(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_add",
         BinaryOperator::Plus(_) => return unsupported_operator("+"),
         BinaryOperator::Minus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_sub",
         BinaryOperator::Minus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_sub",
         BinaryOperator::Minus(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_sub",
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
