@@ -4,10 +4,8 @@ mod test;
 
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_project::ProjectConfig;
 use cairo_lang_utils::Upcast;
 
 use crate::detect::detect_corelib;
@@ -81,18 +79,6 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
             None => crate_roots.remove(&crt),
         };
         self.as_files_group_mut().set_crate_roots(Arc::new(crate_roots));
-    }
-    /// Updates the crate roots from a ProjectConfig object.
-    fn with_project_config(&mut self, config: ProjectConfig) {
-        for (crate_name, directory_path) in config.content.crate_roots {
-            let crate_id = Upcast::upcast(self).intern_crate(CrateLongId(crate_name));
-            let mut path = PathBuf::from(&directory_path);
-            if path.is_relative() {
-                path = PathBuf::from(&config.base_path).join(path);
-            }
-            let root = Directory(path);
-            self.set_crate_root(crate_id, Some(root));
-        }
     }
 }
 impl<T: Upcast<dyn FilesGroup> + AsFilesGroupMut + ?Sized> FilesGroupEx for T {}
