@@ -114,6 +114,12 @@ struct StarknetExecScope {
     storage: HashMap<Felt, Felt>,
 }
 
+/// Execution scope for constant memory allocation.
+struct MemoryExecScope {
+    /// The first free address in the segment.
+    next_address: Relocatable,
+}
+
 impl HintProcessor for CairoHintProcessor {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
@@ -533,7 +539,22 @@ impl HintProcessor for CairoHintProcessor {
                 }
                 println!();
             }
-            Hint::AllocConstantSize { .. } => todo!(),
+            Hint::AllocConstantSize { size, dst } => {
+                let object_size = get_val(size)?.to_usize().expect("Object size too large.");
+                let memory_exec_scope =
+                    match exec_scopes.get_mut_ref::<MemoryExecScope>("memory_exec_scope") {
+                        Ok(memory_exec_scope) => memory_exec_scope,
+                        Err(_) => {
+                            exec_scopes.assign_or_update_variable(
+                                "memory_exec_scope",
+                                Box::new(MemoryExecScope { next_address: vm.add_memory_segment() }),
+                            );
+                            exec_scopes.get_mut_ref::<MemoryExecScope>("memory_exec_scope")?
+                        }
+                    };
+                insert_value_to_cellref!(vm, dst, memory_exec_scope.next_address)?;
+                memory_exec_scope.next_address.offset += object_size;
+            }
         };
         Ok(())
     }
