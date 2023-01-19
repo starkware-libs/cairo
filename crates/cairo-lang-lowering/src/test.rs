@@ -15,6 +15,7 @@ cairo_lang_test_utils::test_file_test!(
         assignment :"assignment",
         borrow_check :"borrow_check",
         call :"call",
+        constant :"constant",
         enums :"enums",
         error_propagate :"error_propagate",
         extern_ :"extern",
