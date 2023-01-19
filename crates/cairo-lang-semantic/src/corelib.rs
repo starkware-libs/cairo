@@ -3,19 +3,21 @@ use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::GenericFunctionId;
+use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
+use crate::items::imp::{find_impls_at_context, ImplLookupContext};
 use crate::items::trt::ConcreteTraitId;
 use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
-    semantic, ConcreteEnumId, ConcreteFunction, ConcreteVariant, Expr, ExprId, ExprTuple,
-    FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
+    semantic, ConcreteEnumId, ConcreteFunction, ConcreteTraitLongId, ConcreteVariant, Expr, ExprId,
+    ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
@@ -282,7 +284,10 @@ pub fn core_binary_operator(
         Ok(Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 }))
     };
     let function_name = match binary_op {
-        BinaryOperator::Plus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [felt_ty, felt_ty] => {
+            let function_id = get_core_trait_function_id(db, "Add".into(), "add".into());
+            return Ok(Ok(function_id));
+        }
         BinaryOperator::Plus(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_add",
         BinaryOperator::Plus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_add",
         BinaryOperator::Plus(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_add",
@@ -360,6 +365,79 @@ pub fn felt_sub(db: &dyn SemanticGroup) -> FunctionId {
 
 pub fn core_jump_nz_func(db: &dyn SemanticGroup) -> FunctionId {
     get_core_function_id(db, "felt_jump_nz".into(), vec![])
+}
+
+fn get_core_trait_function_id(
+    db: &dyn SemanticGroup,
+    trait_name: SmolStr,
+    function_name: SmolStr,
+    // TODO(yuval): generic_args
+) -> FunctionId {
+    let core_module = db.core_module();
+
+    let module_item_id = db
+        .module_item_by_name(core_module, trait_name.clone())
+        .expect("Failed to load core lib.")
+        .unwrap_or_else(|| panic!("'{trait_name}' was not found in core lib."));
+
+    let trait_id = extract_matches!(module_item_id, ModuleItemId::Trait);
+    // TODO(yuval): generic_args
+    let concrete_trait_id =
+        db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args: vec![] });
+
+    let function_id = db
+        .trait_function_by_name(trait_id, function_name.clone())
+        .unwrap_or_else(|_| panic!("Failed to get functions of trait '{trait_name}'."))
+        .unwrap_or_else(|| {
+            panic!(
+                "Trait function '{function_name}' was not found in trait '{trait_name}' in core \
+                 lib."
+            )
+        });
+
+    // Find the relevant impl of the trait.
+    let lookup_context = ImplLookupContext {
+        module_id: core_module,
+        extra_modules: vec![],
+        // TODO(yuval): generic_params
+        generic_params: vec![],
+    };
+
+    let concrete_impl_id = match &find_impls_at_context(db, &lookup_context, concrete_trait_id)
+        .unwrap_or_else(|_| panic!("Failed to get impls of trait '{trait_name}'."))
+        .into_iter()
+        .collect_vec()[..]
+    {
+        &[concrete_impl_id] => concrete_impl_id,
+        concrete_impls => {
+            panic!(
+                "Found {} impls of trait '{}'",
+                concrete_impls.len(),
+                trait_id.name(db.upcast())
+            );
+        }
+    };
+
+    // Find the relevant function in the impl.
+    let impl_id = db.lookup_intern_concrete_impl(concrete_impl_id).impl_id;
+    let impl_function_id = extract_matches!(
+        db.impl_function_by_trait_function(impl_id, function_id).unwrap_or_else(|_| panic!(
+            "Failed to get functions of impl '{}'.",
+            impl_id.name(db.upcast())
+        )),
+        Some
+    );
+
+    db.intern_function(FunctionLongId {
+        function: ConcreteFunction {
+            generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
+                concrete_impl: concrete_impl_id,
+                function: impl_function_id,
+            }),
+            // TODO(yuval): Add generic arguments.
+            generic_args: vec![],
+        },
+    })
 }
 
 /// Given a core library function name and its generic arguments, returns [FunctionId].

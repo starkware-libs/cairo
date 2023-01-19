@@ -30,7 +30,7 @@ End:
 blk1:
 Inputs: v1: core::NonZero::<core::felt>
 Statements:
-  (v2: core::felt) <- core::felt_add(v0, v0)
+  (v2: core::felt) <- core::FeltAdd::add(v0, v0)
   (v3: core::felt) <- 0u
   (v4: core::felt) <- test::foo(v3)
 End:

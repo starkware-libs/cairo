@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
@@ -9,6 +10,7 @@ use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
@@ -17,7 +19,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::{semantic, GenericArgumentId, Mutability, SemanticDiagnostic};
+use crate::{semantic, ConcreteTypeId, GenericArgumentId, Mutability, SemanticDiagnostic};
 
 #[cfg(test)]
 #[path = "trt_test.rs"]
@@ -33,6 +35,37 @@ define_short_id!(ConcreteTraitId, ConcreteTraitLongId, SemanticGroup, lookup_int
 impl ConcreteTraitId {
     pub fn trait_id(&self, db: &dyn SemanticGroup) -> TraitId {
         db.lookup_intern_concrete_trait(*self).trait_id
+    }
+
+    // TODO(yuval): This is currently super inefficient - it calculates the whole mapping each time,
+    // and then looks up in it. Improve it, maybe by making it 2 queries: one to get the complete
+    // mapping and one to get the mapping of a specific generic type.
+    /// A function to lookup the mapping of a generic param of the (generic) trait to its concrete
+    /// assignment in the concrete trait. Note that this mapping may be partial if the
+    /// concretization is partial.
+    pub fn generic_to_concrete_type(
+        &self,
+        db: &dyn SemanticGroup,
+        generic_param: GenericParamId,
+    ) -> Option<ConcreteTypeId> {
+        let trait_generic_params = db.trait_generic_params(self.trait_id(db)).unwrap();
+        let concrete_trait_long_id = db.lookup_intern_concrete_trait(*self);
+        let trait_generic_args = concrete_trait_long_id.generic_args;
+
+        let mut mapping = HashMap::<GenericParamId, ConcreteTypeId>::new();
+        for (i, arg) in trait_generic_args.iter().enumerate() {
+            let param = trait_generic_params[i];
+            // TODO(yuval): allow more generic arg types (e.g. for partial concretization).
+            let concrete_type = match *arg {
+                GenericArgumentId::Type(ty) => match db.lookup_intern_type(ty) {
+                    crate::TypeLongId::Concrete(concrete_type) => concrete_type,
+                    _ => unimplemented!(),
+                },
+                _ => unimplemented!(),
+            };
+            mapping.insert(param, concrete_type);
+        }
+        mapping.get(&generic_param).cloned()
     }
 }
 
@@ -240,12 +273,14 @@ pub fn priv_trait_function_data(
     let data = db.priv_trait_semantic_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
     let declaration = function_syntax.declaration(syntax_db);
-    let generic_params = semantic_generic_params(
+    let function_generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         module_file_id,
         &declaration.generic_params(syntax_db),
     );
+    let trait_generic_params = db.trait_generic_params(trait_id)?;
+    let generic_params = chain!(trait_generic_params, function_generic_params).collect_vec();
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let signature_syntax = declaration.signature(syntax_db);

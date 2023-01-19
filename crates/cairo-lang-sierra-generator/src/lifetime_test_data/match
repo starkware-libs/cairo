@@ -124,7 +124,7 @@ blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 3u
-  (v4: core::felt) <- core::felt_add(v1, v3)
+  (v4: core::felt) <- core::FeltAdd::add(v1, v3)
 End:
   Callsite()
 

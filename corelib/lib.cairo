@@ -59,6 +59,20 @@ fn felt_neg(a: felt) -> felt nopanic {
     a * felt_const::<-1>()
 }
 
+// TODO(yuval): there are still issues with looking up impls with generics. This is a temporary
+// demonstration of being able to use traits in the corelib. We need to add generic args and use
+// impls for all binary operators.
+// To resolve the issue, start with adding <T> to the trait and concretize it with <felt> in the
+// impl. Get a panic 'Found 0 impls of trait 'Add'', and continue from there.
+trait Add {
+    fn add(a: felt, b: felt) -> felt;
+}
+impl FeltAdd of Add {
+    fn add(a: felt, b: felt) -> felt {
+        felt_add(a, b)
+    }
+}
+
 extern type NonZero<T>;
 // TODO(spapini): Add generic impls for NonZero for Copy, Drop.
 enum JumpNzResult<T> { Zero: (), NonZero: NonZero::<T>, }

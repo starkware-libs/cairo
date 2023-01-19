@@ -4,7 +4,7 @@ use std::vec;
 
 use cairo_lang_defs::ids::{
     FunctionSignatureId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
-    LanguageElementId, ModuleId, TraitFunctionId,
+    LanguageElementId, ModuleId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -19,8 +19,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionHelper};
-use itertools::izip;
+use itertools::{chain, izip, Itertools};
 use smol_str::SmolStr;
+use syntax::node::SyntaxNode;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
@@ -31,7 +32,7 @@ use super::strct::SemanticStructEx;
 use crate::corelib::{copy_trait, drop_trait, never_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::diagnostic::{NotFoundItemType, ParamOrReturnType, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_block_semantic, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::{
@@ -538,12 +539,15 @@ pub fn priv_impl_function_declaration_data(
     let function_syntax = &data.function_asts[impl_function_id];
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
-    let generic_params = semantic_generic_params(
+    let function_generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         module_file_id,
         &declaration.generic_params(syntax_db),
     );
+    let impl_generic_params = db.impl_generic_params(impl_id)?;
+    let generic_params = chain!(impl_generic_params, function_generic_params).collect_vec();
+
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let signature_syntax = declaration.signature(syntax_db);
@@ -599,6 +603,7 @@ fn validate_impl_function_signature(
     };
     let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait);
     let trait_id = concrete_trait_long_id.trait_id;
+
     let Ok(trait_functions) = db.trait_functions(trait_id) else {
         return;
     };
@@ -629,14 +634,23 @@ fn validate_impl_function_signature(
         let expected_ty = trait_param.ty;
         let actual_ty = param.ty;
 
-        if expected_ty != actual_ty {
-            diagnostics.report(
-                &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
+        verify_actual_type_match_expected(
+            db,
+            diagnostics,
+            expected_ty,
+            actual_ty,
+            concrete_trait,
+            PotentialDiagParams {
+                syntax_node: signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
                     .type_clause(syntax_db)
-                    .ty(syntax_db),
-                WrongParameterType { impl_id, impl_function_id, trait_id, expected_ty, actual_ty },
-            );
-        }
+                    .ty(syntax_db)
+                    .as_syntax_node(),
+                impl_id,
+                impl_function_id,
+                trait_id,
+                param_or_return_type: ParamOrReturnType::Param,
+            },
+        );
 
         if trait_param.mutability != param.mutability {
             if trait_param.mutability == Mutability::Reference {
@@ -663,20 +677,106 @@ fn validate_impl_function_signature(
 
     let expected_ty = trait_signature.return_type;
     let actual_ty = signature.return_type;
-    if expected_ty != actual_ty {
-        let location_ptr = match signature_syntax.ret_ty(syntax_db) {
-            OptionReturnTypeClause::ReturnTypeClause(ret_ty) => {
-                ret_ty.ty(syntax_db).as_syntax_node()
-            }
-            OptionReturnTypeClause::Empty(_) => {
-                function_syntax.body(syntax_db).lbrace(syntax_db).as_syntax_node()
+    verify_actual_type_match_expected(
+        db,
+        diagnostics,
+        expected_ty,
+        actual_ty,
+        concrete_trait,
+        PotentialDiagParams {
+            syntax_node: match signature_syntax.ret_ty(syntax_db) {
+                OptionReturnTypeClause::ReturnTypeClause(ret_ty) => {
+                    ret_ty.ty(syntax_db).as_syntax_node()
+                }
+                OptionReturnTypeClause::Empty(_) => {
+                    function_syntax.body(syntax_db).lbrace(syntax_db).as_syntax_node()
+                }
+            },
+            impl_id,
+            impl_function_id,
+            trait_id,
+            param_or_return_type: ParamOrReturnType::ReturnType,
+        },
+    );
+}
+
+/// Parameters for a potential diagnostic (WrongTypeInImpl) to report if types don't match. Used by
+/// `verify_actual_type_match_expected`.
+struct PotentialDiagParams {
+    syntax_node: SyntaxNode,
+    impl_id: ImplId,
+    impl_function_id: ImplFunctionId,
+    trait_id: TraitId,
+    param_or_return_type: ParamOrReturnType,
+}
+
+/// Verify that the given `actual_type` matches the `expected_type`:
+/// If the `expected_type` is a concrete type - `actual_type` should be equal to it.
+/// If the `expected_type` is a generic parameter - lookup in the concrete trait (`concrete_trait`)
+/// for its mapping to a concrete type - and this type should be equal to `actual_type`.
+///
+/// If the types don't match - add a relevant diagnostic.
+fn verify_actual_type_match_expected(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    expected_ty: TypeId,
+    actual_ty: TypeId,
+    concrete_trait: ConcreteTraitId,
+    potential_diag_params: PotentialDiagParams,
+) {
+    match db.lookup_intern_type(expected_ty) {
+        TypeLongId::GenericParameter(param) => {
+            if let Some(concrete_type) = concrete_trait.generic_to_concrete_type(db, param) {
+                // This is a generic param. Verify that it's consistent with the mapping of generic
+                // params to types.
+                let concrete_expected = db.intern_type(TypeLongId::Concrete(concrete_type));
+                if concrete_expected != actual_ty {
+                    // TODO(yuval): consider moving to a lambda in this function? and use in 3
+                    // locations here.
+                    diagnostics.report_by_ptr(
+                        potential_diag_params.syntax_node.stable_ptr(),
+                        WrongTypeInImpl {
+                            impl_id: potential_diag_params.impl_id,
+                            impl_function_id: potential_diag_params.impl_function_id,
+                            trait_id: potential_diag_params.trait_id,
+                            expected_ty: concrete_expected,
+                            actual_ty,
+                            param_or_return_type: potential_diag_params.param_or_return_type,
+                        },
+                    );
+                }
+            } else {
+                // This is a generic param that was not found in the mapping.
+                // TODO(yuval): this may be OK, if we have a partial concretization and the actual
+                // type is also the same generic type. Support this.
+                diagnostics.report_by_ptr(
+                    potential_diag_params.syntax_node.stable_ptr(),
+                    WrongTypeInImpl {
+                        impl_id: potential_diag_params.impl_id,
+                        impl_function_id: potential_diag_params.impl_function_id,
+                        trait_id: potential_diag_params.trait_id,
+                        expected_ty,
+                        actual_ty,
+                        param_or_return_type: potential_diag_params.param_or_return_type,
+                    },
+                );
             }
         }
-        .stable_ptr();
-        diagnostics.report_by_ptr(
-            location_ptr,
-            WrongReturnTypeForImpl { impl_id, impl_function_id, trait_id, expected_ty, actual_ty },
-        );
+        _ => {
+            if expected_ty != actual_ty {
+                diagnostics.report_by_ptr(
+                    potential_diag_params.syntax_node.stable_ptr(),
+                    WrongTypeInImpl {
+                        impl_id: potential_diag_params.impl_id,
+                        impl_function_id: potential_diag_params.impl_function_id,
+                        trait_id: potential_diag_params.trait_id,
+                        expected_ty,
+                        actual_ty,
+                        param_or_return_type: potential_diag_params.param_or_return_type,
+                    },
+                );
+            }
+        }
     }
 }
 

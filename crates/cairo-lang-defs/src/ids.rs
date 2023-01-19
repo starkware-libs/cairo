@@ -60,6 +60,19 @@ pub trait TopLevelLanguageElementId: LanguageElementId {
 /// Gets an optional parameter `name`. If specified, implements the Named trait using a key_field
 /// with this name. See the documentation of 'define_short_id' and `stable_ptr.rs` for more details.
 macro_rules! define_language_element_id {
+    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(, $name:ident)?) => {
+        define_language_element_id_partial!($short_id, $long_id, $ast_ty, $lookup $(, $name)?);
+        impl_top_level_language_element_id!($short_id, $lookup $(, $name)?);
+    };
+}
+
+/// Utility macro for *partially* defining an id for a language element.
+/// This is used by `define_language_element_id` (see its documentation), but doesn't implement
+/// TopLevelLanguageElementId for the type.
+///
+/// Note: prefer to use `define_language_element_id`, unless you need to overwrite the behavior of
+/// TopLevelLanguageElementId for the type.
+macro_rules! define_language_element_id_partial {
     ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(,$name:ident)?) => {
         #[derive(Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $long_id(pub ModuleFileId, pub <$ast_ty as TypedSyntaxNode>::StablePtr);
@@ -106,6 +119,15 @@ macro_rules! define_language_element_id {
                 self.stable_ptr(db).untyped()
             }
         }
+    };
+}
+
+/// A macro to implement TopLevelLanguageElementId for a type. Used by define_language_element_id.
+///
+/// Note: prefer to use `define_language_element_id`, unless you need to overwrite the behavior of
+/// TopLevelLanguageElementId for the type.
+macro_rules! impl_top_level_language_element_id {
+    ($short_id:ident, $lookup:ident $(,$name:ident)?) => {
         $(
             impl TopLevelLanguageElementId for $short_id {
                 fn $name(&self, db: &dyn DefsGroup) -> SmolStr {
@@ -295,7 +317,8 @@ impl UnstableSalsaId for FreeFunctionId {
     }
 }
 
-define_language_element_id!(
+define_language_element_id!(ImplId, ImplLongId, ast::ItemImpl, lookup_intern_impl, name);
+define_language_element_id_partial!(
     ImplFunctionId,
     ImplFunctionLongId,
     ast::FunctionWithBody,
@@ -322,6 +345,15 @@ impl ImplFunctionId {
 impl UnstableSalsaId for ImplFunctionId {
     fn get_internal_id(&self) -> &salsa::InternId {
         &self.0
+    }
+}
+impl TopLevelLanguageElementId for ImplFunctionId {
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.impl_id(db).name(db), self.name(db))
+    }
+
+    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        db.lookup_intern_impl_function(*self).name(db)
     }
 }
 
@@ -370,7 +402,7 @@ define_language_element_id!(
     name
 );
 define_language_element_id!(TraitId, TraitLongId, ast::ItemTrait, lookup_intern_trait, name);
-define_language_element_id!(
+define_language_element_id_partial!(
     TraitFunctionId,
     TraitFunctionLongId,
     ast::TraitItemFunction,
@@ -396,7 +428,15 @@ impl TraitFunctionId {
         db.intern_trait(TraitLongId(module_file_id, trait_ptr))
     }
 }
-define_language_element_id!(ImplId, ImplLongId, ast::ItemImpl, lookup_intern_impl, name);
+impl TopLevelLanguageElementId for TraitFunctionId {
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+    }
+
+    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        db.lookup_intern_trait_function(*self).name(db)
+    }
+}
 
 // Struct items.
 // TODO(spapini): Override full_path for to include parents, for better debug.
@@ -452,7 +492,12 @@ define_language_element_id_as_enum! {
 }
 impl FunctionSignatureId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
-        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
+        let function_name = match *self {
+            FunctionSignatureId::Free(_) | FunctionSignatureId::Extern(_) => self.name(db).into(),
+            FunctionSignatureId::Trait(id) => id.full_path(db),
+            FunctionSignatureId::Impl(id) => id.full_path(db),
+        };
+        format!("{}::{}", self.parent_module(db).full_path(db), function_name)
     }
 }
 

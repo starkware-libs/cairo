@@ -2,6 +2,8 @@
 #[path = "diagnostic_test.rs"]
 mod test;
 
+use std::fmt::Display;
+
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionSignatureId, ImplFunctionId, ImplId, ModuleFileId, StructId,
@@ -151,18 +153,20 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::WrongNumberOfGenericArguments { expected, actual } => {
                 format!("Wrong number of generic arguments. Expected {expected}, found: {actual}")
             }
-            SemanticDiagnosticKind::WrongParameterType {
+            SemanticDiagnosticKind::WrongTypeInImpl {
                 impl_id,
                 impl_function_id,
                 trait_id,
                 expected_ty,
                 actual_ty,
+                param_or_return_type,
             } => {
                 let defs_db = db.upcast();
                 let function_name = impl_function_id.name(defs_db);
                 format!(
-                    "Parameter type of impl function `{}::{}` is incompatible with `{}::{}`. \
-                     Expected: `{}`, actual: `{}`.",
+                    "{} type of impl function `{}::{}` is incompatible with `{}::{}`. Expected: \
+                     `{}`, actual: `{}`.",
+                    param_or_return_type,
                     impl_id.name(defs_db),
                     function_name,
                     trait_id.name(defs_db),
@@ -234,31 +238,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::WrongReturnTypeForImpl {
-                impl_id,
-                impl_function_id,
-                trait_id,
-                expected_ty,
-                actual_ty,
-            } => {
-                let defs_db = db.upcast();
-                let function_name = impl_function_id.name(defs_db);
-                format!(
-                    "Return type of impl function `{}::{}` is incompatible with `{}::{}`. \
-                     Expected: `{}`, actual: `{}`.",
-                    impl_id.name(defs_db),
-                    function_name,
-                    trait_id.name(defs_db),
-                    function_name,
-                    expected_ty.format(db),
-                    actual_ty.format(db)
-                )
-            }
             SemanticDiagnosticKind::NoImplementationOfTraitFunction { trait_id, function_name } => {
                 let trait_path = trait_id.full_path(db.upcast());
                 format!(
-                    "Function `{function_name}` of trait `{trait_path}` has has no implementation \
-                     in the context."
+                    "Function `{function_name}` of trait `{trait_path}` has no implementation in \
+                     the context."
                 )
             }
             SemanticDiagnosticKind::MultipleImplementationOfTraitFunction {
@@ -467,6 +451,20 @@ impl DiagnosticEntry for SemanticDiagnostic {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ParamOrReturnType {
+    Param,
+    ReturnType,
+}
+impl Display for ParamOrReturnType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParamOrReturnType::Param => write!(f, "Parameter"),
+            ParamOrReturnType::ReturnType => write!(f, "Return"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SemanticDiagnosticKind {
     ModuleFileNotFound {
         path: String,
@@ -524,12 +522,16 @@ pub enum SemanticDiagnosticKind {
         expected: usize,
         actual: usize,
     },
-    WrongParameterType {
+    /// A type in the signature of an impl item doesn't match the relevant type from its concrete
+    /// trait.
+    WrongTypeInImpl {
         impl_id: ImplId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
+        /// Indicates whether the wrong type is for a param or for a return type of a function.
+        param_or_return_type: ParamOrReturnType,
     },
     TraitParamMutable {
         trait_id: TraitId,
@@ -554,13 +556,6 @@ pub enum SemanticDiagnosticKind {
         actual_ty: semantic::TypeId,
     },
     WrongReturnType {
-        expected_ty: semantic::TypeId,
-        actual_ty: semantic::TypeId,
-    },
-    WrongReturnTypeForImpl {
-        impl_id: ImplId,
-        impl_function_id: ImplFunctionId,
-        trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },

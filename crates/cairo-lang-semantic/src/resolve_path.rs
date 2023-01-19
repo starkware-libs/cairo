@@ -156,6 +156,10 @@ impl<'db> Resolver<'db> {
         module_file_id: ModuleFileId,
         generic_params: &[GenericParamId],
     ) -> Self {
+        // TODO(yuval): check that we don't repeat generic params. Note it can also happen between
+        // trait and a function in it.
+        // Tests already exist - "Repeating generic params in trait" and "Repeating generic params
+        // in trait and function".
         Self {
             db,
             module_file_id,
@@ -405,6 +409,7 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
+
                 let generic_item = self.module_item_to_generic_item(diagnostics, module_item)?;
                 Ok(self.specialize_generic_module_item(
                     diagnostics,

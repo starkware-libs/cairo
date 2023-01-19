@@ -139,8 +139,66 @@ fn test_resolve_path_trait_impl() {
     assert_eq!(
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [], tail: Some(FunctionCall(ExprFunctionCall { \
-         function: core::felt_add, ref_args: [], args: [FunctionCall(ExprFunctionCall { function: \
-         test::foo, ref_args: [], args: [], ty: core::felt }), Literal(ExprLiteral { value: 1, \
-         ty: core::felt })], ty: core::felt })), ty: core::felt }))"
+         function: core::FeltAdd::add, ref_args: [], args: [FunctionCall(ExprFunctionCall { \
+         function: test::MyImpl::foo, ref_args: [], args: [], ty: core::felt }), \
+         Literal(ExprLiteral { value: 1, ty: core::felt })], ty: core::felt })), ty: core::felt \
+         }))"
     );
 }
+
+#[test]
+fn test_resolve_path_generic_trait_impl() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let db = &mut db_val;
+    let test_module = setup_test_module(
+        db,
+        indoc! {"
+            trait Identity<T> {
+                fn id(a: T) -> T;
+            }
+
+            impl U128Identity of Identity::<u128> {
+                fn id(a: u128) -> u128 {
+                    a
+                }
+            }
+
+            impl FeltIdentity of Identity::<felt> {
+                fn id(a: felt) -> felt {
+                    a
+                }
+            }
+
+            fn main() {
+                let x_felt = 3;
+                let x_u128 = 3_u128;
+                let y_felt = Identity::<felt>::id(x_felt);
+                let y_u128 = Identity::<u128>::id(x_u128);
+            }
+        "},
+    )
+    .unwrap();
+    let module_id = test_module.module_id;
+
+    let function_id = FunctionWithBodyId::Free(extract_matches!(
+        db.module_item_by_name(module_id, "main".into()).unwrap().unwrap(),
+        ModuleItemId::FreeFunction
+    ));
+    let expr_formatter = ExprFormatter { db, function_id };
+    let body = db.function_body_expr(function_id);
+    assert_eq!(
+        format!("{:?}", body.to_option().debug(&expr_formatter)),
+        "Some(Block(ExprBlock { statements: [Let(StatementLet { pattern: Variable(x_felt), expr: \
+         Literal(ExprLiteral { value: 3, ty: core::felt }) }), Let(StatementLet { pattern: \
+         Variable(x_u128), expr: Literal(ExprLiteral { value: 3, ty: core::integer::u128 }) }), \
+         Let(StatementLet { pattern: Variable(y_felt), expr: FunctionCall(ExprFunctionCall { \
+         function: test::FeltIdentity::id, ref_args: [], args: [Var(ExprVar { var: \
+         LocalVarId(test::x_felt), ty: core::felt })], ty: core::felt }) }), Let(StatementLet { \
+         pattern: Variable(y_u128), expr: FunctionCall(ExprFunctionCall { function: \
+         test::U128Identity::id, ref_args: [], args: [Var(ExprVar { var: \
+         LocalVarId(test::x_u128), ty: core::integer::u128 })], ty: core::integer::u128 }) })], \
+         tail: None, ty: () }))"
+    );
+}
+
+// TODO(yuval): test for partial concretization.

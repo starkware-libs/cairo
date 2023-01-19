@@ -71,7 +71,7 @@ Statements:
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,
   }
-  (v6: core::felt) <- core::felt_add(v0, v0)
+  (v6: core::felt) <- core::FeltAdd::add(v0, v0)
   () <- match core::felt_jump_nz(v6) {
     JumpNzResult::Zero => blk2,
     JumpNzResult::NonZero => blk3,
@@ -142,13 +142,13 @@ End:
 blk4 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
-  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v1: core::felt) <- core::FeltAdd::add(v0, v0)
+  (v2: core::felt) <- core::FeltAdd::add(v1, v1)
   () <- match core::felt_jump_nz(v2) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,
   }
-  (v7: core::felt) <- core::felt_add(v1, v6)
+  (v7: core::felt) <- core::FeltAdd::add(v1, v6)
   () <- match core::felt_jump_nz(v1) {
     JumpNzResult::Zero => blk2,
     JumpNzResult::NonZero => blk3,
@@ -236,17 +236,17 @@ End:
 blk4 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v1: core::felt) <- core::FeltAdd::add(v0, v0)
   () <- match core::felt_jump_nz(v0) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,
   }
-  (v7: core::felt) <- core::felt_add(v1, v0)
+  (v7: core::felt) <- core::FeltAdd::add(v1, v0)
   () <- match core::felt_jump_nz(v0) {
     JumpNzResult::Zero => blk2,
     JumpNzResult::NonZero => blk3,
   }
-  (v12: core::felt) <- core::felt_add(v7, v0)
+  (v12: core::felt) <- core::FeltAdd::add(v7, v0)
 End:
   Return(v12)
 
