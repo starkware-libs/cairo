@@ -11,6 +11,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 type NonZeroFelt = NonZero<felt>;
                 type BoxFelt = Box<felt>;
 
+                libfunc branch_align = branch_align;
                 libfunc finalize_locals = finalize_locals;
                 libfunc felt_add = felt_add;
                 libfunc felt_mul_2 = felt_mul<2>;
@@ -40,37 +41,39 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 return([7], [8], [4]);                          // #9
 
                 finalize_locals() -> ();                        // #10
-                felt_jump_nz([1]) { fallthrough() 16([1]) };    // #11
-                felt_dup([2]) -> ([1], [2]);                    // #12
-                store_temp_felt([1]) -> ([1]);                  // #13
-                store_temp_felt([2]) -> ([2]);                  // #14
-                return ([1], [2]);                              // #15
+                felt_jump_nz([1]) { fallthrough() 17([1]) };    // #11
+                branch_align() -> ();                           // #12
+                felt_dup([2]) -> ([1], [2]);                    // #13
+                store_temp_felt([1]) -> ([1]);                  // #14
+                store_temp_felt([2]) -> ([2]);                  // #15
+                return ([1], [2]);                              // #16
 
-                jump() { 17() };                                // #16
-                felt_unwrap_nz([1]) -> ([1]);                   // #17
-                felt_dup([2]) -> ([2], [3]);                    // #18
-                felt_sub([1], [3]) -> ([1]);                    // #19
-                store_temp_felt([1]) -> ([1]);                  // #20
-                felt_mul_2([1]) -> ([1]);                       // #21
+                branch_align() -> ();                           // #17
+                jump() { 19() };                                // #18
+                felt_unwrap_nz([1]) -> ([1]);                   // #19
+                felt_dup([2]) -> ([2], [3]);                    // #20
+                felt_sub([1], [3]) -> ([1]);                    // #21
                 store_temp_felt([1]) -> ([1]);                  // #22
-                store_temp_felt([2]) -> ([2]);                  // #23
-                call_foo([1], [2]) -> ([1], [2]);               // #24
-                return ([1], [2]);                              // #25
+                felt_mul_2([1]) -> ([1]);                       // #23
+                store_temp_felt([1]) -> ([1]);                  // #24
+                store_temp_felt([2]) -> ([2]);                  // #25
+                call_foo([1], [2]) -> ([1], [2]);               // #26
+                return ([1], [2]);                              // #27
 
-                felt_into_box([1]) -> ([2]);                    // #26
-                store_temp_box_felt([2]) -> ([2]);              // #27
-                felt_unbox([2]) -> ([3]);                       // #28
-                store_temp_felt([3]) -> ([3]);                  // #29
-                return ([3]);                                   // #30
+                felt_into_box([1]) -> ([2]);                    // #28
+                store_temp_box_felt([2]) -> ([2]);              // #29
+                felt_unbox([2]) -> ([3]);                       // #30
+                store_temp_felt([3]) -> ([3]);                  // #31
+                return ([3]);                                   // #32
 
-                store_temp_felt([1]) -> ([1]);                  // #31
-                call_box_and_back([1]) -> ([1]);                // #32
-                return ([1]);                                   // #33
+                store_temp_felt([1]) -> ([1]);                  // #33
+                call_box_and_back([1]) -> ([1]);                // #34
+                return ([1]);                                   // #35
 
                 test_program@0([1]: felt, [2]: felt) -> (felt, felt, felt);
                 foo@10([1]: felt, [2]: felt) -> (felt, felt);
-                box_and_back@26([1]: felt) -> (felt);
-                box_and_back_wrapper@31([1]: felt) -> (felt);
+                box_and_back@28([1]: felt) -> (felt);
+                box_and_back_wrapper@33([1]: felt) -> (felt);
             "},
             false,
             indoc! {"
@@ -219,16 +222,19 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 type u128 = u128;
                 type RangeCheck = RangeCheck;
 
+                libfunc branch_align = branch_align;
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
                 libfunc u128_overflowing_add = u128_overflowing_add;
                 libfunc drop<u128> = drop<u128>;
                 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 
                 revoke_ap_tracking() -> ();
-                u128_overflowing_add([1], [2], [3]) {fallthrough([1], [2]) 5([1], [2]) };
+                u128_overflowing_add([1], [2], [3]) {fallthrough([1], [2]) 6([1], [2]) };
+                branch_align() -> ();
                 drop<u128>([2]) -> ();
                 store_temp<RangeCheck>([1]) -> ([1]);
                 return ([1]);
+                branch_align() -> ();
                 drop<u128>([2]) -> ();
                 store_temp<RangeCheck>([1]) -> ([1]);
                 return ([1]);
