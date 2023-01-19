@@ -9,10 +9,10 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
-    NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
+    GenericLibfunc, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::GenericTypeId;
+use crate::ids::{id_from_string, GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Operators for integers.
@@ -36,6 +36,10 @@ pub trait UintTraits: Default {
     const LESS_THAN: &'static str;
     /// The generic libfunc id for testing if less than or equal.
     const LESS_THAN_OR_EQUAL: &'static str;
+    /// The generic libfunc id for addition.
+    const OVERFLOWING_ADD: &'static str;
+    /// The generic libfunc id for subtraction.
+    const OVERFLOWING_SUB: &'static str;
 }
 
 #[derive(Default)]
@@ -218,6 +222,108 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc
     }
 }
 
+pub struct UintOperationConcreteLibfunc {
+    pub operator: IntOperator,
+    pub signature: LibfuncSignature,
+}
+impl SignatureBasedConcreteLibfunc for UintOperationConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+
+/// Libfunc for uints operations.
+pub struct UintOperationLibfunc<TUintTraits: UintTraits> {
+    pub operator: IntOperator,
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> UintOperationLibfunc<TUintTraits> {
+    const OVERFLOWING_ADD: u64 = id_from_string(TUintTraits::OVERFLOWING_ADD);
+    const OVERFLOWING_SUB: u64 = id_from_string(TUintTraits::OVERFLOWING_SUB);
+    fn new(operator: IntOperator) -> Option<Self> {
+        Some(Self { operator, _phantom: PhantomData::default() })
+    }
+}
+impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTraits> {
+    type Concrete = UintOperationConcreteLibfunc;
+
+    fn by_id(id: &GenericLibfuncId) -> Option<Self> {
+        match id.id {
+            id if id == Self::OVERFLOWING_ADD => Self::new(IntOperator::OverflowingAdd),
+            id if id == Self::OVERFLOWING_SUB => Self::new(IntOperator::OverflowingSub),
+            _ => None,
+        }
+    }
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        if !args.is_empty() {
+            return Err(SpecializationError::WrongNumberOfGenericArgs);
+        }
+        let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(ty.clone()),
+                ParamSignature::new(ty.clone()),
+            ],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: range_check_type.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: range_check_type,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty,
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Ok(UintOperationConcreteLibfunc {
+            operator: self.operator,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
+    }
+}
+
 #[derive(Default)]
 pub struct Uint8Traits;
 
@@ -228,6 +334,8 @@ impl UintTraits for Uint8Traits {
     const EQUAL: &'static str = "u8_eq";
     const LESS_THAN: &'static str = "u8_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u8_le";
+    const OVERFLOWING_ADD: &'static str = "u8_overflowing_add";
+    const OVERFLOWING_SUB: &'static str = "u8_overflowing_sub";
 }
 
 /// Type for u8.
