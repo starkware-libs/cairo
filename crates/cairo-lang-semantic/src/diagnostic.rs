@@ -2,6 +2,8 @@
 #[path = "diagnostic_test.rs"]
 mod test;
 
+use std::fmt::Display;
+
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionSignatureId, ImplFunctionId, ImplId, ModuleFileId, StructId,
@@ -18,6 +20,7 @@ use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::plugin::PluginMappedDiagnostic;
+use crate::resolve_path::ResolvedConcreteItem;
 use crate::semantic;
 
 pub struct SemanticDiagnostics {
@@ -82,7 +85,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
             SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
-            SemanticDiagnosticKind::NotAFunction => "Not a function.".into(),
+            SemanticDiagnosticKind::UnexpectedElement { expected, actual } => {
+                let expected_str = expected.iter().map(|kind| kind.to_string()).join(" or ");
+                format!("Expected {expected_str}, found {actual}.")
+            }
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
@@ -486,7 +492,10 @@ pub enum SemanticDiagnosticKind {
     UnknownFunction,
     UnknownTrait,
     UnknownImpl,
-    NotAFunction,
+    UnexpectedElement {
+        expected: Vec<ElementKind>,
+        actual: ElementKind,
+    },
     UnknownType,
     UnknownStruct,
     UnknownEnum,
@@ -695,4 +704,42 @@ pub enum UnsupportedOutsideOfFunctionFeatureName {
     FunctionCall,
     ReturnStatement,
     ErrorPropagate,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ElementKind {
+    Module,
+    Function,
+    TraitFunction,
+    Type,
+    Variant,
+    Trait,
+    Impl,
+}
+impl From<&ResolvedConcreteItem> for ElementKind {
+    fn from(val: &ResolvedConcreteItem) -> Self {
+        match val {
+            ResolvedConcreteItem::Module(_) => ElementKind::Module,
+            ResolvedConcreteItem::Function(_) => ElementKind::Function,
+            ResolvedConcreteItem::TraitFunction(_) => ElementKind::TraitFunction,
+            ResolvedConcreteItem::Type(_) => ElementKind::Type,
+            ResolvedConcreteItem::Variant(_) => ElementKind::Variant,
+            ResolvedConcreteItem::Trait(_) => ElementKind::Trait,
+            ResolvedConcreteItem::Impl(_) => ElementKind::Impl,
+        }
+    }
+}
+impl Display for ElementKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let res = match self {
+            ElementKind::Module => "module",
+            ElementKind::Function => "function",
+            ElementKind::TraitFunction => "function",
+            ElementKind::Type => "type",
+            ElementKind::Variant => "variant",
+            ElementKind::Trait => "trait",
+            ElementKind::Impl => "impl",
+        };
+        write!(f, "{res}")
+    }
 }
