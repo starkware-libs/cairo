@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
@@ -723,17 +723,17 @@ fn is_expr(kind: SyntaxKind) -> bool {
 }
 
 /// Tries to detect the crate root the config that contains a cairo file, and add it to the system.
-fn detect_crate_for(db: &mut tokio::sync::MutexGuard<'_, RootDatabase>, file_path: &str) {
+fn detect_crate_for(db: &mut RootDatabase, file_path: &str) {
     let mut path = PathBuf::from(file_path);
     for _ in 0..MAX_CRATE_DETECTION_DEPTH {
         path.pop();
         if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
-            db.with_project_config(config);
+            update_crate_roots_from_project_config(db, config);
             return;
         };
     }
     // Fallback to a single file.
-    if let Err(err) = setup_project(&mut **db, PathBuf::from(file_path).as_path()) {
+    if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
         eprintln!("Error loading file {} as a single crate: {}", file_path, err);
     }
 }

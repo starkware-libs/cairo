@@ -1,5 +1,5 @@
 use std::ffi::OsStr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::ModuleId;
@@ -57,6 +57,19 @@ fn setup_single_file_project(
     }
 }
 
+/// Updates the crate roots from a ProjectConfig object.
+pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: ProjectConfig) {
+    for (crate_name, directory_path) in config.content.crate_roots {
+        let crate_id = db.intern_crate(CrateLongId(crate_name));
+        let mut path = PathBuf::from(&directory_path);
+        if path.is_relative() {
+            path = PathBuf::from(&config.base_path).join(path);
+        }
+        let root = Directory(path);
+        db.set_crate_root(crate_id, Some(root));
+    }
+}
+
 /// Setup the 'db' to compile the project in the given path.
 /// The path can be either a directory with cairo project file or a .cairo file.
 /// Returns the ids of the project crates.
@@ -68,7 +81,7 @@ pub fn setup_project(
         match ProjectConfig::from_directory(path) {
             Ok(config) => {
                 let main_crate_ids = get_main_crate_ids_from_project(db, &config);
-                db.with_project_config(config);
+                update_crate_roots_from_project_config(db, config);
                 Ok(main_crate_ids)
             }
             _ => Err(ProjectError::LoadProjectError),
