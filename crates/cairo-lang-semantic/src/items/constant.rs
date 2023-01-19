@@ -48,7 +48,7 @@ pub fn priv_constant_semantic_data(
 
     let mut resolver = Resolver::new(db, module_file_id, &[]);
 
-    let _const_type = resolve_type(
+    let const_type = resolve_type(
         db,
         &mut diagnostics,
         &mut resolver,
@@ -58,9 +58,26 @@ pub fn priv_constant_semantic_data(
     let mut ctx =
         ComputationContext::new(db, &mut diagnostics, resolver, None, Environment::default());
     let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
+    let value_type = value.ty();
 
-    // TODO(lior): Check that the type of the expression matches the expected type.
-    // TODO(lior): Check that the value is a literal.
+    // Check that the type matches.
+    if !const_type.is_missing(db) && !value_type.is_missing(db) && value_type != const_type {
+        ctx.diagnostics.report(
+            &const_ast.value(syntax_db),
+            crate::diagnostic::SemanticDiagnosticKind::WrongType {
+                expected_ty: const_type,
+                actual_ty: value_type,
+            },
+        );
+    }
+
+    // Check that the expression is a literal.
+    if !matches!(value, Expr::Literal(_)) {
+        ctx.diagnostics.report(
+            &const_ast.value(syntax_db),
+            crate::diagnostic::SemanticDiagnosticKind::OnlyLiteralConstants,
+        );
+    };
 
     let constant = Constant { value };
     let resolved_lookback = Arc::new(ctx.resolver.lookback);
