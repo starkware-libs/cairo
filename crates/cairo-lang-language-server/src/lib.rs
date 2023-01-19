@@ -431,6 +431,9 @@ impl LanguageServer for Backend {
 
             let defs_db = (*db).upcast();
             let (module_id, file_index, stable_ptr) = match item {
+                ResolvedGenericItem::Constant(_) => {
+                    unimplemented!("Constant definitions are not supported yet.");
+                }
                 ResolvedGenericItem::Module(item) => {
                     (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
                 }
