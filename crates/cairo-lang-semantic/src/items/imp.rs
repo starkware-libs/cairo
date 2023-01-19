@@ -28,11 +28,12 @@ use super::function_with_body::{FunctionBody, FunctionBodyData};
 use super::functions::FunctionDeclarationData;
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
-use crate::corelib::{copy_trait, drop_trait, never_ty};
+use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use crate::expr::compute::{compute_expr_block_semantic, ComputationContext, Environment};
+use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
+use crate::expr::inference::Inference;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::{
     semantic, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId, GenericArgumentId,
@@ -145,7 +146,12 @@ pub fn priv_impl_declaration_data_inner(
 
     let concrete_trait = if resolve_trait {
         resolver
-            .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
+            .resolve_concrete_path(
+                &mut diagnostics,
+                &mut Inference::disabled(db),
+                &trait_path_syntax,
+                NotFoundItemType::Trait,
+            )
             .ok()
             .and_then(|concrete_item| {
                 try_extract_matches!(concrete_item, ResolvedConcreteItem::Trait)
@@ -418,6 +424,7 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
         TypeLongId::GenericParameter(_) => {
             return Err(skip_diagnostic());
         }
+        TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }
@@ -736,22 +743,8 @@ pub fn priv_impl_function_body_data(
         environment,
     );
     let function_body = function_syntax.body(db.upcast());
-    let expr = compute_expr_block_semantic(&mut ctx, &function_body)?;
-    let expr_ty = expr.ty();
     let return_type = declaration.signature.return_type;
-    if expr_ty != return_type
-        && !expr_ty.is_missing(db)
-        && !return_type.is_missing(db)
-        && expr_ty != never_ty(db)
-    {
-        ctx.diagnostics.report(
-            &function_body,
-            SemanticDiagnosticKind::WrongReturnType {
-                expected_ty: return_type,
-                actual_ty: expr_ty,
-            },
-        );
-    }
+    let expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
     let body_expr = ctx.exprs.alloc(expr);
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
