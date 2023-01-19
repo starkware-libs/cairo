@@ -51,6 +51,11 @@ error: Type not found.
     fn param_test(ref a: u128) -> bad_type nopanic;
                                   ^******^
 
+error: Not all trait items are implemented. Missing: 'param_test', 'no_ret_ty'.
+ --> lib.cairo:7:6
+impl MyImpl of MyTrait::<A>;
+     ^****^
+
 error: `mod` is not allowed inside impl.
  --> lib.cairo:9:5
     mod a;
@@ -375,3 +380,58 @@ error: Function `foo` of trait `test::MyTrait` has multiple implementations, in:
  --> lib.cairo:11:4
    MyTrait::foo()
    ^**********^
+
+//! > ==========================================================================
+
+//! > Test missing functions in empty impl.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+   fn foo1();
+   fn foo2();
+}
+impl MyImpl of MyTrait;
+
+//! > expected_diagnostics
+error: Not all trait items are implemented. Missing: 'foo1', 'foo2'.
+ --> lib.cairo:5:6
+impl MyImpl of MyTrait;
+     ^****^
+
+//! > ==========================================================================
+
+//! > Test missing functions in nonempty impl.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+   fn foo1();
+   fn foo2();
+   fn foo3();
+}
+impl MyImpl of MyTrait {
+   fn foo2() {}
+}
+
+//! > expected_diagnostics
+error: Not all trait items are implemented. Missing: 'foo1', 'foo3'.
+ --> lib.cairo:6:6
+impl MyImpl of MyTrait {
+     ^****^
