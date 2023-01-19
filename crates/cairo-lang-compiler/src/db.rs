@@ -67,6 +67,10 @@ impl RootDatabase {
     pub fn default_with_dev_corelib() -> Option<Self> {
         Self::with_dev_corelib(get_default_plugins())
     }
+
+    pub fn default_with_project_config(config: ProjectConfig) -> Self {
+        Self::with_project_config(get_default_plugins(), config)
+    }
 }
 
 impl Default for RootDatabase {

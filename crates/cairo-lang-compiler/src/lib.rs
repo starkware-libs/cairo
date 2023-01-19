@@ -71,7 +71,7 @@ pub fn compile(
     project_config: ProjectConfig,
     compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    let mut db = RootDatabase::default();
+    let mut db = RootDatabase::default_with_project_config(project_config.clone());
     update_crate_roots_from_project_config(&mut db, project_config.clone());
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
 
