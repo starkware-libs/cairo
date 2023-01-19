@@ -303,9 +303,8 @@ fn lower_expr(
     expr_id: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
     let expr = &ctx.function_body.exprs[expr_id];
-    let location = ctx.get_location(expr.stable_ptr().untyped());
     match expr {
-        semantic::Expr::Constant(_) => unimplemented!("Constants are not supported yet."),
+        semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, scope),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, scope),
         semantic::Expr::Assignment(expr) => lower_expr_assignment(ctx, expr, scope),
         semantic::Expr::Block(expr) => lower_expr_block(ctx, scope, expr),
@@ -316,13 +315,7 @@ fn lower_expr(
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
             Ok(LoweredExpr::AtVariable(scope.get_semantic(expr.var)))
         }
-        semantic::Expr::Literal(expr) => {
-            log::trace!("Lowering a literal: {:?}", expr.debug(&ctx.expr_formatter));
-            Ok(LoweredExpr::AtVariable(
-                generators::Literal { value: expr.value.clone(), ty: expr.ty, location }
-                    .add(ctx, scope),
-            ))
-        }
+        semantic::Expr::Literal(expr) => lower_expr_literal(ctx, expr, scope),
         semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, scope),
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, scope),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, scope),
@@ -331,6 +324,32 @@ fn lower_expr(
             Err(LoweringFlowError::Failed(*diag_added))
         }
     }
+}
+
+fn lower_expr_literal(
+    ctx: &mut LoweringContext<'_>,
+    expr: &semantic::ExprLiteral,
+    scope: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a literal: {:?}", expr.debug(&ctx.expr_formatter));
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    Ok(LoweredExpr::AtVariable(
+        generators::Literal { value: expr.value.clone(), ty: expr.ty, location }.add(ctx, scope),
+    ))
+}
+
+fn lower_expr_constant(
+    ctx: &mut LoweringContext<'_>,
+    expr: &semantic::ExprConstant,
+    scope: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
+    let const_expr =
+        &ctx.db.constant_semantic_data(expr.constant_id).map_err(LoweringFlowError::Failed)?.value;
+    let semantic::Expr::Literal(const_expr_literal) = const_expr else {
+        panic!("Only literal constants are supported.");
+    };
+    lower_expr_literal(ctx, const_expr_literal, scope)
 }
 
 /// Lowers an expression of type [semantic::ExprTuple].
