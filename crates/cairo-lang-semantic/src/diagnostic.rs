@@ -447,9 +447,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NamedArgumentMismatch { expected, found } => {
                 format!("Unexpected argument name. Expected: '{expected}', found '{found}'.")
             }
-            SemanticDiagnosticKind::ConstantsAreNotSupported => {
-                "Constant definitions are not supported yet.".into()
-            }
             SemanticDiagnosticKind::UnsupportedOutsideOfFunction { feature_name } => {
                 let feature_name_str = match feature_name {
                     UnsupportedOutsideOfFunctionFeatureName::FunctionCall => "Function call",
@@ -683,8 +680,6 @@ pub enum SemanticDiagnosticKind {
         expected: SmolStr,
         found: SmolStr,
     },
-    // TODO(lior): Remove once constants are supported.
-    ConstantsAreNotSupported,
     UnsupportedOutsideOfFunction {
         feature_name: UnsupportedOutsideOfFunctionFeatureName,
     },
@@ -708,6 +703,8 @@ pub enum UnsupportedOutsideOfFunctionFeatureName {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ElementKind {
+    Constant,
+    Variable,
     Module,
     Function,
     TraitFunction,
@@ -719,6 +716,7 @@ pub enum ElementKind {
 impl From<&ResolvedConcreteItem> for ElementKind {
     fn from(val: &ResolvedConcreteItem) -> Self {
         match val {
+            ResolvedConcreteItem::Constant(_) => ElementKind::Constant,
             ResolvedConcreteItem::Module(_) => ElementKind::Module,
             ResolvedConcreteItem::Function(_) => ElementKind::Function,
             ResolvedConcreteItem::TraitFunction(_) => ElementKind::TraitFunction,
@@ -732,6 +730,8 @@ impl From<&ResolvedConcreteItem> for ElementKind {
 impl Display for ElementKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let res = match self {
+            ElementKind::Constant => "constant",
+            ElementKind::Variable => "variable",
             ElementKind::Module => "module",
             ElementKind::Function => "function",
             ElementKind::TraitFunction => "function",
