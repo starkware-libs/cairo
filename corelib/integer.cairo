@@ -140,6 +140,21 @@ extern fn u8_lt(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
 extern fn u8_eq(a: u8, b: u8) -> bool implicits() nopanic;
 extern fn u8_le(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
 
+#[inline(always)]
+fn u8_gt(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic {
+    u8_lt(b, a)
+}
+
+#[inline(always)]
+fn u8_ge(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic {
+    u8_le(b, a)
+}
+
+#[inline(always)]
+fn u8_ne(a: u8, b: u8) -> bool implicits() nopanic {
+    !(a == b)
+}
+
 #[derive(Copy, Drop)]
 struct u256 { low: u128, high: u128, }
 
