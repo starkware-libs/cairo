@@ -87,6 +87,7 @@ pub fn get_concrete_type_id(
             }))
         }
         semantic::TypeLongId::GenericParameter(_) => Err(skip_diagnostic()),
+        semantic::TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
         semantic::TypeLongId::Missing(diag_added) => Err(diag_added),
     }
 }
