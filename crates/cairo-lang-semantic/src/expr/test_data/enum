@@ -55,7 +55,7 @@ error: Unsupported feature.
     let a : A = A::d;
                 ^**^
 
-error: Variable "A" not found.
+error: Expected variable or constant, found type.
  --> lib.cairo:18:17
     let a : A = A;
                 ^

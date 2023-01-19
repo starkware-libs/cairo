@@ -5,7 +5,6 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedLookback, Resolver};
@@ -19,7 +18,7 @@ mod test;
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Constant {
-    value: Expr,
+    pub value: Expr,
 }
 
 /// Information about a constant definition.
@@ -63,9 +62,6 @@ pub fn priv_constant_semantic_data(
     // TODO(lior): Check that the type of the expression matches the expected type.
     // TODO(lior): Check that the value is a literal.
 
-    // TODO(lior): Implement constants.
-    ctx.diagnostics.report(&const_ast.const_kw(syntax_db), ConstantsAreNotSupported);
-
     let constant = Constant { value };
     let resolved_lookback = Arc::new(ctx.resolver.lookback);
     Ok(ConstantData { diagnostics: diagnostics.build(), constant, resolved_lookback })
@@ -77,6 +73,11 @@ pub fn constant_semantic_diagnostics(
     const_id: ConstantId,
 ) -> Diagnostics<SemanticDiagnostic> {
     db.priv_constant_semantic_data(const_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [SemanticGroup::constant_semantic_data].
+pub fn constant_semantic_data(db: &dyn SemanticGroup, const_id: ConstantId) -> Maybe<Constant> {
+    Ok(db.priv_constant_semantic_data(const_id)?.constant)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::constant_resolved_lookback].

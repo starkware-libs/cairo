@@ -305,6 +305,7 @@ fn lower_expr(
     let expr = &ctx.function_body.exprs[expr_id];
     let location = ctx.get_location(expr.stable_ptr().untyped());
     match expr {
+        semantic::Expr::Constant(_) => unimplemented!("Constants are not supported yet."),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, scope),
         semantic::Expr::Assignment(expr) => lower_expr_assignment(ctx, expr, scope),
         semantic::Expr::Block(expr) => lower_expr_block(ctx, scope, expr),
