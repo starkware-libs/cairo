@@ -1205,7 +1205,13 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> M
 
     match &segments[0] {
         PathSegment::Simple(ident_segment) => {
-            resolve_variable_by_name(ctx, &ident_segment.ident(syntax_db), path.stable_ptr().into())
+            let identifier = ident_segment.ident(syntax_db);
+            let variable_name = identifier.text(ctx.db.upcast());
+            if let Some(res) = get_variable_by_name(ctx, &variable_name, path.stable_ptr().into()) {
+                return Ok(res);
+            }
+
+            Err(ctx.diagnostics.report(&identifier, VariableNotFound { name: variable_name }))
         }
         PathSegment::WithGenericArgs(generic_args_segment) => {
             // TODO(ilya, 10/10/2022): Generics are not supported yet.
@@ -1215,20 +1221,32 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> M
 }
 
 /// Resolves a variable given a context and a simple name.
+///
+/// Reports a diagnostic if the variable was not found.
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     identifier: &ast::TerminalIdentifier,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
+    get_variable_by_name(ctx, &variable_name, stable_ptr)
+        .ok_or_else(|| ctx.diagnostics.report(identifier, VariableNotFound { name: variable_name }))
+}
+
+/// Returns the requested variable from the environment if it exists. Returns None otherwise.
+pub fn get_variable_by_name(
+    ctx: &mut ComputationContext<'_>,
+    variable_name: &SmolStr,
+    stable_ptr: ast::ExprPtr,
+) -> Option<Expr> {
     let mut maybe_env = Some(&*ctx.environment);
     while let Some(env) = maybe_env {
-        if let Some(var) = env.variables.get(&variable_name) {
-            return Ok(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }));
+        if let Some(var) = env.variables.get(variable_name) {
+            return Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }));
         }
         maybe_env = env.parent.as_deref();
     }
-    Err(ctx.diagnostics.report(identifier, VariableNotFound { name: variable_name }))
+    None
 }
 
 /// Typechecks a function call.
