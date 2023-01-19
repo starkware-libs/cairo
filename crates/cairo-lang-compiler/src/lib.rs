@@ -7,7 +7,6 @@ use std::sync::Arc;
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{bail, Context, Result};
-use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -15,7 +14,10 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
 use crate::db::RootDatabase;
 use crate::diagnostics::{check_diagnostics, eprint_diagnostic};
-use crate::project::{get_main_crate_ids_from_project, setup_project, ProjectConfig};
+use crate::project::{
+    get_main_crate_ids_from_project, setup_project, update_crate_roots_from_project_config,
+    ProjectConfig,
+};
 
 pub mod db;
 pub mod diagnostics;
@@ -70,7 +72,7 @@ pub fn compile(
     compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
     let mut db = RootDatabase::default();
-    db.with_project_config(project_config.clone());
+    update_crate_roots_from_project_config(&mut db, project_config.clone());
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
 
     compile_prepared_db(db, main_crate_ids, compiler_config)
