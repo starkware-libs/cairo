@@ -8,6 +8,9 @@ use storage::{
 pub mod syscalls;
 use syscalls::SystemType;
 
+pub mod emit_event;
+use emit_event::EmitEventLibfunc;
+
 pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
 
@@ -35,5 +38,6 @@ define_libfunc_hierarchy! {
          StorageBaseAddressFromFelt(StorageBaseAddressFromFeltLibfunc),
          StorageAddressFromBase(StorageAddressFromBaseLibfunc),
          StorageAddressFromBaseAndOffset(StorageAddressFromBaseAndOffsetLibfunc),
+         EmitEvent(EmitEventLibfunc),
     }, StarkNetConcreteLibfunc
 }

@@ -286,6 +286,7 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("storage_read_syscall", vec![] => Ok(()); "storage_read_syscall")]
 #[test_case("storage_write_syscall", vec![] => Ok(()); "storage_write_syscall")]
 #[test_case("call_contract_syscall", vec![] => Ok(()); "call_contract_syscall")]
+#[test_case("emit_event_syscall", vec![] => Ok(()); "emit_event_syscall")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
