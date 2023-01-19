@@ -92,7 +92,7 @@ pub fn enum_resolved_lookback(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_semantic_data].
 pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<EnumData> {
-    let module_file_id = enum_id.module_file(db.upcast());
+    let module_file_id = enum_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only

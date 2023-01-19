@@ -143,7 +143,7 @@ pub fn trait_function_by_name(
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_data].
 pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<TraitData> {
     let syntax_db = db.upcast();
-    let module_file_id = trait_id.module_file(db.upcast());
+    let module_file_id = trait_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -234,7 +234,7 @@ pub fn priv_trait_function_data(
     trait_function_id: TraitFunctionId,
 ) -> Maybe<TraitFunctionData> {
     let syntax_db = db.upcast();
-    let module_file_id = trait_function_id.module_file(db.upcast());
+    let module_file_id = trait_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_semantic_data(trait_id)?;
