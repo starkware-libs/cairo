@@ -10,7 +10,7 @@ use crate::test_utils::SierraGenDatabaseForTesting;
 pub fn test_function_generator(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
-    let db = &mut SierraGenDatabaseForTesting::default();
+    let db = &mut SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     // Parse code and create semantic model.
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,

@@ -72,7 +72,7 @@ fn main() -> anyhow::Result<()> {
     if args.starknet {
         plugins.push(Arc::new(StarkNetPlugin {}));
     }
-    let mut db_val = RootDatabase::new(plugins);
+    let mut db_val = RootDatabase::with_dev_corelib(plugins).unwrap();
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;

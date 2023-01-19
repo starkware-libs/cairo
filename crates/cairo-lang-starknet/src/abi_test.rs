@@ -9,7 +9,7 @@ use crate::abi::Contract;
 
 #[test]
 fn test_abi() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let module_id = setup_test_module(
         &mut db_val,
         indoc! {"

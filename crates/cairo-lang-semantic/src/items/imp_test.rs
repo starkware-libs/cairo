@@ -10,7 +10,7 @@ use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 // TODO(ilya): enable test once impls are enabled.
 #[test]
 fn test_impl() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let db = &mut db_val;
     let (test_module, diagnostics) = setup_test_module(
         db,

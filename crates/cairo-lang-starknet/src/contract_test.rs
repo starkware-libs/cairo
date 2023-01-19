@@ -8,7 +8,7 @@ use crate::contract::{find_contracts, get_external_functions, starknet_keccak};
 
 #[test]
 fn test_contract_resolving() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let db = &mut db_val;
     let _crate_id = setup_test_crate(
         db,

@@ -38,7 +38,7 @@ cairo_lang_test_utils::test_file_test!(
 
 #[test]
 fn test_missing_module_file() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let db = &mut db_val;
     let crate_id = setup_test_crate(
         db,
@@ -175,7 +175,7 @@ impl DiagnosticMapper for PatchMapper {
 
 #[test]
 fn test_inline_module_diagnostics() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let db = &mut db_val;
     db.set_semantic_plugins(vec![Arc::new(AddInlineModuleDummyPlugin {})]);
     let crate_id = setup_test_crate(
@@ -210,7 +210,7 @@ fn test_inline_module_diagnostics() {
 
 #[test]
 fn test_inline_inline_module_diagnostics() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let db = &mut db_val;
     let crate_id = setup_test_crate(
         db,

@@ -48,7 +48,7 @@ cairo_lang_test_utils::test_file_test!(
 #[test_case(r"'\''", 39, "felt")]
 #[test_case(r"'\x12\x34'_u128", 0x1234, "u128")]
 fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_expr = setup_test_expr(&mut db_val, expr, "", "").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
@@ -79,7 +79,7 @@ fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
 
 #[test]
 fn test_expr_assignment() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_expr = setup_test_expr(&mut db_val, "a = a * 3", "", "let mut a = 5;").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
@@ -96,7 +96,7 @@ fn test_expr_assignment() {
 
 #[test]
 fn test_expr_operator() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_expr = setup_test_expr(&mut db_val, "!(-5 + 9 * 3 == 0)", "", "").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
@@ -120,7 +120,7 @@ fn test_expr_operator() {
 
 #[test]
 fn test_member_access() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let TestModule { module_id, .. } = setup_test_module(
         &mut db_val,
         indoc! {"
@@ -189,7 +189,7 @@ fn test_member_access() {
 }
 #[test]
 fn test_member_access_failures() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let diagnostics = setup_test_module(
         &mut db_val,
         indoc! {"
@@ -241,7 +241,7 @@ fn test_member_access_failures() {
 
 #[test]
 fn test_function_with_param() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_function = setup_test_function(&mut db_val, "fn foo(a: felt) {}", "foo", "").unwrap();
     let _db = &db_val;
     let signature = test_function.signature;
@@ -254,7 +254,7 @@ fn test_function_with_param() {
 
 #[test]
 fn test_tuple_type() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_function =
         setup_test_function(&mut db_val, "fn foo(mut a: (felt, (), (felt,))) {}", "foo", "")
             .unwrap();
@@ -272,7 +272,7 @@ fn test_tuple_type() {
 
 #[test]
 fn test_function_with_return_type() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_function =
         setup_test_function(&mut db_val, "fn foo() -> felt { 5 }", "foo", "").unwrap();
     let _db = &db_val;
@@ -284,7 +284,7 @@ fn test_function_with_return_type() {
 
 #[test]
 fn test_function_with_return_type_failures() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let diagnostics =
         setup_test_function(&mut db_val, "fn foo() -> felt { }", "foo", "").get_diagnostics();
     assert_eq!(
@@ -301,7 +301,7 @@ fn test_function_with_return_type_failures() {
 
 #[test]
 fn test_let_statement() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -329,7 +329,7 @@ fn test_let_statement() {
 
 #[test]
 fn test_let_statement_failures() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let diagnostics = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -355,7 +355,7 @@ fn test_let_statement_failures() {
 
 #[test]
 fn test_expr_var() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -385,7 +385,7 @@ fn test_expr_var() {
 
 #[test]
 fn test_expr_var_failures() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let diagnostics = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -411,7 +411,7 @@ fn test_expr_var_failures() {
 
 #[test]
 fn test_expr_match() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -445,7 +445,7 @@ fn test_expr_match() {
 
 #[test]
 fn test_expr_match_failures() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let diagnostics = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -474,7 +474,7 @@ fn test_expr_match_failures() {
 
 #[test]
 fn test_expr_block() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_expr = setup_test_expr(&mut db_val, "{6;8;}", "", "").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
@@ -498,7 +498,7 @@ fn test_expr_block() {
 
 #[test]
 fn test_expr_block_with_tail_expression() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_expr = setup_test_expr(&mut db_val, "{6;8;9}", "", "").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
@@ -530,7 +530,7 @@ fn test_expr_block_with_tail_expression() {
 
 #[test]
 fn test_expr_call() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     // TODO(spapini): Add types.
     let test_expr = setup_test_expr(&mut db_val, "foo()", "fn foo() {6;}", "").unwrap();
     let db = &db_val;
@@ -546,7 +546,7 @@ fn test_expr_call() {
 
 #[test]
 fn test_expr_call_failures() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     // TODO(spapini): Add types.
     let (test_expr, diagnostics) = setup_test_expr(&mut db_val, "foo()", "", "").split();
     let db = &db_val;
@@ -575,7 +575,7 @@ fn test_expr_call_failures() {
 
 #[test]
 fn test_function_body() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -616,7 +616,7 @@ fn test_function_body() {
 
 #[test]
 fn test_expr_struct_ctor() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_expr = setup_test_expr(
         &mut db_val,
         indoc! {"
@@ -644,7 +644,7 @@ fn test_expr_struct_ctor() {
 
 #[test]
 fn test_expr_tuple() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let test_expr = setup_test_expr(&mut db_val, "(1 + 2, (2, 3))", "", "").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
@@ -662,7 +662,7 @@ fn test_expr_tuple() {
 
 #[test]
 fn test_expr_struct_ctor_failures() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let diagnostics = setup_test_module(
         &mut db_val,
         indoc! {"

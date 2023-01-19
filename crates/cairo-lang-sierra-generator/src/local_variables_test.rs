@@ -26,7 +26,7 @@ cairo_lang_test_utils::test_file_test!(
 fn check_find_local_variables(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
-    let db = &mut SierraGenDatabaseForTesting::default();
+    let db = &mut SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     // Parse code and create semantic model.
     let test_function = setup_test_function(
         db,

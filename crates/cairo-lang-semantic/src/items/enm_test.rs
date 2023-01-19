@@ -10,7 +10,7 @@ use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 
 #[test]
 fn test_enum() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     let db = &mut db_val;
     let (test_module, diagnostics) = setup_test_module(
         db,

@@ -11,7 +11,7 @@ use crate::plugin::StarkNetPlugin;
 
 /// Returns a compiler database tuned to Starknet (e.g. Starknet plugin).
 pub fn get_starknet_database() -> RootDatabase {
-    let mut db_val = RootDatabase::default();
+    let mut db_val = RootDatabase::default_with_dev_corelib().unwrap();
     let db = &mut db_val;
 
     // Override implicit precedence for compatibility with the StarkNet OS.

@@ -228,7 +228,7 @@ fn test_add_store_statements(
 
 #[test]
 fn store_temp_simple() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
@@ -262,7 +262,7 @@ fn store_temp_simple() {
 
 #[test]
 fn store_temp_for_branch_command() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
         dummy_simple_branch(&db, "branch_with_param", &["2"], 0),
@@ -284,7 +284,7 @@ fn store_temp_for_branch_command() {
 
 #[test]
 fn store_local_simple() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
@@ -345,7 +345,7 @@ fn store_local_simple() {
 
 #[test]
 fn same_as_param() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add3", &["0"], &["1"]),
         dummy_simple_statement(&db, "dup", &["1"], &["2", "3"]),
@@ -370,7 +370,7 @@ fn same_as_param() {
 
 #[test]
 fn same_as_param_push_value_optimization() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "store_temp<felt>", &["0"], &["1"]),
         dummy_simple_statement(&db, "dup", &["1"], &["2", "3"]),
@@ -398,7 +398,7 @@ fn same_as_param_push_value_optimization() {
 ///     // Use y.
 #[test]
 fn store_local_result_of_if() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_branch(&db, "branch", &[], 0),
         // If part.
@@ -438,7 +438,7 @@ fn store_local_result_of_if() {
 /// Tests the behavior of the [PushValues](pre_sierra::Statement::PushValues) statement.
 #[test]
 fn store_temp_push_values() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
@@ -475,7 +475,7 @@ fn store_temp_push_values() {
 /// [dup_var](pre_sierra::Statement::PushValues::dup_var).
 #[test]
 fn store_temp_push_values_with_dup() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
@@ -509,7 +509,7 @@ fn store_temp_push_values_with_dup() {
 /// Tests the [PushValues](pre_sierra::Statement::PushValues) optimization.
 #[test]
 fn push_values_optimization() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "function_call4", &[], &["0", "1", "2", "3"]),
         dummy_push_values(&db, &[("2", "102"), ("3", "103"), ("0", "100")]),
@@ -533,7 +533,7 @@ fn push_values_optimization() {
 /// Tests that the known stack is cleared after change to ap.
 #[test]
 fn push_values_clear_known_stack() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_push_values(&db, &[("0", "100")]),
         // The explicit call to store_temp() will clear the known stack.
@@ -561,7 +561,7 @@ fn push_values_clear_known_stack() {
 
 #[test]
 fn push_values_temp_not_on_top() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "temp_not_on_top", &[], &["0"]),
         dummy_push_values(&db, &[("0", "100")]),
@@ -577,7 +577,7 @@ fn push_values_temp_not_on_top() {
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn consecutive_push_values() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_push_values(&db, &[("0", "100"), ("1", "101")]),
         dummy_push_values(&db, &[("100", "200"), ("101", "201"), ("2", "202"), ("3", "203")]),
@@ -613,7 +613,7 @@ fn consecutive_push_values() {
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn push_values_after_branch_merge() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_branch(&db, "branch", &[], 0),
         dummy_push_values(&db, &[("0", "100"), ("1", "101"), ("2", "102")]),
@@ -653,7 +653,7 @@ fn push_values_after_branch_merge() {
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn push_values_early_return() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_push_values(&db, &[("0", "100"), ("1", "101")]),
         dummy_simple_branch(&db, "branch", &[], 0),
@@ -690,7 +690,7 @@ fn push_values_early_return() {
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn consecutive_const_additions() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "felt_add3", &["2"], &["3"]),
@@ -730,7 +730,7 @@ fn consecutive_const_additions() {
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn consecutive_const_additions_with_branch() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "felt_add3", &["2"], &["3"]),
@@ -762,7 +762,7 @@ fn consecutive_const_additions_with_branch() {
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn consecutive_appends_with_branch() {
-    let db = SierraGenDatabaseForTesting::default();
+    let db = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "array_append", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "array_append", &["2", "3"], &["4"]),
