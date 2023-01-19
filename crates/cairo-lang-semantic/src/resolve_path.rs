@@ -34,7 +34,7 @@ use crate::items::trt::{
     ConcreteTraitFunctionId, ConcreteTraitFunctionLongId, ConcreteTraitId, ConcreteTraitLongId,
 };
 use crate::literals::LiteralLongId;
-use crate::types::{resolve_type, substitute_generics};
+use crate::types::{resolve_type, substitute_generics, GenericSubstitution};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
     TypeLongId, Variant,
@@ -578,10 +578,11 @@ impl<'db> Resolver<'db> {
                     &mut generic_args,
                     identifier.stable_ptr().untyped(),
                 );
-                let substitution =
-                    &generic_params.into_iter().zip(generic_args.into_iter()).collect();
+                let substitution = GenericSubstitution(
+                    generic_params.into_iter().zip(generic_args.into_iter()).collect(),
+                );
 
-                ResolvedConcreteItem::Type(substitute_generics(self.db, substitution, ty))
+                ResolvedConcreteItem::Type(substitute_generics(self.db, &substitution, ty))
             }
             ResolvedGenericItem::Trait(trait_id) => ResolvedConcreteItem::Trait(specialize_trait(
                 self.db,
@@ -765,7 +766,7 @@ pub fn specialize_function(
     mut generic_args: Vec<GenericArgumentId>,
 ) -> Maybe<FunctionId> {
     // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
-    let generic_params = db
+    let generic_params: Vec<_> = db
         .function_signature_generic_params(generic_function.signature())
         .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
 

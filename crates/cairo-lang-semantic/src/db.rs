@@ -56,6 +56,11 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
     #[salsa::interned]
+    fn intern_concrete_function_with_body(
+        &self,
+        id: items::functions::ConcreteFunctionWithBody,
+    ) -> semantic::ConcreteFunctionWithBodyId;
+    #[salsa::interned]
     fn intern_concrete_struct(&self, id: types::ConcreteStructLongId) -> types::ConcreteStructId;
     #[salsa::interned]
     fn intern_concrete_enum(&self, id: types::ConcreteEnumLongId) -> types::ConcreteEnumId;
