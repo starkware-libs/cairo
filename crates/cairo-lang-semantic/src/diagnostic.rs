@@ -229,6 +229,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_name,
                 )
             }
+            SemanticDiagnosticKind::WrongType { expected_ty, actual_ty } => {
+                format!(
+                    r#"Expected type "{}", found: "{}"."#,
+                    expected_ty.format(db),
+                    actual_ty.format(db)
+                )
+            }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
@@ -465,6 +472,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 };
                 format!("{feature_name_str} is not supported outside of functions.")
             }
+            SemanticDiagnosticKind::OnlyLiteralConstants => {
+                "Only literal constants are currently supported.".into()
+            }
         }
     }
 
@@ -565,6 +575,10 @@ pub enum SemanticDiagnosticKind {
         impl_id: ImplId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
+    },
+    WrongType {
+        expected_ty: semantic::TypeId,
+        actual_ty: semantic::TypeId,
     },
     WrongArgumentType {
         expected_ty: semantic::TypeId,
@@ -697,6 +711,7 @@ pub enum SemanticDiagnosticKind {
     UnsupportedOutsideOfFunction {
         feature_name: UnsupportedOutsideOfFunctionFeatureName,
     },
+    OnlyLiteralConstants,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
