@@ -1,35 +1,39 @@
 use std::path::PathBuf;
 
-pub fn detect_corelib() -> PathBuf {
+pub fn detect_corelib() -> Option<PathBuf> {
+    const CORELIB_DIR_NAME: &str = "corelib";
+
     if let Ok(cargo_dir) = std::env::var("CARGO_MANIFEST_DIR") {
         // This is the directory of Cargo.toml of the current crate.
-        // This is used for developement of the compiler.
+        // This is used for development of the compiler.
         let mut dir = PathBuf::from(cargo_dir);
         dir.pop();
-        dir.push("corelib");
+        dir.push(CORELIB_DIR_NAME);
         if dir.exists() {
-            return dir;
+            return Some(dir);
         }
         dir.pop();
         dir.pop();
-        dir.push("corelib");
+        dir.push(CORELIB_DIR_NAME);
         if dir.exists() {
-            return dir;
+            return Some(dir);
         }
     }
+
     if let Ok(mut dir) = std::env::current_exe() {
         dir.pop();
         dir.pop();
-        dir.push("corelib");
+        dir.push(CORELIB_DIR_NAME);
         if dir.exists() {
-            return dir;
+            return Some(dir);
         }
         dir.pop();
         dir.pop();
-        dir.push("corelib");
+        dir.push(CORELIB_DIR_NAME);
         if dir.exists() {
-            return dir;
+            return Some(dir);
         }
     }
-    panic!("Corelib not found.")
+
+    None
 }
