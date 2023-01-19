@@ -348,7 +348,7 @@ fn compute_expr_function_call_semantic(
                 ctx.resolver.resolve_trait_function(ctx.diagnostics, trait_function, &path)?;
             expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
         }
-        _ => Err(ctx.diagnostics.report(&path, NotAFunction)),
+        _ => Err(ctx.diagnostics.report(&path, NotAFunction((&item).into()))),
     }
 }
 

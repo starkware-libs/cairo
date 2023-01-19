@@ -2,6 +2,8 @@
 #[path = "diagnostic_test.rs"]
 mod test;
 
+use std::fmt::Display;
+
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionSignatureId, ImplFunctionId, ImplId, ModuleFileId, StructId,
@@ -18,6 +20,7 @@ use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::plugin::PluginMappedDiagnostic;
+use crate::resolve_path::ResolvedConcreteItem;
 use crate::semantic;
 
 pub struct SemanticDiagnostics {
@@ -82,7 +85,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
             SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
-            SemanticDiagnosticKind::NotAFunction => "Not a function.".into(),
+            SemanticDiagnosticKind::NotAFunction(kind) => {
+                format!("Expected a function, found {kind}.")
+            }
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
@@ -486,7 +491,7 @@ pub enum SemanticDiagnosticKind {
     UnknownFunction,
     UnknownTrait,
     UnknownImpl,
-    NotAFunction,
+    NotAFunction(ResolvedConcreteItemKind),
     UnknownType,
     UnknownStruct,
     UnknownEnum,
@@ -695,4 +700,42 @@ pub enum UnsupportedOutsideOfFunctionFeatureName {
     FunctionCall,
     ReturnStatement,
     ErrorPropagate,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ResolvedConcreteItemKind {
+    Module,
+    Function,
+    TraitFunction,
+    Type,
+    Variant,
+    Trait,
+    Impl,
+}
+impl From<&ResolvedConcreteItem> for ResolvedConcreteItemKind {
+    fn from(val: &ResolvedConcreteItem) -> Self {
+        match val {
+            ResolvedConcreteItem::Module(_) => ResolvedConcreteItemKind::Module,
+            ResolvedConcreteItem::Function(_) => ResolvedConcreteItemKind::Function,
+            ResolvedConcreteItem::TraitFunction(_) => ResolvedConcreteItemKind::TraitFunction,
+            ResolvedConcreteItem::Type(_) => ResolvedConcreteItemKind::Type,
+            ResolvedConcreteItem::Variant(_) => ResolvedConcreteItemKind::Variant,
+            ResolvedConcreteItem::Trait(_) => ResolvedConcreteItemKind::Trait,
+            ResolvedConcreteItem::Impl(_) => ResolvedConcreteItemKind::Impl,
+        }
+    }
+}
+impl Display for ResolvedConcreteItemKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let res = match self {
+            ResolvedConcreteItemKind::Module => "module",
+            ResolvedConcreteItemKind::Function => "function",
+            ResolvedConcreteItemKind::TraitFunction => "function",
+            ResolvedConcreteItemKind::Type => "type",
+            ResolvedConcreteItemKind::Variant => "variant",
+            ResolvedConcreteItemKind::Trait => "trait",
+            ResolvedConcreteItemKind::Impl => "impl",
+        };
+        write!(f, "{res}")
+    }
 }
