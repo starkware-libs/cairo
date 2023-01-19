@@ -3,7 +3,11 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::plugin::MacroPlugin;
-use cairo_lang_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
+use cairo_lang_filesystem::db::{
+    init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+};
+use cairo_lang_filesystem::detect::detect_corelib;
+use cairo_lang_filesystem::ids::{CrateLongId, Directory};
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
@@ -21,6 +25,8 @@ use crate::pre_sierra;
 use crate::replace_ids::replace_sierra_ids_in_program;
 use crate::utils::{jump_statement, return_statement, simple_statement};
 
+pub const CORELIB_CRATE_NAME: &str = "core";
+
 #[salsa::database(
     DefsDatabase,
     FilesDatabase,
@@ -32,6 +38,17 @@ use crate::utils::{jump_statement, return_statement, simple_statement};
 )]
 pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
+}
+impl SierraGenDatabaseForTesting {
+    pub fn with_dev_corelib() -> Option<Self> {
+        let mut db = Self::default();
+        detect_corelib().map(|path| {
+            let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
+            let core_root_dir = Directory(path);
+            db.set_crate_root(core_crate, Some(core_root_dir));
+            db
+        })
+    }
 }
 impl salsa::Database for SierraGenDatabaseForTesting {}
 impl Default for SierraGenDatabaseForTesting {
@@ -91,7 +108,7 @@ pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::P
 pub fn setup_db_and_get_crate_id(
     content: &str,
 ) -> (SierraGenDatabaseForTesting, cairo_lang_filesystem::ids::CrateId) {
-    let mut db_val = SierraGenDatabaseForTesting::default();
+    let mut db_val = SierraGenDatabaseForTesting::with_dev_corelib().unwrap();
     let db = &mut db_val;
     let crate_id = setup_test_crate(db, content);
     let module_id = ModuleId::CrateRoot(crate_id);

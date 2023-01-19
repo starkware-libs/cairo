@@ -7,6 +7,7 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
     init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
 };
+use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
@@ -18,9 +19,22 @@ use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use crate::items::functions::GenericFunctionId;
 use crate::{semantic, ConcreteFunctionWithBodyId, SemanticDiagnostic};
 
+pub const CORELIB_CRATE_NAME: &str = "core";
+
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SemanticDatabaseForTesting {
     storage: salsa::Storage<SemanticDatabaseForTesting>,
+}
+impl SemanticDatabaseForTesting {
+    pub fn with_dev_corelib() -> Option<Self> {
+        let mut db = Self::default();
+        detect_corelib().map(|path| {
+            let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
+            let core_root_dir = Directory(path);
+            db.set_crate_root(core_crate, Some(core_root_dir));
+            db
+        })
+    }
 }
 impl salsa::Database for SemanticDatabaseForTesting {}
 impl Default for SemanticDatabaseForTesting {
@@ -229,7 +243,7 @@ pub fn setup_test_block(
 pub fn test_expr_diagnostics(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
-    let db = &mut SemanticDatabaseForTesting::default();
+    let db = &mut SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_expr(
@@ -245,7 +259,7 @@ pub fn test_expr_diagnostics(
 pub fn test_function_diagnostics(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
-    let db = &mut SemanticDatabaseForTesting::default();
+    let db = &mut SemanticDatabaseForTesting::with_dev_corelib().unwrap();
     OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_function(
