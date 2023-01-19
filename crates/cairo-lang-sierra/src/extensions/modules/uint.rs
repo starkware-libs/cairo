@@ -26,6 +26,9 @@ pub enum IntOperator {
 pub trait UintTraits: Default {
     /// The rust matching type to this type.
     type UintType: TryFrom<BigInt> + Into<BigInt> + Copy;
+    /// Is the type smaller than 128 bits.
+    /// Relevant since some implementations are different due to range check being 128 bits based.
+    const IS_SMALL: bool;
     /// The generic type id for this type.
     const GENERIC_TYPE_ID: GenericTypeId;
     /// The generic libfunc id for getting a const of this type.
@@ -265,6 +268,8 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
         }
         let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let is_wrapping_result_at_end =
+            !TUintTraits::IS_SMALL || self.operator == IntOperator::OverflowingSub;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature {
@@ -302,7 +307,9 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
                         },
                         OutputVarInfo {
                             ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar {
+                                idx: if is_wrapping_result_at_end { Some(0) } else { None },
+                            },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -330,6 +337,7 @@ pub struct Uint8Traits;
 impl UintTraits for Uint8Traits {
     type UintType = u8;
     const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u8");
+    const IS_SMALL: bool = true;
     const CONST: &'static str = "u8_const";
     const EQUAL: &'static str = "u8_eq";
     const LESS_THAN: &'static str = "u8_lt";
@@ -344,6 +352,7 @@ pub type Uint8Type = UintType<Uint8Traits>;
 define_libfunc_hierarchy! {
     pub enum Uint8Libfunc {
         Const(UintConstLibfunc<Uint8Traits>),
+        Operation(UintOperationLibfunc<Uint8Traits>),
         LessThan(UintLessThanLibfunc<Uint8Traits>),
         Equal(UintEqualLibfunc<Uint8Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),

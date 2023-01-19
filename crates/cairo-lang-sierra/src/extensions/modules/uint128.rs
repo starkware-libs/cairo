@@ -43,6 +43,7 @@ pub struct Uint128Traits;
 impl UintTraits for Uint128Traits {
     type UintType = u128;
     const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u128");
+    const IS_SMALL: bool = false;
     const CONST: &'static str = "u128_const";
     const EQUAL: &'static str = "u128_eq";
     const LESS_THAN: &'static str = "u128_lt";
