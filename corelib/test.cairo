@@ -33,48 +33,43 @@ fn test_bool_operators() {
 
 #[test]
 fn test_ec_operations() {
-    let state = ec_init_state();
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
     let beta_p2_root = 2487829544412206244690656897973144572467842667075005257202960243805141046681;
-    let p = ec_point_from_felts(1, beta_p2_root);
+    let p = option_unwrap(ec_point_from_x(1));
     let (x, y) = ec_point_unwrap(p);
     assert(x == 1, 'x == 1');
-    assert(y == beta_p2_root, 'y is correct');
-    let state2 = ec_add_to_state(state, p);
-    let q = ec_finalize_state(state2);
+    assert(y == beta_p2_root | y == -beta_p2_root, 'y is correct');
+
+    let mut state = ec_state_init();
+    ec_state_add(ref state, p);
+    let q = ec_state_finalize_nonzero(state);
     let (qx, qy) = ec_point_unwrap(q);
     assert(qx == x, 'bad finalize x');
     assert(qy == y, 'bad finalize y');
+
     // Try doing the same thing with the EC op builtin.
-    let state3 = ec_op_builtin(state, 1, p);
-    let q3 = ec_finalize_state(state3);
-    let (qx, qy) = ec_point_unwrap(q);
+    let mut state = ec_state_init();
+    ec_state_add_mul(ref state, 1, p);
+    let q3 = ec_state_finalize_nonzero(state);
+    let (qx, qy) = ec_point_unwrap(q3);
     assert(qx == x, 'bad EC op x');
     assert(qy == y, 'bad EC op y');
-    // Try computing `p + p` using the ec_op function.
-    let double_p = ec_op(p, 1, p);
+
+    // Try computing `p + p` using the ec_mul function.
+    let double_p = option_unwrap(ec_mul(p, 2));
     let (double_x, double_y) = ec_point_unwrap(double_p);
+    let expected_double_y = 3572434102142093425782752266058856056057826477682467661647843687948039943621;
     assert(
         double_x == 75984168971785666410219869038140038216102669781812169677875295511117260233,
         'bad double x'
     );
-    assert(
-        double_y == 3572434102142093425782752266058856056057826477682467661647843687948039943621,
-        'bad double y'
-    );
+    assert(double_y == expected_double_y | double_y == -expected_double_y, 'bad double y');
 }
 
 #[test]
 #[should_panic]
 fn test_bad_ec_point_creation() {
-    ec_point_from_felts(0, 0);
-}
-
-#[test]
-#[should_panic]
-fn test_bad_ec_point_finalization() {
-    let state = ec_init_state();
-    let point_at_infinity = ec_finalize_state(state);
+    ec_point_new(0, 0);
 }
 
 #[test]
