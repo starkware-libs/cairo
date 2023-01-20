@@ -1086,44 +1086,35 @@ fn resolve_variable_or_constant(
     let db = ctx.db;
     let syntax_db = db.upcast();
     let segments = path.elements(syntax_db);
-    if segments.len() != 1 {
+    if segments.is_empty() {
         return Err(ctx.diagnostics.report(path, Unsupported));
     }
 
-    match &segments[0] {
-        PathSegment::Simple(ident_segment) => {
+    // Check if this is a variable.
+    if segments.len() == 1 {
+        if let PathSegment::Simple(ident_segment) = &segments[0] {
             let identifier = ident_segment.ident(syntax_db);
             let variable_name = identifier.text(ctx.db.upcast());
             if let Some(res) = get_variable_by_name(ctx, &variable_name, path.stable_ptr().into()) {
                 return Ok(res);
             }
-            // Check if this is a constant.
-            let resolved_item = ctx.resolver.resolve_concrete_path(
-                ctx.diagnostics,
-                path,
-                NotFoundItemType::Identifier,
-            )?;
-            let ResolvedConcreteItem::Constant(constant_id) = resolved_item else {
-                return Err(
-                    ctx.diagnostics.report(path, UnexpectedElement{
-                        expected:vec![ElementKind::Variable,ElementKind::Constant] ,
-                        actual: (&resolved_item).into()
-                    })
-                );
-            };
-
-            let ty = db.constant_semantic_data(constant_id)?.value.ty();
-            Ok(Expr::Constant(ExprConstant {
-                constant_id,
-                ty,
-                stable_ptr: path.stable_ptr().into(),
-            }))
-        }
-        PathSegment::WithGenericArgs(generic_args_segment) => {
-            // TODO(ilya, 10/10/2022): Generics are not supported yet.
-            Err(ctx.diagnostics.report(generic_args_segment, Unsupported))
         }
     }
+
+    // Check if this is a constant.
+    let resolved_item =
+        ctx.resolver.resolve_concrete_path(ctx.diagnostics, path, NotFoundItemType::Identifier)?;
+    let ResolvedConcreteItem::Constant(constant_id) = resolved_item else {
+        return Err(
+            ctx.diagnostics.report(path, UnexpectedElement{
+                expected: vec![ElementKind::Variable, ElementKind::Constant],
+                actual: (&resolved_item).into()
+            })
+        );
+    };
+
+    let ty = db.constant_semantic_data(constant_id)?.value.ty();
+    Ok(Expr::Constant(ExprConstant { constant_id, ty, stable_ptr: path.stable_ptr().into() }))
 }
 
 /// Resolves a variable given a context and a simple name.
