@@ -75,11 +75,11 @@ pub fn core_libfunc_cost_base<Ops: CostOperations, InfoProvider: InvocationCostI
         Bool(BoolConcreteLibfunc::Or(_)) => vec![ops.const_cost(2)],
         Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.const_cost(2), ops.const_cost(2)],
         Ec(libfunc) => match libfunc {
-            EcConcreteLibfunc::AddToState(_) => vec![ops.const_cost(9)],
-            EcConcreteLibfunc::CreatePoint(_) => vec![ops.const_cost(6), ops.const_cost(6)],
-            EcConcreteLibfunc::FinalizeState(_) => vec![ops.const_cost(13), ops.const_cost(6)],
-            EcConcreteLibfunc::InitState(_) => vec![ops.const_cost(8)],
-            EcConcreteLibfunc::Op(_) => {
+            EcConcreteLibfunc::StateAdd(_) => vec![ops.const_cost(9)],
+            EcConcreteLibfunc::TryNew(_) => vec![ops.const_cost(6), ops.const_cost(6)],
+            EcConcreteLibfunc::StateFinalize(_) => vec![ops.const_cost(13), ops.const_cost(6)],
+            EcConcreteLibfunc::StateInit(_) => vec![ops.const_cost(8)],
+            EcConcreteLibfunc::StateAddMul(_) => {
                 vec![ops.add(ops.const_cost(5), ops.const_cost_token(1, CostTokenType::EcOp))]
             }
             EcConcreteLibfunc::PointFromX(_) => vec![
