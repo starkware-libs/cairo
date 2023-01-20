@@ -27,6 +27,7 @@ cairo_lang_test_utils::test_file_test!(
         function_call: "function_call",
         generics: "generics",
         if_: "if",
+        inference: "inference",
         let_statement: "let_statement",
         literal: "literal",
         match_: "match",

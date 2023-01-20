@@ -228,6 +228,7 @@ pub fn unwrap_error_propagation_type(
             semantic::ConcreteTypeId::Struct(_) | semantic::ConcreteTypeId::Extern(_),
         )
         | TypeLongId::Tuple(_)
+        | TypeLongId::Var(_)
         | TypeLongId::Missing(_) => None,
     }
 }

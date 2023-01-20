@@ -1,0 +1,156 @@
+//! > Test return type inference
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> Option::<felt> {
+    Option::Some(5)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test array inference
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let mut arr = array_new();
+    array_append(arr, 1)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test cycles
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > comments
+// TODO(spapini): Make better diagnostics.
+
+//! > function
+fn foo() {
+    let mut arr = array_new();
+    array_append(arr, arr)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "?1", found: "core::array::Array::<?0>".
+ --> lib.cairo:3:23
+    array_append(arr, arr)
+                      ^*^
+
+error: Type annotation needed.
+ --> lib.cairo:2:19
+    let mut arr = array_new();
+                  ^*******^
+
+//! > ==========================================================================
+
+//! > Test undetermined system
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let mut arr = array_new();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Type annotation needed.
+ --> lib.cairo:2:19
+    let mut arr = array_new();
+                  ^*******^
+
+//! > ==========================================================================
+
+//! > Test type mismatch
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let mut arr: felt = array_new::<felt>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::felt", found: "core::array::Array::<core::felt>".
+ --> lib.cairo:2:25
+    let mut arr: felt = array_new::<felt>();
+                        ^*****************^
+
+//! > ==========================================================================
+
+//! > Test never type
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> felt {
+    panic(array_new())
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test anti never type
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> never {
+    5
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::never", found: "core::felt".
+ --> lib.cairo:1:19
+fn foo() -> never {
+                  ^
