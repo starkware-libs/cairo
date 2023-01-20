@@ -352,6 +352,15 @@ pub fn type_info(
                     .is_empty();
             TypeInfo { droppable, duplicatable }
         }
+        TypeLongId::GenericParameter(_) => {
+            let droppable =
+                !find_impls_at_context(db, &lookup_context, concrete_drop_trait(db, ty))?
+                    .is_empty();
+            let duplicatable =
+                !find_impls_at_context(db, &lookup_context, concrete_copy_trait(db, ty))?
+                    .is_empty();
+            TypeInfo { droppable, duplicatable }
+        }
         TypeLongId::Tuple(tys) => {
             let infos = tys
                 .into_iter()
@@ -361,7 +370,6 @@ pub fn type_info(
             let duplicatable = infos.iter().all(|info| info.duplicatable);
             TypeInfo { droppable, duplicatable }
         }
-        TypeLongId::GenericParameter(_) => todo!(),
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }
