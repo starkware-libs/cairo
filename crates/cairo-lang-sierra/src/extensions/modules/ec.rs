@@ -45,11 +45,11 @@ impl NoGenericArgsGenericType for EcStateType {
 
 define_libfunc_hierarchy! {
     pub enum EcLibfunc {
-        AddToState(EcAddToStateLibfunc),
-        CreatePoint(EcCreatePointLibfunc),
-        FinalizeState(EcFinalizeStateLibfunc),
-        InitState(EcInitStateLibfunc),
-        Op(EcOpLibfunc),
+        StateAdd(EcStateAddLibfunc),
+        TryNew(EcCreatePointLibfunc),
+        StateFinalize(EcStateFinalizeLibfunc),
+        StateInit(EcStateInitLibfunc),
+        StateAddMul(EcStateAddMulLibfunc),
         PointFromX(EcPointFromXLibfunc),
         UnwrapPoint(EcUnwrapPointLibfunc),
     }, EcConcreteLibfunc
@@ -60,7 +60,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct EcCreatePointLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
-    const STR_ID: &'static str = "ec_point_try_create";
+    const STR_ID: &'static str = "ec_point_try_new";
 
     fn specialize_signature(
         &self,
@@ -158,9 +158,9 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
 
 /// Libfunc for initializing an EC state from an EC point.
 #[derive(Default)]
-pub struct EcInitStateLibfunc {}
-impl NoGenericArgsGenericLibfunc for EcInitStateLibfunc {
-    const STR_ID: &'static str = "ec_init_state";
+pub struct EcStateInitLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcStateInitLibfunc {
+    const STR_ID: &'static str = "ec_state_init";
 
     fn specialize_signature(
         &self,
@@ -179,9 +179,9 @@ impl NoGenericArgsGenericLibfunc for EcInitStateLibfunc {
 
 /// Libfunc for initializing an EC state from an EC point.
 #[derive(Default)]
-pub struct EcAddToStateLibfunc {}
-impl NoGenericArgsGenericLibfunc for EcAddToStateLibfunc {
-    const STR_ID: &'static str = "ec_add_to_state";
+pub struct EcStateAddLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcStateAddLibfunc {
+    const STR_ID: &'static str = "ec_state_add";
 
     fn specialize_signature(
         &self,
@@ -201,9 +201,9 @@ impl NoGenericArgsGenericLibfunc for EcAddToStateLibfunc {
 
 /// Libfunc for initializing an EC state from an EC point.
 #[derive(Default)]
-pub struct EcFinalizeStateLibfunc {}
-impl NoGenericArgsGenericLibfunc for EcFinalizeStateLibfunc {
-    const STR_ID: &'static str = "ec_try_finalize_state";
+pub struct EcStateFinalizeLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
+    const STR_ID: &'static str = "ec_state_finalize";
 
     fn specialize_signature(
         &self,
@@ -234,9 +234,9 @@ impl NoGenericArgsGenericLibfunc for EcFinalizeStateLibfunc {
 /// Libfunc for applying the EC op builtin: given an EC state `S`, a scalar `M` and an EC point `Q`,
 /// computes a new EC state `S + M * Q`.
 #[derive(Default)]
-pub struct EcOpLibfunc {}
-impl NoGenericArgsGenericLibfunc for EcOpLibfunc {
-    const STR_ID: &'static str = "ec_op_builtin";
+pub struct EcStateAddMulLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcStateAddMulLibfunc {
+    const STR_ID: &'static str = "ec_state_add_mul";
 
     fn specialize_signature(
         &self,
