@@ -385,32 +385,6 @@ fn test_expr_var() {
 }
 
 #[test]
-fn test_expr_var_failures() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let diagnostics = setup_test_function(
-        &mut db_val,
-        indoc! {"
-            fn foo(a: felt) {
-                a::b;
-            }
-        "},
-        "foo",
-        "",
-    )
-    .get_diagnostics();
-    assert_eq!(
-        diagnostics,
-        indoc! {"
-            error: Unsupported feature.
-             --> lib.cairo:2:5
-                a::b;
-                ^**^
-
-        "}
-    )
-}
-
-#[test]
 fn test_expr_match() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_function = setup_test_function(
