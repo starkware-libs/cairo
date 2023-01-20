@@ -238,7 +238,11 @@ pub struct Args {
 
 pub fn compile_at_path(path: &str) -> Result<CairoProgram, CompilationError> {
     let sierra_code = fs::read_to_string(path).expect("Could not read file!");
-    let program = ProgramParser::new().parse(&sierra_code).unwrap();
+    compile_contents(&sierra_code)
+}
+
+pub fn compile_contents(contents: &str) -> Result<CairoProgram, CompilationError> {
+    let program = ProgramParser::new().parse(&contents).unwrap();
 
     let gas_usage_check = true;
     let cairo_program = compile(
