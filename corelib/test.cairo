@@ -101,6 +101,37 @@ fn test_ec_point_finalization_zero() {
 }
 
 #[test]
+fn test_ecdsa() {
+    let message_hash = 0x503f4bea29baee10b22a7f10bdc82dda071c977c1f25b8f3973d34e6b03b2c;
+    let public_key = 0x7b7454acbe7845da996377f85eb0892044d75ae95d04d3325a391951f35d2ec;
+    let signature_r = 0xbe96d72eb4f94078192c2e84d5230cde2a70f4b45c8797e2c907acff5060bb;
+    let signature_s = 0x677ae6bba6daf00d2631fab14c8acf24be6579f9d9e98f67aa7f2770e57a1f5;
+    assert(
+        ecdsa::check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s),
+        'ecdsa returned false'
+    );
+}
+
+#[test]
+fn test_ec_mul() {
+    let p = ec_point_new(
+        x: 336742005567258698661916498343089167447076063081786685068305785816009957563,
+        y: 1706004133033694959518200210163451614294041810778629639790706933324248611779,
+    );
+    let m = 2713877091499598330239944961141122840311015265600950719674787125185463975936;
+    let (x, y) = ec_point_unwrap(ec_mul(p, m).unwrap());
+
+    assert(
+        x == 2881632108168892236043523177391659237686965655035240771134509747985978822780,
+        'ec_mul failed (x).'
+    );
+    assert(
+        y == 591135563672138037839394207500885413019058613584891498394077262936524140839,
+        'ec_mul failed (y).'
+    );
+}
+
+#[test]
 fn test_felt_operators() {
     assert(1 + 3 == 4, '1 + 3 == 4');
     assert(3 + 6 == 9, '3 + 6 == 9');
