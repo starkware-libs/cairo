@@ -15,7 +15,7 @@ use crate::extensions::core::CoreConcreteLibfunc::{
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use crate::extensions::ec::EcConcreteLibfunc::{
-    AddToState, CreatePoint, FinalizeState, InitState, Op, PointFromX, UnwrapPoint,
+    PointFromX, StateAdd, StateAddMul, StateFinalize, StateInit, TryNew, UnwrapPoint,
 };
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt::{
@@ -75,8 +75,8 @@ pub fn simulate<
             [value] => Ok((vec![value.clone(), value.clone()], 0)),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Ec(AddToState(_)) => todo!(),
-        Ec(CreatePoint(_)) => match &inputs[..] {
+        Ec(StateAdd(_)) => todo!(),
+        Ec(TryNew(_)) => match &inputs[..] {
             [CoreValue::Felt(x), CoreValue::Felt(y)] => {
                 // If the point is on the curve use the fallthrough branch and return the point.
                 if y * y == x * x * x + x + get_beta() {
@@ -88,9 +88,9 @@ pub fn simulate<
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Ec(FinalizeState(_)) => unimplemented!(),
-        Ec(InitState(_)) => unimplemented!(),
-        Ec(Op(_)) => unimplemented!(),
+        Ec(StateFinalize(_)) => unimplemented!(),
+        Ec(StateInit(_)) => unimplemented!(),
+        Ec(StateAddMul(_)) => unimplemented!(),
         Ec(PointFromX(_)) => unimplemented!(),
         Ec(UnwrapPoint(_)) => match &inputs[..] {
             [CoreValue::EcPoint(x, y)] => {
