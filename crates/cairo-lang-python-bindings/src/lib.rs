@@ -25,14 +25,14 @@ fn call_cairo_to_sierra_compiler(input_path: &str, output_path: Option<&str>) ->
 
 #[pyfunction]
 fn call_sierra_to_casm_compiler(input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
-    let cairo_program = compile_sierra_to_casm_at_path(input_path)
+    let casm_program = compile_sierra_to_casm_at_path(input_path)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
-    let cairo_program_contents = format!("{}", cairo_program);
+    let casm_program_contents = format!("{}", casm_program);
     if let Some(path) = output_path {
-        fs::write(path, cairo_program_contents).map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
+        fs::write(path, casm_program_contents).map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
         return Ok(None);
     }
-    Ok(Some(cairo_program_contents))
+    Ok(Some(casm_program_contents))
 }
 
 #[pymodule]
