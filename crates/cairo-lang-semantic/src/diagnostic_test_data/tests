@@ -98,7 +98,7 @@ test_expr_diagnostics
 //! > module_code
 fn foo(ref ref v: felt) {
   let mut a = 1;
-  foo(a);
+  foo(ref a);
 }
 
 //! > function_body
@@ -147,16 +147,16 @@ test_expr_diagnostics
 //! > module_code
 fn foo(ref v: felt) {
   let a = 3;
-  foo(a);
+  foo(ref a);
 }
 
 //! > function_body
 
 //! > expected_diagnostics
 error: ref argument must be a mutable variable.
- --> lib.cairo:3:7
-  foo(a);
-      ^
+ --> lib.cairo:3:11
+  foo(ref a);
+          ^
 
 //! > ==========================================================================
 

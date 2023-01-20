@@ -6,7 +6,7 @@ test_function_lowering
 //! > function
 #[inline(always)]
 fn foo(ref a: felt, b: felt) -> felt {
-  foo(a, b);
+  foo(ref a, b);
   b
 }
 

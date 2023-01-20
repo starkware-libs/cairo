@@ -6,7 +6,7 @@ fn option_unwrap<T>(val: Option::<T>) -> T {
         Option::Some(x) => x,
         Option::None(()) => {
             let mut data = array_new::<felt>();
-            array_append::<felt>(data, 'option_unwrap failed.')
+            array_append::<felt>(ref data, 'option_unwrap failed.')
             panic(data)
         },
     }

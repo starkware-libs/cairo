@@ -253,22 +253,28 @@
     │   │       │   │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │   │       ├── args (kind: ArgList)
-    │   │       │   │   │   │       │   ├── item #0 (kind: ArgUnnamed)
-    │   │       │   │   │   │       │   │   └── value (kind: ExprPath)
-    │   │       │   │   │   │       │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │   │           └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   │   │       │   ├── item #0 (kind: Arg)
+    │   │       │   │   │   │       │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   │       │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │   │       │   │       └── value (kind: ExprPath)
+    │   │       │   │   │   │       │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │   │               └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │   │       │   ├── separator #0 (kind: TokenComma): ','
-    │   │       │   │   │   │       │   ├── item #1 (kind: ArgUnnamed)
-    │   │       │   │   │   │       │   │   └── value (kind: ExprErrorPropagate)
-    │   │       │   │   │   │       │   │       ├── expr (kind: ExprPath)
-    │   │       │   │   │   │       │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │   │       │       └── ident (kind: TokenIdentifier): 'y'
-    │   │       │   │   │   │       │   │       └── op (kind: TokenQuestionMark): '?'
+    │   │       │   │   │   │       │   ├── item #1 (kind: Arg)
+    │   │       │   │   │   │       │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   │       │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │   │       │   │       └── value (kind: ExprErrorPropagate)
+    │   │       │   │   │   │       │   │           ├── expr (kind: ExprPath)
+    │   │       │   │   │   │       │   │           │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │   │           │       └── ident (kind: TokenIdentifier): 'y'
+    │   │       │   │   │   │       │   │           └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   │   │       │   ├── separator #1 (kind: TokenComma): ','
-    │   │       │   │   │   │       │   └── item #2 (kind: ArgUnnamed)
-    │   │       │   │   │   │       │       └── value (kind: ExprPath)
-    │   │       │   │   │   │       │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │               └── ident (kind: TokenIdentifier): 'z'
+    │   │       │   │   │   │       │   └── item #2 (kind: Arg)
+    │   │       │   │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │   │       │           └── value (kind: ExprPath)
+    │   │       │   │   │   │       │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │                   └── ident (kind: TokenIdentifier): 'z'
     │   │       │   │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
@@ -297,10 +303,12 @@
     │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │       ├── args (kind: ArgList)
-    │   │       │   │   │       │   └── item #0 (kind: ArgUnnamed)
-    │   │       │   │   │       │       └── value (kind: ExprPath)
-    │   │       │   │   │       │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       │               └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   │       │   └── item #0 (kind: Arg)
+    │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       │           └── value (kind: ExprPath)
+    │   │       │   │   │       │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       │                   └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #10 (kind: StatementExpr)
@@ -319,10 +327,12 @@
     │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │       ├── args (kind: ArgList)
-    │   │       │   │   │       │   └── item #0 (kind: ArgUnnamed)
-    │   │       │   │   │       │       └── value (kind: ExprPath)
-    │   │       │   │   │       │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       │               └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   │       │   └── item #0 (kind: Arg)
+    │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       │           └── value (kind: ExprPath)
+    │   │       │   │   │       │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       │                   └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   └── child #11 (kind: StatementReturn)

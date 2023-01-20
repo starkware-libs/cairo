@@ -177,6 +177,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::VariantCtorNotImmutable => {
+                "Variant constructor argument must be immutable.".to_string()
+            }
             SemanticDiagnosticKind::TraitParamMutable { trait_id, function_id } => {
                 let defs_db = db.upcast();
                 format!(
@@ -344,6 +347,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
             SemanticDiagnosticKind::RefArgNotMutable => {
                 "ref argument must be a mutable variable.".into()
+            }
+            SemanticDiagnosticKind::RefArgNotExplicit => {
+                "ref argument must be a passed with a preceding 'ref'.".into()
+            }
+            SemanticDiagnosticKind::ImmutableArgWithModifiers => {
+                "Argument cannot have modifiers.".into()
             }
             SemanticDiagnosticKind::AssignmentToImmutableVar => {
                 "Cannot assign to an immutable variable.".into()
@@ -541,6 +550,7 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
+    VariantCtorNotImmutable,
     TraitParamMutable {
         trait_id: TraitId,
         function_id: TraitFunctionId,
@@ -628,6 +638,8 @@ pub enum SemanticDiagnosticKind {
     },
     RefArgNotAVariable,
     RefArgNotMutable,
+    RefArgNotExplicit,
+    ImmutableArgWithModifiers,
     AssignmentToImmutableVar,
     InvalidLhsForAssignment,
     InvalidMemberExpression,

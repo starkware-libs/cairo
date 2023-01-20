@@ -207,7 +207,7 @@ fn foo(ref x: ADrop, y: ADrop) {
 
 fn bar(){
   let mut data = array_new::<felt>();
-  array_append::<felt>(data, 1);
+  array_append::<felt>(ref data, 1);
   panic(data);
 }
 

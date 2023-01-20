@@ -733,7 +733,7 @@ test_function_lowering
 
 //! > function
 fn foo(mut z: felt) {
-    match bar(z) {
+    match bar(ref z) {
         MyEnum::a((x, (y, z))) => {},
         MyEnum::b((x, y)) => {},
         MyEnum::c(x) => {},
@@ -928,7 +928,7 @@ test_function_lowering
 
 //! > function
 fn foo(mut z: felt) {
-    let y = bar(z);
+    let y = bar(ref z);
     match y {
         MyEnum::a((x, (y, z))) => {},
         MyEnum::b((x, y)) => {},
