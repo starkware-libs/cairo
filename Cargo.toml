@@ -28,6 +28,7 @@ members = [
     "crates/cairo-lang-syntax",
     "crates/cairo-lang-test-runner",
     "crates/cairo-lang-protostar",
+    "crates/cairo-lang-python-bindings",
     "tests",
 ]
 
