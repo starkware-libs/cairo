@@ -140,7 +140,7 @@ fn test_resolve_path_trait_impl() {
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [], tail: Some(FunctionCall(ExprFunctionCall { \
          function: core::felt_add, ref_args: [], args: [FunctionCall(ExprFunctionCall { function: \
-         test::foo, ref_args: [], args: [], ty: core::felt }), Literal(ExprLiteral { value: 1, \
-         ty: core::felt })], ty: core::felt })), ty: core::felt }))"
+         test::MyImpl::foo, ref_args: [], args: [], ty: core::felt }), Literal(ExprLiteral { \
+         value: 1, ty: core::felt })], ty: core::felt })), ty: core::felt }))"
     );
 }
