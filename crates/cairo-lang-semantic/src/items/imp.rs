@@ -18,14 +18,14 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionHelper};
-use itertools::izip;
+use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
+use itertools::{chain, izip, zip_eq, Itertools};
 use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{FunctionBody, FunctionBodyData};
-use super::functions::FunctionDeclarationData;
+use super::functions::{substitute_signature, FunctionDeclarationData};
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
 use crate::corelib::{copy_trait, drop_trait};
@@ -35,6 +35,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::Inference;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
+use crate::types::GenericSubstitution;
 use crate::{
     semantic, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId, GenericArgumentId,
     Mutability, SemanticDiagnostic, TypeId, TypeLongId,
@@ -545,12 +546,14 @@ pub fn priv_impl_function_declaration_data(
     let function_syntax = &data.function_asts[impl_function_id];
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
-    let generic_params = semantic_generic_params(
+    let function_generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         module_file_id,
         &declaration.generic_params(syntax_db),
     );
+    let impl_generic_params = db.impl_generic_params(impl_id)?;
+    let generic_params = chain!(impl_generic_params, function_generic_params).collect_vec();
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let signature_syntax = declaration.signature(syntax_db);
@@ -573,7 +576,8 @@ pub fn priv_impl_function_declaration_data(
         &signature_syntax,
         &signature,
         function_syntax,
-    );
+    )
+    .ok();
 
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
@@ -596,42 +600,43 @@ fn validate_impl_function_signature(
     signature_syntax: &ast::FunctionSignature,
     signature: &semantic::Signature,
     function_syntax: &ast::FunctionWithBody,
-) {
+) -> Maybe<()> {
     let syntax_db = db.upcast();
-    let Ok(declaraton_data) = db.priv_impl_declaration_data(impl_id) else {
-        return;
-    };
-    let Ok(concrete_trait) = declaraton_data.concrete_trait else {
-        return;
-    };
+    let declaraton_data = db.priv_impl_declaration_data(impl_id)?;
+    let concrete_trait = declaraton_data.concrete_trait?;
     let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait);
     let trait_id = concrete_trait_long_id.trait_id;
-    let Ok(trait_functions) = db.trait_functions(trait_id) else {
-        return;
-    };
+    let trait_functions = db.trait_functions(trait_id)?;
     let function_name = db.lookup_intern_impl_function(impl_function_id).name(db.upcast());
-    let Some(trait_function_id) = trait_functions.get(&function_name).on_none(|| {
-        diagnostics.report(function_syntax, FunctionNotMemberOfTrait { impl_id, impl_function_id, trait_id });
-    }) else {
-        return;
-    };
-    let Ok(trait_signature) = db.trait_function_signature(*trait_function_id) else {
-        return;
-    };
-    if signature.params.len() != trait_signature.params.len() {
+    let trait_function_id = trait_functions.get(&function_name).ok_or_else(|| {
+        diagnostics.report(
+            function_syntax,
+            FunctionNotMemberOfTrait { impl_id, impl_function_id, trait_id },
+        )
+    })?;
+    let trait_signature = db.trait_function_signature(*trait_function_id)?;
+
+    // Find concrete trait substitution.
+    let trait_generic_params = db.trait_generic_params(trait_id)?;
+    let substitution = GenericSubstitution(
+        zip_eq(trait_generic_params, concrete_trait_long_id.generic_args).collect(),
+    );
+    let concrete_trait_signature = substitute_signature(db, substitution, trait_signature);
+
+    if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(
             &signature_syntax.parameters(syntax_db),
             WrongNumberOfParameters {
                 impl_id,
                 impl_function_id,
                 trait_id,
-                expected: trait_signature.params.len(),
+                expected: concrete_trait_signature.params.len(),
                 actual: signature.params.len(),
             },
         );
     }
     for (idx, (param, trait_param)) in
-        izip!(signature.params.iter(), trait_signature.params.iter()).enumerate()
+        izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {
         let expected_ty = trait_param.ty;
         let actual_ty = param.ty;
@@ -664,11 +669,11 @@ fn validate_impl_function_signature(
         }
     }
 
-    if !trait_signature.panicable && signature.panicable {
+    if !concrete_trait_signature.panicable && signature.panicable {
         diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
     }
 
-    let expected_ty = trait_signature.return_type;
+    let expected_ty = concrete_trait_signature.return_type;
     let actual_ty = signature.return_type;
     if expected_ty != actual_ty {
         let location_ptr = match signature_syntax.ret_ty(syntax_db) {
@@ -685,6 +690,7 @@ fn validate_impl_function_signature(
             WrongReturnTypeForImpl { impl_id, impl_function_id, trait_id, expected_ty, actual_ty },
         );
     }
+    Ok(())
 }
 
 // === Body ===

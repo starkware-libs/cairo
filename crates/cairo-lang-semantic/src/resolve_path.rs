@@ -473,7 +473,7 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<FunctionId> {
         let defs_db = self.db.upcast();
 
-        let concrete_trait_id = concrete_trait_function_id.trait_id(self.db);
+        let concrete_trait_id = concrete_trait_function_id.concrete_trait_id(self.db);
         let function_id = concrete_trait_function_id.function_id(self.db);
 
         // Find the relevant impl of the trait.

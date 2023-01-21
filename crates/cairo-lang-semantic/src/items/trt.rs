@@ -9,6 +9,7 @@ use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
@@ -41,7 +42,7 @@ impl ConcreteTraitId {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ConcreteTraitFunctionLongId {
     // Note the members are private to prevent direct call to the constructor.
-    trait_id: ConcreteTraitId,
+    concrete_trait_id: ConcreteTraitId,
     function_id: TraitFunctionId,
 }
 impl ConcreteTraitFunctionLongId {
@@ -55,7 +56,7 @@ impl ConcreteTraitFunctionLongId {
             function_id.trait_id(db.upcast()),
             "Concrete trait a trait function must belong to the same generic trait."
         );
-        Self { trait_id: concrete_trait_id, function_id }
+        Self { concrete_trait_id, function_id }
     }
 }
 define_short_id!(
@@ -69,8 +70,8 @@ impl ConcreteTraitFunctionId {
         db.lookup_intern_concrete_trait_function(*self).function_id
     }
 
-    pub fn trait_id(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
-        db.lookup_intern_concrete_trait_function(*self).trait_id
+    pub fn concrete_trait_id(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+        db.lookup_intern_concrete_trait_function(*self).concrete_trait_id
     }
 }
 
@@ -240,12 +241,14 @@ pub fn priv_trait_function_data(
     let data = db.priv_trait_semantic_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
     let declaration = function_syntax.declaration(syntax_db);
-    let generic_params = semantic_generic_params(
+    let function_generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         module_file_id,
         &declaration.generic_params(syntax_db),
     );
+    let trait_generic_params = db.trait_generic_params(trait_id)?;
+    let generic_params = chain!(trait_generic_params, function_generic_params).collect_vec();
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let signature_syntax = declaration.signature(syntax_db);
