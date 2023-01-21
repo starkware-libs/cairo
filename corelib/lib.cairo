@@ -127,6 +127,7 @@ use array::Array;
 use array::array_new;
 use array::array_append;
 use array::array_pop_front;
+use array::array_get;
 use array::array_at;
 use array::array_len;
 
