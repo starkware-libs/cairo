@@ -5,7 +5,7 @@ test_expand_plugin
 
 //! > cairo_code
 #[panic_with('1', foo_improved)]
-extern fn foo(a: felt, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
+extern fn foo(a: felt, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
 #[panic_with('2', bar_changed)]
 extern fn bar() -> Result::<felt, Err> nopanic;
@@ -15,12 +15,15 @@ fn non_extern(_a: some_type) -> Option::<(felt, other)> nopanic {
     (4, 56)
 }
 
+#[panic_with('4', generic_panic)]
+extern fn generic<T>(t: T, v: felt) -> Result::<T, Err> nopanic;
+
 //! > generated_cairo_code
 #[panic_with('1', foo_improved)]
-extern fn foo(a: felt, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
+extern fn foo(a: felt, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
-fn foo_improved(a: felt, b: other) -> () {
-    match foo(a, b) {
+fn foo_improved(a: felt, ref b: other) -> () {
+    match foo(a, ref b) {
         Option::Some (v) => {
             v
         },
@@ -54,6 +57,7 @@ fn bar_changed() -> felt {
 fn non_extern(_a: some_type) -> Option::<(felt, other)> nopanic {
     (4, 56)
 }
+
 fn non_extern_stuff(_a: some_type) -> (felt, other) {
     match non_extern(_a) {
         Option::Some (v) => {
@@ -62,6 +66,22 @@ fn non_extern_stuff(_a: some_type) -> (felt, other) {
         Option::None (v) => {
             let mut data = array_new::<felt>();
             array_append::<felt>(ref data, '3');
+            panic(data)
+        },
+    }
+}
+
+
+#[panic_with('4', generic_panic)]
+extern fn generic<T>(t: T, v: felt) -> Result::<T, Err> nopanic;
+fn generic_panic<T>(t: T, v: felt) -> T {
+    match generic(t, v) {
+        Result::Ok (v) => {
+            v
+        },
+        Result::Err (v) => {
+            let mut data = array_new::<felt>();
+            array_append::<felt>(ref data, '4');
             panic(data)
         },
     }

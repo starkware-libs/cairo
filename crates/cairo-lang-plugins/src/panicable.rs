@@ -82,7 +82,6 @@ fn generate_panicable_code(
         let Some((err_value, panicable_name)) = try_extract_matches!(attr.args(db), ast::OptionAttributeArgs::AttributeArgs).and_then(
             |args| {
             if let [ast::Expr::ShortString(err_value), ast::Expr::Path(name)] = &args.arg_list(db).elements(db)[..] {
-                // TODO(orizi): Once generic user functions are supported, support generic params, e.g. for `array_at<T>`.
                 if let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] {
                     Some((err_value.text(db), segment.ident(db).text(db)))
                 } else {
@@ -101,6 +100,7 @@ fn generate_panicable_code(
                 remove_original_item,
             };
         };
+        let generics_params = declaration.generic_params(db).as_syntax_node().get_text(db);
 
         let function_name = declaration.name(db).text(db);
         let params = signature.parameters(db).as_syntax_node().get_text(db);
@@ -108,14 +108,24 @@ fn generate_panicable_code(
             .parameters(db)
             .elements(db)
             .into_iter()
-            .map(|param| param.name(db).as_syntax_node().get_text(db))
+            .map(|param| {
+                format!(
+                    "{}{}",
+                    if matches!(&param.modifiers(db).elements(db)[..], [ast::Modifier::Ref(_)]) {
+                        "ref "
+                    } else {
+                        ""
+                    },
+                    param.name(db).as_syntax_node().get_text(db)
+                )
+            })
             .join(", ");
         return PluginResult {
             code: Some(PluginGeneratedFile {
                 name: "panicable".into(),
                 content: indoc::formatdoc!(
                     r#"
-                    fn {panicable_name}({params}) -> {inner_ty_text} {{
+                    fn {panicable_name}{generics_params}({params}) -> {inner_ty_text} {{
                         match {function_name}({args}) {{
                             {success_variant} (v) => {{
                                 v
