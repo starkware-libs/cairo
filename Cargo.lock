@@ -329,6 +329,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-utils",
  "clap 4.0.26",
+ "itertools",
  "log",
  "salsa",
  "test-log",

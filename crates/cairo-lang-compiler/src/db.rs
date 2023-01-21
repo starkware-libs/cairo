@@ -12,12 +12,16 @@ use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGro
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_project::ProjectConfig;
+use cairo_lang_semantic::corelib::get_core_ty_by_name;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
+use itertools::Itertools;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
+
+use crate::project::update_crate_roots_from_project_config;
 
 #[salsa::database(
     DefsDatabase,
@@ -78,10 +82,23 @@ impl RootDatabaseBuilder {
     }
 
     pub fn with_project_config(&mut self, config: ProjectConfig) -> &mut Self {
+        update_crate_roots_from_project_config(&mut self.db, config.clone());
+
         if let Some(corelib) = config.corelib {
             let core_crate = self.db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
             self.db.set_crate_root(core_crate, Some(corelib));
         }
+
+        self
+    }
+
+    pub fn with_implicit_precedence(&mut self, precedence: Vec<&str>) -> &mut Self {
+        self.db.set_implicit_precedence(Arc::new(
+            precedence
+                .iter()
+                .map(|name| get_core_ty_by_name(&self.db, name.into(), vec![]))
+                .collect_vec(),
+        ));
         self
     }
 
