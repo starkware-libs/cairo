@@ -44,7 +44,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>, value: felt) {
-    array_append::<felt>(arr, value);
+    array_append::<felt>(ref arr, value);
 }
 
 //! > casm
@@ -89,8 +89,8 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>, value1: felt, value2: felt) {
-    array_append::<felt>(arr, value1);
-    array_append::<felt>(arr, value2);
+    array_append::<felt>(ref arr, value1);
+    array_append::<felt>(ref arr, value2);
 }
 
 //! > casm
@@ -137,7 +137,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>) -> Option::<felt> {
-    array_pop_front::<felt>(arr)
+    array_pop_front::<felt>(ref arr)
 }
 
 //! > casm
@@ -206,7 +206,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>, idx: u128) -> Option::<felt> {
-    array_at::<felt>(arr, idx)
+    array_at::<felt>(ref arr, idx)
 }
 
 //! > casm
@@ -293,7 +293,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<u256>, idx: u128) -> Option::<u256> {
-    array_at::<u256>(arr, idx)
+    array_at::<u256>(ref arr, idx)
 }
 
 //! > casm
@@ -384,7 +384,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>) -> u128 {
-    array_len::<felt>(arr)
+    array_len::<felt>(ref arr)
 }
 
 //! > casm
@@ -425,7 +425,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<u256>) -> u128 {
-    array_len::<u256>(arr)
+    array_len::<u256>(ref arr)
 }
 
 //! > casm

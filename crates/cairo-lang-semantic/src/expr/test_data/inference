@@ -25,7 +25,7 @@ test_function_diagnostics
 //! > function
 fn foo() {
     let mut arr = array_new();
-    array_append(arr, 1)
+    array_append(ref arr, 1)
 }
 
 //! > function_name
@@ -57,6 +57,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: ref argument must be a passed with a preceding 'ref'.
+ --> lib.cairo:3:18
+    array_append(arr, arr)
+                 ^*^
+
 error: Unexpected argument type. Expected: "?1", found: "core::array::Array::<?0>".
  --> lib.cairo:3:23
     array_append(arr, arr)

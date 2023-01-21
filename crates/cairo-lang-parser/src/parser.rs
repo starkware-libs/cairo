@@ -719,13 +719,26 @@ impl<'a> Parser<'a> {
         let arg_list = ArgList::new_green(
             self.db,
             self.parse_separated_list::<Arg, TerminalComma, ArgListElementOrSeparatorGreen>(
-                Self::parse_function_argument,
+                Self::try_parse_function_argument,
                 is_of_kind!(rparen, block, rbrace, top_level),
                 "argument",
             ),
         );
         let rparen = self.parse_token::<TerminalRParen>();
         ArgListParenthesized::new_green(self.db, lparen, arg_list, rparen)
+    }
+
+    /// Parses a function call's argument, which contains possibly modifiers, and a argument clause.
+    fn try_parse_function_argument(&mut self) -> Option<ArgGreen> {
+        let modifiers_list = self.parse_modifier_list();
+        let arg_clause = self.try_parse_argument_clause();
+        if !modifiers_list.is_empty() && arg_clause.is_none() {
+            let modifiers = ModifierList::new_green(self.db, modifiers_list);
+            let arg_clause = ArgClauseUnnamed::new_green(self.db, self.parse_expr()).into();
+            return Some(Arg::new_green(self.db, modifiers, arg_clause));
+        }
+        let modifiers = ModifierList::new_green(self.db, modifiers_list);
+        Some(Arg::new_green(self.db, modifiers, arg_clause?))
     }
 
     /// Parses a function call's argument, which is an expression with or without the name
@@ -735,12 +748,12 @@ impl<'a> Parser<'a> {
     /// * `<Expr>` (unnamed).
     /// * `<Identifier>: <Expr>` (named).
     /// * `:<Identifier>` (Field init shorthand - syntactic sugar for `a: a`).
-    fn parse_function_argument(&mut self) -> Option<ArgGreen> {
+    fn try_parse_argument_clause(&mut self) -> Option<ArgClauseGreen> {
         if self.peek().kind == SyntaxKind::TerminalColon {
             let colon = self.take::<TerminalColon>();
             let argname = self.parse_identifier();
             return Some(
-                ArgFieldInitShorthand::new_green(
+                ArgClauseFieldInitShorthand::new_green(
                     self.db,
                     colon,
                     ExprFieldInitShorthand::new_green(self.db, argname),
@@ -757,12 +770,12 @@ impl<'a> Parser<'a> {
         if self.peek().kind == SyntaxKind::TerminalColon {
             if let Some(argname) = self.try_extract_identifier(expr_or_argname) {
                 let colon = self.take::<TerminalColon>();
-                let expr = self.try_parse_expr()?;
-                return Some(ArgNamed::new_green(self.db, argname, colon, expr).into());
+                let expr = self.parse_expr();
+                return Some(ArgClauseNamed::new_green(self.db, argname, colon, expr).into());
             }
         }
 
-        Some(ArgUnnamed::new_green(self.db, expr_or_argname).into())
+        Some(ArgClauseUnnamed::new_green(self.db, expr_or_argname).into())
     }
 
     /// If the given `expr` is a simple identifier, returns the corresponding green node.

@@ -7,7 +7,7 @@ test_function_lowering
 fn foo(ref x: felt, a: bool) -> felt {
   x = 7;
   let mut data = array_new::<felt>();
-  array_append::<felt>(data, 1);
+  array_append::<felt>(ref data, 1);
   let y = panic(data);
   5
 }
@@ -57,7 +57,7 @@ test_function_lowering
 //! > function
 fn foo(ref x: felt, ref a: bool) -> felt {
   if true { x = 7; } else { x = 6; };
-  bar(a)
+  bar(ref a)
 }
 
 //! > function_name
@@ -66,7 +66,7 @@ foo
 //! > module_code
 fn bar(ref a: bool) -> felt {
   let mut data = array_new::<felt>();
-  array_append::<felt>(data, 1);
+  array_append::<felt>(ref data, 1);
   let y = panic(data);
   5
 }

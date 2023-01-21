@@ -708,10 +708,33 @@ impl TypedSyntaxNode for OptionArgNameClauseEmpty {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum Arg {
-    Unnamed(ArgUnnamed),
-    Named(ArgNamed),
-    FieldInitShorthand(ArgFieldInitShorthand),
+pub struct Arg {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Arg {
+    pub const INDEX_MODIFIERS: usize = 0;
+    pub const INDEX_ARG_CLAUSE: usize = 1;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        modifiers: ModifierListGreen,
+        arg_clause: ArgClauseGreen,
+    ) -> ArgGreen {
+        let children: Vec<GreenId> = vec![modifiers.0, arg_clause.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ArgGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Arg,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl Arg {
+    pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
+        ModifierList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn arg_clause(&self, db: &dyn SyntaxGroup) -> ArgClause {
+        ArgClause::from_syntax_node(db, self.children[1].clone())
+    }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ArgPtr(pub SyntaxStablePtrId);
@@ -720,76 +743,130 @@ impl ArgPtr {
         self.0
     }
 }
-impl From<ArgUnnamedPtr> for ArgPtr {
-    fn from(value: ArgUnnamedPtr) -> Self {
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ArgGreen(pub GreenId);
+impl TypedSyntaxNode for Arg {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Arg);
+    type StablePtr = ArgPtr;
+    type Green = ArgGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ArgGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Arg,
+            details: GreenNodeDetails::Node {
+                children: vec![ModifierList::missing(db).0, ArgClause::missing(db).0],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::Arg,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::Arg
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ArgPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ArgClause {
+    Unnamed(ArgClauseUnnamed),
+    Named(ArgClauseNamed),
+    FieldInitShorthand(ArgClauseFieldInitShorthand),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ArgClausePtr(pub SyntaxStablePtrId);
+impl ArgClausePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<ArgClauseUnnamedPtr> for ArgClausePtr {
+    fn from(value: ArgClauseUnnamedPtr) -> Self {
         Self(value.0)
     }
 }
-impl From<ArgNamedPtr> for ArgPtr {
-    fn from(value: ArgNamedPtr) -> Self {
+impl From<ArgClauseNamedPtr> for ArgClausePtr {
+    fn from(value: ArgClauseNamedPtr) -> Self {
         Self(value.0)
     }
 }
-impl From<ArgFieldInitShorthandPtr> for ArgPtr {
-    fn from(value: ArgFieldInitShorthandPtr) -> Self {
+impl From<ArgClauseFieldInitShorthandPtr> for ArgClausePtr {
+    fn from(value: ArgClauseFieldInitShorthandPtr) -> Self {
         Self(value.0)
     }
 }
-impl From<ArgUnnamedGreen> for ArgGreen {
-    fn from(value: ArgUnnamedGreen) -> Self {
+impl From<ArgClauseUnnamedGreen> for ArgClauseGreen {
+    fn from(value: ArgClauseUnnamedGreen) -> Self {
         Self(value.0)
     }
 }
-impl From<ArgNamedGreen> for ArgGreen {
-    fn from(value: ArgNamedGreen) -> Self {
+impl From<ArgClauseNamedGreen> for ArgClauseGreen {
+    fn from(value: ArgClauseNamedGreen) -> Self {
         Self(value.0)
     }
 }
-impl From<ArgFieldInitShorthandGreen> for ArgGreen {
-    fn from(value: ArgFieldInitShorthandGreen) -> Self {
+impl From<ArgClauseFieldInitShorthandGreen> for ArgClauseGreen {
+    fn from(value: ArgClauseFieldInitShorthandGreen) -> Self {
         Self(value.0)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ArgGreen(pub GreenId);
-impl TypedSyntaxNode for Arg {
+pub struct ArgClauseGreen(pub GreenId);
+impl TypedSyntaxNode for ArgClause {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
-    type StablePtr = ArgPtr;
-    type Green = ArgGreen;
+    type StablePtr = ArgClausePtr;
+    type Green = ArgClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         panic!("No missing variant.");
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::ArgUnnamed => Arg::Unnamed(ArgUnnamed::from_syntax_node(db, node)),
-            SyntaxKind::ArgNamed => Arg::Named(ArgNamed::from_syntax_node(db, node)),
-            SyntaxKind::ArgFieldInitShorthand => {
-                Arg::FieldInitShorthand(ArgFieldInitShorthand::from_syntax_node(db, node))
+            SyntaxKind::ArgClauseUnnamed => {
+                ArgClause::Unnamed(ArgClauseUnnamed::from_syntax_node(db, node))
             }
-            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Arg"),
+            SyntaxKind::ArgClauseNamed => {
+                ArgClause::Named(ArgClauseNamed::from_syntax_node(db, node))
+            }
+            SyntaxKind::ArgClauseFieldInitShorthand => ArgClause::FieldInitShorthand(
+                ArgClauseFieldInitShorthand::from_syntax_node(db, node),
+            ),
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "ArgClause"),
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
-            Arg::Unnamed(x) => x.as_syntax_node(),
-            Arg::Named(x) => x.as_syntax_node(),
-            Arg::FieldInitShorthand(x) => x.as_syntax_node(),
+            ArgClause::Unnamed(x) => x.as_syntax_node(),
+            ArgClause::Named(x) => x.as_syntax_node(),
+            ArgClause::FieldInitShorthand(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ArgPtr(self.as_syntax_node().0.stable_ptr)
+        ArgClausePtr(self.as_syntax_node().0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ArgNamed {
+pub struct ArgClauseNamed {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl ArgNamed {
+impl ArgClauseNamed {
     pub const INDEX_NAME: usize = 0;
     pub const INDEX_COLON: usize = 1;
     pub const INDEX_VALUE: usize = 2;
@@ -798,16 +875,16 @@ impl ArgNamed {
         name: TerminalIdentifierGreen,
         colon: TerminalColonGreen,
         value: ExprGreen,
-    ) -> ArgNamedGreen {
+    ) -> ArgClauseNamedGreen {
         let children: Vec<GreenId> = vec![name.0, colon.0, value.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        ArgNamedGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ArgNamed,
+        ArgClauseNamedGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ArgClauseNamed,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl ArgNamed {
+impl ArgClauseNamed {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
     }
@@ -819,21 +896,21 @@ impl ArgNamed {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ArgNamedPtr(pub SyntaxStablePtrId);
-impl ArgNamedPtr {
+pub struct ArgClauseNamedPtr(pub SyntaxStablePtrId);
+impl ArgClauseNamedPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ArgNamedGreen(pub GreenId);
-impl TypedSyntaxNode for ArgNamed {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgNamed);
-    type StablePtr = ArgNamedPtr;
-    type Green = ArgNamedGreen;
+pub struct ArgClauseNamedGreen(pub GreenId);
+impl TypedSyntaxNode for ArgClauseNamed {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgClauseNamed);
+    type StablePtr = ArgClauseNamedPtr;
+    type Green = ArgClauseNamedGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ArgNamedGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ArgNamed,
+        ArgClauseNamedGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ArgClauseNamed,
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalIdentifier::missing(db).0,
@@ -848,10 +925,10 @@ impl TypedSyntaxNode for ArgNamed {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ArgNamed,
+            SyntaxKind::ArgClauseNamed,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ArgNamed
+            SyntaxKind::ArgClauseNamed
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -863,46 +940,46 @@ impl TypedSyntaxNode for ArgNamed {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ArgNamedPtr(self.node.0.stable_ptr)
+        ArgClauseNamedPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ArgUnnamed {
+pub struct ArgClauseUnnamed {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl ArgUnnamed {
+impl ArgClauseUnnamed {
     pub const INDEX_VALUE: usize = 0;
-    pub fn new_green(db: &dyn SyntaxGroup, value: ExprGreen) -> ArgUnnamedGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, value: ExprGreen) -> ArgClauseUnnamedGreen {
         let children: Vec<GreenId> = vec![value.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        ArgUnnamedGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ArgUnnamed,
+        ArgClauseUnnamedGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ArgClauseUnnamed,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl ArgUnnamed {
+impl ArgClauseUnnamed {
     pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[0].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ArgUnnamedPtr(pub SyntaxStablePtrId);
-impl ArgUnnamedPtr {
+pub struct ArgClauseUnnamedPtr(pub SyntaxStablePtrId);
+impl ArgClauseUnnamedPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ArgUnnamedGreen(pub GreenId);
-impl TypedSyntaxNode for ArgUnnamed {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgUnnamed);
-    type StablePtr = ArgUnnamedPtr;
-    type Green = ArgUnnamedGreen;
+pub struct ArgClauseUnnamedGreen(pub GreenId);
+impl TypedSyntaxNode for ArgClauseUnnamed {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgClauseUnnamed);
+    type StablePtr = ArgClauseUnnamedPtr;
+    type Green = ArgClauseUnnamedGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ArgUnnamedGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ArgUnnamed,
+        ArgClauseUnnamedGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ArgClauseUnnamed,
             details: GreenNodeDetails::Node { children: vec![Expr::missing(db).0], width: 0 },
         }))
     }
@@ -910,10 +987,10 @@ impl TypedSyntaxNode for ArgUnnamed {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ArgUnnamed,
+            SyntaxKind::ArgClauseUnnamed,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ArgUnnamed
+            SyntaxKind::ArgClauseUnnamed
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -925,31 +1002,31 @@ impl TypedSyntaxNode for ArgUnnamed {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ArgUnnamedPtr(self.node.0.stable_ptr)
+        ArgClauseUnnamedPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ArgFieldInitShorthand {
+pub struct ArgClauseFieldInitShorthand {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl ArgFieldInitShorthand {
+impl ArgClauseFieldInitShorthand {
     pub const INDEX_COLON: usize = 0;
     pub const INDEX_NAME: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         colon: TerminalColonGreen,
         name: ExprFieldInitShorthandGreen,
-    ) -> ArgFieldInitShorthandGreen {
+    ) -> ArgClauseFieldInitShorthandGreen {
         let children: Vec<GreenId> = vec![colon.0, name.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        ArgFieldInitShorthandGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ArgFieldInitShorthand,
+        ArgClauseFieldInitShorthandGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ArgClauseFieldInitShorthand,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl ArgFieldInitShorthand {
+impl ArgClauseFieldInitShorthand {
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
         TerminalColon::from_syntax_node(db, self.children[0].clone())
     }
@@ -958,21 +1035,21 @@ impl ArgFieldInitShorthand {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ArgFieldInitShorthandPtr(pub SyntaxStablePtrId);
-impl ArgFieldInitShorthandPtr {
+pub struct ArgClauseFieldInitShorthandPtr(pub SyntaxStablePtrId);
+impl ArgClauseFieldInitShorthandPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ArgFieldInitShorthandGreen(pub GreenId);
-impl TypedSyntaxNode for ArgFieldInitShorthand {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgFieldInitShorthand);
-    type StablePtr = ArgFieldInitShorthandPtr;
-    type Green = ArgFieldInitShorthandGreen;
+pub struct ArgClauseFieldInitShorthandGreen(pub GreenId);
+impl TypedSyntaxNode for ArgClauseFieldInitShorthand {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgClauseFieldInitShorthand);
+    type StablePtr = ArgClauseFieldInitShorthandPtr;
+    type Green = ArgClauseFieldInitShorthandGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ArgFieldInitShorthandGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ArgFieldInitShorthand,
+        ArgClauseFieldInitShorthandGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ArgClauseFieldInitShorthand,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalColon::missing(db).0, ExprFieldInitShorthand::missing(db).0],
                 width: 0,
@@ -983,10 +1060,10 @@ impl TypedSyntaxNode for ArgFieldInitShorthand {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ArgFieldInitShorthand,
+            SyntaxKind::ArgClauseFieldInitShorthand,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ArgFieldInitShorthand
+            SyntaxKind::ArgClauseFieldInitShorthand
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -998,7 +1075,7 @@ impl TypedSyntaxNode for ArgFieldInitShorthand {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ArgFieldInitShorthandPtr(self.node.0.stable_ptr)
+        ArgClauseFieldInitShorthandPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

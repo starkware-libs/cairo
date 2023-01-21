@@ -122,7 +122,7 @@ fn generate_panicable_code(
                             }},
                             {failure_variant} (v) => {{
                                 let mut data = array_new::<felt>();
-                                array_append::<felt>(data, {err_value});
+                                array_append::<felt>(ref data, {err_value});
                                 panic(data)
                             }},
                         }}

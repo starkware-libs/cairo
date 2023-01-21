@@ -5,7 +5,7 @@ fn fib(a: felt, b: felt, n: felt) -> felt implicits(RangeCheck, GasBuiltin) {
         },
         Option::None(_) => {
             let mut data = array_new::<felt>();
-            array_append::<felt>(data, 'OOG');
+            array_append::<felt>(ref data, 'OOG');
             panic(data);
         },
     }

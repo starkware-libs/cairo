@@ -334,7 +334,7 @@ test_function_lowering
 
 //! > function
 fn foo(mut a : felt) -> felt {
-  bar(a, a)
+  bar(ref a, ref a)
 }
 
 //! > function_name

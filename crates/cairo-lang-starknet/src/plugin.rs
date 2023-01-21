@@ -207,8 +207,8 @@ $serialization_code$
             Result::Ok(ret_data) => ret_data,
             Result::Err((reason, _ret_data)) => {
                 let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, 'call_contract_syscall failed');
-                array_append::<felt>(err_data, reason);
+                array_append::<felt>(ref err_data, 'call_contract_syscall failed');
+                array_append::<felt>(ref err_data, reason);
                 // TODO(ilya): Handle ret_data.
                 panic(err_data)
             },
@@ -485,7 +485,7 @@ fn handle_event(
         $attrs$
         $declaration$ {{
             let mut keys = array_new::<felt>();
-            array_append::<felt>(keys, {event_key});
+            array_append::<felt>(ref keys, {event_key});
             let mut data = array_new::<felt>();
             $param_serializations$
             starknet::emit_event_syscall(keys, data);
@@ -631,7 +631,7 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
                 Result::Ok(value) => {convert_to},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
+                    array_append::<felt>(ref err_data, revert_reason);
                     panic(err_data)
                 }},
             }}
@@ -647,7 +647,7 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
                 Result::Ok(()) => {{}},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
+                    array_append::<felt>(ref err_data, revert_reason);
                     panic(err_data)
                 }},
             }}
@@ -685,7 +685,7 @@ fn handle_mapping_storage_var(
                 Result::Ok(value) => {value_convert_to},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
+                    array_append::<felt>(ref err_data, revert_reason);
                     panic(err_data)
                 }},
             }}
@@ -701,7 +701,7 @@ fn handle_mapping_storage_var(
                 Result::Ok(()) => {{}},
                 Result::Err(revert_reason) => {{
                     let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
+                    array_append::<felt>(ref err_data, revert_reason);
                     panic(err_data)
                 }},
             }}
@@ -750,16 +750,17 @@ fn generate_entry_point_wrapper(
         };
 
         let is_ref = is_ref_param(db, &param);
-        arg_names.push(arg_name.clone());
+        let ref_modifier = if is_ref { "ref " } else { "" };
+        arg_names.push(format!("{ref_modifier}{arg_name}"));
         let mut_modifier = if is_ref { "mut " } else { "" };
         // TODO(yuval): use panicable version of deserializations when supported.
         let arg_definition = format!(
             "
-            let {mut_modifier}{arg_name} = match {deser_func}(data) {{
+            let {mut_modifier}{arg_name} = match {deser_func}(ref data) {{
                 Option::Some(x) => x,
                 Option::None(()) => {{
                     let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, {input_data_short_err});
+                    array_append::<felt>(ref err_data, {input_data_short_err});
                     panic(err_data)
                 }},
             }};"
@@ -768,7 +769,7 @@ fn generate_entry_point_wrapper(
 
         if is_ref {
             ref_appends
-                .push(RewriteNode::Text(format!("\n            {ser_func}(arr, {arg_name});")));
+                .push(RewriteNode::Text(format!("\n            {ser_func}(ref arr, {arg_name});")));
         }
     }
     let arg_names_str = arg_names.join(", ");
@@ -785,7 +786,7 @@ fn generate_entry_point_wrapper(
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             // TODO(orizi): Handle tuple types.
             if let Some((ser_func, _)) = get_type_serde_funcs(&ret_type_name) {
-                ("\n            let res = ", format!("\n            {ser_func}(arr, res)"))
+                ("\n            let res = ", format!("\n            {ser_func}(ref arr, res)"))
             } else {
                 diagnostics.push(PluginDiagnostic {
                     stable_ptr: ret_type_ast.stable_ptr().0,
@@ -812,17 +813,17 @@ fn generate_entry_point_wrapper(
                 }},
                 Option::None(_) => {{
                     let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, {oog_err});
+                    array_append::<felt>(ref err_data, {oog_err});
                     panic(err_data);
                 }},
             }}
             {arg_definitions}
-            if array_len::<felt>(data) != 0_u128 {{
+            if array_len::<felt>(ref data) != 0_u128 {{
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
                 let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, {input_data_long_err});
+                array_append::<felt>(ref err_data, {input_data_long_err});
                 panic(err_data);
             }}
             {let_res}$wrapped_name$({arg_names_str});

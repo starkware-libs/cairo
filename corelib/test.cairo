@@ -404,14 +404,14 @@ fn test_u256_mul_overflow_2() {
 // TODO(orizi): Switch to operators and literals when added.
 fn test_array_helper(idx: u128) -> felt {
     let mut arr = array_new::<felt>();
-    array_append::<felt>(arr, 10);
-    array_append::<felt>(arr, 11);
-    array_append::<felt>(arr, 12);
-    match array_at::<felt>(arr, idx) {
+    array_append::<felt>(ref arr, 10);
+    array_append::<felt>(ref arr, 11);
+    array_append::<felt>(ref arr, 12);
+    match array_at::<felt>(ref arr, idx) {
         Option::Some(x) => x,
         Option::None(()) => {
             let mut data = array_new::<felt>();
-            array_append::<felt>(data, 'array index OOB');
+            array_append::<felt>(ref data, 'array index OOB');
             panic(data)
         },
     }
@@ -444,7 +444,7 @@ fn test_dict_new() -> DictFeltTo::<felt> {
 #[test]
 fn test_dict_default_val() {
     let mut dict = dict_felt_to_new::<felt>();
-    let default_val = dict_felt_to_read::<felt>(dict, 0);
+    let default_val = dict_felt_to_read::<felt>(ref dict, 0);
     let squashed_dict = dict_felt_to_squash::<felt>(dict);
     assert(default_val == 0, 'default_val == 0');
 }
@@ -453,11 +453,11 @@ fn test_dict_default_val() {
 #[test]
 fn test_dict_write_read() {
     let mut dict = dict_felt_to_new::<felt>();
-    dict_felt_to_write::<felt>(dict, 10, 110);
-    dict_felt_to_write::<felt>(dict, 11, 111);
-    let val10 = dict_felt_to_read::<felt>(dict, 10);
-    let val11 = dict_felt_to_read::<felt>(dict, 11);
-    let val12 = dict_felt_to_read::<felt>(dict, 12);
+    dict_felt_to_write::<felt>(ref dict, 10, 110);
+    dict_felt_to_write::<felt>(ref dict, 11, 111);
+    let val10 = dict_felt_to_read::<felt>(ref dict, 10);
+    let val11 = dict_felt_to_read::<felt>(ref dict, 11);
+    let val12 = dict_felt_to_read::<felt>(ref dict, 12);
     let squashed_dict = dict_felt_to_squash::<felt>(dict);
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');

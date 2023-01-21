@@ -29,7 +29,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenColon
-                if grandparent_kind(db, self) != Some(SyntaxKind::ArgFieldInitShorthand) =>
+                if grandparent_kind(db, self) != Some(SyntaxKind::ArgClauseFieldInitShorthand) =>
             {
                 true
             }
@@ -92,7 +92,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenColon
-                if grandparent_kind(db, self) == Some(SyntaxKind::ArgFieldInitShorthand) =>
+                if grandparent_kind(db, self) == Some(SyntaxKind::ArgClauseFieldInitShorthand) =>
             {
                 true
             }

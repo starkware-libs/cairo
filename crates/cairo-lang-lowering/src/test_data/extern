@@ -5,10 +5,10 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt, b: felt) {
-    f(a,b);
-    g(a,b);
-    h(a,b);
-    i(a,b);
+    f(ref a,b);
+    g(ref a,b);
+    h(ref a,b);
+    i(ref a,b);
 }
 
 //! > function_name
@@ -62,7 +62,7 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt, b: felt) {
-  let x = f(a, b);
+  let x = f(ref a, b);
   match x {
     MyEnum::A(y) => (),
     MyEnum::B(y) => (),
@@ -318,7 +318,7 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt, b: felt) -> felt {
-  match f(a, b) {
+  match f(ref a, b) {
     MyEnum::A(y) => y,
     MyEnum::B((y,)) => y,
     MyEnum::C((y,_)) => y,
@@ -414,7 +414,7 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt, b: felt) {
-  let x = f(a, b);
+  let x = f(ref a, b);
   match x {
     MyEnum::A(y) => (),
     MyEnum::B(y) => (),
@@ -575,7 +575,7 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt, b: felt) -> felt {
-  match f(a, b) {
+  match f(ref a, b) {
     MyEnum::A(y) => y,
     MyEnum::B((y,)) => y,
     MyEnum::C((y,_)) => y,
@@ -671,7 +671,7 @@ test_function_lowering
 
 //! > function
 fn foo(mut arr: Array::<felt>, mut b: (felt,)) -> Array::<felt> {
-    let y = match f(arr, b) {
+    let y = match f(ref arr, ref b) {
         MyEnum::A(x) => arr
     };
     y

@@ -26,7 +26,7 @@ fn foo_improved(a: felt, b: other) -> () {
         },
         Option::None (v) => {
             let mut data = array_new::<felt>();
-            array_append::<felt>(data, '1');
+            array_append::<felt>(ref data, '1');
             panic(data)
         },
     }
@@ -43,7 +43,7 @@ fn bar_changed() -> felt {
         },
         Result::Err (v) => {
             let mut data = array_new::<felt>();
-            array_append::<felt>(data, '2');
+            array_append::<felt>(ref data, '2');
             panic(data)
         },
     }
@@ -61,7 +61,7 @@ fn non_extern_stuff(_a: some_type) -> (felt, other) {
         },
         Option::None (v) => {
             let mut data = array_new::<felt>();
-            array_append::<felt>(data, '3');
+            array_append::<felt>(ref data, '3');
             panic(data)
         },
     }

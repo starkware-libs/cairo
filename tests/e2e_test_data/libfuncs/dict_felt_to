@@ -70,7 +70,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref dict: DictFeltTo::<felt>, key: felt, value: felt) {
-    dict_felt_to_write::<felt>(dict, key, value);
+    dict_felt_to_write::<felt>(ref dict, key, value);
 }
 
 //! > casm
@@ -122,7 +122,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref dict: DictFeltTo::<felt>, key: felt) -> felt {
-    dict_felt_to_read::<felt>(dict, key)
+    dict_felt_to_read::<felt>(ref dict, key)
 }
 
 //! > casm

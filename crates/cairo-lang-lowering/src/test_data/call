@@ -7,7 +7,7 @@ test_function_lowering
 fn foo(ref a: felt) -> felt {
     let b = true;
     if true {
-      bar(a, b);
+      bar(ref a, b);
     } else {
     }
     if false {

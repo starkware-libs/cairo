@@ -231,7 +231,12 @@ fn compute_expr_unary_semantic(
         }
         Ok(function) => function,
     };
-    expr_function_call(ctx, function, vec![(expr, None)], syntax.stable_ptr().into())
+    expr_function_call(
+        ctx,
+        function,
+        vec![(expr, None, Mutability::Immutable)],
+        syntax.stable_ptr().into(),
+    )
 }
 
 fn compute_expr_binary_semantic(
@@ -287,7 +292,12 @@ fn compute_expr_binary_semantic(
         }
         Ok(function) => function,
     };
-    expr_function_call(ctx, function, vec![(lexpr, None), (rexpr, None)], stable_ptr)
+    expr_function_call(
+        ctx,
+        function,
+        vec![(lexpr, None, Mutability::Immutable), (rexpr, None, Mutability::Immutable)],
+        stable_ptr,
+    )
 }
 
 fn compute_expr_tuple_semantic(
@@ -326,7 +336,7 @@ fn compute_expr_function_call_semantic(
         NotFoundItemType::Function,
     )?;
     let args_syntax = syntax.arguments(syntax_db);
-    let named_args: Vec<(Expr, Option<ast::TerminalIdentifier>)> = args_syntax
+    let named_args: Vec<_> = args_syntax
         .args(syntax_db)
         .elements(syntax_db)
         .into_iter()
@@ -340,9 +350,12 @@ fn compute_expr_function_call_semantic(
                     WrongNumberOfArguments { expected: 1, actual: named_args.len() },
                 ));
             }
-            let (arg, name_terminal) = named_args[0].clone();
+            let (arg, name_terminal, mutability) = named_args[0].clone();
             if let Some(name_terminal) = name_terminal {
                 ctx.diagnostics.report(&name_terminal, NamedArgumentsAreNotSupported);
+            }
+            if mutability != Mutability::Immutable {
+                return Err(ctx.diagnostics.report(&args_syntax, VariantCtorNotImmutable));
             }
             if ctx.inference.conform_ty(concrete_variant.ty, arg.ty()).is_err() {
                 return Err(ctx.diagnostics.report(
@@ -379,18 +392,25 @@ fn compute_expr_function_call_semantic(
 pub fn compute_named_argument_clause(
     ctx: &mut ComputationContext<'_>,
     arg_syntax: ast::Arg,
-) -> (Expr, Option<ast::TerminalIdentifier>) {
+) -> (Expr, Option<ast::TerminalIdentifier>, Mutability) {
     let syntax_db = ctx.db.upcast();
 
-    let (expr, arg_name_identifier) = match arg_syntax {
-        ast::Arg::Unnamed(arg_unnamed) => {
+    let mutability = compute_mutability(
+        ctx.diagnostics,
+        syntax_db,
+        &arg_syntax.modifiers(syntax_db).elements(syntax_db),
+    );
+
+    let arg_clause = arg_syntax.arg_clause(syntax_db);
+    let (expr, arg_name_identifier) = match arg_clause {
+        ast::ArgClause::Unnamed(arg_unnamed) => {
             (compute_expr_semantic(ctx, &arg_unnamed.value(syntax_db)), None)
         }
-        ast::Arg::Named(arg_named) => (
+        ast::ArgClause::Named(arg_named) => (
             compute_expr_semantic(ctx, &arg_named.value(syntax_db)),
             Some(arg_named.name(syntax_db)),
         ),
-        ast::Arg::FieldInitShorthand(arg_field_init_shorthand) => {
+        ast::ArgClause::FieldInitShorthand(arg_field_init_shorthand) => {
             let name_expr = arg_field_init_shorthand.name(syntax_db);
             let stable_ptr: ast::ExprPtr = name_expr.stable_ptr().into();
             let arg_name_identifier = name_expr.name(syntax_db);
@@ -400,7 +420,7 @@ pub fn compute_named_argument_clause(
         }
     };
 
-    (expr, arg_name_identifier)
+    (expr, arg_name_identifier, mutability)
 }
 
 pub fn compute_root_expr(
@@ -1215,7 +1235,7 @@ pub fn resolve_variable_by_name(
 fn expr_function_call(
     ctx: &mut ComputationContext<'_>,
     function_id: FunctionId,
-    named_args: Vec<(Expr, Option<ast::TerminalIdentifier>)>,
+    named_args: Vec<(Expr, Option<ast::TerminalIdentifier>, Mutability)>,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
@@ -1249,7 +1269,7 @@ fn expr_function_call(
 
     let mut ref_args = Vec::new();
     let mut args = Vec::new();
-    for ((arg, _name), param) in named_args.into_iter().zip(signature.params.iter()) {
+    for ((arg, _name, mutability), param) in named_args.into_iter().zip(signature.params.iter()) {
         let arg_typ = arg.ty();
         let param_typ = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
@@ -1271,8 +1291,17 @@ fn expr_function_call(
             if !ctx.semantic_defs[expr_var.var].is_mut() {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotMutable);
             }
+            // Verify that it is passed explicitly as 'ref'.
+            if mutability != Mutability::Reference {
+                ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotExplicit);
+            }
             ref_args.push(expr_var.var);
         } else {
+            // Verify that it is passed explicitly as 'ref'.
+            if mutability != Mutability::Immutable {
+                ctx.diagnostics
+                    .report_by_ptr(arg.stable_ptr().untyped(), ImmutableArgWithModifiers);
+            }
             args.push(ctx.exprs.alloc(arg));
         }
     }
@@ -1287,7 +1316,7 @@ fn expr_function_call(
 
 /// Checks the correctness of the named arguments, and outputs diagnostics on errors.
 fn check_named_arguments(
-    named_args: &[(Expr, Option<ast::TerminalIdentifier>)],
+    named_args: &[(Expr, Option<ast::TerminalIdentifier>, Mutability)],
     signature: &Signature,
     ctx: &mut ComputationContext<'_>,
 ) -> Maybe<()> {
@@ -1299,7 +1328,7 @@ fn check_named_arguments(
     // Indicates whether a [UnnamedArgumentFollowsNamed] diagnostic was reported. Used to prevent
     // multiple similar diagnostics.
     let mut reported_unnamed_argument_follows_named: bool = false;
-    for ((arg, name_opt), param) in named_args.iter().zip(signature.params.iter()) {
+    for ((arg, name_opt, _mutability), param) in named_args.iter().zip(signature.params.iter()) {
         // Check name.
         if let Some(name_terminal) = name_opt {
             seen_named_arguments = true;
