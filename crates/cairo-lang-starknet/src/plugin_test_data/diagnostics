@@ -46,16 +46,46 @@ mod TestContract {
     }
 
     mod __external {
+        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(ref err_data, 'Out of gas');
+                    panic(err_data);
+                },
+            }
+            
+            let __arg_x =
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new::<felt>();
+                        array_append::<felt>(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if array_len::<felt>(ref data) != 0_u128 {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            super::foo(__arg_x);
+            let mut arr = array_new::<felt>();
+            // References.
+            // Result.
+            arr
+        }
         
         
     }
 }
 
 //! > expected_diagnostics
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:15
-    fn foo(x: (felt, felt)) {
-              ^**********^
 
 //! > ==========================================================================
 
@@ -88,16 +118,39 @@ mod TestContract {
     }
 
     mod __external {
+        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(ref err_data, 'Out of gas');
+                    panic(err_data);
+                },
+            }
+            
+            if array_len::<felt>(ref data) != 0_u128 {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            
+            let res = super::foo();
+            let mut arr = array_new::<felt>();
+            // References.
+            // Result.
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res)
+            arr
+        }
         
         
     }
 }
 
 //! > expected_diagnostics
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:17
-    fn foo() -> (felt, felt) {
-                ^**********^
 
 //! > ==========================================================================
 
@@ -130,26 +183,58 @@ mod TestContract {
     }
 
     mod __external {
+        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new::<felt>();
+                    array_append::<felt>(ref err_data, 'Out of gas');
+                    panic(err_data);
+                },
+            }
+            
+            let __arg_x =
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new::<felt>();
+                        array_append::<felt>(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+
+            let __arg_y =
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new::<felt>();
+                        array_append::<felt>(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if array_len::<felt>(ref data) != 0_u128 {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new::<felt>();
+                array_append::<felt>(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            
+            let res = super::foo(__arg_x, __arg_y);
+            let mut arr = array_new::<felt>();
+            // References.
+            // Result.
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res)
+            arr
+        }
         
         
     }
 }
 
 //! > expected_diagnostics
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:15
-    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
-              ^**********^
-
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:32
-    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
-                               ^**********^
-
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:49
-    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
-                                                ^**********^
 
 //! > ==========================================================================
 
@@ -285,20 +370,28 @@ mod TestContract {
     
     trait __abi {
         
+        #[event]
+        fn bad_event(x: (felt, felt));
         
     }
 
     mod __external {
         
         
+        #[event]
+        fn bad_event(x: (felt, felt)) {
+            let mut keys = array_new::<felt>();
+            array_append::<felt>(ref keys, 0x24588e9be27cb91356e7dba75bcae8d487891c93e2c1696ab6437f2700aed26);
+            let mut data = array_new::<felt>();
+            serde::Serde::<(felt, felt)>::deserialize(data, x);
+            
+            starknet::emit_event_syscall(keys, data);
+        }
+            
     }
 }
 
 //! > expected_diagnostics
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:21
-    fn bad_event(x: (felt, felt)) {
-                    ^**********^
 
 //! > ==========================================================================
 
@@ -347,11 +440,6 @@ error: `ref` parameters are not supported in contract events.
  --> dummy_file.cairo:4:31
     fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
                               ^*^
-
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:47
-    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
-                                              ^**********^
 
 error: Event function body must be empty.
  --> dummy_file.cairo:5:9

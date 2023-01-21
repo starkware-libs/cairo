@@ -234,7 +234,7 @@ fn assert(cond: bool, err_code: felt) {
     }
 }
 
-// Serialization and Deserialization. DO NOT USE DIRECTLY - direct usage pending traits.
+// Serialization and Deserialization.
 mod serde;
 
 // Hash functions.

@@ -154,11 +154,11 @@
     "0x1",
     "0x1",
     "0xda421e7696ea3653",
-    "0xdd789742f18f358a",
+    "0x3924610df46a5d72",
     "0x13862ed316aec3c6",
     "0x1",
     "0x3",
-    "0x117c73d904c08776",
+    "0x107c50d5f81c20fa",
     "0xd80c729bdaefe9",
     "0xa159ac87b7eaf0ce",
     "0x1",
@@ -234,11 +234,11 @@
     "0x1",
     "0x1",
     "0x1527969abfed2874",
-    "0x5521fbfd6000c2c3",
+    "0xa1af92c22034bb15",
     "0x13862ed316aec3c6",
     "0x1",
     "0x3",
-    "0x7c7236b29914f265",
+    "0xa9aeaf60c734b963",
     "0xcd78677550923043",
     "0xdd9d9fc20319c2ab",
     "0x2",
@@ -621,7 +621,7 @@
     "0x1",
     "0x14",
     "0x0",
-    "0xdd789742f18f358a",
+    "0x3924610df46a5d72",
     "0x1",
     "0x14",
     "0x1",
@@ -774,7 +774,7 @@
     "0x1",
     "0x22",
     "0x0",
-    "0xdd789742f18f358a",
+    "0x3924610df46a5d72",
     "0x1",
     "0x22",
     "0x1",
@@ -934,7 +934,7 @@
     "0x1",
     "0x30",
     "0x0",
-    "0xdd789742f18f358a",
+    "0x3924610df46a5d72",
     "0x1",
     "0x30",
     "0x1",
@@ -1498,7 +1498,7 @@
     "0x1",
     "0x64",
     "0x0",
-    "0x5521fbfd6000c2c3",
+    "0xa1af92c22034bb15",
     "0x2",
     "0x63",
     "0x64",
@@ -1531,7 +1531,7 @@
     "0x1",
     "0x68",
     "0x0",
-    "0x5521fbfd6000c2c3",
+    "0xa1af92c22034bb15",
     "0x2",
     "0x67",
     "0x68",
@@ -3317,7 +3317,7 @@
     "0x3",
     "0xda421e7696ea3653",
     "0x94",
-    "0x117c73d904c08776",
+    "0x107c50d5f81c20fa",
     "0x1",
     "0xda421e7696ea3653",
     "0x2",
@@ -3373,7 +3373,7 @@
     "0x4",
     "0x1019fc7928c89c74",
     "0xf4",
-    "0x7c7236b29914f265",
+    "0xa9aeaf60c734b963",
     "0x2",
     "0xda421e7696ea3653",
     "0x1019fc7928c89c74",
@@ -3565,6 +3565,10 @@
         "store_temp<core::PanicResult::<core::felt>>"
       ],
       [
+        4117522671886556530,
+        "function_call<user@core::serde::FeltSerde::deserialize>"
+      ],
+      [
         4351586621465067030,
         "felt_const<0>"
       ],
@@ -3607,10 +3611,6 @@
       [
         5860306546826047335,
         "store_temp<core::PanicResult::<core::array::Array::<core::felt>>>"
-      ],
-      [
-        6134461233111286467,
-        "function_call<user@core::serde::serialize_felt>"
       ],
       [
         6318534592060038018,
@@ -3701,6 +3701,10 @@
         "bool_not_impl"
       ],
       [
+        11650692123492399893,
+        "function_call<user@core::serde::FeltSerde::serialize>"
+      ],
+      [
         12131653778288196821,
         "store_temp<core::PanicResult::<()>>"
       ],
@@ -3753,10 +3757,6 @@
         "enum_init<core::bool, 1>"
       ],
       [
-        15958671593363682698,
-        "function_call<user@core::serde::deserialize_felt>"
-      ],
-      [
         16014110525439852850,
         "store_temp<RangeCheck>"
       ],
@@ -3799,8 +3799,8 @@
     ],
     "user_func_names": [
       [
-        1260009371681720182,
-        "core::serde::deserialize_felt"
+        1187913281639817466,
+        "core::serde::FeltSerde::deserialize"
       ],
       [
         2681408492213858367,
@@ -3823,16 +3823,16 @@
         "test_contract::test_contract::TestContract::__external::empty"
       ],
       [
-        8967289948748444261,
-        "core::serde::serialize_felt"
-      ],
-      [
         9125103176442502967,
         "core::starknet::use_system_implicit"
       ],
       [
         9125686713590962028,
         "core::integer::u128_ne"
+      ],
+      [
+        12226902868551317859,
+        "core::serde::FeltSerde::serialize"
       ],
       [
         14430921007854316073,

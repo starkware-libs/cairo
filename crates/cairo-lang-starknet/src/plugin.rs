@@ -141,21 +141,16 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
 
                     let param_type = param.type_clause(db).ty(db);
                     let type_name = &param_type.as_syntax_node().get_text(db);
-                    if let Some((ser_func, _)) = get_type_serde_funcs(type_name) {
-                        serialization_code.push(RewriteNode::interpolate_patched(
-                            &formatdoc!("        {ser_func}(calldata, $arg_name$);\n"),
-                            HashMap::from([(
-                                "arg_name".to_string(),
-                                RewriteNode::Trimmed(param.name(db).as_syntax_node()),
-                            )]),
-                        ));
-                    } else {
-                        diagnostics.push(PluginDiagnostic {
-                            stable_ptr: param_type.stable_ptr().untyped(),
-                            message: format!("Could not find serialization for type `{type_name}`"),
-                        });
-                        skip_generation = true;
-                    }
+                    serialization_code.push(RewriteNode::interpolate_patched(
+                        &formatdoc!(
+                            "        serde::Serde::<{type_name}>::serialize(calldata, \
+                             $arg_name$);\n"
+                        ),
+                        HashMap::from([(
+                            "arg_name".to_string(),
+                            RewriteNode::Trimmed(param.name(db).as_syntax_node()),
+                        )]),
+                    ));
                 }
 
                 if skip_generation {
@@ -169,16 +164,7 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                     OptionReturnTypeClause::ReturnTypeClause(ty) => {
                         let ret_type_ast = ty.ty(db);
                         let type_name = ret_type_ast.as_syntax_node().get_text(db);
-                        let Some((_, deser_func)) = get_type_serde_funcs(&type_name) else {
-                            diagnostics.push(PluginDiagnostic {
-                                stable_ptr: ret_type_ast.stable_ptr().untyped(),
-                                message: format!(
-                                    "Could not find deserialization for type `{type_name}`"),
-                            });
-                            continue;
-                        };
-
-                        format!("        {deser_func}(ret_data)")
+                        format!("        serde::Serde::<{type_name}>::deserialize(ret_data)")
                     }
                 };
 
@@ -436,24 +422,13 @@ fn handle_event(
         let param_name = param.name(db);
         let param_type_ast = param.type_clause(db).ty(db);
         let type_name = param_type_ast.as_syntax_node().get_text(db);
-        let ser_func = if let Some((ser_func, _)) = get_type_serde_funcs(&type_name) {
-            ser_func
-        } else {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: param_type_ast.stable_ptr().0,
-                message: format!("Could not find serialization for type `{type_name}`"),
-            });
-            skip_param_serialization = true;
-            ""
-        };
-
         if skip_param_serialization {
             continue;
         }
 
         // TODO(yuval): use panicable version of deserializations when supported.
         let param_serialization = RewriteNode::interpolate_patched(
-            &format!("{ser_func}(data, $param_name$);\n            "),
+            &format!("serde::Serde::<{type_name}>::deserialize(data, $param_name$);\n            "),
             HashMap::from([(
                 "param_name".to_string(),
                 RewriteNode::Trimmed(param_name.as_syntax_node()),
@@ -710,20 +685,6 @@ fn handle_mapping_storage_var(
     ))
 }
 
-/// Returns the serde functions for a type.
-// TODO(orizi): Use type ids when semantic information is available.
-// TODO(orizi): Use traits for serialization when supported.
-fn get_type_serde_funcs(name: &str) -> Option<(&str, &str)> {
-    match name.trim() {
-        "felt" => Some(("serde::serialize_felt", "serde::deserialize_felt")),
-        "bool" => Some(("serde::serialize_bool", "serde::deserialize_bool")),
-        "u128" => Some(("serde::serialize_u128", "serde::deserialize_u128")),
-        "u256" => Some(("serde::serialize_u256", "serde::deserialize_u256")),
-        "Array::<felt>" => Some(("serde::serialize_array_felt", "serde::deserialize_array_felt")),
-        _ => None,
-    }
-}
-
 /// Generates Cairo code for an entry point wrapper.
 fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
@@ -732,7 +693,7 @@ fn generate_entry_point_wrapper(
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
     let params = sig.parameters(db).elements(db);
-    let mut diagnostics = vec![];
+    let diagnostics = vec![];
     let mut arg_names = Vec::new();
     let mut arg_definitions = Vec::new();
     let mut ref_appends = Vec::new();
@@ -741,13 +702,6 @@ fn generate_entry_point_wrapper(
         let arg_name = format!("__arg_{}", param.name(db).text(db));
         let arg_type_ast = param.type_clause(db).ty(db);
         let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db);
-        let Some((ser_func, deser_func)) = get_type_serde_funcs(&type_name) else {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: arg_type_ast.stable_ptr().0,
-                message: format!("Could not find serialization for type `{type_name}`"),
-            });
-            continue;
-        };
 
         let is_ref = is_ref_param(db, &param);
         let ref_modifier = if is_ref { "ref " } else { "" };
@@ -756,20 +710,22 @@ fn generate_entry_point_wrapper(
         // TODO(yuval): use panicable version of deserializations when supported.
         let arg_definition = format!(
             "
-            let {mut_modifier}{arg_name} = match {deser_func}(ref data) {{
-                Option::Some(x) => x,
-                Option::None(()) => {{
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, {input_data_short_err});
-                    panic(err_data)
-                }},
-            }};"
+            let {mut_modifier}{arg_name} =
+                match serde::Serde::<{type_name}>::deserialize(ref data) {{
+                    Option::Some(x) => x,
+                    Option::None(()) => {{
+                        let mut err_data = array_new::<felt>();
+                        array_append::<felt>(ref err_data, {input_data_short_err});
+                        panic(err_data)
+                    }},
+                }};"
         );
         arg_definitions.push(arg_definition);
 
         if is_ref {
-            ref_appends
-                .push(RewriteNode::Text(format!("\n            {ser_func}(ref arr, {arg_name});")));
+            ref_appends.push(RewriteNode::Text(format!(
+                "\n            serde::Serde::<{type_name}>::serialize(ref arr, {arg_name});"
+            )));
         }
     }
     let arg_names_str = arg_names.join(", ");
@@ -785,15 +741,10 @@ fn generate_entry_point_wrapper(
             let ret_type_ast = ty.ty(db);
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             // TODO(orizi): Handle tuple types.
-            if let Some((ser_func, _)) = get_type_serde_funcs(&ret_type_name) {
-                ("\n            let res = ", format!("\n            {ser_func}(ref arr, res)"))
-            } else {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: ret_type_ast.stable_ptr().0,
-                    message: format!("Could not find serialization for type `{ret_type_name}`"),
-                });
-                ("", "".to_string())
-            }
+            (
+                "\n            let res = ",
+                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res)"),
+            )
         }
     };
     if !diagnostics.is_empty() {
