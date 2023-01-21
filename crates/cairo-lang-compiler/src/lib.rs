@@ -56,7 +56,7 @@ pub fn compile_cairo_project_at_path(
 ) -> Result<SierraProgram> {
     let mut db = RootDatabase::default();
     let main_crate_ids = setup_project(&mut db, path)?;
-    compile_prepared_db(db, main_crate_ids, compiler_config)
+    compile_prepared_db(&mut db, main_crate_ids, compiler_config)
 }
 
 /// Compiles a Cairo project.
@@ -71,19 +71,20 @@ pub fn compile(
     project_config: ProjectConfig,
     compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    let mut db = RootDatabase::default();
-    update_crate_roots_from_project_config(&mut db, project_config.clone());
-    let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
+    let mut builder = RootDatabase::builder();
+    let db = builder.with_project_config(project_config.clone()).build();
+    update_crate_roots_from_project_config(db, project_config.clone());
+    let main_crate_ids = get_main_crate_ids_from_project(db, &project_config);
 
     compile_prepared_db(db, main_crate_ids, compiler_config)
 }
 
 fn compile_prepared_db(
-    mut db: RootDatabase,
+    db: &mut RootDatabase,
     main_crate_ids: Vec<CrateId>,
     compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    if check_diagnostics(&mut db, compiler_config.on_diagnostic) {
+    if check_diagnostics(db, compiler_config.on_diagnostic) {
         bail!("Compilation failed.");
     }
 
@@ -93,7 +94,7 @@ fn compile_prepared_db(
         .context("Compilation failed without any diagnostics")?;
 
     if compiler_config.replace_ids {
-        sierra_program = Arc::new(replace_sierra_ids_in_program(&db, &sierra_program));
+        sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
     }
 
     Ok(sierra_program)
