@@ -407,14 +407,7 @@ fn test_array_helper(idx: u128) -> felt {
     array_append::<felt>(ref arr, 10);
     array_append::<felt>(ref arr, 11);
     array_append::<felt>(ref arr, 12);
-    match array_at::<felt>(ref arr, idx) {
-        Option::Some(x) => x,
-        Option::None(()) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, 'array index OOB');
-            panic(data)
-        },
-    }
+    array_at(ref arr, idx)
 }
 
 #[test]
