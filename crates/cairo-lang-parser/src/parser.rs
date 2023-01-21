@@ -341,6 +341,7 @@ impl<'a> Parser<'a> {
     /// Some(missing-identifier) is returned.
     fn try_parse_identifier(&mut self) -> Option<TerminalIdentifierGreen> {
         if self.peek().kind.is_keyword_terminal() {
+            // TODO(spapini): don't skip every keyword. Instead, pass a recovery set.
             Some(self.skip_token_and_return_missing::<TerminalIdentifier>(
                 ParserDiagnosticKind::ReservedIdentifier { identifier: self.peek().text.clone() },
             ))

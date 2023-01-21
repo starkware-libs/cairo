@@ -421,6 +421,15 @@ pub fn concrete_function_signature(
     let substitution =
         GenericSubstitution(generic_params.into_iter().zip(generic_args.into_iter()).collect());
     let generic_signature = db.function_signature_signature(generic_function.signature())?;
+    Ok(substitute_signature(db, substitution, generic_signature))
+}
+
+/// Substitutes a generic args in a generic signature.
+pub fn substitute_signature(
+    db: &dyn SemanticGroup,
+    substitution: GenericSubstitution,
+    generic_signature: Signature,
+) -> Signature {
     let concretize_param = |param: semantic::Parameter| Parameter {
         id: param.id,
         name: param.name,
@@ -428,13 +437,13 @@ pub fn concrete_function_signature(
         mutability: param.mutability,
         stable_ptr: param.stable_ptr,
     };
-    Ok(Signature {
+    Signature {
         params: generic_signature.params.into_iter().map(concretize_param).collect(),
         return_type: substitute_generics(db, &substitution, generic_signature.return_type),
         implicits: generic_signature.implicits,
         panicable: generic_signature.panicable,
         stable_ptr: generic_signature.stable_ptr,
-    })
+    }
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the
