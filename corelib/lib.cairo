@@ -155,6 +155,7 @@ use ec::EcOp;
 use ec::EcPoint;
 use ec::EcState;
 use ec::ec_mul;
+use ec::ec_neg;
 use ec::ec_point_from_x;
 use ec::ec_point_new;
 use ec::ec_point_try_new;

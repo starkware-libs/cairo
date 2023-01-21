@@ -183,6 +183,42 @@ test::foo@0([0]: EcPoint) -> (Tuple<felt, felt>);
 
 //! > ==========================================================================
 
+//! > ec_neg libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(a: EcPoint) -> EcPoint {
+    ec_neg(a)
+}
+
+//! > casm
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3] * -1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 2})
+
+//! > sierra_code
+type EcPoint = EcPoint;
+
+libfunc ec_neg = ec_neg;
+libfunc store_temp<EcPoint> = store_temp<EcPoint>;
+libfunc rename<EcPoint> = rename<EcPoint>;
+
+ec_neg([0]) -> ([1]);
+store_temp<EcPoint>([1]) -> ([1]);
+rename<EcPoint>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: EcPoint) -> (EcPoint);
+
+//! > ==========================================================================
+
 //! > ec_state_init libfunc
 
 //! > test_comments
