@@ -2,29 +2,25 @@ use std::mem::take;
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_plugins::get_default_plugins;
-use cairo_lang_semantic::corelib::get_core_ty_by_name;
-use cairo_lang_semantic::db::SemanticGroup;
-use itertools::Itertools;
 
 use crate::plugin::StarkNetPlugin;
 
 /// Returns a compiler database tuned to Starknet (e.g. Starknet plugin).
 pub fn get_starknet_database() -> RootDatabase {
-    let mut builder = RootDatabase::builder();
-    let db = builder.with_dev_corelib().unwrap().build();
-
     // Override implicit precedence for compatibility with the StarkNet OS.
-    db.set_implicit_precedence(Arc::new(
-        ["Pedersen", "RangeCheck", "Bitwise", "EcOp", "GasBuiltin", "System"]
-            .iter()
-            .map(|name| get_core_ty_by_name(db, name.into(), vec![]))
-            .collect_vec(),
-    ));
+    let precedence = ["Pedersen", "RangeCheck", "Bitwise", "EcOp", "GasBuiltin", "System"];
 
     let mut plugins = get_default_plugins();
     plugins.push(Arc::new(StarkNetPlugin {}));
-    db.set_semantic_plugins(plugins);
+
+    let mut builder = RootDatabase::builder();
+    let db = builder
+        .with_dev_corelib()
+        .unwrap()
+        .with_implicit_precedence(Vec::from(precedence))
+        .with_plugins(plugins)
+        .build();
+
     take(db)
 }
