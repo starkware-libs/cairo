@@ -186,7 +186,7 @@ pub type ArrayPopFrontLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayPopFront
 #[derive(Default)]
 pub struct ArrayAtLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayAtLibfuncWrapped {
-    const STR_ID: &'static str = "array_at";
+    const STR_ID: &'static str = "array_get";
 
     fn specialize_signature(
         &self,

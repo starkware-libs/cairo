@@ -15,7 +15,7 @@ pub fn build(
         ArrayConcreteLibfunc::New(_) => build_array_new(builder),
         ArrayConcreteLibfunc::Append(_) => build_array_append(builder),
         ArrayConcreteLibfunc::PopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
-        ArrayConcreteLibfunc::At(libfunc) => build_array_at(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::At(libfunc) => build_array_get(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
     }
 }
@@ -89,7 +89,7 @@ fn build_pop_front(
 }
 
 /// Handles a Sierra statement for fetching an array element at a specific index.
-fn build_array_at(
+fn build_array_get(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
