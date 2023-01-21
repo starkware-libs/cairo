@@ -1,3 +1,4 @@
+use std::mem::take;
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
@@ -11,8 +12,8 @@ use crate::plugin::StarkNetPlugin;
 
 /// Returns a compiler database tuned to Starknet (e.g. Starknet plugin).
 pub fn get_starknet_database() -> RootDatabase {
-    let mut db_val = RootDatabase::default();
-    let db = &mut db_val;
+    let mut builder = RootDatabase::builder();
+    let db = builder.with_dev_corelib().unwrap().build();
 
     // Override implicit precedence for compatibility with the StarkNet OS.
     db.set_implicit_precedence(Arc::new(
@@ -25,5 +26,5 @@ pub fn get_starknet_database() -> RootDatabase {
     let mut plugins = get_default_plugins();
     plugins.push(Arc::new(StarkNetPlugin {}));
     db.set_semantic_plugins(plugins);
-    db_val
+    take(db)
 }
