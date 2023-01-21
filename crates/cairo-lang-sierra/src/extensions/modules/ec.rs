@@ -45,6 +45,7 @@ impl NoGenericArgsGenericType for EcStateType {
 
 define_libfunc_hierarchy! {
     pub enum EcLibfunc {
+        Neg(EcNegLibfunc),
         StateAdd(EcStateAddLibfunc),
         TryNew(EcCreatePointLibfunc),
         StateFinalize(EcStateFinalizeLibfunc),
@@ -151,6 +152,28 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
                     ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                 },
             ],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+/// Libfunc for unwrapping the x,y values of an EC point.
+#[derive(Default)]
+pub struct EcNegLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcNegLibfunc {
+    const STR_ID: &'static str = "ec_neg";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let point_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![point_ty.clone()],
+            vec![OutputVarInfo {
+                ty: point_ty,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
             SierraApChange::Known { new_vars_only: true },
         ))
     }

@@ -20,6 +20,7 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
+        EcConcreteLibfunc::Neg(_) => build_ec_neg(builder),
         EcConcreteLibfunc::StateAdd(_) => build_ec_state_add(builder),
         EcConcreteLibfunc::TryNew(_) => build_ec_point_try_new(builder),
         EcConcreteLibfunc::StateFinalize(_) => build_ec_state_finalize(builder),
@@ -185,6 +186,25 @@ fn build_ec_point_unwrap(
     };
 
     Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[x], &[y]], None)]))
+}
+
+/// Generates casm instructions for ec_neg().
+fn build_ec_neg(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref x;
+        deref y;
+    };
+    casm_build_extend!(casm_builder,
+        const neg_one = -1;
+        let neg_y = y * neg_one;
+    );
+
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[x, neg_y]], None)]))
 }
 
 /// Handles instruction for initializing an EC state.

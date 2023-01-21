@@ -6,6 +6,8 @@ extern type EcPoint;
 extern fn ec_point_try_new(x: felt, y: felt) -> Option::<EcPoint> nopanic;
 extern fn ec_point_from_x(x: felt) -> Option::<EcPoint> nopanic;
 extern fn ec_point_unwrap(p: EcPoint) -> (felt, felt) nopanic;
+/// Computes the negation of an elliptic curve point (-p).
+extern fn ec_neg(p: EcPoint) -> EcPoint nopanic;
 
 // EC state.
 
