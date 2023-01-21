@@ -2,10 +2,16 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::plugin::MacroPlugin;
-use cairo_lang_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
+use cairo_lang_filesystem::db::{
+    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+    CORELIB_CRATE_NAME,
+};
+use cairo_lang_filesystem::detect::detect_corelib;
+use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
+use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
@@ -34,6 +40,10 @@ impl RootDatabase {
         res.set_semantic_plugins(plugins);
         res
     }
+
+    pub fn builder() -> RootDatabaseBuilder {
+        RootDatabaseBuilder::default()
+    }
 }
 
 impl Default for RootDatabase {
@@ -42,6 +52,44 @@ impl Default for RootDatabase {
         Self::new(get_default_plugins())
     }
 }
+
+#[derive(Default)]
+pub struct RootDatabaseBuilder {
+    db: RootDatabase,
+}
+
+impl RootDatabaseBuilder {
+    pub fn new() -> Self {
+        Self { db: RootDatabase::new(Vec::new()) }
+    }
+
+    pub fn with_plugins(&mut self, plugins: Vec<Arc<dyn SemanticPlugin>>) -> &mut Self {
+        self.db.set_semantic_plugins(plugins);
+        self
+    }
+
+    pub fn with_dev_corelib(&mut self) -> Option<&mut Self> {
+        if let Some(path) = detect_corelib() {
+            init_dev_corelib(&mut self.db, path);
+            Some(self)
+        } else {
+            None
+        }
+    }
+
+    pub fn with_project_config(&mut self, config: ProjectConfig) -> &mut Self {
+        if let Some(corelib) = config.corelib {
+            let core_crate = self.db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
+            self.db.set_crate_root(core_crate, Some(corelib));
+        }
+        self
+    }
+
+    pub fn build(&mut self) -> &mut RootDatabase {
+        &mut self.db
+    }
+}
+
 impl AsFilesGroupMut for RootDatabase {
     fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
