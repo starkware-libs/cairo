@@ -26,8 +26,7 @@ mod ERC20 {
         assert(recipient != 0, 'ERC20: mint to the 0 address');
         total_supply::write(initial_supply);
         balances::write(recipient, initial_supply);
-        // TODO(orizi): Move into events module.
-        __external::Transfer(0, recipient, initial_supply);
+        Transfer(0, recipient, initial_supply);
     }
 
     #[view]
@@ -96,8 +95,7 @@ mod ERC20 {
         assert(recipient != 0, 'ERC20: transfer to 0');
         balances::write(sender, balances::read(sender) - amount);
         balances::write(recipient, balances::read(recipient) + amount);
-        // TODO(orizi): Move into events module.
-        __external::Transfer(sender, recipient, amount);
+        Transfer(sender, recipient, amount);
     }
 
     fn spend_allowance(owner: felt, spender: felt, amount: u256) {
@@ -112,8 +110,7 @@ mod ERC20 {
     fn approve_helper(owner: felt, spender: felt, amount: u256) {
         assert(spender != 0, 'ERC20: approve from 0');
         allowances::write((owner, spender), amount);
-        // TODO(orizi): Move into events module.
-        __external::Approval(owner, spender, amount);
+        Approval(owner, spender, amount);
     }
 
     // TODO(orizi): Add and use actual libfunc.
