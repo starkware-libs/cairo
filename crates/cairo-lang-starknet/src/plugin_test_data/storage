@@ -35,8 +35,8 @@ mod TestContract {
             ) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -51,8 +51,8 @@ mod TestContract {
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -71,8 +71,8 @@ mod TestContract {
             ) {
                 Result::Ok(value) => u128_from_felt(value),
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -87,8 +87,8 @@ mod TestContract {
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -107,8 +107,8 @@ mod TestContract {
             ) {
                 Result::Ok(value) => if value == 0 { false } else { true },
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -123,8 +123,8 @@ mod TestContract {
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -143,8 +143,8 @@ mod TestContract {
             ) {
                 Result::Ok(value) => u128_from_felt(value),
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -159,8 +159,8 @@ mod TestContract {
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -179,8 +179,8 @@ mod TestContract {
             ) {
                 Result::Ok(value) => if value == 0 { false } else { true },
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -195,8 +195,8 @@ mod TestContract {
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -215,8 +215,8 @@ mod TestContract {
             ) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -231,8 +231,8 @@ mod TestContract {
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }

@@ -63,8 +63,8 @@ mod TestContract {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, 'Out of gas');
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
                     panic(err_data);
                 },
             }
@@ -73,8 +73,8 @@ mod TestContract {
                 match serde::Serde::<felt>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
-                        let mut err_data = array_new::<felt>();
-                        array_append::<felt>(ref err_data, 'Input too short for arguments');
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
                         panic(err_data)
                     },
                 };
@@ -83,22 +83,22 @@ mod TestContract {
                 match serde::Serde::<felt>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
-                        let mut err_data = array_new::<felt>();
-                        array_append::<felt>(ref err_data, 'Input too short for arguments');
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
                         panic(err_data)
                     },
                 };
-            if array_len::<felt>(ref data) != 0_u128 {
+            if array_len(ref data) != 0_u128 {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(ref err_data, 'Input too long for arguments');
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             
             let res = super::get_something(ref __arg_arg, __arg_num);
-            let mut arr = array_new::<felt>();
+            let mut arr = array_new();
             // References.
             serde::Serde::<felt>::serialize(ref arr, __arg_arg);
             // Result.
@@ -110,8 +110,8 @@ mod TestContract {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, 'Out of gas');
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
                     panic(err_data);
                 },
             }
@@ -120,8 +120,8 @@ mod TestContract {
                 match serde::Serde::<felt>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
-                        let mut err_data = array_new::<felt>();
-                        array_append::<felt>(ref err_data, 'Input too short for arguments');
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
                         panic(err_data)
                     },
                 };
@@ -130,21 +130,21 @@ mod TestContract {
                 match serde::Serde::<felt>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
-                        let mut err_data = array_new::<felt>();
-                        array_append::<felt>(ref err_data, 'Input too short for arguments');
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
                         panic(err_data)
                     },
                 };
-            if array_len::<felt>(ref data) != 0_u128 {
+            if array_len(ref data) != 0_u128 {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(ref err_data, 'Input too long for arguments');
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             super::set_something(ref __arg_arg, __arg_num);
-            let mut arr = array_new::<felt>();
+            let mut arr = array_new();
             // References.
             serde::Serde::<felt>::serialize(ref arr, __arg_arg);
             // Result.
@@ -154,9 +154,9 @@ mod TestContract {
         
         #[event]
         fn awesome_event(x: felt, y: u128) {
-            let mut keys = array_new::<felt>();
-            array_append::<felt>(ref keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
-            let mut data = array_new::<felt>();
+            let mut keys = array_new();
+            array_append(ref keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
+            let mut data = array_new();
             serde::Serde::<felt>::deserialize(data, x);
             serde::Serde::<u128>::deserialize(data, y);
             
@@ -165,9 +165,9 @@ mod TestContract {
             
         #[event]
         fn best_event_ever() {
-            let mut keys = array_new::<felt>();
-            array_append::<felt>(ref keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
-            let mut data = array_new::<felt>();
+            let mut keys = array_new();
+            array_append(ref keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
+            let mut data = array_new();
             
             starknet::emit_event_syscall(keys, data);
         }

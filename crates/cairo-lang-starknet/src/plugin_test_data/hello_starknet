@@ -51,8 +51,8 @@ mod HelloStarknet {
             ) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -67,8 +67,8 @@ mod HelloStarknet {
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, revert_reason);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, revert_reason);
                     panic(err_data)
                 },
             }
@@ -89,8 +89,8 @@ mod HelloStarknet {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, 'Out of gas');
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
                     panic(err_data);
                 },
             }
@@ -99,21 +99,21 @@ mod HelloStarknet {
                 match serde::Serde::<felt>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
-                        let mut err_data = array_new::<felt>();
-                        array_append::<felt>(ref err_data, 'Input too short for arguments');
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
                         panic(err_data)
                     },
                 };
-            if array_len::<felt>(ref data) != 0_u128 {
+            if array_len(ref data) != 0_u128 {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(ref err_data, 'Input too long for arguments');
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             super::increase_balance(__arg_amount);
-            let mut arr = array_new::<felt>();
+            let mut arr = array_new();
             // References.
             // Result.
             arr
@@ -123,23 +123,23 @@ mod HelloStarknet {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, 'Out of gas');
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
                     panic(err_data);
                 },
             }
             
-            if array_len::<felt>(ref data) != 0_u128 {
+            if array_len(ref data) != 0_u128 {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(ref err_data, 'Input too long for arguments');
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             
             let res = super::get_balance();
-            let mut arr = array_new::<felt>();
+            let mut arr = array_new();
             // References.
             // Result.
             serde::Serde::<felt>::serialize(ref arr, res)
