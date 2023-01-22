@@ -262,13 +262,14 @@ fn compute_expr_binary_semantic(
         return match lexpr {
             Expr::Var(ExprVar { var, .. }) => {
                 // The semantic_var must be valid as 'lexpr' is a result of compute_expr_semantic.
-                let semantic_var = ctx.semantic_defs.get(&var).unwrap();
+                let semantic_var = ctx.semantic_defs.get(&var).unwrap().clone();
+                let expected_ty = ctx.reduce_ty(semantic_var.ty());
+                let actual_ty = ctx.reduce_ty(rexpr.ty());
 
-                if ctx.inference.conform_ty(semantic_var.ty(), rexpr.ty()).is_err() {
-                    return Err(ctx.diagnostics.report(
-                        &rhs_syntax,
-                        WrongArgumentType { expected_ty: semantic_var.ty(), actual_ty: rexpr.ty() },
-                    ));
+                if ctx.inference.conform_ty(actual_ty, expected_ty).is_err() {
+                    return Err(ctx
+                        .diagnostics
+                        .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
                 }
                 if !semantic_var.is_mut() {
                     ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
@@ -284,11 +285,15 @@ fn compute_expr_binary_semantic(
         };
     }
     // TODO(spapini): Use a trait here.
+    let lty = ctx.reduce_ty(lexpr.ty());
+    let rty = ctx.reduce_ty(rexpr.ty());
     let function = match core_binary_operator(
         db,
+        &mut ctx.inference,
         &binary_op,
-        ctx.reduce_ty(lexpr.ty()),
-        ctx.reduce_ty(rexpr.ty()),
+        lty,
+        rty,
+        syntax.stable_ptr().untyped(),
     )? {
         Err(err_kind) => {
             return Err(ctx.diagnostics.report(&binary_op, err_kind));
@@ -360,11 +365,12 @@ fn compute_expr_function_call_semantic(
             if mutability != Mutability::Immutable {
                 return Err(ctx.diagnostics.report(&args_syntax, VariantCtorNotImmutable));
             }
-            if ctx.inference.conform_ty(concrete_variant.ty, arg.ty()).is_err() {
-                return Err(ctx.diagnostics.report(
-                    &args_syntax,
-                    WrongArgumentType { expected_ty: concrete_variant.ty, actual_ty: arg.ty() },
-                ));
+            let expected_ty = ctx.reduce_ty(concrete_variant.ty);
+            let actual_ty = ctx.reduce_ty(arg.ty());
+            if ctx.inference.conform_ty(actual_ty, expected_ty).is_err() {
+                return Err(ctx
+                    .diagnostics
+                    .report(&args_syntax, WrongArgumentType { expected_ty, actual_ty }));
             }
             let concrete_enum_id = concrete_variant.concrete_enum_id;
             Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
@@ -453,11 +459,13 @@ pub fn compute_root_expr(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBlock,
     return_type: TypeId,
-) -> Maybe<Expr> {
+) -> Maybe<ExprId> {
     let res = compute_expr_block_semantic(ctx, syntax)?;
-    if ctx.inference.conform_ty(res.ty(), return_type).is_err() {
+    let res_ty = res.ty();
+    let res = ctx.exprs.alloc(res);
+    if ctx.inference.conform_ty(res_ty, return_type).is_err() {
         ctx.diagnostics
-            .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res.ty() });
+            .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
         return Ok(res);
     }
 
@@ -494,6 +502,7 @@ pub fn compute_root_expr(
                             continue;
                         }
                     };
+
                     long_function_id.function.generic_function =
                         GenericFunctionId::Impl(concrete_impl_function);
                 }
@@ -1078,12 +1087,12 @@ fn struct_ctor_expr(
         };
 
         // Check types.
-        if ctx.inference.conform_ty(arg_expr.ty(), member.ty).is_err() {
+        let expected_ty = ctx.reduce_ty(member.ty);
+        let actual_ty = ctx.reduce_ty(arg_expr.ty());
+        if ctx.inference.conform_ty(actual_ty, expected_ty).is_err() {
             if !member.ty.is_missing(db) {
-                ctx.diagnostics.report(
-                    &arg_identifier,
-                    WrongArgumentType { expected_ty: member.ty, actual_ty: arg_expr.ty() },
-                );
+                ctx.diagnostics
+                    .report(&arg_identifier, WrongArgumentType { expected_ty, actual_ty });
             }
             skipped_members.insert(member.id);
             continue;
@@ -1467,10 +1476,13 @@ fn expr_function_call(
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
         // added).
         // TODO(lior): Add a test to missing type once possible.
-        if !arg_typ.is_missing(ctx.db) && ctx.inference.conform_ty(arg_typ, param_typ).is_err() {
+        let expected_ty = ctx.reduce_ty(param_typ);
+        let actual_ty = ctx.reduce_ty(arg_typ);
+        if !arg_typ.is_missing(ctx.db) && ctx.inference.conform_ty(actual_ty, expected_ty).is_err()
+        {
             ctx.diagnostics.report_by_ptr(
                 arg.stable_ptr().untyped(),
-                WrongArgumentType { expected_ty: param_typ, actual_ty: arg_typ },
+                WrongArgumentType { expected_ty, actual_ty },
             );
         }
 
@@ -1565,8 +1577,10 @@ pub fn compute_statement_semantic(
                         &mut ctx.resolver,
                         &var_type_path,
                     );
+                    let explicit_type = ctx.reduce_ty(explicit_type);
+                    let inferred_type = ctx.reduce_ty(inferred_type);
                     if !inferred_type.is_missing(db)
-                        && ctx.inference.conform_ty(explicit_type, inferred_type).is_err()
+                        && ctx.inference.conform_ty(inferred_type, explicit_type).is_err()
                     {
                         ctx.diagnostics.report(
                             &let_syntax.rhs(syntax_db),
@@ -1612,7 +1626,10 @@ pub fn compute_statement_semantic(
                     UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
                 )?
                 .return_type;
-            if expr_ty != expected_ty && !expected_ty.is_missing(db) && !expr_ty.is_missing(db) {
+            if !expected_ty.is_missing(db)
+                && !expr_ty.is_missing(db)
+                && ctx.inference.conform_ty(expr_ty, expected_ty).is_err()
+            {
                 ctx.diagnostics
                     .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
             }
