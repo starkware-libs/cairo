@@ -74,6 +74,15 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
             super::foo(__arg_x);
             let mut arr = array_new();
             // References.
@@ -136,6 +145,15 @@ mod TestContract {
                 let mut err_data = array_new();
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
             }
             
             let res = super::foo();
@@ -220,6 +238,15 @@ mod TestContract {
                 let mut err_data = array_new();
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
             }
             
             let res = super::foo(__arg_x, __arg_y);

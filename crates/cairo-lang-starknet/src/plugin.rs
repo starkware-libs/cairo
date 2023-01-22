@@ -736,6 +736,15 @@ fn generate_entry_point_wrapper(
                 array_append(ref err_data, {input_data_long_err});
                 panic(err_data);
             }}
+            match get_gas_all(get_builtin_costs()) {{
+                Option::Some(_) => {{
+                }},
+                Option::None(_) => {{
+                    let mut err_data = array_new();
+                    array_append(ref err_data, {oog_err});
+                    panic(err_data)
+                }},
+            }}
             {let_res}$wrapped_name$({arg_names_str});
             let mut arr = array_new();
             // References.$ref_appends$
