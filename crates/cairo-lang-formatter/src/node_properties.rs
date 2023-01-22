@@ -115,6 +115,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::GenericParamList
                 | SyntaxKind::GenericArgList
                 | SyntaxKind::ItemList
+                | SyntaxKind::TraitItemList
         )
     }
 
@@ -125,6 +126,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::StatementReturn
             | SyntaxKind::ItemConstant
             | SyntaxKind::FunctionWithBody
+            | SyntaxKind::TraitItemFunction
             | SyntaxKind::ItemExternFunction
             | SyntaxKind::ItemExternType
             | SyntaxKind::ItemTrait
@@ -147,6 +149,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                             | SyntaxKind::ExprMatch
                             | SyntaxKind::ModuleBody
                             | SyntaxKind::TraitBody
+                            | SyntaxKind::ImplBody
                     )
                 )
             }
