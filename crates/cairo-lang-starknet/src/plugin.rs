@@ -508,7 +508,6 @@ fn handle_storage_struct(
         let type_ast = member.type_clause(db).ty(db);
         if let Some((key_type_ast, value_type_ast)) = try_extract_mapping_types(db, &type_ast) {
             match handle_mapping_storage_var(
-                key_type_ast.as_syntax_node().get_text(db).trim(),
                 value_type_ast.as_syntax_node().get_text(db).trim(),
                 &address,
             ) {
@@ -632,23 +631,14 @@ fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
 }
 
 /// Generate getters and setters skeleton for a non-mapping member in the storage struct.
-fn handle_mapping_storage_var(
-    key_type_name: &str,
-    value_type_name: &str,
-    address: &str,
-) -> Option<String> {
-    let key_convert_to = match key_type_name {
-        "felt" => "key",
-        "bool" => "if key { 1 } else { 0 }",
-        "u128" => "u128_to_felt(key)",
-        _ => return None,
-    };
+fn handle_mapping_storage_var(value_type_name: &str, address: &str) -> Option<String> {
     let (value_convert_to, value_convert_from) = get_conversions(value_type_name)?;
     Some(format!(
         "
     mod $storage_var_name$ {{
         fn address(key: $key_type$) -> starknet::StorageBaseAddress {{
-            starknet::storage_base_address_from_felt(pedersen({address}, {key_convert_to}))
+            starknet::storage_base_address_from_felt(
+                hash::LegacyHash::<$key_type$>::hash({address}, key))
         }}
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
