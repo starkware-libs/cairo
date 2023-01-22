@@ -77,6 +77,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => vec![ApChange::Known(3)],
         },
         CoreConcreteLibfunc::Ec(libfunc) => match libfunc {
+            EcConcreteLibfunc::Neg(_) => vec![ApChange::Known(0)],
             EcConcreteLibfunc::StateAdd(_) => vec![ApChange::Known(9)],
             EcConcreteLibfunc::TryNew(_) => vec![ApChange::Known(6), ApChange::Known(6)],
             EcConcreteLibfunc::StateFinalize(_) => vec![ApChange::Known(11), ApChange::Known(3)],

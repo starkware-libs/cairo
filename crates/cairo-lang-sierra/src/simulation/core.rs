@@ -14,9 +14,7 @@ use crate::extensions::core::CoreConcreteLibfunc::{
     Gas, Mem, Struct, Uint128, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
-use crate::extensions::ec::EcConcreteLibfunc::{
-    PointFromX, StateAdd, StateAddMul, StateFinalize, StateInit, TryNew, UnwrapPoint,
-};
+use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt::{
     FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
@@ -75,29 +73,27 @@ pub fn simulate<
             [value] => Ok((vec![value.clone(), value.clone()], 0)),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Ec(StateAdd(_)) => todo!(),
-        Ec(TryNew(_)) => match &inputs[..] {
-            [CoreValue::Felt(x), CoreValue::Felt(y)] => {
-                // If the point is on the curve use the fallthrough branch and return the point.
-                if y * y == x * x * x + x + get_beta() {
-                    Ok((vec![CoreValue::EcPoint(x.clone(), y.clone())], 0))
-                } else {
-                    Ok((vec![], 1))
+        Ec(libfunc) => match libfunc {
+            EcConcreteLibfunc::TryNew(_) => match &inputs[..] {
+                [CoreValue::Felt(x), CoreValue::Felt(y)] => {
+                    // If the point is on the curve use the fallthrough branch and return the point.
+                    if y * y == x * x * x + x + get_beta() {
+                        Ok((vec![CoreValue::EcPoint(x.clone(), y.clone())], 0))
+                    } else {
+                        Ok((vec![], 1))
+                    }
                 }
-            }
-            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
-        Ec(StateFinalize(_)) => unimplemented!(),
-        Ec(StateInit(_)) => unimplemented!(),
-        Ec(StateAddMul(_)) => unimplemented!(),
-        Ec(PointFromX(_)) => unimplemented!(),
-        Ec(UnwrapPoint(_)) => match &inputs[..] {
-            [CoreValue::EcPoint(x, y)] => {
-                Ok((vec![CoreValue::Felt(x.clone()), CoreValue::Felt(y.clone())], 0))
-            }
-            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+                [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+            },
+            EcConcreteLibfunc::UnwrapPoint(_) => match &inputs[..] {
+                [CoreValue::EcPoint(x, y)] => {
+                    Ok((vec![CoreValue::Felt(x.clone()), CoreValue::Felt(y.clone())], 0))
+                }
+                [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+            },
+            _ => unimplemented!(),
         },
         FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
