@@ -38,6 +38,9 @@ mod TestContract {
     }
 
     
+
+    
+
     trait __abi {
         #[external]
         fn foo(x: (felt, felt));
@@ -90,7 +93,6 @@ mod TestContract {
             arr
         }
         
-        
     }
 }
 
@@ -119,6 +121,9 @@ mod TestContract {
     }
 
     
+
+    
+
     trait __abi {
         #[external]
         fn foo() -> (felt, felt);
@@ -164,7 +169,6 @@ mod TestContract {
             arr
         }
         
-        
     }
 }
 
@@ -193,6 +197,9 @@ mod TestContract {
     }
 
     
+
+    
+
     trait __abi {
         #[external]
         fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt);
@@ -257,7 +264,6 @@ mod TestContract {
             arr
         }
         
-        
     }
 }
 
@@ -284,13 +290,15 @@ mod TestContract {
 mod TestContract {
 
     
+
+    
+
     trait __abi {
         
         
     }
 
     mod __external {
-        
         
     }
 }
@@ -321,13 +329,15 @@ mod TestContract {
 mod TestContract {
 
     
+
+    
+
     trait __abi {
         
         
     }
 
     mod __external {
-        
         
     }
 }
@@ -358,13 +368,15 @@ mod TestContract {
 mod TestContract {
 
     
+
+    
+
     trait __abi {
         
         
     }
 
     mod __external {
-        
         
     }
 }
@@ -395,6 +407,19 @@ mod TestContract {
 mod TestContract {
 
     
+
+    
+    #[event]
+    fn bad_event(x: (felt, felt)) {
+        let mut keys = array_new();
+        array_append(ref keys, 0x24588e9be27cb91356e7dba75bcae8d487891c93e2c1696ab6437f2700aed26);
+        let mut data = array_new();
+        serde::Serde::<(felt, felt)>::serialize(ref data, x);
+        
+        starknet::emit_event_syscall(keys, data);
+    }
+            
+
     trait __abi {
         
         #[event]
@@ -404,17 +429,6 @@ mod TestContract {
 
     mod __external {
         
-        
-        #[event]
-        fn bad_event(x: (felt, felt)) {
-            let mut keys = array_new();
-            array_append(ref keys, 0x24588e9be27cb91356e7dba75bcae8d487891c93e2c1696ab6437f2700aed26);
-            let mut data = array_new();
-            serde::Serde::<(felt, felt)>::serialize(ref data, x);
-            
-            starknet::emit_event_syscall(keys, data);
-        }
-            
     }
 }
 
@@ -441,13 +455,15 @@ mod TestContract {
 mod TestContract {
 
     
+
+    
+
     trait __abi {
         
         
     }
 
     mod __external {
-        
         
     }
 }
