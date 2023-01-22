@@ -35,3 +35,12 @@ impl LegacyHashU256 of LegacyHash::<u256> {
         LegacyHash::<u128>::hash(state, value.high)
     }
 }
+
+// TODO(orizi): Move to generic impl.
+impl LegacyHashFeltPair of LegacyHash::<(felt, felt)> {
+    fn hash(state: felt, pair: (felt, felt)) -> felt {
+        let (first, second) = pair;
+        let state = LegacyHash::hash(state, first);
+        LegacyHash::hash(state, second)
+    }
+}

@@ -724,7 +724,7 @@ fn generate_entry_point_wrapper(
                 Option::None(_) => {{
                     let mut err_data = array_new();
                     array_append(ref err_data, {oog_err});
-                    panic(err_data);
+                    panic(err_data)
                 }},
             }}
             {arg_definitions}
