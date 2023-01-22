@@ -88,7 +88,7 @@ mod HelloStarknet {
                 Option::None(_) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, 'Out of gas');
-                    panic(err_data);
+                    panic(err_data)
                 },
             }
             
@@ -131,7 +131,7 @@ mod HelloStarknet {
                 Option::None(_) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, 'Out of gas');
-                    panic(err_data);
+                    panic(err_data)
                 },
             }
             
