@@ -129,20 +129,18 @@ impl ProgramAnnotations {
     /// assignment is consistent with the new assignment.
     pub fn set_or_assert(
         &mut self,
-        statement_id: StatementIdx,
+        statement_idx: StatementIdx,
         annotations: StatementAnnotations,
     ) -> Result<(), AnnotationError> {
-        let idx = statement_id.0;
+        let idx = statement_idx.0;
         match self.per_statement_annotations.get(idx).ok_or(AnnotationError::InvalidStatementIdx)? {
             None => self.per_statement_annotations[idx] = Some(annotations),
             Some(expected_annotations) => {
                 if expected_annotations.refs != annotations.refs {
-                    return Err(AnnotationError::InconsistentReferencesAnnotation(statement_id));
+                    return Err(AnnotationError::InconsistentReferencesAnnotation(statement_idx));
                 }
                 if expected_annotations.function_id != annotations.function_id {
-                    return Err(AnnotationError::InconsistentFunctionId {
-                        statement_idx: statement_id,
-                    });
+                    return Err(AnnotationError::InconsistentFunctionId { statement_idx });
                 }
 
                 validate_environment_equality(
@@ -150,7 +148,7 @@ impl ProgramAnnotations {
                     &annotations.environment,
                 )
                 .map_err(|error| AnnotationError::InconsistentEnvironments {
-                    statement_idx: statement_id,
+                    statement_idx,
                     error,
                 })?;
             }
