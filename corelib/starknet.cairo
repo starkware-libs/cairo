@@ -40,3 +40,66 @@ extern fn call_contract_syscall(
 extern fn emit_event_syscall(
     keys: Array::<felt>, data: Array::<felt>
 ) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;
+
+trait StorageAccess<T> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<T, felt>;
+    fn write(address_domain: felt, base: StorageBaseAddress, value: T) -> Result::<(), felt>;
+}
+
+impl StorageAccessFelt of StorageAccess::<felt> {
+    #[inline(always)]
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<felt, felt> {
+        storage_read_syscall(address_domain, storage_address_from_base(base))
+    }
+    #[inline(always)]
+    fn write(address_domain: felt, base: StorageBaseAddress, value: felt) -> Result::<(), felt> {
+        storage_write_syscall(address_domain, storage_address_from_base(base), value)
+    }
+}
+
+impl StorageAccessBool of StorageAccess::<bool> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<bool, felt> {
+        Result::Ok(StorageAccess::<felt>::read(address_domain, base)? != 0)
+    }
+    #[inline(always)]
+    fn write(address_domain: felt, base: StorageBaseAddress, value: bool) -> Result::<(), felt> {
+            StorageAccess::<felt>::write(address_domain, base, if value {
+                1
+            } else {
+                0
+        })
+    }
+}
+
+impl StorageAccessU128 of StorageAccess::<u128> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u128, felt> {
+        Result::Ok(u128_from_felt(StorageAccess::<felt>::read(address_domain, base)?))
+    }
+    #[inline(always)]
+    fn write(address_domain: felt, base: StorageBaseAddress, value: u128) -> Result::<(), felt> {
+        StorageAccess::<felt>::write(address_domain, base, u128_to_felt(value))
+    }
+}
+
+impl StorageAccessU256 of StorageAccess::<u256> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u256, felt> {
+        Result::Ok(
+            u256 {
+                low: StorageAccess::<u128>::read(address_domain, base)?,
+                high: u128_from_felt(
+                    storage_read_syscall(
+                        address_domain, storage_address_from_base_and_offset(base, 1_u8)
+                    )?
+                )
+            }
+        )
+    }
+    fn write(address_domain: felt, base: StorageBaseAddress, value: u256) -> Result::<(), felt> {
+        StorageAccess::<u128>::write(address_domain, base, value.low)?;
+        storage_write_syscall(
+            address_domain,
+            storage_address_from_base_and_offset(base, 1_u8),
+            u128_to_felt(value.high)
+        )
+    }
+}

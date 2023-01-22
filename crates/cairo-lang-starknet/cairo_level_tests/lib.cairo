@@ -1,6 +1,6 @@
 #[contract]
 mod TestContract {
-    struct Storage { value: felt, mapping: Map::<u128, bool>, }
+    struct Storage { value: felt, mapping: Map::<u128, bool>, large_mapping: Map::<u256, u256>, }
 
     #[view]
     fn get_plus_2(a: felt) -> felt {
@@ -39,6 +39,16 @@ mod TestContract {
     #[view]
     fn contains(key: u128) -> bool {
         mapping::read(key)
+    }
+
+    #[external]
+    fn set_large(key: u256, value: u256) {
+        large_mapping::write(key, value)
+    }
+
+    #[view]
+    fn get_large(key: u256) -> u256 {
+        large_mapping::read(key)
     }
 }
 
@@ -152,4 +162,48 @@ fn not_contains_removed() {
     let mut retdata = TestContract::__external::contains(single_element_arr(4));
     pop_and_compare(ref retdata, 0, 'Wrong result');
     assert_empty(retdata);
+}
+
+fn single_u256_arr(value: u256) -> Array::<felt> {
+    let mut arr = array_new::<felt>();
+    serde::Serde::serialize(ref arr, value);
+    arr
+}
+
+fn pop_u256(ref arr: Array::<felt>) -> u256 {
+    match serde::Serde::deserialize(ref arr) {
+        Option::Some(x) => x,
+        Option::None(_) => {
+            panic(single_element_arr('Got empty result data'))
+        },
+    }
+}
+
+#[test]
+#[available_gas(300000)]
+fn read_large_first_value() {
+    let mut retdata = TestContract::__external::get_large(
+        single_u256_arr(u256 { low: 1_u128, high: 2_u128 })
+    );
+    let value = pop_u256(ref retdata);
+    assert_empty(retdata);
+    assert(value.low == 0_u128, 'bad low');
+    assert(value.high == 0_u128, 'bad high');
+}
+
+#[test]
+#[available_gas(300000)]
+fn write_read_large_value() {
+    let mut args = array_new::<felt>();
+    serde::Serde::serialize(ref args, u256 { low: 1_u128, high: 2_u128 });
+    serde::Serde::serialize(ref args, u256 { low: 3_u128, high: 4_u128 });
+    let mut retdata = TestContract::__external::set_large(args);
+    assert_empty(retdata);
+    let mut retdata = TestContract::__external::get_large(
+        single_u256_arr(u256 { low: 1_u128, high: 2_u128 })
+    );
+    let value = pop_u256(ref retdata);
+    assert_empty(retdata);
+    assert(value.low == 3_u128, 'bad low');
+    assert(value.high == 4_u128, 'bad high');
 }
