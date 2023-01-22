@@ -31,10 +31,8 @@ extern fn storage_write_syscall(
 ) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;
 
 // Interoperability.
-type CallContractResult = Result::<Array::<felt>,
-(
-felt, Array::<felt>
-)>; extern fn call_contract_syscall(
+type CallContractResult = Result::<Array::<felt>, (felt, Array::<felt>)>;
+extern fn call_contract_syscall(
     address: ContractAddress, calldata: Array::<felt>
 ) -> CallContractResult implicits(GasBuiltin, System) nopanic;
 
