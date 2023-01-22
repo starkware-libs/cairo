@@ -460,7 +460,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 
                 test_program@0([1]: u128, [2]: u128) -> (felt);
             "},
-            "One of the arguments does not match the expected type of the libfunc or return \
+            "#0: One of the arguments does not match the expected type of the libfunc or return \
  statement.";
             "Types mismatch")]
 #[test_case(indoc! {"
