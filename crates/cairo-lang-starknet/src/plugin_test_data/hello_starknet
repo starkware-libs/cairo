@@ -95,14 +95,15 @@ mod HelloStarknet {
                 },
             }
             
-            let __arg_amount = match serde::deserialize_felt(ref data) {
-                Option::Some(x) => x,
-                Option::None(()) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(ref err_data, 'Input too short for arguments');
-                    panic(err_data)
-                },
-            };
+            let __arg_amount =
+                match serde::Serde::<felt>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new::<felt>();
+                        array_append::<felt>(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
             if array_len::<felt>(ref data) != 0_u128 {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -141,7 +142,7 @@ mod HelloStarknet {
             let mut arr = array_new::<felt>();
             // References.
             // Result.
-            serde::serialize_felt(ref arr, res)
+            serde::Serde::<felt>::serialize(ref arr, res)
             arr
         }
         
