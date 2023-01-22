@@ -1,6 +1,7 @@
 #[abi]
 trait IAnotherContract {
-fn foo(); }
+    fn foo();
+}
 
 
 #[contract]

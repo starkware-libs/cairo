@@ -1,11 +1,10 @@
 trait Serde<T> {
-fn serialize(
-    ref serialized: Array::<felt>, input: T
-    ); fn deserialize(
-    ref serialized: Array::<felt>
-) -> Option::<T>; }
+    fn serialize(ref serialized: Array::<felt>, input: T);
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<T>;
+}
 
-    impl FeltSerde of Serde::<felt> { fn serialize(ref serialized: Array::<felt>, input: felt) {
+impl FeltSerde of Serde::<felt> {
+    fn serialize(ref serialized: Array::<felt>, input: felt) {
         array_append(ref serialized, input);
     }
     fn deserialize(ref serialized: Array::<felt>) -> Option::<felt> {
@@ -13,7 +12,8 @@ fn serialize(
     }
 }
 
-    impl BoolSerde of Serde::<bool> { fn serialize(ref serialized: Array::<felt>, input: bool) {
+impl BoolSerde of Serde::<bool> {
+    fn serialize(ref serialized: Array::<felt>, input: bool) {
             Serde::<felt>::serialize(ref serialized, if input {
                 1
             } else {
@@ -25,7 +25,8 @@ fn serialize(
     }
 }
 
-    impl U128Serde of Serde::<u128> { fn serialize(ref serialized: Array::<felt>, input: u128) {
+impl U128Serde of Serde::<u128> {
+    fn serialize(ref serialized: Array::<felt>, input: u128) {
         Serde::<felt>::serialize(ref serialized, u128_to_felt(input));
     }
     fn deserialize(ref serialized: Array::<felt>) -> Option::<u128> {
@@ -33,7 +34,8 @@ fn serialize(
     }
 }
 
-    impl U256Serde of Serde::<u256> { fn serialize(ref serialized: Array::<felt>, input: u256) {
+impl U256Serde of Serde::<u256> {
+    fn serialize(ref serialized: Array::<felt>, input: u256) {
         Serde::<u128>::serialize(ref serialized, input.low);
         Serde::<u128>::serialize(ref serialized, input.high);
     }
@@ -47,9 +49,8 @@ fn serialize(
     }
 }
 
-    impl ArrayFeltSerde of Serde::<Array::<felt>> { fn serialize(
-        ref serialized: Array::<felt>, mut input: Array::<felt>
-    ) {
+impl ArrayFeltSerde of Serde::<Array::<felt>> {
+    fn serialize(ref serialized: Array::<felt>, mut input: Array::<felt>) {
         Serde::<u128>::serialize(ref serialized, array_len(ref input))
         serialize_array_felt_helper(ref serialized, ref input);
     }
