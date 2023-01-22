@@ -277,6 +277,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                      in the context."
                 )
             }
+            SemanticDiagnosticKind::AmbiguousTrait => {
+                "Ambiguous method call. More than one applicable trait function with a suitable \
+                 self type was found. Consider adding type annotations are explicitly refer to the \
+                 impl function."
+                    .into()
+            }
             SemanticDiagnosticKind::MultipleImplementationOfTraitFunction {
                 trait_id,
                 all_impl_ids,
@@ -599,6 +605,7 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         function_name: SmolStr,
     },
+    AmbiguousTrait,
     MultipleImplementationOfTraitFunction {
         trait_id: TraitId,
         all_impl_ids: Vec<ImplId>,
