@@ -131,3 +131,60 @@ Statements:
   (v15: core::felt) <- 5u
 End:
   Return(v9, v15)
+
+//! > ==========================================================================
+
+//! > Test method call.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo() -> Option::<felt> {
+  let x = Option::None(());
+  x.is_some();
+  x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+// TODO(spapini): Make this generic too.
+impl OptionCopy of Copy::<Option::<felt>>;
+trait OptionTrait<T>{
+  fn is_some(self: Option::<T>) -> bool;
+}
+impl OptionTraitImpl<T> of OptionTrait::<T> {
+  fn is_some(self: Option::<T>) -> bool {
+      match self {
+          Option::Some(_) => true,
+          Option::None(_) => false,
+      }
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0 (root):
+Inputs:
+Initial refs:
+Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::option::Option::<core::felt>) <- Option::None(v0)
+  (v2: core::bool) <- test::OptionTraitImpl::is_some(v1)
+End:
+  Return(v1)
+
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::option::Option::<core::felt>) <- Option::None(v0)
+  (v2: core::bool) <- test::OptionTraitImpl::is_some(v1)
+End:
+  Return(v1)

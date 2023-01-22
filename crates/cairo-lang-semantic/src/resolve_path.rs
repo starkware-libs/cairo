@@ -485,11 +485,7 @@ impl<'db> Resolver<'db> {
 
         // Find the relevant impl of the trait.
         let trait_id = function_id.trait_id(defs_db);
-        let lookup_context = ImplLookupContext {
-            module_id: self.module_file_id.0,
-            extra_modules: vec![trait_id.module_file_id(defs_db).0],
-            generic_params: self.generic_params.values().copied().collect(),
-        };
+        let lookup_context = self.impl_lookup_context(trait_id);
 
         // TODO(yuval): Support trait function default implementations.
         let impl_id =
@@ -532,6 +528,16 @@ impl<'db> Resolver<'db> {
             )
             .expect("Impl returned from find_impls_at_context() must be conformable.");
         Ok(self.db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args }))
+    }
+
+    /// Retrieve an impl lookup context for finding impls for a trait in the current context.
+    pub fn impl_lookup_context(&mut self, trait_id: TraitId) -> ImplLookupContext {
+        let lookup_context = ImplLookupContext {
+            module_id: self.module_file_id.0,
+            extra_modules: vec![trait_id.module_file_id(self.db.upcast()).0],
+            generic_params: self.generic_params.values().copied().collect(),
+        };
+        lookup_context
     }
 
     /// Specializes a ResolvedGenericItem that came from a ModuleItem.
