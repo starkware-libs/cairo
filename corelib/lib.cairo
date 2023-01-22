@@ -147,22 +147,23 @@ use result::Result;
 // Option.
 mod option;
 use option::Option;
+use option::option_unwrap;
 
 // EC.
 mod ec;
 use ec::EcOp;
 use ec::EcPoint;
 use ec::EcState;
-use ec::ec_add_to_state;
-use ec::ec_finalize_state;
-use ec::ec_init_state;
-use ec::ec_op;
-use ec::ec_op_builtin;
-use ec::ec_point_from_felts;
-use ec::ec_point_try_create;
+use ec::ec_mul;
+use ec::ec_point_from_x;
+use ec::ec_point_new;
+use ec::ec_point_try_new;
 use ec::ec_point_unwrap;
-use ec::ec_try_finalize_state;
-use ec::ec_try_op;
+use ec::ec_state_add_mul;
+use ec::ec_state_add;
+use ec::ec_state_finalize_nonzero;
+use ec::ec_state_finalize;
+use ec::ec_state_init;
 
 // Integer.
 mod integer;
