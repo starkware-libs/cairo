@@ -11,3 +11,21 @@ fn option_unwrap<T>(val: Option::<T>) -> T {
         },
     }
 }
+
+/// Returns `true` if the `Option` is `Option::Some`.
+#[inline(always)]
+fn option_is_some<T>(val: Option::<T>) -> bool {
+    match val {
+        Option::Some(x) => true,
+        Option::None(()) => false,
+    }
+}
+
+/// Returns `true` if the `Option` is `Option::None`.
+#[inline(always)]
+fn option_is_none<T>(val: Option::<T>) -> bool {
+    match val {
+        Option::Some(x) => false,
+        Option::None(()) => true,
+    }
+}
