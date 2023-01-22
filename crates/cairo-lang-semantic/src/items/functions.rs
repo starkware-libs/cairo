@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionSignatureId, FunctionWithBodyId, GenericParamId,
     ImplFunctionId, ModuleItemId, ParamLongId,
@@ -15,6 +14,7 @@ use itertools::chain;
 
 use super::attribute::Attribute;
 use super::modifiers;
+use super::trt::ConcreteTraitFunctionId;
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
@@ -38,17 +38,20 @@ pub enum GenericFunctionId {
     Extern(ExternFunctionId),
     /// A generic function of a concrete impl.
     Impl(ConcreteImplGenericFunctionId),
+    // TODO(spapini): Remove when we separate semantic representations.
+    Trait(ConcreteTraitFunctionId),
 }
 impl GenericFunctionId {
-    pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
-        self.signature().format(db)
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        self.signature(db).format(db.elongate().upcast())
     }
     /// Gets the FunctionSignatureId of the generic function.
-    pub fn signature(&self) -> FunctionSignatureId {
+    pub fn signature(&self, db: &dyn SemanticGroup) -> FunctionSignatureId {
         match *self {
             GenericFunctionId::Free(id) => FunctionSignatureId::Free(id),
             GenericFunctionId::Extern(id) => FunctionSignatureId::Extern(id),
             GenericFunctionId::Impl(id) => FunctionSignatureId::Impl(id.function),
+            GenericFunctionId::Trait(id) => FunctionSignatureId::Trait(id.function_id(db)),
         }
     }
 }
@@ -113,6 +116,7 @@ impl FunctionId {
             GenericFunctionId::Impl(impl_function_id) => {
                 Some(FunctionWithBodyId::Impl(impl_function_id.function))
             }
+            GenericFunctionId::Trait(_) => None,
             GenericFunctionId::Extern(_) => None,
         }
     }
@@ -410,17 +414,40 @@ pub fn concrete_function_signature(
 ) -> Maybe<Signature> {
     let ConcreteFunction { generic_function, generic_args, .. } =
         db.lookup_intern_function(function_id).function;
-    let generic_params = db.function_signature_generic_params(generic_function.signature())?;
+    let generic_params = db.function_signature_generic_params(generic_function.signature(db))?;
     if generic_params.len() != generic_args.len() {
+        eprintln!("{generic_params:?}  {generic_args:?}");
         // TODO(spapini): Uphold the invariant that constructed ConcreteFunction instances
         //   always have the correct number of generic arguments.
         return Err(skip_diagnostic());
     }
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
-    let substitution =
-        GenericSubstitution(generic_params.into_iter().zip(generic_args.into_iter()).collect());
-    let generic_signature = db.function_signature_signature(generic_function.signature())?;
+    let function_subs = generic_params.into_iter().zip(generic_args.into_iter());
+    let substitution = match generic_function {
+        GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => {
+            GenericSubstitution(function_subs.collect())
+        }
+        GenericFunctionId::Impl(id) => {
+            let long_concrete_impl = db.lookup_intern_concrete_impl(id.concrete_impl);
+            let generic_params = db.impl_generic_params(long_concrete_impl.impl_id)?;
+            let generic_args = long_concrete_impl.generic_args;
+            GenericSubstitution(
+                chain!(function_subs, generic_params.into_iter().zip(generic_args.into_iter()))
+                    .collect(),
+            )
+        }
+        GenericFunctionId::Trait(id) => {
+            let long_concrete_trait = db.lookup_intern_concrete_trait(id.concrete_trait_id(db));
+            let generic_params = db.trait_generic_params(long_concrete_trait.trait_id)?;
+            let generic_args = long_concrete_trait.generic_args;
+            GenericSubstitution(
+                chain!(function_subs, generic_params.into_iter().zip(generic_args.into_iter()))
+                    .collect(),
+            )
+        }
+    };
+    let generic_signature = db.function_signature_signature(generic_function.signature(db))?;
     Ok(substitute_signature(db, substitution, generic_signature))
 }
 

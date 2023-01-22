@@ -17,7 +17,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{Inference, TypeVar};
 use crate::items::imp::{find_impls_at_context, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
-use crate::{semantic, GenericArgumentId};
+use crate::{semantic, ConcreteVariant, FunctionId, GenericArgumentId};
 
 /// A substitution of generic arguments in generic parameters. Used for concretization.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -354,6 +354,45 @@ pub fn substitute_generics(
     }
 }
 
+/// Substituted generics in a [FunctionId].
+pub fn substitute_function(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    function: &mut FunctionId,
+) {
+    let mut long_function = db.lookup_intern_function(*function);
+    substitute_generics_args(db, substitution, &mut long_function.function.generic_args);
+    *function = db.intern_function(long_function);
+}
+
+/// Substituted generics in a [ConcreteVariant].
+pub fn substitute_variant(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    variant: &mut ConcreteVariant,
+) {
+    variant.ty = substitute_generics(db.upcast(), substitution, variant.ty);
+    let mut long_concrete_enum = db.lookup_intern_concrete_enum(variant.concrete_enum_id);
+    substitute_generics_args(db, substitution, &mut long_concrete_enum.generic_args);
+    variant.concrete_enum_id = db.intern_concrete_enum(long_concrete_enum);
+}
+
+/// Substituted generics in a slice of [GenericArgumentId].
+pub fn substitute_generics_args(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    generic_args: &mut [GenericArgumentId],
+) {
+    for arg in generic_args.iter_mut() {
+        match arg {
+            GenericArgumentId::Type(ty) => {
+                *ty = substitute_generics(db.upcast(), substitution, *ty)
+            }
+            GenericArgumentId::Literal(_) => {}
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct TypeInfo {
     /// Can the type be (trivially) dropped.
@@ -369,6 +408,7 @@ pub fn type_info(
     ty: TypeId,
 ) -> Maybe<TypeInfo> {
     // TODO(spapini): Validate Copy and Drop for structs and enums.
+    let inference = Inference::disabled(db);
     Ok(match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete_type_id) => {
             let module = concrete_type_id.generic_type(db).parent_module(db.upcast());
@@ -376,21 +416,37 @@ pub fn type_info(
             if !lookup_context.extra_modules.contains(&module) {
                 lookup_context.extra_modules.push(module);
             }
-            let droppable =
-                !find_impls_at_context(db, &lookup_context, concrete_drop_trait(db, ty))?
-                    .is_empty();
-            let duplicatable =
-                !find_impls_at_context(db, &lookup_context, concrete_copy_trait(db, ty))?
-                    .is_empty();
+            let droppable = !find_impls_at_context(
+                db,
+                &inference,
+                &lookup_context,
+                concrete_drop_trait(db, ty),
+            )?
+            .is_empty();
+            let duplicatable = !find_impls_at_context(
+                db,
+                &inference,
+                &lookup_context,
+                concrete_copy_trait(db, ty),
+            )?
+            .is_empty();
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::GenericParameter(_) => {
-            let droppable =
-                !find_impls_at_context(db, &lookup_context, concrete_drop_trait(db, ty))?
-                    .is_empty();
-            let duplicatable =
-                !find_impls_at_context(db, &lookup_context, concrete_copy_trait(db, ty))?
-                    .is_empty();
+            let droppable = !find_impls_at_context(
+                db,
+                &inference,
+                &lookup_context,
+                concrete_drop_trait(db, ty),
+            )?
+            .is_empty();
+            let duplicatable = !find_impls_at_context(
+                db,
+                &inference,
+                &lookup_context,
+                concrete_copy_trait(db, ty),
+            )?
+            .is_empty();
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::Tuple(tys) => {

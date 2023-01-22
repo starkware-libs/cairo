@@ -347,7 +347,7 @@ trait MyTrait {
 error: Function `foo` of trait `test::MyTrait` has has no implementation in the context.
  --> lib.cairo:5:4
    MyTrait::foo()
-   ^**********^
+   ^************^
 
 //! > ==========================================================================
 
@@ -379,7 +379,7 @@ impl MyImpl2 of MyTrait {
 error: Function `foo` of trait `test::MyTrait` has multiple implementations, in: test::MyImpl1, test::MyImpl2
  --> lib.cairo:11:4
    MyTrait::foo()
-   ^**********^
+   ^************^
 
 //! > ==========================================================================
 

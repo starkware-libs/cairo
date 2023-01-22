@@ -248,7 +248,8 @@ pub fn priv_trait_function_data(
         &declaration.generic_params(syntax_db),
     );
     let trait_generic_params = db.trait_generic_params(trait_id)?;
-    let generic_params = chain!(trait_generic_params, function_generic_params).collect_vec();
+    let generic_params =
+        chain!(trait_generic_params, function_generic_params.clone()).collect_vec();
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let signature_syntax = declaration.signature(syntax_db);
@@ -287,7 +288,7 @@ pub fn priv_trait_function_data(
     Ok(TraitFunctionData {
         diagnostics: diagnostics.build(),
         signature,
-        generic_params,
+        generic_params: function_generic_params,
         attributes,
         resolved_lookback,
     })
