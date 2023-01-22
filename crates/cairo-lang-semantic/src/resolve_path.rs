@@ -5,8 +5,8 @@ mod test;
 use std::iter::Peekable;
 
 use cairo_lang_defs::ids::{
-    GenericParamId, GenericTypeId, ImplId, LanguageElementId, ModuleFileId, ModuleId, ModuleItemId,
-    TraitFunctionId, TraitId, TypeAliasId,
+    ConstantId, GenericParamId, GenericTypeId, ImplId, LanguageElementId, ModuleFileId, ModuleId,
+    ModuleItemId, TraitFunctionId, TraitId, TypeAliasId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -47,6 +47,7 @@ use crate::{
 #[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedConcreteItem {
+    Constant(ConstantId),
     Module(ModuleId),
     Function(FunctionId),
     TraitFunction(ConcreteTraitFunctionId),
@@ -58,6 +59,7 @@ pub enum ResolvedConcreteItem {
 #[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedGenericItem {
+    Constant(ConstantId),
     Module(ModuleId),
     GenericFunction(GenericFunctionId),
     TraitFunction(TraitFunctionId),
@@ -70,6 +72,7 @@ pub enum ResolvedGenericItem {
 impl ResolvedConcreteItem {
     pub fn generic(&self, db: &dyn SemanticGroup) -> Option<ResolvedGenericItem> {
         Some(match self {
+            ResolvedConcreteItem::Constant(id) => ResolvedGenericItem::Constant(*id),
             ResolvedConcreteItem::Module(item) => ResolvedGenericItem::Module(*item),
             ResolvedConcreteItem::Function(function) => ResolvedGenericItem::GenericFunction(
                 db.lookup_intern_function(*function).function.generic_function,
@@ -550,6 +553,7 @@ impl<'db> Resolver<'db> {
         generic_args: Option<Vec<GenericArgumentId>>,
     ) -> Maybe<ResolvedConcreteItem> {
         Ok(match generic_item {
+            ResolvedGenericItem::Constant(id) => ResolvedConcreteItem::Constant(id),
             ResolvedGenericItem::Module(module_id) => {
                 if generic_args.is_some() {
                     return Err(diagnostics.report(identifier, UnexpectedGenericArgs));
@@ -659,9 +663,7 @@ impl<'db> Resolver<'db> {
         module_item: ModuleItemId,
     ) -> Maybe<ResolvedGenericItem> {
         Ok(match module_item {
-            ModuleItemId::Constant(_) => {
-                unimplemented!("Constant definition is not supported yet.");
-            }
+            ModuleItemId::Constant(id) => ResolvedGenericItem::Constant(id),
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
             ModuleItemId::Use(id) => {
                 // TODO(spapini): Before the last change, we called priv_use_semantic_data()
