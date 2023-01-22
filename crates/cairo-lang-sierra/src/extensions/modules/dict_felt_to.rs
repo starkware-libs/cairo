@@ -1,8 +1,11 @@
 use super::dict_manager::DictManagerType;
 use super::felt::FeltType;
 use super::gas::GasBuiltinType;
+use super::nullable::NullableType;
 use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
+use super::uint::Uint8Type;
+use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
@@ -28,12 +31,16 @@ impl GenericTypeArgGenericType for DictFeltToTypeWrapped {
         long_id: crate::program::ConcreteTypeLongId,
         wrapped_info: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        // TODO(Gil): the implementation support values of size 1. Remove when other sizes are
-        // supported.
-        if !wrapped_info.storable
+        // List of specific types allowed as dictionary values.
+        // TODO(Gil): Check in the higher level compiler and raise proper diagnostic (when we'll
+        // have a 'where' equivalent).
+        // TODO(Gil): Allow any type of size 1 which implement the 'Default' trait.
+        let allowed_types =
+            [FeltType::id(), Uint128Type::id(), Uint8Type::id(), NullableType::id()];
+        if !allowed_types.contains(&wrapped_info.long_id.generic_id)
+            || !wrapped_info.storable
             || !wrapped_info.droppable
             || !wrapped_info.duplicatable
-            || wrapped_info.size != 1
         {
             Err(SpecializationError::UnsupportedGenericArg)
         } else {
