@@ -15,10 +15,6 @@ impl NoGenericArgsGenericLibfunc for BranchAlignLibfunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch(
-            vec![],
-            vec![],
-            SierraApChange::Known { new_vars_only: false },
-        ))
+        Ok(LibfuncSignature::new_non_branch(vec![], vec![], SierraApChange::BranchAlign))
     }
 }

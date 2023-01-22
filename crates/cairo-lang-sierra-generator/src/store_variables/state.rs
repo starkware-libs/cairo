@@ -53,6 +53,7 @@ impl State {
         // Clear the stack if needed.
         match branch_signature.ap_change {
             SierraApChange::NotImplemented
+            | SierraApChange::BranchAlign
             | SierraApChange::Unknown
             | SierraApChange::Known { new_vars_only: false } => {
                 // Clear the stack in this case since it's possible that undeclared (not part of the
