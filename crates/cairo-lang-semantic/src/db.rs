@@ -24,7 +24,7 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
-use crate::items::imp::{ConcreteImplId, ImplLookupContext};
+use crate::items::imp::ImplLookupContext;
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::ConcreteTraitId;
 use crate::plugin::{DynDiagnosticMapper, SemanticPlugin};
@@ -315,13 +315,6 @@ pub trait SemanticGroup:
         &self,
         impl_id: ImplId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Find implementation for a concrete trait in a module.
-    #[salsa::invoke(items::imp::find_impls_at_module)]
-    fn find_impls_at_module(
-        &self,
-        module_id: ModuleId,
-        concrete_trait_id: ConcreteTraitId,
-    ) -> Maybe<Vec<ConcreteImplId>>;
     /// Returns the functions in the impl.
     #[salsa::invoke(items::imp::impl_functions)]
     fn impl_functions(&self, impl_id: ImplId) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>>;

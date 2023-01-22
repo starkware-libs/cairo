@@ -27,7 +27,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::Inference;
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
-use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
+use crate::items::functions::GenericFunctionId;
 use crate::items::imp::{
     find_impls_at_context, ConcreteImplId, ConcreteImplLongId, ImplLookupContext,
 };
@@ -448,6 +448,8 @@ impl<'db> Resolver<'db> {
                 }
             }
             ResolvedConcreteItem::Trait(concrete_trait_id) => {
+                // TODO(spapini): Currently, generics of the trait function itself (not the trait)
+                // are not handle. Use `generic_args` to handle them.
                 // Find the relevant function in the trait.
                 let long_trait_id = self.db.lookup_intern_concrete_trait(*concrete_trait_id);
                 let trait_id = long_trait_id.trait_id;
@@ -467,13 +469,15 @@ impl<'db> Resolver<'db> {
         }
     }
 
-    /// Given a trait function, resolves it to its implementation.
-    pub fn resolve_trait_function<TNode: TypedSyntaxNode>(
+    /// Given a concrete trait (with possible type variables in generic args), resolves it to its
+    /// implementation.
+    pub fn resolve_trait(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
+        inference: &mut Inference<'_>,
         concrete_trait_function_id: ConcreteTraitFunctionId,
-        node_for_diagnostic: &TNode,
-    ) -> Maybe<FunctionId> {
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Maybe<ConcreteImplId> {
         let defs_db = self.db.upcast();
 
         let concrete_trait_id = concrete_trait_function_id.concrete_trait_id(self.db);
@@ -488,59 +492,46 @@ impl<'db> Resolver<'db> {
         };
 
         // TODO(yuval): Support trait function default implementations.
-        let concrete_impl_id =
-            match &find_impls_at_context(self.db, &lookup_context, concrete_trait_id)?
+        let impl_id =
+            match &find_impls_at_context(self.db, inference, &lookup_context, concrete_trait_id)?
                 .into_iter()
                 .collect_vec()[..]
             {
                 &[] => {
-                    return Err(diagnostics.report(
-                        node_for_diagnostic,
+                    return Err(diagnostics.report_by_ptr(
+                        stable_ptr,
                         NoImplementationOfTraitFunction {
                             trait_id,
                             function_name: function_id.name(defs_db),
                         },
                     ));
                 }
-                &[concrete_impl_id] => concrete_impl_id,
-                concrete_impls => {
-                    return Err(diagnostics.report(
-                        node_for_diagnostic,
+                &[impl_id] => impl_id,
+                impls => {
+                    return Err(diagnostics.report_by_ptr(
+                        stable_ptr,
                         MultipleImplementationOfTraitFunction {
                             trait_id,
-                            all_impl_ids: concrete_impls
-                                .iter()
-                                .map(|imp| self.db.lookup_intern_concrete_impl(*imp).impl_id)
-                                .collect(),
+                            all_impl_ids: impls.to_vec(),
                             function_name: function_id.name(defs_db),
                         },
                     ));
                 }
             };
 
-        // Find the relevant function in the impl.
-        let impl_id = self.db.lookup_intern_concrete_impl(concrete_impl_id).impl_id;
-        let Some(impl_function_id) =
-            self.db.impl_function_by_trait_function(impl_id, function_id)? else {
-                return Err(diagnostics.report(
-                    node_for_diagnostic,
-                    NoImplementationOfTraitFunction {
-                        trait_id,
-                        function_name: function_id.name(defs_db),
-                    },
-                ));
-            };
-
-        Ok(self.db.intern_function(FunctionLongId {
-            function: ConcreteFunction {
-                generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
-                    concrete_impl: concrete_impl_id,
-                    function: impl_function_id,
-                }),
-                // TODO(yuval): Add generic arguments.
-                generic_args: vec![],
-            },
-        }))
+        // Infer the impl.
+        let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
+        let impl_generic_params = self.db.impl_generic_params(impl_id)?;
+        let impl_concrete_trait = self.db.impl_trait(impl_id)?;
+        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(impl_concrete_trait);
+        let generic_args = inference
+            .infer_generics(
+                &impl_generic_params,
+                &long_imp_concrete_trait.generic_args,
+                &long_concrete_trait.generic_args,
+            )
+            .expect("Impl returned from find_impls_at_context() must be conformable.");
+        Ok(self.db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args }))
     }
 
     /// Specializes a ResolvedGenericItem that came from a ModuleItem.
@@ -802,7 +793,7 @@ pub fn specialize_function(
 ) -> Maybe<FunctionId> {
     // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
     let generic_params: Vec<_> = db
-        .function_signature_generic_params(generic_function.signature())
+        .function_signature_generic_params(generic_function.signature(db))
         .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
 
     conform_generic_args(

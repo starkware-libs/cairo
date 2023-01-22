@@ -432,27 +432,37 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::find_impls_at_module].
+/// Finds implementations for a concrete trait in a module.
 pub fn find_impls_at_module(
     db: &dyn SemanticGroup,
+    inference: &Inference<'_>,
     module_id: ModuleId,
     concrete_trait_id: ConcreteTraitId,
-) -> Maybe<Vec<ConcreteImplId>> {
+) -> Maybe<Vec<ImplId>> {
     let mut res = Vec::new();
+
+    // TODO(spapini): This depends on ast, instead of just ids.
+    // TODO(spapini): Look also in uses.
     let impls = db.module_impls(module_id)?;
+    let long_concrete_trait = db.lookup_intern_concrete_trait(concrete_trait_id);
+
     // TODO(spapini): Index better.
     for impl_id in impls.keys().copied() {
         let Ok(imp_data)= db.priv_impl_declaration_data(impl_id) else {continue};
-        if !imp_data.generic_params.is_empty() {
-            // TODO(spapini): Infer generics and substitute.
+        let Ok(imp_concrete_trait) = imp_data.concrete_trait else {continue};
+        let long_imp_concrete_trait = db.lookup_intern_concrete_trait(imp_concrete_trait);
+
+        if imp_concrete_trait.trait_id(db) != concrete_trait_id.trait_id(db) {
             continue;
         }
-
-        if imp_data.concrete_trait == Ok(concrete_trait_id) {
-            let concrete_impl_id =
-                db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args: vec![] });
-            res.push(concrete_impl_id);
+        if !inference.can_infer_generics(
+            &imp_data.generic_params,
+            &long_imp_concrete_trait.generic_args,
+            &long_concrete_trait.generic_args,
+        ) {
+            continue;
         }
+        res.push(impl_id);
     }
     Ok(res)
 }
@@ -468,23 +478,29 @@ pub struct ImplLookupContext {
 /// Finds all the implementations of a concrete trait, in a specific lookup context.
 pub fn find_impls_at_context(
     db: &dyn SemanticGroup,
+    inference: &Inference<'_>,
     lookup_context: &ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
-) -> Maybe<OrderedHashSet<ConcreteImplId>> {
+) -> Maybe<OrderedHashSet<ImplId>> {
     let mut res = OrderedHashSet::default();
     // TODO(spapini): Lookup in generic_params once impl generic params are supported.
-    res.extend(find_impls_at_module(db, lookup_context.module_id, concrete_trait_id)?);
+    res.extend(find_impls_at_module(db, inference, lookup_context.module_id, concrete_trait_id)?);
     for module_id in &lookup_context.extra_modules {
-        if let Ok(imps) = find_impls_at_module(db, *module_id, concrete_trait_id) {
+        if let Ok(imps) = find_impls_at_module(db, inference, *module_id, concrete_trait_id) {
             res.extend(imps);
         }
     }
     for submodule in db.module_submodules_ids(lookup_context.module_id)? {
-        res.extend(find_impls_at_module(db, ModuleId::Submodule(submodule), concrete_trait_id)?);
+        res.extend(find_impls_at_module(
+            db,
+            inference,
+            ModuleId::Submodule(submodule),
+            concrete_trait_id,
+        )?);
     }
     for use_id in db.module_uses_ids(lookup_context.module_id)? {
         if let Ok(ResolvedGenericItem::Module(submodule)) = db.use_resolved_item(use_id) {
-            res.extend(find_impls_at_module(db, submodule, concrete_trait_id)?);
+            res.extend(find_impls_at_module(db, inference, submodule, concrete_trait_id)?);
         }
     }
     Ok(res)
@@ -553,7 +569,7 @@ pub fn priv_impl_function_declaration_data(
         &declaration.generic_params(syntax_db),
     );
     let impl_generic_params = db.impl_generic_params(impl_id)?;
-    let generic_params = chain!(impl_generic_params, function_generic_params).collect_vec();
+    let generic_params = chain!(impl_generic_params, function_generic_params.clone()).collect_vec();
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let signature_syntax = declaration.signature(syntax_db);
@@ -585,7 +601,7 @@ pub fn priv_impl_function_declaration_data(
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
-        generic_params,
+        generic_params: function_generic_params,
         environment,
         attributes,
         resolved_lookback,

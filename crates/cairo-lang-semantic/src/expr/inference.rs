@@ -2,12 +2,13 @@
 
 use std::collections::HashMap;
 
+use cairo_lang_defs::ids::GenericParamId;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use itertools::zip_eq;
+use itertools::{zip_eq, Itertools};
 
 use crate::corelib::never_ty;
 use crate::db::SemanticGroup;
-use crate::types::ConcreteEnumLongId;
+use crate::types::{substitute_generics_args, ConcreteEnumLongId, GenericSubstitution};
 use crate::{
     ConcreteEnumId, ConcreteTypeId, ConcreteVariant, GenericArgumentId, Pattern, TypeId, TypeLongId,
 };
@@ -20,14 +21,16 @@ pub struct TypeVar {
 }
 
 // TODO(spapini): Add to diagnostics.
+#[derive(Debug)]
 pub enum InferenceError {
-    // TODO(spapini): Cycle.
+    Disabled,
     Cycle { type_var: TypeVar },
     KindMismatch { ty0: TypeId, ty1: TypeId },
     GenericArgMismatch { garg0: GenericArgumentId, garg1: GenericArgumentId },
 }
 
-/// State of inference
+/// State of inference.
+#[derive(Clone)]
 pub struct Inference<'db> {
     db: &'db dyn SemanticGroup,
     /// Current inferred assignment for type variables.
@@ -185,10 +188,7 @@ impl<'db> Inference<'db> {
                 }
                 let gargs0 = concrete0.generic_args(self.db);
                 let gargs1 = concrete1.generic_args(self.db);
-                let gargs = zip_eq(gargs0, gargs1)
-                    .into_iter()
-                    .map(|(garg0, garg1)| self.conform_generic_arg(garg0, garg1))
-                    .collect::<Result<Vec<_>, _>>()?;
+                let gargs = self.conform_generic_args(&gargs0, &gargs1)?;
                 let long_ty = TypeLongId::Concrete(ConcreteTypeId::new(
                     self.db,
                     concrete0.generic_type(self.db),
@@ -215,7 +215,19 @@ impl<'db> Inference<'db> {
         }
     }
 
-    /// Conforms generics args. See `conform_y()`.
+    /// Conforms generics args. See `conform_ty()`.
+    fn conform_generic_args(
+        &mut self,
+        gargs0: &[GenericArgumentId],
+        gargs1: &[GenericArgumentId],
+    ) -> Result<Vec<GenericArgumentId>, InferenceError> {
+        zip_eq(gargs0, gargs1)
+            .into_iter()
+            .map(|(garg0, garg1)| self.conform_generic_arg(*garg0, *garg1))
+            .collect::<Result<Vec<_>, _>>()
+    }
+
+    /// Conforms a generics arg. See `conform_ty()`.
     pub fn conform_generic_arg(
         &mut self,
         garg0: GenericArgumentId,
@@ -240,6 +252,9 @@ impl<'db> Inference<'db> {
     /// Assigns a value to a [TypeVar]. Return the assigned type, or an error.
     /// Assumes the variable is not already assigned.
     fn assign(&mut self, var: TypeVar, ty: TypeId) -> Result<TypeId, InferenceError> {
+        if !self.enabled {
+            return Err(InferenceError::Disabled);
+        }
         assert!(!self.assignment.contains_key(&var), "Cannot reassign variable.");
         if self.contains_var(ty, var) {
             return Err(InferenceError::Cycle { type_var: var });
@@ -270,5 +285,50 @@ impl<'db> Inference<'db> {
             }
             TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => false,
         }
+    }
+
+    /// Determines if an assignment to `generic_params` can be chosen s.t. `generic_args` will be
+    /// substituted to `expected_generic_args`.
+    pub fn can_infer_generics(
+        &self,
+        generic_params: &[GenericParamId],
+        generic_args: &[GenericArgumentId],
+        expected_generic_args: &[GenericArgumentId],
+    ) -> bool {
+        if generic_args.len() != expected_generic_args.len() {
+            return false;
+        }
+        let mut inference = self.clone();
+        let res = inference.infer_generics(generic_params, generic_args, expected_generic_args);
+        res.is_ok()
+    }
+
+    /// Chooses and assignment to generic_params s.t. generic_args will be substituted to
+    /// expected_generic_args.
+    /// Returns the generic_params assignment.
+    pub fn infer_generics(
+        &mut self,
+        generic_params: &[GenericParamId],
+        generic_args: &[GenericArgumentId],
+        expected_generic_args: &[GenericArgumentId],
+    ) -> Result<Vec<GenericArgumentId>, InferenceError> {
+        // TODO(spapini): Handle non-type generic args.
+        let substitution = GenericSubstitution(
+            generic_params
+                .iter()
+                .map(|param| {
+                    (
+                        *param,
+                        GenericArgumentId::Type(
+                            self.new_var(param.stable_ptr(self.db.upcast()).untyped()),
+                        ),
+                    )
+                })
+                .collect(),
+        );
+        let mut generic_args = generic_args.iter().copied().collect_vec();
+        substitute_generics_args(self.db, &substitution, &mut generic_args);
+        self.conform_generic_args(&generic_args, expected_generic_args)?;
+        Ok(generic_params.iter().map(|param| substitution[*param]).collect())
     }
 }
