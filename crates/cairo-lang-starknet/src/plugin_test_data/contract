@@ -157,8 +157,8 @@ mod TestContract {
             let mut keys = array_new();
             array_append(ref keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
             let mut data = array_new();
-            serde::Serde::<felt>::deserialize(data, x);
-            serde::Serde::<u128>::deserialize(data, y);
+            serde::Serde::<felt>::serialize(ref data, x);
+            serde::Serde::<u128>::serialize(ref data, y);
             
             starknet::emit_event_syscall(keys, data);
         }

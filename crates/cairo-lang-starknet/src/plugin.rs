@@ -143,7 +143,7 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                     let type_name = &param_type.as_syntax_node().get_text(db);
                     serialization_code.push(RewriteNode::interpolate_patched(
                         &formatdoc!(
-                            "        serde::Serde::<{type_name}>::serialize(calldata, \
+                            "        serde::Serde::<{type_name}>::serialize(ref calldata, \
                              $arg_name$);\n"
                         ),
                         HashMap::from([(
@@ -164,7 +164,7 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                     OptionReturnTypeClause::ReturnTypeClause(ty) => {
                         let ret_type_ast = ty.ty(db);
                         let type_name = ret_type_ast.as_syntax_node().get_text(db);
-                        format!("        serde::Serde::<{type_name}>::deserialize(ret_data)")
+                        format!("        serde::Serde::<{type_name}>::deserialize(ref ret_data)")
                     }
                 };
 
@@ -428,7 +428,9 @@ fn handle_event(
 
         // TODO(yuval): use panicable version of deserializations when supported.
         let param_serialization = RewriteNode::interpolate_patched(
-            &format!("serde::Serde::<{type_name}>::deserialize(data, $param_name$);\n            "),
+            &format!(
+                "serde::Serde::<{type_name}>::serialize(ref data, $param_name$);\n            "
+            ),
             HashMap::from([(
                 "param_name".to_string(),
                 RewriteNode::Trimmed(param_name.as_syntax_node()),
@@ -698,7 +700,6 @@ fn generate_entry_point_wrapper(
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
             let ret_type_ast = ty.ty(db);
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
-            // TODO(orizi): Handle tuple types.
             (
                 "\n            let res = ",
                 format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res)"),
