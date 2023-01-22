@@ -29,10 +29,7 @@ mod TestContract {
         fn read() -> felt {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
-                address_domain,
-                starknet::storage_address_from_base(address()),
-            ) {
+            match starknet::StorageAccess::<felt>::read(address_domain, address()) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
                     let mut err_data = array_new();
@@ -44,9 +41,9 @@ mod TestContract {
         fn write(value: felt) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            match starknet::StorageAccess::<felt>::write(
                 address_domain,
-                starknet::storage_address_from_base(address()),
+                address(),
                 value,
             ) {
                 Result::Ok(()) => {},
@@ -65,11 +62,8 @@ mod TestContract {
         fn read() -> u128 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
-                address_domain,
-                starknet::storage_address_from_base(address()),
-            ) {
-                Result::Ok(value) => u128_from_felt(value),
+            match starknet::StorageAccess::<u128>::read(address_domain, address()) {
+                Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, revert_reason);
@@ -80,10 +74,10 @@ mod TestContract {
         fn write(value: u128) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            match starknet::StorageAccess::<u128>::write(
                 address_domain,
-                starknet::storage_address_from_base(address()),
-                u128_to_felt(value),
+                address(),
+                value,
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
@@ -101,11 +95,8 @@ mod TestContract {
         fn read() -> bool {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
-                address_domain,
-                starknet::storage_address_from_base(address()),
-            ) {
-                Result::Ok(value) => if value == 0 { false } else { true },
+            match starknet::StorageAccess::<bool>::read(address_domain, address()) {
+                Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, revert_reason);
@@ -116,10 +107,10 @@ mod TestContract {
         fn write(value: bool) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            match starknet::StorageAccess::<bool>::write(
                 address_domain,
-                starknet::storage_address_from_base(address()),
-                if value { 1 } else { 0 },
+                address(),
+                value,
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
@@ -138,11 +129,8 @@ mod TestContract {
         fn read(key: felt) -> u128 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
-                address_domain,
-                starknet::storage_address_from_base(address(key)),
-            ) {
-                Result::Ok(value) => u128_from_felt(value),
+            match starknet::StorageAccess::<u128>::read(address_domain, address(key)) {
+                Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, revert_reason);
@@ -153,10 +141,10 @@ mod TestContract {
         fn write(key: felt, value: u128) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            match starknet::StorageAccess::<u128>::write(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
-                u128_to_felt(value),
+                address(key),
+                value,
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
@@ -175,11 +163,8 @@ mod TestContract {
         fn read(key: u128) -> bool {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
-                address_domain,
-                starknet::storage_address_from_base(address(key)),
-            ) {
-                Result::Ok(value) => if value == 0 { false } else { true },
+            match starknet::StorageAccess::<bool>::read(address_domain, address(key)) {
+                Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, revert_reason);
@@ -190,10 +175,10 @@ mod TestContract {
         fn write(key: u128, value: bool) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            match starknet::StorageAccess::<bool>::write(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
-                if value { 1 } else { 0 },
+                address(key),
+                value,
             ) {
                 Result::Ok(()) => {},
                 Result::Err(revert_reason) => {
@@ -212,10 +197,7 @@ mod TestContract {
         fn read(key: bool) -> felt {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
-                address_domain,
-                starknet::storage_address_from_base(address(key)),
-            ) {
+            match starknet::StorageAccess::<felt>::read(address_domain, address(key)) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
                     let mut err_data = array_new();
@@ -227,9 +209,9 @@ mod TestContract {
         fn write(key: bool, value: felt) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            match starknet::StorageAccess::<felt>::write(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
+                address(key),
                 value,
             ) {
                 Result::Ok(()) => {},

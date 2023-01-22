@@ -98,9 +98,11 @@ type StorageAddress = StorageAddress;
 
 libfunc storage_address_from_base_and_offset = storage_address_from_base_and_offset;
 libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
+libfunc rename<StorageAddress> = rename<StorageAddress>;
 
 storage_address_from_base_and_offset([0], [1]) -> ([2]);
-store_temp<StorageAddress>([2]) -> ([3]);
+store_temp<StorageAddress>([2]) -> ([2]);
+rename<StorageAddress>([2]) -> ([3]);
 return([3]);
 
 test::foo@0([0]: StorageBaseAddress, [1]: u8) -> (StorageAddress);
