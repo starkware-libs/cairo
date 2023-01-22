@@ -134,6 +134,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::ItemStruct
             | SyntaxKind::Attribute
             | SyntaxKind::ItemEnum
+            | SyntaxKind::ItemTypeAlias
             | SyntaxKind::ItemModule
             | SyntaxKind::ItemUse => true,
             SyntaxKind::TerminalComma
