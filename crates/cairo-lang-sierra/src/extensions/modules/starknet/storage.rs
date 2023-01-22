@@ -95,7 +95,7 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseAndOffsetLibfunc {
             ],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
