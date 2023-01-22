@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use cairo_lang_defs::ids::{FunctionSignatureId, LocalVarLongId, MemberId};
+use cairo_lang_defs::ids::{FunctionSignatureId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -17,7 +17,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper};
 use id_arena::Arena;
-use itertools::zip_eq;
+use itertools::{chain, zip_eq};
 use num_bigint::{BigInt, Sign};
 use smol_str::SmolStr;
 use unescaper::unescape;
@@ -39,8 +39,10 @@ use crate::diagnostic::{
 };
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
+use crate::items::imp::find_impls_at_context;
 use crate::items::modifiers::compute_mutability;
 use crate::items::strct::SemanticStructEx;
+use crate::items::trt::{ConcreteTraitFunctionId, ConcreteTraitFunctionLongId};
 use crate::literals::LiteralLongId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
@@ -253,7 +255,7 @@ fn compute_expr_binary_semantic(
     let lexpr = compute_expr_semantic(ctx, lhs_syntax);
     let rhs_syntax = syntax.rhs(syntax_db);
     if matches!(binary_op, BinaryOperator::Dot(_)) {
-        return member_access_expr(ctx, lexpr, rhs_syntax, stable_ptr);
+        return dot_expr(ctx, lexpr, rhs_syntax, stable_ptr);
     }
     let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
     if matches!(binary_op, BinaryOperator::Eq(_)) {
@@ -428,6 +430,25 @@ pub fn compute_named_argument_clause(
     (expr, arg_name_identifier, mutability)
 }
 
+/// Resolves a trait function to an impl function.
+pub fn resolve_trait_function(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    inference: &mut Inference<'_>,
+    resolver: &mut Resolver<'_>,
+    concrete_trait_function: ConcreteTraitFunctionId,
+    stable_ptr: SyntaxStablePtrId,
+) -> Maybe<ConcreteImplGenericFunctionId> {
+    // Resolve impl.
+    let concrete_impl =
+        resolver.resolve_trait(diagnostics, inference, concrete_trait_function, stable_ptr)?;
+    let impl_id = db.lookup_intern_concrete_impl(concrete_impl).impl_id;
+    let impl_function = db
+        .impl_function_by_trait_function(impl_id, concrete_trait_function.function_id(db))?
+        .unwrap();
+    Ok(ConcreteImplGenericFunctionId { concrete_impl, function: impl_function })
+}
+
 pub fn compute_root_expr(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBlock,
@@ -447,37 +468,36 @@ pub fn compute_root_expr(
             Expr::Tuple(expr) => expr.ty = ctx.inference.reduce_ty(expr.ty),
             Expr::Assignment(expr) => expr.ty = ctx.inference.reduce_ty(expr.ty),
             Expr::Block(expr) => expr.ty = ctx.inference.reduce_ty(expr.ty),
-            Expr::FunctionCall(expr) => {
-                expr.ty = ctx.inference.reduce_ty(expr.ty);
-                let mut long_function_id = ctx.db.lookup_intern_function(expr.function);
+            Expr::FunctionCall(call_expr) => {
+                call_expr.ty = ctx.inference.reduce_ty(call_expr.ty);
+                let mut long_function_id = ctx.db.lookup_intern_function(call_expr.function);
                 long_function_id.function.generic_args =
                     ctx.inference.reduce_generic_args(&long_function_id.function.generic_args);
-                if let GenericFunctionId::Trait(trait_function) =
+                if let GenericFunctionId::Trait(concrete_trait_function) =
                     long_function_id.function.generic_function
                 {
-                    // Resolve impl.
-                    let Ok(concrete_impl) = ctx.resolver.resolve_trait(
-                            ctx.diagnostics,
-                            &mut ctx.inference,
-                            trait_function,
-                            expr.stable_ptr.untyped(),
-                        ) else {
+                    let concrete_impl_function = match resolve_trait_function(
+                        ctx.db,
+                        ctx.diagnostics,
+                        &mut ctx.inference,
+                        &mut ctx.resolver,
+                        concrete_trait_function,
+                        call_expr.stable_ptr.untyped(),
+                    ) {
+                        Ok(concrete_impl_function) => concrete_impl_function,
+                        Err(diag_added) => {
+                            *expr = Expr::Missing(ExprMissing {
+                                ty: TypeId::missing(ctx.db, diag_added),
+                                stable_ptr: call_expr.stable_ptr,
+                                diag_added,
+                            });
                             continue;
-                        };
-                    let impl_id = ctx.db.lookup_intern_concrete_impl(concrete_impl).impl_id;
-                    let impl_function = ctx
-                        .db
-                        .impl_function_by_trait_function(
-                            impl_id,
-                            trait_function.function_id(ctx.db),
-                        )?
-                        .unwrap();
-                    let generic_function =
-                        ConcreteImplGenericFunctionId { concrete_impl, function: impl_function };
+                        }
+                    };
                     long_function_id.function.generic_function =
-                        GenericFunctionId::Impl(generic_function);
+                        GenericFunctionId::Impl(concrete_impl_function);
                 }
-                expr.function = ctx.db.intern_function(long_function_id)
+                call_expr.function = ctx.db.intern_function(long_function_id)
             }
             Expr::Match(expr) => {
                 expr.ty = ctx.inference.reduce_ty(expr.ty);
@@ -1162,24 +1182,129 @@ fn short_string_to_semantic(
 /// error.
 fn expr_as_identifier(
     ctx: &mut ComputationContext<'_>,
-    rhs_syntax: &ast::Expr,
+    path: &ast::ExprPath,
     syntax_db: &dyn SyntaxGroup,
 ) -> Maybe<SmolStr> {
-    if let ast::Expr::Path(path) = rhs_syntax {
-        let segments = path.elements(syntax_db);
-        if segments.len() == 1 {
-            return Ok(segments[0].identifier(syntax_db));
-        }
-    };
-    Err(ctx.diagnostics.report(rhs_syntax, InvalidMemberExpression))
+    let segments = path.elements(syntax_db);
+    if segments.len() == 1 {
+        return Ok(segments[0].identifier(syntax_db));
+    }
+    Err(ctx.diagnostics.report(path, InvalidMemberExpression))
 }
 
 // TODO(spapini): Consider moving some checks here to the responsibility of the parser.
+/// Computes the semantic expression for a dot expression.
+fn dot_expr(
+    ctx: &mut ComputationContext<'_>,
+    lexpr: Expr,
+    rhs_syntax: ast::Expr,
+    stable_ptr: ast::ExprPtr,
+) -> Maybe<Expr> {
+    // Find MemberId.
+    match rhs_syntax {
+        ast::Expr::Path(expr) => member_access_expr(ctx, lexpr, expr, stable_ptr),
+        ast::Expr::FunctionCall(expr) => method_call_expr(ctx, lexpr, expr, stable_ptr),
+        _ => Err(ctx.diagnostics.report(&rhs_syntax, InvalidMemberExpression)),
+    }
+}
+
+/// Finds all the trait ids usable in the current context.
+fn all_module_trait_ids(ctx: &mut ComputationContext<'_>) -> Maybe<Vec<TraitId>> {
+    let mut module_traits = ctx.db.module_traits_ids(ctx.resolver.module_file_id.0)?;
+    for use_id in ctx.db.module_uses_ids(ctx.resolver.module_file_id.0)? {
+        if let Ok(ResolvedGenericItem::Trait(trait_id)) = ctx.db.use_resolved_item(use_id) {
+            module_traits.push(trait_id);
+        }
+    }
+    Ok(module_traits)
+}
+
+/// Computes the semantic model of a method call expression (e.g. "expr.method(..)").
+/// Finds all traits with at least one candidate impl with a matching `self` param.
+/// If more/less than 1 such trait exists, fails.
+fn method_call_expr(
+    ctx: &mut ComputationContext<'_>,
+    lexpr: Expr,
+    expr: ast::ExprFunctionCall,
+    stable_ptr: ast::ExprPtr,
+) -> Maybe<Expr> {
+    // TODO(spapini): Add ctx.module_id.
+    // TODO(spapini): Look also in uses.
+    let syntax_db = ctx.db.upcast();
+    let path = expr.path(syntax_db);
+    let func_name = expr_as_identifier(ctx, &path, syntax_db)?;
+    let mut candidates = vec![];
+    for trait_id in all_module_trait_ids(ctx)? {
+        for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
+            if name != func_name {
+                continue;
+            }
+
+            // Check if trait function signature's first param can fit our expr type.
+            let mut inference = ctx.inference.clone();
+            let Some(concrete_trait_id) = inference.infer_concrete_trait_by_self(
+                trait_function, lexpr.ty()
+            ) else {continue};
+
+            // Find impls for it.
+            let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
+            let Ok(impls) = find_impls_at_context(
+                ctx.db, &inference, &lookup_context, concrete_trait_id) else { continue; };
+
+            if impls.is_empty() {
+                continue;
+            }
+
+            candidates.push(trait_function);
+        }
+    }
+
+    let trait_function = match candidates[..] {
+        [] => {
+            return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnknownFunction));
+        }
+        [trait_function] => trait_function,
+        [trait_function_id0, trait_function_id1, ..] => {
+            return Err(ctx.diagnostics.report_by_ptr(
+                stable_ptr.untyped(),
+                AmbiguousTrait { trait_function_id0, trait_function_id1 },
+            ));
+        }
+    };
+
+    let concrete_trait_id =
+        ctx.inference.infer_concrete_trait_by_self(trait_function, lexpr.ty()).unwrap();
+    let signature = ctx.db.trait_function_signature(trait_function).unwrap();
+    let first_param = signature.params.into_iter().next().unwrap();
+    let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
+        ConcreteTraitFunctionLongId::new(ctx.db, concrete_trait_id, trait_function),
+    );
+
+    let function_id = ctx.db.intern_function(FunctionLongId {
+        function: ConcreteFunction {
+            generic_function: GenericFunctionId::Trait(concrete_trait_function_id),
+            generic_args: vec![],
+        },
+    });
+
+    let named_args: Vec<_> = chain!(
+        [(lexpr, None, first_param.mutability)],
+        expr.arguments(syntax_db)
+            .args(syntax_db)
+            .elements(syntax_db)
+            .into_iter()
+            .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax))
+    )
+    .collect();
+
+    expr_function_call(ctx, function_id, named_args, stable_ptr)
+}
+
 /// Computes the semantic model of a member access expression (e.g. "expr.member").
 fn member_access_expr(
     ctx: &mut ComputationContext<'_>,
     lexpr: Expr,
-    rhs_syntax: ast::Expr,
+    rhs_syntax: ast::ExprPath,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();

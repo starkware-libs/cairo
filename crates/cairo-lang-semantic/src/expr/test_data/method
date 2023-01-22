@@ -1,0 +1,106 @@
+//! > Test method
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> Option::<felt> {
+    let x = Option::None(());
+    x.is_some();
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OptionTrait<T>{
+    fn is_some(self: Option::<T>) -> bool;
+}
+impl OptionTraitImpl<T> of OptionTrait::<T> {
+    fn is_some(self: Option::<T>) -> bool {
+        match self {
+            Option::Some(_) => true,
+            Option::None(_) => false,
+        }
+    }
+}
+
+trait AnotherTrait{
+    fn is_some(self: felt) -> bool;
+}
+impl OtherImpl of AnotherTrait {
+    fn is_some(self: felt) -> bool {
+        true
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test method failures
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> Option::<felt> {
+    let x = Option::None(());
+    x.is_foo();
+    x.is_some();
+    let y = Option::Some(true);
+    y.is_bar();
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OptionTrait<T>{
+    fn is_some(self: Option::<T>) -> bool;
+    fn is_bar(self: Option::<T>) -> bool;
+}
+impl OptionTraitImpl<T> of OptionTrait::<T> {
+    fn is_some(self: Option::<T>) -> bool {
+        match self {
+            Option::Some(_) => true,
+            Option::None(_) => false,
+        }
+    }
+    fn is_bar(self: Option::<T>) -> bool { true }
+}
+impl AnotherOptionTraitImpl<T> of OptionTrait::<felt> {
+    fn is_some(self: Option::<felt>) -> bool {
+        match self {
+            Option::Some(_) => true,
+            Option::None(_) => false,
+        }
+    }
+    fn is_bar(self: Option::<felt>) -> bool { true }
+}
+trait AnotherTrait{
+    fn is_bar(self: Option::<bool>) -> bool;
+}
+impl AnotherTraitImpl of AnotherTrait {
+    fn is_bar(self: Option::<bool>) -> bool {
+        false
+    }
+}
+
+//! > expected_diagnostics
+error: Unknown function.
+ --> lib.cairo:33:5
+    x.is_foo();
+    ^********^
+
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: OptionTrait::is_bar and AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:36:5
+    y.is_bar();
+    ^********^
+
+error: Function `is_some` of trait `test::OptionTrait` has multiple implementations, in: test::OptionTraitImpl, test::AnotherOptionTraitImpl
+ --> lib.cairo:34:5
+    x.is_some();
+    ^*********^

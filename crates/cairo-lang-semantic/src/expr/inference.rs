@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use cairo_lang_defs::ids::GenericParamId;
+use cairo_lang_defs::ids::{GenericParamId, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use itertools::{zip_eq, Itertools};
 
@@ -10,7 +10,8 @@ use crate::corelib::never_ty;
 use crate::db::SemanticGroup;
 use crate::types::{substitute_generics_args, ConcreteEnumLongId, GenericSubstitution};
 use crate::{
-    ConcreteEnumId, ConcreteTypeId, ConcreteVariant, GenericArgumentId, Pattern, TypeId, TypeLongId,
+    ConcreteEnumId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
+    GenericArgumentId, Pattern, TypeId, TypeLongId,
 };
 
 /// A type variable, created when a generic type argument is not passed, and thus is not known
@@ -330,5 +331,29 @@ impl<'db> Inference<'db> {
         substitute_generics_args(self.db, &substitution, &mut generic_args);
         self.conform_generic_args(&generic_args, expected_generic_args)?;
         Ok(generic_params.iter().map(|param| substitution[*param]).collect())
+    }
+
+    /// Tries to infer a trait function as a method for `self_ty`.
+    pub fn infer_concrete_trait_by_self(
+        &mut self,
+        trait_function: TraitFunctionId,
+        self_ty: TypeId,
+    ) -> Option<ConcreteTraitId> {
+        let trait_id = trait_function.trait_id(self.db.upcast());
+        let signature = self.db.trait_function_signature(trait_function).ok()?;
+        let first_param = signature.params.into_iter().next()?;
+        if first_param.name != "self" {
+            return None;
+        }
+        let generic_params = self.db.trait_generic_params(trait_id).ok()?;
+
+        let generic_args = self
+            .infer_generics(
+                &generic_params,
+                &[GenericArgumentId::Type(first_param.ty)],
+                &[GenericArgumentId::Type(self_ty)],
+            )
+            .ok()?;
+        Some(self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }))
     }
 }
