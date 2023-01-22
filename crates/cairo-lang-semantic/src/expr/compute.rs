@@ -38,13 +38,14 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
+use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
 use crate::items::modifiers::compute_mutability;
 use crate::items::strct::SemanticStructEx;
 use crate::literals::LiteralLongId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type_with_inference, ConcreteTypeId};
-use crate::{Mutability, Parameter, PatternStruct, Signature};
+use crate::{ConcreteFunction, FunctionLongId, Mutability, Parameter, PatternStruct, Signature};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -375,8 +376,12 @@ fn compute_expr_function_call_semantic(
             expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
         }
         ResolvedConcreteItem::TraitFunction(trait_function) => {
-            let function =
-                ctx.resolver.resolve_trait_function(ctx.diagnostics, trait_function, &path)?;
+            let function = db.intern_function(FunctionLongId {
+                function: ConcreteFunction {
+                    generic_function: GenericFunctionId::Trait(trait_function),
+                    generic_args: vec![],
+                },
+            });
             expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
         }
         _ => Err(ctx.diagnostics.report(
@@ -435,12 +440,6 @@ pub fn compute_root_expr(
         return Ok(res);
     }
 
-    // Check fully resolved.
-    if let Some(stable_ptr) = ctx.inference.first_undetermined_variable() {
-        ctx.diagnostics.report_by_ptr(stable_ptr, TypeYetUnknown);
-        return Ok(res);
-    }
-
     // Apply inference.
     for (_id, expr) in ctx.exprs.iter_mut() {
         match expr {
@@ -453,6 +452,31 @@ pub fn compute_root_expr(
                 let mut long_function_id = ctx.db.lookup_intern_function(expr.function);
                 long_function_id.function.generic_args =
                     ctx.inference.reduce_generic_args(&long_function_id.function.generic_args);
+                if let GenericFunctionId::Trait(trait_function) =
+                    long_function_id.function.generic_function
+                {
+                    // Resolve impl.
+                    let Ok(concrete_impl) = ctx.resolver.resolve_trait(
+                            ctx.diagnostics,
+                            &mut ctx.inference,
+                            trait_function,
+                            expr.stable_ptr.untyped(),
+                        ) else {
+                            continue;
+                        };
+                    let impl_id = ctx.db.lookup_intern_concrete_impl(concrete_impl).impl_id;
+                    let impl_function = ctx
+                        .db
+                        .impl_function_by_trait_function(
+                            impl_id,
+                            trait_function.function_id(ctx.db),
+                        )?
+                        .unwrap();
+                    let generic_function =
+                        ConcreteImplGenericFunctionId { concrete_impl, function: impl_function };
+                    long_function_id.function.generic_function =
+                        GenericFunctionId::Impl(generic_function);
+                }
                 expr.function = ctx.db.intern_function(long_function_id)
             }
             Expr::Match(expr) => {
@@ -487,6 +511,12 @@ pub fn compute_root_expr(
             Statement::Let(stmt) => ctx.inference.reduce_pattern(&mut stmt.pattern),
             Statement::Expr(_) | Statement::Return(_) => {}
         }
+    }
+
+    // Check fully resolved.
+    if let Some(stable_ptr) = ctx.inference.first_undetermined_variable() {
+        ctx.diagnostics.report_by_ptr(stable_ptr, TypeYetUnknown);
+        return Ok(res);
     }
 
     Ok(res)
