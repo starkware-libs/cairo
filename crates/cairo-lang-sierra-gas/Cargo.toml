@@ -19,3 +19,4 @@ indoc.workspace = true
 test-case.workspace = true
 test-log.workspace = true
 pretty_assertions.workspace = true
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "0.1.0" }
