@@ -147,6 +147,8 @@ use result::Result;
 // Option.
 mod option;
 use option::Option;
+use option::option_is_none;
+use option::option_is_some;
 use option::option_unwrap;
 
 // EC.
