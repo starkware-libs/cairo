@@ -31,6 +31,7 @@ cairo_lang_test_utils::test_file_test!(
         let_statement: "let_statement",
         literal: "literal",
         match_: "match",
+        method: "method",
         operators: "operators",
         pattern: "pattern",
         return_: "return",

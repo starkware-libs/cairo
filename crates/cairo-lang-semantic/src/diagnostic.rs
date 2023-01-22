@@ -277,6 +277,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                      in the context."
                 )
             }
+            SemanticDiagnosticKind::Ambiguous => "Ambiguous".into(),
             SemanticDiagnosticKind::MultipleImplementationOfTraitFunction {
                 trait_id,
                 all_impl_ids,
@@ -599,6 +600,7 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         function_name: SmolStr,
     },
+    Ambiguous,
     MultipleImplementationOfTraitFunction {
         trait_id: TraitId,
         all_impl_ids: Vec<ImplId>,
