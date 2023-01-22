@@ -45,7 +45,7 @@ fn test_expr_lookup() {
         expr_debugs,
         [
             "Block(ExprBlock { statements: [Let(StatementLet { pattern: Variable(x), expr: \
-             FunctionCall(ExprFunctionCall { function: core::felt_add, ref_args: [], args: \
+             FunctionCall(ExprFunctionCall { function: core::FeltAdd::add, ref_args: [], args: \
              [Literal(ExprLiteral { value: 5, ty: core::felt }), Literal(ExprLiteral { value: 5, \
              ty: core::felt })], ty: core::felt }) })], tail: Some(Match(ExprMatch { \
              matched_expr: FunctionCall(ExprFunctionCall { function: core::felt_mul, ref_args: \
@@ -61,7 +61,7 @@ fn test_expr_lookup() {
              core::felt })), ty: core::felt })",
             "Block(ExprBlock { statements: [], tail: Some(Literal(ExprLiteral { value: 6, ty: \
              core::felt })), ty: core::felt })",
-            "FunctionCall(ExprFunctionCall { function: core::felt_add, ref_args: [], args: \
+            "FunctionCall(ExprFunctionCall { function: core::FeltAdd::add, ref_args: [], args: \
              [Literal(ExprLiteral { value: 5, ty: core::felt }), Literal(ExprLiteral { value: 5, \
              ty: core::felt })], ty: core::felt })",
             "FunctionCall(ExprFunctionCall { function: core::felt_mul, ref_args: [], args: \
