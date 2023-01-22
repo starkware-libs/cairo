@@ -73,6 +73,13 @@ fn test_bad_ec_point_creation() {
 }
 
 #[test]
+fn test_ec_point_finalization_zero() {
+    let state = ec_state_init();
+    let point_at_infinity = ec_state_finalize(state);
+    assert(option_is_none(point_at_infinity), 'Wrong point');
+}
+
+#[test]
 fn test_felt_operators() {
     assert(1 + 3 == 4, '1 + 3 == 4');
     assert(3 + 6 == 9, '3 + 6 == 9');
