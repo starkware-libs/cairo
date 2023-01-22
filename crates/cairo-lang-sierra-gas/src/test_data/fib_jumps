@@ -1,0 +1,17 @@
+//! > Test fib_jumps.
+
+//! > test_file_name
+fib_jumps
+
+//! > test_function_name
+test_solve_gas
+
+//! > gas_solution
+#40: step(4)
+#27: step(8)
+#49: step(0)
+#13: step(11)
+#3: step(13)
+
+Fibonacci:
+step(17)
