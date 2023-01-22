@@ -330,6 +330,9 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             mod $contract_name$ {{
             $original_items$
                 $storage_code$
+
+                $event_functions$
+
                 trait {ABI_TRAIT} {{
                     $abi_functions$
                     $abi_events$
@@ -337,7 +340,6 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
                 mod {EXTERNAL_MODULE} {{
                     $generated_external_functions$
-                    $event_functions$
                 }}
             }}
         "
@@ -428,9 +430,7 @@ fn handle_event(
 
         // TODO(yuval): use panicable version of deserializations when supported.
         let param_serialization = RewriteNode::interpolate_patched(
-            &format!(
-                "serde::Serde::<{type_name}>::serialize(ref data, $param_name$);\n            "
-            ),
+            &format!("serde::Serde::<{type_name}>::serialize(ref data, $param_name$);\n        "),
             HashMap::from([(
                 "param_name".to_string(),
                 RewriteNode::Trimmed(param_name.as_syntax_node()),
@@ -459,14 +459,14 @@ fn handle_event(
             RewriteNode::interpolate_patched(
                 &format!(
                     "
-        $attrs$
-        $declaration$ {{
-            let mut keys = array_new();
-            array_append(ref keys, {event_key});
-            let mut data = array_new();
-            $param_serializations$
-            starknet::emit_event_syscall(keys, data);
-        }}
+    $attrs$
+    $declaration$ {{
+        let mut keys = array_new();
+        array_append(ref keys, {event_key});
+        let mut data = array_new();
+        $param_serializations$
+        starknet::emit_event_syscall(keys, data);
+    }}
             "
                 ),
                 HashMap::from([
