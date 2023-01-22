@@ -1200,12 +1200,12 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
     let db = ctx.db;
     let syntax_db = db.upcast();
     let segments = path.elements(syntax_db);
-    if segments.len() != 1 {
+    if segments.is_empty() {
         return Err(ctx.diagnostics.report(path, Unsupported));
     }
 
     // Check if this is a variable.
-    if let PathSegment::Simple(ident_segment) = &segments[0] {
+    if let [PathSegment::Simple(ident_segment)] = &segments[..] {
         let identifier = ident_segment.ident(syntax_db);
         let variable_name = identifier.text(ctx.db.upcast());
         if let Some(res) = get_variable_by_name(ctx, &variable_name, path.stable_ptr().into()) {
@@ -1223,8 +1223,8 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
     let ResolvedConcreteItem::Constant(constant_id) = resolved_item else {
         return Err(
             ctx.diagnostics.report(path, UnexpectedElement{
-                expected:vec![ElementKind::Variable,ElementKind::Constant] ,
-                actual: (&resolved_item).into()
+                expected:vec![ElementKind::Variable, ElementKind::Constant],
+                actual: (&resolved_item).into(),
             })
         );
     };
