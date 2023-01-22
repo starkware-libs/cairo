@@ -33,8 +33,8 @@ pub enum CompilationError {
     InvocationError { statement_idx: StatementIdx, error: InvocationError },
     #[error("#{statement_idx}: Return arguments are not on the stack.")]
     ReturnArgumentsNotOnStack { statement_idx: StatementIdx },
-    #[error(transparent)]
-    ReferencesError(#[from] ReferencesError),
+    #[error("#{statement_idx}: {error}")]
+    ReferencesError { statement_idx: StatementIdx, error: ReferencesError },
     #[error("#{statement_idx}: Invocation mismatched to libfunc")]
     LibfuncInvocationMismatch { statement_idx: StatementIdx },
     #[error("{var_id} is dangling at #{statement_idx}.")]
@@ -170,7 +170,8 @@ pub fn compile(
                     .iter()
                     .map(|param_signature| param_signature.ty.clone())
                     .collect();
-                check_types_match(&invoke_refs, &param_types)?;
+                check_types_match(&invoke_refs, &param_types)
+                    .map_err(|error| AnnotationError::ReferencesError { statement_idx, error })?;
                 let compiled_invocation = compile_invocation(
                     ProgramInfo { metadata, type_sizes: &type_sizes },
                     invocation,
