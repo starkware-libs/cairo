@@ -50,6 +50,8 @@ impl UintTraits for Uint128Traits {
     const LESS_THAN_OR_EQUAL: &'static str = "u128_le";
     const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u128_overflowing_sub";
+    const TO_FELT: &'static str = "u128_to_felt";
+    const FROM_FELT: &'static str = "u128_from_felt";
 }
 
 impl JumpNotZeroTraits for Uint128Traits {
