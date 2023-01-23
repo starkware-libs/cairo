@@ -18,7 +18,6 @@ use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
-use itertools::Itertools;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::project::update_crate_roots_from_project_config;
@@ -63,7 +62,7 @@ pub struct RootDatabaseBuilder {
 }
 
 impl RootDatabaseBuilder {
-    pub fn new() -> Self {
+    pub fn empty() -> Self {
         Self { db: RootDatabase::new(Vec::new()) }
     }
 
@@ -97,7 +96,7 @@ impl RootDatabaseBuilder {
             precedence
                 .iter()
                 .map(|name| get_core_ty_by_name(&self.db, name.into(), vec![]))
-                .collect_vec(),
+                .collect::<Vec<_>>(),
         ));
         self
     }

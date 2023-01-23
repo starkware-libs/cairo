@@ -72,7 +72,7 @@ fn main() -> anyhow::Result<()> {
     if args.starknet {
         plugins.push(Arc::new(StarkNetPlugin {}));
     }
-    let mut builder = RootDatabaseBuilder::new();
+    let mut builder = RootDatabaseBuilder::empty();
     builder.with_plugins(plugins).with_dev_corelib().unwrap();
     let mut db_val = builder.build();
     let db = &mut db_val;
