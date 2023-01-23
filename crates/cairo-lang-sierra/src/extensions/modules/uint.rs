@@ -43,6 +43,10 @@ pub trait UintTraits: Default {
     const OVERFLOWING_ADD: &'static str;
     /// The generic libfunc id for subtraction.
     const OVERFLOWING_SUB: &'static str;
+    /// The generic libfunc id for convertion to felt.
+    const TO_FELT: &'static str;
+    /// The generic libfunc id for convertion from felt.
+    const FROM_FELT: &'static str;
 }
 
 #[derive(Default)]
@@ -344,6 +348,8 @@ impl UintTraits for Uint8Traits {
     const LESS_THAN_OR_EQUAL: &'static str = "u8_le";
     const OVERFLOWING_ADD: &'static str = "u8_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u8_overflowing_sub";
+    const TO_FELT: &'static str = "u8_to_felt";
+    const FROM_FELT: &'static str = "u8_from_felt";
 }
 
 /// Type for u8.
