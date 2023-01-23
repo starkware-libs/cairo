@@ -362,6 +362,9 @@ pub fn substitute_function(
 ) {
     let mut long_function = db.lookup_intern_function(*function);
     substitute_generics_args(db, substitution, &mut long_function.function.generic_args);
+    long_function.function.generic_function.generic_args_apply(db, |generic_args| {
+        substitute_generics_args(db, substitution, generic_args)
+    });
     *function = db.intern_function(long_function);
 }
 

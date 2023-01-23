@@ -330,7 +330,9 @@ impl<'db> Inference<'db> {
         let mut generic_args = generic_args.iter().copied().collect_vec();
         substitute_generics_args(self.db, &substitution, &mut generic_args);
         self.conform_generic_args(&generic_args, expected_generic_args)?;
-        Ok(generic_params.iter().map(|param| substitution[*param]).collect())
+
+        let generic_args = generic_params.iter().map(|param| substitution[*param]).collect_vec();
+        Ok(self.reduce_generic_args(&generic_args))
     }
 
     /// Tries to infer a trait function as a method for `self_ty`.
