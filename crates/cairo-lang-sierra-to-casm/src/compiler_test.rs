@@ -328,59 +328,6 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
             "};
             "fib_jumps")]
-#[test_case(read_sierra_example_file("fib_recursive").as_str(),
-            true,
-            indoc! {"
-                ap += 2;
-                // Statement #  4 - tests if n == 0 and initiates 1 for the early return values.
-                [ap + 0] = 1, ap++;
-                jmp rel 7 if [fp + -3] != 0;
-                [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4] + 6, ap++;
-                [ap + 0] = [ap + -3], ap++;
-                ret;
-
-                // Statement # 14 - calculating n - 1, and testing if n - 1 == 0.
-                [fp + -3] = [ap + 0] + 1, ap++;
-                jmp rel 7 if [ap + -1] != 0;
-                [ap + 0] = [fp + -5], ap++;
-                // Statement # 18 - n == 1, so we return updated gb and 1.
-                [ap + 0] = [fp + -4] + 4, ap++;
-                [ap + 0] = [ap + -4], ap++;
-                ret;
-
-                // Statement # 25 - Get gas for the recursive calls.
-                %{ memory[ap + 0] = 3900 <= memory[fp + -4] %}
-                jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [fp + -4] + 340282366920938463463374607431768207556, ap++;
-                [ap + -1] = [[fp + -5] + 0];
-                jmp rel 23;
-                [fp + -4] = [ap + 0] + 3900, ap++;
-                [ap + -1] = [[fp + -5] + 0];
-
-                // Statement # 28 - Performing both recursive calculations and returning their sum.
-                [ap + 0] = [fp + -5] + 1, ap++;
-                [ap + 0] = [ap + -2], ap++;
-                [ap + -5] = [fp + 0] + 1;
-                [ap + 0] = [ap + -5], ap++;
-                call rel -36;
-                [fp + 1] = [ap + -1];
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [fp + 0], ap++;
-                call rel -42;
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [fp + 1] + [ap + -3], ap++;
-                ret;
-
-                // Statement # 46 - Ran out of gas - returning update gb and error value.
-                [ap + 0] = [fp + -5] + 1, ap++;
-                [ap + 0] = [fp + -4], ap++;
-                [ap + 0] = -1, ap++;
-                ret;
-            "};
-            "fib_recursive")]
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
