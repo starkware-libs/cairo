@@ -137,6 +137,9 @@ extern type u8;
 extern fn u8_const<value>() -> u8 nopanic;
 extern fn u8_to_felt(a: u8) -> felt nopanic;
 
+#[panic_with('u8_from OF', u8_from_felt)]
+extern fn u8_try_from_felt(a: felt) -> Option::<u8> implicits(RangeCheck) nopanic;
+
 extern fn u8_lt(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
 extern fn u8_eq(a: u8, b: u8) -> bool implicits() nopanic;
 extern fn u8_le(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;

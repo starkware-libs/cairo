@@ -47,7 +47,7 @@ pub trait UintTraits: Default {
     /// The generic libfunc id for convertion to felt.
     const TO_FELT: &'static str;
     /// The generic libfunc id for convertion from felt.
-    const FROM_FELT: &'static str;
+    const TRY_FROM_FELT: &'static str;
 }
 
 #[derive(Default)]
@@ -359,6 +359,60 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintToFeltLibfunc<
     }
 }
 
+/// Libfunc for attempting to convert a felt into a uint.
+#[derive(Default)]
+pub struct UintFromFeltLibfunc<TUintTraits: UintTraits> {
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintFromFeltLibfunc<TUintTraits> {
+    const STR_ID: &'static str = TUintTraits::TRY_FROM_FELT;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
+            ],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: range_check_type.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?,
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: range_check_type,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 0,
+                        }),
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
 #[derive(Default)]
 pub struct Uint8Traits;
 
@@ -373,7 +427,7 @@ impl UintTraits for Uint8Traits {
     const OVERFLOWING_ADD: &'static str = "u8_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u8_overflowing_sub";
     const TO_FELT: &'static str = "u8_to_felt";
-    const FROM_FELT: &'static str = "u8_from_felt";
+    const TRY_FROM_FELT: &'static str = "u8_try_from_felt";
 }
 
 /// Type for u8.
@@ -387,5 +441,6 @@ define_libfunc_hierarchy! {
         Equal(UintEqualLibfunc<Uint8Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
         ToFelt(UintToFeltLibfunc<Uint8Traits>),
+        FromFelt(UintFromFeltLibfunc<Uint8Traits>),
     }, Uint8Concrete
 }
