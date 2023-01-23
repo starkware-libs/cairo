@@ -193,6 +193,10 @@ mod TestContract {
         }
         
     }
+
+    mod __constructor {
+        
+    }
 }
 
 //! > expected_diagnostics

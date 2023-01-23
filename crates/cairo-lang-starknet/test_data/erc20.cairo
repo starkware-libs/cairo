@@ -15,8 +15,7 @@ mod ERC20 {
     fn Approval(owner: felt, spender: felt, value: u256) {
     }
 
-    // TODO(orizi): Make into a constructor attribute.
-    #[external]
+    #[constructor]
     fn constructor(
         name_: felt, symbol_: felt, decimals_: felt, initial_supply: u256, recipient: felt
     ) {
