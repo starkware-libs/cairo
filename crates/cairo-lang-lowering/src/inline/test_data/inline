@@ -43,6 +43,76 @@ End:
 
 //! > ==========================================================================
 
+//! > Test generic function inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(val: Option::<felt>) -> felt {
+  bar(val, 2)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+/// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
+#[inline(always)]
+fn bar<T>(val: Option::<T>, val2: T) -> T {
+    match val {
+        Option::Some(x) => x,
+        Option::None(()) => val2,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > inlining_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::option::Option::<core::felt>
+Statements:
+  (v1: core::felt) <- 2u
+  (v2: core::felt) <- test::bar<Type(core::felt),>(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::option::Option::<core::felt>
+Statements:
+  (v1: core::felt) <- 2u
+  () <- blk3()
+End:
+  Return(v2)
+
+blk1:
+Inputs: v4: core::felt
+Statements:
+End:
+  Callsite(v4 -> v3)
+
+blk2:
+Inputs: v5: ()
+Statements:
+  () <- struct_destructure(v5)
+End:
+  Callsite(v1 -> v3)
+
+blk3:
+Inputs:
+Statements:
+  () <- match_enum(v0) {
+    Option::Some => blk1,
+    Option::None => blk2,
+  }
+End:
+  Callsite(v3 -> v2)
+
+//! > ==========================================================================
+
 //! > Test inlining same arg twice.
 
 //! > test_function_name

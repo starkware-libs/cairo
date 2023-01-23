@@ -38,6 +38,12 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
+    /// A concrete version of priv_function_with_body_lowered_flat
+    fn priv_concrete_function_with_body_lowered_flat(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
     /// Computes the final lowered representation (after all the internal transformations).
     fn concrete_function_with_body_lowered(
         &self,
@@ -143,7 +149,7 @@ fn priv_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
-fn concrete_function_with_body_lowered(
+fn priv_concrete_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
@@ -152,6 +158,16 @@ fn concrete_function_with_body_lowered(
         .priv_function_with_body_lowered_flat(function.function_with_body_id(semantic_db))?)
     .clone();
     concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?);
+    Ok(Arc::new(lowered))
+}
+
+fn concrete_function_with_body_lowered(
+    db: &dyn LoweringGroup,
+    function: ConcreteFunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    let semantic_db = db.upcast();
+    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
+
     // TODO(spapini): passing function.function_with_body_id might be weird here.
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
