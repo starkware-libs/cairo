@@ -497,6 +497,12 @@ pub fn compute_root_expr(
                     long_function_id.function.generic_function =
                         GenericFunctionId::Impl(concrete_impl_function);
                 }
+                long_function_id
+                    .function
+                    .generic_function
+                    .generic_args_apply(ctx.db, |generic_args| {
+                        *generic_args = ctx.inference.reduce_generic_args(generic_args)
+                    });
                 call_expr.function = ctx.db.intern_function(long_function_id)
             }
             Expr::Match(expr) => {
