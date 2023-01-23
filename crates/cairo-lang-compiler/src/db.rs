@@ -44,6 +44,10 @@ impl RootDatabase {
         res
     }
 
+    pub fn empty() -> Self {
+        Self::new(Vec::new())
+    }
+
     pub fn builder() -> RootDatabaseBuilder {
         RootDatabaseBuilder::default()
     }
@@ -63,7 +67,7 @@ pub struct RootDatabaseBuilder {
 
 impl RootDatabaseBuilder {
     pub fn empty() -> Self {
-        Self { db: RootDatabase::new(Vec::new()) }
+        Self { db: RootDatabase::empty() }
     }
 
     pub fn with_plugins(&mut self, plugins: Vec<Arc<dyn SemanticPlugin>>) -> &mut Self {
