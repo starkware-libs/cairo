@@ -111,6 +111,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint8Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
             Uint8Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Uint8Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
+            Uint8Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
         },
         CoreConcreteLibfunc::Uint128(libfunc) => match libfunc {
             Uint128Concrete::Operation(libfunc) => match libfunc.operator {
