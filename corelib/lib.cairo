@@ -154,9 +154,6 @@ use result::Result;
 // Option.
 mod option;
 use option::Option;
-use option::option_is_none;
-use option::option_is_some;
-use option::option_unwrap;
 
 // EC.
 mod ec;
@@ -171,7 +168,6 @@ use ec::ec_point_try_new;
 use ec::ec_point_unwrap;
 use ec::ec_state_add_mul;
 use ec::ec_state_add;
-use ec::ec_state_finalize_nonzero;
 use ec::ec_state_finalize;
 use ec::ec_state_init;
 
