@@ -203,6 +203,9 @@ fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> V
         Uint8Concrete::LessThanOrEqual(_) => {
             vec![ops.const_cost(3), ops.const_cost(4)]
         }
+        Uint8Concrete::FromFelt(_) => {
+            vec![ops.const_cost(3), ops.const_cost(8)]
+        }
     }
 }
 
