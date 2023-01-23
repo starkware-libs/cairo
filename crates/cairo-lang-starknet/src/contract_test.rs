@@ -4,7 +4,8 @@ use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
-use crate::contract::{find_contracts, get_external_functions, starknet_keccak};
+use crate::contract::{find_contracts, get_module_functions, starknet_keccak};
+use crate::plugin::EXTERNAL_MODULE;
 
 #[test]
 fn test_contract_resolving() {
@@ -43,7 +44,7 @@ fn test_contract_resolving() {
     assert_eq!(contracts.len(), 1);
 
     assert_eq!(
-        get_external_functions(db, &contracts[0])
+        get_module_functions(db, &contracts[0], EXTERNAL_MODULE)
             .unwrap()
             .into_iter()
             .map(|func_id| func_id.name(db))
