@@ -3020,9 +3020,9 @@
     "0x480280007ffb7fff",
     "0x482480017ffe8000",
     "0xefffffffffffffde00000000000000ff",
-    "0x400280017ffb7fff",
-    "0x400280027ffb7ffc",
-    "0x4824800180007ffc",
+    "0x480280017ffb7fff",
+    "0x400280027ffb7ffb",
+    "0x402480017fff7ffb",
     "0xffffffffffffffffffffffffffffffff",
     "0x20680017fff7fff",
     "0xf",
@@ -5078,9 +5078,9 @@
     "0x480280007ffc7fff",
     "0x482480017ffe8000",
     "0xefffffffffffffde00000000000000ff",
-    "0x400280017ffc7fff",
-    "0x400280027ffc7ffc",
-    "0x4824800180007ffc",
+    "0x480280017ffc7fff",
+    "0x400280027ffc7ffb",
+    "0x402480017fff7ffb",
     "0xffffffffffffffffffffffffffffffff",
     "0x20680017fff7fff",
     "0xf",
@@ -5959,7 +5959,7 @@
     [
       3012,
       [
-        "\n(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + 0] = x\nmemory[ap + 1] = y\n"
+        "\n(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)\nx = min(value // scalar, 340282366920938463463374607431768211454)\ny = value - x * scalar\nmemory[ap + 0] = x\nmemory[ap + 1] = y\n"
       ]
     ],
     [
@@ -6211,7 +6211,7 @@
     [
       5070,
       [
-        "\n(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + 0] = x\nmemory[ap + 1] = y\n"
+        "\n(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)\nx = min(value // scalar, 340282366920938463463374607431768211454)\ny = value - x * scalar\nmemory[ap + 0] = x\nmemory[ap + 1] = y\n"
       ]
     ],
     [
