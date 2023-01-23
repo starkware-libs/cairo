@@ -2,15 +2,17 @@ use cairo_lang_defs::ids::{EnumId, GenericTypeId, ModuleId, ModuleItemId, TraitI
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
+use crate::expr::inference::Inference;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::GenericFunctionId;
-use crate::items::trt::ConcreteTraitId;
+use crate::items::trt::{ConcreteTraitFunctionLongId, ConcreteTraitId};
 use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
@@ -265,9 +267,11 @@ pub fn core_unary_operator(
 
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
+    inference: &mut Inference<'_>,
     binary_op: &BinaryOperator,
     type1: TypeId,
     type2: TypeId,
+    stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
     // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
     //   traits.
@@ -283,11 +287,15 @@ pub fn core_binary_operator(
         Ok(Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 }))
     };
     let function_name = match binary_op {
-        BinaryOperator::Plus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_add",
-        BinaryOperator::Plus(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_add",
-        BinaryOperator::Plus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_add",
-        BinaryOperator::Plus(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_add",
-        BinaryOperator::Plus(_) => return unsupported_operator("+"),
+        BinaryOperator::Plus(_) => {
+            return Ok(Ok(get_core_trait_function_infer(
+                db,
+                inference,
+                "Add".into(),
+                "add".into(),
+                stable_ptr,
+            )));
+        }
         BinaryOperator::Minus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_sub",
         BinaryOperator::Minus(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_sub",
         BinaryOperator::Minus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_sub",
@@ -431,6 +439,35 @@ fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
     let trait_id =
         extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait);
     trait_id
+}
+
+/// Retrieves a trait function from the core library with type variables as generic arguments, to
+/// be inferred later.
+fn get_core_trait_function_infer(
+    db: &dyn SemanticGroup,
+    inference: &mut Inference<'_>,
+    trait_name: SmolStr,
+    function_name: SmolStr,
+    stable_ptr: SyntaxStablePtrId,
+) -> FunctionId {
+    let trait_id = get_core_trait(db, trait_name);
+    let generic_params = db.trait_generic_params(trait_id);
+    let generic_args = generic_params
+        .iter()
+        .map(|_| GenericArgumentId::Type(inference.new_var(stable_ptr)))
+        .collect();
+    let concrete_trait_id =
+        db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
+    let trait_function = db.trait_function_by_name(trait_id, function_name).unwrap().unwrap();
+    let concrete_trait_function = db.intern_concrete_trait_function(
+        ConcreteTraitFunctionLongId::new(db, concrete_trait_id, trait_function),
+    );
+    db.intern_function(FunctionLongId {
+        function: ConcreteFunction {
+            generic_function: GenericFunctionId::Trait(concrete_trait_function),
+            generic_args: vec![],
+        },
+    })
 }
 
 pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
