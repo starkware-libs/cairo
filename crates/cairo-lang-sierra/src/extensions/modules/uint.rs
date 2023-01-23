@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use num_bigint::BigInt;
 
+use super::felt::FeltType;
 use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -188,7 +189,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintLessThanLibfun
     }
 }
 
-/// Libfunc for comparing u128s.
+/// Libfunc for comparing uints.
 #[derive(Default)]
 pub struct UintLessThanOrEqualLibfunc<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
@@ -335,6 +336,29 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
     }
 }
 
+/// Libfunc for converting a uint into a felt.
+#[derive(Default)]
+pub struct UintToFeltLibfunc<TUintTraits: UintTraits> {
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintToFeltLibfunc<TUintTraits> {
+    const STR_ID: &'static str = TUintTraits::TO_FELT;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch(
+            vec![context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(FeltType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
 #[derive(Default)]
 pub struct Uint8Traits;
 
@@ -362,5 +386,6 @@ define_libfunc_hierarchy! {
         LessThan(UintLessThanLibfunc<Uint8Traits>),
         Equal(UintEqualLibfunc<Uint8Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
+        ToFelt(UintToFeltLibfunc<Uint8Traits>),
     }, Uint8Concrete
 }

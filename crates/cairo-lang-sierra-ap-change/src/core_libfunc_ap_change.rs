@@ -99,7 +99,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             GasConcreteLibfunc::RefundGas(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint8(libfunc) => match libfunc {
-            Uint8Concrete::Const(_) => vec![ApChange::Known(0)],
+            Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) => vec![ApChange::Known(0)],
             Uint8Concrete::Operation(libfunc) => match libfunc.operator {
                 IntOperator::OverflowingAdd => {
                     vec![ApChange::Known(3), ApChange::Known(3)]

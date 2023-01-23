@@ -135,6 +135,7 @@ extern fn u128_jump_nz(a: u128) -> JumpNzResult::<u128> implicits() nopanic;
 #[derive(Copy, Drop)]
 extern type u8;
 extern fn u8_const<value>() -> u8 nopanic;
+extern fn u8_to_felt(a: u8) -> felt nopanic;
 
 extern fn u8_lt(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
 extern fn u8_eq(a: u8, b: u8) -> bool implicits() nopanic;
