@@ -202,6 +202,9 @@ use integer::u128_xor;
 use integer::u128_jump_nz;
 use integer::u8;
 use integer::u8_const;
+use integer::u8_from_felt;
+use integer::u8_try_from_felt;
+use integer::u8_to_felt;
 use integer::u8_add;
 impl U8Add of Add::<u8> {
     #[inline(always)]
