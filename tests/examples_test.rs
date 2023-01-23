@@ -1,4 +1,3 @@
-use std::mem::take;
 use std::path::PathBuf;
 
 use assert_matches::assert_matches;
@@ -24,10 +23,11 @@ fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
     path.push(format!("{name}.cairo"));
 
     let mut builder = RootDatabase::builder();
-    let db = builder.with_dev_corelib().unwrap().build();
-    let main_crate_ids = setup_project(db, path.as_path()).expect("Project setup failed.");
-    assert!(!check_and_eprint_diagnostics(db));
-    (take(db), main_crate_ids)
+    builder.with_dev_corelib().unwrap();
+    let mut db = builder.build();
+    let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
+    assert!(!check_and_eprint_diagnostics(&mut db));
+    (db, main_crate_ids)
 }
 
 /// Returns the path of the relevant test file.

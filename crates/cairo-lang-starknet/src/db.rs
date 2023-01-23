@@ -1,4 +1,3 @@
-use std::mem::take;
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
@@ -15,12 +14,11 @@ pub fn get_starknet_database() -> RootDatabase {
     plugins.push(Arc::new(StarkNetPlugin {}));
 
     let mut builder = RootDatabase::builder();
-    let db = builder
+    builder
         .with_dev_corelib()
         .unwrap()
         .with_implicit_precedence(Vec::from(precedence))
-        .with_plugins(plugins)
-        .build();
+        .with_plugins(plugins);
 
-    take(db)
+    builder.build()
 }

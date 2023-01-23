@@ -102,8 +102,8 @@ impl RootDatabaseBuilder {
         self
     }
 
-    pub fn build(&mut self) -> &mut RootDatabase {
-        &mut self.db
+    pub fn build(self) -> RootDatabase {
+        self.db
     }
 }
 

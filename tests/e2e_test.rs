@@ -39,7 +39,8 @@ cairo_lang_test_utils::test_file_test!(
 
 fn run_small_e2e_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
     let mut builder = RootDatabase::builder();
-    let db = builder.with_dev_corelib().unwrap().build();
+    builder.with_dev_corelib().unwrap();
+    let db = &mut builder.build();
     // Parse code and create semantic model.
     let test_module = setup_test_module(db, inputs["cairo"].as_str()).unwrap();
     assert!(!check_and_eprint_diagnostics(db));
