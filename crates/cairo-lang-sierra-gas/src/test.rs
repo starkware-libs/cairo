@@ -7,10 +7,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use crate::calc_gas_info;
 
 cairo_lang_test_utils::test_file_test!(
-    inlining,
+    test_solve_gas,
     "src/test_data",
     {
-
         fib_jumps :"fib_jumps",
         fib_recursive :"fib_recursive",
     },
