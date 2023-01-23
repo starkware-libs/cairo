@@ -4,8 +4,8 @@ use super::non_zero::NonZeroType;
 use super::range_check::RangeCheckType;
 use super::uint::{
     IntOperator, UintConstLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
-    UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc, UintTraits,
-    UintType,
+    UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
+    UintToFeltLibfunc, UintTraits, UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -32,7 +32,7 @@ define_libfunc_hierarchy! {
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint128Traits>),
         Const(UintConstLibfunc<Uint128Traits>),
         FromFelt(Uint128sFromFeltLibfunc),
-        ToFelt(Uint128ToFeltLibfunc),
+        ToFelt(UintToFeltLibfunc<Uint128Traits>),
         JumpNotZero(JumpNotZeroLibfunc<Uint128Traits>),
     }, Uint128Concrete
 }
@@ -296,26 +296,5 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFeltLibfunc {
             ],
             fallthrough: Some(0),
         })
-    }
-}
-
-/// Libfunc for converting a u128 into a felt.
-#[derive(Default)]
-pub struct Uint128ToFeltLibfunc {}
-impl NoGenericArgsGenericLibfunc for Uint128ToFeltLibfunc {
-    const STR_ID: &'static str = "u128_to_felt";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch(
-            vec![context.get_concrete_type(Uint128Type::id(), &[])?],
-            vec![OutputVarInfo {
-                ty: context.get_concrete_type(FeltType::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
-        ))
     }
 }
