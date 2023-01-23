@@ -188,5 +188,6 @@ pub fn build_u8(
                 build_small_uint_overflowing_sub(builder, BigInt::from(u8::MAX) + 1)
             }
         },
+        Uint8Concrete::ToFelt(_) => misc::build_identity(builder),
     }
 }
