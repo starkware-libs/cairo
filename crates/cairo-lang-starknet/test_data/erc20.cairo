@@ -112,8 +112,15 @@ mod ERC20 {
         Approval(owner, spender, amount);
     }
 
-    // TODO(orizi): Add and use actual libfunc.
+    // TODO(orizi): Remove when shorter unwrap is added.
     fn get_caller_address() -> felt {
-        12345678
+        match starknet::get_caller_address() {
+            Result::Ok(x) => x,
+            Result::Err(revert_reason) => {
+                let mut err_data = array_new();
+                array_append(ref err_data, revert_reason);
+                panic(err_data)
+            },
+        }
     }
 }
