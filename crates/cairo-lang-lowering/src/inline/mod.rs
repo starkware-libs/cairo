@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, zip_eq};
@@ -289,10 +290,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
 
     fn rewrite(&mut self, statement: &Statement) -> Maybe<Statement> {
         if let Statement::Call(stmt) = statement {
-            if let Some(function_id) =
-                stmt.function.try_get_function_with_body_id(self.ctx.db.upcast())
-            {
-                let inline_data = self.ctx.db.priv_inline_data(function_id)?;
+            let concrete_function = self.ctx.db.lookup_intern_function(stmt.function).function;
+            let semantic_db = self.ctx.db.upcast();
+            if let Some(function_id) = concrete_function.get_body(semantic_db) {
+                let inline_data =
+                    self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
                 if inline_data.config == InlineConfiguration::Always && inline_data.is_inlineable {
                     let block = self.inline_function(function_id, &stmt.inputs, &stmt.outputs)?;
@@ -309,11 +311,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// Returns the block_id that should be called instead of the function.
     pub fn inline_function(
         &mut self,
-        function_id: FunctionWithBodyId,
+        function_id: ConcreteFunctionWithBodyId,
         inputs: &[VariableId],
         outputs: &[VariableId],
     ) -> Maybe<BlockId> {
-        let lowered = self.ctx.db.priv_function_with_body_lowered_flat(function_id)?;
+        let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
         let root_block_id = lowered.root?;
 
         // As the block_ids and variable_ids are per function, we need to rename all
