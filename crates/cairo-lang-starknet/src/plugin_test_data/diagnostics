@@ -94,6 +94,10 @@ mod TestContract {
         }
         
     }
+
+    mod __constructor {
+        
+    }
 }
 
 //! > expected_diagnostics
@@ -168,6 +172,10 @@ mod TestContract {
             serde::Serde::<(felt, felt)>::serialize(ref arr, res)
             arr
         }
+        
+    }
+
+    mod __constructor {
         
     }
 }
@@ -265,6 +273,10 @@ mod TestContract {
         }
         
     }
+
+    mod __constructor {
+        
+    }
 }
 
 //! > expected_diagnostics
@@ -299,6 +311,10 @@ mod TestContract {
     }
 
     mod __external {
+        
+    }
+
+    mod __constructor {
         
     }
 }
@@ -340,6 +356,10 @@ mod TestContract {
     mod __external {
         
     }
+
+    mod __constructor {
+        
+    }
 }
 
 //! > expected_diagnostics
@@ -377,6 +397,10 @@ mod TestContract {
     }
 
     mod __external {
+        
+    }
+
+    mod __constructor {
         
     }
 }
@@ -430,6 +454,10 @@ mod TestContract {
     mod __external {
         
     }
+
+    mod __constructor {
+        
+    }
 }
 
 //! > expected_diagnostics
@@ -464,6 +492,10 @@ mod TestContract {
     }
 
     mod __external {
+        
+    }
+
+    mod __constructor {
         
     }
 }

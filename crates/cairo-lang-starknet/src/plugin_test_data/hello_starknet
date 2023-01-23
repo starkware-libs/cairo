@@ -165,6 +165,10 @@ mod HelloStarknet {
         }
         
     }
+
+    mod __constructor {
+        
+    }
 }
 
 //! > expected_diagnostics
