@@ -34,6 +34,9 @@ fn test_function_inlining(
     let before =
         (*db.priv_function_with_body_lowered_flat(test_function.function_id).unwrap()).clone();
     let mut after = before.clone();
+
+    let lowering_diagnostics =
+        db.function_with_body_lowering_diagnostics(test_function.function_id).unwrap();
     apply_inlining(db, test_function.function_id, &mut after).unwrap();
 
     OrderedHashMap::from([
@@ -46,6 +49,6 @@ fn test_function_inlining(
             "after".into(),
             format!("{:?}", after.debug(&LoweredFormatter { db, variables: &after.variables })),
         ),
-        ("inlining_diagnostics".into(), after.diagnostics.format(db)),
+        ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
     ])
 }

@@ -15,8 +15,6 @@ foo
 
 //! > semantic_diagnostics
 
-//! > inlining_diagnostics
-
 //! > before
 blk0 (root):
 Inputs: v0: core::felt
@@ -41,6 +39,8 @@ Statements:
 End:
   Callsite(v3 -> v1)
 
+//! > lowering_diagnostics
+
 //! > ==========================================================================
 
 //! > Test inlining same arg twice.
@@ -64,8 +64,6 @@ fn bar(a: felt, b: felt) -> felt nopanic  {
 
 //! > semantic_diagnostics
 
-//! > inlining_diagnostics
-
 //! > before
 blk0 (root):
 Inputs: v0: core::felt
@@ -88,6 +86,8 @@ Statements:
   (v2: core::felt) <- core::felt_add(v0, v0)
 End:
   Callsite(v2 -> v1)
+
+//! > lowering_diagnostics
 
 //! > ==========================================================================
 
@@ -116,8 +116,6 @@ fn bar2(a: felt, b: felt) -> felt implicits() nopanic  {
 }
 
 //! > semantic_diagnostics
-
-//! > inlining_diagnostics
 
 //! > before
 blk0 (root):
@@ -159,3 +157,5 @@ Statements:
   (v8: core::felt) <- core::felt_mul(v1, v2)
 End:
   Callsite(v8 -> v5)
+
+//! > lowering_diagnostics
