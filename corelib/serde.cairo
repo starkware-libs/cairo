@@ -25,6 +25,15 @@ impl BoolSerde of Serde::<bool> {
     }
 }
 
+impl U8Serde of Serde::<u8> {
+    fn serialize(ref serialized: Array::<felt>, input: u8) {
+        Serde::<felt>::serialize(ref serialized, u8_to_felt(input));
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<u8> {
+        Option::Some(u8_try_from_felt(Serde::<felt>::deserialize(ref serialized)?)?)
+    }
+}
+
 impl U128Serde of Serde::<u128> {
     fn serialize(ref serialized: Array::<felt>, input: u128) {
         Serde::<felt>::serialize(ref serialized, u128_to_felt(input));

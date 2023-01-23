@@ -23,6 +23,12 @@ impl LegacyHashBool of LegacyHash::<bool> {
     }
 }
 
+impl LegacyHashU8 of LegacyHash::<u8> {
+    fn hash(state: felt, value: u8) -> felt {
+        LegacyHash::<felt>::hash(state, u8_to_felt(value))
+    }
+}
+
 impl LegacyHashU128 of LegacyHash::<u128> {
     fn hash(state: felt, value: u128) -> felt {
         LegacyHash::<felt>::hash(state, u128_to_felt(value))
