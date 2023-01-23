@@ -67,7 +67,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "`inline` without arguments is not supported.".into()
             }
             LoweringDiagnosticKind::InliningFunctionWithEarlyReturnNotSupported => {
-                "Inlining of function with an early return is not supported.".into()
+                "Inlining of functions with an early return is not supported.".into()
             }
         }
     }
