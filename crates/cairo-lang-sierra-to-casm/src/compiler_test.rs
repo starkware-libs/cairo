@@ -286,45 +286,42 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = 1, ap++;
                 ret;
 
-                // Statement # 9 - Calculates n - 1 and tests if n - 1 == 0.
-                [fp + -3] = [ap + 0] + 1, ap++;
-                jmp rel 7 if [ap + -1] != 0;
+                // Statement # 9
+                // Setting up the latest memory to be of the form [b=0, _, _, n, rc, gb, a=1].
+                [ap + 0] = 0, ap++;
+                [ap + 0] = [fp + -3], ap++;
+                [ap + 0] = [ap + -1], ap++;
+                [ap + 0] = [ap + -1], ap++;
                 [ap + 0] = [fp + -5], ap++;
                 [ap + 0] = [fp + -4], ap++;
                 [ap + 0] = 1, ap++;
+
+                // Statement #21, check n.
+                jmp rel 6 if [ap + -4] != 0;
+                // Statement # 22 - n == 0, so we can return the latest a.
+                [ap + 0] = [ap + -3], ap++;
+                [ap + 0] = [ap + -3], ap++;
+                [ap + 0] = [ap + -3], ap++;
                 ret;
+                %{ memory[ap + 0] = 1100 <= memory[ap + -2] %}
 
-                // Statement # 21
-                // Setting up the latest memory to be of the form [b=1, _, _, n=n-1, rc, gb, a=1]. 
-                [ap + 0] = 1, ap++;
-                [ap + 0] = [ap + -2], ap++;
-                [ap + 0] = [ap + -1], ap++;
-                [ap + 0] = [ap + -1], ap++;
-                [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4], ap++;
-                [ap + 0] = 1, ap++;
-                // Statement # 31 - Getting gas for the main loop.
-                %{ memory[ap + 0] = 1000 <= memory[ap + -2] %}
                 jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap + -3] + 340282366920938463463374607431768210456, ap++;
+                [ap + 0] = [ap + -3] + 340282366920938463463374607431768210356, ap++;
                 [ap + -1] = [[ap + -5] + 0];
-                jmp rel 17;
+                jmp rel 13;
 
-                // Statement # 34
+                // Statement # 31
                 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
                 // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
-                [ap + -3] = [ap + 0] + 1000, ap++;
+                [ap + -3] = [ap + 0] + 1100, ap++;
                 [ap + -1] = [[ap + -5] + 0];
                 [ap + -6] = [ap + 0] + 1, ap++;
                 [ap + 0] = [ap + -6] + 1, ap++;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -6] + [ap + -12], ap++;
-                jmp rel -16 if [ap + -4] != 0;
-                // Statement # 44 - n == 0, so we can return the latest a.
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3], ap++;
-                ret;
+                jmp rel -22;
+
+                // Statement # 41  - Ran out of gas - returning updated gb and -1.
                 [ap + 0] = [ap + -5] + 1, ap++;
                 [ap + 0] = [ap + -5], ap++;
                 [ap + 0] = -1, ap++;
