@@ -3,9 +3,10 @@ use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::{chain, zip_eq};
 
 pub use crate::core_libfunc_cost_base::InvocationCostInfoProvider;
-use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations};
+use crate::core_libfunc_cost_base::{core_libfunc_postcost, core_libfunc_precost, CostOperations};
 use crate::gas_info::GasInfo;
 
 /// Cost operations for getting `Option<i64>` costs values.
@@ -52,5 +53,11 @@ pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<Option<OrderedHashMap<CostTokenType, i64>>> {
-    core_libfunc_cost_base(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider)
+    let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
+    let postcost = core_libfunc_postcost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
+    zip_eq(precost, postcost)
+        .map(|(precost, postcost)| {
+            Some(chain!(precost?.into_iter(), postcost?.into_iter()).collect())
+        })
+        .collect()
 }

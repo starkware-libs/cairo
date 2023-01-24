@@ -424,7 +424,7 @@ fn foo(ref s: EcState, m: felt, p: EcPoint) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 9, EcOp: 1})
+test::foo: OrderedHashMap({EcOp: 1, Step: 9})
 
 //! > sierra_code
 type EcOp = EcOp;
