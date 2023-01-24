@@ -52,7 +52,10 @@ impl DiagnosticEntry for LoweringDiagnostic {
             }
             LoweringDiagnosticKind::VariableMoved => "Variable was previously moved.".into(),
             LoweringDiagnosticKind::VariableNotDropped => "Variable not dropped.".into(),
-            LoweringDiagnosticKind::UnsupportedMatch => "Unsupported match.".into(),
+            LoweringDiagnosticKind::UnsupportedMatch => "Unsupported match. Currently, matches \
+                                                         require one arm per variant, in the \
+                                                         order of variant definition."
+                .into(),
             LoweringDiagnosticKind::UnsupportedMatchArm => "Unsupported match arm.".into(),
             LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => {
                 "Cannot inline a function that might call itself.".into()
