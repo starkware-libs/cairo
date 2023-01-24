@@ -7,7 +7,8 @@ extern type StorageAddress;
 extern type ContractAddress;
 
 // An Helper function to force the inclusion of `System` in the list of implicits.
-fn use_system_implicit() implicits(System) {}
+fn use_system_implicit() implicits(System) {
+}
 
 // Storage.
 extern fn storage_base_address_const<address>() -> StorageBaseAddress nopanic;
@@ -23,11 +24,11 @@ extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress 
 // This parameter is going to be used to access address spaces with different
 // data availability guarantees.
 extern fn storage_read_syscall(
-    address_domain: felt, address: StorageAddress, 
+    address_domain: felt, address: StorageAddress,
 ) -> Result::<felt, Array::<felt>> implicits(GasBuiltin, System) nopanic;
 extern fn storage_write_syscall(
     address_domain: felt, address: StorageAddress, value: felt
-) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;
+) -> Result::<(), Array::<felt>> implicits(GasBuiltin, System) nopanic;
 
 // Interoperability.
 extern fn contract_address_const<address>() -> ContractAddress nopanic;
@@ -46,7 +47,9 @@ extern fn get_caller_address() -> Result::<felt, felt> implicits(GasBuiltin, Sys
 
 trait StorageAccess<T> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<T, Array::<felt>>;
-    fn write(address_domain: felt, base: StorageBaseAddress, value: T) -> Result::<(), felt>;
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: T
+    ) -> Result::<(), Array::<felt>>;
 }
 
 impl StorageAccessFelt of StorageAccess::<felt> {
@@ -55,7 +58,9 @@ impl StorageAccessFelt of StorageAccess::<felt> {
         storage_read_syscall(address_domain, storage_address_from_base(base))
     }
     #[inline(always)]
-    fn write(address_domain: felt, base: StorageBaseAddress, value: felt) -> Result::<(), felt> {
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: felt
+    ) -> Result::<(), Array::<felt>> {
         storage_write_syscall(address_domain, storage_address_from_base(base), value)
     }
 }
@@ -65,11 +70,13 @@ impl StorageAccessBool of StorageAccess::<bool> {
         Result::Ok(StorageAccess::<felt>::read(address_domain, base)? != 0)
     }
     #[inline(always)]
-    fn write(address_domain: felt, base: StorageBaseAddress, value: bool) -> Result::<(), felt> {
-        StorageAccess::<felt>::write(address_domain, base, if value {
-            1
-        } else {
-            0
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: bool
+    ) -> Result::<(), Array::<felt>> {
+            StorageAccess::<felt>::write(address_domain, base, if value {
+                1
+            } else {
+                0
         })
     }
 }
@@ -79,7 +86,9 @@ impl StorageAccessU8 of StorageAccess::<u8> {
         Result::Ok(u8_from_felt(StorageAccess::<felt>::read(address_domain, base)?))
     }
     #[inline(always)]
-    fn write(address_domain: felt, base: StorageBaseAddress, value: u8) -> Result::<(), felt> {
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: u8
+    ) -> Result::<(), Array::<felt>> {
         StorageAccess::<felt>::write(address_domain, base, u8_to_felt(value))
     }
 }
@@ -89,7 +98,9 @@ impl StorageAccessU128 of StorageAccess::<u128> {
         Result::Ok(u128_from_felt(StorageAccess::<felt>::read(address_domain, base)?))
     }
     #[inline(always)]
-    fn write(address_domain: felt, base: StorageBaseAddress, value: u128) -> Result::<(), felt> {
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: u128
+    ) -> Result::<(), Array::<felt>> {
         StorageAccess::<felt>::write(address_domain, base, u128_to_felt(value))
     }
 }
@@ -107,7 +118,9 @@ impl StorageAccessU256 of StorageAccess::<u256> {
             }
         )
     }
-    fn write(address_domain: felt, base: StorageBaseAddress, value: u256) -> Result::<(), felt> {
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: u256
+    ) -> Result::<(), Array::<felt>> {
         StorageAccess::<u128>::write(address_domain, base, value.low)?;
         storage_write_syscall(
             address_domain,
