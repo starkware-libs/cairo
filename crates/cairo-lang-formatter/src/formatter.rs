@@ -3,13 +3,12 @@ use std::fmt;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::FormatterConfig;
 
-#[derive(Clone, Debug, Copy, PartialEq, Eq)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord)]
 /// Defines the break point behaviour.
 /// Defined in get_break_line_point_properties.
 pub enum BreakLinePointIndentation {
@@ -43,17 +42,27 @@ pub enum BreakLinePointIndentation {
     NotIndented,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 /// Properties defining the behaviour of a break line point.
 pub struct BreakLinePointProperties {
     /// Breaking precedence, lower values will break first.
     pub precedence: usize,
     /// Dictates the breaking indentation behaviour.
     pub break_indentation: BreakLinePointIndentation,
+    /// Indicates whether a breakpoint is optional. An optional breakpoint may be broken only if
+    /// the line is too long. A non-optional breakpoint is always broken.
+    pub is_optional: bool,
+    /// Indicates to put a space instead of the break line point if it were not broken.
+    pub space_if_not_broken: bool,
 }
 impl BreakLinePointProperties {
-    pub fn new(precedence: usize, break_indentation: BreakLinePointIndentation) -> Self {
-        Self { precedence, break_indentation }
+    pub fn new(
+        precedence: usize,
+        break_indentation: BreakLinePointIndentation,
+        is_optional: bool,
+        space_if_not_broken: bool,
+    ) -> Self {
+        Self { precedence, break_indentation, is_optional, space_if_not_broken }
     }
 }
 
@@ -62,14 +71,17 @@ impl BreakLinePointProperties {
 enum LineComponent {
     /// A simple string to be printed.
     Token(String),
-    /// A child LineBuilder, any break line point inside will be ignored unless
+    /// Any break line point inside a protected zone is ignored unless
     /// it has no sibling break line points.
-    /// For example, in the expression let x = 1 * (2 + 3); everything inside the parenthesis
-    /// will be collected into an internal LineBuilder and will be broken only if the line is too
-    /// long after the first break line point, the one before the '*' operator, is broken.
-    /// More generally, any break point inside a child LineBuilder will be ignored unless there
-    /// are no breakpoint which are direct children of the parent LineBuilder.
-    Internal(LineBuilder),
+    /// For example, in the expression let "x = 1 * (2 + 3);" everything inside the parentheses
+    /// is collected into a protected zone and is broken only if the line is too
+    /// long after the first break line point (the one before the '*' operator) is broken.
+    /// More generally, any break point inside a protected zone is ignored unless there
+    /// are no breakpoints which are direct children of the parent LineBuilder.
+    /// The precedence dictates the order of breaking the protected zones, among sibling protected
+    /// zones. For example, the body of a function should be broken into separate lines before
+    /// the function signature.
+    ProtectedZone { builder: LineBuilder, precedence: usize },
     /// Represent a space in the code.
     Space,
     /// Represent a leading indent.
@@ -81,10 +93,10 @@ impl LineComponent {
     pub fn width(&self) -> usize {
         match self {
             Self::Token(s) => s.len(),
-            Self::Internal(builder) => builder.width(),
+            Self::ProtectedZone { builder, .. } => builder.width(),
             Self::Space => 1,
             Self::Indent(n) => *n,
-            Self::BreakLinePoint(_) => 0,
+            Self::BreakLinePoint(properties) => usize::from(properties.space_if_not_broken),
         }
     }
 }
@@ -92,10 +104,12 @@ impl fmt::Display for LineComponent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Token(s) => write!(f, "{s}"),
-            Self::Internal(builder) => write!(f, "{builder}"),
+            Self::ProtectedZone { builder, .. } => write!(f, "{builder}"),
             Self::Space => write!(f, " "),
             Self::Indent(n) => write!(f, "{}", " ".repeat(*n)),
-            Self::BreakLinePoint(_) => write!(f, ""),
+            Self::BreakLinePoint(properties) => {
+                write!(f, "{}", if properties.space_if_not_broken { " " } else { "" })
+            }
         }
     }
 }
@@ -146,10 +160,13 @@ impl LineBuilder {
     }
     /// Adds a a sub-builder as the next child.
     /// All subsequent children will be added to this sub builder until set as closed.
-    fn open_sub_builder(&mut self) {
+    fn open_sub_builder(&mut self, precedence: usize) {
         let active_builder = self.get_active_builder_mut();
         active_builder.flush_pending_break_line_points();
-        active_builder.push_child(LineComponent::Internal(LineBuilder::default()));
+        active_builder.push_child(LineComponent::ProtectedZone {
+            builder: LineBuilder::default(),
+            precedence,
+        });
     }
     /// Sets the last child, which is assumed to be a LineBuilder, as close.
     /// New children will be siblings of this subtree.
@@ -201,14 +218,14 @@ impl LineBuilder {
         // TODO(Gil): Optimize to O(1).
         self.children[start..end].iter().fold(0, |sum, node| sum + node.width())
     }
-    /// Returns the minimum break line point precedence from within all the break line points
+    /// Returns the next break line point properties from within all the break line points
     /// which are a direct child of this tree, or None if there are no such break line points.
-    fn get_min_break_precedence(&self) -> Option<usize> {
+    fn get_next_break_properties(&self) -> Option<BreakLinePointProperties> {
         self.children
             .iter()
             .filter_map(|child| {
                 if let LineComponent::BreakLinePoint(properties) = child {
-                    Some(properties.precedence)
+                    Some(properties.clone())
                 } else {
                     None
                 }
@@ -232,34 +249,43 @@ impl LineBuilder {
             .collect()
     }
     /// Returns a vector of the positions of all the break line point children which have the
-    /// minimum precedence from within all the break line point children.
-    fn get_current_break_positions(&self) -> Vec<usize> {
-        if let Some(precedence) = self.get_min_break_precedence() {
-            self.get_break_point_indices_by_precedence(precedence)
-        } else {
-            vec![]
-        }
+    /// highest precedence from within all the break line point children.
+    fn get_current_break_positions(&self) -> Option<(Vec<usize>, BreakLinePointProperties)> {
+        self.get_next_break_properties().map(|properties| {
+            (self.get_break_point_indices_by_precedence(properties.precedence), properties)
+        })
     }
-    /// Repeatedly calls break_line_tree until each line length is less than max_width.
-    /// Returns a vec of strings, each one represents a line.
+    /// Recursively calls break_line_tree until no break_line_point or protected zone exists in the
+    /// tree. Returns a vec of strings, each one represents a line.
     fn break_line_tree(&self, max_line_width: usize, tab_size: usize) -> Vec<String> {
-        // TODO(gil): consider using a write buffer similar to 'write!()' to reduce string
-        // allocations.
+        // TODO(gil): improve the complexity of this function. Right now the line builder is
+        // entirely cloned for each protected zone, which results in a worst case complexity of
+        // O(n*m) where n is the line length and m is the number of protected zones. The actual
+        // complexity is lower since the line is broken into smaller pieces and each one is handeled
+        // separetly.
         if self.width() < max_line_width {
             return vec![self.to_string()];
         }
-        let mut sub_builders = self.break_line_tree_single_level(tab_size);
-        // While the line is not broken into several lines, try to flatten it and then break it.
+        let mut sub_builders = self.break_line_tree_single_level(max_line_width, tab_size);
+        // If the line was not broken into several lines (i.e. only one sub_builder), open the
+        // highest precedence protected zone and try to break again.
         while sub_builders.len() == 1 {
-            if !sub_builders[0].is_flat() {
-                sub_builders = sub_builders[0].flatten().break_line_tree_single_level(tab_size);
+            // Break the line according to the break_line_points.
+            // TODO(Gil): remove the "contains_break_line_points" and return from the breaking
+            // function whether it broke any break points.
+            if sub_builders[0].contains_break_line_points() {
+                sub_builders =
+                    sub_builders[0].break_line_tree_single_level(max_line_width, tab_size)
+            } else if sub_builders[0].contains_protected_zone() {
+                // No break_line_points, open the highest precedence protected zone.
+                sub_builders = vec![sub_builders[0].open_protected_zone()];
             } else {
-                // Can't break tree to fit within width
-                // TODO(Gil): Propagate error to user.
+                // All break line points were already broken or removed.
+                // TODO(Gil): Propagate error to user if line is still too long.
                 return vec![self.to_string()];
             }
         }
-        // Keep breaking recursively the new lines if they are still too long
+        // Keep breaking recursively the new lines.
         sub_builders
             .iter()
             .flat_map(|tree| tree.break_line_tree(max_line_width, tab_size))
@@ -267,14 +293,17 @@ impl LineBuilder {
     }
     /// Breaks the LineTree once into a vector of LineTrees according to the highest precedence
     /// (lowest precedence number) break line point found in the LineTree.
-    fn break_line_tree_single_level(&self, tab_size: usize) -> Vec<LineBuilder> {
-        let mut breaking_positions = self.get_current_break_positions();
-        if breaking_positions.is_empty() {
+    fn break_line_tree_single_level(
+        &self,
+        max_line_width: usize,
+        tab_size: usize,
+    ) -> Vec<LineBuilder> {
+        let Some((mut breaking_positions, break_line_point_properties)) = self.get_current_break_positions() else {
             return vec![self.clone()];
+        };
+        if self.width() <= max_line_width && break_line_point_properties.is_optional {
+            return vec![self.remove_all_optional_break_line_points()];
         }
-        let break_line_point_indentation_type =
-            extract_matches!(&self.children[breaking_positions[0]], LineComponent::BreakLinePoint)
-                .break_indentation;
         let base_indent = self.get_leading_indent();
         let mut trees: Vec<LineBuilder> = vec![];
         let n_children = self.children.len();
@@ -286,7 +315,7 @@ impl LineBuilder {
         // Iterate over the break line points and collect each part between them into one new
         // LineBuilder.
         for (i, current_line_end) in breaking_positions.iter().enumerate() {
-            let added_indent = match break_line_point_indentation_type {
+            let added_indent = match break_line_point_properties.break_indentation {
                 BreakLinePointIndentation::Indented if i != 0 => tab_size,
                 BreakLinePointIndentation::IndentedWithTail
                     if i != 0 && i != n_break_points - 1 =>
@@ -317,13 +346,16 @@ impl LineBuilder {
         // Splitted into two match statements since self is mutably borrowed in the second match,
         // and thus a mutable ref to self can't be returned in it.
         match self.children.last() {
-            Some(LineComponent::Internal(sub_builder)) if sub_builder.is_open => {}
+            Some(LineComponent::ProtectedZone { builder: sub_builder, .. })
+                if sub_builder.is_open => {}
             _ => {
                 return self;
             }
         }
         match self.children.last_mut() {
-            Some(LineComponent::Internal(sub_builder)) if sub_builder.is_open => {
+            Some(LineComponent::ProtectedZone { builder: sub_builder, .. })
+                if sub_builder.is_open =>
+            {
                 sub_builder.get_active_builder_mut()
             }
             _ => {
@@ -345,31 +377,51 @@ impl LineBuilder {
             )
             .join("\n")
     }
-    /// Creates a new LineBuilder where the first subchild which is a LineBuilder, is replaced by
-    /// all its children.
-    fn flatten(&self) -> LineBuilder {
-        let mut flattened_tree = LineBuilder::default();
-        let mut first_tree_found = false;
+    /// Returns the highest protected zone precedence (minimum number) from within all the protected
+    /// zones which are direct children of this builder, or None if there are no protected zones
+    /// direct-children.
+    fn get_highest_protected_zone_precedence(&self) -> Option<usize> {
+        self.children
+            .iter()
+            .filter_map(|child| {
+                if let LineComponent::ProtectedZone { precedence, .. } = child {
+                    Some(*precedence)
+                } else {
+                    None
+                }
+            })
+            .min()
+    }
+    /// Creates a new LineBuilder where the first subchild which is a protected zone, is now
+    /// unprotected.
+    fn open_protected_zone(&self) -> LineBuilder {
+        let mut unprotected_builder = LineBuilder::default();
+        let mut first_protected_zone_found = false;
+        let highest_precedence = self
+            .get_highest_protected_zone_precedence()
+            .expect("Tried to unprotect a line builder with no protected zones.");
         for child in self.children.iter() {
             match child {
-                LineComponent::Internal(sub_tree) if !first_tree_found => {
-                    first_tree_found = true;
+                LineComponent::ProtectedZone { builder: sub_tree, precedence }
+                    if *precedence == highest_precedence && !first_protected_zone_found =>
+                {
+                    first_protected_zone_found = true;
                     for sub_child in sub_tree.children.iter() {
-                        flattened_tree.push_child(sub_child.clone());
+                        unprotected_builder.push_child(sub_child.clone());
                     }
                 }
-                _ => flattened_tree.push_child(child.clone()),
+                _ => unprotected_builder.push_child(child.clone()),
             }
         }
-        flattened_tree
+        unprotected_builder
     }
-    /// Returns whether or not the line contains an internal LineBuilder.
-    fn is_flat(&self) -> bool {
-        !self.children.iter().any(|child| matches!(child, LineComponent::Internal(_)))
+    /// Returns whether or not the line contains a protected zone.
+    fn contains_protected_zone(&self) -> bool {
+        self.children.iter().any(|child| matches!(child, LineComponent::ProtectedZone { .. }))
     }
     /// Returns whether the line contains only indents.
     fn is_only_indents(&self) -> bool {
-        !self.children.iter().any(|child| !matches!(child, LineComponent::Indent(_)))
+        !self.children.iter().any(|child| !matches!(child, LineComponent::Indent { .. }))
     }
     fn get_leading_indent(&self) -> usize {
         let mut leading_indent = 0;
@@ -379,6 +431,29 @@ impl LineBuilder {
         }
         leading_indent
     }
+    /// Returns whether the line contains a break point.
+    fn contains_break_line_points(&self) -> bool {
+        self.children.iter().any(|child| matches!(child, LineComponent::BreakLinePoint(_)))
+    }
+    // Removes all the break line points.
+    fn remove_all_optional_break_line_points(&self) -> LineBuilder {
+        LineBuilder {
+            children: self
+                .children
+                .iter()
+                .map(|child| match child {
+                    LineComponent::BreakLinePoint(node_properties)
+                        if node_properties.is_optional =>
+                    {
+                        LineComponent::Token(child.to_string())
+                    }
+                    _ => child.clone(),
+                })
+                .collect_vec(),
+            is_open: true,
+            pending_break_line_points: vec![],
+        }
+    }
 }
 
 /// A struct holding all the data of the pending line to be emitted.
@@ -387,7 +462,7 @@ struct PendingLineState {
     /// Intermidiate representation of the text to be emitted.
     line_buffer: LineBuilder,
     /// Should the next space between tokens be ignored.
-    no_space_after: bool,
+    force_no_space_after: bool,
     /// Current indentation of the produced line.
     indentation: String,
 }
@@ -396,7 +471,7 @@ impl PendingLineState {
     pub fn new() -> Self {
         Self {
             line_buffer: LineBuilder::default(),
-            no_space_after: true,
+            force_no_space_after: true,
             indentation: String::new(),
         }
     }
@@ -404,7 +479,7 @@ impl PendingLineState {
     pub fn reset(&mut self, indentation: String) {
         self.indentation = indentation;
         self.line_buffer.clear();
-        self.no_space_after = true;
+        self.force_no_space_after = true;
     }
     pub fn is_empty(&self) -> bool {
         self.line_buffer.is_empty()
@@ -441,10 +516,9 @@ pub trait SyntaxNodeFormat {
         &self,
         db: &dyn SyntaxGroup,
     ) -> WrappingBreakLinePoints;
-    /// Returns true if the node is protected from breaking unless no other break points exist.
-    /// For example break points inside ExprParenthesized should only be used if there are no break
-    /// points outside the parentheses. Only applicable for internal nodes.
-    fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool;
+    /// If self is a protected zone, returns its precedence (highest precedence == lowest number).
+    /// Otherwise, returns None.
+    fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
 }
 
 pub struct Formatter<'a> {
@@ -485,18 +559,18 @@ impl<'a> Formatter<'a> {
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
-        let is_protected_zone = syntax_node.is_protected_breaking_node(self.db);
+        let protected_zone_precedence = syntax_node.get_protected_zone_precedence(self.db);
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
         self.append_break_line_point(node_break_points.leading);
-        if is_protected_zone {
-            self.line_state.line_buffer.open_sub_builder();
+        if let Some(precedence) = protected_zone_precedence {
+            self.line_state.line_buffer.open_sub_builder(precedence);
         }
         if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node, no_space_after);
         } else {
             self.format_internal(syntax_node, no_space_after);
         }
-        if is_protected_zone {
+        if protected_zone_precedence.is_some() {
             self.line_state.line_buffer.close_sub_builder();
         }
         self.append_break_line_point(node_break_points.trailing);
@@ -570,15 +644,16 @@ impl<'a> Formatter<'a> {
     }
     /// Appends a token node to the result.
     fn append_token(&mut self, text: SmolStr, syntax_node: &SyntaxNode, no_space_after: bool) {
-        if !syntax_node.force_no_space_before(self.db) && !self.line_state.no_space_after {
+        if !syntax_node.force_no_space_before(self.db) && !self.line_state.force_no_space_after {
             self.line_state.line_buffer.push_space();
         }
-        self.line_state.no_space_after = no_space_after;
+        self.line_state.force_no_space_after = no_space_after;
         self.line_state.line_buffer.push_str(&text);
     }
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
         if let Some(properties) = properties {
             self.line_state.line_buffer.push_break_line_point(properties);
+            self.line_state.force_no_space_after = true;
         }
     }
     /// Returns the leading indentation according to the current indent and the tab size.

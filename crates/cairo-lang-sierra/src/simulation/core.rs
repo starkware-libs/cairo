@@ -566,6 +566,21 @@ fn simulate_u8_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint8Concrete::ToFelt(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint8(value)] => {
+                Ok((vec![CoreValue::Felt(value.to_bigint().unwrap())], 0))
+            }
+            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint8Concrete::FromFelt(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Felt(value)] => Ok(match u8::try_from(value) {
+                Ok(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint8(value)], 0),
+                Err(_) => (vec![CoreValue::RangeCheck], 1),
+            }),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 

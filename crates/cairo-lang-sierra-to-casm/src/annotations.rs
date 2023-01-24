@@ -26,10 +26,17 @@ use crate::type_sizes::TypeSizeMap;
 pub enum AnnotationError {
     #[error("#{0}: Inconsistent references annotations.")]
     InconsistentReferencesAnnotation(StatementIdx),
+    #[error("#{source_statement_idx}->#{destination_statement_idx}: Annotation was already set.")]
+    AnnotationAlreadySet {
+        source_statement_idx: StatementIdx,
+        destination_statement_idx: StatementIdx,
+    },
     #[error("#{statement_idx}: {error}")]
     InconsistentEnvironments { statement_idx: StatementIdx, error: EnvironmentError },
-    #[error("#{statement_idx} Belongs to two different functions.")]
+    #[error("#{statement_idx}: Belongs to two different functions.")]
     InconsistentFunctionId { statement_idx: StatementIdx },
+    #[error("#{statement_idx}: Invalid convergence.")]
+    InvalidConvergence { statement_idx: StatementIdx },
     #[error("InvalidStatementIdx")]
     InvalidStatementIdx,
     #[error("MissingAnnotationsForStatement")]
@@ -46,10 +53,8 @@ pub enum AnnotationError {
     FrameStateError(#[from] FrameStateError),
     #[error(transparent)]
     GasWalletError(#[from] GasWalletError),
-
     #[error("#{statement_idx}: {error}")]
     ReferencesError { statement_idx: StatementIdx, error: ReferencesError },
-
     #[error(
         "#{source_statement_idx}->#{destination_statement_idx}: Got '{error}' error while moving \
          {var_id}."
@@ -76,6 +81,8 @@ pub struct StatementAnnotations {
     pub refs: StatementRefs,
     /// The function id that the statement belongs to.
     pub function_id: FunctionId,
+    /// Indicates whether convergence in allowed in the given statement.
+    pub convergence_allowed: bool,
     pub environment: Environment,
 }
 
@@ -110,6 +117,7 @@ impl ProgramAnnotations {
                         AnnotationError::ReferencesError { statement_idx: func.entry_point, error }
                     })?,
                     function_id: func.id.clone(),
+                    convergence_allowed: false,
                     environment: if gas_usage_check {
                         Environment::new(GasWallet::Value(
                             metadata.gas_info.function_costs[func.id.clone()].clone(),
@@ -124,9 +132,10 @@ impl ProgramAnnotations {
         Ok(annotations)
     }
 
-    /// Sets the annotations at 'statement_id' to 'annotations'
-    /// If the annotations for this statement were set previously, assert that the previous
-    /// assignment is consistent with the new assignment.
+    /// Sets the annotations at 'statement_idx' to 'annotations'
+    /// If the annotations for this statement were set previously asserts that the previous
+    /// assignment is consistent with the new assignment and verifies that convergence_allowed
+    /// is true.
     pub fn set_or_assert(
         &mut self,
         statement_idx: StatementIdx,
@@ -151,13 +160,18 @@ impl ProgramAnnotations {
                     statement_idx,
                     error,
                 })?;
+
+                // Note that we ignore annotations here.
+                // a flow cannot converge with a branch target.
+                if !expected_annotations.convergence_allowed {
+                    return Err(AnnotationError::InvalidConvergence { statement_idx });
+                }
             }
         };
         Ok(())
     }
 
     /// Returns the result of applying take_args to the StatementAnnotations at statement_idx.
-    /// Assumes statement_idx is a valid index.
     pub fn get_annotations_after_take_args<'a>(
         &self,
         statement_idx: StatementIdx,
@@ -175,73 +189,78 @@ impl ProgramAnnotations {
         Ok((StatementAnnotations { refs: statement_refs, ..statement_annotations }, taken_refs))
     }
 
-    /// Propagates the annotations from the statement at `statement_idx` to all the branches
-    /// from said statement.
+    /// Propagates the annotations from `statement_idx` to 'destination_statement_idx'.
+
     /// `annotations` is the result of calling get_annotations_after_take_args at
-    /// `statement_idx` and `per_branch_ref_changes` are the reference changes at each branch.
+    /// `statement_idx` and `branch_changes` are the reference changes at each branch.
+    ///  if `must_set` is true, asserts that destination_statement_idx wasn't annotated before.
     pub fn propagate_annotations(
         &mut self,
         statement_idx: StatementIdx,
-        annotations: StatementAnnotations,
-        branches: &[BranchInfo],
-        per_branch_ref_changes: impl Iterator<Item = BranchChanges>,
+        destination_statement_idx: StatementIdx,
+        annotations: &StatementAnnotations,
+        branch_info: &BranchInfo,
+        branch_changes: BranchChanges,
+        must_set: bool,
     ) -> Result<(), AnnotationError> {
-        for (branch_info, branch_result) in zip_eq(branches, per_branch_ref_changes) {
-            let destination_statement_idx = statement_idx.next(&branch_info.target);
-
-            let mut new_refs: StatementRefs =
-                HashMap::with_capacity(annotations.refs.len() + branch_result.refs.len());
-            for (var_id, ref_value) in &annotations.refs {
-                new_refs.insert(
-                    var_id.clone(),
-                    ReferenceValue {
-                        expression: ref_value
-                            .expression
-                            .clone()
-                            .apply_ap_change(branch_result.ap_change)
-                            .map_err(|error| AnnotationError::ApChangeError {
-                                var_id: var_id.clone(),
-                                source_statement_idx: statement_idx,
-                                destination_statement_idx,
-                                error,
-                            })?,
-                        ty: ref_value.ty.clone(),
-                    },
-                );
-            }
-
-            self.set_or_assert(
+        if must_set && self.per_statement_annotations[destination_statement_idx.0].is_some() {
+            return Err(AnnotationError::AnnotationAlreadySet {
+                source_statement_idx: statement_idx,
                 destination_statement_idx,
-                StatementAnnotations {
-                    refs: put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))
-                        .map_err(|error| AnnotationError::OverrideReferenceError {
+            });
+        }
+
+        let mut new_refs: StatementRefs =
+            HashMap::with_capacity(annotations.refs.len() + branch_changes.refs.len());
+        for (var_id, ref_value) in &annotations.refs {
+            new_refs.insert(
+                var_id.clone(),
+                ReferenceValue {
+                    expression: ref_value
+                        .expression
+                        .clone()
+                        .apply_ap_change(branch_changes.ap_change)
+                        .map_err(|error| AnnotationError::ApChangeError {
+                            var_id: var_id.clone(),
+                            source_statement_idx: statement_idx,
+                            destination_statement_idx,
+                            error,
+                        })?,
+                    ty: ref_value.ty.clone(),
+                },
+            );
+        }
+
+        self.set_or_assert(
+            destination_statement_idx,
+            StatementAnnotations {
+                refs: put_results(new_refs, zip_eq(&branch_info.results, branch_changes.refs))
+                    .map_err(|error| AnnotationError::OverrideReferenceError {
                         source_statement_idx: statement_idx,
                         destination_statement_idx,
                         var_id: error.var_id(),
                     })?,
-                    function_id: annotations.function_id.clone(),
-                    environment: Environment {
-                        ap_tracking: update_ap_tracking(
-                            annotations.environment.ap_tracking,
-                            branch_result.ap_change,
-                        )
-                        .map_err(|error| {
-                            AnnotationError::ApTrackingError {
-                                source_statement_idx: statement_idx,
-                                destination_statement_idx,
-                                error,
-                            }
-                        })?,
-                        frame_state: annotations.environment.frame_state.clone(),
-                        gas_wallet: annotations
-                            .environment
-                            .gas_wallet
-                            .update(branch_result.gas_change)?,
-                    },
+                function_id: annotations.function_id.clone(),
+                convergence_allowed: !must_set,
+
+                environment: Environment {
+                    ap_tracking: update_ap_tracking(
+                        annotations.environment.ap_tracking,
+                        branch_changes.ap_change,
+                    )
+                    .map_err(|error| AnnotationError::ApTrackingError {
+                        source_statement_idx: statement_idx,
+                        destination_statement_idx,
+                        error,
+                    })?,
+                    frame_state: annotations.environment.frame_state.clone(),
+                    gas_wallet: annotations
+                        .environment
+                        .gas_wallet
+                        .update(branch_changes.gas_change)?,
                 },
-            )?;
-        }
-        Ok(())
+            },
+        )
     }
 
     /// Validates the ap change and return types in a return statement.

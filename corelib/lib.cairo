@@ -1,35 +1,36 @@
 mod traits;
 use traits::Copy;
 use traits::Drop;
+use traits::Add;
 
 #[derive(Copy, Drop)]
 enum bool { False: (), True: (), }
 
-extern fn bool_and_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+extern fn bool_and_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
 fn bool_and(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r,) = bool_and_impl(a, b);
+    let (r, ) = bool_and_impl(a, b);
     r
 }
 
-extern fn bool_or_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+extern fn bool_or_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
 fn bool_or(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r,) = bool_or_impl(a, b);
+    let (r, ) = bool_or_impl(a, b);
     r
 }
 
-extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;
+extern fn bool_not_impl(a: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
 fn bool_not(a: bool) -> bool implicits() nopanic {
-    let (r,) = bool_not_impl(a);
+    let (r, ) = bool_not_impl(a);
     r
 }
 
-extern fn bool_xor_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+extern fn bool_xor_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
 fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r,) = bool_xor_impl(a, b);
+    let (r, ) = bool_xor_impl(a, b);
     r
 }
 
@@ -51,6 +52,12 @@ extern fn felt_const<value>() -> felt nopanic;
 impl FeltCopy of Copy::<felt>;
 impl FeltDrop of Drop::<felt>;
 
+impl FeltAdd of Add::<felt> {
+    #[inline(always)]
+    fn add(a: felt, b: felt) -> felt {
+        felt_add(a, b)
+    }
+}
 extern fn felt_add(a: felt, b: felt) -> felt nopanic;
 extern fn felt_sub(a: felt, b: felt) -> felt nopanic;
 extern fn felt_mul(a: felt, b: felt) -> felt nopanic;
@@ -74,7 +81,7 @@ fn felt_eq(a: felt, b: felt) -> bool nopanic {
     match a - b {
         0 => bool::True(()),
         _ => bool::False(()),
-    }
+     }
 }
 #[inline(always)]
 fn felt_ne(a: felt, b: felt) -> bool nopanic {
@@ -147,9 +154,6 @@ use result::Result;
 // Option.
 mod option;
 use option::Option;
-use option::option_is_none;
-use option::option_is_some;
-use option::option_unwrap;
 
 // EC.
 mod ec;
@@ -164,7 +168,6 @@ use ec::ec_point_try_new;
 use ec::ec_point_unwrap;
 use ec::ec_state_add_mul;
 use ec::ec_state_add;
-use ec::ec_state_finalize_nonzero;
 use ec::ec_state_finalize;
 use ec::ec_state_init;
 
@@ -176,6 +179,12 @@ use integer::u128_from_felt;
 use integer::u128_try_from_felt;
 use integer::u128_to_felt;
 use integer::u128_add;
+impl U128Add of Add::<u128> {
+    #[inline(always)]
+    fn add(a: u128, b: u128) -> u128 {
+        u128_add(a, b)
+    }
+}
 use integer::u128_sub;
 use integer::u128_mul;
 use integer::u128_as_non_zero;
@@ -193,7 +202,16 @@ use integer::u128_xor;
 use integer::u128_jump_nz;
 use integer::u8;
 use integer::u8_const;
+use integer::u8_from_felt;
+use integer::u8_try_from_felt;
+use integer::u8_to_felt;
 use integer::u8_add;
+impl U8Add of Add::<u8> {
+    #[inline(always)]
+    fn add(a: u8, b: u8) -> u8 {
+        u8_add(a, b)
+    }
+}
 use integer::u8_sub;
 use integer::u8_eq;
 use integer::u8_ne;
@@ -203,6 +221,12 @@ use integer::u8_gt;
 use integer::u8_ge;
 use integer::u256;
 use integer::u256_add;
+impl U256Add of Add::<u256> {
+    #[inline(always)]
+    fn add(a: u256, b: u256) -> u256 {
+        u256_add(a, b)
+    }
+}
 use integer::u256_sub;
 use integer::u256_mul;
 use integer::u256_eq;

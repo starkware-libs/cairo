@@ -33,6 +33,7 @@ cairo_lang_test_utils::test_file_test!(
         storage: "storage",
         interoperability: "interoperability",
         emit_event: "emit_event",
+        getters: "getters",
     },
     run_small_e2e_test
 );

@@ -1,7 +1,8 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
+use itertools::Itertools;
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
@@ -143,4 +144,82 @@ pub fn build_cell_eq(
         casm_builder,
         [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
     ))
+}
+
+/// Helper to add code that validates that variable `value` is smaller than some `bound`, with
+/// `a_imm`, `b_imm` and `K` constants for checking this bound.
+/// `auxiliary_vars` are the variables already allocated used for execution of the algorithm,
+/// requires different sizes for different `K`s, for 1 requires 4, for 2 requires 5.
+///
+/// We show that a number is in the range [0, bound) by writing it as:
+///   A * x + y,
+/// where:
+///   * K = low positive number (the lower the better, here we support only 1 or 2).
+///   * max_x = 2**128 - K.
+///   * A = bound // max_x.
+///   * B = bound % max_x.
+///   * x is in the range [0, max_x],
+///   * y is in the range [0, B):
+///     * y is in the range [0, 2**128).
+///     * y + 2**128 - B is in the range [0, 2**128).
+///
+/// Note that the minimal possible value of the expression A * x + y is min_val = 0 (where x = y
+/// = 0), and the maximal value is obtained where x = max_x and y = B - 1:
+///   max_val = (A * max_x + B) - 1 = bound - 1.
+///
+/// As long as A <= B, every number in the range can be represented.
+pub fn validate_in_range<const K: u8>(
+    casm_builder: &mut CasmBuilder,
+    a_imm: u128,
+    b_imm: u128,
+    value: Var,
+    range_check: Var,
+    auxiliary_vars: &[Var],
+) {
+    casm_build_extend! {casm_builder,
+        const a_imm = a_imm;
+        // 2**128 - B.
+        const b_imm_fix = (u128::MAX - b_imm + 1);
+        const u128_limit_minus_1 = u128::MAX;
+    }
+    match K {
+        1 => {
+            let (x, y, x_part, y_fixed) =
+                auxiliary_vars.iter().cloned().collect_tuple().expect("Wrong amount of vars.");
+            casm_build_extend! {casm_builder,
+                hint LinearSplit {value: value, scalar: a_imm, max_x: u128_limit_minus_1} into {x: x, y: y};
+                assert x_part = x * a_imm;
+                assert value = x_part + y;
+                // x < 2**128
+                assert x = *(range_check++);
+                // y < 2**128
+                assert y = *(range_check++);
+                // y + 2**128 - B < 2**128 ==> y < B
+                assert y_fixed = y + b_imm_fix;
+                assert y_fixed = *(range_check++);
+            };
+        }
+        2 => {
+            let (x, y, x_part, y_fixed, diff) =
+                auxiliary_vars.iter().cloned().collect_tuple().expect("Wrong amount of vars.");
+            casm_build_extend! {casm_builder,
+                const u128_limit_minus_2 = u128::MAX - 1;
+                hint LinearSplit {value: value, scalar: a_imm, max_x: u128_limit_minus_2} into {x: x, y: y};
+                assert x_part = x * a_imm;
+                assert value = x_part + y;
+                // y < 2**128
+                assert y = *(range_check++);
+                // y + 2**128 - B < 2**128 ==> y < B
+                assert y_fixed = y + b_imm_fix;
+                assert y_fixed = *(range_check++);
+                // x < 2**128 && x != 2**128 - 1 ==> x < 2**128 - 1
+                assert x = *(range_check++);
+                assert diff = x - u128_limit_minus_1;
+                jump Done if diff != 0;
+                InfiniteLoop:
+                jump InfiniteLoop;
+            };
+        }
+        _ => unreachable!("Only K value of 1 or 2 are supported."),
+    }
 }

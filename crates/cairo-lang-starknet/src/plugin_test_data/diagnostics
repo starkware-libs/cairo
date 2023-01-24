@@ -38,6 +38,9 @@ mod TestContract {
     }
 
     
+
+    
+
     trait __abi {
         #[external]
         fn foo(x: (felt, felt));
@@ -53,7 +56,7 @@ mod TestContract {
                 Option::None(_) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, 'Out of gas');
-                    panic(err_data);
+                    panic(err_data)
                 },
             }
             
@@ -90,6 +93,9 @@ mod TestContract {
             arr
         }
         
+    }
+
+    mod __constructor {
         
     }
 }
@@ -119,6 +125,9 @@ mod TestContract {
     }
 
     
+
+    
+
     trait __abi {
         #[external]
         fn foo() -> (felt, felt);
@@ -134,7 +143,7 @@ mod TestContract {
                 Option::None(_) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, 'Out of gas');
-                    panic(err_data);
+                    panic(err_data)
                 },
             }
             
@@ -164,6 +173,9 @@ mod TestContract {
             arr
         }
         
+    }
+
+    mod __constructor {
         
     }
 }
@@ -193,6 +205,9 @@ mod TestContract {
     }
 
     
+
+    
+
     trait __abi {
         #[external]
         fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt);
@@ -208,7 +223,7 @@ mod TestContract {
                 Option::None(_) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, 'Out of gas');
-                    panic(err_data);
+                    panic(err_data)
                 },
             }
             
@@ -257,6 +272,9 @@ mod TestContract {
             arr
         }
         
+    }
+
+    mod __constructor {
         
     }
 }
@@ -284,6 +302,9 @@ mod TestContract {
 mod TestContract {
 
     
+
+    
+
     trait __abi {
         
         
@@ -291,6 +312,9 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }
@@ -321,6 +345,9 @@ mod TestContract {
 mod TestContract {
 
     
+
+    
+
     trait __abi {
         
         
@@ -328,6 +355,9 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }
@@ -358,6 +388,9 @@ mod TestContract {
 mod TestContract {
 
     
+
+    
+
     trait __abi {
         
         
@@ -365,6 +398,9 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }
@@ -395,6 +431,19 @@ mod TestContract {
 mod TestContract {
 
     
+
+    
+    #[event]
+    fn bad_event(x: (felt, felt)) {
+        let mut keys = array_new();
+        array_append(ref keys, 0x24588e9be27cb91356e7dba75bcae8d487891c93e2c1696ab6437f2700aed26);
+        let mut data = array_new();
+        serde::Serde::<(felt, felt)>::serialize(ref data, x);
+        
+        starknet::emit_event_syscall(keys, data);
+    }
+            
+
     trait __abi {
         
         #[event]
@@ -404,17 +453,10 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
-        #[event]
-        fn bad_event(x: (felt, felt)) {
-            let mut keys = array_new();
-            array_append(ref keys, 0x24588e9be27cb91356e7dba75bcae8d487891c93e2c1696ab6437f2700aed26);
-            let mut data = array_new();
-            serde::Serde::<(felt, felt)>::serialize(ref data, x);
-            
-            starknet::emit_event_syscall(keys, data);
-        }
-            
     }
 }
 
@@ -441,6 +483,9 @@ mod TestContract {
 mod TestContract {
 
     
+
+    
+
     trait __abi {
         
         
@@ -448,6 +493,9 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }

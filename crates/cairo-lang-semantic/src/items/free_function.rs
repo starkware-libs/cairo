@@ -157,8 +157,7 @@ pub fn priv_free_function_body_data(
     );
     let function_body = function_syntax.body(db.upcast());
     let return_type = declaration.signature.return_type;
-    let expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let body_expr = ctx.exprs.alloc(expr);
+    let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
     let direct_callees: HashSet<FunctionId> = exprs

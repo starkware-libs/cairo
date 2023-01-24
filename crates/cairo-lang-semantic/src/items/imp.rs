@@ -28,7 +28,7 @@ use super::function_with_body::{FunctionBody, FunctionBodyData};
 use super::functions::{substitute_signature, FunctionDeclarationData};
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
-use crate::corelib::{copy_trait, drop_trait};
+use crate::corelib::{copy_trait, core_module, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -441,13 +441,16 @@ pub fn find_impls_at_module(
 ) -> Maybe<Vec<ImplId>> {
     let mut res = Vec::new();
 
-    // TODO(spapini): This depends on ast, instead of just ids.
-    // TODO(spapini): Look also in uses.
-    let impls = db.module_impls(module_id)?;
+    let mut impls = db.module_impls_ids(module_id)?;
+    for use_id in db.module_uses_ids(module_id)? {
+        if let Ok(ResolvedGenericItem::Impl(impl_id)) = db.use_resolved_item(use_id) {
+            impls.push(impl_id);
+        }
+    }
     let long_concrete_trait = db.lookup_intern_concrete_trait(concrete_trait_id);
 
     // TODO(spapini): Index better.
-    for impl_id in impls.keys().copied() {
+    for impl_id in impls {
         let Ok(imp_data)= db.priv_impl_declaration_data(impl_id) else {continue};
         let Ok(imp_concrete_trait) = imp_data.concrete_trait else {continue};
         let long_imp_concrete_trait = db.lookup_intern_concrete_trait(imp_concrete_trait);
@@ -485,7 +488,8 @@ pub fn find_impls_at_context(
     let mut res = OrderedHashSet::default();
     // TODO(spapini): Lookup in generic_params once impl generic params are supported.
     res.extend(find_impls_at_module(db, inference, lookup_context.module_id, concrete_trait_id)?);
-    for module_id in &lookup_context.extra_modules {
+    let core_module = core_module(db);
+    for module_id in chain!(&lookup_context.extra_modules, [&core_module]) {
         if let Ok(imps) = find_impls_at_module(db, inference, *module_id, concrete_trait_id) {
             res.extend(imps);
         }
@@ -766,8 +770,7 @@ pub fn priv_impl_function_body_data(
     );
     let function_body = function_syntax.body(db.upcast());
     let return_type = declaration.signature.return_type;
-    let expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let body_expr = ctx.exprs.alloc(expr);
+    let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
     let direct_callees: HashSet<FunctionId> = exprs

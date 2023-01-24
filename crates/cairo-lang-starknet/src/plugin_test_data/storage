@@ -223,6 +223,9 @@ mod TestContract {
             }
         }
     }
+
+    
+
     trait __abi {
         
         
@@ -230,6 +233,9 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }

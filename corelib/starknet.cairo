@@ -24,13 +24,14 @@ extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress 
 // This parameter is going to be used to access address spaces with different
 // data availability guarantees.
 extern fn storage_read_syscall(
-    address_domain: felt, address: StorageAddress,
+    address_domain: felt, address: StorageAddress, 
 ) -> Result::<felt, felt> implicits(GasBuiltin, System) nopanic;
 extern fn storage_write_syscall(
     address_domain: felt, address: StorageAddress, value: felt
 ) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;
 
 // Interoperability.
+extern fn contract_address_const<address>() -> ContractAddress nopanic;
 type CallContractResult = Result::<Array::<felt>, (felt, Array::<felt>)>;
 extern fn call_contract_syscall(
     address: ContractAddress, calldata: Array::<felt>
@@ -40,6 +41,9 @@ extern fn call_contract_syscall(
 extern fn emit_event_syscall(
     keys: Array::<felt>, data: Array::<felt>
 ) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;
+
+// Getters.
+extern fn get_caller_address() -> Result::<felt, felt> implicits(GasBuiltin, System) nopanic;
 
 trait StorageAccess<T> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<T, felt>;
@@ -71,6 +75,16 @@ impl StorageAccessBool of StorageAccess::<bool> {
     }
 }
 
+impl StorageAccessU8 of StorageAccess::<u8> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u8, felt> {
+        Result::Ok(u8_from_felt(StorageAccess::<felt>::read(address_domain, base)?))
+    }
+    #[inline(always)]
+    fn write(address_domain: felt, base: StorageBaseAddress, value: u8) -> Result::<(), felt> {
+        StorageAccess::<felt>::write(address_domain, base, u8_to_felt(value))
+    }
+}
+
 impl StorageAccessU128 of StorageAccess::<u128> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u128, felt> {
         Result::Ok(u128_from_felt(StorageAccess::<felt>::read(address_domain, base)?))
@@ -85,12 +99,13 @@ impl StorageAccessU256 of StorageAccess::<u256> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u256, felt> {
         Result::Ok(
             u256 {
-                low: StorageAccess::<u128>::read(address_domain, base)?,
-                high: u128_from_felt(
-                    storage_read_syscall(
-                        address_domain, storage_address_from_base_and_offset(base, 1_u8)
-                    )?
-                )
+            low: StorageAccess::<u128>::read(address_domain, base)?,
+            high: u128_from_felt(
+                storage_read_syscall(
+                    address_domain,
+                    storage_address_from_base_and_offset(base, 1_u8)
+                )?
+            )
             }
         )
     }

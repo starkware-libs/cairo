@@ -67,7 +67,7 @@ error: Only literal constants are currently supported.
 const MY_CONST: MissingType = {
                               ^
 
-error: Expected type "core::bool", found: "core::felt".
+error: Function call is not supported outside of functions.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^***^

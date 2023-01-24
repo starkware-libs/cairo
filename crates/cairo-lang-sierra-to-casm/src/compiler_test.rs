@@ -624,7 +624,7 @@ of the libfunc or return statement.";
 
                 foo@0() -> ();
                 bar@0() -> ();
-            "}, "#0 Belongs to two different functions.";
+            "}, "#0: Belongs to two different functions.";
             "Statement in two functions")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();

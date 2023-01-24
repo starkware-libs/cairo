@@ -39,12 +39,13 @@ fn fib(a: Box::<felt>, b: Box::<felt>, n: Box::<felt>) -> Box::<felt> {
         0 => {
             a
         },
-        _ => {
+         _ => {
             fib(
                 b,
                 into_box::<felt>(unbox::<felt>(a) + unbox::<felt>(b)),
                 into_box::<felt>(unbox::<felt>(n) - 1),
+                
             )
         },
-    }
+     }
 }

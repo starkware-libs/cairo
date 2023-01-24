@@ -62,7 +62,7 @@ error: ref argument must be a passed with a preceding 'ref'.
     array_append(arr, arr)
                  ^*^
 
-error: Unexpected argument type. Expected: "?1", found: "core::array::Array::<?0>".
+error: Unexpected argument type. Expected: "?0", found: "core::array::Array::<?0>".
  --> lib.cairo:3:23
     array_append(arr, arr)
                       ^*^
@@ -234,7 +234,7 @@ error: Function `foo` of trait `test::MyTrait` has multiple implementations, in:
    MyTrait::foo(5);
    ^*************^
 
-error: Function `foo` of trait `test::MyTrait` has has no implementation in the context.
+error: Function `foo` of trait `test::MyTrait::<?1>` has has no implementation in the context.
  --> lib.cairo:18:4
    MyTrait::foo(true);
    ^****************^

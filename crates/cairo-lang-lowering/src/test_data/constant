@@ -24,7 +24,7 @@ Inputs: v0: core::felt
 Initial refs:
 Statements:
   (v1: core::felt) <- 4660u
-  (v2: core::felt) <- core::felt_add(v1, v0)
+  (v2: core::felt) <- core::FeltAdd::add(v1, v0)
 End:
   Return(v2)
 
@@ -33,6 +33,13 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 4660u
-  (v2: core::felt) <- core::felt_add(v1, v0)
+  () <- blk1()
 End:
   Return(v2)
+
+blk1:
+Inputs:
+Statements:
+  (v3: core::felt) <- core::felt_add(v1, v0)
+End:
+  Callsite(v3 -> v2)

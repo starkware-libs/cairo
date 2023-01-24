@@ -17,9 +17,6 @@ extern type EcState;
 
 extern fn ec_state_init() -> EcState nopanic;
 extern fn ec_state_add(ref s: EcState, p: EcPoint) nopanic;
-// TODO(lior): Remove the panic version `ec_state_finalize_nonzero` once option_unwrap() is
-//   supported.
-#[panic_with('EC zero point', ec_state_finalize_nonzero)]
 extern fn ec_state_finalize(s: EcState) -> Option::<EcPoint> nopanic;
 /// Adds the product p * m to the state.
 extern fn ec_state_add_mul(ref s: EcState, m: felt, p: EcPoint) implicits(EcOp) nopanic;

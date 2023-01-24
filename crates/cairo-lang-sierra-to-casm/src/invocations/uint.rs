@@ -7,6 +7,7 @@ use cairo_lang_sierra::extensions::uint::{
 use num_bigint::BigInt;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::misc::validate_in_range;
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
@@ -170,6 +171,70 @@ fn build_small_uint_overflowing_sub(
     ))
 }
 
+/// Handles a small uint conversion from felt.
+fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, const B: u128>(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, value] = builder.try_get_single_cells()?;
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref value;
+    };
+    casm_build_extend! {casm_builder,
+        const limit = LIMIT;
+        tempvar is_small;
+        hint TestLessThan {lhs: value, rhs: limit} into {dst: is_small};
+        jump IsSmall if is_small != 0;
+        tempvar shifted_value = value - limit;
+        tempvar x;
+        tempvar y;
+        tempvar x_part;
+        tempvar y_fixed;
+    }
+    match K {
+        1 => {
+            validate_in_range::<K>(
+                &mut casm_builder,
+                A,
+                B,
+                shifted_value,
+                range_check,
+                &[x, y, x_part, y_fixed],
+            );
+            casm_build_extend! {casm_builder, jump Done;};
+        }
+        2 => {
+            casm_build_extend! {casm_builder, tempvar diff;};
+            validate_in_range::<K>(
+                &mut casm_builder,
+                A,
+                B,
+                shifted_value,
+                range_check,
+                &[x, y, x_part, y_fixed, diff],
+            );
+        }
+        _ => unreachable!("Only K value of 1 or 2 are supported."),
+    }
+    casm_build_extend! {casm_builder,
+        IsSmall:
+        assert value = *(range_check++);
+        // value + 2**128 - limit < 2**128 ==> value < limit
+        const fixer_limit = (u128::MAX - LIMIT + 1);
+        tempvar value_upper_limit = value + fixer_limit;
+        assert value_upper_limit = *(range_check++);
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[range_check], &[value]], None),
+            ("Done", &[&[range_check]], Some(failure_handle_statement_id)),
+        ],
+    ))
+}
+
 /// Builds instructions for Sierra u8 operations.
 pub fn build_u8(
     libfunc: &Uint8Concrete,
@@ -188,5 +253,12 @@ pub fn build_u8(
                 build_small_uint_overflowing_sub(builder, BigInt::from(u8::MAX) + 1)
             }
         },
+        Uint8Concrete::ToFelt(_) => misc::build_identity(builder),
+        Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<
+            256,
+            2,
+            0x8000000000000110000000000000000_u128,
+            0x1000000000000021ffffffffffffff01_u128,
+        >(builder),
     }
 }

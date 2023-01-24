@@ -30,7 +30,7 @@ trait IContract {
 }
 mod IContractDispatcher {
         fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
-        let calldata = array_new();
+        let mut calldata = array_new();
         serde::Serde::<felt>::serialize(ref calldata, arg);
         serde::Serde::<felt>::serialize(ref calldata, num);
 
@@ -51,7 +51,7 @@ mod IContractDispatcher {
     }
 
     fn empty(contract_address: ContractAddress, ) {
-        let calldata = array_new();
+        let mut calldata = array_new();
 
         let ret_data = match starknet::call_contract_syscall(
             contract_address,
