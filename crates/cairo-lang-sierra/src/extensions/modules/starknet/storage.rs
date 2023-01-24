@@ -242,6 +242,8 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_array_ty =
+            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty.clone())])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -258,7 +260,7 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
                 // Address
                 ParamSignature::new(addr_ty),
                 // Value
-                ParamSignature::new(felt_ty.clone()),
+                ParamSignature::new(felt_ty),
             ],
             branch_signatures: vec![
                 // Success branch.
@@ -296,8 +298,8 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ty: felt_array_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },

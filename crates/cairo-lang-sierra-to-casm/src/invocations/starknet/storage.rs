@@ -158,7 +158,7 @@ pub fn build_storage_write(
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
-        buffer(6) system;
+        buffer(8) system;
         deref gas_builtin;
         deref address_domain;
         deref storage_address;
@@ -175,17 +175,20 @@ pub fn build_storage_write(
         assert value = *(system++);
         hint SystemCall { system: original_system };
         let updated_gas_builtin = *(system++);
-        // `revert_reason` is 0 on success, nonzero on failure/revert.
-        tempvar revert_reason = *(system++);
-        jump Failure if revert_reason != 0;
+        tempvar failure_flag = *(system++);
+        // The response in the success case is smaller than in the failure case.
+        let success_final_system = system;
+        let revert_reason_start = *(system++);
+        let revert_reason_end = *(system++);
+        jump Failure if failure_flag != 0;
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[updated_gas_builtin], &[system]], None),
+            ("Fallthrough", &[&[updated_gas_builtin], &[success_final_system]], None),
             (
                 "Failure",
-                &[&[updated_gas_builtin], &[system], &[revert_reason]],
+                &[&[updated_gas_builtin], &[system], &[revert_reason_start, revert_reason_end]],
                 Some(failure_handle_statement_id),
             ),
         ],
