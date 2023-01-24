@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use crate::calc_gas_info;
+use crate::{calc_gas_postcost_info, calc_gas_precost_info};
 
 cairo_lang_test_utils::test_file_test!(
     test_solve_gas,
@@ -26,8 +26,9 @@ fn get_example_program(name: &str) -> Program {
 fn test_solve_gas(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
     let path = &inputs["test_file_name"];
 
-    OrderedHashMap::from([(
-        "gas_solution".into(),
-        format!("{}", calc_gas_info(&get_example_program(path), Default::default()).unwrap()),
-    )])
+    let gas_info0 = calc_gas_precost_info(&get_example_program(path), Default::default()).unwrap();
+    let gas_info1 = calc_gas_postcost_info(&get_example_program(path), Default::default()).unwrap();
+    let gas_info = gas_info0.combine(gas_info1);
+
+    OrderedHashMap::from([("gas_solution".into(), format!("{}", gas_info))])
 }

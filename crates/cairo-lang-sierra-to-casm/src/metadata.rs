@@ -4,7 +4,7 @@ use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
 use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
 use cairo_lang_sierra_gas::gas_info::GasInfo;
-use cairo_lang_sierra_gas::{calc_gas_info, CostError};
+use cairo_lang_sierra_gas::{calc_gas_postcost_info, calc_gas_precost_info, CostError};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use thiserror::Error;
 
@@ -36,9 +36,41 @@ pub fn calc_metadata(
     program: &Program,
     config: MetadataComputationConfig,
 ) -> Result<Metadata, MetadataError> {
-    let gas_info = calc_gas_info(program, config.function_set_costs)?;
+    let pre_function_set_costs = config
+        .function_set_costs
+        .iter()
+        .map(|(func, costs)| {
+            (
+                func.clone(),
+                costs
+                    .iter()
+                    .filter(|(token, _cost)| !matches!(token, CostTokenType::Step))
+                    .map(|(k, v)| (*k, *v))
+                    .collect(),
+            )
+        })
+        .collect();
+    let pre_gas_info = calc_gas_precost_info(program, pre_function_set_costs)?;
+
     let ap_change_info = calc_ap_changes(program, |idx, token_type| {
-        gas_info.variable_values[(idx, token_type)] as usize
+        pre_gas_info.variable_values[(idx, token_type)] as usize
     })?;
-    Ok(Metadata { ap_change_info, gas_info })
+
+    let post_function_set_costs = config
+        .function_set_costs
+        .iter()
+        .map(|(func, costs)| {
+            (
+                func.clone(),
+                costs
+                    .iter()
+                    .filter(|(token, _cost)| matches!(token, CostTokenType::Step))
+                    .map(|(k, v)| (*k, *v))
+                    .collect(),
+            )
+        })
+        .collect();
+    let post_gas_info = calc_gas_postcost_info(program, post_function_set_costs)?;
+
+    Ok(Metadata { ap_change_info, gas_info: pre_gas_info.combine(post_gas_info) })
 }
