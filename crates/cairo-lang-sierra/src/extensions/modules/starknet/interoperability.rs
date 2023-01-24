@@ -105,11 +105,6 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
                                 DeferredOutputKind::AddConst { param_idx: 1 },
                             ),
                         },
-                        // Revert reason
-                        OutputVarInfo {
-                            ty: felt_ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-                        },
                         // result
                         OutputVarInfo {
                             ty: felt_array_ty,

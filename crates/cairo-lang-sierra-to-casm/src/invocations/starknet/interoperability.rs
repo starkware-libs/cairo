@@ -14,7 +14,7 @@ pub fn build_call_contract(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "call_contract".as_bytes());
+    let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, "CallContract".as_bytes());
 
     let [expr_gas_builtin, expr_system, expr_address, expr_arr] = builder.try_get_refs()?;
     let gas_builtin = expr_gas_builtin.try_unpack_single()?;
@@ -42,11 +42,11 @@ pub fn build_call_contract(
         hint SystemCall { system: original_system };
 
         let updated_gas_builtin = *(system++);
-        // `revert_reason` is 0 on success, nonzero on failure/revert.
-        tempvar revert_reason = *(system++);
+        // `failure_flag` is 0 on success, nonzero on failure/revert.
+        tempvar failure_flag = *(system++);
         let res_start = *(system++);
         let res_end = *(system++);
-        jump Failure if revert_reason != 0;
+        jump Failure if failure_flag != 0;
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
@@ -54,7 +54,7 @@ pub fn build_call_contract(
             ("Fallthrough", &[&[updated_gas_builtin], &[system], &[res_start, res_end]], None),
             (
                 "Failure",
-                &[&[updated_gas_builtin], &[system], &[revert_reason], &[res_start, res_end]],
+                &[&[updated_gas_builtin], &[system], &[res_start, res_end]],
                 Some(failure_handle_statement_id),
             ),
         ],
