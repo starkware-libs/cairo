@@ -41,8 +41,9 @@ extern fn emit_event_syscall(
 ) -> SyscallResult::<()> implicits(GasBuiltin, System) nopanic;
 
 // Getters.
-extern fn get_caller_address_syscall() -> SyscallResult::<felt> implicits(GasBuiltin,
-System) nopanic;
+extern fn get_caller_address_syscall() -> SyscallResult::<felt> implicits(
+    GasBuiltin, System
+) nopanic;
 
 fn get_caller_address() -> felt {
     get_caller_address_syscall().unwrap_syscall()

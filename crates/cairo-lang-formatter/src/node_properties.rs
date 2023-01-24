@@ -102,7 +102,6 @@ impl SyntaxNodeFormat for SyntaxNode {
     fn allow_newline_after(&self, _db: &dyn SyntaxGroup) -> bool {
         false
     }
-
     fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize {
         match self.kind(db) {
             SyntaxKind::ItemList => 2,
@@ -148,6 +147,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::PatternList
                 | SyntaxKind::ParamList
                 | SyntaxKind::ImplicitsList
+                | SyntaxKind::ImplicitsClause
                 | SyntaxKind::MemberList
                 | SyntaxKind::ArgList
                 | SyntaxKind::Arg
@@ -222,20 +222,22 @@ impl SyntaxNodeFormat for SyntaxNode {
                 )),
             },
             _ => match self.kind(db) {
-                SyntaxKind::ParamList | SyntaxKind::ExprList => WrappingBreakLinePoints {
-                    leading: Some(BreakLinePointProperties::new(
-                        2,
-                        BreakLinePointIndentation::IndentedWithTail,
-                        true,
-                        false,
-                    )),
-                    trailing: Some(BreakLinePointProperties::new(
-                        2,
-                        BreakLinePointIndentation::IndentedWithTail,
-                        true,
-                        false,
-                    )),
-                },
+                SyntaxKind::ParamList | SyntaxKind::ExprList | SyntaxKind::ImplicitsList => {
+                    WrappingBreakLinePoints {
+                        leading: Some(BreakLinePointProperties::new(
+                            2,
+                            BreakLinePointIndentation::IndentedWithTail,
+                            true,
+                            false,
+                        )),
+                        trailing: Some(BreakLinePointProperties::new(
+                            2,
+                            BreakLinePointIndentation::IndentedWithTail,
+                            true,
+                            false,
+                        )),
+                    }
+                }
                 SyntaxKind::StructArgList => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         3,
