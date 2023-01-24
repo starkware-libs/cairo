@@ -99,7 +99,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             GasConcreteLibfunc::RefundGas(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint8(libfunc) => match libfunc {
-            Uint8Concrete::Const(_) => vec![ApChange::Known(0)],
+            Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) => vec![ApChange::Known(0)],
             Uint8Concrete::Operation(libfunc) => match libfunc.operator {
                 IntOperator::OverflowingAdd => {
                     vec![ApChange::Known(3), ApChange::Known(3)]
@@ -177,6 +177,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibfunc::EmitEvent(_) => vec![ApChange::Known(2), ApChange::Known(2)],
+            StarkNetConcreteLibfunc::GetCallerAddress(_) => {
+                vec![ApChange::Known(2), ApChange::Known(2)]
+            }
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],

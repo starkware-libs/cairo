@@ -28,7 +28,7 @@ use super::function_with_body::{FunctionBody, FunctionBodyData};
 use super::functions::{substitute_signature, FunctionDeclarationData};
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
-use crate::corelib::{copy_trait, drop_trait};
+use crate::corelib::{copy_trait, core_module, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -485,7 +485,8 @@ pub fn find_impls_at_context(
     let mut res = OrderedHashSet::default();
     // TODO(spapini): Lookup in generic_params once impl generic params are supported.
     res.extend(find_impls_at_module(db, inference, lookup_context.module_id, concrete_trait_id)?);
-    for module_id in &lookup_context.extra_modules {
+    let core_module = core_module(db);
+    for module_id in chain!(&lookup_context.extra_modules, [&core_module]) {
         if let Ok(imps) = find_impls_at_module(db, inference, *module_id, concrete_trait_id) {
             res.extend(imps);
         }
@@ -766,8 +767,7 @@ pub fn priv_impl_function_body_data(
     );
     let function_body = function_syntax.body(db.upcast());
     let return_type = declaration.signature.return_type;
-    let expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let body_expr = ctx.exprs.alloc(expr);
+    let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
     let direct_callees: HashSet<FunctionId> = exprs

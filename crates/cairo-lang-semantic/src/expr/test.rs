@@ -110,7 +110,7 @@ fn test_expr_operator() {
         format!("{:?}", expr.debug(&expr_formatter)),
         "FunctionCall(ExprFunctionCall { function: core::bool_not, ref_args: [], args: \
          [FunctionCall(ExprFunctionCall { function: core::felt_eq, ref_args: [], args: \
-         [FunctionCall(ExprFunctionCall { function: core::felt_add, ref_args: [], args: \
+         [FunctionCall(ExprFunctionCall { function: core::FeltAdd::add, ref_args: [], args: \
          [FunctionCall(ExprFunctionCall { function: core::felt_neg, ref_args: [], args: \
          [Literal(ExprLiteral { value: 5, ty: core::felt })], ty: core::felt }), \
          FunctionCall(ExprFunctionCall { function: core::felt_mul, ref_args: [], args: \
@@ -627,7 +627,7 @@ fn test_expr_tuple() {
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Tuple(ExprTuple { items: [FunctionCall(ExprFunctionCall { function: core::felt_add, \
+        "Tuple(ExprTuple { items: [FunctionCall(ExprFunctionCall { function: core::FeltAdd::add, \
          ref_args: [], args: [Literal(ExprLiteral { value: 1, ty: core::felt }), \
          Literal(ExprLiteral { value: 2, ty: core::felt })], ty: core::felt }), Tuple(ExprTuple { \
          items: [Literal(ExprLiteral { value: 2, ty: core::felt }), Literal(ExprLiteral { value: \

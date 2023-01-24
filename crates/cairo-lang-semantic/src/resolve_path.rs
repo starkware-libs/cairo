@@ -497,7 +497,7 @@ impl<'db> Resolver<'db> {
                     return Err(diagnostics.report_by_ptr(
                         stable_ptr,
                         NoImplementationOfTraitFunction {
-                            trait_id,
+                            concrete_trait_id,
                             function_name: function_id.name(defs_db),
                         },
                     ));

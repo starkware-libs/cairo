@@ -21,7 +21,7 @@ use smol_str::SmolStr;
 use crate::db::SemanticGroup;
 use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve_path::ResolvedConcreteItem;
-use crate::semantic;
+use crate::{semantic, ConcreteTraitId};
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
@@ -270,11 +270,23 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::NoImplementationOfTraitFunction { trait_id, function_name } => {
-                let trait_path = trait_id.full_path(db.upcast());
+            SemanticDiagnosticKind::NoImplementationOfTraitFunction {
+                concrete_trait_id,
+                function_name,
+            } => {
+                let long_concrete_trait = db.lookup_intern_concrete_trait(*concrete_trait_id);
+                let trait_path = long_concrete_trait.trait_id.full_path(db.upcast());
+                let generic_args = long_concrete_trait.generic_args;
                 format!(
-                    "Function `{function_name}` of trait `{trait_path}` has has no implementation \
-                     in the context."
+                    "Function `{function_name}` of trait `{trait_path}::<{}>` has has no \
+                     implementation in the context.",
+                    generic_args
+                        .iter()
+                        .map(|arg| match arg {
+                            crate::GenericArgumentId::Type(ty) => ty.format(db),
+                            crate::GenericArgumentId::Literal(literal_id) => literal_id.format(db),
+                        })
+                        .join(", ")
                 )
             }
             SemanticDiagnosticKind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {
@@ -605,7 +617,7 @@ pub enum SemanticDiagnosticKind {
         actual_ty: semantic::TypeId,
     },
     NoImplementationOfTraitFunction {
-        trait_id: TraitId,
+        concrete_trait_id: ConcreteTraitId,
         function_name: SmolStr,
     },
     AmbiguousTrait {

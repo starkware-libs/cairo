@@ -14,14 +14,14 @@ use itertools::chain;
 
 use super::attribute::Attribute;
 use super::modifiers;
-use super::trt::ConcreteTraitFunctionId;
+use super::trt::{ConcreteTraitFunctionId, ConcreteTraitFunctionLongId};
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::types::{resolve_type, substitute_generics, GenericSubstitution};
-use crate::{semantic, ConcreteImplId, Parameter, SemanticDiagnostic};
+use crate::{semantic, ConcreteImplId, GenericArgumentId, Parameter, SemanticDiagnostic};
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteImplGenericFunctionId {
@@ -42,6 +42,29 @@ pub enum GenericFunctionId {
     Trait(ConcreteTraitFunctionId),
 }
 impl GenericFunctionId {
+    pub fn generic_args_apply<F: FnOnce(&mut Vec<GenericArgumentId>)>(
+        &mut self,
+        db: &dyn SemanticGroup,
+        functor: F,
+    ) {
+        match self {
+            GenericFunctionId::Impl(f) => {
+                let mut long_impl = db.lookup_intern_concrete_impl(f.concrete_impl);
+                functor(&mut long_impl.generic_args);
+                f.concrete_impl = db.intern_concrete_impl(long_impl);
+            }
+            GenericFunctionId::Trait(f) => {
+                let mut long_trait = db.lookup_intern_concrete_trait(f.concrete_trait_id(db));
+                functor(&mut long_trait.generic_args);
+                *f = db.intern_concrete_trait_function(ConcreteTraitFunctionLongId::new(
+                    db,
+                    db.intern_concrete_trait(long_trait),
+                    f.function_id(db),
+                ));
+            }
+            _ => {}
+        };
+    }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         self.signature(db).format(db.elongate().upcast())
     }
