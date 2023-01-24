@@ -5,7 +5,7 @@ use itertools::chain;
 
 use crate::db::LoweringGroup;
 use crate::objects::{
-    BlockId, Statement, StatementCall, StatementCallBlock, StatementLiteral, StatementMatchExtern,
+    BlockId, Statement, StatementCall, StatementLiteral, StatementMatchExtern,
     StatementStructDestructure, StructuredBlock, StructuredBlockEnd, VariableId,
 };
 use crate::{
@@ -241,7 +241,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
         match self {
             Statement::Literal(stmt) => stmt.fmt(f, ctx),
             Statement::Call(stmt) => stmt.fmt(f, ctx),
-            Statement::CallBlock(stmt) => stmt.fmt(f, ctx),
             Statement::MatchExtern(stmt) => stmt.fmt(f, ctx),
             Statement::StructConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::StructDestructure(stmt) => stmt.fmt(f, ctx),
@@ -272,12 +271,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
             }
         }
         write!(f, ")")
-    }
-}
-
-impl DebugWithDb<LoweredFormatter<'_>> for StatementCallBlock {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}()", self.block.debug(ctx))
     }
 }
 

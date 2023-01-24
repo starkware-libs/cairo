@@ -33,13 +33,6 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 4660u
-  () <- blk1()
+  (v2: core::felt) <- core::felt_add(v1, v0)
 End:
   Return(v2)
-
-blk1:
-Inputs:
-Statements:
-  (v3: core::felt) <- core::felt_add(v1, v0)
-End:
-  Callsite(v3 -> v2)
