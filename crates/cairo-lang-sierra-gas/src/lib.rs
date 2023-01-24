@@ -2,9 +2,11 @@
 //!
 //! This crate provides the gas computation for the Cairo programs.
 
+use cairo_lang_eq_solver::Expr;
+use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::ConcreteType;
-use cairo_lang_sierra::ids::ConcreteTypeId;
+use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -42,9 +44,12 @@ impl InvocationCostInfoProvider for ProgramRegistry<CoreType, CoreLibfunc> {
 }
 
 /// Calculates gas information for a given program.
-pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
+pub fn calc_gas_info(
+    program: &Program,
+    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let equations = generate_equations::generate_equations(
+    let mut equations = generate_equations::generate_equations(
         program,
         |statement_future_cost, idx, libfunc_id| {
             let libfunc = registry
@@ -58,6 +63,16 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
             )
         },
     )?;
+    for (func_id, cost_terms) in function_set_costs {
+        for token_type in CostTokenType::iter() {
+            equations[*token_type].push(
+                Expr::from_var(Var::StatementFuture(
+                    registry.get_function(&func_id)?.entry_point,
+                    *token_type,
+                )) - Expr::from_const(cost_terms.get(token_type).copied().unwrap_or_default()),
+            );
+        }
+    }
 
     let mut variable_values = OrderedHashMap::default();
     let mut function_costs = OrderedHashMap::default();

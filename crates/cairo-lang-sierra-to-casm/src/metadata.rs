@@ -1,8 +1,11 @@
+use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
 use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_gas::{calc_gas_info, CostError};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use thiserror::Error;
 
 /// Metadata provided with a Sierra program to simplify the compilation to casm.
@@ -22,9 +25,18 @@ pub enum MetadataError {
     CostError(#[from] CostError),
 }
 
+/// Configuration for metadata computation.
+#[derive(Default)]
+pub struct MetadataComputationConfig {
+    pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+}
+
 /// Calculates the metadata for a Sierra program.
-pub fn calc_metadata(program: &Program) -> Result<Metadata, MetadataError> {
-    let gas_info = calc_gas_info(program)?;
+pub fn calc_metadata(
+    program: &Program,
+    config: MetadataComputationConfig,
+) -> Result<Metadata, MetadataError> {
+    let gas_info = calc_gas_info(program, config.function_set_costs)?;
     let ap_change_info = calc_ap_changes(program, |idx, token_type| {
         gas_info.variable_values[(idx, token_type)] as usize
     })?;

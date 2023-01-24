@@ -28,6 +28,6 @@ fn test_solve_gas(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<Str
 
     OrderedHashMap::from([(
         "gas_solution".into(),
-        format!("{}", calc_gas_info(&get_example_program(path)).unwrap()),
+        format!("{}", calc_gas_info(&get_example_program(path), Default::default()).unwrap()),
     )])
 }
