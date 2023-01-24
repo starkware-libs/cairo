@@ -441,13 +441,16 @@ pub fn find_impls_at_module(
 ) -> Maybe<Vec<ImplId>> {
     let mut res = Vec::new();
 
-    // TODO(spapini): This depends on ast, instead of just ids.
-    // TODO(spapini): Look also in uses.
-    let impls = db.module_impls(module_id)?;
+    let mut impls = db.module_impls_ids(module_id)?;
+    for use_id in db.module_uses_ids(module_id)? {
+        if let Ok(ResolvedGenericItem::Impl(impl_id)) = db.use_resolved_item(use_id) {
+            impls.push(impl_id);
+        }
+    }
     let long_concrete_trait = db.lookup_intern_concrete_trait(concrete_trait_id);
 
     // TODO(spapini): Index better.
-    for impl_id in impls.keys().copied() {
+    for impl_id in impls {
         let Ok(imp_data)= db.priv_impl_declaration_data(impl_id) else {continue};
         let Ok(imp_concrete_trait) = imp_data.concrete_trait else {continue};
         let long_imp_concrete_trait = db.lookup_intern_concrete_trait(imp_concrete_trait);
