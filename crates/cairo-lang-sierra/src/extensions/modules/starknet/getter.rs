@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
 use super::syscalls::SystemType;
+use crate::extensions::array::ArrayType;
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
 use crate::extensions::lib_func::{
@@ -36,6 +37,7 @@ impl<TGetterTraits: GetterTraits> NoGenericArgsGenericLibfunc for GetterLibfunc<
         let info_ty = context.get_concrete_type(TGetterTraits::InfoType::id(), &[])?;
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
+        let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -89,8 +91,8 @@ impl<TGetterTraits: GetterTraits> NoGenericArgsGenericLibfunc for GetterLibfunc<
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ty: felt_array_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -104,6 +106,6 @@ impl<TGetterTraits: GetterTraits> NoGenericArgsGenericLibfunc for GetterLibfunc<
 #[derive(Default)]
 pub struct GetCallerAddressTrait {}
 impl GetterTraits for GetCallerAddressTrait {
-    const STR_ID: &'static str = "get_caller_address";
+    const STR_ID: &'static str = "get_caller_address_syscall";
     type InfoType = FeltType;
 }

@@ -42,7 +42,18 @@ extern fn emit_event_syscall(
 ) -> Result::<(), Array::<felt>> implicits(GasBuiltin, System) nopanic;
 
 // Getters.
-extern fn get_caller_address() -> Result::<felt, felt> implicits(GasBuiltin, System) nopanic;
+extern fn get_caller_address_syscall() -> Result::<felt,
+Array::<felt>> implicits(GasBuiltin, System) nopanic;
+
+// TODO(orizi): Remove when shorter unwrap is added.
+fn get_caller_address() -> felt {
+    match starknet::get_caller_address_syscall() {
+        Result::Ok(x) => x,
+        Result::Err(revert_reason) => {
+            panic(revert_reason)
+        },
+    }
+}
 
 trait StorageAccess<T> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<T, Array::<felt>>;
