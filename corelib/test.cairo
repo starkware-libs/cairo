@@ -61,7 +61,8 @@ fn test_ec_operations() {
     // Try computing `p + p` using the ec_mul function.
     let double_p = ec_mul(p, 2).unwrap();
     let (double_x, double_y) = ec_point_unwrap(double_p);
-    let expected_double_y = 3572434102142093425782752266058856056057826477682467661647843687948039943621;
+    let expected_double_y =
+        3572434102142093425782752266058856056057826477682467661647843687948039943621;
     assert(
         double_x == 75984168971785666410219869038140038216102669781812169677875295511117260233,
         'bad double x'

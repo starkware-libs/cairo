@@ -647,7 +647,10 @@ impl<'a> Formatter<'a> {
         if syntax_node.kind(self.db) != SyntaxKind::TokenWhitespace {
             self.is_current_line_whitespaces = false;
         }
+        let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
+        self.append_break_line_point(node_break_points.leading);
         self.line_state.line_buffer.push_str(&text);
+        self.append_break_line_point(node_break_points.trailing);
     }
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
         if let Some(properties) = properties {

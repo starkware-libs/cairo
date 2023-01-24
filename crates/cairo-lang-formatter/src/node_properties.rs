@@ -135,14 +135,39 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::WrappedGenericParamList => Some(3),
                 _ => None,
             },
+            Some(SyntaxKind::StatementLet) => match self.kind(db) {
+                SyntaxKind::ExprBinary
+                | SyntaxKind::ExprBlock
+                | SyntaxKind::ExprErrorPropagate
+                | SyntaxKind::ExprFieldInitShorthand
+                | SyntaxKind::ExprFunctionCall
+                | SyntaxKind::ExprIf
+                | SyntaxKind::ExprList
+                | SyntaxKind::ExprMatch
+                | SyntaxKind::ExprMissing
+                | SyntaxKind::ExprParenthesized
+                | SyntaxKind::ExprPath
+                | SyntaxKind::ExprStructCtorCall
+                | SyntaxKind::ExprTuple
+                | SyntaxKind::ExprUnary => Some(1),
+                SyntaxKind::TerminalEq => Some(2),
+                SyntaxKind::PatternEnum | SyntaxKind::PatternTuple | SyntaxKind::PatternStruct => {
+                    Some(3)
+                }
+                SyntaxKind::TypeClause => Some(4),
+                _ => None,
+            },
             _ => match self.kind(db) {
                 SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprList
                 | SyntaxKind::ExprBlock
+                | SyntaxKind::ExprTuple
+                | SyntaxKind::PatternTuple
                 | SyntaxKind::ModuleBody
                 | SyntaxKind::MatchArms
                 | SyntaxKind::MatchArm
                 | SyntaxKind::StructArgList
+                | SyntaxKind::TraitItemList
                 | SyntaxKind::PatternStructParamList
                 | SyntaxKind::PatternList
                 | SyntaxKind::ParamList
@@ -222,22 +247,23 @@ impl SyntaxNodeFormat for SyntaxNode {
                 )),
             },
             _ => match self.kind(db) {
-                SyntaxKind::ParamList | SyntaxKind::ExprList | SyntaxKind::ImplicitsList => {
-                    WrappingBreakLinePoints {
-                        leading: Some(BreakLinePointProperties::new(
-                            2,
-                            BreakLinePointIndentation::IndentedWithTail,
-                            true,
-                            false,
-                        )),
-                        trailing: Some(BreakLinePointProperties::new(
-                            2,
-                            BreakLinePointIndentation::IndentedWithTail,
-                            true,
-                            false,
-                        )),
-                    }
-                }
+                SyntaxKind::ParamList
+                | SyntaxKind::ExprList
+                | SyntaxKind::ImplicitsList
+                | SyntaxKind::PatternList => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        2,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    )),
+                    trailing: Some(BreakLinePointProperties::new(
+                        2,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    )),
+                },
                 SyntaxKind::StructArgList => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         3,
@@ -378,6 +404,15 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     )),
                     trailing: None,
+                },
+                SyntaxKind::TokenEq => WrappingBreakLinePoints {
+                    leading: None,
+                    trailing: Some(BreakLinePointProperties::new(
+                        10,
+                        BreakLinePointIndentation::Indented,
+                        true,
+                        true,
+                    )),
                 },
                 _ => WrappingBreakLinePoints { leading: None, trailing: None },
             },
