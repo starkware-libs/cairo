@@ -5,12 +5,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xffffffffffffffffffffffffffffde04",
+    "0xffffffffffffffffffffffffffffff38",
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0xa",
     "0x4825800180007ffa",
-    "0x21fc",
+    "0xc8",
     "0x400280007ff97fff",
     "0x482680017ff98000",
     "0x1",
@@ -230,12 +230,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xfffffffffffffffffffffffffffff1f0",
+    "0x100000000000000000000000000000000",
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0xa",
     "0x4825800180007ffa",
-    "0xe10",
+    "0x0",
     "0x400280007ff97fff",
     "0x482680017ff98000",
     "0x1",
@@ -560,7 +560,7 @@
     [
       0,
       [
-        "memory[ap + 0] = 8700 <= memory[fp + -6]"
+        "memory[ap + 0] = 200 <= memory[fp + -6]"
       ]
     ],
     [
@@ -614,7 +614,7 @@
     [
       225,
       [
-        "memory[ap + 0] = 3600 <= memory[fp + -6]"
+        "memory[ap + 0] = 0 <= memory[fp + -6]"
       ]
     ],
     [

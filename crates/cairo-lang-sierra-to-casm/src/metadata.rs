@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
 use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
@@ -22,9 +24,17 @@ pub enum MetadataError {
     CostError(#[from] CostError),
 }
 
+#[derive(Default)]
+pub struct MetadataComputationConfig {
+    pub function_gas_fixation: HashMap<usize, i32>,
+}
+
 /// Calculates the metadata for a Sierra program.
-pub fn calc_metadata(program: &Program) -> Result<Metadata, MetadataError> {
-    let gas_info = calc_gas_info(program)?;
+pub fn calc_metadata(
+    program: &Program,
+    config: MetadataComputationConfig,
+) -> Result<Metadata, MetadataError> {
+    let gas_info = calc_gas_info(program, config.function_gas_fixation)?;
     let ap_change_info = calc_ap_changes(program, |idx, token_type| {
         gas_info.variable_values[(idx, token_type)] as usize
     })?;
