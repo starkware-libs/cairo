@@ -58,7 +58,7 @@ fn u128_checked_add(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) no
 impl U128Add of Add::<u128> {
     #[inline(always)]
     fn add(a: u128, b: u128) -> u128 {
-        u128_overflowing_add(a, b).expect('u128_add OF')
+        u128_overflowing_add(a, b).expect('u128_add Overflow')
     }
 }
 
@@ -67,6 +67,13 @@ fn u128_checked_sub(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) no
     match u128_overflowing_sub(a, b) {
         Result::Ok(r) => Option::<u128>::Some(r),
         Result::Err(r) => Option::<u128>::None(()),
+    }
+}
+
+impl U128Sub of Sub::<u128> {
+    #[inline(always)]
+    fn sub(a: u128, b: u128) -> u128 {
+        u128_overflowing_sub(a, b).expect('u128_sub Overflow')
     }
 }
 
@@ -205,7 +212,6 @@ impl U8Add of Add::<u8> {
     }
 }
 
-#[panic_with('u8_sub Overflow', u8_sub)]
 fn u8_checked_sub(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
     match u8_overflowing_sub(a, b) {
         Result::Ok(r) => Option::<u8>::Some(r),
@@ -213,6 +219,12 @@ fn u8_checked_sub(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
     }
 }
 
+impl U8Sub of Sub::<u8> {
+    #[inline(always)]
+    fn sub(a: u8, b: u8) -> u8 {
+        u8_overflowing_sub(a, b).expect('u8_sub Overflow')
+    }
+}
 
 #[derive(Copy, Drop)]
 struct u256 {
@@ -293,6 +305,13 @@ fn u256_checked_sub(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) no
         Option::<u256>::None(())
     } else {
         Option::<u256>::Some(r)
+    }
+}
+
+impl U256Sub of Sub::<u256> {
+    #[inline(always)]
+    fn sub(a: u256, b: u256) -> u256 {
+        u256_checked_sub(a, b).expect('u256_sub Overflow')
     }
 }
 
