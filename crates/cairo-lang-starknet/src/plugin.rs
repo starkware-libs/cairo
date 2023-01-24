@@ -599,9 +599,7 @@ fn handle_simple_storage_var(address: &str) -> String {
             match starknet::StorageAccess::<$type_name$>::read(address_domain, address()) {{
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {{
-                    let mut err_data = array_new();
-                    array_append(ref err_data, revert_reason);
-                    panic(err_data)
+                    panic(revert_reason)
                 }},
             }}
         }}
@@ -640,9 +638,7 @@ fn handle_mapping_storage_var(address: &str) -> String {
             match starknet::StorageAccess::<$value_type$>::read(address_domain, address(key)) {{
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {{
-                    let mut err_data = array_new();
-                    array_append(ref err_data, revert_reason);
-                    panic(err_data)
+                    panic(revert_reason)
                 }},
             }}
         }}

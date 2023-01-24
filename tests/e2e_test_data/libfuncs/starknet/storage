@@ -119,7 +119,7 @@ run_small_e2e_test
 //! > cairo
 fn foo(
     address_domain: felt, address: starknet::StorageAddress,
-) -> Result::<felt, felt> {
+) -> Result::<felt, Array::<felt>> {
     starknet::storage_read_syscall(address_domain, address)
 }
 
@@ -131,64 +131,67 @@ fn foo(
 [fp + -3] = [[fp + -5] + 3];
 %{ syscall_handler.syscall(syscall_ptr=memory[fp + -5]) %}
 [ap + 0] = [[fp + -5] + 5], ap++;
-jmp rel 10 if [ap + -1] != 0;
+jmp rel 12 if [ap + -1] != 0;
 [ap + 0] = [[fp + -5] + 4], ap++;
 [ap + 0] = [fp + -5] + 7, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [[fp + -5] + 6], ap++;
-jmp rel 8;
+[ap + 0] = 0, ap++;
+jmp rel 9;
 [ap + 0] = [[fp + -5] + 4], ap++;
-[ap + 0] = [fp + -5] + 7, ap++;
+[ap + 0] = [fp + -5] + 8, ap++;
 [ap + 0] = 1, ap++;
-[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [[fp + -5] + 6], ap++;
+[ap + 0] = [[fp + -5] + 7], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 57})
+test::foo: OrderedHashMap({Step: 58})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
 type System = System;
 type felt = felt;
 type StorageAddress = StorageAddress;
-type core::result::Result::<core::felt, core::felt> = Enum<ut@core::result::Result::<core::felt, core::felt>, felt, felt>;
+type Array<felt> = Array<felt>;
+type core::result::Result::<core::felt, core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<core::felt, core::array::Array::<core::felt>>, felt, Array<felt>>;
 
 libfunc storage_read_syscall = storage_read_syscall;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::result::Result::<core::felt, core::felt>, 0> = enum_init<core::result::Result::<core::felt, core::felt>, 0>;
+libfunc enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc store_temp<System> = store_temp<System>;
 libfunc rename<System> = rename<System>;
-libfunc store_temp<core::result::Result::<core::felt, core::felt>> = store_temp<core::result::Result::<core::felt, core::felt>>;
-libfunc rename<core::result::Result::<core::felt, core::felt>> = rename<core::result::Result::<core::felt, core::felt>>;
+libfunc store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>> = store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>;
+libfunc rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>> = rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>;
 libfunc jump = jump;
-libfunc enum_init<core::result::Result::<core::felt, core::felt>, 1> = enum_init<core::result::Result::<core::felt, core::felt>, 1>;
+libfunc enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>;
 
 storage_read_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 10([7], [8], [9]) };
 branch_align() -> ();
-enum_init<core::result::Result::<core::felt, core::felt>, 0>([6]) -> ([10]);
+enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>([6]) -> ([10]);
 store_temp<GasBuiltin>([4]) -> ([4]);
 rename<GasBuiltin>([4]) -> ([11]);
 store_temp<System>([5]) -> ([5]);
 rename<System>([5]) -> ([12]);
-store_temp<core::result::Result::<core::felt, core::felt>>([10]) -> ([10]);
-rename<core::result::Result::<core::felt, core::felt>>([10]) -> ([13]);
+store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([10]) -> ([10]);
+rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([10]) -> ([13]);
 jump() { 18() };
 branch_align() -> ();
-enum_init<core::result::Result::<core::felt, core::felt>, 1>([9]) -> ([14]);
+enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>([9]) -> ([14]);
 store_temp<GasBuiltin>([7]) -> ([7]);
 rename<GasBuiltin>([7]) -> ([11]);
 store_temp<System>([8]) -> ([8]);
 rename<System>([8]) -> ([12]);
-store_temp<core::result::Result::<core::felt, core::felt>>([14]) -> ([14]);
-rename<core::result::Result::<core::felt, core::felt>>([14]) -> ([13]);
+store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([14]) -> ([14]);
+rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([14]) -> ([13]);
 rename<GasBuiltin>([11]) -> ([15]);
 rename<System>([12]) -> ([16]);
-rename<core::result::Result::<core::felt, core::felt>>([13]) -> ([17]);
+rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([13]) -> ([17]);
 return([15], [16], [17]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt, [3]: StorageAddress) -> (GasBuiltin, System, core::result::Result::<core::felt, core::felt>);
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt, [3]: StorageAddress) -> (GasBuiltin, System, core::result::Result::<core::felt, core::array::Array::<core::felt>>);
 
 //! > ==========================================================================
 
