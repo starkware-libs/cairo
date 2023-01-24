@@ -154,6 +154,61 @@ fn test_u8_add_overflow_2() {
     200_u8 + 60_u8;
 }
 
+
+#[test]
+fn test_u64_operators() {
+    assert(1_u64 == 1_u64, '1 == 1');
+    assert(1_u64 != 2_u64, '1 != 2');
+    assert(1_u64 + 3_u64 == 4_u64, '1 + 3 == 4');
+    assert(3_u64 + 6_u64 == 9_u64, '3 + 6 == 9');
+    assert(3_u64 - 1_u64 == 2_u64, '3 - 1 == 2');
+    assert(231_u64 - 131_u64 == 100_u64, '231-131=100');
+    assert(1_u64 < 4_u64, '1 < 4');
+    assert(1_u64 <= 4_u64, '1 <= 4');
+    assert(!(4_u64 < 4_u64), '!(4 < 4)');
+    assert(4_u64 <= 4_u64, '4 <= 4');
+    assert(5_u64 > 2_u64, '5 > 2');
+    assert(5_u64 >= 2_u64, '5 >= 2');
+    assert(!(3_u64 > 3_u64), '!(3 > 3)');
+    assert(3_u64 >= 3_u64, '3 >= 3');
+}
+
+#[test]
+#[should_panic]
+fn test_u64_sub_overflow_1() {
+    0_u64 - 1_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_sub_overflow_2() {
+    0_u64 - 3_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_sub_overflow_3() {
+    1_u64 - 3_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_sub_overflow_4() {
+    100_u64 - 250_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_add_overflow_1() {
+    0x8000000000000000_u64 + 0x8000000000000000_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_add_overflow_2() {
+    0x9000000000000000_u64 + 0x8000000000000001_u64;
+}
+
 #[test]
 fn test_u128_operators() {
     assert(1_u128 == 1_u128, '1 == 1');

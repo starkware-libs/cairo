@@ -213,6 +213,25 @@ use integer::u8_lt;
 use integer::u8_le;
 use integer::u8_gt;
 use integer::u8_ge;
+use integer::u64;
+use integer::u64_const;
+use integer::u64_from_felt;
+use integer::u64_try_from_felt;
+use integer::u64_to_felt;
+use integer::u64_add;
+impl U64Add of Add::<u64> {
+    #[inline(always)]
+    fn add(a: u64, b: u64) -> u64 {
+        u64_add(a, b)
+    }
+}
+use integer::u64_sub;
+use integer::u64_eq;
+use integer::u64_ne;
+use integer::u64_lt;
+use integer::u64_le;
+use integer::u64_gt;
+use integer::u64_ge;
 use integer::u256;
 use integer::U256Add;
 use integer::u256_sub;
