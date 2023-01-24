@@ -9,5 +9,5 @@ fn fib(a: felt, b: felt, n: felt) -> FibResult {
             let r = fib(b, a + b, n - 1);
             FibResult { value: r.value, nothing: (), index: r.index + 1 }
         },
-    }
+     }
 }

@@ -22,7 +22,7 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
                 array_append::<felt>(ref data, err)
                 panic(data)
             },
-        }
+         }
     }
     fn unwrap(self: Result::<T, E>) -> T {
         self.expect('Result::unwrap failed.')
@@ -34,8 +34,8 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
                 array_append::<felt>(ref data, err)
                 panic(data)
             },
-            Result::Err(x) => x,
-        }
+             Result::Err(x) => x,
+         }
     }
     fn unwrap_err(self: Result::<T, E>) -> E {
         self.expect_err('Result::unwrap_err failed.')
@@ -44,12 +44,12 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
         match self {
             Result::Ok(_) => true,
             Result::Err(_) => false,
-        }
+         }
     }
     fn is_err(self: Result::<T, E>) -> bool {
         match self {
             Result::Ok(_) => false,
             Result::Err(_) => true,
-        }
+         }
     }
 }
