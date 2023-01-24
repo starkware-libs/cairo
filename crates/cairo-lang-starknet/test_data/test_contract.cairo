@@ -1,6 +1,6 @@
 #[abi]
 trait IAnotherContract {
-    fn foo();
+    fn foo(a: u128);
 }
 
 
@@ -21,5 +21,12 @@ mod TestContract {
 
     #[external]
     fn empty() {
+    }
+
+    #[external]
+    fn call_foo(a: u128) {
+        // TODO(ilya): pass the address of foo as an argument.
+        let foo_address = starknet::contract_address_const::<17>();
+        super::IAnotherContractDispatcher::foo(foo_address, a);
     }
 }
