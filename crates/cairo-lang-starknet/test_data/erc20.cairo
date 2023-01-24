@@ -1,7 +1,8 @@
 #[contract]
 mod ERC20 {
-    struct Storage { name: felt, symbol: felt, // TODO(orizi): Move to u8.
-    decimals: felt,
+    struct Storage { name: felt,
+    symbol: felt,
+    decimals: u8,
     total_supply: u256,
     balances: Map::<felt, u256>,
     allowances: Map::<(felt, felt), u256>,
@@ -17,7 +18,7 @@ mod ERC20 {
 
     #[constructor]
     fn constructor(
-        name_: felt, symbol_: felt, decimals_: felt, initial_supply: u256, recipient: felt
+        name_: felt, symbol_: felt, decimals_: u8, initial_supply: u256, recipient: felt
     ) {
         name::write(name_);
         symbol::write(symbol_);
@@ -39,7 +40,7 @@ mod ERC20 {
     }
 
     #[view]
-    fn get_decimals() -> felt {
+    fn get_decimals() -> u8 {
         decimals::read()
     }
 
