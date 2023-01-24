@@ -188,15 +188,10 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                     "$func_decl$ {
         let mut calldata = array_new();
 $serialization_code$
-        let ret_data = match starknet::call_contract_syscall(
+        let ret_data = starknet::call_contract_syscall(
             contract_address,
             calldata,
-        ) {
-            Result::Ok(ret_data) => ret_data,
-            Result::Err(revert_reason) => {
-                panic(revert_reason)
-            },
-        };
+        ).unwrap_syscall();
 $deserialization_code$
     }
 ",
@@ -218,6 +213,9 @@ $deserialization_code$
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
             "mod {dispatcher_name} {{
+                use starknet::SyscallResultTrait;
+                use starknet::SyscallResultTraitImpl;
+
                 $body$
             }}",
         ),
@@ -337,6 +335,9 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             "
             #[{GENERATED_CONTRACT_ATTR}]
             mod $contract_name$ {{
+                use starknet::SyscallResultTrait;
+                use starknet::SyscallResultTraitImpl;
+
             $original_items$
                 $storage_code$
 
@@ -482,12 +483,7 @@ fn handle_event(
         array_append(ref keys, {event_key});
         let mut data = array_new();
         $param_serializations$
-        match starknet::emit_event_syscall(keys, data) {{
-            Result::Ok(()) => {{}},
-            Result::Err(revert_reason) => {{
-                panic(revert_reason)
-            }},
-        }}
+        starknet::emit_event_syscall(keys, data).unwrap_syscall()
     }}
             "
                 ),
@@ -591,32 +587,28 @@ fn handle_simple_storage_var(address: &str) -> String {
     format!(
         "
     mod $storage_var_name$ {{
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address() -> starknet::StorageBaseAddress {{
             starknet::storage_base_address_const::<{address}>()
         }}
         fn read() -> $type_name$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::StorageAccess::<$type_name$>::read(address_domain, address()) {{
-                Result::Ok(value) => value,
-                Result::Err(revert_reason) => {{
-                    panic(revert_reason)
-                }},
-            }}
+            starknet::StorageAccess::<$type_name$>::read(
+                address_domain,
+                address(),
+            ).unwrap_syscall()
         }}
         fn write(value: $type_name$) {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::StorageAccess::<$type_name$>::write(
+            starknet::StorageAccess::<$type_name$>::write(
                 address_domain,
                 address(),
                 value,
-            ) {{
-                Result::Ok(()) => {{}},
-                Result::Err(revert_reason) => {{
-                    panic(revert_reason)
-                }},
-            }}
+            ).unwrap_syscall()
         }}
     }}"
     )
@@ -627,6 +619,9 @@ fn handle_mapping_storage_var(address: &str) -> String {
     format!(
         "
     mod $storage_var_name$ {{
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address(key: $key_type$) -> starknet::StorageBaseAddress {{
             starknet::storage_base_address_from_felt(
                 hash::LegacyHash::<$key_type$>::hash({address}, key))
@@ -634,26 +629,19 @@ fn handle_mapping_storage_var(address: &str) -> String {
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::StorageAccess::<$value_type$>::read(address_domain, address(key)) {{
-                Result::Ok(value) => value,
-                Result::Err(revert_reason) => {{
-                    panic(revert_reason)
-                }},
-            }}
+            starknet::StorageAccess::<$value_type$>::read(
+                address_domain,
+                address(key),
+            ).unwrap_syscall()
         }}
         fn write(key: $key_type$, value: $value_type$) {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::StorageAccess::<$value_type$>::write(
+            starknet::StorageAccess::<$value_type$>::write(
                 address_domain,
                 address(key),
                 value,
-            ) {{
-                Result::Ok(()) => {{}},
-                Result::Err(revert_reason) => {{
-                    panic(revert_reason)
-                }},
-            }}
+            ).unwrap_syscall()
         }}
     }}"
     )

@@ -24,6 +24,9 @@ mod HelloStarknet {
 //! > generated_cairo_code
 #[generated_contract]
 mod HelloStarknet {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     // Increases the balance by the given amount.
     #[external]
@@ -39,32 +42,28 @@ mod HelloStarknet {
 
     
     mod balance {
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address() -> starknet::StorageBaseAddress {
             starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
         }
         fn read() -> felt {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::StorageAccess::<felt>::read(address_domain, address()) {
-                Result::Ok(value) => value,
-                Result::Err(revert_reason) => {
-                    panic(revert_reason)
-                },
-            }
+            starknet::StorageAccess::<felt>::read(
+                address_domain,
+                address(),
+            ).unwrap_syscall()
         }
         fn write(value: felt) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::StorageAccess::<felt>::write(
+            starknet::StorageAccess::<felt>::write(
                 address_domain,
                 address(),
                 value,
-            ) {
-                Result::Ok(()) => {},
-                Result::Err(revert_reason) => {
-                    panic(revert_reason)
-                },
-            }
+            ).unwrap_syscall()
         }
     }
 
