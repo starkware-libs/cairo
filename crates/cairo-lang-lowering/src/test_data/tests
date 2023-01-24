@@ -331,7 +331,7 @@ blk0 (root):
 Inputs: v0: test::Array::<core::felt, 5>
 Initial refs:
 Statements:
-  (v1: core::felt) <- core::felt_const<Literal(LiteralLongId { value: 17 }),>()
+  (v1: core::felt) <- core::felt_const::<LiteralLongId { value: 17 }>()
 End:
   Return(v1)
 
@@ -339,7 +339,7 @@ End:
 blk0 (root):
 Inputs: v0: test::Array::<core::felt, 5>
 Statements:
-  (v1: core::felt) <- core::felt_const<Literal(LiteralLongId { value: 17 }),>()
+  (v1: core::felt) <- core::felt_const::<LiteralLongId { value: 17 }>()
 End:
   Return(v1)
 
