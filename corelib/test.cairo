@@ -301,10 +301,7 @@ fn test_u256_operators() {
     );
     assert(
         as_u256(0_u128, max_u128)
-            * as_u256(
-                0_u128,
-                max_u128
-            ) == as_u256(0xfffffffffffffffffffffffffffffffe_u128, 1_u128),
+            * as_u256(0_u128, max_u128) == as_u256(0xfffffffffffffffffffffffffffffffe_u128, 1_u128),
         'max_u128 * max_u128'
     );
     assert(
