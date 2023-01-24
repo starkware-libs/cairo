@@ -17,7 +17,7 @@ pub fn build_getter(
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
-        buffer(4) system;
+        buffer(6) system;
         deref gas_builtin;
     };
     casm_build_extend! {casm_builder,
@@ -28,19 +28,25 @@ pub fn build_getter(
         assert gas_builtin = *(system++);
         hint SystemCall { system: original_system };
         let updated_gas_builtin = *(system++);
-        // `revert_reason` is 0 on success, nonzero on failure/revert.
-        tempvar revert_reason = *(system++);
-        let failure_system = system;
-        jump Failure if revert_reason != 0;
-        let info = *(system++);
+        tempvar failure_flag = *(system++);
+        // The response in the success case is smaller than in the failure case.
+        let response_0 = *(system++);
+        let success_final_system = system;
+        let revert_reason_end = *(system++);
+        jump Failure if failure_flag != 0;
+
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[updated_gas_builtin], &[system], &[info]], None),
+            (
+                "Fallthrough",
+                &[&[updated_gas_builtin], &[success_final_system], &[response_0]],
+                None,
+            ),
             (
                 "Failure",
-                &[&[updated_gas_builtin], &[failure_system], &[revert_reason]],
+                &[&[updated_gas_builtin], &[system], &[response_0, revert_reason_end]],
                 Some(failure_handle_statement_id),
             ),
         ],
