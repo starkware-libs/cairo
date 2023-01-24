@@ -2,9 +2,10 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::vec;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionSignatureId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
-    LanguageElementId, ModuleId, TraitFunctionId,
+    LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -45,13 +46,32 @@ use crate::{
 #[path = "imp_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteImplLongId {
     pub impl_id: ImplId,
     pub generic_args: Vec<GenericArgumentId>,
 }
 define_short_id!(ConcreteImplId, ConcreteImplLongId, SemanticGroup, lookup_intern_concrete_impl);
+impl DebugWithDb<dyn SemanticGroup> for ConcreteImplLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.impl_id.full_path(db.upcast()))?;
+        if !self.generic_args.is_empty() {
+            write!(f, "::<")?;
+            for (i, arg) in self.generic_args.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{:?}", arg.debug(db))?;
+            }
+            write!(f, ">")?;
+        }
+        Ok(())
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]

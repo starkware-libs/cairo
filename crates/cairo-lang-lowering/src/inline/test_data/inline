@@ -34,7 +34,7 @@ End:
 blk1:
 Inputs:
 Statements:
-  (v2: core::felt) <- core::felt_const<Literal(LiteralLongId { value: -1 }),>()
+  (v2: core::felt) <- core::felt_const::<LiteralLongId { value: -1 }>()
   (v3: core::felt) <- core::felt_mul(v0, v2)
 End:
   Callsite(v3 -> v1)
@@ -73,7 +73,7 @@ blk0 (root):
 Inputs: v0: core::option::Option::<core::felt>
 Statements:
   (v1: core::felt) <- 2u
-  (v2: core::felt) <- test::bar<Type(core::felt),>(v0, v1)
+  (v2: core::felt) <- test::bar::<core::felt>(v0, v1)
 End:
   Return(v2)
 
