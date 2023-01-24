@@ -55,7 +55,7 @@ blk0:
 Inputs:
 Statements:
   (v3: core::felt) <- 1u
-  () <- blk3()
+  (v4: core::felt) <- core::felt_add(v0, v3)
 End:
   Callsite(v4 -> v5)
 
@@ -75,13 +75,6 @@ Statements:
   }
 End:
   Return(v5)
-
-blk3:
-Inputs:
-Statements:
-  (v6: core::felt) <- core::felt_add(v0, v3)
-End:
-  Callsite(v6 -> v4)
 
 //! > ==========================================================================
 

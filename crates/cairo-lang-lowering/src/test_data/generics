@@ -51,25 +51,11 @@ Statements:
   (v0: core::felt) <- 5u
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  () <- blk1()
+  (v3: (core::felt, core::bool)) <- struct_construct(v0, v2)
   (v4: core::felt) <- 6u
   (v5: ()) <- struct_construct()
   (v6: core::bool) <- bool::False(v5)
-  () <- blk2()
+  (v7: (core::felt, core::bool)) <- struct_construct(v4, v6)
   (v8: ()) <- struct_construct()
 End:
   Return(v8)
-
-blk1:
-Inputs:
-Statements:
-  (v9: (core::felt, core::bool)) <- struct_construct(v0, v2)
-End:
-  Callsite(v9 -> v3)
-
-blk2:
-Inputs:
-Statements:
-  (v10: (core::felt, core::bool)) <- struct_construct(v4, v6)
-End:
-  Callsite(v10 -> v7)
