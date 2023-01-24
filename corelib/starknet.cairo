@@ -20,6 +20,7 @@ extern fn storage_address_from_base_and_offset(
 ) -> StorageAddress nopanic;
 extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
+
 // Only address_domain 0 is currently supported.
 // This parameter is going to be used to access address spaces with different
 // data availability guarantees.
@@ -31,6 +32,7 @@ extern fn storage_write_syscall(
 ) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;
 
 // Interoperability.
+extern fn contract_address_const<address>() -> ContractAddress nopanic;
 type CallContractResult = Result::<Array::<felt>, (felt, Array::<felt>)>;
 extern fn call_contract_syscall(
     address: ContractAddress, calldata: Array::<felt>
