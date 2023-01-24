@@ -32,9 +32,7 @@ mod TestContract {
             match starknet::StorageAccess::<felt>::read(address_domain, address()) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, revert_reason);
-                    panic(err_data)
+                    panic(revert_reason)
                 },
             }
         }
@@ -65,9 +63,7 @@ mod TestContract {
             match starknet::StorageAccess::<u128>::read(address_domain, address()) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, revert_reason);
-                    panic(err_data)
+                    panic(revert_reason)
                 },
             }
         }
@@ -98,9 +94,7 @@ mod TestContract {
             match starknet::StorageAccess::<bool>::read(address_domain, address()) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, revert_reason);
-                    panic(err_data)
+                    panic(revert_reason)
                 },
             }
         }
@@ -132,9 +126,7 @@ mod TestContract {
             match starknet::StorageAccess::<u128>::read(address_domain, address(key)) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, revert_reason);
-                    panic(err_data)
+                    panic(revert_reason)
                 },
             }
         }
@@ -166,9 +158,7 @@ mod TestContract {
             match starknet::StorageAccess::<bool>::read(address_domain, address(key)) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, revert_reason);
-                    panic(err_data)
+                    panic(revert_reason)
                 },
             }
         }
@@ -200,9 +190,7 @@ mod TestContract {
             match starknet::StorageAccess::<felt>::read(address_domain, address(key)) {
                 Result::Ok(value) => value,
                 Result::Err(revert_reason) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, revert_reason);
-                    panic(err_data)
+                    panic(revert_reason)
                 },
             }
         }

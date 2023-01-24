@@ -25,7 +25,7 @@ extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress 
 // data availability guarantees.
 extern fn storage_read_syscall(
     address_domain: felt, address: StorageAddress, 
-) -> Result::<felt, felt> implicits(GasBuiltin, System) nopanic;
+) -> Result::<felt, Array::<felt>> implicits(GasBuiltin, System) nopanic;
 extern fn storage_write_syscall(
     address_domain: felt, address: StorageAddress, value: felt
 ) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;
@@ -46,13 +46,13 @@ extern fn emit_event_syscall(
 extern fn get_caller_address() -> Result::<felt, felt> implicits(GasBuiltin, System) nopanic;
 
 trait StorageAccess<T> {
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<T, felt>;
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<T, Array::<felt>>;
     fn write(address_domain: felt, base: StorageBaseAddress, value: T) -> Result::<(), felt>;
 }
 
 impl StorageAccessFelt of StorageAccess::<felt> {
     #[inline(always)]
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<felt, felt> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<felt, Array::<felt>> {
         storage_read_syscall(address_domain, storage_address_from_base(base))
     }
     #[inline(always)]
@@ -62,7 +62,7 @@ impl StorageAccessFelt of StorageAccess::<felt> {
 }
 
 impl StorageAccessBool of StorageAccess::<bool> {
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<bool, felt> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<bool, Array::<felt>> {
         Result::Ok(StorageAccess::<felt>::read(address_domain, base)? != 0)
     }
     #[inline(always)]
@@ -76,7 +76,7 @@ impl StorageAccessBool of StorageAccess::<bool> {
 }
 
 impl StorageAccessU8 of StorageAccess::<u8> {
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u8, felt> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u8, Array::<felt>> {
         Result::Ok(u8_from_felt(StorageAccess::<felt>::read(address_domain, base)?))
     }
     #[inline(always)]
@@ -86,7 +86,7 @@ impl StorageAccessU8 of StorageAccess::<u8> {
 }
 
 impl StorageAccessU128 of StorageAccess::<u128> {
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u128, felt> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u128, Array::<felt>> {
         Result::Ok(u128_from_felt(StorageAccess::<felt>::read(address_domain, base)?))
     }
     #[inline(always)]
@@ -96,7 +96,7 @@ impl StorageAccessU128 of StorageAccess::<u128> {
 }
 
 impl StorageAccessU256 of StorageAccess::<u256> {
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u256, felt> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u256, Array::<felt>> {
         Result::Ok(
             u256 {
             low: StorageAccess::<u128>::read(address_domain, base)?,
