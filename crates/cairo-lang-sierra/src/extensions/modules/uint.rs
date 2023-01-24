@@ -444,3 +444,35 @@ define_libfunc_hierarchy! {
         FromFelt(UintFromFeltLibfunc<Uint8Traits>),
     }, Uint8Concrete
 }
+
+#[derive(Default)]
+pub struct Uint64Traits;
+
+impl UintTraits for Uint64Traits {
+    type UintType = u64;
+    const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u64");
+    const IS_SMALL: bool = true;
+    const CONST: &'static str = "u64_const";
+    const EQUAL: &'static str = "u64_eq";
+    const LESS_THAN: &'static str = "u64_lt";
+    const LESS_THAN_OR_EQUAL: &'static str = "u64_le";
+    const OVERFLOWING_ADD: &'static str = "u64_overflowing_add";
+    const OVERFLOWING_SUB: &'static str = "u64_overflowing_sub";
+    const TO_FELT: &'static str = "u64_to_felt";
+    const TRY_FROM_FELT: &'static str = "u64_try_from_felt";
+}
+
+/// Type for u64.
+pub type Uint64Type = UintType<Uint64Traits>;
+
+define_libfunc_hierarchy! {
+    pub enum Uint64Libfunc {
+        Const(UintConstLibfunc<Uint64Traits>),
+        Operation(UintOperationLibfunc<Uint64Traits>),
+        LessThan(UintLessThanLibfunc<Uint64Traits>),
+        Equal(UintEqualLibfunc<Uint64Traits>),
+        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint64Traits>),
+        ToFelt(UintToFeltLibfunc<Uint64Traits>),
+        FromFelt(UintFromFeltLibfunc<Uint64Traits>),
+    }, Uint64Concrete
+}
