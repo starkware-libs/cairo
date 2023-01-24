@@ -440,7 +440,12 @@ mod TestContract {
         let mut data = array_new();
         serde::Serde::<(felt, felt)>::serialize(ref data, x);
         
-        starknet::emit_event_syscall(keys, data);
+        match starknet::emit_event_syscall(keys, data) {
+            Result::Ok(()) => {},
+            Result::Err(revert_reason) => {
+                panic(revert_reason)
+            },
+        }
     }
             
 
