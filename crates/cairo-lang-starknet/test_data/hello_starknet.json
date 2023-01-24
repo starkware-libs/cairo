@@ -89,15 +89,15 @@
     "0x1019fc7928c89c74",
     "0x1",
     "0xda421e7696ea3653",
-    "0xe74fce603b886267",
+    "0xd0742e8b128469d6",
     "0xbbeca76c5f31d160",
     "0x3",
     "0x0",
-    "0xe74fce603b886267",
+    "0xd0742e8b128469d6",
     "0x1",
     "0x8f26e0f086cc2787",
     "0x1",
-    "0x1019fc7928c89c74",
+    "0xda421e7696ea3653",
     "0x55",
     "0x40001aa317609755",
     "0x40001aa317609755",
@@ -491,35 +491,35 @@
     "0x74903af5ed38aea8",
     "0x74903af5ed38aea8",
     "0x0",
-    "0x83686072e95fc85",
+    "0x2a52308e0f2c18e0",
     "0xdd9d9fc20319c2ab",
     "0x2",
     "0x1",
-    "0xe74fce603b886267",
+    "0xd0742e8b128469d6",
     "0x2",
     "0x0",
-    "0x8db98017ad4cf619",
+    "0x255b3c69e1ff1216",
     "0x6cf23f6e840da115",
     "0x1",
     "0x1",
-    "0xe74fce603b886267",
-    "0xb4645662b86a6533",
+    "0xd0742e8b128469d6",
+    "0x83fb1f3e596a7d60",
     "0x1f573f5f6e8fdd53",
     "0x1",
     "0x1",
-    "0xe74fce603b886267",
-    "0x83304072e92e9c8",
+    "0xd0742e8b128469d6",
+    "0x2a55b28e0f2f2b9d",
     "0xdd9d9fc20319c2ab",
     "0x2",
     "0x1",
-    "0xe74fce603b886267",
+    "0xd0742e8b128469d6",
     "0x2",
     "0x1",
-    "0xad32f9881a289c12",
+    "0xfc56003143493431",
     "0xa159ac87b7eaf0ce",
     "0x1",
     "0x1",
-    "0xe74fce603b886267",
+    "0xd0742e8b128469d6",
     "0xf13df39b62fb68cf",
     "0xc55bad999f5a3d39",
     "0x1",
@@ -530,7 +530,7 @@
     "0x1",
     "0x1",
     "0x1d9672abcf6e84c9",
-    "0x197",
+    "0x195",
     "0x0",
     "0x40001aa317609755",
     "0x2",
@@ -3357,7 +3357,7 @@
     "0x1",
     "0xb",
     "0x0",
-    "0x83686072e95fc85",
+    "0x2a52308e0f2c18e0",
     "0x1",
     "0xb",
     "0x1",
@@ -3397,7 +3397,7 @@
     "0x1",
     "0xe",
     "0x0",
-    "0x8db98017ad4cf619",
+    "0x255b3c69e1ff1216",
     "0x1",
     "0xc",
     "0x1",
@@ -3405,7 +3405,7 @@
     "0x1",
     "0xc",
     "0x0",
-    "0xb4645662b86a6533",
+    "0x83fb1f3e596a7d60",
     "0x1",
     "0xc",
     "0x1",
@@ -3425,7 +3425,7 @@
     "0xffffffffffffffff",
     "0x0",
     "0x0",
-    "0x83304072e92e9c8",
+    "0x2a55b28e0f2f2b9d",
     "0x1",
     "0xa",
     "0x1",
@@ -3465,7 +3465,7 @@
     "0x1",
     "0xe",
     "0x0",
-    "0x8db98017ad4cf619",
+    "0x255b3c69e1ff1216",
     "0x1",
     "0x10",
     "0x1",
@@ -3473,7 +3473,7 @@
     "0x1",
     "0x10",
     "0x0",
-    "0xb4645662b86a6533",
+    "0x83fb1f3e596a7d60",
     "0x1",
     "0x10",
     "0x1",
@@ -3497,7 +3497,7 @@
     "0x1",
     "0x12",
     "0x0",
-    "0xb4645662b86a6533",
+    "0x83fb1f3e596a7d60",
     "0x1",
     "0xf",
     "0x1",
@@ -3505,7 +3505,7 @@
     "0x1",
     "0x13",
     "0x0",
-    "0xad32f9881a289c12",
+    "0xfc56003143493431",
     "0x1",
     "0x13",
     "0x2",
@@ -3532,7 +3532,7 @@
     "0xeb1776ddf832a4cd",
     "0x0",
     "0x1",
-    "0x18d",
+    "0x18b",
     "0x0",
     "0x0",
     "0x2e3080ad677e478f",
@@ -3541,29 +3541,13 @@
     "0xffffffffffffffff",
     "0x0",
     "0x0",
-    "0x6b832b529245fc0e",
-    "0x0",
+    "0x94700eff4bc4fff8",
     "0x1",
-    "0xffffffffffffffff",
-    "0x1",
-    "0x16",
-    "0x0",
-    "0x1a6384043777ab9e",
-    "0x2",
-    "0x16",
     "0x15",
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x17",
-    "0x0",
-    "0x94700eff4bc4fff8",
-    "0x1",
-    "0x17",
-    "0x1",
-    "0xffffffffffffffff",
-    "0x1",
-    "0x18",
+    "0x16",
     "0x0",
     "0x80524a506b1a247f",
     "0x1",
@@ -3571,7 +3555,7 @@
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x19",
+    "0x17",
     "0x0",
     "0xf180aa0ea7c19064",
     "0x1",
@@ -3579,43 +3563,43 @@
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x1a",
+    "0x18",
     "0x0",
     "0xa85c4ad5c8e4bcd5",
     "0x1",
-    "0x18",
+    "0x16",
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x18",
+    "0x16",
     "0x0",
     "0xc71e6d1009f3cbd3",
     "0x1",
-    "0x18",
+    "0x16",
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x1b",
+    "0x19",
     "0x1",
     "0x3",
+    "0x17",
+    "0x18",
     "0x19",
-    "0x1a",
-    "0x1b",
     "0x0",
     "0xfa2ac48bb106f38e",
     "0x0",
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x1c",
+    "0x1a",
     "0x0",
     "0x947390ff4bc812b5",
     "0x1",
-    "0x1c",
+    "0x1a",
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x1d",
+    "0x1b",
     "0x0",
     "0x80524a506b1a247f",
     "0x1",
@@ -3623,7 +3607,7 @@
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x1e",
+    "0x1c",
     "0x0",
     "0xf180aa0ea7c19064",
     "0x1",
@@ -3631,28 +3615,28 @@
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x1f",
+    "0x1d",
     "0x0",
     "0xa85c4ad5c8e4bcd5",
     "0x1",
-    "0x1d",
+    "0x1b",
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x1d",
+    "0x1b",
     "0x0",
     "0xc71e6d1009f3cbd3",
     "0x1",
-    "0x1d",
+    "0x1b",
     "0x1",
     "0xffffffffffffffff",
     "0x1",
-    "0x20",
+    "0x1e",
     "0x1",
     "0x3",
+    "0x1c",
+    "0x1d",
     "0x1e",
-    "0x1f",
-    "0x20",
     "0x0",
     "0xf13df39b62fb68cf",
     "0x0",
@@ -3826,7 +3810,7 @@
     "0x1",
     "0x1d9672abcf6e84c9",
     "0x0",
-    "0x194"
+    "0x192"
   ],
   "sierra_program_debug_info": {
     "type_names": [
@@ -3887,16 +3871,16 @@
         "System"
       ],
       [
+        15020681832033446358,
+        "core::result::Result::<(), core::array::Array::<core::felt>>"
+      ],
+      [
         15727166343418099283,
         "Array<felt>"
       ],
       [
         16351467547032869373,
         "core::result::Result::<core::felt, core::array::Array::<core::felt>>"
-      ],
-      [
-        16667767658632471143,
-        "core::result::Result::<(), core::felt>"
       ]
     ],
     "libfunc_names": [
@@ -3907,14 +3891,6 @@
       [
         533362876658986487,
         "store_temp<u128>"
-      ],
-      [
-        590820405008329160,
-        "enum_init<core::result::Result::<(), core::felt>, 1>"
-      ],
-      [
-        591807766450273413,
-        "enum_init<core::result::Result::<(), core::felt>, 0>"
       ],
       [
         705292029030821401,
@@ -3945,8 +3921,20 @@
         "array_pop_front<felt>"
       ],
       [
+        2691811627744825878,
+        "store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>"
+      ],
+      [
         2785814028946806345,
         "rename<GasBuiltin>"
+      ],
+      [
+        3049553284381284576,
+        "enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>"
+      ],
+      [
+        3050540645823228829,
+        "enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>"
       ],
       [
         3328301606880823183,
@@ -4069,16 +4057,16 @@
         "store_temp<BuiltinCosts>"
       ],
       [
+        9510229390771518816,
+        "rename<core::result::Result::<(), core::array::Array::<core::felt>>>"
+      ],
+      [
         9658818963800389097,
         "felt_const<7733229381460288120802334208475838166080759535023995805565484692595>"
       ],
       [
         9752721977740611049,
         "drop<felt>"
-      ],
-      [
-        10212334469219415577,
-        "store_temp<core::result::Result::<(), core::felt>>"
       ],
       [
         10464330274279749695,
@@ -4121,10 +4109,6 @@
         "storage_read_syscall"
       ],
       [
-        12480311880346803218,
-        "enum_match<core::result::Result::<(), core::felt>>"
-      ],
-      [
         12938018335875292343,
         "store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
       ],
@@ -4135,10 +4119,6 @@
       [
         12986995382922958785,
         "rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
-      ],
-      [
-        12998609406498858291,
-        "rename<core::result::Result::<(), core::felt>>"
       ],
       [
         13385636199102747990,
@@ -4239,6 +4219,10 @@
       [
         18096672134894264448,
         "function_call<user@core::integer::u128_ne>"
+      ],
+      [
+        18182720757137224753,
+        "enum_match<core::result::Result::<(), core::array::Array::<core::felt>>>"
       ]
     ],
     "user_func_names": [
