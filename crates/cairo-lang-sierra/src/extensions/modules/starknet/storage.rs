@@ -1,4 +1,5 @@
 use super::syscalls::SystemType;
+use crate::extensions::array::ArrayType;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
@@ -13,6 +14,7 @@ use crate::extensions::{
     SpecializationError,
 };
 use crate::ids::GenericTypeId;
+use crate::program::GenericArg;
 
 /// Type for StarkNet storage base address, a value in the range [0, 2 ** 251 - 256).
 #[derive(Default)]
@@ -154,6 +156,8 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_array_ty =
+            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty.clone())])?;
 
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -187,9 +191,9 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
                                 DeferredOutputKind::AddConst { param_idx: 1 },
                             ),
                         },
-                        // read_value
+                        // Read result
                         OutputVarInfo {
-                            ty: felt_ty.clone(),
+                            ty: felt_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
@@ -212,8 +216,8 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ty: felt_array_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
