@@ -186,9 +186,8 @@ fn pop_u256(ref arr: Array::<felt>) -> u256 {
 #[test]
 #[available_gas(300000)]
 fn read_large_first_value() {
-    let mut retdata = TestContract::__external::get_large(
-        single_u256_arr(u256 { low: 1_u128, high: 2_u128 })
-    );
+    let mut retdata =
+        TestContract::__external::get_large(single_u256_arr(u256 { low: 1_u128, high: 2_u128 }));
     let value = pop_u256(ref retdata);
     assert_empty(retdata);
     assert(value.low == 0_u128, 'bad low');
@@ -203,9 +202,8 @@ fn write_read_large_value() {
     serde::Serde::serialize(ref args, u256 { low: 3_u128, high: 4_u128 });
     let mut retdata = TestContract::__external::set_large(args);
     assert_empty(retdata);
-    let mut retdata = TestContract::__external::get_large(
-        single_u256_arr(u256 { low: 1_u128, high: 2_u128 })
-    );
+    let mut retdata =
+        TestContract::__external::get_large(single_u256_arr(u256 { low: 1_u128, high: 2_u128 }));
     let value = pop_u256(ref retdata);
     assert_empty(retdata);
     assert(value.low == 3_u128, 'bad low');

@@ -139,6 +139,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprList
                 | SyntaxKind::ExprBlock
+                | SyntaxKind::ExprTuple
+                | SyntaxKind::PatternTuple
                 | SyntaxKind::ModuleBody
                 | SyntaxKind::MatchArms
                 | SyntaxKind::MatchArm
@@ -222,22 +224,23 @@ impl SyntaxNodeFormat for SyntaxNode {
                 )),
             },
             _ => match self.kind(db) {
-                SyntaxKind::ParamList | SyntaxKind::ExprList | SyntaxKind::ImplicitsList => {
-                    WrappingBreakLinePoints {
-                        leading: Some(BreakLinePointProperties::new(
-                            2,
-                            BreakLinePointIndentation::IndentedWithTail,
-                            true,
-                            false,
-                        )),
-                        trailing: Some(BreakLinePointProperties::new(
-                            2,
-                            BreakLinePointIndentation::IndentedWithTail,
-                            true,
-                            false,
-                        )),
-                    }
-                }
+                SyntaxKind::ParamList
+                | SyntaxKind::ExprList
+                | SyntaxKind::ImplicitsList
+                | SyntaxKind::PatternList => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        2,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    )),
+                    trailing: Some(BreakLinePointProperties::new(
+                        2,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    )),
+                },
                 SyntaxKind::StructArgList => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         3,
@@ -378,6 +381,15 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     )),
                     trailing: None,
+                },
+                SyntaxKind::TerminalEq => WrappingBreakLinePoints {
+                    leading: None,
+                    trailing: Some(BreakLinePointProperties::new(
+                        10,
+                        BreakLinePointIndentation::Indented,
+                        true,
+                        true,
+                    )),
                 },
                 _ => WrappingBreakLinePoints { leading: None, trailing: None },
             },

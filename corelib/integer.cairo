@@ -98,9 +98,7 @@ fn u128_mod(a: u128, b: u128) -> u128 implicits(RangeCheck) {
 
 extern fn u128_safe_divmod(
     a: u128, b: NonZero::<u128>
-    ) -> (
-    u128, u128
-) implicits(RangeCheck) nopanic;
+) -> (u128, u128) implicits(RangeCheck) nopanic;
 
 extern fn u128_lt(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic;
 extern fn u128_eq(a: u128, b: u128) -> bool implicits() nopanic;
@@ -203,10 +201,11 @@ struct u256 {
 }
 
 fn u256_overflow_add(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
-    let (high, overflow) = match u128_overflowing_add(a.high, b.high) {
-        Result::Ok(high) => (high, false),
-        Result::Err(high) => (high, true),
-    };
+    let (high, overflow) =
+        match u128_overflowing_add(a.high, b.high) {
+            Result::Ok(high) => (high, false),
+            Result::Err(high) => (high, true),
+        };
     match u128_overflowing_add(a.low, b.low) {
         Result::Ok(low) => (u256 { low, high }, overflow),
         Result::Err(low) => {
@@ -219,10 +218,11 @@ fn u256_overflow_add(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nop
 }
 
 fn u256_overflow_sub(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
-    let (high, overflow) = match u128_overflowing_sub(a.high, b.high) {
-        Result::Ok(high) => (high, false),
-        Result::Err(high) => (high, true),
-    };
+    let (high, overflow) =
+        match u128_overflowing_sub(a.high, b.high) {
+            Result::Ok(high) => (high, false),
+            Result::Err(high) => (high, true),
+        };
     match u128_overflowing_sub(a.low, b.low) {
         Result::Ok(low) => (u256 { low, high }, overflow),
         Result::Err(low) => {
@@ -238,17 +238,19 @@ fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) nopanic {
     let (high1, low) = u128_wide_mul(a.low, b.low);
     let (overflow_value1, high2) = u128_wide_mul(a.low, b.high);
     let (overflow_value2, high3) = u128_wide_mul(a.high, b.low);
-    let (high, overflow) = match u128_overflowing_add(high1, high2) {
-        Result::Ok(high) => (
-            high,
-            overflow_value1 != 0_u128 | overflow_value2 != 0_u128 | (a.high > 0_u128 & b.high > 0_u128)
-        ),
-        Result::Err(high) => (high, true),
-    };
-    let (high, overflow) = match u128_overflowing_add(high, high3) {
-        Result::Ok(high) => (high, overflow),
-        Result::Err(high) => (high, true),
-    };
+    let (high, overflow) =
+        match u128_overflowing_add(high1, high2) {
+            Result::Ok(high) => (
+                high,
+                overflow_value1 != 0_u128 | overflow_value2 != 0_u128 | (a.high > 0_u128 & b.high > 0_u128)
+            ),
+            Result::Err(high) => (high, true),
+        };
+    let (high, overflow) =
+        match u128_overflowing_add(high, high3) {
+            Result::Ok(high) => (high, overflow),
+            Result::Err(high) => (high, true),
+        };
     (u256 { low, high }, overflow)
 }
 

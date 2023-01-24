@@ -37,7 +37,8 @@ fn test_bool_operators() {
 #[test]
 fn test_ec_operations() {
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
-    let beta_p2_root = 2487829544412206244690656897973144572467842667075005257202960243805141046681;
+    let beta_p2_root =
+        2487829544412206244690656897973144572467842667075005257202960243805141046681;
     let p = ec_point_from_x(1).unwrap();
     let (x, y) = ec_point_unwrap(p);
     assert(x == 1, 'x == 1');
@@ -61,7 +62,8 @@ fn test_ec_operations() {
     // Try computing `p + p` using the ec_mul function.
     let double_p = ec_mul(p, 2).unwrap();
     let (double_x, double_y) = ec_point_unwrap(double_p);
-    let expected_double_y = 3572434102142093425782752266058856056057826477682467661647843687948039943621;
+    let expected_double_y =
+        3572434102142093425782752266058856056057826477682467661647843687948039943621;
     assert(
         double_x == 75984168971785666410219869038140038216102669781812169677875295511117260233,
         'bad double x'
