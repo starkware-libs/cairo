@@ -7,7 +7,8 @@ extern type StorageAddress;
 extern type ContractAddress;
 
 // An Helper function to force the inclusion of `System` in the list of implicits.
-fn use_system_implicit() implicits(System) {}
+fn use_system_implicit() implicits(System) {
+}
 
 // Storage.
 extern fn storage_base_address_const<address>() -> StorageBaseAddress nopanic;
@@ -42,7 +43,18 @@ extern fn emit_event_syscall(
 ) -> Result::<(), Array::<felt>> implicits(GasBuiltin, System) nopanic;
 
 // Getters.
-extern fn get_caller_address() -> Result::<felt, felt> implicits(GasBuiltin, System) nopanic;
+extern fn get_caller_address_syscall() -> Result::<felt,
+Array::<felt>> implicits(GasBuiltin, System) nopanic;
+
+// TODO(orizi): Remove when shorter unwrap is added.
+fn get_caller_address() -> felt {
+    match starknet::get_caller_address_syscall() {
+        Result::Ok(x) => x,
+        Result::Err(revert_reason) => {
+            panic(revert_reason)
+        },
+    }
+}
 
 trait StorageAccess<T> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<T, Array::<felt>>;
@@ -72,10 +84,10 @@ impl StorageAccessBool of StorageAccess::<bool> {
     fn write(
         address_domain: felt, base: StorageBaseAddress, value: bool
     ) -> Result::<(), Array::<felt>> {
-        StorageAccess::<felt>::write(address_domain, base, if value {
-            1
-        } else {
-            0
+            StorageAccess::<felt>::write(address_domain, base, if value {
+                1
+            } else {
+                0
         })
     }
 }
