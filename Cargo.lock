@@ -914,10 +914,14 @@ dependencies = [
 name = "cairo_python_bindings"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "cairo-lang-compiler",
  "cairo-lang-runner",
  "cairo-lang-sierra-to-casm",
+ "cairo-lang-starknet",
  "pyo3",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

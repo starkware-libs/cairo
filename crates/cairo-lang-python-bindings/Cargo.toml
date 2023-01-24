@@ -9,6 +9,10 @@ edition = "2021"
 cairo-lang-compiler = { path = "../cairo-lang-compiler" }
 cairo-lang-runner = { path = "../cairo-lang-runner" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet" }
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
 
 [lib]
 name = "cairo_python_bindings"
