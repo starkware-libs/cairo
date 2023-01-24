@@ -2,10 +2,12 @@ use std::fmt::Display;
 
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use itertools::zip_eq;
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
@@ -39,6 +41,12 @@ pub enum CompilationError {
     LibfuncInvocationMismatch { statement_idx: StatementIdx },
     #[error("{var_id} is dangling at #{statement_idx}.")]
     DanglingReferences { statement_idx: StatementIdx, var_id: VarId },
+
+    #[error("#{source_statement_idx}->#{destination_statement_idx}: Expected branch align")]
+    ExpectedBranchAlign {
+        source_statement_idx: StatementIdx,
+        destination_statement_idx: StatementIdx,
+    },
 }
 
 /// The casm program representation.
@@ -194,15 +202,38 @@ pub fn compile(
                 }
                 instructions.extend(compiled_invocation.instructions);
 
-                program_annotations.propagate_annotations(
-                    statement_idx,
-                    StatementAnnotations {
-                        environment: compiled_invocation.environment,
-                        ..annotations
-                    },
-                    &invocation.branches,
-                    compiled_invocation.results.into_iter(),
-                )?;
+                let updated_annotations = StatementAnnotations {
+                    environment: compiled_invocation.environment,
+                    ..annotations
+                };
+
+                let branching_libfunc = compiled_invocation.results.len() > 1;
+
+                for (branch_info, branch_changes) in
+                    zip_eq(&invocation.branches, compiled_invocation.results)
+                {
+                    let destination_statement_idx = statement_idx.next(&branch_info.target);
+                    if branching_libfunc
+                        && !is_branch_align(
+                            &registry,
+                            &program.statements[destination_statement_idx.0],
+                        )?
+                    {
+                        return Err(CompilationError::ExpectedBranchAlign {
+                            source_statement_idx: statement_idx,
+                            destination_statement_idx,
+                        });
+                    }
+
+                    program_annotations.propagate_annotations(
+                        statement_idx,
+                        destination_statement_idx,
+                        &updated_annotations,
+                        branch_info,
+                        branch_changes,
+                        branching_libfunc,
+                    )?;
+                }
             }
         }
     }
@@ -221,4 +252,23 @@ pub fn compile(
                 .collect(),
         },
     })
+}
+
+/// Returns true if `statement` is an invocation of the branch_align libfunc.
+fn is_branch_align(
+    registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    statement: &Statement,
+) -> Result<bool, CompilationError> {
+    if let Statement::Invocation(invocation) = statement {
+        let libfunc = registry
+            .get_libfunc(&invocation.libfunc_id)
+            .map_err(CompilationError::ProgramRegistryError)?;
+        if let [branch_signature] = libfunc.branch_signatures() {
+            if branch_signature.ap_change == SierraApChange::BranchAlign {
+                return Ok(true);
+            }
+        }
+    }
+
+    Ok(false)
 }
