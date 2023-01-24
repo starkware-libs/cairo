@@ -42,8 +42,8 @@ impl U256Serde of Serde::<u256> {
     fn deserialize(ref serialized: Array::<felt>) -> Option::<u256> {
         Option::Some(
             u256 {
-                low: Serde::<u128>::deserialize(ref serialized)?,
-                high: Serde::<u128>::deserialize(ref serialized)?,
+            low: Serde::<u128>::deserialize(ref serialized)?,
+            high: Serde::<u128>::deserialize(ref serialized)?,
             }
         )
     }
