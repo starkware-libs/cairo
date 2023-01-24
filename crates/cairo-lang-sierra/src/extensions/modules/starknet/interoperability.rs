@@ -50,7 +50,7 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
         let addr_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         let felt_array_ty =
-            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty.clone())])?;
+            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty)])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -106,11 +106,6 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
                             ),
                         },
                         // Revert reason
-                        OutputVarInfo {
-                            ty: felt_ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-                        },
-                        // result
                         OutputVarInfo {
                             ty: felt_array_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
