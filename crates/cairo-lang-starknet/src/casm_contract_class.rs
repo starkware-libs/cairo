@@ -12,9 +12,12 @@ use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::NoGenericArgsGenericType;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra_to_casm::compiler::CompilationError;
-use cairo_lang_sierra_to_casm::metadata::{calc_metadata, MetadataError};
+use cairo_lang_sierra_to_casm::metadata::{
+    calc_metadata, MetadataComputationConfig, MetadataError,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use convert_case::{Case, Casing};
+use itertools::chain;
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
@@ -26,7 +29,7 @@ use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
 
 /// The expected gas cost of an entrypoint that begins with get_gas() immediately.
-pub const ENTRY_POINT_COST: i64 = 15;
+pub const ENTRY_POINT_COST: i32 = 100;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum StarknetSierraCompilationError {
@@ -69,8 +72,20 @@ impl CasmContractClass {
 
         let program = sierra_from_felts(&contract_class.sierra_program)?;
 
+        let entrypoint_ids = chain!(
+            &contract_class.entry_points_by_type.constructor,
+            &contract_class.entry_points_by_type.external,
+            &contract_class.entry_points_by_type.l1_handler,
+        )
+        .map(|entrypoint| program.funcs[entrypoint.function_idx].id.clone());
+        let metadata_computation_config = MetadataComputationConfig {
+            function_set_costs: entrypoint_ids
+                .map(|id| (id, [(CostTokenType::Step, ENTRY_POINT_COST)].into()))
+                .collect(),
+        };
+        let metadata = calc_metadata(&program, metadata_computation_config)?;
+
         let gas_usage_check = true;
-        let metadata = calc_metadata(&program)?;
         let cairo_program =
             cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
 
@@ -157,7 +172,7 @@ impl CasmContractClass {
                 .code_offset;
             // TODO(orizi): Convert back into an assert when there's a valid const cost.
             if metadata.gas_info.function_costs[function.id.clone()]
-                != OrderedHashMap::from_iter([(CostTokenType::Step, ENTRY_POINT_COST)])
+                != OrderedHashMap::from_iter([(CostTokenType::Step, ENTRY_POINT_COST as i64)])
             {
                 eprintln!("Unexpected entry point cost.");
             }
