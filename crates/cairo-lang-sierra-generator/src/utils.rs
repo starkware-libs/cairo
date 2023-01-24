@@ -267,9 +267,6 @@ pub fn statement_outputs(
     lowered_function: &lowering::FlatLowered,
 ) -> Vec<lowering::VariableId> {
     match statement {
-        lowering::Statement::CallBlock(statement_call_block) => {
-            collect_outputs(lowered_function, &[statement_call_block.block])
-        }
         lowering::Statement::MatchExtern(lowering::StatementMatchExtern { arms, .. })
         | lowering::Statement::MatchEnum(lowering::StatementMatchEnum { arms, .. }) => {
             let blocks = arms.iter().map(|(_, block)| *block).collect_vec();
