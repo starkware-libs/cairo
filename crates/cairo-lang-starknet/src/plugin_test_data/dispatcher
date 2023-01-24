@@ -29,35 +29,28 @@ trait IContract {
     fn my_event();
 }
 mod IContractDispatcher {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
         fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
         let mut calldata = array_new();
         serde::Serde::<felt>::serialize(ref calldata, arg);
         serde::Serde::<felt>::serialize(ref calldata, num);
 
-        let ret_data = match starknet::call_contract_syscall(
+        let ret_data = starknet::call_contract_syscall(
             contract_address,
             calldata,
-        ) {
-            Result::Ok(ret_data) => ret_data,
-            Result::Err(revert_reason) => {
-                panic(revert_reason)
-            },
-        };
+        ).unwrap_syscall();
         serde::Serde::<felt>::deserialize(ref ret_data)
     }
 
     fn empty(contract_address: ContractAddress, ) {
         let mut calldata = array_new();
 
-        let ret_data = match starknet::call_contract_syscall(
+        let ret_data = starknet::call_contract_syscall(
             contract_address,
             calldata,
-        ) {
-            Result::Ok(ret_data) => ret_data,
-            Result::Err(revert_reason) => {
-                panic(revert_reason)
-            },
-        };
+        ).unwrap_syscall();
 
     }
 
