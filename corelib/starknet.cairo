@@ -41,6 +41,9 @@ extern fn emit_event_syscall(
     keys: Array::<felt>, data: Array::<felt>
 ) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;
 
+// Getters.
+extern fn get_caller_address() -> Result::<felt, felt> implicits(GasBuiltin, System) nopanic;
+
 trait StorageAccess<T> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<T, felt>;
     fn write(address_domain: felt, base: StorageBaseAddress, value: T) -> Result::<(), felt>;

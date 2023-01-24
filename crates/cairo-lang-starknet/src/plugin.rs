@@ -28,11 +28,13 @@ use crate::contract::starknet_keccak;
 const ABI_ATTR: &str = "abi";
 const CONTRACT_ATTR: &str = "contract";
 const EXTERNAL_ATTR: &str = "external";
+const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const VIEW_ATTR: &str = "view";
 pub const EVENT_ATTR: &str = "event";
 pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
+pub const CONSTRUCTOR_MODULE: &str = "__constructor";
 
 /// The diagnostics remapper of the plugin.
 #[derive(Debug, PartialEq, Eq)]
@@ -264,6 +266,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     let mut diagnostics = vec![];
 
     let mut generated_external_functions = Vec::new();
+    let mut generated_constructor_functions = Vec::new();
 
     let mut storage_code = RewriteNode::Text("".to_string());
     let mut original_items = Vec::new();
@@ -274,10 +277,16 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         let keep_original = match &item {
             ast::Item::FreeFunction(item_function)
                 if item_function.has_attr(db, EXTERNAL_ATTR)
-                    || item_function.has_attr(db, VIEW_ATTR) =>
+                    || item_function.has_attr(db, VIEW_ATTR)
+                    || item_function.has_attr(db, CONSTRUCTOR_ATTR) =>
             {
-                let attr =
-                    if item_function.has_attr(db, EXTERNAL_ATTR) { "external" } else { "view" };
+                let attr = if item_function.has_attr(db, EXTERNAL_ATTR) {
+                    EXTERNAL_ATTR
+                } else if item_function.has_attr(db, VIEW_ATTR) {
+                    VIEW_ATTR
+                } else {
+                    CONSTRUCTOR_ATTR
+                };
                 abi_functions.push(RewriteNode::Modified(ModifiedNode {
                     children: vec![
                         RewriteNode::Text(format!("#[{attr}]\n        ")),
@@ -288,9 +297,13 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
                 match generate_entry_point_wrapper(db, item_function) {
                     Ok(generated_function) => {
-                        generated_external_functions.push(generated_function);
-                        generated_external_functions
-                            .push(RewriteNode::Text("\n        ".to_string()));
+                        let generated = if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
+                            &mut generated_constructor_functions
+                        } else {
+                            &mut generated_external_functions
+                        };
+                        generated.push(generated_function);
+                        generated.push(RewriteNode::Text("\n        ".to_string()));
                     }
                     Err(entry_point_diagnostics) => {
                         diagnostics.extend(entry_point_diagnostics);
@@ -330,6 +343,9 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             mod $contract_name$ {{
             $original_items$
                 $storage_code$
+
+                $event_functions$
+
                 trait {ABI_TRAIT} {{
                     $abi_functions$
                     $abi_events$
@@ -337,7 +353,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
                 mod {EXTERNAL_MODULE} {{
                     $generated_external_functions$
-                    $event_functions$
+                }}
+
+                mod {CONSTRUCTOR_MODULE} {{
+                    $generated_constructor_functions$
                 }}
             }}
         "
@@ -364,6 +383,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             (
                 "generated_external_functions".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: generated_external_functions }),
+            ),
+            (
+                "generated_constructor_functions".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: generated_constructor_functions }),
             ),
             (
                 "event_functions".to_string(),
@@ -428,9 +451,7 @@ fn handle_event(
 
         // TODO(yuval): use panicable version of deserializations when supported.
         let param_serialization = RewriteNode::interpolate_patched(
-            &format!(
-                "serde::Serde::<{type_name}>::serialize(ref data, $param_name$);\n            "
-            ),
+            &format!("serde::Serde::<{type_name}>::serialize(ref data, $param_name$);\n        "),
             HashMap::from([(
                 "param_name".to_string(),
                 RewriteNode::Trimmed(param_name.as_syntax_node()),
@@ -459,14 +480,14 @@ fn handle_event(
             RewriteNode::interpolate_patched(
                 &format!(
                     "
-        $attrs$
-        $declaration$ {{
-            let mut keys = array_new();
-            array_append(ref keys, {event_key});
-            let mut data = array_new();
-            $param_serializations$
-            starknet::emit_event_syscall(keys, data);
-        }}
+    $attrs$
+    $declaration$ {{
+        let mut keys = array_new();
+        array_append(ref keys, {event_key});
+        let mut data = array_new();
+        $param_serializations$
+        starknet::emit_event_syscall(keys, data);
+    }}
             "
                 ),
                 HashMap::from([
@@ -724,7 +745,7 @@ fn generate_entry_point_wrapper(
                 Option::None(_) => {{
                     let mut err_data = array_new();
                     array_append(ref err_data, {oog_err});
-                    panic(err_data);
+                    panic(err_data)
                 }},
             }}
             {arg_definitions}

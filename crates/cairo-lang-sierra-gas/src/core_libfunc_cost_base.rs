@@ -185,7 +185,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations, InfoProvider: InvocationCostI
 /// Returns costs for u8 libfuncs.
 fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint8Concrete::Const(_) => vec![ops.const_cost(0)],
+        Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) => vec![ops.const_cost(0)],
         Uint8Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
                 vec![ops.const_cost(4), ops.const_cost(4)]

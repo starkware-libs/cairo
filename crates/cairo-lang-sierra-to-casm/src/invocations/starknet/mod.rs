@@ -1,5 +1,6 @@
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
+use self::getter::build_getter;
 use self::interoperability::{build_call_contract, build_contract_address_const};
 use self::storage::{
     build_storage_address_from_base_and_offset, build_storage_base_address_const,
@@ -7,6 +8,8 @@ use self::storage::{
 };
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::InvocationError;
+
+mod getter;
 
 mod storage;
 use storage::{build_storage_read, build_storage_write};
@@ -39,5 +42,6 @@ pub fn build(
             build_storage_address_from_base_and_offset(builder)
         }
         StarkNetConcreteLibfunc::EmitEvent(_) => build_emit_event(builder),
+        StarkNetConcreteLibfunc::GetCallerAddress(_) => build_getter(builder, "GetCallerAddress"),
     }
 }

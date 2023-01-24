@@ -71,6 +71,9 @@ mod HelloStarknet {
             }
         }
     }
+
+    
+
     trait __abi {
         #[external]
         fn increase_balance(amount: felt);
@@ -88,7 +91,7 @@ mod HelloStarknet {
                 Option::None(_) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, 'Out of gas');
-                    panic(err_data);
+                    panic(err_data)
                 },
             }
             
@@ -131,7 +134,7 @@ mod HelloStarknet {
                 Option::None(_) => {
                     let mut err_data = array_new();
                     array_append(ref err_data, 'Out of gas');
-                    panic(err_data);
+                    panic(err_data)
                 },
             }
             
@@ -161,6 +164,9 @@ mod HelloStarknet {
             arr
         }
         
+    }
+
+    mod __constructor {
         
     }
 }
