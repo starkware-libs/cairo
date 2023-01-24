@@ -88,12 +88,13 @@ impl StorageAccessU256 of StorageAccess::<u256> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u256, felt> {
         Result::Ok(
             u256 {
-                low: StorageAccess::<u128>::read(address_domain, base)?,
-                high: u128_from_felt(
-                    storage_read_syscall(
-                        address_domain, storage_address_from_base_and_offset(base, 1_u8)
-                    )?
-                )
+            low: StorageAccess::<u128>::read(address_domain, base)?,
+            high: u128_from_felt(
+                storage_read_syscall(
+                    address_domain,
+                    storage_address_from_base_and_offset(base, 1_u8)
+                )?
+            )
             }
         )
     }
