@@ -482,7 +482,12 @@ fn handle_event(
         array_append(ref keys, {event_key});
         let mut data = array_new();
         $param_serializations$
-        starknet::emit_event_syscall(keys, data);
+        match starknet::emit_event_syscall(keys, data) {{
+            Result::Ok(()) => {{}},
+            Result::Err(revert_reason) => {{
+                panic(revert_reason)
+            }},
+        }}
     }}
             "
                 ),

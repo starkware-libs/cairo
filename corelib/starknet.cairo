@@ -39,7 +39,7 @@ extern fn call_contract_syscall(
 // Events.
 extern fn emit_event_syscall(
     keys: Array::<felt>, data: Array::<felt>
-) -> Result::<(), felt> implicits(GasBuiltin, System) nopanic;
+) -> Result::<(), Array::<felt>> implicits(GasBuiltin, System) nopanic;
 
 // Getters.
 extern fn get_caller_address() -> Result::<felt, felt> implicits(GasBuiltin, System) nopanic;
