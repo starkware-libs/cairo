@@ -193,12 +193,8 @@ $serialization_code$
             calldata,
         ) {
             Result::Ok(ret_data) => ret_data,
-            Result::Err((reason, _ret_data)) => {
-                let mut err_data = array_new();
-                array_append(ref err_data, 'call_contract_syscall failed');
-                array_append(ref err_data, reason);
-                // TODO(ilya): Handle ret_data.
-                panic(err_data)
+            Result::Err(revert_reason) => {
+                panic(revert_reason)
             },
         };
 $deserialization_code$

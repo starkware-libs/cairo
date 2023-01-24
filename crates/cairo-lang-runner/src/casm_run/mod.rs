@@ -295,7 +295,7 @@ impl HintProcessor for CairoHintProcessor {
                         vm.insert_value(&revert_reason_ptr, revert_reason_start)?;
                         vm.insert_value(&revert_reason_ptr, revert_reason_end)?;
                     }
-                } else if selector == "call_contract".as_bytes() {
+                } else if selector == "CallContract".as_bytes() {
                     todo!()
                 } else {
                     panic!("Unknown selector for system call!");
