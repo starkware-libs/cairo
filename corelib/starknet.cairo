@@ -74,6 +74,16 @@ impl StorageAccessBool of StorageAccess::<bool> {
     }
 }
 
+impl StorageAccessU8 of StorageAccess::<u8> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u8, felt> {
+        Result::Ok(u8_from_felt(StorageAccess::<felt>::read(address_domain, base)?))
+    }
+    #[inline(always)]
+    fn write(address_domain: felt, base: StorageBaseAddress, value: u8) -> Result::<(), felt> {
+        StorageAccess::<felt>::write(address_domain, base, u8_to_felt(value))
+    }
+}
+
 impl StorageAccessU128 of StorageAccess::<u128> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u128, felt> {
         Result::Ok(u128_from_felt(StorageAccess::<felt>::read(address_domain, base)?))
