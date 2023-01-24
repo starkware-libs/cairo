@@ -1,4 +1,4 @@
-use cairo_felt::{Felt, FeltOps};
+use cairo_felt::Felt;
 
 /// Converts a bigint representing a felt to a Cairo short-string.
 pub fn as_cairo_short_string(value: &Felt) -> Option<String> {

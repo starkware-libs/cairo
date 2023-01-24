@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
-use cairo_felt::{self as felt, felt_str, Felt, FeltOps, PRIME_STR};
+use cairo_felt::{self as felt, felt_str, Felt, PRIME_STR};
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
@@ -628,7 +628,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     let mut runner = CairoRunner::new(&program, "all", false)
         .map_err(VirtualMachineError::from)
         .map_err(Box::new)?;
-    let mut vm = VirtualMachine::new(true, vec![]);
+    let mut vm = VirtualMachine::new(true);
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 
