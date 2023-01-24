@@ -32,7 +32,7 @@ struct MyStruct {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- blk1()
+  (v1: core::felt) <- core::felt_add(v0, v0)
   (v2: core::felt) <- test::revoke_ap()
   (v3: test::MyStruct) <- struct_construct(v0, v1)
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
@@ -44,13 +44,6 @@ Statements:
   (v11: core::felt, v12: core::felt) <- struct_destructure(v9)
 End:
   Return(v11)
-
-blk1:
-Inputs:
-Statements:
-  (v13: core::felt) <- core::felt_add(v0, v0)
-End:
-  Callsite(v13 -> v1)
 
 //! > local_variables
 v1, v9
