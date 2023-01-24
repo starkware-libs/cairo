@@ -341,7 +341,7 @@ fn create_metadata(
     calc_gas: bool,
 ) -> Result<Metadata, RunnerError> {
     if calc_gas {
-        calc_metadata(sierra_program).map_err(|err| match err {
+        calc_metadata(sierra_program, Default::default()).map_err(|err| match err {
             MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
             MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
         })

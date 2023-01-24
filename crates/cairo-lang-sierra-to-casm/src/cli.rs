@@ -27,7 +27,7 @@ fn main() {
     let gas_usage_check = true;
     let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
         &program,
-        &calc_metadata(&program).expect("Failed calculating Sierra variables."),
+        &calc_metadata(&program, Default::default()).expect("Failed calculating Sierra variables."),
         gas_usage_check,
     )
     .expect("Compilation failed.");
