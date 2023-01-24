@@ -201,7 +201,7 @@ impl SierraCasmRunner {
         for ty in func.signature.ret_types.iter().rev() {
             let size = self.sierra_program_registry.get_type(ty)?.info().size as usize;
             let values: Vec<Felt> =
-                cells[(ap - size)..ap].iter().cloned().map(|cell| cell.unwrap()).collect();
+                ((ap - size)..ap).map(|index| cells[index].clone().unwrap()).collect();
             ap -= size;
             results_data.push((ty.clone(), values));
         }
