@@ -184,13 +184,7 @@ use integer::u128_const;
 use integer::u128_from_felt;
 use integer::u128_try_from_felt;
 use integer::u128_to_felt;
-use integer::u128_add;
-impl U128Add of Add::<u128> {
-    #[inline(always)]
-    fn add(a: u128, b: u128) -> u128 {
-        u128_add(a, b)
-    }
-}
+use integer::U128Add;
 use integer::u128_sub;
 use integer::u128_mul;
 use integer::u128_as_non_zero;
@@ -211,13 +205,7 @@ use integer::u8_const;
 use integer::u8_from_felt;
 use integer::u8_try_from_felt;
 use integer::u8_to_felt;
-use integer::u8_add;
-impl U8Add of Add::<u8> {
-    #[inline(always)]
-    fn add(a: u8, b: u8) -> u8 {
-        u8_add(a, b)
-    }
-}
+use integer::U8Add;
 use integer::u8_sub;
 use integer::u8_eq;
 use integer::u8_ne;
@@ -226,13 +214,7 @@ use integer::u8_le;
 use integer::u8_gt;
 use integer::u8_ge;
 use integer::u256;
-use integer::u256_add;
-impl U256Add of Add::<u256> {
-    #[inline(always)]
-    fn add(a: u256, b: u256) -> u256 {
-        u256_add(a, b)
-    }
-}
+use integer::U256Add;
 use integer::u256_sub;
 use integer::u256_mul;
 use integer::u256_eq;
