@@ -1,10 +1,11 @@
+use std::cmp::Ordering;
 use std::fmt;
 
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use itertools::Itertools;
-use smol_str::SmolStr;
+use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
 
@@ -42,9 +43,14 @@ pub enum BreakLinePointIndentation {
     NotIndented,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 /// Properties defining the behaviour of a break line point.
 pub struct BreakLinePointProperties {
+    /// Indicates that the break line point was added instead of an empty line in the code, which
+    /// means it must be preserved in the output. Notice that the number of consecutive empty line
+    /// break points is limitted and not all empty lines in the code creates an empty line break
+    /// points.
+    pub is_empty_line_breakpoint: bool,
     /// Breaking precedence, lower values will break first.
     pub precedence: usize,
     /// Dictates the breaking indentation behaviour.
@@ -55,6 +61,22 @@ pub struct BreakLinePointProperties {
     /// Indicates to put a space instead of the break line point if it were not broken.
     pub space_if_not_broken: bool,
 }
+impl Ord for BreakLinePointProperties {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self.is_empty_line_breakpoint, other.is_empty_line_breakpoint) {
+            (true, true) | (false, false) => self.precedence.cmp(&other.precedence),
+            (true, false) => Ordering::Greater,
+            (false, true) => Ordering::Less,
+        }
+    }
+}
+
+impl PartialOrd for BreakLinePointProperties {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 impl BreakLinePointProperties {
     pub fn new(
         precedence: usize,
@@ -62,7 +84,22 @@ impl BreakLinePointProperties {
         is_optional: bool,
         space_if_not_broken: bool,
     ) -> Self {
-        Self { precedence, break_indentation, is_optional, space_if_not_broken }
+        Self {
+            precedence,
+            break_indentation,
+            is_optional,
+            space_if_not_broken,
+            is_empty_line_breakpoint: false,
+        }
+    }
+    pub fn new_empty_line() -> Self {
+        Self {
+            precedence: 0,
+            break_indentation: BreakLinePointIndentation::NotIndented,
+            is_optional: false,
+            space_if_not_broken: false,
+            is_empty_line_breakpoint: true,
+        }
     }
 }
 
@@ -129,7 +166,11 @@ struct LineBuilder {
 }
 impl fmt::Display for LineBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.children.iter().map(|child| child.to_string()).join(""))
+        if self.is_only_indents() {
+            write!(f, "")
+        } else {
+            write!(f, "{}", self.children.iter().map(|child| child.to_string()).join(""))
+        }
     }
 }
 impl LineBuilder {
@@ -148,15 +189,6 @@ impl LineBuilder {
         } else {
             Self::default()
         }
-    }
-    /// Clears the line. Represent an empty line after the call.
-    pub fn clear(&mut self) {
-        self.children.clear();
-        self.is_open = true;
-    }
-    /// Is the line empty.
-    fn is_empty(&self) -> bool {
-        self.children.is_empty()
     }
     /// Adds a a sub-builder as the next child.
     /// All subsequent children will be added to this sub builder until set as closed.
@@ -178,8 +210,8 @@ impl LineBuilder {
     /// Adds a line component as the next child. If the last child is an open LineBuilder the child
     /// is recursively appended to the sub builder.
     fn push_child(&mut self, component: LineComponent) {
-        match component {
-            LineComponent::BreakLinePoint(_) => {
+        match &component {
+            LineComponent::BreakLinePoint(properties) if !properties.is_empty_line_breakpoint => {
                 if !self.is_only_indents() {
                     self.get_active_builder_mut().pending_break_line_points.push(component);
                 }
@@ -198,6 +230,10 @@ impl LineBuilder {
     /// Appends a space to the line.
     pub fn push_space(&mut self) {
         self.push_child(LineComponent::Space);
+    }
+    /// Appends a user-inserted empty line to the line.
+    pub fn push_empty_line_break_line_point(&mut self) {
+        self.push_child(LineComponent::BreakLinePoint(BreakLinePointProperties::new_empty_line()));
     }
     /// Appends an optional break line point.
     pub fn push_break_line_point(&mut self, properties: BreakLinePointProperties) {
@@ -248,13 +284,6 @@ impl LineBuilder {
             })
             .collect()
     }
-    /// Returns a vector of the positions of all the break line point children which have the
-    /// highest precedence from within all the break line point children.
-    fn get_current_break_positions(&self) -> Option<(Vec<usize>, BreakLinePointProperties)> {
-        self.get_next_break_properties().map(|properties| {
-            (self.get_break_point_indices_by_precedence(properties.precedence), properties)
-        })
-    }
     /// Recursively calls break_line_tree until no break_line_point or protected zone exists in the
     /// tree. Returns a vec of strings, each one represents a line.
     fn break_line_tree(&self, max_line_width: usize, tab_size: usize) -> Vec<String> {
@@ -263,9 +292,6 @@ impl LineBuilder {
         // O(n*m) where n is the line length and m is the number of protected zones. The actual
         // complexity is lower since the line is broken into smaller pieces and each one is handeled
         // separetly.
-        if self.width() < max_line_width {
-            return vec![self.to_string()];
-        }
         let mut sub_builders = self.break_line_tree_single_level(max_line_width, tab_size);
         // If the line was not broken into several lines (i.e. only one sub_builder), open the
         // highest precedence protected zone and try to break again.
@@ -298,9 +324,11 @@ impl LineBuilder {
         max_line_width: usize,
         tab_size: usize,
     ) -> Vec<LineBuilder> {
-        let Some((mut breaking_positions, break_line_point_properties)) = self.get_current_break_positions() else {
+        let Some(break_line_point_properties) = self.get_next_break_properties() else {
             return vec![self.clone()];
         };
+        let mut breaking_positions =
+            self.get_break_point_indices_by_precedence(break_line_point_properties.precedence);
         if self.width() <= max_line_width && break_line_point_properties.is_optional {
             return vec![self.remove_all_optional_break_line_points()];
         }
@@ -367,15 +395,8 @@ impl LineBuilder {
     /// several lines (separated by '\n'), where each line length is
     /// less than max_line_width (if possible).
     /// Each line is prepended by the leading
-    pub fn build(&self, max_line_width: usize, tab_size: usize, leading_indent: &str) -> String {
-        self.break_line_tree(max_line_width, tab_size)
-            .iter()
-            .map(
-                |line| {
-                    if line.is_empty() { "".to_string() } else { leading_indent.to_string() + line }
-                },
-            )
-            .join("\n")
+    pub fn build(&self, max_line_width: usize, tab_size: usize) -> String {
+        self.break_line_tree(max_line_width, tab_size).iter().join("\n") + "\n"
     }
     /// Returns the highest protected zone precedence (minimum number) from within all the protected
     /// zones which are direct children of this builder, or None if there are no protected zones
@@ -457,32 +478,16 @@ impl LineBuilder {
 }
 
 /// A struct holding all the data of the pending line to be emitted.
-/// TODO(Gil): change to a more complex struct to handle line breaking.
 struct PendingLineState {
     /// Intermidiate representation of the text to be emitted.
     line_buffer: LineBuilder,
     /// Should the next space between tokens be ignored.
     force_no_space_after: bool,
-    /// Current indentation of the produced line.
-    indentation: String,
 }
 
 impl PendingLineState {
     pub fn new() -> Self {
-        Self {
-            line_buffer: LineBuilder::default(),
-            force_no_space_after: true,
-            indentation: String::new(),
-        }
-    }
-    /// Resets the line state to a clean state.
-    pub fn reset(&mut self, indentation: String) {
-        self.indentation = indentation;
-        self.line_buffer.clear();
-        self.force_no_space_after = true;
-    }
-    pub fn is_empty(&self) -> bool {
-        self.line_buffer.is_empty()
+        Self { line_buffer: LineBuilder::default(), force_no_space_after: true }
     }
 }
 
@@ -500,11 +505,6 @@ pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space after it.
     /// Only applicable for token nodes.
     fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns true if the children of a node should be indented inwards relative to the parent.
-    /// Only applicable for internal nodes.
-    fn should_change_indent(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns true if the line should break after the node.
-    fn force_line_break(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns true if the line is allowed to break after the node.
     /// Only applicable for terminal nodes.
     fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool;
@@ -523,35 +523,30 @@ pub trait SyntaxNodeFormat {
 
 pub struct Formatter<'a> {
     db: &'a dyn SyntaxGroup,
-    result: String,
     config: FormatterConfig,
     /// A buffer for the current line.
     line_state: PendingLineState,
-    /// A list of precomputed indent strings (i.e. spaces) for reasonable indent sizes.
-    /// The item in index `i` is a string representing `i` tabs.
-    indents_list: Vec<String>,
-    /// Current indentation in tabs.
-    current_indent: usize,
     /// The number of empty lines allowed after the current node.
     empty_lines_allowance: usize,
+    /// Indicates whether the current line only consists of whitespace tokens (since the last
+    /// newline).
+    is_current_line_whitespaces: bool,
 }
 
 impl<'a> Formatter<'a> {
     pub fn new(db: &'a dyn SyntaxGroup, config: FormatterConfig) -> Self {
-        let indents_list = generate_indents_list(&config);
         Self {
             db,
-            result: String::new(),
             config,
             line_state: PendingLineState::new(),
-            indents_list,
-            current_indent: 0,
             empty_lines_allowance: 0,
+            is_current_line_whitespaces: true,
         }
     }
-    /// Returns the result of the formatter after format_node was called.
-    pub fn get_result(&self) -> String {
-        self.result.clone()
+    /// Gets a root of a syntax tree and returns the formatted string of the code it represents.
+    pub fn get_formatted_string(&mut self, syntax_node: &SyntaxNode) -> String {
+        self.format_node(syntax_node, false);
+        self.line_state.line_buffer.build(self.config.max_line_length, self.config.tab_size)
     }
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
@@ -574,14 +569,11 @@ impl<'a> Formatter<'a> {
             self.line_state.line_buffer.close_sub_builder();
         }
         self.append_break_line_point(node_break_points.trailing);
-        if syntax_node.force_line_break(self.db) && !self.line_state.is_empty() {
-            self.finalize_line();
-        }
     }
     /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
-        let indent_change = usize::from(syntax_node.should_change_indent(self.db));
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
+
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
         let children = syntax_node.children(self.db);
         let n_children = children.len();
@@ -589,15 +581,9 @@ impl<'a> Formatter<'a> {
             if child.width(self.db) == 0 {
                 continue;
             }
-
-            self.current_indent += indent_change;
-            if self.line_state.is_empty() {
-                self.line_state.reset(self.get_indentation())
-            }
             self.format_node(&child, no_space_after && i == n_children - 1);
 
             self.empty_lines_allowance = allowed_empty_between;
-            self.current_indent -= indent_change;
         }
     }
     /// Formats a terminal node and appends the formatted string to the result.
@@ -609,26 +595,38 @@ impl<'a> Formatter<'a> {
         let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
 
         // The first newlines is the leading trivia correspond exactly to empty lines.
-        self.format_trivia(leading_trivia, self.empty_lines_allowance);
-        self.empty_lines_allowance = 0;
+        self.format_trivia(leading_trivia, true);
         self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
-        let allowed_newlines = usize::from(syntax_node.allow_newline_after(self.db));
-        self.format_trivia(trailing_trivia, allowed_newlines);
+        self.format_trivia(trailing_trivia, false);
     }
     /// Appends a trivia node (if needed) to the result.
-    fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, mut allowed_newlines: usize) {
+    fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, is_leading: bool) {
         for trivium in trivia.elements(self.db) {
             match trivium {
                 ast::Trivium::SingleLineComment(_) => {
-                    allowed_newlines = 2;
+                    if !is_leading {
+                        self.line_state.line_buffer.push_space();
+                    }
                     self.format_token(&trivium.as_syntax_node(), true);
+                    self.empty_lines_allowance = 1;
+
+                    self.line_state.line_buffer.push_break_line_point(
+                        BreakLinePointProperties::new(
+                            // Should be greater than any other precedence.
+                            usize::MAX,
+                            BreakLinePointIndentation::NotIndented,
+                            false,
+                            false,
+                        ),
+                    );
                 }
                 ast::Trivium::Whitespace(_) => {}
                 ast::Trivium::Newline(_) => {
-                    if allowed_newlines > 0 {
-                        allowed_newlines -= 1;
-                        self.finalize_line();
+                    if self.empty_lines_allowance > 0 && self.is_current_line_whitespaces {
+                        self.empty_lines_allowance -= 1;
+                        self.line_state.line_buffer.push_empty_line_break_line_point();
                     }
+                    self.is_current_line_whitespaces = true;
                 }
                 ast::Trivium::Skipped(_) => {
                     self.format_token(&trivium.as_syntax_node(), false);
@@ -636,18 +634,19 @@ impl<'a> Formatter<'a> {
             }
         }
     }
-    /// Formats a token node and it to the result.
+    /// Formats a token node and appends it to the result.
+    /// Assumes the given SyntaxNode is a token.
     fn format_token(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
         let text = syntax_node.text(self.db).unwrap();
-        self.append_token(text, syntax_node, no_space_after);
-    }
-    /// Appends a token node to the result.
-    fn append_token(&mut self, text: SmolStr, syntax_node: &SyntaxNode, no_space_after: bool) {
         if !syntax_node.force_no_space_before(self.db) && !self.line_state.force_no_space_after {
             self.line_state.line_buffer.push_space();
         }
         self.line_state.force_no_space_after = no_space_after;
+
+        if syntax_node.kind(self.db) != SyntaxKind::TokenWhitespace {
+            self.is_current_line_whitespaces = false;
+        }
         self.line_state.line_buffer.push_str(&text);
     }
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
@@ -656,35 +655,4 @@ impl<'a> Formatter<'a> {
             self.line_state.force_no_space_after = true;
         }
     }
-    /// Returns the leading indentation according to the current indent and the tab size.
-    fn get_indentation(&self) -> String {
-        if self.current_indent < self.indents_list.len() {
-            self.indents_list[self.current_indent].clone()
-        } else {
-            " ".repeat(self.config.tab_size * self.current_indent)
-        }
-    }
-    fn append_newline(&mut self) {
-        self.result.push('\n');
-    }
-    /// Builds the pending line states into a string, and append it to the result.
-    fn finalize_line(&mut self) {
-        self.result.push_str(&self.line_state.line_buffer.build(
-            self.config.max_line_length - self.current_indent * self.config.tab_size,
-            self.config.tab_size,
-            &self.get_indentation(),
-        ));
-        self.append_newline();
-        self.line_state.reset(self.get_indentation());
-    }
-}
-
-/// Generates the leading indents for reasonable indent sizes
-fn generate_indents_list(config: &FormatterConfig) -> Vec<String> {
-    let mut indent_list: Vec<String> = vec![];
-    let tab = " ".repeat(config.tab_size);
-    for i in 0..(config.max_line_length / config.tab_size) {
-        indent_list.push(tab.repeat(i).to_string());
-    }
-    indent_list
 }
