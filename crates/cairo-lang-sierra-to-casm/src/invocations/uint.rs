@@ -7,6 +7,7 @@ use cairo_lang_sierra::extensions::uint::{
 use num_bigint::BigInt;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::misc::validate_in_range;
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
@@ -171,8 +172,7 @@ fn build_small_uint_overflowing_sub(
 }
 
 /// Handles a small uint conversion from felt.
-// TODO(orizi): Extract implementation from here and from address normalization.
-fn build_small_uint_from_felt<const LIMIT: u128, const A: u128, const B: u128>(
+fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, const B: u128>(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, value] = builder.try_get_single_cells()?;
@@ -182,54 +182,43 @@ fn build_small_uint_from_felt<const LIMIT: u128, const A: u128, const B: u128>(
         buffer(2) range_check;
         deref value;
     };
-    // We show that `value` is in the range [0, bound) by writing it as:
-    //   A * x + y,
-    // where:
-    //   * K = low positive number (the lower the better, here it is 1 or 2).
-    //   * max_x = 2**128 - K.
-    //   * A = bound // max_x.
-    //   * B = bound % max_x.
-    //   * x is in the range [0, max_x],
-    //   * y is in the range [0, B):
-    //     * y is in the range [0, 2**128).
-    //     * y + 2**128 - B is in the range [0, 2**128).
-    //
-    // Note that the minimal possible value of the expression A * x + y is min_val = 0 (where x = y
-    // = 0), and the maximal value is obtained where x = max_x and y = B - 1:
-    //   max_val = (A * max_x + B) - 1 = bound - 1.
-    //
-    // As long as A <= B, every number in the range can be represented.
-    // We choose K to be 2 in order to find A <= B.
     casm_build_extend! {casm_builder,
         const limit = LIMIT;
-        const u128_limit_minus_1 = u128::MAX;
-        const u128_limit_minus_2 = u128::MAX;
         tempvar is_small;
         hint TestLessThan {lhs: value, rhs: limit} into {dst: is_small};
         jump IsSmall if is_small != 0;
         tempvar shifted_value = value - limit;
-        // Here we want to make sure that `value` > LIMIT,
-        // for that it is enough to show that `shifted_value` < PRIME - LIMIT.
-        // We use the method described above with (A, B) = divmod(PRIME - LIMIT, 2**128 - 1)
-        const a_imm = A;
-        // 2**128 - B.
-        const b_imm_fix = (u128::MAX - B + 1);
         tempvar x;
         tempvar y;
-        hint LinearSplit {value: shifted_value, scalar: a_imm, max_x: u128_limit_minus_2} into {x: x, y: y};
-        tempvar x_part = x * a_imm;
-        assert shifted_value = x_part + y;
-        // y < 2**128
-        assert y = *(range_check++);
-        // y + 2**128 - B < 2**128 ==> y < B
-        tempvar y_fixed = y + b_imm_fix;
-        assert y_fixed = *(range_check++);
-        // x < 2**128 && x != 2**128 - 1 ==> x < 2**128 - 1
-        assert x = *(range_check++);
-        tempvar diff = x - u128_limit_minus_1;
-        jump Failure if diff != 0;
-        InfiniteLoop:
-        jump InfiniteLoop;
+        tempvar x_part;
+        tempvar y_fixed;
+    }
+    match K {
+        1 => {
+            validate_in_range::<K>(
+                &mut casm_builder,
+                A,
+                B,
+                shifted_value,
+                range_check,
+                &[x, y, x_part, y_fixed],
+            );
+            casm_build_extend! {casm_builder, jump Done;};
+        }
+        2 => {
+            casm_build_extend! {casm_builder, tempvar diff;};
+            validate_in_range::<K>(
+                &mut casm_builder,
+                A,
+                B,
+                shifted_value,
+                range_check,
+                &[x, y, x_part, y_fixed, diff],
+            );
+        }
+        _ => unreachable!("Only K value of 1 or 2 are supported."),
+    }
+    casm_build_extend! {casm_builder,
         IsSmall:
         assert value = *(range_check++);
         // value + 2**128 - limit < 2**128 ==> value < limit
@@ -241,7 +230,7 @@ fn build_small_uint_from_felt<const LIMIT: u128, const A: u128, const B: u128>(
         casm_builder,
         [
             ("Fallthrough", &[&[range_check], &[value]], None),
-            ("Failure", &[&[range_check]], Some(failure_handle_statement_id)),
+            ("Done", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
     ))
 }
@@ -267,6 +256,7 @@ pub fn build_u8(
         Uint8Concrete::ToFelt(_) => misc::build_identity(builder),
         Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<
             256,
+            2,
             0x8000000000000110000000000000000_u128,
             0x1000000000000021ffffffffffffff01_u128,
         >(builder),
