@@ -9,6 +9,7 @@ use crate::extensions::lib_func::{
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
 };
+use crate::program::GenericArg;
 
 /// Libfunc for an emit event system call.
 #[derive(Default)]
@@ -24,6 +25,8 @@ impl NoGenericArgsGenericLibfunc for EmitEventLibfunc {
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
+        let felt_array_ty =
+            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty)])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -76,8 +79,8 @@ impl NoGenericArgsGenericLibfunc for EmitEventLibfunc {
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ty: felt_array_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
