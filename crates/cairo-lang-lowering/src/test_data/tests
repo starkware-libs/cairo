@@ -131,7 +131,7 @@ Statements:
   (v2: ()) <- struct_construct()
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
-  (v5: core::felt) <- core::felt_sub(v3, v4)
+  (v5: core::felt) <- core::FeltSub::sub(v3, v4)
   () <- match core::felt_jump_nz(v5) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,

@@ -273,7 +273,7 @@ Initial refs:
 Statements:
   (v4: core::felt) <- core::FeltAdd::add(v0, v1)
   (v5: core::felt) <- core::FeltSub::sub(v2, v3)
-  (v6: core::felt) <- core::felt_sub(v4, v5)
+  (v6: core::felt) <- core::FeltSub::sub(v4, v5)
   () <- match core::felt_jump_nz(v6) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,

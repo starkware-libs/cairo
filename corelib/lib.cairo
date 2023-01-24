@@ -3,6 +3,14 @@ use traits::Copy;
 use traits::Drop;
 use traits::Add;
 use traits::Sub;
+use traits::Mul;
+use traits::Div;
+use traits::Rem;
+use traits::PartialEq;
+use traits::BitAnd;
+use traits::BitOr;
+use traits::BitXor;
+use traits::PartialOrd;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -40,9 +48,15 @@ fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
 
 extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
 
-#[inline(always)]
-fn bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
-    !(a == b)
+impl BoolPartialEq of PartialEq::<bool> {
+    #[inline(always)]
+    fn eq(a: bool, b: bool) -> bool {
+        bool_eq(a, b)
+    }
+    #[inline(always)]
+    fn ne(a: bool, b: bool) -> bool {
+        !(a == b)
+    }
 }
 
 // Felt.
@@ -88,38 +102,37 @@ impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
 impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
 extern fn felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
 
-// TODO(orizi): Change to extern when added.
-#[inline(always)]
-fn felt_eq(a: felt, b: felt) -> bool {
-    match a - b {
-        0 => bool::True(()),
-        _ => bool::False(()),
+impl FeltPartialEq of PartialEq::<felt> {
+    #[inline(always)]
+    fn eq(a: felt, b: felt) -> bool {
+        match a - b {
+            0 => bool::True(()),
+            _ => bool::False(()),
+        }
+    }
+    #[inline(always)]
+    fn ne(a: felt, b: felt) -> bool {
+        !(a == b)
     }
 }
 
-#[inline(always)]
-fn felt_ne(a: felt, b: felt) -> bool {
-    !(a == b)
-}
-
-#[inline(always)]
-fn felt_lt(a: felt, b: felt) -> bool implicits(RangeCheck) {
-    u256_from_felt(a) < u256_from_felt(b)
-}
-
-#[inline(always)]
-fn felt_gt(a: felt, b: felt) -> bool implicits(RangeCheck) {
-    b < a
-}
-
-#[inline(always)]
-fn felt_le(a: felt, b: felt) -> bool implicits(RangeCheck) {
-    !(b < a)
-}
-
-#[inline(always)]
-fn felt_ge(a: felt, b: felt) -> bool implicits(RangeCheck) {
-    !(a < b)
+impl PartialOrdFelt of PartialOrd::<felt> {
+    #[inline(always)]
+    fn le(a: felt, b: felt) -> bool {
+        !(b < a)
+    }
+    #[inline(always)]
+    fn ge(a: felt, b: felt) -> bool {
+        !(a < b)
+    }
+    #[inline(always)]
+    fn lt(a: felt, b: felt) -> bool {
+        u256_from_felt(a) < u256_from_felt(b)
+    }
+    #[inline(always)]
+    fn gt(a: felt, b: felt) -> bool {
+        b < a
+    }
 }
 
 extern fn felt_jump_nz(a: felt) -> JumpNzResult::<felt> nopanic;
@@ -201,12 +214,8 @@ use integer::u128_mul;
 use integer::u128_as_non_zero;
 use integer::u128_div;
 use integer::u128_mod;
-use integer::u128_lt;
-use integer::u128_le;
-use integer::u128_gt;
-use integer::u128_ge;
-use integer::u128_eq;
-use integer::u128_ne;
+use integer::U128PartialOrd;
+use integer::U128PartialEq;
 use integer::u128_and;
 use integer::u128_or;
 use integer::u128_xor;
@@ -218,12 +227,8 @@ use integer::u8_try_from_felt;
 use integer::u8_to_felt;
 use integer::U8Add;
 use integer::U8Sub;
-use integer::u8_eq;
-use integer::u8_ne;
-use integer::u8_lt;
-use integer::u8_le;
-use integer::u8_gt;
-use integer::u8_ge;
+use integer::U8PartialOrd;
+use integer::U8PartialEq;
 use integer::u64;
 use integer::u64_const;
 use integer::u64_from_felt;
@@ -231,22 +236,14 @@ use integer::u64_try_from_felt;
 use integer::u64_to_felt;
 use integer::U64Add;
 use integer::U64Sub;
-use integer::u64_eq;
-use integer::u64_ne;
-use integer::u64_lt;
-use integer::u64_le;
-use integer::u64_gt;
-use integer::u64_ge;
+use integer::U64PartialOrd;
+use integer::U64PartialEq;
 use integer::u256;
 use integer::U256Add;
 use integer::U256Sub;
+use integer::U256PartialOrd;
+use integer::U256PartialEq;
 use integer::u256_mul;
-use integer::u256_eq;
-use integer::u256_ne;
-use integer::u256_lt;
-use integer::u256_le;
-use integer::u256_gt;
-use integer::u256_ge;
 use integer::u256_and;
 use integer::u256_or;
 use integer::u256_xor;
