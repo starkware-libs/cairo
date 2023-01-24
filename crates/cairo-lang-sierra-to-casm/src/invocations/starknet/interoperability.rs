@@ -3,6 +3,7 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
 use num_bigint::BigInt;
+use num_traits::Signed;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
@@ -66,7 +67,7 @@ pub fn build_contract_address_const(
     libfunc: &SignatureAndConstConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound = BigInt::from(1) << 251;
-    if libfunc.c >= addr_bound {
+    if libfunc.c.is_negative() || libfunc.c >= addr_bound {
         return Err(InvocationError::InvalidGenericArg);
     }
 
