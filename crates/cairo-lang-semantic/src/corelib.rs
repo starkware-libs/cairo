@@ -273,13 +273,21 @@ pub fn core_binary_operator(
     type2: TypeId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
-    // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
-    //   traits.
-    type1.check_not_missing(db)?;
-    type2.check_not_missing(db)?;
     if let Some((trait_name, function_name)) = match binary_op {
         BinaryOperator::Plus(_) => Some(("Add", "add")),
         BinaryOperator::Minus(_) => Some(("Sub", "sub")),
+        // BinaryOperator::Mul(_) => Some(("Mul", "mul")),
+        // BinaryOperator::Div(_) => Some(("Div", "div")),
+        // BinaryOperator::Mod(_) => Some(("Mod", "modulo")),
+        BinaryOperator::EqEq(_) => Some(("PartialEq", "eq")),
+        BinaryOperator::Neq(_) => Some(("PartialEq", "ne")),
+        // BinaryOperator::And(_) => Some(("And", "and")),
+        // BinaryOperator::Or(_) => Some(("Or", "or")),
+        // BinaryOperator::Xor(_) => Some(("Xor", "xor")),
+        BinaryOperator::LE(_) => Some(("Order", "le")),
+        BinaryOperator::GE(_) => Some(("Order", "ge")),
+        BinaryOperator::LT(_) => Some(("Order", "lt")),
+        BinaryOperator::GT(_) => Some(("Order", "gt")),
         _ => None,
     } {
         return Ok(Ok(get_core_trait_function_infer(
@@ -291,6 +299,10 @@ pub fn core_binary_operator(
         )));
     }
 
+    // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
+    //   traits.
+    type1.check_not_missing(db)?;
+    type2.check_not_missing(db)?;
     let felt_ty = core_felt_ty(db);
     let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
     let u64_ty = get_core_ty_by_name(db, "u64".into(), vec![]);
