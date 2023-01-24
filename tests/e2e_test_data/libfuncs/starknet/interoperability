@@ -6,7 +6,7 @@
 run_small_e2e_test
 
 //! > cairo
-fn foo(address: ContractAddress, calldata: Array::<felt>) -> starknet::CallContractResult {
+fn foo(address: ContractAddress, calldata: Array::<felt>) -> starknet::SyscallResult::<Array::<felt>> {
     starknet::call_contract_syscall(address, calldata)
 }
 

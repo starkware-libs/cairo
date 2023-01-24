@@ -33,6 +33,9 @@ mod TestContract {
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
     #[external]
     fn foo(x: (felt, felt)) {
     }
@@ -120,6 +123,9 @@ mod TestContract {
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
     #[external]
     fn foo() -> (felt, felt) {
     }
@@ -200,6 +206,9 @@ mod TestContract {
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
     #[external]
     fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
     }
@@ -300,6 +309,9 @@ mod TestContract {
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
 
@@ -343,6 +355,9 @@ mod TestContract {
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
 
@@ -386,6 +401,9 @@ mod TestContract {
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
 
@@ -429,6 +447,9 @@ mod TestContract {
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
 
@@ -440,12 +461,7 @@ mod TestContract {
         let mut data = array_new();
         serde::Serde::<(felt, felt)>::serialize(ref data, x);
         
-        match starknet::emit_event_syscall(keys, data) {
-            Result::Ok(()) => {},
-            Result::Err(revert_reason) => {
-                panic(revert_reason)
-            },
-        }
+        starknet::emit_event_syscall(keys, data).unwrap_syscall()
     }
             
 
@@ -486,6 +502,9 @@ mod TestContract {
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
 
