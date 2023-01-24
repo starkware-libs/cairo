@@ -134,9 +134,6 @@ impl<'a> BorrowChecker<'a> {
             });
 
             let demand = match stmt {
-                Statement::CallBlock(stmt) => {
-                    self.get_demand(new_callsite, RealBlock(stmt.block, 0))
-                }
                 Statement::MatchExtern(StatementMatchExtern { arms, .. })
                 | Statement::MatchEnum(StatementMatchEnum { arms, .. }) => {
                     let arm_demands = arms
