@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{define_short_id, OptionFrom};
 use itertools::Itertools;
@@ -412,6 +413,8 @@ pub fn type_info(
 ) -> Maybe<TypeInfo> {
     // TODO(spapini): Validate Copy and Drop for structs and enums.
     let inference = Inference::disabled(db);
+    // Dummy stable pointer for type inference variables, since inference is disabled.
+    let stable_ptr = db.intern_stable_ptr(SyntaxStablePtr::Root);
     Ok(match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete_type_id) => {
             let module = concrete_type_id.generic_type(db).parent_module(db.upcast());
@@ -424,6 +427,7 @@ pub fn type_info(
                 &inference,
                 &lookup_context,
                 concrete_drop_trait(db, ty),
+                stable_ptr,
             )?
             .is_empty();
             let duplicatable = !find_impls_at_context(
@@ -431,6 +435,7 @@ pub fn type_info(
                 &inference,
                 &lookup_context,
                 concrete_copy_trait(db, ty),
+                stable_ptr,
             )?
             .is_empty();
             TypeInfo { droppable, duplicatable }
@@ -441,6 +446,7 @@ pub fn type_info(
                 &inference,
                 &lookup_context,
                 concrete_drop_trait(db, ty),
+                stable_ptr,
             )?
             .is_empty();
             let duplicatable = !find_impls_at_context(
@@ -448,6 +454,7 @@ pub fn type_info(
                 &inference,
                 &lookup_context,
                 concrete_copy_trait(db, ty),
+                stable_ptr,
             )?
             .is_empty();
             TypeInfo { droppable, duplicatable }
