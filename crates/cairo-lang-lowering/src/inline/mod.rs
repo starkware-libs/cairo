@@ -162,6 +162,9 @@ pub struct FunctionInlinerRewriter<'db> {
     ctx: LoweringContext<'db>,
     /// A Queue of blocks on which we want to apply the FunctionInlinerRewriter.
     block_queue: BlockQueue,
+
+    // rewritten statments.
+    statements: Vec<Statement>,
 }
 pub struct BlockQueue {
     /// A Queue of blocks that require processing.
@@ -270,17 +273,17 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 block_queue: VecDeque::from(flat_lower.blocks.0.clone()),
                 flat_blocks: FlatBlocks::new(),
             },
+            statements: vec![],
         };
 
         rewriter.ctx.variables = flat_lower.variables.clone();
         while let Some(block) = rewriter.block_queue.dequeue() {
-            let mut statements = vec![];
             for stmt in block.statements.iter().cloned() {
-                statements.extend(rewriter.rewrite(stmt)?);
+                rewriter.rewrite(stmt)?;
             }
             rewriter.block_queue.finalize(FlatBlock {
                 inputs: block.inputs.clone(),
-                statements,
+                statements: std::mem::take(&mut rewriter.statements),
                 end: block.end.clone(),
             });
         }
@@ -294,7 +297,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
         })
     }
 
-    fn rewrite(&mut self, statement: Statement) -> Maybe<Vec<Statement>> {
+    // Rewrites statement and appends the statments that replace it to self.statements.
+    fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
             let concrete_function = self.ctx.db.lookup_intern_function(stmt.function).function;
             let semantic_db = self.ctx.db.upcast();
@@ -303,19 +307,18 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
                 if inline_data.config == InlineConfiguration::Always && inline_data.is_inlineable {
-                    let mut statements = vec![];
-
                     for statement in
                         self.inline_function(function_id, &stmt.inputs, &stmt.outputs)?.into_iter()
                     {
-                        statements.extend(self.rewrite(statement)?);
+                        self.rewrite(statement)?
                     }
-                    return Ok(statements);
+                    return Ok(());
                 }
             }
         }
 
-        Ok(vec![statement])
+        self.statements.push(statement);
+        Ok(())
     }
 
     /// Inlines the given function, with the given input and outputs variables.
