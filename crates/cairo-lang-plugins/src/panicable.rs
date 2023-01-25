@@ -50,21 +50,6 @@ fn generate_panicable_code(
             continue;
         }
         let signature = declaration.signature(db);
-        if !matches!(
-            signature.optional_no_panic(db),
-            ast::OptionTerminalNoPanic::TerminalNoPanic(_)
-        ) {
-            // Only nopanic functions can be wrapped.
-            return PluginResult {
-                code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: attr.stable_ptr().untyped(),
-                    message: "Only nopanic functions can be wrapped".into(),
-                }],
-                remove_original_item,
-            };
-        }
-
         let Some((inner_ty_text, success_variant, failure_variant)) =
             extract_success_ty_and_variants(db, &signature) else {
             return PluginResult {
