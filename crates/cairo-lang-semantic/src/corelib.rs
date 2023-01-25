@@ -12,7 +12,7 @@ use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::GenericFunctionId;
-use crate::items::trt::{ConcreteTraitFunctionLongId, ConcreteTraitId};
+use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId};
 use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
@@ -466,7 +466,7 @@ fn get_core_trait_function_infer(
         db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let trait_function = db.trait_function_by_name(trait_id, function_name).unwrap().unwrap();
     let concrete_trait_function = db.intern_concrete_trait_function(
-        ConcreteTraitFunctionLongId::new(db, concrete_trait_id, trait_function),
+        ConcreteTraitGenericFunctionLongId::new(db, concrete_trait_id, trait_function),
     );
     db.intern_function(FunctionLongId {
         function: ConcreteFunction {
