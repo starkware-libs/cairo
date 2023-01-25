@@ -32,7 +32,8 @@ use crate::items::imp::{
     find_impls_at_context, ConcreteImplId, ConcreteImplLongId, ImplLookupContext,
 };
 use crate::items::trt::{
-    ConcreteTraitFunctionId, ConcreteTraitFunctionLongId, ConcreteTraitId, ConcreteTraitLongId,
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
+    ConcreteTraitLongId,
 };
 use crate::literals::LiteralLongId;
 use crate::types::{resolve_type_with_inference, substitute_generics, GenericSubstitution};
@@ -50,7 +51,7 @@ pub enum ResolvedConcreteItem {
     Constant(ConstantId),
     Module(ModuleId),
     Function(FunctionId),
-    TraitFunction(ConcreteTraitFunctionId),
+    TraitFunction(ConcreteTraitGenericFunctionId),
     Type(TypeId),
     Variant(ConcreteVariant),
     Trait(ConcreteTraitId),
@@ -190,56 +191,8 @@ impl<'db> Resolver<'db> {
         // Follow modules.
         while segments.peek().is_some() {
             let segment = segments.next().unwrap();
-            let (identifier, generic_args) = match segment {
-                syntax::node::ast::PathSegment::WithGenericArgs(segment) => {
-                    let mut generic_args = vec![];
-                    for generic_arg_syntax in
-                        segment.generic_args(syntax_db).generic_args(syntax_db).elements(syntax_db)
-                    {
-                        match generic_arg_syntax {
-                            ast::Expr::Literal(literal_syntax) => {
-                                let literal =
-                                    LiteralLongId::try_from(literal_syntax.text(syntax_db))
-                                        .map_err(|_| {
-                                            diagnostics.report(&literal_syntax, UnknownLiteral)
-                                        })?;
-                                generic_args.push(GenericArgumentId::Literal(
-                                    self.db.intern_literal(literal),
-                                ));
-                            }
-                            ast::Expr::Unary(unary)
-                                if matches!(unary.expr(syntax_db), ast::Expr::Literal(_))
-                                    && matches!(
-                                        unary.op(syntax_db),
-                                        ast::UnaryOperator::Minus(_)
-                                    ) =>
-                            {
-                                let mut literal = LiteralLongId::try_from(
-                                    extract_matches!(unary.expr(syntax_db), ast::Expr::Literal)
-                                        .text(syntax_db),
-                                )
-                                .map_err(|_| diagnostics.report(&unary, UnknownLiteral))?;
-                                literal.value *= -1;
-                                generic_args.push(GenericArgumentId::Literal(
-                                    self.db.intern_literal(literal),
-                                ));
-                            }
-                            _ => {
-                                let ty = resolve_type_with_inference(
-                                    self.db,
-                                    diagnostics,
-                                    inference,
-                                    self,
-                                    &generic_arg_syntax,
-                                );
-                                generic_args.push(GenericArgumentId::Type(ty));
-                            }
-                        }
-                    }
-                    (segment.ident(syntax_db), Some(generic_args))
-                }
-                syntax::node::ast::PathSegment::Simple(segment) => (segment.ident(syntax_db), None),
-            };
+            let (identifier, generic_args) =
+                self.resolve_segment(diagnostics, inference, segment)?;
 
             // If this is not the last segment, set the expected type to
             // [NotFoundItemType::Identifier].
@@ -256,6 +209,61 @@ impl<'db> Resolver<'db> {
             self.lookback.mark_concrete(self.db, segment, item.clone());
         }
         Ok(item)
+    }
+
+    /// Resolves a path segment's identifier and generic args.
+    pub fn resolve_segment(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        inference: &mut Inference<'_>,
+        segment: &ast::PathSegment,
+    ) -> Maybe<(ast::TerminalIdentifier, Option<Vec<GenericArgumentId>>)> {
+        let syntax_db = self.db.upcast();
+        let (identifier, generic_args) = match segment {
+            syntax::node::ast::PathSegment::WithGenericArgs(segment) => {
+                let mut generic_args = vec![];
+                for generic_arg_syntax in
+                    segment.generic_args(syntax_db).generic_args(syntax_db).elements(syntax_db)
+                {
+                    match generic_arg_syntax {
+                        ast::Expr::Literal(literal_syntax) => {
+                            let literal = LiteralLongId::try_from(literal_syntax.text(syntax_db))
+                                .map_err(|_| {
+                                diagnostics.report(&literal_syntax, UnknownLiteral)
+                            })?;
+                            generic_args
+                                .push(GenericArgumentId::Literal(self.db.intern_literal(literal)));
+                        }
+                        ast::Expr::Unary(unary)
+                            if matches!(unary.expr(syntax_db), ast::Expr::Literal(_))
+                                && matches!(unary.op(syntax_db), ast::UnaryOperator::Minus(_)) =>
+                        {
+                            let mut literal = LiteralLongId::try_from(
+                                extract_matches!(unary.expr(syntax_db), ast::Expr::Literal)
+                                    .text(syntax_db),
+                            )
+                            .map_err(|_| diagnostics.report(&unary, UnknownLiteral))?;
+                            literal.value *= -1;
+                            generic_args
+                                .push(GenericArgumentId::Literal(self.db.intern_literal(literal)));
+                        }
+                        _ => {
+                            let ty = resolve_type_with_inference(
+                                self.db,
+                                diagnostics,
+                                inference,
+                                self,
+                                &generic_arg_syntax,
+                            );
+                            generic_args.push(GenericArgumentId::Type(ty));
+                        }
+                    }
+                }
+                (segment.ident(syntax_db), Some(generic_args))
+            }
+            syntax::node::ast::PathSegment::Simple(segment) => (segment.ident(syntax_db), None),
+        };
+        Ok((identifier, generic_args))
     }
 
     /// Resolves the first segment of a concrete path.
@@ -448,8 +456,6 @@ impl<'db> Resolver<'db> {
                 }
             }
             ResolvedConcreteItem::Trait(concrete_trait_id) => {
-                // TODO(spapini): Currently, generics of the trait function itself (not the trait)
-                // are not handle. Use `generic_args` to handle them.
                 // Find the relevant function in the trait.
                 let long_trait_id = self.db.lookup_intern_concrete_trait(*concrete_trait_id);
                 let trait_id = long_trait_id.trait_id;
@@ -457,13 +463,22 @@ impl<'db> Resolver<'db> {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
 
-                let trait_function =
-                    self.db.intern_concrete_trait_function(ConcreteTraitFunctionLongId::new(
+                let trait_function = self.db.intern_concrete_trait_function(
+                    ConcreteTraitGenericFunctionLongId::new(
                         self.db,
                         *concrete_trait_id,
                         trait_function_id,
-                    ));
-                Ok(ResolvedConcreteItem::TraitFunction(trait_function))
+                    ),
+                );
+
+                Ok(ResolvedConcreteItem::Function(specialize_function(
+                    self.db,
+                    diagnostics,
+                    inference,
+                    identifier.stable_ptr().untyped(),
+                    GenericFunctionId::Trait(trait_function),
+                    generic_args.unwrap_or_default(),
+                )?))
             }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }
@@ -475,7 +490,7 @@ impl<'db> Resolver<'db> {
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         inference: &mut Inference<'_>,
-        concrete_trait_function_id: ConcreteTraitFunctionId,
+        concrete_trait_function_id: ConcreteTraitGenericFunctionId,
         stable_ptr: SyntaxStablePtrId,
     ) -> Maybe<ConcreteImplId> {
         let defs_db = self.db.upcast();
@@ -841,7 +856,7 @@ pub fn specialize_type(
     Ok(db.intern_type(TypeLongId::Concrete(ConcreteTypeId::new(db, generic_type, generic_args))))
 }
 
-fn conform_generic_args(
+pub fn conform_generic_args(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     inference: &mut Inference<'_>,
