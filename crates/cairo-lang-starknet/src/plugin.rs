@@ -15,7 +15,8 @@ use cairo_lang_semantic::plugin::{
 };
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_syntax::node::ast::{
-    FunctionWithBody, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause, Param,
+    FunctionWithBody, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause,
+    OptionWrappedGenericParamList, Param,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -281,10 +282,20 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 } else {
                     CONSTRUCTOR_ATTR
                 };
+
+                let declaration = item_function.declaration(db);
+                if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
+                    declaration.generic_params(db)
+                {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "Contract entry points cannot have generic arguments".to_string(),
+                        stable_ptr: generic_params.stable_ptr().untyped(),
+                    })
+                }
                 abi_functions.push(RewriteNode::Modified(ModifiedNode {
                     children: vec![
                         RewriteNode::Text(format!("#[{attr}]\n        ")),
-                        RewriteNode::Trimmed(item_function.declaration(db).as_syntax_node()),
+                        RewriteNode::Trimmed(declaration.as_syntax_node()),
                         RewriteNode::Text(";\n        ".to_string()),
                     ],
                 }));
@@ -417,6 +428,16 @@ fn handle_event(
 ) -> (Option<(RewriteNode, RewriteNode)>, Vec<PluginDiagnostic>) {
     let mut diagnostics = vec![];
     let declaration = function_ast.declaration(db);
+
+    if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
+        declaration.generic_params(db)
+    {
+        diagnostics.push(PluginDiagnostic {
+            message: "Event functions cannot have generic arguments".to_string(),
+            stable_ptr: generic_params.stable_ptr().untyped(),
+        })
+    }
+
     let signature = declaration.signature(db);
     let ret_ty = declaration.signature(db).ret_ty(db);
     if matches!(ret_ty, OptionReturnTypeClause::ReturnTypeClause(_)) {

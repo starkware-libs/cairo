@@ -190,6 +190,100 @@ mod TestContract {
 
 //! > ==========================================================================
 
+//! > Test diagnostics of generic entry point.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo<T>(x: T) {
+    }
+}
+
+//! > generated_cairo_code
+#[generated_contract]
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    fn foo<T>(x: T) {
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn foo<T>(x: T);
+        
+        
+    }
+
+    mod __external {
+        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_x =
+                match serde::Serde::<T>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if array_len(ref data) != 0_u128 {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::foo(__arg_x);
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        
+    }
+
+    mod __constructor {
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Contract entry points cannot have generic arguments
+ --> dummy_file.cairo:4:11
+    fn foo<T>(x: T) {
+          ^*^
+
+//! > ==========================================================================
+
 //! > Test multiple diagnostics from entry point.
 
 //! > test_function_name
@@ -440,7 +534,7 @@ test_expand_contract
 #[contract]
 mod TestContract {
     #[event]
-    fn bad_event(x: (felt, felt)) {
+    fn generic_event<T>(x: T) {
     }
 }
 
@@ -454,21 +548,9 @@ mod TestContract {
     
 
     
-    #[event]
-    fn bad_event(x: (felt, felt)) {
-        let mut keys = array_new();
-        array_append(ref keys, 0x24588e9be27cb91356e7dba75bcae8d487891c93e2c1696ab6437f2700aed26);
-        let mut data = array_new();
-        serde::Serde::<(felt, felt)>::serialize(ref data, x);
-        
-        starknet::emit_event_syscall(keys, data).unwrap_syscall()
-    }
-            
 
     trait __abi {
         
-        #[event]
-        fn bad_event(x: (felt, felt));
         
     }
 
@@ -482,6 +564,10 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
+error: Event functions cannot have generic arguments
+ --> dummy_file.cairo:4:21
+    fn generic_event<T>(x: T) {
+                    ^*^
 
 //! > ==========================================================================
 
