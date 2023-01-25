@@ -39,10 +39,10 @@ fn setup_single_file_project(
     let file_stemp = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
     if file_stemp == "lib" {
         let canonical = path.canonicalize().map_err(|_| bad_path_err())?;
-        let crate_name =
-            canonical.parent().ok_or_else(bad_path_err)?.to_str().ok_or_else(bad_path_err)?;
+        let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
+        let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
         let crate_id = db.intern_crate(CrateLongId(crate_name.into()));
-        db.set_crate_root(crate_id, Some(Directory(path.to_path_buf())));
+        db.set_crate_root(crate_id, Some(Directory(file_dir.to_path_buf())));
         Ok(crate_id)
     } else {
         // If file_stemp is not lib, create a fake lib file.
