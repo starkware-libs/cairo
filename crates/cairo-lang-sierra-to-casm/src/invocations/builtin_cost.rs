@@ -2,9 +2,7 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_casm::{casm, casm_build_extend};
-use cairo_lang_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
-};
+use cairo_lang_sierra::extensions::builtin_cost::{BuiltinCostConcreteLibfunc, CostTokenType};
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -45,24 +43,9 @@ fn build_builtin_get_gas(
         deref builtin_cost;
     };
 
-    // The actual number of writes for calculating the requested gas amount.
-    let optimized_out_writes = (BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i64)
-        - (BuiltinCostGetGasLibfunc::cost_computation_steps(|token_type| {
-            variable_values[(builder.idx, token_type)] as usize
-        }) as i64);
-
     let requested_steps = variable_values[(builder.idx, CostTokenType::Step)];
-    // The cost of this libfunc is computed assuming all the cost types are used (and all are > 1).
-    // Since in practice this is rarely the case, refund according to the actual number of steps
-    // produced by the libfunc.
-    let refund_steps = optimized_out_writes;
-    assert!(
-        refund_steps >= 0,
-        "Internal compiler error: BuiltinCostGetGasLibfunc::max_cost() is wrong."
-    );
-    let mut total_requested_count = casm_builder.add_var(CellExpression::Immediate(BigInt::from(
-        (requested_steps - refund_steps) * STEP_COST,
-    )));
+    let mut total_requested_count =
+        casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_steps * STEP_COST)));
     for token_type in CostTokenType::iter() {
         if *token_type == CostTokenType::Step {
             continue;

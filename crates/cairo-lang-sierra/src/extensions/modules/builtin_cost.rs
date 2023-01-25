@@ -1,4 +1,5 @@
 use convert_case::Casing;
+use itertools::chain;
 
 use super::gas::GasBuiltinType;
 use super::range_check::RangeCheckType;
@@ -26,9 +27,17 @@ pub enum CostTokenType {
     EcOp,
 }
 impl CostTokenType {
-    pub fn iter() -> std::slice::Iter<'static, Self> {
-        [CostTokenType::Step, CostTokenType::Pedersen, CostTokenType::Bitwise, CostTokenType::EcOp]
-            .iter()
+    pub fn iter()
+    -> std::iter::Chain<std::slice::Iter<'static, Self>, std::slice::Iter<'static, Self>> {
+        chain!(Self::iter_precost(), Self::iter_postcost())
+    }
+
+    pub fn iter_precost() -> std::slice::Iter<'static, Self> {
+        [CostTokenType::Pedersen, CostTokenType::Bitwise, CostTokenType::EcOp].iter()
+    }
+
+    pub fn iter_postcost() -> std::slice::Iter<'static, Self> {
+        [CostTokenType::Step].iter()
     }
 
     /// Returns the name of the token type, in snake_case.
@@ -81,11 +90,6 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct BuiltinCostGetGasLibfunc {}
 impl BuiltinCostGetGasLibfunc {
-    /// Returns the maximal number of steps required for the computation of the requested cost.
-    /// The number of steps is also the change in `ap` (every step includes `ap++`).
-    pub fn cost_computation_max_steps() -> usize {
-        Self::cost_computation_steps(|_| 2)
-    }
     /// Returns the number of steps required for the computation of the requested cost, given the
     /// number of requested token usages. The number of steps is also the change in `ap` (every
     /// step includes `ap++`).
