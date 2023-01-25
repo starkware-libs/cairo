@@ -61,12 +61,12 @@ mod IContractDispatcher {
 }
 
 //! > expected_diagnostics
-error: `ref` parameters are not supported in the ABI of a contract.
- --> dummy_file.cairo:7:16
+error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
+ --> lib.cairo:7:16
     fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
                ^*^
 
-error: `ref` parameters are not supported in the ABI of a contract.
- --> dummy_file.cairo:7:32
+error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
+ --> lib.cairo:7:32
     fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
                                ^*^
