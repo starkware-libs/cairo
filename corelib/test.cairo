@@ -34,14 +34,16 @@ fn test_bool_operators() {
     assert(!(true ^ true), '!(t ^ t)');
 }
 
+impl OptionEcPointCopy of Copy::<Option::<EcPoint>>;
+
 #[test]
 fn test_ec_operations() {
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
     let beta_p2_root = 2487829544412206244690656897973144572467842667075005257202960243805141046681;
     let p = ec_point_from_x(1).unwrap();
     let (x, y) = ec_point_unwrap(p);
-    assert(x == 1, 'x == 1');
-    assert(y == beta_p2_root | y == -beta_p2_root, 'y is correct');
+    assert(x == 1, 'x != 1');
+    assert(y == beta_p2_root | y == -beta_p2_root, 'y is wrong');
 
     let mut state = ec_state_init();
     ec_state_add(ref state, p);
@@ -59,8 +61,8 @@ fn test_ec_operations() {
     assert(qy == y, 'bad EC op y');
 
     // Try computing `p + p` using the ec_mul function.
-    let double_p = ec_mul(p, 2).unwrap();
-    let (double_x, double_y) = ec_point_unwrap(double_p);
+    let double_p = ec_mul(p, 2);
+    let (double_x, double_y) = ec_point_unwrap(double_p.unwrap());
     let expected_double_y =
         3572434102142093425782752266058856056057826477682467661647843687948039943621;
     assert(
@@ -68,6 +70,19 @@ fn test_ec_operations() {
         'bad double x'
     );
     assert(double_y == expected_double_y | double_y == -expected_double_y, 'bad double y');
+
+    // Compute `2p - p`.
+    let (sub_x, sub_y) = ec_point_unwrap((double_p - Option::Some(p)).unwrap());
+    assert(sub_x == x, 'bad x for 2p - p');
+    assert(sub_y == y, 'bad y for 2p - p');
+
+    // Compute `p - p`.
+    assert((Option::Some(p) - Option::Some(p)).is_none(), 'p - p did not return 0.');
+
+    // Compute `(-p) - p`.
+    let (sub2_x, sub2_y) = ec_point_unwrap((Option::Some(ec_neg(p)) - Option::Some(p)).unwrap());
+    assert(sub2_x == double_x, 'bad x for (-p) - p');
+    assert(sub2_y == -double_y, 'bad y for (-p) - p');
 }
 
 #[test]
