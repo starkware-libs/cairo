@@ -77,12 +77,18 @@ impl U128Sub of Sub::<u128> {
     }
 }
 
-#[panic_with('u128_mul OF', u128_mul)]
 fn u128_checked_mul(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) nopanic {
     let (top_word, bottom_word) = u128_wide_mul(a, b);
     match u128_to_felt(top_word) {
         0 => Option::<u128>::Some(bottom_word),
         _ => Option::<u128>::None(()),
+    }
+}
+
+impl U128Mul of Mul::<u128> {
+    #[inline(always)]
+    fn mul(a: u128, b: u128) -> u128 {
+        u128_checked_mul(a, b).expect('u128_mul Overflow')
     }
 }
 
@@ -102,8 +108,11 @@ fn u128_safe_div(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopa
     q
 }
 
-fn u128_div(a: u128, b: u128) -> u128 implicits(RangeCheck) {
-    u128_safe_div(a, u128_as_non_zero(b))
+impl U128Div of Div::<u128> {
+    #[inline(always)]
+    fn div(a: u128, b: u128) -> u128 {
+        u128_safe_div(a, u128_as_non_zero(b))
+    }
 }
 
 fn u128_safe_mod(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopanic {
@@ -111,8 +120,11 @@ fn u128_safe_mod(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopa
     r
 }
 
-fn u128_mod(a: u128, b: u128) -> u128 implicits(RangeCheck) {
-    u128_safe_mod(a, u128_as_non_zero(b))
+impl U128Rem of Rem::<u128> {
+    #[inline(always)]
+    fn rem(a: u128, b: u128) -> u128 {
+        u128_safe_mod(a, u128_as_non_zero(b))
+    }
 }
 
 extern fn u128_safe_divmod(
@@ -155,17 +167,26 @@ impl U128PartialOrd of PartialOrd::<u128> {
 
 extern type Bitwise;
 extern fn bitwise(a: u128, b: u128) -> (u128, u128, u128) implicits(Bitwise) nopanic;
-fn u128_and(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
-    let (v, _, _) = bitwise(a, b);
-    v
+impl U128BitAnd of BitAnd::<u128> {
+    #[inline(always)]
+    fn bitand(a: u128, b: u128) -> u128 {
+        let (v, _, _) = bitwise(a, b);
+        v
+    }
 }
-fn u128_xor(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
-    let (_, v, _) = bitwise(a, b);
-    v
+impl U128BitXor of BitXor::<u128> {
+    #[inline(always)]
+    fn bitxor(a: u128, b: u128) -> u128 {
+        let (_, v, _) = bitwise(a, b);
+        v
+    }
 }
-fn u128_or(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
-    let (_, _, v) = bitwise(a, b);
-    v
+impl U128BitOr of BitOr::<u128> {
+    #[inline(always)]
+    fn bitor(a: u128, b: u128) -> u128 {
+        let (_, _, v) = bitwise(a, b);
+        v
+    }
 }
 
 extern fn u128_jump_nz(a: u128) -> JumpNzResult::<u128> implicits() nopanic;
@@ -433,13 +454,19 @@ impl U256Sub of Sub::<u256> {
     }
 }
 
-#[panic_with('u256_mul OF', u256_mul)]
 fn u256_checked_mul(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) {
     let (r, overflow) = u256_overflow_mul(a, b);
     if overflow {
         Option::<u256>::None(())
     } else {
         Option::<u256>::Some(r)
+    }
+}
+
+impl U256Mul of Mul::<u256> {
+    #[inline(always)]
+    fn mul(a: u256, b: u256) -> u256 {
+        u256_checked_mul(a, b).expect('u256_mul Overflow')
     }
 }
 
@@ -478,17 +505,23 @@ impl U256PartialOrd of PartialOrd::<u256> {
     }
 }
 
-#[inline(always)]
-fn u256_and(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
-    u256 { low: a.low & b.low, high: a.high & b.high }
+impl U256BitAnd of BitAnd::<u256> {
+    #[inline(always)]
+    fn bitand(a: u256, b: u256) -> u256 {
+        u256 { low: a.low & b.low, high: a.high & b.high }
+    }
 }
-#[inline(always)]
-fn u256_or(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
-    u256 { low: a.low | b.low, high: a.high | b.high }
+impl U256BitXor of BitXor::<u256> {
+    #[inline(always)]
+    fn bitxor(a: u256, b: u256) -> u256 {
+        u256 { low: a.low ^ b.low, high: a.high ^ b.high }
+    }
 }
-#[inline(always)]
-fn u256_xor(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
-    u256 { low: a.low ^ b.low, high: a.high ^ b.high }
+impl U256BitOr of BitOr::<u256> {
+    #[inline(always)]
+    fn bitor(a: u256, b: u256) -> u256 {
+        u256 { low: a.low | b.low, high: a.high | b.high }
+    }
 }
 
 fn u256_from_felt(a: felt) -> u256 implicits(RangeCheck) nopanic {
