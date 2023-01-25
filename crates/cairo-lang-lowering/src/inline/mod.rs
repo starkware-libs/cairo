@@ -162,10 +162,31 @@ pub struct FunctionInlinerRewriter<'db> {
     ctx: LoweringContext<'db>,
     /// A Queue of blocks on which we want to apply the FunctionInlinerRewriter.
     block_queue: BlockQueue,
-
-    // rewritten statments.
+    /// rewritten statements.
     statements: Vec<Statement>,
+    /// stack for statements that require rewriting.
+    statement_rewrite_stack: StatementStack,
 }
+
+#[derive(Default)]
+pub struct StatementStack {
+    stack: Vec<Statement>,
+}
+
+impl StatementStack {
+    /// Pushes multiple statement into the stack.
+    ///
+    /// Note that to keep the order of the statements when they are popped from the stack
+    /// they need to be pushed in reverse order.
+    fn push_statments(&mut self, statements: impl DoubleEndedIterator<Item = Statement>) {
+        self.stack.extend(statements.rev());
+    }
+
+    fn pop_statement(&mut self) -> Option<Statement> {
+        self.stack.pop()
+    }
+}
+
 pub struct BlockQueue {
     /// A Queue of blocks that require processing.
     block_queue: VecDeque<FlatBlock>,
@@ -274,17 +295,21 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 flat_blocks: FlatBlocks::new(),
             },
             statements: vec![],
+            statement_rewrite_stack: StatementStack::default(),
         };
 
         rewriter.ctx.variables = flat_lower.variables.clone();
         while let Some(block) = rewriter.block_queue.dequeue() {
-            for stmt in block.statements.iter().cloned() {
-                rewriter.rewrite(stmt)?;
+            rewriter.statement_rewrite_stack.push_statments(block.statements.into_iter());
+
+            while let Some(statements) = rewriter.statement_rewrite_stack.pop_statement() {
+                rewriter.rewrite(statements)?;
             }
+
             rewriter.block_queue.finalize(FlatBlock {
-                inputs: block.inputs.clone(),
+                inputs: block.inputs,
                 statements: std::mem::take(&mut rewriter.statements),
-                end: block.end.clone(),
+                end: block.end,
             });
         }
 
@@ -297,7 +322,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
         })
     }
 
-    // Rewrites statement and appends the statments that replace it to self.statements.
+    /// Rewrites statement and either appends it to self.statements or adds new statements to
+    /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
             let concrete_function = self.ctx.db.lookup_intern_function(stmt.function).function;
@@ -307,12 +333,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
                 if inline_data.config == InlineConfiguration::Always && inline_data.is_inlineable {
-                    for statement in
-                        self.inline_function(function_id, &stmt.inputs, &stmt.outputs)?.into_iter()
-                    {
-                        self.rewrite(statement)?
-                    }
-                    return Ok(());
+                    return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
                 }
             }
         }
@@ -322,14 +343,15 @@ impl<'db> FunctionInlinerRewriter<'db> {
     }
 
     /// Inlines the given function, with the given input and outputs variables.
-    /// Returns a vector of statement that needs to replace the call statement in the orignal block.
-    /// May add additional blocks to the block to support the inlining.
+    /// The statements that needs to replace the call statement in the original block
+    /// are pushed into the statement_rewrite_stack.
+    /// May also push additional blocks to the block queue.
     pub fn inline_function(
         &mut self,
         function_id: ConcreteFunctionWithBodyId,
         inputs: &[VariableId],
         outputs: &[VariableId],
-    ) -> Maybe<Vec<Statement>> {
+    ) -> Maybe<()> {
         let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
         let root_block_id = lowered.root?;
         let root_block = &lowered.blocks[root_block_id];
@@ -383,7 +405,10 @@ impl<'db> FunctionInlinerRewriter<'db> {
             mapper.renamed_blocks.insert(block_id, self.block_queue.enqueue_block(new_block));
         }
 
-        Ok(root_block.statements.iter().map(|stmt| mapper.rebuild_statement(stmt)).collect())
+        self.statement_rewrite_stack.push_statments(
+            root_block.statements.iter().map(|statement| mapper.rebuild_statement(statement)),
+        );
+        Ok(())
     }
 }
 
