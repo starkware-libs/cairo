@@ -269,66 +269,32 @@ pub fn core_binary_operator(
     db: &dyn SemanticGroup,
     inference: &mut Inference<'_>,
     binary_op: &BinaryOperator,
-    type1: TypeId,
-    type2: TypeId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
-    if let Some((trait_name, function_name)) = match binary_op {
-        BinaryOperator::Plus(_) => Some(("Add", "add")),
-        BinaryOperator::Minus(_) => Some(("Sub", "sub")),
-        BinaryOperator::EqEq(_) => Some(("PartialEq", "eq")),
-        BinaryOperator::Neq(_) => Some(("PartialEq", "ne")),
-        BinaryOperator::LE(_) => Some(("PartialOrd", "le")),
-        BinaryOperator::GE(_) => Some(("PartialOrd", "ge")),
-        BinaryOperator::LT(_) => Some(("PartialOrd", "lt")),
-        BinaryOperator::GT(_) => Some(("PartialOrd", "gt")),
-        _ => None,
-    } {
-        return Ok(Ok(get_core_trait_function_infer(
-            db,
-            inference,
-            trait_name.into(),
-            function_name.into(),
-            stable_ptr,
-        )));
-    }
-
-    // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
-    //   traits.
-    type1.check_not_missing(db)?;
-    type2.check_not_missing(db)?;
-    let felt_ty = core_felt_ty(db);
-    let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
-    let u256_ty = get_core_ty_by_name(db, "u256".into(), vec![]);
-    let bool_ty = core_bool_ty(db);
-    let unsupported_operator = |op: &str| {
-        Ok(Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 }))
-    };
-    let function_name = match binary_op {
-        BinaryOperator::Mul(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_mul",
-        BinaryOperator::Mul(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_mul",
-        BinaryOperator::Mul(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_mul",
-        BinaryOperator::Mul(_) => return unsupported_operator("*"),
-        BinaryOperator::Div(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_div",
-        BinaryOperator::Div(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_div",
-        BinaryOperator::Div(_) => return unsupported_operator("/"),
-        BinaryOperator::Mod(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_mod",
-        BinaryOperator::Mod(_) => return unsupported_operator("%"),
-        BinaryOperator::And(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_and",
-        BinaryOperator::And(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_and",
-        BinaryOperator::And(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_and",
-        BinaryOperator::And(_) => return unsupported_operator("&"),
-        BinaryOperator::Or(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_or",
-        BinaryOperator::Or(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_or",
-        BinaryOperator::Or(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_or",
-        BinaryOperator::Or(_) => return unsupported_operator("|"),
-        BinaryOperator::Xor(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_xor",
-        BinaryOperator::Xor(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_xor",
-        BinaryOperator::Xor(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_xor",
-        BinaryOperator::Xor(_) => return unsupported_operator("^"),
+    let (trait_name, function_name) = match binary_op {
+        BinaryOperator::Plus(_) => ("Add", "add"),
+        BinaryOperator::Minus(_) => ("Sub", "sub"),
+        BinaryOperator::Mul(_) => ("Mul", "mul"),
+        BinaryOperator::Div(_) => ("Div", "div"),
+        BinaryOperator::Mod(_) => ("Rem", "rem"),
+        BinaryOperator::EqEq(_) => ("PartialEq", "eq"),
+        BinaryOperator::Neq(_) => ("PartialEq", "ne"),
+        BinaryOperator::LE(_) => ("PartialOrd", "le"),
+        BinaryOperator::GE(_) => ("PartialOrd", "ge"),
+        BinaryOperator::LT(_) => ("PartialOrd", "lt"),
+        BinaryOperator::GT(_) => ("PartialOrd", "gt"),
+        BinaryOperator::And(_) => ("BitAnd", "bitand"),
+        BinaryOperator::Or(_) => ("BitOr", "bitor"),
+        BinaryOperator::Xor(_) => ("BitXor", "bitxor"),
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
-    Ok(Ok(get_core_function_id(db, function_name.into(), vec![])))
+    Ok(Ok(get_core_trait_function_infer(
+        db,
+        inference,
+        trait_name.into(),
+        function_name.into(),
+        stable_ptr,
+    )))
 }
 
 pub fn felt_eq(db: &dyn SemanticGroup) -> FunctionId {

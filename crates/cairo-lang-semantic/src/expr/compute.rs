@@ -286,15 +286,12 @@ fn compute_expr_binary_semantic(
             _ => Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
         };
     }
-    // TODO(spapini): Use a trait here.
-    let lty = ctx.reduce_ty(lexpr.ty());
-    let rty = ctx.reduce_ty(rexpr.ty());
+    ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
+    ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
     let function = match core_binary_operator(
         db,
         &mut ctx.inference,
         &binary_op,
-        lty,
-        rty,
         syntax.stable_ptr().untyped(),
     )? {
         Err(err_kind) => {

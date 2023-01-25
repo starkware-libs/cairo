@@ -19,17 +19,21 @@ enum bool {
 }
 
 extern fn bool_and_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
-#[inline(always)]
-fn bool_and(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r, ) = bool_and_impl(a, b);
-    r
+impl BoolBitAnd of BitAnd::<bool> {
+    #[inline(always)]
+    fn bitand(a: bool, b: bool) -> bool {
+        let (r, ) = bool_and_impl(a, b);
+        r
+    }
 }
 
 extern fn bool_or_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
-#[inline(always)]
-fn bool_or(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r, ) = bool_or_impl(a, b);
-    r
+impl BoolBitOr of BitOr::<bool> {
+    #[inline(always)]
+    fn bitor(a: bool, b: bool) -> bool {
+        let (r, ) = bool_or_impl(a, b);
+        r
+    }
 }
 
 extern fn bool_not_impl(a: bool) -> (bool, ) implicits() nopanic;
@@ -40,10 +44,12 @@ fn bool_not(a: bool) -> bool implicits() nopanic {
 }
 
 extern fn bool_xor_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
-#[inline(always)]
-fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r, ) = bool_xor_impl(a, b);
-    r
+impl BoolBitXor of BitXor::<bool> {
+    #[inline(always)]
+    fn bitxor(a: bool, b: bool) -> bool {
+        let (r, ) = bool_xor_impl(a, b);
+        r
+    }
 }
 
 extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
@@ -84,9 +90,15 @@ impl FeltSub of Sub::<felt> {
     }
 }
 extern fn felt_sub(a: felt, b: felt) -> felt nopanic;
+impl FeltMul of Mul::<felt> {
+    #[inline(always)]
+    fn mul(a: felt, b: felt) -> felt {
+        felt_mul(a, b)
+    }
+}
 extern fn felt_mul(a: felt, b: felt) -> felt nopanic;
 #[inline(always)]
-fn felt_neg(a: felt) -> felt nopanic {
+fn felt_neg(a: felt) -> felt {
     a * felt_const::<-1>()
 }
 
@@ -212,15 +224,14 @@ use integer::u128_try_from_felt;
 use integer::u128_to_felt;
 use integer::U128Add;
 use integer::U128Sub;
-use integer::u128_mul;
-use integer::u128_as_non_zero;
-use integer::u128_div;
-use integer::u128_mod;
+use integer::U128Mul;
+use integer::U128Div;
+use integer::U128Rem;
 use integer::U128PartialOrd;
 use integer::U128PartialEq;
-use integer::u128_and;
-use integer::u128_or;
-use integer::u128_xor;
+use integer::U128BitAnd;
+use integer::U128BitOr;
+use integer::U128BitXor;
 use integer::u128_jump_nz;
 use integer::u8;
 use integer::u8_const;
@@ -243,12 +254,12 @@ use integer::U64PartialEq;
 use integer::u256;
 use integer::U256Add;
 use integer::U256Sub;
+use integer::U256Mul;
 use integer::U256PartialOrd;
 use integer::U256PartialEq;
-use integer::u256_mul;
-use integer::u256_and;
-use integer::u256_or;
-use integer::u256_xor;
+use integer::U256BitAnd;
+use integer::U256BitOr;
+use integer::U256BitXor;
 use integer::u256_from_felt;
 use integer::Bitwise;
 
