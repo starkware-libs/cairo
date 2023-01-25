@@ -165,6 +165,9 @@ pub struct FunctionInlinerRewriter<'db> {
 
     // rewritten statments.
     statements: Vec<Statement>,
+
+    // Statements that require rewriting in reverse order..
+    statement_rewrite_stack: Vec<Statement>,
 }
 pub struct BlockQueue {
     /// A Queue of blocks that require processing.
@@ -274,17 +277,21 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 flat_blocks: FlatBlocks::new(),
             },
             statements: vec![],
+            statement_rewrite_stack: vec![],
         };
 
         rewriter.ctx.variables = flat_lower.variables.clone();
         while let Some(block) = rewriter.block_queue.dequeue() {
-            for stmt in block.statements.iter().cloned() {
-                rewriter.rewrite(stmt)?;
+            rewriter.enqueue_statments(block.statements.into_iter());
+
+            while let Some(statements) = rewriter.statement_rewrite_stack.pop() {
+                rewriter.rewrite(statements)?;
             }
+
             rewriter.block_queue.finalize(FlatBlock {
-                inputs: block.inputs.clone(),
+                inputs: block.inputs,
                 statements: std::mem::take(&mut rewriter.statements),
-                end: block.end.clone(),
+                end: block.end,
             });
         }
 
@@ -297,7 +304,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
         })
     }
 
-    // Rewrites statement and appends the statments that replace it to self.statements.
+    // Rewrites statement and either appends it to self.statements or
+    // adds a a list of statements that needs rewritting to self.pending
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
             let concrete_function = self.ctx.db.lookup_intern_function(stmt.function).function;
@@ -307,12 +315,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
                 if inline_data.config == InlineConfiguration::Always && inline_data.is_inlineable {
-                    for statement in
-                        self.inline_function(function_id, &stmt.inputs, &stmt.outputs)?.into_iter()
-                    {
-                        self.rewrite(statement)?
-                    }
-                    return Ok(());
+                    return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
                 }
             }
         }
@@ -329,7 +332,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         function_id: ConcreteFunctionWithBodyId,
         inputs: &[VariableId],
         outputs: &[VariableId],
-    ) -> Maybe<Vec<Statement>> {
+    ) -> Maybe<()> {
         let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
         let root_block_id = lowered.root?;
         let root_block = &lowered.blocks[root_block_id];
@@ -383,7 +386,17 @@ impl<'db> FunctionInlinerRewriter<'db> {
             mapper.renamed_blocks.insert(block_id, self.block_queue.enqueue_block(new_block));
         }
 
-        Ok(root_block.statements.iter().map(|stmt| mapper.rebuild_statement(stmt)).collect())
+        // Inline enqueue_statments() to avoid self lifetime issue.
+        self.statement_rewrite_stack.extend(
+            root_block.statements.iter().map(|statement| mapper.rebuild_statement(statement)).rev(),
+        );
+        Ok(())
+    }
+
+    // Adds statements to the rewrite stack,
+    fn enqueue_statments(&mut self, statements: impl DoubleEndedIterator<Item = Statement>) {
+        // Note that the stack is in reverse order.
+        self.statement_rewrite_stack.extend(statements.rev());
     }
 }
 
