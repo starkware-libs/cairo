@@ -78,8 +78,8 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_concrete_trait_function(
         &self,
-        id: items::trt::ConcreteTraitFunctionLongId,
-    ) -> items::trt::ConcreteTraitFunctionId;
+        id: items::trt::ConcreteTraitGenericFunctionLongId,
+    ) -> items::trt::ConcreteTraitGenericFunctionId;
     #[salsa::interned]
     fn intern_concrete_impl(
         &self,
