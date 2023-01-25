@@ -1,3 +1,4 @@
+use array::ArrayTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
 
@@ -477,10 +478,10 @@ fn test_u256_mul_overflow_2() {
 
 // TODO(orizi): Switch to operators and literals when added.
 fn test_array_helper(idx: u128) -> felt {
-    let mut arr = array_new::<felt>();
-    array_append::<felt>(ref arr, 10);
-    array_append::<felt>(ref arr, 11);
-    array_append::<felt>(ref arr, 12);
+    let mut arr = ArrayTrait::new();
+    arr.append(10);
+    arr.append(11);
+    arr.append(12);
     array_at(ref arr, idx)
 }
 
