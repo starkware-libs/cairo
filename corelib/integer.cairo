@@ -117,9 +117,7 @@ fn u128_mod(a: u128, b: u128) -> u128 implicits(RangeCheck) {
 
 extern fn u128_safe_divmod(
     a: u128, b: NonZero::<u128>
-    ) -> (
-    u128, u128
-) implicits(RangeCheck) nopanic;
+) -> (u128, u128) implicits(RangeCheck) nopanic;
 
 extern fn u128_lt(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic;
 extern fn u128_eq(a: u128, b: u128) -> bool implicits() nopanic;
