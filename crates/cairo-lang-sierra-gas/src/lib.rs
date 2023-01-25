@@ -73,6 +73,7 @@ pub fn calc_gas_precost_info(
 pub fn calc_gas_postcost_info(
     program: &Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    precost_gas_info: &GasInfo,
 ) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     calc_gas_info_inner(
@@ -86,6 +87,7 @@ pub fn calc_gas_postcost_info(
                 idx,
                 libfunc,
                 &registry,
+                precost_gas_info,
             )
         },
         function_set_costs,

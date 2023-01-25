@@ -7,6 +7,7 @@ use itertools::zip_eq;
 
 pub use crate::core_libfunc_cost_base::InvocationCostInfoProvider;
 use crate::core_libfunc_cost_base::{core_libfunc_postcost, core_libfunc_precost, CostOperations};
+use crate::core_libfunc_cost_expr::GasApInfoProvider;
 use crate::gas_info::GasInfo;
 
 /// Cost operations for getting `Option<i64>` costs values.
@@ -23,10 +24,6 @@ impl CostOperations for Ops<'_> {
 
     fn const_cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
         Some(OrderedHashMap::from_iter([(token_type, value as i64)]))
-    }
-
-    fn function_cost(&mut self, function: &cairo_lang_sierra::program::Function) -> Self::CostType {
-        self.gas_info.function_costs.get(&function.id).cloned()
     }
 
     fn function_token_cost(
@@ -66,7 +63,12 @@ pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     info_provider: &InfoProvider,
 ) -> Vec<Option<OrderedHashMap<CostTokenType, i64>>> {
     let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
-    let postcost = core_libfunc_postcost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
+    let postcost = core_libfunc_postcost(
+        &mut Ops { gas_info, idx: *idx },
+        libfunc,
+        info_provider,
+        &GasApInfoProvider { info_provider, gas_info, idx: *idx },
+    );
     zip_eq(precost, postcost)
         .map(|(precost, postcost)| {
             let precost = precost?;

@@ -31,6 +31,14 @@ impl CostTokenType {
             .iter()
     }
 
+    pub fn iter_precost() -> std::slice::Iter<'static, Self> {
+        [CostTokenType::Pedersen, CostTokenType::Bitwise, CostTokenType::EcOp].iter()
+    }
+
+    pub fn iter_postcost() -> std::slice::Iter<'static, Self> {
+        [CostTokenType::Step].iter()
+    }
+
     /// Returns the name of the token type, in snake_case.
     pub fn name(&self) -> String {
         match self {
@@ -81,11 +89,6 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct BuiltinCostGetGasLibfunc {}
 impl BuiltinCostGetGasLibfunc {
-    /// Returns the maximal number of steps required for the computation of the requested cost.
-    /// The number of steps is also the change in `ap` (every step includes `ap++`).
-    pub fn cost_computation_max_steps() -> usize {
-        Self::cost_computation_steps(|_| 2)
-    }
     /// Returns the number of steps required for the computation of the requested cost, given the
     /// number of requested token usages. The number of steps is also the change in `ap` (every
     /// step includes `ap++`).
