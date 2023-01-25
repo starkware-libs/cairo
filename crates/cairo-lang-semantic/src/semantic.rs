@@ -1,3 +1,4 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::LocalVarId;
 // Reexport objects
@@ -92,10 +93,21 @@ impl Variable {
 /// Generic argument.
 /// A value assigned to a generic parameter.
 /// May be a type, impl, constant, etc..
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GenericArgumentId {
     Type(TypeId),
     Literal(LiteralId),
     // TODO(spapini): impls and constants as generic values.
+}
+impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        match self {
+            GenericArgumentId::Type(id) => write!(f, "{:?}", id.debug(db)),
+            GenericArgumentId::Literal(id) => write!(f, "{:?}", id.debug(db)),
+        }
+    }
 }

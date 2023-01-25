@@ -2,7 +2,7 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::uint::{
-    IntOperator, Uint8Concrete, UintConstConcreteLibfunc, UintTraits,
+    IntOperator, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc, UintTraits,
 };
 use num_bigint::BigInt;
 
@@ -259,6 +259,34 @@ pub fn build_u8(
             2,
             0x8000000000000110000000000000000_u128,
             0x1000000000000021ffffffffffffff01_u128,
+        >(builder),
+    }
+}
+
+/// Builds instructions for Sierra u64 operations.
+pub fn build_u64(
+    libfunc: &Uint64Concrete,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    match libfunc {
+        Uint64Concrete::Const(libfunc) => build_const(libfunc, builder),
+        Uint64Concrete::LessThan(_) => build_less_than(builder),
+        Uint64Concrete::Equal(_) => misc::build_cell_eq(builder),
+        Uint64Concrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
+        Uint64Concrete::Operation(libfunc) => match libfunc.operator {
+            IntOperator::OverflowingAdd => {
+                build_small_uint_overflowing_add(builder, u64::MAX as u128 + 1)
+            }
+            IntOperator::OverflowingSub => {
+                build_small_uint_overflowing_sub(builder, BigInt::from(u64::MAX) + 1)
+            }
+        },
+        Uint64Concrete::ToFelt(_) => misc::build_identity(builder),
+        Uint64Concrete::FromFelt(_) => build_small_uint_from_felt::<
+            0x10000000000000000,
+            2,
+            0x8000000000000110000000000000000_u128,
+            0x10000000000000210000000000000001_u128,
         >(builder),
     }
 }

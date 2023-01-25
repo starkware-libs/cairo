@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
-use cairo_felt::{self as felt, felt_str, Felt, FeltOps, PRIME_STR};
+use cairo_felt::{self as felt, felt_str, Felt, PRIME_STR};
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
@@ -289,9 +289,13 @@ impl HintProcessor for CairoHintProcessor {
                         vm.insert_value(&result_ptr, value)?;
                     } else {
                         vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
-                        vm.insert_value(&revert_reason_ptr, Felt::from(1))?;
+                        let revert_reason_start = vm.add_memory_segment();
+                        // TODO(ilya): Add revert reason.
+                        let revert_reason_end = revert_reason_start;
+                        vm.insert_value(&revert_reason_ptr, revert_reason_start)?;
+                        vm.insert_value(&revert_reason_ptr, revert_reason_end)?;
                     }
-                } else if selector == "call_contract".as_bytes() {
+                } else if selector == "CallContract".as_bytes() {
                     todo!()
                 } else {
                     panic!("Unknown selector for system call!");
@@ -624,7 +628,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     let mut runner = CairoRunner::new(&program, "all", false)
         .map_err(VirtualMachineError::from)
         .map_err(Box::new)?;
-    let mut vm = VirtualMachine::new(true, vec![]);
+    let mut vm = VirtualMachine::new(true);
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 

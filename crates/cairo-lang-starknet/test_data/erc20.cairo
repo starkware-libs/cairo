@@ -1,20 +1,21 @@
 #[contract]
 mod ERC20 {
-    struct Storage { name: felt,
-    symbol: felt,
-    decimals: u8,
-    total_supply: u256,
-    balances: Map::<felt, u256>,
-    allowances: Map::<(felt, felt), u256>,
+    use starknet::get_caller_address;
+
+    struct Storage {
+        name: felt,
+        symbol: felt,
+        decimals: u8,
+        total_supply: u256,
+        balances: Map::<felt, u256>,
+        allowances: Map::<(felt, felt), u256>,
     }
 
     #[event]
-    fn Transfer(from: felt, to: felt, value: u256) {
-    }
+    fn Transfer(from: felt, to: felt, value: u256) {}
 
     #[event]
-    fn Approval(owner: felt, spender: felt, value: u256) {
-    }
+    fn Approval(owner: felt, spender: felt, value: u256) {}
 
     #[constructor]
     fn constructor(
@@ -111,17 +112,5 @@ mod ERC20 {
         assert(spender != 0, 'ERC20: approve from 0');
         allowances::write((owner, spender), amount);
         Approval(owner, spender, amount);
-    }
-
-    // TODO(orizi): Remove when shorter unwrap is added.
-    fn get_caller_address() -> felt {
-        match starknet::get_caller_address() {
-            Result::Ok(x) => x,
-            Result::Err(revert_reason) => {
-                let mut err_data = array_new();
-                array_append(ref err_data, revert_reason);
-                panic(err_data)
-            },
-         }
     }
 }

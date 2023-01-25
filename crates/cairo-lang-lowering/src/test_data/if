@@ -272,7 +272,7 @@ Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
 Initial refs:
 Statements:
   (v4: core::felt) <- core::FeltAdd::add(v0, v1)
-  (v5: core::felt) <- core::felt_sub(v2, v3)
+  (v5: core::felt) <- core::FeltSub::sub(v2, v3)
   (v6: core::felt) <- core::felt_sub(v4, v5)
   () <- match core::felt_jump_nz(v6) {
     JumpNzResult::Zero => blk0,
@@ -300,7 +300,7 @@ blk2 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
   () <- blk3()
-  (v5: core::felt) <- core::felt_sub(v2, v3)
+  () <- blk4()
   (v6: core::felt) <- core::felt_sub(v4, v5)
   () <- match core::felt_jump_nz(v6) {
     JumpNzResult::Zero => blk0,
@@ -315,3 +315,10 @@ Statements:
   (v11: core::felt) <- core::felt_add(v0, v1)
 End:
   Callsite(v11 -> v4)
+
+blk4:
+Inputs:
+Statements:
+  (v12: core::felt) <- core::felt_sub(v2, v3)
+End:
+  Callsite(v12 -> v5)

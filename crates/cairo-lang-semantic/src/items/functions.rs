@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionSignatureId, FunctionWithBodyId, GenericParamId,
-    ImplFunctionId, ModuleItemId, ParamLongId,
+    ImplFunctionId, ModuleItemId, ParamLongId, TopLevelLanguageElementId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -66,7 +66,25 @@ impl GenericFunctionId {
         };
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        self.signature(db).format(db.elongate().upcast())
+        let defs_db = db.upcast();
+        match self {
+            GenericFunctionId::Free(id) => id.full_path(defs_db),
+            GenericFunctionId::Extern(id) => id.full_path(defs_db),
+            GenericFunctionId::Impl(id) => {
+                format!(
+                    "{:?}::{}",
+                    id.concrete_impl.debug(db.elongate()),
+                    id.function.name(defs_db)
+                )
+            }
+            GenericFunctionId::Trait(id) => {
+                format!(
+                    "{:?}::{}",
+                    id.concrete_trait_id(db).debug(db.elongate()),
+                    id.function_id(db).name(defs_db)
+                )
+            }
+        }
     }
     /// Gets the FunctionSignatureId of the generic function.
     pub fn signature(&self, db: &dyn SemanticGroup) -> FunctionSignatureId {
@@ -282,9 +300,12 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
     ) -> std::fmt::Result {
         write!(f, "{}", self.generic_function.format(db.upcast()))?;
         if !self.generic_args.is_empty() {
-            write!(f, "<")?;
-            for arg in self.generic_args.iter() {
-                write!(f, "{:?},", arg.debug(db))?;
+            write!(f, "::<")?;
+            for (i, arg) in self.generic_args.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{:?}", arg.debug(db))?;
             }
             write!(f, ">")?;
         }

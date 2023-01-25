@@ -49,10 +49,15 @@ error: Binary operator '>' is not supported for types 'core::bool' and 'core::fe
     a>a>a;
        ^
 
-error: Binary operator '-' is not supported for types 'core::felt' and 'core::bool'.
- --> lib.cairo:8:7
+error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
+ --> lib.cairo:8:9
     a - b
-      ^
+        ^
+
+error: Unexpected return type. Expected: "()", found: "?2".
+ --> lib.cairo:1:48
+fn foo(a: felt, b: bool) implicits(RangeCheck) {
+                                               ^
 
 //! > ==========================================================================
 

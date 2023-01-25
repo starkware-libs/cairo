@@ -148,3 +148,61 @@ error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported
 //! > lowering_structured
 
 //! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test empty enum match.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  match Option::Some(5) {};
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match. Currently, matches require one arm per variant, in the order of variant definition.
+ --> lib.cairo:2:3
+  match Option::Some(5) {};
+  ^**********************^
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test empty extern match.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  match felt_jump_nz(5) {};
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match. Currently, matches require one arm per variant, in the order of variant definition.
+ --> lib.cairo:2:9
+  match felt_jump_nz(5) {};
+        ^*************^
+
+//! > lowering_structured
+
+//! > lowering_flat

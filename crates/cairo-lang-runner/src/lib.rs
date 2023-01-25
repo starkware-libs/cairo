@@ -1,7 +1,7 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
-use cairo_felt::{Felt, FeltOps};
+use cairo_felt::Felt;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
@@ -201,7 +201,7 @@ impl SierraCasmRunner {
         for ty in func.signature.ret_types.iter().rev() {
             let size = self.sierra_program_registry.get_type(ty)?.info().size as usize;
             let values: Vec<Felt> =
-                cells[(ap - size)..ap].iter().cloned().map(|cell| cell.unwrap()).collect();
+                ((ap - size)..ap).map(|index| cells[index].clone().unwrap()).collect();
             ap -= size;
             results_data.push((ty.clone(), values));
         }
@@ -341,7 +341,7 @@ fn create_metadata(
     calc_gas: bool,
 ) -> Result<Metadata, RunnerError> {
     if calc_gas {
-        calc_metadata(sierra_program).map_err(|err| match err {
+        calc_metadata(sierra_program, Default::default()).map_err(|err| match err {
             MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
             MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
         })

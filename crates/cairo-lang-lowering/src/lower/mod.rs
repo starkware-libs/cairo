@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::FunctionWithBodyId;
-use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, ToMaybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
@@ -562,7 +562,9 @@ fn lower_optimized_extern_match(
         .concrete_enum_variants(extern_enum.concrete_enum_id)
         .map_err(LoweringFlowError::Failed)?;
     if match_arms.len() != concrete_variants.len() {
-        return Err(LoweringFlowError::Failed(skip_diagnostic()));
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report_by_location(location, UnsupportedMatch),
+        ));
     }
     // Merge arm blocks.
     let sealed_blocks = zip_eq(&concrete_variants, match_arms)

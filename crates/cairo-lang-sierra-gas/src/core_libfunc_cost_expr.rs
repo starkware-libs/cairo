@@ -5,7 +5,7 @@ use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::core_libfunc_cost_base::{
-    core_libfunc_cost_base, CostOperations, InvocationCostInfoProvider,
+    core_libfunc_postcost, core_libfunc_precost, CostOperations, InvocationCostInfoProvider,
 };
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
@@ -32,6 +32,17 @@ impl CostOperations for Ops<'_> {
         self.statement_future_cost.get_future_cost(&function.entry_point).clone()
     }
 
+    fn function_token_cost(
+        &mut self,
+        function: &cairo_lang_sierra::program::Function,
+        token_type: CostTokenType,
+    ) -> Self::CostType {
+        Self::CostType::from_iter([(
+            token_type,
+            self.statement_future_cost.get_future_cost(&function.entry_point)[token_type].clone(),
+        )])
+    }
+
     fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
         Self::CostType::from_iter([(
             token_type,
@@ -49,11 +60,21 @@ impl CostOperations for Ops<'_> {
 }
 
 /// Returns an expression for the gas cost for core libfuncs.
-pub fn core_libfunc_cost_expr<InfoProvider: InvocationCostInfoProvider>(
+pub fn core_libfunc_precost_expr<InfoProvider: InvocationCostInfoProvider>(
     statement_future_cost: &mut dyn StatementFutureCost,
     idx: &StatementIdx,
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<CostExprMap> {
-    core_libfunc_cost_base(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+    core_libfunc_precost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+}
+
+/// Returns an expression for the gas cost for core libfuncs.
+pub fn core_libfunc_postcost_expr<InfoProvider: InvocationCostInfoProvider>(
+    statement_future_cost: &mut dyn StatementFutureCost,
+    idx: &StatementIdx,
+    libfunc: &CoreConcreteLibfunc,
+    info_provider: &InfoProvider,
+) -> Vec<CostExprMap> {
+    core_libfunc_postcost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
 }

@@ -175,7 +175,7 @@ Initial refs:
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<core::felt>) <- Option::None(v0)
-  (v2: core::bool) <- test::OptionTraitImpl::is_some(v1)
+  (v2: core::bool) <- test::OptionTraitImpl::<core::felt>::is_some(v1)
 End:
   Return(v1)
 
@@ -185,6 +185,6 @@ Inputs:
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<core::felt>) <- Option::None(v0)
-  (v2: core::bool) <- test::OptionTraitImpl::is_some(v1)
+  (v2: core::bool) <- test::OptionTraitImpl::<core::felt>::is_some(v1)
 End:
   Return(v1)

@@ -30,6 +30,9 @@ mod TestContract {
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
     fn internal_func() -> felt {
         1
     }
@@ -54,7 +57,7 @@ mod TestContract {
         serde::Serde::<felt>::serialize(ref data, x);
         serde::Serde::<u128>::serialize(ref data, y);
         
-        starknet::emit_event_syscall(keys, data);
+        starknet::emit_event_syscall(keys, data).unwrap_syscall()
     }
             
     #[event]
@@ -63,7 +66,7 @@ mod TestContract {
         array_append(ref keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
         let mut data = array_new();
         
-        starknet::emit_event_syscall(keys, data);
+        starknet::emit_event_syscall(keys, data).unwrap_syscall()
     }
             
 

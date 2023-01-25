@@ -2,9 +2,13 @@ mod traits;
 use traits::Copy;
 use traits::Drop;
 use traits::Add;
+use traits::Sub;
 
 #[derive(Copy, Drop)]
-enum bool { False: (), True: (), }
+enum bool {
+    False: (),
+    True: (),
+}
 
 extern fn bool_and_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
@@ -59,6 +63,12 @@ impl FeltAdd of Add::<felt> {
     }
 }
 extern fn felt_add(a: felt, b: felt) -> felt nopanic;
+impl FeltSub of Sub::<felt> {
+    #[inline(always)]
+    fn sub(a: felt, b: felt) -> felt {
+        felt_sub(a, b)
+    }
+}
 extern fn felt_sub(a: felt, b: felt) -> felt nopanic;
 extern fn felt_mul(a: felt, b: felt) -> felt nopanic;
 #[inline(always)]
@@ -68,7 +78,10 @@ fn felt_neg(a: felt) -> felt nopanic {
 
 extern type NonZero<T>;
 // TODO(spapini): Add generic impls for NonZero for Copy, Drop.
-enum JumpNzResult<T> { Zero: (), NonZero: NonZero::<T>, }
+enum JumpNzResult<T> {
+    Zero: (),
+    NonZero: NonZero::<T>,
+}
 extern fn unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
 
 impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
@@ -77,14 +90,15 @@ extern fn felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
 
 // TODO(orizi): Change to extern when added.
 #[inline(always)]
-fn felt_eq(a: felt, b: felt) -> bool nopanic {
+fn felt_eq(a: felt, b: felt) -> bool {
     match a - b {
         0 => bool::True(()),
         _ => bool::False(()),
-     }
+    }
 }
+
 #[inline(always)]
-fn felt_ne(a: felt, b: felt) -> bool nopanic {
+fn felt_ne(a: felt, b: felt) -> bool {
     !(a == b)
 }
 
@@ -178,14 +192,8 @@ use integer::u128_const;
 use integer::u128_from_felt;
 use integer::u128_try_from_felt;
 use integer::u128_to_felt;
-use integer::u128_add;
-impl U128Add of Add::<u128> {
-    #[inline(always)]
-    fn add(a: u128, b: u128) -> u128 {
-        u128_add(a, b)
-    }
-}
-use integer::u128_sub;
+use integer::U128Add;
+use integer::U128Sub;
 use integer::u128_mul;
 use integer::u128_as_non_zero;
 use integer::u128_div;
@@ -205,29 +213,30 @@ use integer::u8_const;
 use integer::u8_from_felt;
 use integer::u8_try_from_felt;
 use integer::u8_to_felt;
-use integer::u8_add;
-impl U8Add of Add::<u8> {
-    #[inline(always)]
-    fn add(a: u8, b: u8) -> u8 {
-        u8_add(a, b)
-    }
-}
-use integer::u8_sub;
+use integer::U8Add;
+use integer::U8Sub;
 use integer::u8_eq;
 use integer::u8_ne;
 use integer::u8_lt;
 use integer::u8_le;
 use integer::u8_gt;
 use integer::u8_ge;
+use integer::u64;
+use integer::u64_const;
+use integer::u64_from_felt;
+use integer::u64_try_from_felt;
+use integer::u64_to_felt;
+use integer::U64Add;
+use integer::U64Sub;
+use integer::u64_eq;
+use integer::u64_ne;
+use integer::u64_lt;
+use integer::u64_le;
+use integer::u64_gt;
+use integer::u64_ge;
 use integer::u256;
-use integer::u256_add;
-impl U256Add of Add::<u256> {
-    #[inline(always)]
-    fn add(a: u256, b: u256) -> u256 {
-        u256_add(a, b)
-    }
-}
-use integer::u256_sub;
+use integer::U256Add;
+use integer::U256Sub;
 use integer::u256_mul;
 use integer::u256_eq;
 use integer::u256_ne;
@@ -250,8 +259,11 @@ use gas::get_gas;
 use gas::get_gas_all;
 
 // Panics.
-enum PanicResult<T> { Ok: T, Err: Array::<felt>, }
-enum never { }
+enum PanicResult<T> {
+    Ok: T,
+    Err: Array::<felt>,
+}
+enum never {}
 extern fn panic(data: Array::<felt>) -> never;
 
 fn assert(cond: bool, err_code: felt) {
