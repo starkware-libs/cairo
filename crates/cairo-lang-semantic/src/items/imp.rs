@@ -458,6 +458,7 @@ pub fn find_impls_at_module(
     inference: &Inference<'_>,
     module_id: ModuleId,
     concrete_trait_id: ConcreteTraitId,
+    stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Vec<ImplId>> {
     let mut res = Vec::new();
 
@@ -482,6 +483,7 @@ pub fn find_impls_at_module(
             &imp_data.generic_params,
             &long_imp_concrete_trait.generic_args,
             &long_concrete_trait.generic_args,
+            stable_ptr,
         ) {
             continue;
         }
@@ -504,13 +506,22 @@ pub fn find_impls_at_context(
     inference: &Inference<'_>,
     lookup_context: &ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
+    stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<OrderedHashSet<ImplId>> {
     let mut res = OrderedHashSet::default();
     // TODO(spapini): Lookup in generic_params once impl generic params are supported.
-    res.extend(find_impls_at_module(db, inference, lookup_context.module_id, concrete_trait_id)?);
+    res.extend(find_impls_at_module(
+        db,
+        inference,
+        lookup_context.module_id,
+        concrete_trait_id,
+        stable_ptr,
+    )?);
     let core_module = core_module(db);
     for module_id in chain!(&lookup_context.extra_modules, [&core_module]) {
-        if let Ok(imps) = find_impls_at_module(db, inference, *module_id, concrete_trait_id) {
+        if let Ok(imps) =
+            find_impls_at_module(db, inference, *module_id, concrete_trait_id, stable_ptr)
+        {
             res.extend(imps);
         }
     }
@@ -520,11 +531,18 @@ pub fn find_impls_at_context(
             inference,
             ModuleId::Submodule(submodule),
             concrete_trait_id,
+            stable_ptr,
         )?);
     }
     for use_id in db.module_uses_ids(lookup_context.module_id)? {
         if let Ok(ResolvedGenericItem::Module(submodule)) = db.use_resolved_item(use_id) {
-            res.extend(find_impls_at_module(db, inference, submodule, concrete_trait_id)?);
+            res.extend(find_impls_at_module(
+                db,
+                inference,
+                submodule,
+                concrete_trait_id,
+                stable_ptr,
+            )?);
         }
     }
     Ok(res)

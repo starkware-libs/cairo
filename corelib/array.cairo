@@ -7,3 +7,37 @@ extern fn array_get<T>(
     ref arr: Array::<T>, index: u128
 ) -> Option::<T> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(ref arr: Array::<T>) -> u128 nopanic;
+
+trait ArrayTrait<T> {
+    fn new() -> Array::<T>;
+    fn append(ref self: Array::<T>, value: T);
+    fn pop_front(ref self: Array::<T>) -> Option::<T>;
+    fn get(ref self: Array::<T>, index: u128) -> Option::<T>;
+    fn at(ref self: Array::<T>, index: u128) -> T;
+    fn len(ref self: Array::<T>) -> u128;
+}
+impl ArrayImpl<T> of ArrayTrait::<T> {
+    #[inline(always)]
+    fn new() -> Array::<T> {
+        array_new()
+    }
+    #[inline(always)]
+    fn append(ref self: Array::<T>, value: T) {
+        array_append(ref self, value)
+    }
+    #[inline(always)]
+    fn pop_front(ref self: Array::<T>) -> Option::<T> {
+        array_pop_front(ref self)
+    }
+    #[inline(always)]
+    fn get(ref self: Array::<T>, index: u128) -> Option::<T> {
+        array_get(ref self, index)
+    }
+    fn at(ref self: Array::<T>, index: u128) -> T {
+        array_at(ref self, index)
+    }
+    #[inline(always)]
+    fn len(ref self: Array::<T>) -> u128 {
+        array_len(ref self)
+    }
+}
