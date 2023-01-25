@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context};
-use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::db::RootDatabaseBuilder;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
@@ -72,7 +72,9 @@ fn main() -> anyhow::Result<()> {
     if args.starknet {
         plugins.push(Arc::new(StarkNetPlugin {}));
     }
-    let mut db_val = RootDatabase::new(plugins);
+    let mut builder = RootDatabaseBuilder::empty();
+    builder.with_plugins(plugins).with_dev_corelib().unwrap();
+    let mut db_val = builder.build();
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;

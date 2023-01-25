@@ -363,7 +363,6 @@ dependencies = [
  "salsa",
  "smol_str",
  "test-log",
- "thiserror",
 ]
 
 [[package]]
@@ -400,7 +399,6 @@ name = "cairo-lang-filesystem"
 version = "0.1.0"
 dependencies = [
  "cairo-lang-debug",
- "cairo-lang-project",
  "cairo-lang-utils",
  "env_logger",
  "path-clean",
@@ -543,6 +541,7 @@ dependencies = [
 name = "cairo-lang-project"
 version = "0.1.0"
 dependencies = [
+ "cairo-lang-filesystem",
  "indoc",
  "serde",
  "smol_str",

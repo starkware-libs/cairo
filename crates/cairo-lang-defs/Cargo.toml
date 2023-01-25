@@ -14,7 +14,6 @@ indexmap.workspace = true
 itertools.workspace = true
 salsa.workspace = true
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "0.1.0" }
-thiserror.workspace = true
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "0.1.0" }
 smol_str.workspace = true
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
