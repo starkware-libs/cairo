@@ -27,7 +27,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
-  (v1: core::felt) <- core::felt_mul(v0, v0)
+  (v1: core::felt) <- core::FeltMul::mul(v0, v0)
   (v2: core::felt) <- core::FeltAdd::add(v0, v1)
 End:
   Return(v2)
@@ -142,7 +142,7 @@ Statements:
   (v13: core::felt) <- 3u
   (v14: core::felt) <- 0u
   (v15: core::felt) <- core::FeltAdd::add(v0, v14)
-  (v16: core::felt) <- core::felt_mul(v12, v15)
+  (v16: core::felt) <- core::FeltMul::mul(v12, v15)
   (v17: core::felt) <- core::FeltAdd::add(v11, v16)
 End:
   Return(v17)
