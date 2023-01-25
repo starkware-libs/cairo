@@ -18,7 +18,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Step: 3})
 
 //! > sierra_code
 type felt = felt;
@@ -44,7 +44,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>, value: felt) {
-    array_append::<felt>(arr, value);
+    array_append::<felt>(ref arr, value);
 }
 
 //! > casm
@@ -54,7 +54,7 @@ fn foo(ref arr: Array::<felt>, value: felt) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 4})
+test::foo: OrderedHashMap({Step: 3})
 
 //! > sierra_code
 type felt = felt;
@@ -89,8 +89,8 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>, value1: felt, value2: felt) {
-    array_append::<felt>(arr, value1);
-    array_append::<felt>(arr, value2);
+    array_append::<felt>(ref arr, value1);
+    array_append::<felt>(ref arr, value2);
 }
 
 //! > casm
@@ -101,7 +101,7 @@ fn foo(ref arr: Array::<felt>, value1: felt, value2: felt) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 6})
+test::foo: OrderedHashMap({Step: 4})
 
 //! > sierra_code
 type felt = felt;
@@ -137,7 +137,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>) -> Option::<felt> {
-    array_pop_front::<felt>(arr)
+    array_pop_front::<felt>(ref arr)
 }
 
 //! > casm
@@ -156,7 +156,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 7})
+test::foo: OrderedHashMap({Step: 9})
 
 //! > sierra_code
 type felt = felt;
@@ -197,7 +197,7 @@ test::foo@0([0]: Array<felt>) -> (Array<felt>, core::option::Option::<core::felt
 
 //! > ==========================================================================
 
-//! > array_at libfunc
+//! > array_get libfunc
 
 //! > test_comments
 
@@ -206,7 +206,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>, idx: u128) -> Option::<felt> {
-    array_at::<felt>(arr, idx)
+    array_get::<felt>(ref arr, idx)
 }
 
 //! > casm
@@ -235,7 +235,7 @@ ap += 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 10})
+test::foo: OrderedHashMap({Step: 12})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -245,7 +245,7 @@ type u128 = u128;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::felt> = Enum<ut@core::option::Option::<core::felt>, felt, Unit>;
 
-libfunc array_at<felt> = array_at<felt>;
+libfunc array_get<felt> = array_get<felt>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::felt>, 0> = enum_init<core::option::Option::<core::felt>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -258,7 +258,7 @@ libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::felt>, 1> = enum_init<core::option::Option::<core::felt>, 1>;
 libfunc rename<Array<felt>> = rename<Array<felt>>;
 
-array_at<felt>([0], [1], [2]) { fallthrough([3], [4], [5]) 9([6], [7]) };
+array_get<felt>([0], [1], [2]) { fallthrough([3], [4], [5]) 9([6], [7]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::felt>, 0>([5]) -> ([8]);
 store_temp<RangeCheck>([3]) -> ([3]);
@@ -284,7 +284,7 @@ test::foo@0([0]: RangeCheck, [1]: Array<felt>, [2]: u128) -> (RangeCheck, Array<
 
 //! > ==========================================================================
 
-//! > array_at libfunc on larger element
+//! > array_get libfunc on larger element
 
 //! > test_comments
 
@@ -293,7 +293,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<u256>, idx: u128) -> Option::<u256> {
-    array_at::<u256>(arr, idx)
+    array_get::<u256>(ref arr, idx)
 }
 
 //! > casm
@@ -326,7 +326,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 10})
+test::foo: OrderedHashMap({Step: 13})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -336,7 +336,7 @@ type Array<core::integer::u256> = Array<core::integer::u256>;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::integer::u256> = Enum<ut@core::option::Option::<core::integer::u256>, core::integer::u256, Unit>;
 
-libfunc array_at<core::integer::u256> = array_at<core::integer::u256>;
+libfunc array_get<core::integer::u256> = array_get<core::integer::u256>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::integer::u256>, 0> = enum_init<core::option::Option::<core::integer::u256>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -349,7 +349,7 @@ libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u256>, 1> = enum_init<core::option::Option::<core::integer::u256>, 1>;
 libfunc rename<Array<core::integer::u256>> = rename<Array<core::integer::u256>>;
 
-array_at<core::integer::u256>([0], [1], [2]) { fallthrough([3], [4], [5]) 9([6], [7]) };
+array_get<core::integer::u256>([0], [1], [2]) { fallthrough([3], [4], [5]) 9([6], [7]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::integer::u256>, 0>([5]) -> ([8]);
 store_temp<RangeCheck>([3]) -> ([3]);
@@ -384,7 +384,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>) -> u128 {
-    array_len::<felt>(arr)
+    array_len::<felt>(ref arr)
 }
 
 //! > casm
@@ -394,7 +394,7 @@ fn foo(ref arr: Array::<felt>) -> u128 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Step: 3})
 
 //! > sierra_code
 type felt = felt;
@@ -425,7 +425,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<u256>) -> u128 {
-    array_len::<u256>(arr)
+    array_len::<u256>(ref arr)
 }
 
 //! > casm
@@ -436,7 +436,7 @@ fn foo(ref arr: Array::<u256>) -> u128 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Step: 3})
 
 //! > sierra_code
 type u128 = u128;

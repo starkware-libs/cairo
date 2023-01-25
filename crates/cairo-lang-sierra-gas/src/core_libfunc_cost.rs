@@ -3,8 +3,11 @@ use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::zip_eq;
 
-use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations};
+pub use crate::core_libfunc_cost_base::InvocationCostInfoProvider;
+use crate::core_libfunc_cost_base::{core_libfunc_postcost, core_libfunc_precost, CostOperations};
+use crate::core_libfunc_cost_expr::GasApInfoProvider;
 use crate::gas_info::GasInfo;
 
 /// Cost operations for getting `Option<i64>` costs values.
@@ -23,8 +26,16 @@ impl CostOperations for Ops<'_> {
         Some(OrderedHashMap::from_iter([(token_type, value as i64)]))
     }
 
-    fn function_cost(&mut self, function: &cairo_lang_sierra::program::Function) -> Self::CostType {
-        self.gas_info.function_costs.get(&function.id).cloned()
+    fn function_token_cost(
+        &mut self,
+        function: &cairo_lang_sierra::program::Function,
+        token_type: CostTokenType,
+    ) -> Self::CostType {
+        let function_cost = self.gas_info.function_costs.get(&function.id)?;
+        Some(OrderedHashMap::from_iter([(
+            token_type,
+            function_cost.get(&token_type).copied().unwrap_or_default(),
+        )]))
     }
 
     fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
@@ -45,10 +56,34 @@ impl CostOperations for Ops<'_> {
 
 /// Returns the gas usage for a core libfunc.
 /// Values with unknown values will return as None.
-pub fn core_libfunc_cost(
+pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     gas_info: &GasInfo,
     idx: &StatementIdx,
     libfunc: &CoreConcreteLibfunc,
+    info_provider: &InfoProvider,
 ) -> Vec<Option<OrderedHashMap<CostTokenType, i64>>> {
-    core_libfunc_cost_base(&mut Ops { gas_info, idx: *idx }, libfunc)
+    let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
+    let postcost = core_libfunc_postcost(
+        &mut Ops { gas_info, idx: *idx },
+        libfunc,
+        info_provider,
+        &GasApInfoProvider { info_provider, gas_info, idx: *idx },
+    );
+    zip_eq(precost, postcost)
+        .map(|(precost, postcost)| {
+            let precost = precost?;
+            let postcost = postcost?;
+            Some(
+                CostTokenType::iter()
+                    .map(|token| {
+                        (
+                            *token,
+                            precost.get(token).copied().unwrap_or_default()
+                                + postcost.get(token).copied().unwrap_or_default(),
+                        )
+                    })
+                    .collect(),
+            )
+        })
+        .collect()
 }

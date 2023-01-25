@@ -1,15 +1,20 @@
 //! Sierra gas computation.
 //!
 //! This crate provides the gas computation for the Cairo programs.
-use std::collections::HashMap;
 
+use cairo_lang_eq_solver::Expr;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::ConcreteType;
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use core_libfunc_cost_base::InvocationCostInfoProvider;
+use core_libfunc_cost_expr::CostExprMap;
 use cost_expr::Var;
 use gas_info::GasInfo;
+use generate_equations::StatementFutureCost;
 use thiserror::Error;
 
 pub mod core_libfunc_cost;
@@ -34,23 +39,85 @@ pub enum CostError {
     SolvingGasEquationFailed,
 }
 
-/// Calculates gas information for a given program.
-pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
+impl InvocationCostInfoProvider for ProgramRegistry<CoreType, CoreLibfunc> {
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize {
+        self.get_type(ty).unwrap().info().size as usize
+    }
+}
+
+/// Calculates gas precost information for a given program - the gas costs of non-step tokens.
+pub fn calc_gas_precost_info(
+    program: &Program,
+    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let equations = generate_equations::generate_equations(
+    calc_gas_info_inner(
         program,
         |statement_future_cost, idx, libfunc_id| {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registery creation would have already failed.");
-            core_libfunc_cost_expr::core_libfunc_cost_expr(statement_future_cost, idx, libfunc)
+            core_libfunc_cost_expr::core_libfunc_precost_expr(
+                statement_future_cost,
+                idx,
+                libfunc,
+                &registry,
+            )
         },
-    )?;
+        function_set_costs,
+        &registry,
+    )
+}
 
-    let mut variable_values = HashMap::<(StatementIdx, CostTokenType), i64>::default();
-    let mut function_costs =
-        HashMap::<cairo_lang_sierra::ids::FunctionId, OrderedHashMap<CostTokenType, i64>>::default(
-        );
+/// Calculates gas postcost information for a given program - the gas costs of step token.
+pub fn calc_gas_postcost_info(
+    program: &Program,
+    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    precost_gas_info: &GasInfo,
+) -> Result<GasInfo, CostError> {
+    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
+    calc_gas_info_inner(
+        program,
+        |statement_future_cost, idx, libfunc_id| {
+            let libfunc = registry
+                .get_libfunc(libfunc_id)
+                .expect("Program registery creation would have already failed.");
+            core_libfunc_cost_expr::core_libfunc_postcost_expr(
+                statement_future_cost,
+                idx,
+                libfunc,
+                &registry,
+                precost_gas_info,
+            )
+        },
+        function_set_costs,
+        &registry,
+    )
+}
+
+/// Calculates gas information. Used for both precost and postcost.
+fn calc_gas_info_inner<
+    GetCost: Fn(&mut dyn StatementFutureCost, &StatementIdx, &ConcreteLibfuncId) -> Vec<CostExprMap>,
+>(
+    program: &Program,
+    get_cost: GetCost,
+    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+) -> Result<GasInfo, CostError> {
+    let mut equations = generate_equations::generate_equations(program, get_cost)?;
+    for (func_id, cost_terms) in function_set_costs {
+        for token_type in CostTokenType::iter() {
+            equations[*token_type].push(
+                Expr::from_var(Var::StatementFuture(
+                    registry.get_function(&func_id)?.entry_point,
+                    *token_type,
+                )) - Expr::from_const(cost_terms.get(token_type).copied().unwrap_or_default()),
+            );
+        }
+    }
+
+    let mut variable_values = OrderedHashMap::default();
+    let mut function_costs = OrderedHashMap::default();
     for (token_type, token_equations) in equations {
         let solution = cairo_lang_eq_solver::try_solve_equations(token_equations)
             .ok_or(CostError::SolvingGasEquationFailed)?;
@@ -59,7 +126,7 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
             if !function_costs.contains_key(id) {
                 function_costs.insert(id.clone(), OrderedHashMap::default());
             }
-            let value = solution[&Var::StatementFuture(func.entry_point, token_type)];
+            let value = solution[Var::StatementFuture(func.entry_point, token_type)];
             if value != 0 {
                 function_costs.get_mut(id).unwrap().insert(token_type, value);
             }

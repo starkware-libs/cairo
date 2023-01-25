@@ -1,6 +1,6 @@
 use assert_matches::assert_matches;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{ModuleItemId, VarId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, VarId};
 use cairo_lang_utils::extract_matches;
 use indoc::indoc;
 use num_bigint::ToBigInt;
@@ -21,14 +21,17 @@ cairo_lang_test_utils::test_file_test!(
     "src/expr/test_data",
     {
         assignment: "assignment",
+        constant: "constant",
         enum_: "enum",
         error_propagate: "error_propagate",
         function_call: "function_call",
         generics: "generics",
         if_: "if",
+        inference: "inference",
         let_statement: "let_statement",
         literal: "literal",
         match_: "match",
+        method: "method",
         operators: "operators",
         pattern: "pattern",
         return_: "return",
@@ -51,7 +54,7 @@ fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
     let test_expr = setup_test_expr(&mut db_val, expr, "", "").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
-    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
+    let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
     // TODO(spapini): Currently, DebugWithDb can't "switch" dbs, and thus ExternTypeId is not
     // followed (it uses SyntaxGroup, and not SemanticGroup).
     // Fix this.
@@ -82,7 +85,7 @@ fn test_expr_assignment() {
     let test_expr = setup_test_expr(&mut db_val, "a = a * 3", "", "let mut a = 5;").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
-    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
+    let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
@@ -99,7 +102,7 @@ fn test_expr_operator() {
     let test_expr = setup_test_expr(&mut db_val, "!(-5 + 9 * 3 == 0)", "", "").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
-    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
+    let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     // TODO(spapini): Make transparent DebugWithDb attribute, to have better outputs.
     // TODO(spapini): Have better whitespaces here somehow.
@@ -107,7 +110,7 @@ fn test_expr_operator() {
         format!("{:?}", expr.debug(&expr_formatter)),
         "FunctionCall(ExprFunctionCall { function: core::bool_not, ref_args: [], args: \
          [FunctionCall(ExprFunctionCall { function: core::felt_eq, ref_args: [], args: \
-         [FunctionCall(ExprFunctionCall { function: core::felt_add, ref_args: [], args: \
+         [FunctionCall(ExprFunctionCall { function: core::FeltAdd::add, ref_args: [], args: \
          [FunctionCall(ExprFunctionCall { function: core::felt_neg, ref_args: [], args: \
          [Literal(ExprLiteral { value: 5, ty: core::felt })], ty: core::felt }), \
          FunctionCall(ExprFunctionCall { function: core::felt_mul, ref_args: [], args: \
@@ -141,13 +144,13 @@ fn test_member_access() {
     )
     .unwrap();
     let db = &db_val;
-    let foo_id = extract_matches!(
+    let foo_id = FunctionWithBodyId::Free(extract_matches!(
         db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
         ModuleItemId::FreeFunction
-    );
-    let expr_formatter = ExprFormatter { db, free_function_id: foo_id };
+    ));
+    let expr_formatter = ExprFormatter { db, function_id: foo_id };
     let block = extract_matches!(
-        db.expr_semantic(foo_id, db.free_function_definition_body(foo_id).unwrap()),
+        db.expr_semantic(foo_id, db.function_body_expr(foo_id).unwrap()),
         semantic::Expr::Block
     );
     let exprs: Vec<_> = block
@@ -315,7 +318,7 @@ fn test_let_statement() {
     .unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_function.function_id, test_function.body);
-    let expr_formatter = ExprFormatter { db, free_function_id: test_function.function_id };
+    let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
@@ -383,32 +386,6 @@ fn test_expr_var() {
 }
 
 #[test]
-fn test_expr_var_failures() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let diagnostics = setup_test_function(
-        &mut db_val,
-        indoc! {"
-            fn foo(a: felt) {
-                a::b;
-            }
-        "},
-        "foo",
-        "",
-    )
-    .get_diagnostics();
-    assert_eq!(
-        diagnostics,
-        indoc! {"
-            error: Unsupported feature.
-             --> lib.cairo:2:5
-                a::b;
-                ^**^
-
-        "}
-    )
-}
-
-#[test]
 fn test_expr_match() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_function = setup_test_function(
@@ -431,7 +408,7 @@ fn test_expr_match() {
         crate::Expr::Block
     );
     let expr = db.expr_semantic(test_function.function_id, tail.unwrap());
-    let expr_formatter = ExprFormatter { db, free_function_id: test_function.function_id };
+    let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "Match(ExprMatch { matched_expr: Var(ExprVar { var: ParamId(test::a), ty: core::felt }), \
@@ -549,7 +526,7 @@ fn test_expr_call_failures() {
     // TODO(spapini): Add types.
     let (test_expr, diagnostics) = setup_test_expr(&mut db_val, "foo()", "", "").split();
     let db = &db_val;
-    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
+    let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     // Check expr.
     assert_eq!(
@@ -589,8 +566,9 @@ fn test_function_body() {
     let db = &db_val;
     let item_id = db.module_item_by_name(test_function.module_id, "foo".into()).unwrap().unwrap();
 
-    let function_id = extract_matches!(item_id, ModuleItemId::FreeFunction);
-    let body = db.free_function_definition_body(function_id).unwrap();
+    let function_id =
+        FunctionWithBodyId::Free(extract_matches!(item_id, ModuleItemId::FreeFunction));
+    let body = db.function_body_expr(function_id).unwrap();
 
     // Test the resulting semantic function body.
     let semantic::ExprBlock { statements, .. } = extract_matches!(
@@ -631,7 +609,7 @@ fn test_expr_struct_ctor() {
     .unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
-    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
+    let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "StructCtor(ExprStructCtor { struct_id: StructId(test::A), members: [(MemberId(test::a), \
@@ -646,10 +624,10 @@ fn test_expr_tuple() {
     let test_expr = setup_test_expr(&mut db_val, "(1 + 2, (2, 3))", "", "").unwrap();
     let db = &db_val;
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
-    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
+    let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Tuple(ExprTuple { items: [FunctionCall(ExprFunctionCall { function: core::felt_add, \
+        "Tuple(ExprTuple { items: [FunctionCall(ExprFunctionCall { function: core::FeltAdd::add, \
          ref_args: [], args: [Literal(ExprLiteral { value: 1, ty: core::felt }), \
          Literal(ExprLiteral { value: 2, ty: core::felt })], ty: core::felt }), Tuple(ExprTuple { \
          items: [Literal(ExprLiteral { value: 2, ty: core::felt }), Literal(ExprLiteral { value: \

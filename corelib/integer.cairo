@@ -1,8 +1,16 @@
+use result::ResultTrait;
+use result::ResultTraitImpl;
+use option::OptionTrait;
+use option::OptionTraitImpl;
+
 #[derive(Copy, Drop)]
 extern type u128;
 extern fn u128_const<value>() -> u128 nopanic;
 
-enum U128sFromFeltResult { Narrow: u128, Wide: (u128, u128), }
+enum U128sFromFeltResult {
+    Narrow: u128,
+    Wide: (u128, u128),
+}
 extern fn u128s_from_felt(a: felt) -> U128sFromFeltResult implicits(RangeCheck) nopanic;
 
 #[panic_with('u128_from OF', u128_from_felt)]
@@ -15,15 +23,15 @@ fn u128_try_from_felt(a: felt) -> Option::<u128> implicits(RangeCheck) nopanic {
 
 extern fn u128_to_felt(a: u128) -> felt nopanic;
 
-extern fn u128_overflow_add(
+extern fn u128_overflowing_add(
     a: u128, b: u128
 ) -> Result::<u128, u128> implicits(RangeCheck) nopanic;
-extern fn u128_overflow_sub(
+extern fn u128_overflowing_sub(
     a: u128, b: u128
 ) -> Result::<u128, u128> implicits(RangeCheck) nopanic;
 
 fn u128_wrapping_add(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
-    match u128_overflow_add(a, b) {
+    match u128_overflowing_add(a, b) {
         Result::Ok(x) => x,
         Result::Err(x) => x,
     }
@@ -31,7 +39,7 @@ fn u128_wrapping_add(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
 
 extern fn u128_wide_mul(a: u128, b: u128) -> (u128, u128) implicits(RangeCheck) nopanic;
 
-fn u128_overflow_mul(a: u128, b: u128) -> (u128, bool) implicits(RangeCheck) nopanic {
+fn u128_overflowing_mul(a: u128, b: u128) -> (u128, bool) implicits(RangeCheck) nopanic {
     let (top_word, bottom_word) = u128_wide_mul(a, b);
     match u128_to_felt(top_word) {
         0 => (bottom_word, false),
@@ -39,19 +47,33 @@ fn u128_overflow_mul(a: u128, b: u128) -> (u128, bool) implicits(RangeCheck) nop
     }
 }
 
-#[panic_with('u128_add OF', u128_add)]
+
 fn u128_checked_add(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) nopanic {
-    match u128_overflow_add(a, b) {
+    match u128_overflowing_add(a, b) {
         Result::Ok(r) => Option::<u128>::Some(r),
         Result::Err(r) => Option::<u128>::None(()),
     }
 }
 
+impl U128Add of Add::<u128> {
+    #[inline(always)]
+    fn add(a: u128, b: u128) -> u128 {
+        u128_overflowing_add(a, b).expect('u128_add Overflow')
+    }
+}
+
 #[panic_with('u128_sub OF', u128_sub)]
 fn u128_checked_sub(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) nopanic {
-    match u128_overflow_sub(a, b) {
+    match u128_overflowing_sub(a, b) {
         Result::Ok(r) => Option::<u128>::Some(r),
         Result::Err(r) => Option::<u128>::None(()),
+    }
+}
+
+impl U128Sub of Sub::<u128> {
+    #[inline(always)]
+    fn sub(a: u128, b: u128) -> u128 {
+        u128_overflowing_sub(a, b).expect('u128_sub Overflow')
     }
 }
 
@@ -95,9 +117,7 @@ fn u128_mod(a: u128, b: u128) -> u128 implicits(RangeCheck) {
 
 extern fn u128_safe_divmod(
     a: u128, b: NonZero::<u128>
-    ) -> (
-    u128, u128
-) implicits(RangeCheck) nopanic;
+) -> (u128, u128) implicits(RangeCheck) nopanic;
 
 extern fn u128_lt(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic;
 extern fn u128_eq(a: u128, b: u128) -> bool implicits() nopanic;
@@ -133,17 +153,164 @@ fn u128_or(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
 extern fn u128_jump_nz(a: u128) -> JumpNzResult::<u128> implicits() nopanic;
 
 #[derive(Copy, Drop)]
-struct u256 { low: u128, high: u128, }
+extern type u8;
+extern fn u8_const<value>() -> u8 nopanic;
+extern fn u8_to_felt(a: u8) -> felt nopanic;
 
-fn u256_overflow_add(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
-    let (high, overflow) = match u128_overflow_add(a.high, b.high) {
+#[panic_with('u8_from OF', u8_from_felt)]
+extern fn u8_try_from_felt(a: felt) -> Option::<u8> implicits(RangeCheck) nopanic;
+
+extern fn u8_lt(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
+extern fn u8_eq(a: u8, b: u8) -> bool implicits() nopanic;
+extern fn u8_le(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
+
+#[inline(always)]
+fn u8_gt(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic {
+    u8_lt(b, a)
+}
+
+#[inline(always)]
+fn u8_ge(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic {
+    u8_le(b, a)
+}
+
+#[inline(always)]
+fn u8_ne(a: u8, b: u8) -> bool implicits() nopanic {
+    !(a == b)
+}
+
+extern fn u8_overflowing_add(a: u8, b: u8) -> Result::<u8, u8> implicits(RangeCheck) nopanic;
+extern fn u8_overflowing_sub(a: u8, b: u8) -> Result::<u8, u8> implicits(RangeCheck) nopanic;
+
+fn u8_wrapping_add(a: u8, b: u8) -> u8 implicits(RangeCheck) nopanic {
+    match u8_overflowing_add(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u8_wrapping_sub(a: u8, b: u8) -> u8 implicits(RangeCheck) nopanic {
+    match u8_overflowing_sub(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u8_checked_add(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
+    match u8_overflowing_add(a, b) {
+        Result::Ok(r) => Option::<u8>::Some(r),
+        Result::Err(r) => Option::<u8>::None(()),
+    }
+}
+
+impl U8Add of Add::<u8> {
+    #[inline(always)]
+    fn add(a: u8, b: u8) -> u8 {
+        u8_overflowing_add(a, b).expect('u8_add Overflow')
+    }
+}
+
+fn u8_checked_sub(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
+    match u8_overflowing_sub(a, b) {
+        Result::Ok(r) => Option::<u8>::Some(r),
+        Result::Err(r) => Option::<u8>::None(()),
+    }
+}
+
+impl U8Sub of Sub::<u8> {
+    #[inline(always)]
+    fn sub(a: u8, b: u8) -> u8 {
+        u8_overflowing_sub(a, b).expect('u8_sub Overflow')
+    }
+}
+
+#[derive(Copy, Drop)]
+extern type u64;
+extern fn u64_const<value>() -> u64 nopanic;
+extern fn u64_to_felt(a: u64) -> felt nopanic;
+
+#[panic_with('u64_from OF', u64_from_felt)]
+extern fn u64_try_from_felt(a: felt) -> Option::<u64> implicits(RangeCheck) nopanic;
+
+extern fn u64_lt(a: u64, b: u64) -> bool implicits(RangeCheck) nopanic;
+extern fn u64_eq(a: u64, b: u64) -> bool implicits() nopanic;
+extern fn u64_le(a: u64, b: u64) -> bool implicits(RangeCheck) nopanic;
+
+#[inline(always)]
+fn u64_gt(a: u64, b: u64) -> bool implicits(RangeCheck) nopanic {
+    u64_lt(b, a)
+}
+
+#[inline(always)]
+fn u64_ge(a: u64, b: u64) -> bool implicits(RangeCheck) nopanic {
+    u64_le(b, a)
+}
+
+#[inline(always)]
+fn u64_ne(a: u64, b: u64) -> bool implicits() nopanic {
+    !(a == b)
+}
+
+extern fn u64_overflowing_add(a: u64, b: u64) -> Result::<u64, u64> implicits(RangeCheck) nopanic;
+extern fn u64_overflowing_sub(a: u64, b: u64) -> Result::<u64, u64> implicits(RangeCheck) nopanic;
+
+fn u64_wrapping_add(a: u64, b: u64) -> u64 implicits(RangeCheck) nopanic {
+    match u64_overflowing_add(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u64_wrapping_sub(a: u64, b: u64) -> u64 implicits(RangeCheck) nopanic {
+    match u64_overflowing_sub(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u64_checked_add(a: u64, b: u64) -> Option::<u64> implicits(RangeCheck) nopanic {
+    match u64_overflowing_add(a, b) {
+        Result::Ok(r) => Option::<u64>::Some(r),
+        Result::Err(r) => Option::<u64>::None(()),
+    }
+}
+
+impl U64Add of Add::<u64> {
+    #[inline(always)]
+    fn add(a: u64, b: u64) -> u64 {
+        u64_overflowing_add(a, b).expect('u64_add Overflow')
+    }
+}
+
+fn u64_checked_sub(a: u64, b: u64) -> Option::<u64> implicits(RangeCheck) nopanic {
+    match u64_overflowing_sub(a, b) {
+        Result::Ok(r) => Option::<u64>::Some(r),
+        Result::Err(r) => Option::<u64>::None(()),
+    }
+}
+
+impl U64Sub of Sub::<u64> {
+    #[inline(always)]
+    fn sub(a: u64, b: u64) -> u64 {
+        u64_overflowing_sub(a, b).expect('u64_sub Overflow')
+    }
+}
+
+#[derive(Copy, Drop)]
+struct u256 {
+    low: u128,
+    high: u128,
+}
+
+fn u256_overflowing_add(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
+    let (high, overflow) = match u128_overflowing_add(a.high, b.high) {
         Result::Ok(high) => (high, false),
         Result::Err(high) => (high, true),
     };
-    match u128_overflow_add(a.low, b.low) {
+    match u128_overflowing_add(a.low, b.low) {
         Result::Ok(low) => (u256 { low, high }, overflow),
         Result::Err(low) => {
-            match u128_overflow_add(high, 1_u128) {
+            match u128_overflowing_add(high, 1_u128) {
                 Result::Ok(high) => (u256 { low, high }, overflow),
                 Result::Err(high) => (u256 { low, high }, true),
             }
@@ -152,14 +319,14 @@ fn u256_overflow_add(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nop
 }
 
 fn u256_overflow_sub(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
-    let (high, overflow) = match u128_overflow_sub(a.high, b.high) {
+    let (high, overflow) = match u128_overflowing_sub(a.high, b.high) {
         Result::Ok(high) => (high, false),
         Result::Err(high) => (high, true),
     };
-    match u128_overflow_sub(a.low, b.low) {
+    match u128_overflowing_sub(a.low, b.low) {
         Result::Ok(low) => (u256 { low, high }, overflow),
         Result::Err(low) => {
-            match u128_overflow_sub(high, 1_u128) {
+            match u128_overflowing_sub(high, 1_u128) {
                 Result::Ok(high) => (u256 { low, high }, overflow),
                 Result::Err(high) => (u256 { low, high }, true),
             }
@@ -171,27 +338,33 @@ fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) nopanic {
     let (high1, low) = u128_wide_mul(a.low, b.low);
     let (overflow_value1, high2) = u128_wide_mul(a.low, b.high);
     let (overflow_value2, high3) = u128_wide_mul(a.high, b.low);
-    let (high, overflow) = match u128_overflow_add(high1, high2) {
+    let (high, overflow) = match u128_overflowing_add(high1, high2) {
         Result::Ok(high) => (
             high,
             overflow_value1 != 0_u128 | overflow_value2 != 0_u128 | (a.high > 0_u128 & b.high > 0_u128)
         ),
         Result::Err(high) => (high, true),
     };
-    let (high, overflow) = match u128_overflow_add(high, high3) {
+    let (high, overflow) = match u128_overflowing_add(high, high3) {
         Result::Ok(high) => (high, overflow),
         Result::Err(high) => (high, true),
     };
     (u256 { low, high }, overflow)
 }
 
-#[panic_with('u256_add OF', u256_add)]
 fn u256_checked_add(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) nopanic {
-    let (r, overflow) = u256_overflow_add(a, b);
+    let (r, overflow) = u256_overflowing_add(a, b);
     if overflow {
         Option::<u256>::None(())
     } else {
         Option::<u256>::Some(r)
+    }
+}
+
+impl U256Add of Add::<u256> {
+    #[inline(always)]
+    fn add(a: u256, b: u256) -> u256 {
+        u256_checked_add(a, b).expect('u256_add Overflow')
     }
 }
 
@@ -205,6 +378,13 @@ fn u256_checked_sub(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) no
     }
 }
 
+impl U256Sub of Sub::<u256> {
+    #[inline(always)]
+    fn sub(a: u256, b: u256) -> u256 {
+        u256_checked_sub(a, b).expect('u256_sub Overflow')
+    }
+}
+
 #[panic_with('u256_mul OF', u256_mul)]
 fn u256_checked_mul(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) nopanic {
     let (r, overflow) = u256_overflow_mul(a, b);
@@ -214,11 +394,11 @@ fn u256_checked_mul(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) no
         Option::<u256>::Some(r)
     }
 }
-
+#[inline(always)]
 fn u256_eq(a: u256, b: u256) -> bool implicits() {
     a.low == b.low & a.high == b.high
 }
-
+#[inline(always)]
 fn u256_ne(a: u256, b: u256) -> bool implicits() {
     !(a == b)
 }
@@ -232,25 +412,27 @@ fn u256_lt(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
         false
     }
 }
-
+#[inline(always)]
 fn u256_le(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
     !u256_lt(b, a)
 }
-
+#[inline(always)]
 fn u256_gt(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
     u256_lt(b, a)
 }
-
+#[inline(always)]
 fn u256_ge(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
     !u256_lt(a, b)
 }
-
+#[inline(always)]
 fn u256_and(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
     u256 { low: a.low & b.low, high: a.high & b.high }
 }
+#[inline(always)]
 fn u256_or(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
     u256 { low: a.low | b.low, high: a.high | b.high }
 }
+#[inline(always)]
 fn u256_xor(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
     u256 { low: a.low ^ b.low, high: a.high ^ b.high }
 }

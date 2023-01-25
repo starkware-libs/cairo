@@ -17,6 +17,7 @@ pub struct ConfigPlugin {
 impl MacroPlugin for ConfigPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         let item_attributes = match item_ast {
+            ast::Item::Constant(ast_node) => ast_node.attributes(db),
             ast::Item::Module(ast_node) => ast_node.attributes(db),
             ast::Item::Use(ast_node) => ast_node.attributes(db),
             ast::Item::FreeFunction(ast_node) => ast_node.attributes(db),

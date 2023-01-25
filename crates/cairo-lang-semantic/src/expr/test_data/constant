@@ -1,0 +1,78 @@
+//! > Const
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let x = MY_CONST + MyModule::CONST_IN_MODULE;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+const MY_CONST: felt = 0x1234;
+
+mod MyModule {
+    const CONST_IN_MODULE: felt = 1;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Const diagnostics
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() { }
+
+//! > function_name
+foo
+
+//! > module_code
+const MY_CONST: MissingType = {
+    return foo();
+    Option::<felt>::Some(0)?
+};
+
+const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
+
+//! > expected_diagnostics
+error: Type not found.
+ --> lib.cairo:1:17
+const MY_CONST: MissingType = {
+                ^*********^
+
+error: Function call is not supported outside of functions.
+ --> lib.cairo:2:12
+    return foo();
+           ^***^
+
+error: Return statement is not supported outside of functions.
+ --> lib.cairo:2:5
+    return foo();
+    ^***********^
+
+error: The '?' operator is not supported outside of functions.
+ --> lib.cairo:3:5
+    Option::<felt>::Some(0)?
+    ^**********************^
+
+error: Only literal constants are currently supported.
+ --> lib.cairo:1:31
+const MY_CONST: MissingType = {
+                              ^
+
+error: Function call is not supported outside of functions.
+ --> lib.cairo:6:42
+const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
+                                         ^***^
+
+error: Only literal constants are currently supported.
+ --> lib.cairo:6:42
+const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
+                                         ^***^

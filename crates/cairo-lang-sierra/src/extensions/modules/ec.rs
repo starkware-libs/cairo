@@ -8,7 +8,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 
 // Type representing the EcOp builtin.
 #[derive(Default)]
@@ -45,20 +45,23 @@ impl NoGenericArgsGenericType for EcStateType {
 
 define_libfunc_hierarchy! {
     pub enum EcLibfunc {
-        AddToState(EcAddToStateLibfunc),
-        CreatePoint(EcCreatePointLibfunc),
-        FinalizeState(EcFinalizeStateLibfunc),
-        InitState(EcInitStateLibfunc),
-        Op(EcOpLibfunc),
+        Neg(EcNegLibfunc),
+        StateAdd(EcStateAddLibfunc),
+        TryNew(EcCreatePointLibfunc),
+        StateFinalize(EcStateFinalizeLibfunc),
+        StateInit(EcStateInitLibfunc),
+        StateAddMul(EcStateAddMulLibfunc),
+        PointFromX(EcPointFromXLibfunc),
         UnwrapPoint(EcUnwrapPointLibfunc),
     }, EcConcreteLibfunc
 }
 
-/// Libfunc for creating an EC point. Inputs are verified to be on the curve.
+/// Libfunc for creating an EC point from its coordinates `x` and `y`.
+/// If `(x, y)` is not on the curve, nothing is returned.
 #[derive(Default)]
 pub struct EcCreatePointLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_point_try_create");
+    const STR_ID: &'static str = "ec_point_try_new";
 
     fn specialize_signature(
         &self,
@@ -71,6 +74,7 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
                 ParamSignature::new(felt_ty),
             ],
             branch_signatures: vec![
+                // Success.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: context.get_concrete_type(EcPointType::id(), &[])?,
@@ -78,6 +82,43 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Failure.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+/// Libfunc for creating an EC point from its x coordinate.
+/// If there exists `y` such that `(x, y)` is on the curve, either `(x, y)` or `(x, -y)` (both
+/// constitute valid points on the curve) is returned.
+/// Otherwise, nothing is returned.
+#[derive(Default)]
+pub struct EcPointFromXLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
+    const STR_ID: &'static str = "ec_point_from_x";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(felt_ty)],
+            branch_signatures: vec![
+                // Success.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: context.get_concrete_type(EcPointType::id(), &[])?,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Failure.
                 BranchSignature {
                     vars: vec![],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -92,7 +133,7 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
 #[derive(Default)]
 pub struct EcUnwrapPointLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_point_unwrap");
+    const STR_ID: &'static str = "ec_point_unwrap";
 
     fn specialize_signature(
         &self,
@@ -116,11 +157,33 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
     }
 }
 
+/// Libfunc for unwrapping the x,y values of an EC point.
+#[derive(Default)]
+pub struct EcNegLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcNegLibfunc {
+    const STR_ID: &'static str = "ec_neg";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let point_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![point_ty.clone()],
+            vec![OutputVarInfo {
+                ty: point_ty,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
 /// Libfunc for initializing an EC state from an EC point.
 #[derive(Default)]
-pub struct EcInitStateLibfunc {}
-impl NoGenericArgsGenericLibfunc for EcInitStateLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_init_state");
+pub struct EcStateInitLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcStateInitLibfunc {
+    const STR_ID: &'static str = "ec_state_init";
 
     fn specialize_signature(
         &self,
@@ -139,9 +202,9 @@ impl NoGenericArgsGenericLibfunc for EcInitStateLibfunc {
 
 /// Libfunc for initializing an EC state from an EC point.
 #[derive(Default)]
-pub struct EcAddToStateLibfunc {}
-impl NoGenericArgsGenericLibfunc for EcAddToStateLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_add_to_state");
+pub struct EcStateAddLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcStateAddLibfunc {
+    const STR_ID: &'static str = "ec_state_add";
 
     fn specialize_signature(
         &self,
@@ -161,9 +224,9 @@ impl NoGenericArgsGenericLibfunc for EcAddToStateLibfunc {
 
 /// Libfunc for initializing an EC state from an EC point.
 #[derive(Default)]
-pub struct EcFinalizeStateLibfunc {}
-impl NoGenericArgsGenericLibfunc for EcFinalizeStateLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_try_finalize_state");
+pub struct EcStateFinalizeLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
+    const STR_ID: &'static str = "ec_state_finalize";
 
     fn specialize_signature(
         &self,
@@ -194,9 +257,9 @@ impl NoGenericArgsGenericLibfunc for EcFinalizeStateLibfunc {
 /// Libfunc for applying the EC op builtin: given an EC state `S`, a scalar `M` and an EC point `Q`,
 /// computes a new EC state `S + M * Q`.
 #[derive(Default)]
-pub struct EcOpLibfunc {}
-impl NoGenericArgsGenericLibfunc for EcOpLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("ec_op_builtin");
+pub struct EcStateAddMulLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcStateAddMulLibfunc {
+    const STR_ID: &'static str = "ec_state_add_mul";
 
     fn specialize_signature(
         &self,

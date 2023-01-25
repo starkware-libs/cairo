@@ -8,7 +8,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 
 /// Type representing the Pedersen hash builtin.
 #[derive(Default)]
@@ -32,7 +32,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct PedersenHashLibfunc {}
 impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("pedersen");
+    const STR_ID: &'static str = "pedersen";
 
     fn specialize_signature(
         &self,

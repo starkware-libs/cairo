@@ -1,0 +1,273 @@
+//! > Basic borrow checking valid.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(x: ACopy, y: ADrop) {
+  if true {
+    use_a_copy(x);
+    use_a_drop(y);
+  } else {
+    use_a_drop(y);
+  }
+  use_a_copy(x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type ACopy;
+impl ACopyCopy of Copy::<ACopy>;
+extern type ADrop;
+impl ADropDrop of Drop::<ADrop>;
+
+extern fn use_a_copy(x: ACopy) nopanic;
+extern fn use_a_drop(x: ADrop) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0:
+Inputs: v4: ()
+Initial refs:
+Statements:
+  () <- test::use_a_copy(v0)
+  () <- test::use_a_drop(v1)
+End:
+  Callsite()
+
+blk1:
+Inputs: v5: ()
+Initial refs:
+Statements:
+  () <- test::use_a_drop(v1)
+End:
+  Callsite()
+
+blk2 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Initial refs:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk1,
+    bool::True => blk0,
+  }
+  () <- test::use_a_copy(v0)
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
+//! > lowering_flat
+blk0:
+Inputs: v4: ()
+Statements:
+  () <- test::use_a_copy(v0)
+  () <- test::use_a_drop(v1)
+End:
+  Callsite()
+
+blk1:
+Inputs: v5: ()
+Statements:
+  () <- test::use_a_drop(v1)
+End:
+  Callsite()
+
+blk2 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk1,
+    bool::True => blk0,
+  }
+  () <- test::use_a_copy(v0)
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Basic borrow checking failures.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(x: ACopy, y: ADrop) {
+  if true {
+    use_a_copy(x);
+    use_a_drop(y);
+  } else {
+  }
+  use_a_drop(y);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type ACopy;
+impl ACopyCopy of Copy::<ACopy>;
+extern type ADrop;
+impl ADropDrop of Drop::<ADrop>;
+
+extern fn use_a_copy(x: ACopy) nopanic;
+extern fn use_a_drop(x: ADrop) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:8:18
+fn foo(x: ACopy, y: ADrop) {
+                 ^
+
+//! > lowering_structured
+blk0:
+Inputs: v4: ()
+Initial refs:
+Statements:
+  () <- test::use_a_copy(v0)
+  () <- test::use_a_drop(v1)
+End:
+  Callsite()
+
+blk1:
+Inputs: v5: ()
+Initial refs:
+Statements:
+End:
+  Callsite()
+
+blk2 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Initial refs:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk1,
+    bool::True => blk0,
+  }
+  () <- test::use_a_drop(v1)
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
+//! > lowering_flat
+blk0:
+Inputs: v4: ()
+Statements:
+  () <- test::use_a_copy(v0)
+  () <- test::use_a_drop(v1)
+End:
+  Callsite()
+
+blk1:
+Inputs: v5: ()
+Statements:
+End:
+  Callsite()
+
+blk2 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk1,
+    bool::True => blk0,
+  }
+  () <- test::use_a_drop(v1)
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Borrow checking with panic
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(ref x: ADrop, y: ADrop) {
+  use_a_drop(x);
+  bar();
+  x = y;
+}
+
+fn bar(){
+  let mut data = array_new::<felt>();
+  array_append::<felt>(ref data, 1);
+  panic(data);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type ACopy;
+impl ACopyCopy of Copy::<ACopy>;
+extern type ADrop;
+impl ADropDrop of Drop::<ADrop>;
+
+extern fn use_a_copy(x: ACopy) nopanic;
+extern fn use_a_drop(x: ADrop) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:8:12
+fn foo(ref x: ADrop, y: ADrop) {
+           ^
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: test::ADrop, v1: test::ADrop
+Initial refs: v0: test::ADrop
+Statements:
+  () <- test::use_a_drop(v0)
+    Ref changes: r0 <- v0
+  (v2: ()) <- test::bar()
+  (v3: ()) <- struct_construct()
+    Ref changes: r0 <- v1
+End:
+  Return(v1, v3)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: test::ADrop, v1: test::ADrop
+Statements:
+  () <- test::use_a_drop(v0)
+  (v4: core::PanicResult::<()>) <- test::bar()
+  () <- match_enum(v4) {
+    PanicResult::Ok => blk1,
+    PanicResult::Err => blk2,
+  }
+  (v3: ()) <- struct_construct()
+  (v7: core::PanicResult::<()>) <- PanicResult::Ok(v3)
+End:
+  Return(v1, v7)
+
+blk1:
+Inputs: v5: ()
+Statements:
+End:
+  Callsite()
+
+blk2:
+Inputs: v6: core::array::Array::<core::felt>
+Statements:
+  (v8: core::PanicResult::<()>) <- PanicResult::Err(v6)
+End:
+  Return(v0, v8)

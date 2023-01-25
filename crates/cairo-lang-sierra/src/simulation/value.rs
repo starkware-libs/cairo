@@ -10,6 +10,8 @@ pub enum CoreValue {
     Felt(BigInt),
     GasBuiltin(i64),
     RangeCheck,
+    Uint8(u8),
+    Uint64(u64),
     Uint128(u128),
     NonZero(Box<CoreValue>),
     Ref(Box<CoreValue>),

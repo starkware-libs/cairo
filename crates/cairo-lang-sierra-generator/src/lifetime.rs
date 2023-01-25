@@ -9,7 +9,10 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use itertools::Itertools;
 use lowering::FlatLowered;
+
+use crate::utils::statement_outputs;
 
 pub type StatementLocation = (BlockId, usize);
 
@@ -125,8 +128,9 @@ fn inner_find_variable_lifetime(
 
     // Go over the block in reverse order, starting from handling the block end.
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(vars) => {
-            state.use_variables(context, vars, (block_id, block.statements.len()));
+        lowering::FlatBlockEnd::Callsite(remapping) => {
+            let vars = remapping.values().copied().collect_vec();
+            state.use_variables(context, &vars, (block_id, block.statements.len()));
         }
         lowering::FlatBlockEnd::Return(vars) => {
             state.clear();
@@ -139,9 +143,10 @@ fn inner_find_variable_lifetime(
         let statement_location = (block_id, idx);
 
         // Add the new variables from the statement's output.
+        let outputs = statement_outputs(statement, context.lowered_function);
         state.handle_new_variables(
             context,
-            &statement.outputs(),
+            &outputs,
             DropLocation::PostStatement(statement_location),
         );
 

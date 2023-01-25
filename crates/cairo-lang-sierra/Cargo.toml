@@ -30,5 +30,6 @@ assert_matches.workspace = true
 bimap.workspace = true
 env_logger.workspace = true
 indoc.workspace = true
+pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true

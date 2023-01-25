@@ -2,9 +2,11 @@
 #[path = "diagnostic_test.rs"]
 mod test;
 
+use std::fmt::Display;
+
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
+    EnumId, FunctionSignatureId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -13,11 +15,13 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::plugin::PluginMappedDiagnostic;
-use crate::semantic;
+use crate::resolve_path::ResolvedConcreteItem;
+use crate::{semantic, ConcreteTraitId};
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
@@ -81,7 +85,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
             SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
-            SemanticDiagnosticKind::NotAFunction => "Not a function.".into(),
+            SemanticDiagnosticKind::UnexpectedElement { expected, actual } => {
+                let expected_str = expected.iter().map(|kind| kind.to_string()).join(" or ");
+                format!("Expected {expected_str}, found {actual}.")
+            }
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
@@ -170,6 +177,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::VariantCtorNotImmutable => {
+                "Variant constructor argument must be immutable.".to_string()
+            }
             SemanticDiagnosticKind::TraitParamMutable { trait_id, function_id } => {
                 let defs_db = db.upcast();
                 format!(
@@ -219,15 +229,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_name,
                 )
             }
+            SemanticDiagnosticKind::WrongType { expected_ty, actual_ty } => {
+                format!(
+                    r#"Expected type "{}", found: "{}"."#,
+                    expected_ty.format(db),
+                    actual_ty.format(db)
+                )
+            }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
-            }
-            SemanticDiagnosticKind::ImplBodyIsNotSupported => {
-                "impl body is not supported yet.".into()
             }
             SemanticDiagnosticKind::WrongReturnType { expected_ty, actual_ty } => {
                 format!(
@@ -256,6 +270,47 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::NoImplementationOfTraitFunction {
+                concrete_trait_id,
+                function_name,
+            } => {
+                let long_concrete_trait = db.lookup_intern_concrete_trait(*concrete_trait_id);
+                let trait_path = long_concrete_trait.trait_id.full_path(db.upcast());
+                let generic_args = long_concrete_trait.generic_args;
+                format!(
+                    "Function `{function_name}` of trait `{trait_path}::<{}>` has has no \
+                     implementation in the context.",
+                    generic_args
+                        .iter()
+                        .map(|arg| match arg {
+                            crate::GenericArgumentId::Type(ty) => ty.format(db),
+                            crate::GenericArgumentId::Literal(literal_id) => literal_id.format(db),
+                        })
+                        .join(", ")
+                )
+            }
+            SemanticDiagnosticKind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {
+                format!(
+                    "Ambiguous method call. More than one applicable trait function with a \
+                     suitable self type was found: {} and {}. Consider adding type annotations or \
+                     explicitly refer to the impl function.",
+                    trait_function_id0.full_path(db.upcast()),
+                    trait_function_id1.full_path(db.upcast())
+                )
+            }
+            SemanticDiagnosticKind::MultipleImplementationOfTraitFunction {
+                trait_id,
+                all_impl_ids,
+                function_name,
+            } => {
+                let trait_path = trait_id.full_path(db.upcast());
+                let impls_str =
+                    all_impl_ids.iter().map(|imp| imp.full_path(db.upcast())).join(", ");
+                format!(
+                    "Function `{function_name}` of trait `{trait_path}` has multiple \
+                     implementations, in: {impls_str}",
+                )
+            }
             SemanticDiagnosticKind::VariableNotFound { name } => {
                 format!(r#"Variable "{name}" not found."#)
             }
@@ -271,10 +326,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::ParamNameRedefinition { function_id, param_name } => {
+            SemanticDiagnosticKind::ParamNameRedefinition { function_signature_id, param_name } => {
                 format!(
                     r#"Redefinition of parameter name "{param_name}" in function "{}"."#,
-                    function_id.full_path(db.upcast())
+                    function_signature_id.full_path(db.upcast())
                 )
             }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
@@ -292,6 +347,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
             }
+            SemanticDiagnosticKind::TypeYetUnknown => r#"Type annotation needed."#.to_string(),
             SemanticDiagnosticKind::NoSuchMember { struct_id, member_name } => {
                 format!(
                     r#"Struct "{}" has no member "{member_name}""#,
@@ -319,6 +375,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
             SemanticDiagnosticKind::RefArgNotMutable => {
                 "ref argument must be a mutable variable.".into()
+            }
+            SemanticDiagnosticKind::RefArgNotExplicit => {
+                "ref argument must be a passed with a preceding 'ref'.".into()
+            }
+            SemanticDiagnosticKind::ImmutableArgWithModifiers => {
+                "Argument cannot have modifiers.".into()
             }
             SemanticDiagnosticKind::AssignmentToImmutableVar => {
                 "Cannot assign to an immutable variable.".into()
@@ -384,6 +446,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
                 format!("`{}` is not allowed inside impl.", item_kw)
             }
+            SemanticDiagnosticKind::MissingItemsInImpl { item_names } => {
+                format!(
+                    "Not all trait items are implemented. Missing: {}.",
+                    item_names.iter().map(|name| format!("'{}'", name)).join(", ")
+                )
+            }
             SemanticDiagnosticKind::PassPanicAsNopanic { impl_function_id, trait_id } => {
                 let name = impl_function_id.name(db.upcast());
                 let trait_name = trait_id.name(db.upcast());
@@ -416,6 +484,17 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::NamedArgumentMismatch { expected, found } => {
                 format!("Unexpected argument name. Expected: '{expected}', found '{found}'.")
+            }
+            SemanticDiagnosticKind::UnsupportedOutsideOfFunction { feature_name } => {
+                let feature_name_str = match feature_name {
+                    UnsupportedOutsideOfFunctionFeatureName::FunctionCall => "Function call",
+                    UnsupportedOutsideOfFunctionFeatureName::ReturnStatement => "Return statement",
+                    UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate => "The '?' operator",
+                };
+                format!("{feature_name_str} is not supported outside of functions.")
+            }
+            SemanticDiagnosticKind::OnlyLiteralConstants => {
+                "Only literal constants are currently supported.".into()
             }
         }
     }
@@ -451,7 +530,10 @@ pub enum SemanticDiagnosticKind {
     UnknownFunction,
     UnknownTrait,
     UnknownImpl,
-    NotAFunction,
+    UnexpectedElement {
+        expected: Vec<ElementKind>,
+        actual: ElementKind,
+    },
     UnknownType,
     UnknownStruct,
     UnknownEnum,
@@ -496,6 +578,7 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
+    VariantCtorNotImmutable,
     TraitParamMutable {
         trait_id: TraitId,
         function_id: TraitFunctionId,
@@ -514,6 +597,10 @@ pub enum SemanticDiagnosticKind {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
+    WrongType {
+        expected_ty: semantic::TypeId,
+        actual_ty: semantic::TypeId,
+    },
     WrongArgumentType {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
@@ -522,13 +609,25 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
-    ImplBodyIsNotSupported,
     WrongReturnTypeForImpl {
         impl_id: ImplId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
+    },
+    NoImplementationOfTraitFunction {
+        concrete_trait_id: ConcreteTraitId,
+        function_name: SmolStr,
+    },
+    AmbiguousTrait {
+        trait_function_id0: TraitFunctionId,
+        trait_function_id1: TraitFunctionId,
+    },
+    MultipleImplementationOfTraitFunction {
+        trait_id: TraitId,
+        all_impl_ids: Vec<ImplId>,
+        function_name: SmolStr,
     },
     VariableNotFound {
         name: SmolStr,
@@ -542,7 +641,7 @@ pub enum SemanticDiagnosticKind {
         variant_name: SmolStr,
     },
     ParamNameRedefinition {
-        function_id: GenericFunctionId,
+        function_signature_id: FunctionSignatureId,
         param_name: SmolStr,
     },
     IncompatibleMatchArms {
@@ -557,6 +656,7 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         member_name: SmolStr,
     },
+    TypeYetUnknown,
     NoSuchMember {
         struct_id: StructId,
         member_name: SmolStr,
@@ -574,6 +674,8 @@ pub enum SemanticDiagnosticKind {
     },
     RefArgNotAVariable,
     RefArgNotMutable,
+    RefArgNotExplicit,
+    ImmutableArgWithModifiers,
     AssignmentToImmutableVar,
     InvalidLhsForAssignment,
     InvalidMemberExpression,
@@ -608,6 +710,9 @@ pub enum SemanticDiagnosticKind {
     InvalidImplItem {
         item_kw: SmolStr,
     },
+    MissingItemsInImpl {
+        item_names: Vec<SmolStr>,
+    },
     PassPanicAsNopanic {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
@@ -628,6 +733,10 @@ pub enum SemanticDiagnosticKind {
         expected: SmolStr,
         found: SmolStr,
     },
+    UnsupportedOutsideOfFunction {
+        feature_name: UnsupportedOutsideOfFunctionFeatureName,
+    },
+    OnlyLiteralConstants,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -637,4 +746,54 @@ pub enum NotFoundItemType {
     Type,
     Trait,
     Impl,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum UnsupportedOutsideOfFunctionFeatureName {
+    FunctionCall,
+    ReturnStatement,
+    ErrorPropagate,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ElementKind {
+    Constant,
+    Variable,
+    Module,
+    Function,
+    TraitFunction,
+    Type,
+    Variant,
+    Trait,
+    Impl,
+}
+impl From<&ResolvedConcreteItem> for ElementKind {
+    fn from(val: &ResolvedConcreteItem) -> Self {
+        match val {
+            ResolvedConcreteItem::Constant(_) => ElementKind::Constant,
+            ResolvedConcreteItem::Module(_) => ElementKind::Module,
+            ResolvedConcreteItem::Function(_) => ElementKind::Function,
+            ResolvedConcreteItem::TraitFunction(_) => ElementKind::TraitFunction,
+            ResolvedConcreteItem::Type(_) => ElementKind::Type,
+            ResolvedConcreteItem::Variant(_) => ElementKind::Variant,
+            ResolvedConcreteItem::Trait(_) => ElementKind::Trait,
+            ResolvedConcreteItem::Impl(_) => ElementKind::Impl,
+        }
+    }
+}
+impl Display for ElementKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let res = match self {
+            ElementKind::Constant => "constant",
+            ElementKind::Variable => "variable",
+            ElementKind::Module => "module",
+            ElementKind::Function => "function",
+            ElementKind::TraitFunction => "function",
+            ElementKind::Type => "type",
+            ElementKind::Variant => "variant",
+            ElementKind::Trait => "trait",
+            ElementKind::Impl => "impl",
+        };
+        write!(f, "{res}")
+    }
 }

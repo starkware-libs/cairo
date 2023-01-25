@@ -1,4 +1,5 @@
 use super::syscalls::SystemType;
+use crate::extensions::array::ArrayType;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
@@ -7,13 +8,37 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
+use crate::extensions::uint::Uint8Type;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
+use crate::program::GenericArg;
 
-/// Type for StarkNet storage address, a value in the range [0, 2 ** 251 - 256).
+/// Type for StarkNet storage base address, a value in the range [0, 2 ** 251 - 256).
+#[derive(Default)]
+pub struct StorageBaseAddressType {}
+impl NoGenericArgsGenericType for StorageBaseAddressType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("StorageBaseAddress");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const SIZE: i16 = 1;
+}
+
+/// Libfunc for creating a constant storage base address.
+#[derive(Default)]
+pub struct StorageBaseAddressConstLibfuncWrapped {}
+impl ConstGenLibfunc for StorageBaseAddressConstLibfuncWrapped {
+    const STR_ID: &'static str = ("storage_base_address_const");
+    const GENERIC_TYPE_ID: GenericTypeId = <StorageBaseAddressType as NoGenericArgsGenericType>::ID;
+}
+
+pub type StorageBaseAddressConstLibfunc =
+    WrapConstGenLibfunc<StorageBaseAddressConstLibfuncWrapped>;
+
+/// Type for StarkNet storage base address, a value in the range [0, 2 ** 251).
 #[derive(Default)]
 pub struct StorageAddressType {}
 impl NoGenericArgsGenericType for StorageAddressType {
@@ -24,21 +49,66 @@ impl NoGenericArgsGenericType for StorageAddressType {
     const SIZE: i16 = 1;
 }
 
-/// Libfunc for creating a constant storage address.
+/// Libfunc for converting a base address into a storage address.
 #[derive(Default)]
-pub struct StorageAddressConstLibfuncWrapped {}
-impl ConstGenLibfunc for StorageAddressConstLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_address_const");
-    const GENERIC_TYPE_ID: GenericTypeId = <StorageAddressType as NoGenericArgsGenericType>::ID;
+pub struct StorageAddressFromBaseLibfunc {}
+impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseLibfunc {
+    const STR_ID: &'static str = "storage_address_from_base";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
+                allow_deferred: true,
+                allow_add_const: true,
+                allow_const: true,
+            }],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
 }
 
-pub type StorageAddressConstLibfunc = WrapConstGenLibfunc<StorageAddressConstLibfuncWrapped>;
-
-/// Libfunc for converting a felt into a storage address.
+/// Libfunc for converting a base address and offset into a storage address.
 #[derive(Default)]
-pub struct StorageAddressFromFeltLibfunc {}
-impl NoGenericArgsGenericLibfunc for StorageAddressFromFeltLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_addr_from_felt");
+pub struct StorageAddressFromBaseAndOffsetLibfunc {}
+impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseAndOffsetLibfunc {
+    const STR_ID: &'static str = "storage_address_from_base_and_offset";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(context.get_concrete_type(StorageBaseAddressType::id(), &[])?),
+                ParamSignature {
+                    ty: context.get_concrete_type(Uint8Type::id(), &[])?,
+                    allow_deferred: false,
+                    allow_add_const: false,
+                    allow_const: true,
+                },
+            ],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+/// Libfunc for converting a felt into a storage base address.
+#[derive(Default)]
+pub struct StorageBaseAddressFromFeltLibfunc {}
+impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFeltLibfunc {
+    const STR_ID: &'static str = "storage_base_address_from_felt";
 
     fn specialize_signature(
         &self,
@@ -63,7 +133,7 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromFeltLibfunc {
                     }),
                 },
                 OutputVarInfo {
-                    ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
+                    ty: context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 },
             ],
@@ -76,7 +146,7 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromFeltLibfunc {
 #[derive(Default)]
 pub struct StorageReadLibfunc {}
 impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_read_syscall");
+    const STR_ID: &'static str = "storage_read_syscall";
 
     fn specialize_signature(
         &self,
@@ -86,6 +156,8 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_array_ty =
+            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty.clone())])?;
 
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -119,9 +191,9 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
                                 DeferredOutputKind::AddConst { param_idx: 1 },
                             ),
                         },
-                        // read_value
+                        // Read result
                         OutputVarInfo {
-                            ty: felt_ty.clone(),
+                            ty: felt_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
@@ -144,8 +216,8 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ty: felt_array_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -160,7 +232,7 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
 #[derive(Default)]
 pub struct StorageWriteLibfunc {}
 impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("storage_write_syscall");
+    const STR_ID: &'static str = "storage_write_syscall";
 
     fn specialize_signature(
         &self,
@@ -170,6 +242,8 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_array_ty =
+            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty.clone())])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -186,7 +260,7 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
                 // Address
                 ParamSignature::new(addr_ty),
                 // Value
-                ParamSignature::new(felt_ty.clone()),
+                ParamSignature::new(felt_ty),
             ],
             branch_signatures: vec![
                 // Success branch.
@@ -224,8 +298,8 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ty: felt_array_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },

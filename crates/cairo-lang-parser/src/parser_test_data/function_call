@@ -5,7 +5,7 @@ test_partial_parser_tree
 
 //! > cairo_code
 fn test() {
-    f::<felt, 7>(12, a + 3, b);
+    f::<felt, 7>(12, a + 3, ref b);
 }
 
 //! > top_level_kind
@@ -34,23 +34,27 @@ ExprFunctionCall
         ├── lparen (kind: TokenLParen): '('
         ├── args (kind: ArgList)
         │   ├── item #0 (kind: Arg)
-        │   │   ├── name (kind: OptionArgNameClauseEmpty) []
-        │   │   └── value (kind: TokenLiteralNumber): '12'
+        │   │   ├── modifiers (kind: ModifierList) []
+        │   │   └── arg_clause (kind: ArgClauseUnnamed)
+        │   │       └── value (kind: TokenLiteralNumber): '12'
         │   ├── separator #0 (kind: TokenComma): ','
         │   ├── item #1 (kind: Arg)
-        │   │   ├── name (kind: OptionArgNameClauseEmpty) []
-        │   │   └── value (kind: ExprBinary)
-        │   │       ├── lhs (kind: ExprPath)
-        │   │       │   └── item #0 (kind: PathSegmentSimple)
-        │   │       │       └── ident (kind: TokenIdentifier): 'a'
-        │   │       ├── op (kind: TokenPlus): '+'
-        │   │       └── rhs (kind: TokenLiteralNumber): '3'
+        │   │   ├── modifiers (kind: ModifierList) []
+        │   │   └── arg_clause (kind: ArgClauseUnnamed)
+        │   │       └── value (kind: ExprBinary)
+        │   │           ├── lhs (kind: ExprPath)
+        │   │           │   └── item #0 (kind: PathSegmentSimple)
+        │   │           │       └── ident (kind: TokenIdentifier): 'a'
+        │   │           ├── op (kind: TokenPlus): '+'
+        │   │           └── rhs (kind: TokenLiteralNumber): '3'
         │   ├── separator #1 (kind: TokenComma): ','
         │   └── item #2 (kind: Arg)
-        │       ├── name (kind: OptionArgNameClauseEmpty) []
-        │       └── value (kind: ExprPath)
-        │           └── item #0 (kind: PathSegmentSimple)
-        │               └── ident (kind: TokenIdentifier): 'b'
+        │       ├── modifiers (kind: ModifierList)
+        │       │   └── child #0 (kind: TokenRef): 'ref'
+        │       └── arg_clause (kind: ArgClauseUnnamed)
+        │           └── value (kind: ExprPath)
+        │               └── item #0 (kind: PathSegmentSimple)
+        │                   └── ident (kind: TokenIdentifier): 'b'
         └── rparen (kind: TokenRParen): ')'
 
 //! > ==========================================================================
@@ -62,7 +66,7 @@ test_partial_parser_tree
 
 //! > cairo_code
 fn test() {
-    f(12, y: a + 3);
+    f(12, y: a + 3, :z);
 }
 
 //! > top_level_kind
@@ -81,17 +85,26 @@ ExprFunctionCall
         ├── lparen (kind: TokenLParen): '('
         ├── args (kind: ArgList)
         │   ├── item #0 (kind: Arg)
-        │   │   ├── name (kind: OptionArgNameClauseEmpty) []
-        │   │   └── value (kind: TokenLiteralNumber): '12'
+        │   │   ├── modifiers (kind: ModifierList) []
+        │   │   └── arg_clause (kind: ArgClauseUnnamed)
+        │   │       └── value (kind: TokenLiteralNumber): '12'
         │   ├── separator #0 (kind: TokenComma): ','
-        │   └── item #1 (kind: Arg)
-        │       ├── name (kind: ArgNameClause)
-        │       │   ├── name (kind: TokenIdentifier): 'y'
-        │       │   └── colon (kind: TokenColon): ':'
-        │       └── value (kind: ExprBinary)
-        │           ├── lhs (kind: ExprPath)
-        │           │   └── item #0 (kind: PathSegmentSimple)
-        │           │       └── ident (kind: TokenIdentifier): 'a'
-        │           ├── op (kind: TokenPlus): '+'
-        │           └── rhs (kind: TokenLiteralNumber): '3'
+        │   ├── item #1 (kind: Arg)
+        │   │   ├── modifiers (kind: ModifierList) []
+        │   │   └── arg_clause (kind: ArgClauseNamed)
+        │   │       ├── name (kind: TokenIdentifier): 'y'
+        │   │       ├── colon (kind: TokenColon): ':'
+        │   │       └── value (kind: ExprBinary)
+        │   │           ├── lhs (kind: ExprPath)
+        │   │           │   └── item #0 (kind: PathSegmentSimple)
+        │   │           │       └── ident (kind: TokenIdentifier): 'a'
+        │   │           ├── op (kind: TokenPlus): '+'
+        │   │           └── rhs (kind: TokenLiteralNumber): '3'
+        │   ├── separator #1 (kind: TokenComma): ','
+        │   └── item #2 (kind: Arg)
+        │       ├── modifiers (kind: ModifierList) []
+        │       └── arg_clause (kind: ArgClauseFieldInitShorthand)
+        │           ├── colon (kind: TokenColon): ':'
+        │           └── name (kind: ExprFieldInitShorthand)
+        │               └── name (kind: TokenIdentifier): 'z'
         └── rparen (kind: TokenRParen): ')'

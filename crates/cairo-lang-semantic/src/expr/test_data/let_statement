@@ -84,3 +84,32 @@ error: `ref` is only allowed for function parameters, not for local variables.
  --> lib.cairo:2:13
     let ref a = 3;
             ^
+
+//! > ==========================================================================
+
+//! > Variable not found diagnostics
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let x = not_found;
+    let x = foo;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Identifier not found.
+ --> lib.cairo:2:13
+    let x = not_found;
+            ^*******^
+
+error: Expected variable or constant, found function.
+ --> lib.cairo:3:13
+    let x = foo;
+            ^*^

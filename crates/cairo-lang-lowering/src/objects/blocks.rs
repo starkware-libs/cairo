@@ -8,7 +8,7 @@ pub struct BlockId(pub usize);
 
 /// A convenient wrapper around a vector of blocks.
 /// This is used instead of id_arena, since the latter is harder to clone and modify.
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Blocks<T>(pub Vec<T>);
 
 impl<T> Blocks<T> {

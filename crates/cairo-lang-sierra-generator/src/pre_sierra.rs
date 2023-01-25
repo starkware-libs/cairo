@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::FreeFunctionId;
+use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
@@ -9,9 +9,9 @@ use crate::db::SierraGenGroup;
 /// Represents the long id of a pre-sierra label.
 /// The long id consists of the parent function and a unique identifier inside the function.
 // TODO(lior): Make sure this struct can only be constructed by expr_generator_context.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct LabelLongId {
-    pub parent: FreeFunctionId,
+    pub parent: ConcreteFunctionWithBodyId,
     // A unique identifier inside the function
     pub id: usize,
 }

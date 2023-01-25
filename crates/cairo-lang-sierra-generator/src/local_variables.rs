@@ -9,14 +9,14 @@ use cairo_lang_sierra::extensions::lib_func::OutputVarInfo;
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use itertools::zip_eq;
+use itertools::{zip_eq, Itertools};
 use lowering::FlatLowered;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, match_enum_libfunc_id,
-    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    statement_outputs, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Given the lowering of a function, returns the set of variables which should be stored as local
@@ -56,10 +56,7 @@ fn inner_find_local_variables(
         match statement {
             lowering::Statement::Literal(statement_literal) => {
                 // Treat literal as a temporary variable.
-                state.set_variable_status(
-                    statement_literal.output,
-                    VariableStatus::TemporaryVariable,
-                );
+                state.set_variable_status(statement_literal.output, VariableStatus::Constant);
             }
             lowering::Statement::Call(statement_call) => {
                 let (_, concrete_function_id) =
@@ -86,7 +83,7 @@ fn inner_find_local_variables(
                     state.revoke_temporary_variables();
                     known_ap_change = false;
                 }
-                state.mark_outputs_as_temporary(statement);
+                state.mark_outputs_as_temporary(lowered_function, statement);
             }
             lowering::Statement::MatchExtern(statement_match_extern) => {
                 let (_, concrete_function_id) =
@@ -168,7 +165,11 @@ fn inner_find_local_variables(
     // TODO(lior): Handle block.drops.
 
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(vars) | lowering::FlatBlockEnd::Return(vars) => {
+        lowering::FlatBlockEnd::Callsite(remapping) => {
+            let vars = remapping.values().copied().collect_vec();
+            state.use_variables(&vars, res);
+        }
+        lowering::FlatBlockEnd::Return(vars) => {
             state.use_variables(vars, res);
         }
         lowering::FlatBlockEnd::Unreachable => {}
@@ -224,7 +225,7 @@ fn handle_match(
     } else {
         true
     };
-    state.mark_outputs_as_temporary(statement);
+    state.mark_outputs_as_temporary(lowered_function, statement);
 
     Ok(known_ap_change)
 }
@@ -268,6 +269,7 @@ fn handle_function_call(
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum VariableStatus {
+    Constant,
     TemporaryVariable,
     Revoked,
     /// Indicates that the variable is essentially the same as another variable.
@@ -340,13 +342,17 @@ impl LocalVariablesState {
                 // Recursively visit `alias`.
                 self.use_variable(*alias, res);
             }
-            Some(VariableStatus::TemporaryVariable) | None => {}
+            Some(VariableStatus::TemporaryVariable | VariableStatus::Constant) | None => {}
         }
     }
 
     /// Marks all the outputs of the statement as [VariableStatus::TemporaryVariable].
-    fn mark_outputs_as_temporary(&mut self, statement: &lowering::Statement) {
-        for var_id in statement.outputs() {
+    fn mark_outputs_as_temporary(
+        &mut self,
+        lowered_function: &FlatLowered,
+        statement: &lowering::Statement,
+    ) {
+        for var_id in statement_outputs(statement, lowered_function) {
             self.set_variable_status(var_id, VariableStatus::TemporaryVariable);
         }
     }

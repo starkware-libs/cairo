@@ -1,3 +1,4 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::LocalVarId;
 // Reexport objects
@@ -13,8 +14,10 @@ pub use crate::expr::pattern::{
     PatternVariable,
 };
 pub use crate::items::enm::{ConcreteVariant, Variant};
-pub use crate::items::free_function::FreeFunctionDefinition;
-pub use crate::items::functions::{ConcreteFunction, FunctionId, FunctionLongId, Signature};
+pub use crate::items::function_with_body::FunctionBody;
+pub use crate::items::functions::{
+    ConcreteFunction, ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, Signature,
+};
 pub use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
 pub use crate::items::strct::Member;
 pub use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
@@ -44,6 +47,8 @@ pub struct Parameter {
     pub name: SmolStr,
     pub ty: TypeId,
     pub mutability: Mutability,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::TerminalIdentifierPtr,
 }
 
 /// The mutability attribute of a variable.
@@ -88,10 +93,21 @@ impl Variable {
 /// Generic argument.
 /// A value assigned to a generic parameter.
 /// May be a type, impl, constant, etc..
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GenericArgumentId {
     Type(TypeId),
     Literal(LiteralId),
     // TODO(spapini): impls and constants as generic values.
+}
+impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        match self {
+            GenericArgumentId::Type(id) => write!(f, "{:?}", id.debug(db)),
+            GenericArgumentId::Literal(id) => write!(f, "{:?}", id.debug(db)),
+        }
+    }
 }

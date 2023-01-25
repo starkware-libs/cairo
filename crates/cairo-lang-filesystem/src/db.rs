@@ -7,12 +7,12 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_project::ProjectConfig;
 use cairo_lang_utils::Upcast;
 
-use crate::detect::detect_corelib;
 use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
 use crate::span::{FileSummary, TextOffset};
+
+pub const CORELIB_CRATE_NAME: &str = "core";
 
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
@@ -48,11 +48,10 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     // Initialize inputs.
     db.set_file_overrides(Arc::new(HashMap::new()));
     db.set_crate_roots(Arc::new(HashMap::new()));
+}
 
-    // Set core config.
-    let core_crate = db.intern_crate(CrateLongId("core".into()));
-    // TODO(spapini): find the correct path.
-    let path = detect_corelib();
+pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), path: PathBuf) {
+    let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
     let core_root_dir = Directory(path);
     db.set_crate_root(core_crate, Some(core_root_dir));
 }
@@ -81,18 +80,6 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
             None => crate_roots.remove(&crt),
         };
         self.as_files_group_mut().set_crate_roots(Arc::new(crate_roots));
-    }
-    /// Updates the crate roots from a ProjectConfig object.
-    fn with_project_config(&mut self, config: ProjectConfig) {
-        for (crate_name, directory_path) in config.content.crate_roots {
-            let crate_id = Upcast::upcast(self).intern_crate(CrateLongId(crate_name));
-            let mut path = PathBuf::from(&directory_path);
-            if path.is_relative() {
-                path = PathBuf::from(&config.base_path).join(path);
-            }
-            let root = Directory(path);
-            self.set_crate_root(crate_id, Some(root));
-        }
     }
 }
 impl<T: Upcast<dyn FilesGroup> + AsFilesGroupMut + ?Sized> FilesGroupEx for T {}

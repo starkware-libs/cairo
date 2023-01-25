@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::ops::Deref;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use cairo_lang_syntax::node::ast;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{define_short_id, OptionFrom};
 use itertools::Itertools;
 
@@ -13,9 +14,27 @@ use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::expr::inference::{Inference, TypeVar};
 use crate::items::imp::{find_impls_at_context, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
-use crate::{semantic, GenericArgumentId};
+use crate::{semantic, ConcreteVariant, FunctionId, GenericArgumentId};
+
+/// A substitution of generic arguments in generic parameters. Used for concretization.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GenericSubstitution(pub OrderedHashMap<GenericParamId, GenericArgumentId>);
+impl Deref for GenericSubstitution {
+    type Target = OrderedHashMap<GenericParamId, GenericArgumentId>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+#[allow(clippy::derive_hash_xor_eq)]
+impl std::hash::Hash for GenericSubstitution {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.iter().collect_vec().hash(state);
+    }
+}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum TypeLongId {
@@ -24,6 +43,7 @@ pub enum TypeLongId {
     /// during inference.
     Tuple(Vec<TypeId>),
     GenericParameter(GenericParamId),
+    Var(TypeVar),
     Missing(DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -70,6 +90,7 @@ impl TypeLongId {
             TypeLongId::GenericParameter(generic_param) => {
                 generic_param.name(db.upcast()).to_string()
             }
+            TypeLongId::Var(var) => format!("?{}", var.id),
             TypeLongId::Missing(_) => "<missing>".to_string(),
         }
     }
@@ -210,40 +231,68 @@ impl ConcreteExternTypeId {
 
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
+pub fn resolve_type_with_inference(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    inference: &mut Inference<'_>,
+    resolver: &mut Resolver<'_>,
+    ty_syntax: &ast::Expr,
+) -> TypeId {
+    maybe_resolve_type(db, diagnostics, inference, resolver, ty_syntax)
+        .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
+}
 pub fn resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, resolver, ty_syntax)
+    maybe_resolve_type(db, diagnostics, &mut Inference::disabled(db), resolver, ty_syntax)
         .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
 }
 pub fn maybe_resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
+    inference: &mut Inference<'_>,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> Maybe<TypeId> {
     let syntax_db = db.upcast();
     Ok(match ty_syntax {
         ast::Expr::Path(path) => {
-            match resolver.resolve_concrete_path(diagnostics, path, NotFoundItemType::Type)? {
+            match resolver.resolve_concrete_path(
+                diagnostics,
+                inference,
+                path,
+                NotFoundItemType::Type,
+            )? {
                 ResolvedConcreteItem::Type(ty) => ty,
                 _ => {
                     return Err(diagnostics.report(path, NotAType));
                 }
             }
         }
-        ast::Expr::Parenthesized(expr_syntax) => {
-            resolve_type(db, diagnostics, resolver, &expr_syntax.expr(syntax_db))
-        }
+        ast::Expr::Parenthesized(expr_syntax) => resolve_type_with_inference(
+            db,
+            diagnostics,
+            inference,
+            resolver,
+            &expr_syntax.expr(syntax_db),
+        ),
         ast::Expr::Tuple(tuple_syntax) => {
             let sub_tys = tuple_syntax
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
-                .map(|subexpr_syntax| resolve_type(db, diagnostics, resolver, &subexpr_syntax))
+                .map(|subexpr_syntax| {
+                    resolve_type_with_inference(
+                        db,
+                        diagnostics,
+                        inference,
+                        resolver,
+                        &subexpr_syntax,
+                    )
+                })
                 .collect();
             db.intern_type(TypeLongId::Tuple(sub_tys))
         }
@@ -267,8 +316,8 @@ pub fn generic_type_generic_params(
 
 pub fn substitute_generics(
     db: &dyn SemanticGroup,
-    substitution: &HashMap<GenericParamId, GenericArgumentId>,
-    ty: crate::TypeId,
+    substitution: &GenericSubstitution,
+    ty: TypeId,
 ) -> TypeId {
     match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete) => {
@@ -300,7 +349,50 @@ pub fn substitute_generics(
                 }
             })
             .unwrap_or(ty),
+        TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
         TypeLongId::Missing(_) => ty,
+    }
+}
+
+/// Substituted generics in a [FunctionId].
+pub fn substitute_function(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    function: &mut FunctionId,
+) {
+    let mut long_function = db.lookup_intern_function(*function);
+    substitute_generics_args(db, substitution, &mut long_function.function.generic_args);
+    long_function.function.generic_function.generic_args_apply(db, |generic_args| {
+        substitute_generics_args(db, substitution, generic_args)
+    });
+    *function = db.intern_function(long_function);
+}
+
+/// Substituted generics in a [ConcreteVariant].
+pub fn substitute_variant(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    variant: &mut ConcreteVariant,
+) {
+    variant.ty = substitute_generics(db.upcast(), substitution, variant.ty);
+    let mut long_concrete_enum = db.lookup_intern_concrete_enum(variant.concrete_enum_id);
+    substitute_generics_args(db, substitution, &mut long_concrete_enum.generic_args);
+    variant.concrete_enum_id = db.intern_concrete_enum(long_concrete_enum);
+}
+
+/// Substituted generics in a slice of [GenericArgumentId].
+pub fn substitute_generics_args(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    generic_args: &mut [GenericArgumentId],
+) {
+    for arg in generic_args.iter_mut() {
+        match arg {
+            GenericArgumentId::Type(ty) => {
+                *ty = substitute_generics(db.upcast(), substitution, *ty)
+            }
+            GenericArgumentId::Literal(_) => {}
+        }
     }
 }
 
@@ -319,6 +411,7 @@ pub fn type_info(
     ty: TypeId,
 ) -> Maybe<TypeInfo> {
     // TODO(spapini): Validate Copy and Drop for structs and enums.
+    let inference = Inference::disabled(db);
     Ok(match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete_type_id) => {
             let module = concrete_type_id.generic_type(db).parent_module(db.upcast());
@@ -326,12 +419,37 @@ pub fn type_info(
             if !lookup_context.extra_modules.contains(&module) {
                 lookup_context.extra_modules.push(module);
             }
-            let droppable =
-                !find_impls_at_context(db, &lookup_context, concrete_drop_trait(db, ty))?
-                    .is_empty();
-            let duplicatable =
-                !find_impls_at_context(db, &lookup_context, concrete_copy_trait(db, ty))?
-                    .is_empty();
+            let droppable = !find_impls_at_context(
+                db,
+                &inference,
+                &lookup_context,
+                concrete_drop_trait(db, ty),
+            )?
+            .is_empty();
+            let duplicatable = !find_impls_at_context(
+                db,
+                &inference,
+                &lookup_context,
+                concrete_copy_trait(db, ty),
+            )?
+            .is_empty();
+            TypeInfo { droppable, duplicatable }
+        }
+        TypeLongId::GenericParameter(_) => {
+            let droppable = !find_impls_at_context(
+                db,
+                &inference,
+                &lookup_context,
+                concrete_drop_trait(db, ty),
+            )?
+            .is_empty();
+            let duplicatable = !find_impls_at_context(
+                db,
+                &inference,
+                &lookup_context,
+                concrete_copy_trait(db, ty),
+            )?
+            .is_empty();
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::Tuple(tys) => {
@@ -343,7 +461,7 @@ pub fn type_info(
             let duplicatable = infos.iter().all(|info| info.duplicatable);
             TypeInfo { droppable, duplicatable }
         }
-        TypeLongId::GenericParameter(_) => todo!(),
+        TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }

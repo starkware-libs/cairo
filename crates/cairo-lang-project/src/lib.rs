@@ -5,6 +5,7 @@ mod test;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use cairo_lang_filesystem::ids::Directory;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -25,6 +26,7 @@ const PROJECT_FILE_NAME: &str = "cairo_project.toml";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectConfig {
     pub base_path: PathBuf,
+    pub corelib: Option<Directory>,
     pub content: ProjectConfigContent,
 }
 /// Contents of a Cairo project config file.
@@ -44,6 +46,6 @@ impl ProjectConfig {
             .ok_or(DeserializationError::PathError)?
             .into();
         let content = toml::from_str(&std::fs::read_to_string(filename)?)?;
-        Ok(ProjectConfig { base_path, content })
+        Ok(ProjectConfig { base_path, content, corelib: None })
     }
 }

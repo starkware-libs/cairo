@@ -11,7 +11,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
 
 /// Type for StarkNet storage address, a value in the range [0, 2 ** 250).
@@ -29,7 +29,7 @@ impl NoGenericArgsGenericType for ContractAddressType {
 #[derive(Default)]
 pub struct ContractAddressConstLibfuncWrapped {}
 impl ConstGenLibfunc for ContractAddressConstLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("contract_address_const");
+    const STR_ID: &'static str = "contract_address_const";
     const GENERIC_TYPE_ID: GenericTypeId = <ContractAddressType as NoGenericArgsGenericType>::ID;
 }
 
@@ -39,7 +39,7 @@ pub type ContractAddressConstLibfunc = WrapConstGenLibfunc<ContractAddressConstL
 #[derive(Default)]
 pub struct CallContractLibfunc {}
 impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("call_contract_syscall");
+    const STR_ID: &'static str = "call_contract_syscall";
 
     fn specialize_signature(
         &self,
@@ -50,7 +50,7 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
         let addr_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         let felt_array_ty =
-            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty.clone())])?;
+            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty)])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -106,11 +106,6 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
                             ),
                         },
                         // Revert reason
-                        OutputVarInfo {
-                            ty: felt_ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-                        },
-                        // result
                         OutputVarInfo {
                             ty: felt_array_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),

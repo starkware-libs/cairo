@@ -1,38 +1,46 @@
 mod traits;
 use traits::Copy;
 use traits::Drop;
+use traits::Add;
+use traits::Sub;
 
 #[derive(Copy, Drop)]
-enum bool { False: (), True: (), }
+enum bool {
+    False: (),
+    True: (),
+}
 
-extern fn bool_and_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+extern fn bool_and_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
+#[inline(always)]
 fn bool_and(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r,) = bool_and_impl(a, b);
+    let (r, ) = bool_and_impl(a, b);
     r
 }
 
-// TODO(orizi): Change to extern when added.
+extern fn bool_or_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
+#[inline(always)]
 fn bool_or(a: bool, b: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => b,
-        bool::True(x) => bool::True(()),
-    }
-}
-
-extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;
-fn bool_not(a: bool) -> bool implicits() nopanic {
-    let (r,) = bool_not_impl(a);
+    let (r, ) = bool_or_impl(a, b);
     r
 }
 
-extern fn bool_xor_impl(a: bool, b: bool) -> (bool,) implicits() nopanic;
+extern fn bool_not_impl(a: bool) -> (bool, ) implicits() nopanic;
+#[inline(always)]
+fn bool_not(a: bool) -> bool implicits() nopanic {
+    let (r, ) = bool_not_impl(a);
+    r
+}
+
+extern fn bool_xor_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
+#[inline(always)]
 fn bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
-    let (r,) = bool_xor_impl(a, b);
+    let (r, ) = bool_xor_impl(a, b);
     r
 }
 
 extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
 
+#[inline(always)]
 fn bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
     !(a == b)
 }
@@ -48,16 +56,32 @@ extern fn felt_const<value>() -> felt nopanic;
 impl FeltCopy of Copy::<felt>;
 impl FeltDrop of Drop::<felt>;
 
+impl FeltAdd of Add::<felt> {
+    #[inline(always)]
+    fn add(a: felt, b: felt) -> felt {
+        felt_add(a, b)
+    }
+}
 extern fn felt_add(a: felt, b: felt) -> felt nopanic;
+impl FeltSub of Sub::<felt> {
+    #[inline(always)]
+    fn sub(a: felt, b: felt) -> felt {
+        felt_sub(a, b)
+    }
+}
 extern fn felt_sub(a: felt, b: felt) -> felt nopanic;
 extern fn felt_mul(a: felt, b: felt) -> felt nopanic;
+#[inline(always)]
 fn felt_neg(a: felt) -> felt nopanic {
     a * felt_const::<-1>()
 }
 
 extern type NonZero<T>;
 // TODO(spapini): Add generic impls for NonZero for Copy, Drop.
-enum JumpNzResult<T> { Zero: (), NonZero: NonZero::<T>, }
+enum JumpNzResult<T> {
+    Zero: (),
+    NonZero: NonZero::<T>,
+}
 extern fn unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
 
 impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
@@ -65,28 +89,35 @@ impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
 extern fn felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
 
 // TODO(orizi): Change to extern when added.
-fn felt_eq(a: felt, b: felt) -> bool nopanic {
+#[inline(always)]
+fn felt_eq(a: felt, b: felt) -> bool {
     match a - b {
         0 => bool::True(()),
         _ => bool::False(()),
     }
 }
-fn felt_ne(a: felt, b: felt) -> bool nopanic {
+
+#[inline(always)]
+fn felt_ne(a: felt, b: felt) -> bool {
     !(a == b)
 }
 
+#[inline(always)]
 fn felt_lt(a: felt, b: felt) -> bool implicits(RangeCheck) {
     u256_from_felt(a) < u256_from_felt(b)
 }
 
+#[inline(always)]
 fn felt_gt(a: felt, b: felt) -> bool implicits(RangeCheck) {
     b < a
 }
 
+#[inline(always)]
 fn felt_le(a: felt, b: felt) -> bool implicits(RangeCheck) {
     !(b < a)
 }
 
+#[inline(always)]
 fn felt_ge(a: felt, b: felt) -> bool implicits(RangeCheck) {
     !(a < b)
 }
@@ -117,6 +148,7 @@ use array::Array;
 use array::array_new;
 use array::array_append;
 use array::array_pop_front;
+use array::array_get;
 use array::array_at;
 use array::array_len;
 
@@ -141,17 +173,20 @@ use option::Option;
 mod ec;
 use ec::EcOp;
 use ec::EcPoint;
+use ec::EcPointAdd;
+use ec::EcPointSub;
 use ec::EcState;
-use ec::ec_add_to_state;
-use ec::ec_finalize_state;
-use ec::ec_init_state;
-use ec::ec_op;
-use ec::ec_op_builtin;
-use ec::ec_point_from_felts;
-use ec::ec_point_try_create;
+use ec::OptionEcPointCopy;
+use ec::ec_mul;
+use ec::ec_neg;
+use ec::ec_point_from_x;
+use ec::ec_point_new;
+use ec::ec_point_try_new;
 use ec::ec_point_unwrap;
-use ec::ec_try_finalize_state;
-use ec::ec_try_op;
+use ec::ec_state_add_mul;
+use ec::ec_state_add;
+use ec::ec_state_finalize;
+use ec::ec_state_init;
 
 // Integer.
 mod integer;
@@ -160,8 +195,8 @@ use integer::u128_const;
 use integer::u128_from_felt;
 use integer::u128_try_from_felt;
 use integer::u128_to_felt;
-use integer::u128_add;
-use integer::u128_sub;
+use integer::U128Add;
+use integer::U128Sub;
 use integer::u128_mul;
 use integer::u128_as_non_zero;
 use integer::u128_div;
@@ -176,9 +211,35 @@ use integer::u128_and;
 use integer::u128_or;
 use integer::u128_xor;
 use integer::u128_jump_nz;
+use integer::u8;
+use integer::u8_const;
+use integer::u8_from_felt;
+use integer::u8_try_from_felt;
+use integer::u8_to_felt;
+use integer::U8Add;
+use integer::U8Sub;
+use integer::u8_eq;
+use integer::u8_ne;
+use integer::u8_lt;
+use integer::u8_le;
+use integer::u8_gt;
+use integer::u8_ge;
+use integer::u64;
+use integer::u64_const;
+use integer::u64_from_felt;
+use integer::u64_try_from_felt;
+use integer::u64_to_felt;
+use integer::U64Add;
+use integer::U64Sub;
+use integer::u64_eq;
+use integer::u64_ne;
+use integer::u64_lt;
+use integer::u64_le;
+use integer::u64_gt;
+use integer::u64_ge;
 use integer::u256;
-use integer::u256_add;
-use integer::u256_sub;
+use integer::U256Add;
+use integer::U256Sub;
 use integer::u256_mul;
 use integer::u256_eq;
 use integer::u256_ne;
@@ -201,19 +262,22 @@ use gas::get_gas;
 use gas::get_gas_all;
 
 // Panics.
-enum PanicResult<T> { Ok: T, Err: Array::<felt>, }
-enum never { }
+enum PanicResult<T> {
+    Ok: T,
+    Err: Array::<felt>,
+}
+enum never {}
 extern fn panic(data: Array::<felt>) -> never;
 
 fn assert(cond: bool, err_code: felt) {
     if !cond {
         let mut data = array_new::<felt>();
-        array_append::<felt>(data, err_code);
+        array_append::<felt>(ref data, err_code);
         panic(data);
     }
 }
 
-// Serialization and Deserialization. DO NOT USE DIRECTLY - direct usage pending traits.
+// Serialization and Deserialization.
 mod serde;
 
 // Hash functions.

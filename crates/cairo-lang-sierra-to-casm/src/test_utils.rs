@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -8,19 +7,23 @@ use cairo_lang_sierra_ap_change::calc_ap_changes;
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use itertools::Itertools;
 
-use crate::metadata::{calc_metadata, Metadata};
+use crate::metadata::{calc_metadata, Metadata, MetadataComputationConfig};
 
 /// Builds the metadata for a Sierra program.
 pub fn build_metadata(program: &Program, calculate_gas_info: bool) -> Metadata {
     if calculate_gas_info {
-        calc_metadata(program).expect("Failed calculating gas or ap change.")
+        calc_metadata(program, MetadataComputationConfig::default())
+            .expect("Failed calculating gas or ap change.")
     } else {
         Metadata {
-            ap_change_info: calc_ap_changes(program).unwrap_or(ApChangeInfo {
-                function_ap_change: HashMap::default(),
-                variable_values: HashMap::default(),
+            ap_change_info: calc_ap_changes(program, |_, _| 0).unwrap_or(ApChangeInfo {
+                function_ap_change: Default::default(),
+                variable_values: Default::default(),
             }),
-            gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
+            gas_info: GasInfo {
+                variable_values: Default::default(),
+                function_costs: Default::default(),
+            },
         }
     }
 }

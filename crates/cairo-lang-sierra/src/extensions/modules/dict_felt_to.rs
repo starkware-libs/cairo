@@ -1,5 +1,6 @@
 use super::dict_manager::DictManagerType;
 use super::felt::FeltType;
+use super::gas::GasBuiltinType;
 use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
 use crate::define_libfunc_hierarchy;
@@ -13,7 +14,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
 
 /// Type representing a dictionary from a felt to types of size one.
@@ -55,7 +56,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct DictFeltToNewLibfunc {}
 impl SignatureOnlyGenericLibfunc for DictFeltToNewLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("dict_felt_to_new");
+    const STR_ID: &'static str = "dict_felt_to_new";
 
     fn specialize_signature(
         &self,
@@ -85,7 +86,7 @@ impl SignatureOnlyGenericLibfunc for DictFeltToNewLibfunc {
 #[derive(Default)]
 pub struct DictFeltToWriteLibfunc {}
 impl SignatureOnlyGenericLibfunc for DictFeltToWriteLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("dict_felt_to_write");
+    const STR_ID: &'static str = "dict_felt_to_write";
 
     fn specialize_signature(
         &self,
@@ -110,7 +111,7 @@ impl SignatureOnlyGenericLibfunc for DictFeltToWriteLibfunc {
 #[derive(Default)]
 pub struct DictFeltToReadLibfunc {}
 impl SignatureOnlyGenericLibfunc for DictFeltToReadLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("dict_felt_to_read");
+    const STR_ID: &'static str = "dict_felt_to_read";
 
     fn specialize_signature(
         &self,
@@ -142,7 +143,7 @@ impl SignatureOnlyGenericLibfunc for DictFeltToReadLibfunc {
 #[derive(Default)]
 pub struct DictFeltToSquashLibfunc {}
 impl SignatureOnlyGenericLibfunc for DictFeltToSquashLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("dict_felt_to_squash");
+    const STR_ID: &'static str = "dict_felt_to_squash";
 
     fn specialize_signature(
         &self,
@@ -154,22 +155,32 @@ impl SignatureOnlyGenericLibfunc for DictFeltToSquashLibfunc {
             context.get_wrapped_concrete_type(DictFeltToType::id(), generic_ty.clone())?;
         let squashed_dict_ty =
             context.get_wrapped_concrete_type(SquashedDictFeltToType::id(), generic_ty)?;
-        let dict_manager_ty = context.get_concrete_type(DictManagerType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        let dict_manager_ty = context.get_concrete_type(DictManagerType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch(
-            vec![range_check_type.clone(), dict_manager_ty.clone(), dict_ty],
+            vec![
+                range_check_type.clone(),
+                gas_builtin_type.clone(),
+                dict_manager_ty.clone(),
+                dict_ty,
+            ],
             vec![
                 OutputVarInfo {
                     ty: range_check_type,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 },
                 OutputVarInfo {
-                    ty: dict_manager_ty,
+                    ty: gas_builtin_type,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
                 },
                 OutputVarInfo {
-                    ty: squashed_dict_ty,
+                    ty: dict_manager_ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(2) },
+                },
+                OutputVarInfo {
+                    ty: squashed_dict_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(3) },
                 },
             ],
             SierraApChange::Unknown,

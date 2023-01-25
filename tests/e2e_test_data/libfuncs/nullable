@@ -132,7 +132,12 @@ fn foo() -> felt {
 
 //! > casm
 [ap + 0] = 1234, ap++;
-%{ memory[ap + 0] = segments.add() %}
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 0] = __boxed_segment
+__boxed_segment += 1
+%}
 [ap + -1] = [[ap + 0] + 0], ap++;
 jmp rel 6 if [ap + -1] != 0;
 [ap + 0] = 555, ap++;

@@ -37,64 +37,57 @@ fn revoke_ap() -> felt {
 blk0:
 Inputs:
 Statements:
-  (v3: core::felt) <- test::revoke_ap()
-  (v4: core::felt) <- core::unwrap_nz<Type(core::felt),>(v2)
-End:
-  Callsite(v4)
-
-blk1:
-Inputs:
-Statements:
   (v1: core::felt) <- 1u
 End:
-  Callsite(v1)
+  Callsite()
 
-blk2:
+blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
-  (v5: core::felt) <- blk0()
+  (v3: core::felt) <- test::revoke_ap()
+  (v4: core::felt) <- core::unwrap_nz::<core::felt>(v2)
 End:
-  Callsite(v5)
+  Callsite()
+
+blk2:
+Inputs:
+Statements:
+  (v7: core::felt) <- 1u
+End:
+  Callsite(v7 -> v11)
 
 blk3:
-Inputs:
+Inputs: v8: core::NonZero::<core::felt>
 Statements:
-  (v10: core::felt) <- test::revoke_ap()
-  (v11: core::felt) <- core::unwrap_nz<Type(core::felt),>(v9)
+  (v9: core::felt) <- test::revoke_ap()
+  (v10: core::felt) <- core::unwrap_nz::<core::felt>(v8)
 End:
-  Callsite(v11)
+  Callsite(v10 -> v11)
 
-blk4:
-Inputs:
-Statements:
-  (v8: core::felt) <- 1u
-End:
-  Callsite(v8)
-
-blk5:
-Inputs: v9: core::NonZero::<core::felt>
-Statements:
-  (v12: core::felt) <- blk3()
-End:
-  Callsite(v12)
-
-blk6 (root):
+blk4 (root):
 Inputs: v0: core::felt
 Statements:
-  (v6: core::felt) <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk1,
-    JumpNzResult::NonZero => blk2,
+  () <- match core::felt_jump_nz(v0) {
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
-  (v7: core::felt) <- core::felt_add(v0, v0)
-  (v13: core::felt) <- match core::felt_jump_nz(v7) {
-    JumpNzResult::Zero => blk4,
-    JumpNzResult::NonZero => blk5,
+  () <- blk5()
+  () <- match core::felt_jump_nz(v6) {
+    JumpNzResult::Zero => blk2,
+    JumpNzResult::NonZero => blk3,
   }
 End:
-  Return(v13)
+  Return(v11)
+
+blk5:
+Inputs:
+Statements:
+  (v12: core::felt) <- core::felt_add(v0, v0)
+End:
+  Callsite(v12 -> v6)
 
 //! > local_variables
-v7
+v6
 
 //! > ==========================================================================
 
@@ -130,46 +123,67 @@ Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Callsite(v3)
+  Callsite(v3 -> v6)
 
 blk1:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
   (v5: core::felt) <- 2u
 End:
-  Callsite(v5)
+  Callsite(v5 -> v6)
 
 blk2:
 Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
-  Callsite(v8)
+  Callsite(v8 -> v11)
 
 blk3:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 2u
 End:
-  Callsite(v10)
+  Callsite(v10 -> v11)
 
 blk4 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
-  (v2: core::felt) <- core::felt_add(v1, v1)
-  (v6: core::felt) <- match core::felt_jump_nz(v2) {
+  () <- blk5()
+  () <- blk6()
+  () <- match core::felt_jump_nz(v2) {
     JumpNzResult::Zero => blk0,
     JumpNzResult::NonZero => blk1,
   }
-  (v7: core::felt) <- core::felt_add(v1, v6)
-  (v11: core::felt) <- match core::felt_jump_nz(v1) {
+  () <- blk7()
+  () <- match core::felt_jump_nz(v1) {
     JumpNzResult::Zero => blk2,
     JumpNzResult::NonZero => blk3,
   }
   (v12: core::felt) <- test::revoke_ap()
 End:
   Return(v11)
+
+blk5:
+Inputs:
+Statements:
+  (v13: core::felt) <- core::felt_add(v0, v0)
+End:
+  Callsite(v13 -> v1)
+
+blk6:
+Inputs:
+Statements:
+  (v14: core::felt) <- core::felt_add(v1, v1)
+End:
+  Callsite(v14 -> v2)
+
+blk7:
+Inputs:
+Statements:
+  (v15: core::felt) <- core::felt_add(v1, v6)
+End:
+  Callsite(v15 -> v7)
 
 //! > local_variables
 v1, v11
@@ -221,62 +235,69 @@ fn revoke_ap() -> felt {
 blk0:
 Inputs:
 Statements:
+  (v2: core::felt) <- 1u
+End:
+  Callsite()
+
+blk1:
+Inputs: v3: core::NonZero::<core::felt>
+Statements:
   (v4: core::felt) <- test::revoke_ap()
   (v5: core::felt) <- 0u
 End:
   Return(v5)
 
-blk1:
-Inputs:
-Statements:
-  (v2: core::felt) <- 1u
-End:
-  Callsite(v2)
-
 blk2:
-Inputs: v3: core::NonZero::<core::felt>
-Statements:
-  () <- blk0()
-End:
-  Unreachable
-
-blk3:
-Inputs:
-Statements:
-  (v10: core::felt) <- 2u
-End:
-  Callsite(v10)
-
-blk4:
 Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
-  Callsite(v8)
+  Callsite()
 
-blk5:
+blk3:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
-  (v11: core::felt) <- blk3()
+  (v10: core::felt) <- 2u
 End:
-  Callsite(v11)
+  Callsite()
 
-blk6 (root):
+blk4 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
-  (v6: core::felt) <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk1,
-    JumpNzResult::NonZero => blk2,
+  () <- blk5()
+  () <- match core::felt_jump_nz(v0) {
+    JumpNzResult::Zero => blk0,
+    JumpNzResult::NonZero => blk1,
   }
-  (v7: core::felt) <- core::felt_add(v1, v0)
-  (v12: core::felt) <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk4,
-    JumpNzResult::NonZero => blk5,
+  () <- blk6()
+  () <- match core::felt_jump_nz(v0) {
+    JumpNzResult::Zero => blk2,
+    JumpNzResult::NonZero => blk3,
   }
-  (v13: core::felt) <- core::felt_add(v7, v0)
+  () <- blk7()
 End:
-  Return(v13)
+  Return(v12)
+
+blk5:
+Inputs:
+Statements:
+  (v13: core::felt) <- core::felt_add(v0, v0)
+End:
+  Callsite(v13 -> v1)
+
+blk6:
+Inputs:
+Statements:
+  (v14: core::felt) <- core::felt_add(v1, v0)
+End:
+  Callsite(v14 -> v7)
+
+blk7:
+Inputs:
+Statements:
+  (v15: core::felt) <- core::felt_add(v7, v0)
+End:
+  Callsite(v15 -> v12)
 
 //! > local_variables
 v7

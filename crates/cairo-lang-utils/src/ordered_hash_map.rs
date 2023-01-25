@@ -45,6 +45,11 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
         self.0.keys()
     }
 
+    /// Returns a consuming iterator over the keys of the map, in their order.
+    pub fn into_keys(self) -> indexmap::map::IntoKeys<Key, Value> {
+        self.0.into_keys()
+    }
+
     /// Returns an iterator over the values of the map, in their order.
     pub fn values(&self) -> indexmap::map::Values<'_, Key, Value> {
         self.0.values()

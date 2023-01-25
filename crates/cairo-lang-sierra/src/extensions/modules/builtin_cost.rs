@@ -1,4 +1,5 @@
 use convert_case::Casing;
+use itertools::chain;
 
 use super::gas::GasBuiltinType;
 use super::range_check::RangeCheckType;
@@ -11,7 +12,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 
 /// Represents different type of costs.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -26,9 +27,17 @@ pub enum CostTokenType {
     EcOp,
 }
 impl CostTokenType {
-    pub fn iter() -> std::slice::Iter<'static, Self> {
-        [CostTokenType::Step, CostTokenType::Pedersen, CostTokenType::Bitwise, CostTokenType::EcOp]
-            .iter()
+    pub fn iter()
+    -> std::iter::Chain<std::slice::Iter<'static, Self>, std::slice::Iter<'static, Self>> {
+        chain!(Self::iter_precost(), Self::iter_postcost())
+    }
+
+    pub fn iter_precost() -> std::slice::Iter<'static, Self> {
+        [CostTokenType::Pedersen, CostTokenType::Bitwise, CostTokenType::EcOp].iter()
+    }
+
+    pub fn iter_postcost() -> std::slice::Iter<'static, Self> {
+        [CostTokenType::Step].iter()
     }
 
     /// Returns the name of the token type, in snake_case.
@@ -81,15 +90,27 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct BuiltinCostGetGasLibfunc {}
 impl BuiltinCostGetGasLibfunc {
-    /// Returns the maximal number of steps required for the computation of the requested cost.
-    /// The number of steps is also the change in `ap` (every step includes `ap++`).
-    pub fn cost_computation_max_steps() -> usize {
-        (CostTokenType::iter().len() - 1) * 3
+    /// Returns the number of steps required for the computation of the requested cost, given the
+    /// number of requested token usages. The number of steps is also the change in `ap` (every
+    /// step includes `ap++`).
+    pub fn cost_computation_steps<TokenUsages: Fn(CostTokenType) -> usize>(
+        token_usages: TokenUsages,
+    ) -> usize {
+        CostTokenType::iter()
+            .map(|token_type| match token_type {
+                CostTokenType::Step => 0,
+                _ => match token_usages(*token_type) {
+                    0 => 0,
+                    1 => 2,
+                    _ => 3,
+                },
+            })
+            .sum()
     }
 }
 
 impl NoGenericArgsGenericLibfunc for BuiltinCostGetGasLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("get_gas_all");
+    const STR_ID: &'static str = "get_gas_all";
 
     fn specialize_signature(
         &self,
@@ -154,7 +175,7 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostGetGasLibfunc {
 pub struct BuiltinCostGetBuiltinCostsLibfunc {}
 
 impl NoGenericArgsGenericLibfunc for BuiltinCostGetBuiltinCostsLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("get_builtin_costs");
+    const STR_ID: &'static str = "get_builtin_costs";
 
     fn specialize_signature(
         &self,

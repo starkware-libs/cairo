@@ -8,12 +8,12 @@ use crate::extensions::lib_func::{
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 
 /// Trait for implementing a JumpNotZero library function for a type.
 pub trait JumpNotZeroTraits: Default {
     /// The jump not zero library function id.
-    const JUMP_NOT_ZERO: GenericLibfuncId;
+    const JUMP_NOT_ZERO: &'static str;
     /// The id of the generic type to implement the library functions for.
     const GENERIC_TYPE_ID: GenericTypeId;
 }
@@ -27,7 +27,7 @@ pub struct JumpNotZeroLibfunc<TJumpNotZeroTraits: JumpNotZeroTraits> {
 impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibfunc
     for JumpNotZeroLibfunc<TJumpNotZeroTraits>
 {
-    const ID: GenericLibfuncId = TJumpNotZeroTraits::JUMP_NOT_ZERO;
+    const STR_ID: &'static str = TJumpNotZeroTraits::JUMP_NOT_ZERO;
 
     fn specialize_signature(
         &self,

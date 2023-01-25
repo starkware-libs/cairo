@@ -92,14 +92,14 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                 ) {
                     // Change the return type.
                     new_func
-                        .modify_child(db, ast::ItemFreeFunction::INDEX_DECLARATION)
+                        .modify_child(db, ast::FunctionWithBody::INDEX_DECLARATION)
                         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
                         .modify_child(db, ast::FunctionSignature::INDEX_RET_TY)
                         .modify_child(db, ast::ReturnTypeClause::INDEX_TY)
                         .set_str("NewType".into());
                     // Remove the attribute.
                     new_func
-                        .modify_child(db, ast::ItemFreeFunction::INDEX_ATTRIBUTES)
+                        .modify_child(db, ast::FunctionWithBody::INDEX_ATTRIBUTES)
                         .modify(db)
                         .children
                         .remove(0);

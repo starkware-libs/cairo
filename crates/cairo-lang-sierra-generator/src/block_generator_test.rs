@@ -33,14 +33,15 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     .split();
 
     // Lower code.
-    let lowered_structured =
-        db.free_function_lowered_structured(test_function.function_id).unwrap();
-    let lowered = db.free_function_lowered_flat(test_function.function_id).unwrap();
+    let lowering_diagnostics =
+        db.function_with_body_lowering_diagnostics(test_function.function_id).unwrap();
+    let lowered =
+        db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
 
     if lowered.root.is_err() {
         return OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
-            ("lowering_diagnostics".into(), lowered_structured.diagnostics.format(db)),
+            ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
             ("sierra_gen_diagnostics".into(), "".into()),
             ("sierra_code".into(), "".into()),
         ]);
@@ -53,7 +54,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let lifetime = find_variable_lifetime(&lowered, &OrderedHashSet::default())
         .expect("Failed to retrieve lifetime information.");
     let mut expr_generator_context =
-        ExprGeneratorContext::new(db, &lowered, test_function.function_id, &lifetime);
+        ExprGeneratorContext::new(db, &lowered, test_function.concrete_function_id, &lifetime);
     let statements_opt = generate_block_code(&mut expr_generator_context, block_id, block);
     let expected_sierra_code = statements_opt.map_or("None".into(), |statements| {
         statements
@@ -65,7 +66,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
-        ("lowering_diagnostics".into(), lowered_structured.diagnostics.format(db)),
+        ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
         ("sierra_code".into(), expected_sierra_code),
     ])
 }

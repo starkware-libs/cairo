@@ -283,6 +283,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
 
 [[package]]
+name = "cairo-felt"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a792f409586c42c2d62cff582989e573d45b0855be95e022421d25f608364cc1"
+dependencies = [
+ "lazy_static",
+ "num-bigint",
+ "num-integer",
+ "num-traits 0.2.15",
+ "serde",
+]
+
+[[package]]
 name = "cairo-lang-casm"
 version = "0.1.0"
 dependencies = [
@@ -350,7 +363,6 @@ dependencies = [
  "salsa",
  "smol_str",
  "test-log",
- "thiserror",
 ]
 
 [[package]]
@@ -375,6 +387,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "good_lp",
+ "indexmap",
  "indoc",
  "itertools",
  "test-case",
@@ -386,7 +399,6 @@ name = "cairo-lang-filesystem"
 version = "0.1.0"
 dependencies = [
  "cairo-lang-debug",
- "cairo-lang-project",
  "cairo-lang-utils",
  "env_logger",
  "path-clean",
@@ -529,6 +541,7 @@ dependencies = [
 name = "cairo-lang-project"
 version = "0.1.0"
 dependencies = [
+ "cairo-lang-filesystem",
  "indoc",
  "serde",
  "smol_str",
@@ -544,6 +557,7 @@ dependencies = [
  "anyhow",
  "ark-ff 0.4.0-alpha.7",
  "ark-std 0.3.0",
+ "cairo-felt",
  "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-diagnostics",
@@ -611,6 +625,7 @@ dependencies = [
  "lalrpop-util",
  "num-bigint",
  "num-traits 0.2.15",
+ "pretty_assertions",
  "regex",
  "salsa",
  "serde",
@@ -641,10 +656,13 @@ version = "0.1.0"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
+ "cairo-lang-sierra-ap-change",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "env_logger",
  "indoc",
  "itertools",
+ "pretty_assertions",
  "test-case",
  "test-log",
  "thiserror",
@@ -776,6 +794,7 @@ name = "cairo-lang-test-runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cairo-felt",
  "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-debug",
@@ -822,18 +841,18 @@ dependencies = [
  "indexmap",
  "itertools",
  "log",
- "num-bigint",
  "test-case",
  "test-log",
 ]
 
 [[package]]
 name = "cairo-vm"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0db448207a281d6ec29c4de24422fba5d52f0a0b9424dd7a758d995f5a89e40e"
+checksum = "c4fa1ade23dd2a6e671a923e748406c2c5f6c27fc186950ed04fae392b552a51"
 dependencies = [
  "bincode",
+ "cairo-felt",
  "clap 3.2.23",
  "generic-array",
  "hex",
@@ -2603,6 +2622,7 @@ name = "tests"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
+ "cairo-felt",
  "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-defs",

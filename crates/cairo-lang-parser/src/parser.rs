@@ -133,6 +133,7 @@ impl<'a> Parser<'a> {
         );
 
         match self.peek().kind {
+            SyntaxKind::TerminalConst => Some(self.expect_const(attributes).into()),
             SyntaxKind::TerminalModule => Some(self.expect_module(attributes).into()),
             SyntaxKind::TerminalStruct => Some(self.expect_struct(attributes).into()),
             SyntaxKind::TerminalEnum => Some(self.expect_enum(attributes).into()),
@@ -262,6 +263,30 @@ impl<'a> Parser<'a> {
         )
     }
 
+    /// Assumes the current token is [TerminalConst].
+    /// Expected pattern: `const <Identifier> = <Expr>;`
+    fn expect_const(&mut self, attributes: AttributeListGreen) -> ItemConstantGreen {
+        let const_kw = self.take::<TerminalConst>();
+        let name = self.parse_identifier();
+        let type_clause = self.parse_type_clause(ErrorRecovery {
+            should_stop: is_of_kind!(eq, semicolon, top_level),
+        });
+        let eq = self.parse_token::<TerminalEq>();
+        let expr = self.parse_expr();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+
+        ItemConstant::new_green(
+            self.db,
+            attributes,
+            const_kw,
+            name,
+            type_clause,
+            eq,
+            expr,
+            semicolon,
+        )
+    }
+
     /// Assumes the current token is Extern.
     /// Expected pattern: `extern(<FunctionDeclaration>|type<Identifier>);`
     fn expect_extern_item(&mut self, attributes: AttributeListGreen) -> ItemGreen {
@@ -316,6 +341,7 @@ impl<'a> Parser<'a> {
     /// Some(missing-identifier) is returned.
     fn try_parse_identifier(&mut self) -> Option<TerminalIdentifierGreen> {
         if self.peek().kind.is_keyword_terminal() {
+            // TODO(spapini): don't skip every keyword. Instead, pass a recovery set.
             Some(self.skip_token_and_return_missing::<TerminalIdentifier>(
                 ParserDiagnosticKind::ReservedIdentifier { identifier: self.peek().text.clone() },
             ))
@@ -408,10 +434,10 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Function.
     /// Expected pattern: `<FunctionDeclaration><Block>`
-    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> ItemFreeFunctionGreen {
+    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> FunctionWithBodyGreen {
         let declaration = self.expect_function_declaration();
         let function_body = self.parse_block();
-        ItemFreeFunction::new_green(self.db, attributes, declaration, function_body)
+        FunctionWithBody::new_green(self.db, attributes, declaration, function_body)
     }
 
     /// Assumes the current token is Trait.
@@ -694,7 +720,7 @@ impl<'a> Parser<'a> {
         let arg_list = ArgList::new_green(
             self.db,
             self.parse_separated_list::<Arg, TerminalComma, ArgListElementOrSeparatorGreen>(
-                Self::parse_function_argument,
+                Self::try_parse_function_argument,
                 is_of_kind!(rparen, block, rbrace, top_level),
                 "argument",
             ),
@@ -703,13 +729,40 @@ impl<'a> Parser<'a> {
         ArgListParenthesized::new_green(self.db, lparen, arg_list, rparen)
     }
 
+    /// Parses a function call's argument, which contains possibly modifiers, and a argument clause.
+    fn try_parse_function_argument(&mut self) -> Option<ArgGreen> {
+        let modifiers_list = self.parse_modifier_list();
+        let arg_clause = self.try_parse_argument_clause();
+        if !modifiers_list.is_empty() && arg_clause.is_none() {
+            let modifiers = ModifierList::new_green(self.db, modifiers_list);
+            let arg_clause = ArgClauseUnnamed::new_green(self.db, self.parse_expr()).into();
+            return Some(Arg::new_green(self.db, modifiers, arg_clause));
+        }
+        let modifiers = ModifierList::new_green(self.db, modifiers_list);
+        Some(Arg::new_green(self.db, modifiers, arg_clause?))
+    }
+
     /// Parses a function call's argument, which is an expression with or without the name
     /// of the argument.
     ///
     /// Possible patterns:
-    /// * `<Expr>`
-    /// * `<Identifier>: <Expr>`
-    fn parse_function_argument(&mut self) -> Option<ArgGreen> {
+    /// * `<Expr>` (unnamed).
+    /// * `<Identifier>: <Expr>` (named).
+    /// * `:<Identifier>` (Field init shorthand - syntactic sugar for `a: a`).
+    fn try_parse_argument_clause(&mut self) -> Option<ArgClauseGreen> {
+        if self.peek().kind == SyntaxKind::TerminalColon {
+            let colon = self.take::<TerminalColon>();
+            let argname = self.parse_identifier();
+            return Some(
+                ArgClauseFieldInitShorthand::new_green(
+                    self.db,
+                    colon,
+                    ExprFieldInitShorthand::new_green(self.db, argname),
+                )
+                .into(),
+            );
+        }
+
         // Read an expression.
         let expr_or_argname = self.try_parse_expr()?;
 
@@ -718,20 +771,12 @@ impl<'a> Parser<'a> {
         if self.peek().kind == SyntaxKind::TerminalColon {
             if let Some(argname) = self.try_extract_identifier(expr_or_argname) {
                 let colon = self.take::<TerminalColon>();
-                let expr = self.try_parse_expr()?;
-                return Some(Arg::new_green(
-                    self.db,
-                    ArgNameClause::new_green(self.db, argname, colon).into(),
-                    expr,
-                ));
+                let expr = self.parse_expr();
+                return Some(ArgClauseNamed::new_green(self.db, argname, colon, expr).into());
             }
         }
 
-        Some(Arg::new_green(
-            self.db,
-            OptionArgNameClauseEmpty::new_green(self.db).into(),
-            expr_or_argname,
-        ))
+        Some(ArgClauseUnnamed::new_green(self.db, expr_or_argname).into())
     }
 
     /// If the given `expr` is a simple identifier, returns the corresponding green node.
@@ -982,13 +1027,20 @@ impl<'a> Parser<'a> {
         Some(match self.peek().kind {
             SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
             _ => {
-                let name = self.try_parse_identifier()?;
+                let modifier_list = self.parse_modifier_list();
+                let name = if modifier_list.is_empty() {
+                    self.try_parse_identifier()?
+                } else {
+                    self.parse_identifier()
+                };
+                let modifiers = ModifierList::new_green(self.db, modifier_list);
                 if self.peek().kind == SyntaxKind::TerminalColon {
                     let colon = self.take::<TerminalColon>();
                     let pattern = self.parse_pattern();
-                    PatternStructParamWithExpr::new_green(self.db, name, colon, pattern).into()
+                    PatternStructParamWithExpr::new_green(self.db, modifiers, name, colon, pattern)
+                        .into()
                 } else {
-                    name.into()
+                    PatternIdentifier::new_green(self.db, modifiers, name).into()
                 }
             }
         })

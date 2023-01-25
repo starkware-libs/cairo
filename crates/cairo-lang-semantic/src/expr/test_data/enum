@@ -50,12 +50,12 @@ error: Enum "test::A" has no variant "c"
     let a : A = A::c();
                    ^
 
-error: Unsupported feature.
- --> lib.cairo:17:17
+error: Enum "test::A" has no variant "d"
+ --> lib.cairo:17:20
     let a : A = A::d;
-                ^**^
+                   ^
 
-error: Variable "A" not found.
+error: Expected variable or constant, found type.
  --> lib.cairo:18:17
     let a : A = A;
                 ^
