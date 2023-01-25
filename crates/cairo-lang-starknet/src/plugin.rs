@@ -167,7 +167,18 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                     OptionReturnTypeClause::ReturnTypeClause(ty) => {
                         let ret_type_ast = ty.ty(db);
                         let type_name = ret_type_ast.as_syntax_node().get_text(db);
-                        format!("        serde::Serde::<{type_name}>::deserialize(ref ret_data)")
+                        let ret_data_short_err = "'Returned data too short'";
+                        format!(
+                            "
+    match serde::Serde::<{type_name}>::deserialize(ref ret_data) {{
+        Option::Some(x) => x,
+        Option::None(()) => {{
+            let mut err_data = array_new();
+            array_append(ref err_data, {ret_data_short_err});
+            panic(err_data)
+        }},
+    }}"
+                        )
                     }
                 };
 
@@ -189,7 +200,7 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                     "$func_decl$ {
         let mut calldata = array_new();
 $serialization_code$
-        let ret_data = starknet::call_contract_syscall(
+        let mut ret_data = starknet::call_contract_syscall(
             contract_address,
             calldata,
         ).unwrap_syscall();
