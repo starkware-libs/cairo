@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use assert_matches::assert_matches;
-use cairo_felt::{self as felt, felt_str, Felt, FeltOps};
+use cairo_felt::{self as felt, felt_str, Felt};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
@@ -207,7 +207,10 @@ fn run_function_test(
         .run_function(/* find first */ "", params, available_gas)
         .expect("Failed running the function.");
     if let Some(expected_cost) = expected_cost {
-        assert_eq!(available_gas.unwrap() - result.gas_counter.unwrap(), Felt::from(expected_cost));
+        assert_eq!(
+            available_gas.unwrap() - result.gas_counter.as_ref().unwrap(),
+            Felt::from(expected_cost)
+        );
     }
     result.value
 }
