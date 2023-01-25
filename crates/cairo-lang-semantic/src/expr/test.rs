@@ -109,7 +109,7 @@ fn test_expr_operator() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "FunctionCall(ExprFunctionCall { function: core::bool_not, ref_args: [], args: \
-         [FunctionCall(ExprFunctionCall { function: core::felt_eq, ref_args: [], args: \
+         [FunctionCall(ExprFunctionCall { function: core::FeltPartialEq::eq, ref_args: [], args: \
          [FunctionCall(ExprFunctionCall { function: core::FeltAdd::add, ref_args: [], args: \
          [FunctionCall(ExprFunctionCall { function: core::felt_neg, ref_args: [], args: \
          [Literal(ExprLiteral { value: 5, ty: core::felt })], ty: core::felt }), \

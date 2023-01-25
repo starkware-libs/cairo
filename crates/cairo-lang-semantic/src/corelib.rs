@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{EnumId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplId, ModuleId, ModuleItemId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
@@ -11,13 +11,13 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::GenericFunctionId;
+use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId};
 use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
-    semantic, ConcreteEnumId, ConcreteFunction, ConcreteVariant, Expr, ExprId, ExprTuple,
-    FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
+    semantic, ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteVariant, Expr, ExprId,
+    ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
@@ -273,13 +273,15 @@ pub fn core_binary_operator(
     type2: TypeId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
-    // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
-    //   traits.
-    type1.check_not_missing(db)?;
-    type2.check_not_missing(db)?;
     if let Some((trait_name, function_name)) = match binary_op {
         BinaryOperator::Plus(_) => Some(("Add", "add")),
         BinaryOperator::Minus(_) => Some(("Sub", "sub")),
+        BinaryOperator::EqEq(_) => Some(("PartialEq", "eq")),
+        BinaryOperator::Neq(_) => Some(("PartialEq", "ne")),
+        BinaryOperator::LE(_) => Some(("PartialOrd", "le")),
+        BinaryOperator::GE(_) => Some(("PartialOrd", "ge")),
+        BinaryOperator::LT(_) => Some(("PartialOrd", "lt")),
+        BinaryOperator::GT(_) => Some(("PartialOrd", "gt")),
         _ => None,
     } {
         return Ok(Ok(get_core_trait_function_infer(
@@ -291,9 +293,11 @@ pub fn core_binary_operator(
         )));
     }
 
+    // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
+    //   traits.
+    type1.check_not_missing(db)?;
+    type2.check_not_missing(db)?;
     let felt_ty = core_felt_ty(db);
-    let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
-    let u64_ty = get_core_ty_by_name(db, "u64".into(), vec![]);
     let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
     let u256_ty = get_core_ty_by_name(db, "u256".into(), vec![]);
     let bool_ty = core_bool_ty(db);
@@ -310,20 +314,6 @@ pub fn core_binary_operator(
         BinaryOperator::Div(_) => return unsupported_operator("/"),
         BinaryOperator::Mod(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_mod",
         BinaryOperator::Mod(_) => return unsupported_operator("%"),
-        BinaryOperator::EqEq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_eq",
-        BinaryOperator::EqEq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_eq",
-        BinaryOperator::EqEq(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_eq",
-        BinaryOperator::EqEq(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_eq",
-        BinaryOperator::EqEq(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_eq",
-        BinaryOperator::EqEq(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_eq",
-        BinaryOperator::EqEq(_) => return unsupported_operator("=="),
-        BinaryOperator::Neq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ne",
-        BinaryOperator::Neq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_ne",
-        BinaryOperator::Neq(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_ne",
-        BinaryOperator::Neq(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_ne",
-        BinaryOperator::Neq(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_ne",
-        BinaryOperator::Neq(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_ne",
-        BinaryOperator::Neq(_) => return unsupported_operator("!="),
         BinaryOperator::And(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_and",
         BinaryOperator::And(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_and",
         BinaryOperator::And(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_and",
@@ -336,41 +326,55 @@ pub fn core_binary_operator(
         BinaryOperator::Xor(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_xor",
         BinaryOperator::Xor(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_xor",
         BinaryOperator::Xor(_) => return unsupported_operator("^"),
-        BinaryOperator::LE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_le",
-        BinaryOperator::LE(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_le",
-        BinaryOperator::LE(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_le",
-        BinaryOperator::LE(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_le",
-        BinaryOperator::LE(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_le",
-        BinaryOperator::LE(_) => return unsupported_operator("<="),
-        BinaryOperator::GE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ge",
-        BinaryOperator::GE(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_ge",
-        BinaryOperator::GE(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_ge",
-        BinaryOperator::GE(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_ge",
-        BinaryOperator::GE(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_ge",
-        BinaryOperator::GE(_) => return unsupported_operator(">="),
-        BinaryOperator::LT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_lt",
-        BinaryOperator::LT(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_lt",
-        BinaryOperator::LT(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_lt",
-        BinaryOperator::LT(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_lt",
-        BinaryOperator::LT(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_lt",
-        BinaryOperator::LT(_) => return unsupported_operator("<"),
-        BinaryOperator::GT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_gt",
-        BinaryOperator::GT(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_gt",
-        BinaryOperator::GT(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_gt",
-        BinaryOperator::GT(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_gt",
-        BinaryOperator::GT(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_gt",
-        BinaryOperator::GT(_) => return unsupported_operator(">"),
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
     Ok(Ok(get_core_function_id(db, function_name.into(), vec![])))
 }
 
 pub fn felt_eq(db: &dyn SemanticGroup) -> FunctionId {
-    get_core_function_id(db, "felt_eq".into(), vec![])
+    get_core_function_impl_method(db, "FeltPartialEq".into(), "eq".into())
 }
 
 pub fn felt_sub(db: &dyn SemanticGroup) -> FunctionId {
-    get_core_function_id(db, "felt_sub".into(), vec![])
+    get_core_function_impl_method(db, "FeltSub".into(), "sub".into())
+}
+
+/// Given a core library impl name and a method name, returns [FunctionId].
+fn get_core_function_impl_method(
+    db: &dyn SemanticGroup,
+    impl_name: SmolStr,
+    method_name: SmolStr,
+) -> FunctionId {
+    let core_module = db.core_module();
+    let module_item_id = db
+        .module_item_by_name(core_module, impl_name.clone())
+        .expect("Failed to load core lib.")
+        .unwrap_or_else(|| panic!("Impl '{impl_name}' was not found in core lib."));
+    let impl_id = match module_item_id {
+        ModuleItemId::Use(use_id) => {
+            db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
+                try_extract_matches!(resolved_generic_item, ResolvedGenericItem::Impl)
+            })
+        }
+        _ => ImplId::option_from(module_item_id),
+    }
+    .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
+    let function = db
+        .impl_functions(impl_id)
+        .ok()
+        .and_then(|functions| functions.get(&method_name).cloned())
+        .unwrap_or_else(|| panic!("no {method_name} in {impl_name}."));
+    let concrete_impl =
+        db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args: vec![] });
+    db.intern_function(FunctionLongId {
+        function: ConcreteFunction {
+            generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
+                concrete_impl,
+                function,
+            }),
+            generic_args: vec![],
+        },
+    })
 }
 
 pub fn core_jump_nz_func(db: &dyn SemanticGroup) -> FunctionId {
