@@ -388,3 +388,32 @@ Statements:
   (v2: core::felt, v3: core::felt, v1: core::felt) <- test::bar(v0, v0)
 End:
   Return(v1)
+
+//! > ==========================================================================
+
+//! > Test concretization with bad types.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(mut data: Array::<felt>) -> u128 {
+   serde::Serde::<u128>::deserialize(ref data)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+error: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
+ --> lib.cairo:1:41
+fn foo(mut data: Array::<felt>) -> u128 {
+                                        ^
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+
+//! > lowering_flat

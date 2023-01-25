@@ -466,7 +466,6 @@ pub fn compute_root_expr(
     if ctx.inference.conform_ty(res_ty, return_type).is_err() {
         ctx.diagnostics
             .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
-        return Ok(res);
     }
 
     // Apply inference.
