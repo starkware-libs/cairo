@@ -7,7 +7,7 @@ trait IAnotherContract {
 #[contract]
 mod TestContract {
     struct Storage {
-        my_storage_var: felt, 
+        my_storage_var: felt
     }
 
     fn internal_func() -> felt {
