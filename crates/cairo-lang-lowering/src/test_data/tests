@@ -37,16 +37,9 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_mul(v0, v0)
-  () <- blk1()
+  (v2: core::felt) <- core::felt_add(v0, v1)
 End:
   Return(v2)
-
-blk1:
-Inputs:
-Statements:
-  (v3: core::felt) <- core::felt_add(v0, v1)
-End:
-  Callsite(v3 -> v2)
 
 //! > ==========================================================================
 
@@ -186,25 +179,11 @@ Statements:
   (v12: core::felt) <- 5u
   (v13: core::felt) <- 3u
   (v14: core::felt) <- 0u
-  () <- blk3()
+  (v15: core::felt) <- core::felt_add(v0, v14)
   (v16: core::felt) <- core::felt_mul(v12, v15)
-  () <- blk4()
+  (v17: core::felt) <- core::felt_add(v11, v16)
 End:
   Return(v17)
-
-blk3:
-Inputs:
-Statements:
-  (v18: core::felt) <- core::felt_add(v0, v14)
-End:
-  Callsite(v18 -> v15)
-
-blk4:
-Inputs:
-Statements:
-  (v19: core::felt) <- core::felt_add(v11, v16)
-End:
-  Callsite(v19 -> v17)
 
 //! > ==========================================================================
 
