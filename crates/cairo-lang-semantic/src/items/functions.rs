@@ -14,7 +14,7 @@ use itertools::chain;
 
 use super::attribute::Attribute;
 use super::modifiers;
-use super::trt::{ConcreteTraitFunctionId, ConcreteTraitFunctionLongId};
+use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
@@ -39,7 +39,7 @@ pub enum GenericFunctionId {
     /// A generic function of a concrete impl.
     Impl(ConcreteImplGenericFunctionId),
     // TODO(spapini): Remove when we separate semantic representations.
-    Trait(ConcreteTraitFunctionId),
+    Trait(ConcreteTraitGenericFunctionId),
 }
 impl GenericFunctionId {
     pub fn generic_args_apply<F: FnOnce(&mut Vec<GenericArgumentId>)>(
@@ -56,7 +56,7 @@ impl GenericFunctionId {
             GenericFunctionId::Trait(f) => {
                 let mut long_trait = db.lookup_intern_concrete_trait(f.concrete_trait_id(db));
                 functor(&mut long_trait.generic_args);
-                *f = db.intern_concrete_trait_function(ConcreteTraitFunctionLongId::new(
+                *f = db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
                     db,
                     db.intern_concrete_trait(long_trait),
                     f.function_id(db),
@@ -460,7 +460,6 @@ pub fn concrete_function_signature(
         db.lookup_intern_function(function_id).function;
     let generic_params = db.function_signature_generic_params(generic_function.signature(db))?;
     if generic_params.len() != generic_args.len() {
-        eprintln!("{generic_params:?}  {generic_args:?}");
         // TODO(spapini): Uphold the invariant that constructed ConcreteFunction instances
         //   always have the correct number of generic arguments.
         return Err(skip_diagnostic());

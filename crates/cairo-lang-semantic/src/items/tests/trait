@@ -564,9 +564,6 @@ error: Parameter type of impl function `FeltIdentity::foo` is incompatible with 
 
 //! > Matching generic arguments of functions in trait/impl.
 
-//! > comments
-TODO(yuval): fix - there should be no diagnostics here.
-
 //! > test_function_name
 test_function_diagnostics
 
@@ -587,7 +584,3 @@ impl FeltIdentity of Identity::<felt> {
 }
 
 //! > expected_diagnostics
-error: Parameter type of impl function `FeltIdentity::foo` is incompatible with `Identity::foo`. Expected: `S`, actual: `S`.
- --> lib.cairo:6:26
-   fn foo<S>(a: felt, b: S) {}
-                         ^

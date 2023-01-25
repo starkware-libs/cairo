@@ -611,11 +611,11 @@ pub fn priv_impl_function_declaration_data(
     validate_impl_function_signature(
         db,
         &mut diagnostics,
-        impl_id,
         impl_function_id,
         &signature_syntax,
         &signature,
         function_syntax,
+        &function_generic_params,
     )
     .ok();
 
@@ -635,13 +635,14 @@ pub fn priv_impl_function_declaration_data(
 fn validate_impl_function_signature(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    impl_id: ImplId,
     impl_function_id: ImplFunctionId,
     signature_syntax: &ast::FunctionSignature,
     signature: &semantic::Signature,
     function_syntax: &ast::FunctionWithBody,
+    impl_func_generics: &[GenericParamId],
 ) -> Maybe<()> {
     let syntax_db = db.upcast();
+    let impl_id = impl_function_id.impl_id(db.upcast());
     let declaraton_data = db.priv_impl_declaration_data(impl_id)?;
     let concrete_trait = declaraton_data.concrete_trait?;
     let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait);
@@ -662,6 +663,29 @@ fn validate_impl_function_signature(
         zip_eq(trait_generic_params, concrete_trait_long_id.generic_args).collect(),
     );
     let concrete_trait_signature = substitute_signature(db, substitution, trait_signature);
+
+    // Match generics of the function.
+    let trait_func_generics = db.trait_function_generic_params(*trait_function_id)?;
+    if impl_func_generics.len() != trait_func_generics.len() {
+        diagnostics.report(
+            &function_syntax.declaration(syntax_db).name(syntax_db),
+            WrongNumberOfGenericArguments {
+                expected: trait_func_generics.len(),
+                actual: impl_func_generics.len(),
+            },
+        );
+        return Ok(());
+    }
+    let substitution = GenericSubstitution(
+        zip_eq(
+            trait_func_generics,
+            impl_func_generics.iter().map(|param| {
+                GenericArgumentId::Type(db.intern_type(TypeLongId::GenericParameter(*param)))
+            }),
+        )
+        .collect(),
+    );
+    let concrete_trait_signature = substitute_signature(db, substitution, concrete_trait_signature);
 
     if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(
