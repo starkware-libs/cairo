@@ -1,13 +1,11 @@
 use std::marker::PhantomData;
 
-use super::non_zero::NonZeroType;
+use super::non_zero::nonzero_ty;
 use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
 };
-use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
-};
+use crate::extensions::{NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::GenericTypeId;
 
 /// Trait for implementing a JumpNotZero library function for a type.
@@ -45,7 +43,7 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibfunc
                 // NonZero.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: context.get_wrapped_concrete_type(NonZeroType::id(), ty)?,
+                        ty: nonzero_ty(context, &ty)?,
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: true },
