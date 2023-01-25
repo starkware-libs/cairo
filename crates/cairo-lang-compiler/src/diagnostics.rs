@@ -8,11 +8,15 @@ use cairo_lang_semantic::db::SemanticGroup;
 
 use crate::db::RootDatabase;
 
+#[cfg(test)]
+#[path = "diagnostics_test.rs"]
+mod test;
+
 /// Checks if there are diagnostics and reports them to the provided callback as strings.
 /// Returns `true` if diagnostics were found.
-pub fn check_diagnostics(
+pub fn check_diagnostics<'a>(
     db: &mut RootDatabase,
-    on_diagnostic: Option<Box<dyn FnMut(String)>>,
+    on_diagnostic: Option<Box<dyn FnMut(String) + 'a>>,
 ) -> bool {
     let mut on_diagnostic = on_diagnostic.unwrap_or_else(|| Box::new(|_| ()));
 
@@ -67,4 +71,11 @@ pub fn check_and_eprint_diagnostics(db: &mut RootDatabase) -> bool {
 
 pub fn eprint_diagnostic(diag: String) {
     eprint!("{}", diag);
+}
+
+/// Returns a string with all the diagnostics in the db.
+pub fn get_diagnostics_as_string(db: &mut RootDatabase) -> String {
+    let mut diagnostics = String::default();
+    check_diagnostics(db, Some(Box::new(|s| diagnostics += &s)));
+    diagnostics
 }
