@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use super::non_zero::NonZeroType;
+use super::non_zero::{nonzero_ty, NonZeroType};
 use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
@@ -45,7 +45,7 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibfunc
                 // NonZero.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: context.get_wrapped_concrete_type(NonZeroType::id(), ty)?,
+                        ty: nonzero_ty(context, &ty)?,
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: true },
