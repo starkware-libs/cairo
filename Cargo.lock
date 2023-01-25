@@ -656,6 +656,7 @@ version = "0.1.0"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
+ "cairo-lang-sierra-ap-change",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "env_logger",
