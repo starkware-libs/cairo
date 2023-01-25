@@ -277,6 +277,19 @@ pub fn core_binary_operator(
     //   traits.
     type1.check_not_missing(db)?;
     type2.check_not_missing(db)?;
+    if let Some((trait_name, function_name)) = match binary_op {
+        BinaryOperator::Plus(_) => Some(("Add", "add")),
+        BinaryOperator::Minus(_) => Some(("Sub", "sub")),
+        _ => None,
+    } {
+        return Ok(Ok(get_core_trait_function_infer(
+            db,
+            inference,
+            trait_name.into(),
+            function_name.into(),
+            stable_ptr,
+        )));
+    }
 
     let felt_ty = core_felt_ty(db);
     let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
@@ -288,21 +301,6 @@ pub fn core_binary_operator(
         Ok(Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 }))
     };
     let function_name = match binary_op {
-        BinaryOperator::Plus(_) => {
-            return Ok(Ok(get_core_trait_function_infer(
-                db,
-                inference,
-                "Add".into(),
-                "add".into(),
-                stable_ptr,
-            )));
-        }
-        BinaryOperator::Minus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_sub",
-        BinaryOperator::Minus(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_sub",
-        BinaryOperator::Minus(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_sub",
-        BinaryOperator::Minus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_sub",
-        BinaryOperator::Minus(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_sub",
-        BinaryOperator::Minus(_) => return unsupported_operator("-"),
         BinaryOperator::Mul(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_mul",
         BinaryOperator::Mul(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_mul",
         BinaryOperator::Mul(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_mul",
