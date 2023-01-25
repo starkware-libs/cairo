@@ -503,32 +503,37 @@ impl<'db> Resolver<'db> {
         let lookup_context = self.impl_lookup_context(trait_id);
 
         // TODO(yuval): Support trait function default implementations.
-        let impl_id =
-            match &find_impls_at_context(self.db, inference, &lookup_context, concrete_trait_id)?
-                .into_iter()
-                .collect_vec()[..]
-            {
-                &[] => {
-                    return Err(diagnostics.report_by_ptr(
-                        stable_ptr,
-                        NoImplementationOfTraitFunction {
-                            concrete_trait_id,
-                            function_name: function_id.name(defs_db),
-                        },
-                    ));
-                }
-                &[impl_id] => impl_id,
-                impls => {
-                    return Err(diagnostics.report_by_ptr(
-                        stable_ptr,
-                        MultipleImplementationOfTraitFunction {
-                            trait_id,
-                            all_impl_ids: impls.to_vec(),
-                            function_name: function_id.name(defs_db),
-                        },
-                    ));
-                }
-            };
+        let impl_id = match &find_impls_at_context(
+            self.db,
+            inference,
+            &lookup_context,
+            concrete_trait_id,
+            stable_ptr,
+        )?
+        .into_iter()
+        .collect_vec()[..]
+        {
+            &[] => {
+                return Err(diagnostics.report_by_ptr(
+                    stable_ptr,
+                    NoImplementationOfTraitFunction {
+                        concrete_trait_id,
+                        function_name: function_id.name(defs_db),
+                    },
+                ));
+            }
+            &[impl_id] => impl_id,
+            impls => {
+                return Err(diagnostics.report_by_ptr(
+                    stable_ptr,
+                    MultipleImplementationOfTraitFunction {
+                        trait_id,
+                        all_impl_ids: impls.to_vec(),
+                        function_name: function_id.name(defs_db),
+                    },
+                ));
+            }
+        };
 
         // Infer the impl.
         let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
@@ -540,6 +545,7 @@ impl<'db> Resolver<'db> {
                 &impl_generic_params,
                 &long_imp_concrete_trait.generic_args,
                 &long_concrete_trait.generic_args,
+                stable_ptr,
             )
             .expect("Impl returned from find_impls_at_context() must be conformable.");
         Ok(self.db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args }))
