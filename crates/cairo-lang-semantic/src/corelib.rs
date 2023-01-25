@@ -280,6 +280,7 @@ pub fn core_binary_operator(
 
     let felt_ty = core_felt_ty(db);
     let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
+    let u64_ty = get_core_ty_by_name(db, "u64".into(), vec![]);
     let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
     let u256_ty = get_core_ty_by_name(db, "u256".into(), vec![]);
     let bool_ty = core_bool_ty(db);
@@ -298,6 +299,7 @@ pub fn core_binary_operator(
         }
         BinaryOperator::Minus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_sub",
         BinaryOperator::Minus(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_sub",
         BinaryOperator::Minus(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_sub",
         BinaryOperator::Minus(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_sub",
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
@@ -313,12 +315,14 @@ pub fn core_binary_operator(
         BinaryOperator::EqEq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_eq",
         BinaryOperator::EqEq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_eq",
         BinaryOperator::EqEq(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_eq",
         BinaryOperator::EqEq(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_eq",
         BinaryOperator::EqEq(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_eq",
         BinaryOperator::EqEq(_) => return unsupported_operator("=="),
         BinaryOperator::Neq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ne",
         BinaryOperator::Neq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_ne",
         BinaryOperator::Neq(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_ne",
+        BinaryOperator::Neq(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_ne",
         BinaryOperator::Neq(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_ne",
         BinaryOperator::Neq(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_ne",
         BinaryOperator::Neq(_) => return unsupported_operator("!="),
@@ -336,21 +340,25 @@ pub fn core_binary_operator(
         BinaryOperator::Xor(_) => return unsupported_operator("^"),
         BinaryOperator::LE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_le",
         BinaryOperator::LE(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_le",
+        BinaryOperator::LE(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_le",
         BinaryOperator::LE(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_le",
         BinaryOperator::LE(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_le",
         BinaryOperator::LE(_) => return unsupported_operator("<="),
         BinaryOperator::GE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ge",
         BinaryOperator::GE(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_ge",
+        BinaryOperator::GE(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_ge",
         BinaryOperator::GE(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_ge",
         BinaryOperator::GE(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_ge",
         BinaryOperator::GE(_) => return unsupported_operator(">="),
         BinaryOperator::LT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_lt",
         BinaryOperator::LT(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_lt",
+        BinaryOperator::LT(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_lt",
         BinaryOperator::LT(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_lt",
         BinaryOperator::LT(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_lt",
         BinaryOperator::LT(_) => return unsupported_operator("<"),
         BinaryOperator::GT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_gt",
         BinaryOperator::GT(_) if [type1, type2] == [u8_ty, u8_ty] => "u8_gt",
+        BinaryOperator::GT(_) if [type1, type2] == [u64_ty, u64_ty] => "u64_gt",
         BinaryOperator::GT(_) if [type1, type2] == [u128_ty, u128_ty] => "u128_gt",
         BinaryOperator::GT(_) if [type1, type2] == [u256_ty, u256_ty] => "u256_gt",
         BinaryOperator::GT(_) => return unsupported_operator(">"),
@@ -482,10 +490,13 @@ pub fn try_get_const_libfunc_name_by_type(
     let felt_ty = core_felt_ty(db);
     let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
     let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
+    let u64_ty = get_core_ty_by_name(db, "u64".into(), vec![]);
     if ty == felt_ty {
         Ok("felt_const".into())
     } else if ty == u8_ty {
         Ok("u8_const".into())
+    } else if ty == u64_ty {
+        Ok("u64_const".into())
     } else if ty == u128_ty {
         Ok("u128_const".into())
     } else {
