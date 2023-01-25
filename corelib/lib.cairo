@@ -164,6 +164,8 @@ use array::array_pop_front;
 use array::array_get;
 use array::array_at;
 use array::array_len;
+use array::ArrayTrait;
+use array::ArrayImpl;
 
 // Dictionary.
 mod dict;
@@ -268,8 +270,8 @@ extern fn panic(data: Array::<felt>) -> never;
 
 fn assert(cond: bool, err_code: felt) {
     if !cond {
-        let mut data = array_new::<felt>();
-        array_append::<felt>(ref data, err_code);
+        let mut data = ArrayTrait::new();
+        data.append(err_code);
         panic(data);
     }
 }
