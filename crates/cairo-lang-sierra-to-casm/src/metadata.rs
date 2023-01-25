@@ -70,7 +70,7 @@ pub fn calc_metadata(
             )
         })
         .collect();
-    let post_gas_info = calc_gas_postcost_info(program, post_function_set_costs)?;
+    let post_gas_info = calc_gas_postcost_info(program, post_function_set_costs, &pre_gas_info)?;
 
     Ok(Metadata { ap_change_info, gas_info: pre_gas_info.combine(post_gas_info) })
 }

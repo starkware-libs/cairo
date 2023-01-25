@@ -1,9 +1,7 @@
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
-use cairo_lang_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
-};
+use cairo_lang_sierra::extensions::builtin_cost::{BuiltinCostConcreteLibfunc, CostTokenType};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup,
     Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint64, Uint8,
@@ -25,6 +23,11 @@ use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
+use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
+    core_libfunc_ap_change, InvocationApChangeInfoProvider,
+};
+use cairo_lang_sierra_ap_change::ApChange;
+use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
 
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
@@ -37,8 +40,6 @@ pub trait CostOperations {
     fn const_cost(&self, value: i32) -> Self::CostType;
     /// Gets a cost from a constant value of the given token type.
     fn const_cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType;
-    /// Gets a cost for the content of a function.
-    fn function_cost(&mut self, function: &Function) -> Self::CostType;
     /// Gets a cost for the content of a function.
     fn function_token_cost(
         &mut self,
@@ -72,8 +73,7 @@ pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: InvocationCostInf
         FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
             // let func_content_cost = ops.function_cost(function);
             // vec![func_content_cost]
-            let func_content_cost = CostTokenType::iter()
-                .filter(|token| !matches!(token, CostTokenType::Step))
+            let func_content_cost = CostTokenType::iter_precost()
                 .map(|token| ops.function_token_cost(function, *token))
                 .collect_vec()
                 .into_iter()
@@ -87,8 +87,7 @@ pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: InvocationCostInf
             vec![ops.const_cost_token(1, CostTokenType::EcOp)]
         }
         BranchAlign(_) => {
-            let cost = CostTokenType::iter()
-                .filter(|token| !matches!(token, CostTokenType::Step))
+            let cost = CostTokenType::iter_precost()
                 .map(|token_type| ops.statement_var_cost(*token_type))
                 .reduce(|x, y| ops.add(x, y));
             vec![cost.unwrap()]
@@ -97,8 +96,7 @@ pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: InvocationCostInf
             vec![ops.const_cost_token(1, CostTokenType::Pedersen)]
         }
         BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinGetGas(_)) => {
-            let cost = CostTokenType::iter()
-                .filter(|token| !matches!(token, CostTokenType::Step))
+            let cost = CostTokenType::iter_precost()
                 .map(|token_type| ops.statement_var_cost(*token_type))
                 .reduce(|x, y| ops.add(x, y));
             vec![ops.sub(ops.const_cost(0), cost.unwrap()), ops.const_cost(0)]
@@ -110,10 +108,15 @@ pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: InvocationCostInf
 /// Returns a postcost value for a libfunc - the cost of step token.
 /// This is a helper function to implement costing both for creating
 /// gas equations and getting actual gas usage after having a solution.
-pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostInfoProvider>(
+pub fn core_libfunc_postcost<
+    Ops: CostOperations,
+    InfoProvider: InvocationCostInfoProvider,
+    ApInfoProvider: InvocationApChangeInfoProvider,
+>(
     ops: &mut Ops,
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
+    ap_info_provider: &ApInfoProvider,
 ) -> Vec<Ops::CostType> {
     match libfunc {
         // For the case of function calls - assumes a variable for the cost of running from a
@@ -121,8 +124,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
             // let func_content_cost = ops.function_cost(function);
             // vec![ops.add(ops.const_cost(2), func_content_cost)]
-            let func_content_cost = CostTokenType::iter()
-                .filter(|token| matches!(token, CostTokenType::Step))
+            let func_content_cost = CostTokenType::iter_postcost()
                 .map(|token| ops.function_token_cost(function, *token))
                 .collect_vec()
                 .into_iter()
@@ -160,8 +162,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         }
         Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Step)],
         BranchAlign(_) => {
-            let cost = CostTokenType::iter()
-                .filter(|token| matches!(token, CostTokenType::Step))
+            let cost = CostTokenType::iter_postcost()
                 .map(|token_type| ops.statement_var_cost(*token_type))
                 .reduce(|x, y| ops.add(x, y));
             vec![ops.add(cost.unwrap(), ops.const_cost(1))]
@@ -222,18 +223,23 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Pedersen(_) => {
             vec![ops.const_cost(2)]
         }
-        BuiltinCost(libfunc) => match libfunc {
+        BuiltinCost(builtin_libfunc) => match builtin_libfunc {
             BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => {
-                let cost = CostTokenType::iter()
-                    .filter(|token| matches!(token, CostTokenType::Step))
+                let cost = CostTokenType::iter_postcost()
                     .map(|token_type| ops.statement_var_cost(*token_type))
                     .reduce(|x, y| ops.add(x, y));
                 // Compute the (maximal) number of steps for the computation of the requested cost.
-                let compute_requested_cost_steps =
-                    BuiltinCostGetGasLibfunc::cost_computation_max_steps() as i32;
+                let [cost_branch0, cost_branch1] =
+                    <[_; 2]>::try_from(core_libfunc_ap_change(libfunc, ap_info_provider))
+                        .ok()
+                        .unwrap();
+                let cost_branch0: i32 =
+                    extract_matches!(cost_branch0, ApChange::Known).try_into().unwrap();
+                let cost_branch1: i32 =
+                    extract_matches!(cost_branch1, ApChange::Known).try_into().unwrap();
                 vec![
-                    ops.sub(ops.const_cost(compute_requested_cost_steps + 3), cost.unwrap()),
-                    ops.const_cost(compute_requested_cost_steps + 5),
+                    ops.sub(ops.const_cost(cost_branch0 + 3), cost.unwrap()),
+                    ops.const_cost(cost_branch1 + 5),
                 ]
             }
             BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => vec![ops.const_cost(3)],

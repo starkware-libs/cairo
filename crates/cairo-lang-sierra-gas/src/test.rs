@@ -25,9 +25,10 @@ fn get_example_program(name: &str) -> Program {
 
 fn test_solve_gas(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
     let path = &inputs["test_file_name"];
+    let program = get_example_program(path);
 
-    let gas_info0 = calc_gas_precost_info(&get_example_program(path), Default::default()).unwrap();
-    let gas_info1 = calc_gas_postcost_info(&get_example_program(path), Default::default()).unwrap();
+    let gas_info0 = calc_gas_precost_info(&program, Default::default()).unwrap();
+    let gas_info1 = calc_gas_postcost_info(&program, Default::default(), &gas_info0).unwrap();
     let gas_info = gas_info0.combine(gas_info1);
 
     OrderedHashMap::from([("gas_solution".into(), format!("{}", gas_info))])
