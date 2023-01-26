@@ -12,6 +12,9 @@ enum MyEnumGeneric<S, T> {
     b: S,
     c: T
 }
+
+impl MyEnumGenericDrop of Drop::<MyEnumGeneric::<(), felt>>;
+
 fn main() -> felt {
     let es0 = MyEnumShort::a(10);
     match_short(es0);

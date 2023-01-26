@@ -22,6 +22,10 @@ extern type MyStruct;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Variable not dropped.
+ --> lib.cairo:4:5
+    bar(x, x + x, ref z);
+    ^******************^
 
 //! > sierra_gen_diagnostics
 

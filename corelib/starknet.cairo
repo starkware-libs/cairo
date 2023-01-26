@@ -35,6 +35,10 @@ extern fn call_contract_syscall(
     address: ContractAddress, calldata: Array::<felt>
 ) -> SyscallResult::<Array::<felt>> implicits(GasBuiltin, System) nopanic;
 
+extern fn contract_address_try_from_felt(
+    address: felt
+) -> Option::<ContractAddress> implicits(RangeCheck) nopanic;
+
 // Events.
 extern fn emit_event_syscall(
     keys: Array::<felt>, data: Array::<felt>

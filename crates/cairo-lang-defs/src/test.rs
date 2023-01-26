@@ -216,7 +216,7 @@ fn test_plugin() {
     // 2. The expected items were generated.
     assert_eq!(
         format!("{:?}", db.module_items(module_id).unwrap().debug(db)),
-        "[FreeFunctionId(test::f), ExternTypeId(test::B), StructId(test::A)]"
+        "[StructId(test::A), FreeFunctionId(test::f), ExternTypeId(test::B)]"
     );
 }
 
