@@ -301,7 +301,7 @@ impl NoGenericArgsGenericLibfunc for EcStateAddLibfunc {
 #[derive(Default)]
 pub struct EcStateFinalizeLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
-    const STR_ID: &'static str = "ec_state_finalize";
+    const STR_ID: &'static str = "ec_state_try_finalize_nz";
 
     fn specialize_signature(
         &self,
