@@ -158,6 +158,7 @@ fn inner_find_local_variables(
         lowering::FlatBlockEnd::Return(vars) => {
             state.use_variables(vars, res);
         }
+        lowering::FlatBlockEnd::Goto(_block_id, _remapping) => {}
         lowering::FlatBlockEnd::Unreachable => {}
     }
     Ok(known_ap_change)

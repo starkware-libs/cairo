@@ -90,6 +90,7 @@ impl<'a> BorrowChecker<'a> {
         callsite_info: Option<CallsiteInfo<'_>>,
     ) -> Demand {
         let demand = match block_end {
+            FlatBlockEnd::Goto(_target_block_id, _remapping) => todo!(),
             FlatBlockEnd::Callsite(remapping) => {
                 let callsite_info = callsite_info.unwrap();
                 let mut demand =

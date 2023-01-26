@@ -136,6 +136,7 @@ fn inner_find_variable_lifetime(
             state.clear();
             state.use_variables(context, vars, (block_id, block.statements.len()));
         }
+        lowering::FlatBlockEnd::Goto(_block_id, _remapping) => todo!(),
         lowering::FlatBlockEnd::Unreachable => {}
     }
 

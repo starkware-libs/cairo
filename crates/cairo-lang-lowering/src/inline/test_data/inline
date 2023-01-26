@@ -282,3 +282,74 @@ End:
   Return(v2)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining diagnostics for a function with an early return.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt) -> felt {
+  bar(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar(a: felt) -> felt {
+  if a == 0 {
+    return 1;
+  }
+  0
+}
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero => blk3,
+  }
+  (v1: core::felt) <- 0u
+End:
+  Goto(1, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+End:
+  Goto(1, {v1 -> v2})
+
+blk3:
+Inputs: v3: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite({})
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Inlining of functions with an early return is not supported.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
