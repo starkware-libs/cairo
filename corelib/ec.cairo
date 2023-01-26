@@ -43,7 +43,7 @@ extern type EcState;
 
 extern fn ec_state_init() -> EcState nopanic;
 extern fn ec_state_add(ref s: EcState, p: NonZeroEcPoint) nopanic;
-extern fn ec_state_finalize(s: EcState) -> Option::<NonZeroEcPoint> nopanic;
+extern fn ec_state_finalize_opt(s: EcState) -> Option::<NonZeroEcPoint> nopanic;
 /// Adds the product p * m to the state.
 extern fn ec_state_add_mul(ref s: EcState, m: felt, p: NonZeroEcPoint) implicits(EcOp) nopanic;
 
@@ -51,7 +51,7 @@ extern fn ec_state_add_mul(ref s: EcState, m: felt, p: NonZeroEcPoint) implicits
 fn ec_mul(p: NonZeroEcPoint, m: felt) -> Option::<NonZeroEcPoint> {
     let mut state = ec_state_init();
     ec_state_add_mul(ref state, m, p);
-    ec_state_finalize(state)
+    ec_state_finalize_opt(state)
 }
 
 impl EcPointAdd of Add::<Option::<NonZeroEcPoint>> {
@@ -73,7 +73,7 @@ impl EcPointAdd of Add::<Option::<NonZeroEcPoint>> {
         let mut state = ec_state_init();
         ec_state_add(ref state, p_nz);
         ec_state_add(ref state, q_nz);
-        ec_state_finalize(state)
+        ec_state_finalize_opt(state)
     }
 }
 

@@ -333,7 +333,7 @@ fn build_ec_state_finalize(
         tempvar random_y = random_ptr[1];
         // If the X coordinate is the same, either the points are equal or their sum is the point at
         // infinity. Either way, we can't compute the slope in this case.
-        // The result may be the point at infinity if the user called `ec_state_finalize`
+        // The result may be the point at infinity if the user called `ec_state_finalize_opt`
         // immediately after ec_state_init.
         tempvar denominator = x - random_x;
         jump NotSameX if denominator != 0;

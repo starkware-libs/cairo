@@ -50,7 +50,7 @@ fn test_ec_operations() {
 
     let mut state = ec_state_init();
     ec_state_add(ref state, p);
-    let q = ec_state_finalize(state).expect('zero point');
+    let q = ec_state_finalize_opt(state).expect('zero point');
     let (qx, qy) = ec_point_unwrap(q);
     assert(qx == x, 'bad finalize x');
     assert(qy == y, 'bad finalize y');
@@ -58,7 +58,7 @@ fn test_ec_operations() {
     // Try doing the same thing with the EC op builtin.
     let mut state = ec_state_init();
     ec_state_add_mul(ref state, 1, p);
-    let q3 = ec_state_finalize(state).expect('zero point');
+    let q3 = ec_state_finalize_opt(state).expect('zero point');
     let (qx, qy) = ec_point_unwrap(q3);
     assert(qx == x, 'bad EC op x');
     assert(qy == y, 'bad EC op y');
@@ -97,7 +97,7 @@ fn test_bad_ec_point_creation() {
 #[test]
 fn test_ec_point_finalization_zero() {
     let state = ec_state_init();
-    let point_at_infinity = ec_state_finalize(state);
+    let point_at_infinity = ec_state_finalize_opt(state);
     assert(point_at_infinity.is_none(), 'Wrong point');
 }
 

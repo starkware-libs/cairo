@@ -423,7 +423,7 @@ test::foo@0([0]: EcState, [1]: NonZero<EcPoint>) -> (EcState, Unit);
 
 //! > ==========================================================================
 
-//! > ec_state_finalize libfunc
+//! > ec_state_finalize_opt libfunc
 
 //! > test_comments
 
@@ -432,7 +432,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(s: EcState) -> Option::<NonZeroEcPoint> {
-    ec_state_finalize(s)
+    ec_state_finalize_opt(s)
 }
 
 //! > casm
@@ -470,7 +470,7 @@ type NonZero<EcPoint> = NonZero<EcPoint>;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit>;
 
-libfunc ec_state_finalize = ec_state_finalize;
+libfunc ec_state_finalize_opt = ec_state_finalize_opt;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 0> = enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 0>;
 libfunc store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>> = store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>;
@@ -479,7 +479,7 @@ libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 1> = enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 1>;
 
-ec_state_finalize([0]) { fallthrough([1]) 6() };
+ec_state_finalize_opt([0]) { fallthrough([1]) 6() };
 branch_align() -> ();
 enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 0>([1]) -> ([2]);
 store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([2]) -> ([2]);
