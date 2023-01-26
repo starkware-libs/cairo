@@ -188,6 +188,8 @@ use dict::dict_felt_to_new;
 use dict::dict_felt_to_write;
 use dict::dict_felt_to_read;
 use dict::dict_felt_to_squash;
+use dict::DictFeltToTrait;
+use dict::DictFeltToImpl;
 
 // Result.
 mod result;
