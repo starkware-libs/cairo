@@ -136,9 +136,9 @@ fn simulate(
              => Ok((vec![RangeCheck, GasBuiltin(1)], 0)); "get_gas(5)")]
 #[test_case("get_gas", vec![], vec![RangeCheck, GasBuiltin(2)]
              => Ok((vec![RangeCheck, GasBuiltin(2)], 1)); "get_gas(2)")]
-#[test_case("u128_jump_nz", vec![], vec![Uint128(2)]
-             => Ok((vec![NonZero(Box::new(Uint128(2)))], 1)); "u128_jump_nz(2)")]
-#[test_case("u128_jump_nz", vec![], vec![Uint128(0)] => Ok((vec![], 0)); "u128_jump_nz(0)")]
+#[test_case("u128_is_zero", vec![], vec![Uint128(2)]
+             => Ok((vec![NonZero(Box::new(Uint128(2)))], 1)); "u128_is_zero(2)")]
+#[test_case("u128_is_zero", vec![], vec![Uint128(0)] => Ok((vec![], 0)); "u128_is_zero(0)")]
 #[test_case("jump", vec![], vec![] => Ok((vec![], 0)); "jump()")]
 #[test_case("u128_overflowing_add", vec![], vec![RangeCheck, Uint128(2), Uint128(3)]
              => Ok((vec![RangeCheck, Uint128(5)], 0));
@@ -215,7 +215,7 @@ fn simulate_none_branch(
             "u128_const<3>(1)")]
 #[test_case("dup", vec![type_arg("u128")], vec![] => WrongNumberOfArgs; "dup<u128>()")]
 #[test_case("drop", vec![type_arg("u128")], vec![] => WrongNumberOfArgs; "drop<u128>()")]
-#[test_case("u128_jump_nz", vec![], vec![] => WrongNumberOfArgs; "u128_jump_nz()")]
+#[test_case("u128_is_zero", vec![], vec![] => WrongNumberOfArgs; "u128_is_zero()")]
 #[test_case("unwrap_nz", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;
             "unwrap_nz<u128>()")]
 #[test_case("store_temp", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;
