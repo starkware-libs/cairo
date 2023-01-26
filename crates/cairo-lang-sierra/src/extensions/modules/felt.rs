@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 use num_traits::Zero;
 
-use super::jump_not_zero::{JumpNotZeroLibfunc, JumpNotZeroTraits};
+use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -31,17 +31,17 @@ define_libfunc_hierarchy! {
     pub enum FeltLibfunc {
         BinaryOperation(FeltBinaryOperationLibfunc),
         Const(FeltConstLibfunc),
-        JumpNotZero(FeltJumpNotZeroLibfunc),
+        IsZero(FeltJumpNotZeroLibfunc),
     }, FeltConcrete
 }
 
 #[derive(Default)]
 pub struct FeltTraits {}
-impl JumpNotZeroTraits for FeltTraits {
-    const JUMP_NOT_ZERO: &'static str = "felt_jump_nz";
+impl IsZeroTraits for FeltTraits {
+    const IS_ZERO: &'static str = "felt_is_zero";
     const GENERIC_TYPE_ID: GenericTypeId = <FeltType as NamedType>::ID;
 }
-pub type FeltJumpNotZeroLibfunc = JumpNotZeroLibfunc<FeltTraits>;
+pub type FeltJumpNotZeroLibfunc = IsZeroLibfunc<FeltTraits>;
 
 /// Felt binary operators.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

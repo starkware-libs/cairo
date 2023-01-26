@@ -90,7 +90,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Drop(_) | CoreConcreteLibfunc::Dup(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::Felt(libfunc) => match libfunc {
             FeltConcrete::BinaryOperation(_) | FeltConcrete::Const(_) => vec![ApChange::Known(0)],
-            FeltConcrete::JumpNotZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
+            FeltConcrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
         CoreConcreteLibfunc::FunctionCall(libfunc) => {
             vec![ApChange::FunctionCall(libfunc.function.id.clone())]
@@ -142,7 +142,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint128Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
             Uint128Concrete::FromFelt(_) => vec![ApChange::Known(1), ApChange::Known(6)],
             Uint128Concrete::Const(_) | Uint128Concrete::ToFelt(_) => vec![ApChange::Known(0)],
-            Uint128Concrete::JumpNotZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
+            Uint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Mem(libfunc) => match libfunc {
             MemConcreteLibfunc::StoreTemp(libfunc) => {

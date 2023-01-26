@@ -42,7 +42,7 @@ fn test_store_temp() {
 #[test]
 fn test_jump_nz() {
     assert_eq!(
-        compile_libfunc("felt_jump_nz", vec![ref_expr!([ap - 5])]),
+        compile_libfunc("felt_is_zero", vec![ref_expr!([ap - 5])]),
         ReducedCompiledInvocation {
             instructions: casm! {jmp rel 0 if [ap - 5] != 0;}.instructions,
             relocations: vec![RelocationEntry {
