@@ -55,7 +55,31 @@ define_libfunc_hierarchy! {
         StateAddMul(EcStateAddMulLibfunc),
         PointFromX(EcPointFromXLibfunc),
         UnwrapPoint(EcUnwrapPointLibfunc),
+        Zero(EcZeroLibfunc),
     }, EcConcreteLibfunc
+}
+
+/// Libfunc for returning the zero point (the point at infinity).
+#[derive(Default)]
+pub struct EcZeroLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcZeroLibfunc {
+    const STR_ID: &'static str = "ec_point_zero";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![],
+            vec![OutputVarInfo {
+                ty: ecpoint_ty,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
 }
 
 /// Libfunc for creating an EC point from its coordinates `x` and `y`.

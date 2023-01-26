@@ -29,6 +29,7 @@ pub fn build(
         EcConcreteLibfunc::StateAddMul(_) => build_ec_state_add_mul(builder),
         EcConcreteLibfunc::PointFromX(_) => build_ec_point_from_x(builder),
         EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
+        EcConcreteLibfunc::Zero(_) => build_ec_zero(builder),
     }
 }
 
@@ -91,6 +92,19 @@ fn add_ec_points(
     };
 
     (result_x, result_y)
+}
+
+/// Generates casm instructions for `ec_point_zero()`.
+fn build_ec_zero(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let mut casm_builder = CasmBuilder::default();
+
+    casm_build_extend!(casm_builder,
+        const zero = 0;
+    );
+
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[zero, zero]], None)]))
 }
 
 /// Handles instruction for creating an EC point.

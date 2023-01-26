@@ -1,3 +1,39 @@
+//! > ec_point_zero libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo() -> EcPoint {
+    ec_point_zero()
+}
+
+//! > casm
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 2})
+
+//! > sierra_code
+type EcPoint = EcPoint;
+
+libfunc ec_point_zero = ec_point_zero;
+libfunc store_temp<EcPoint> = store_temp<EcPoint>;
+libfunc rename<EcPoint> = rename<EcPoint>;
+
+ec_point_zero() -> ([0]);
+store_temp<EcPoint>([0]) -> ([0]);
+rename<EcPoint>([0]) -> ([1]);
+return([1]);
+
+test::foo@0() -> (EcPoint);
+
+//! > ==========================================================================
+
 //! > ec_point_try_new libfunc
 
 //! > test_comments

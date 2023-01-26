@@ -20,6 +20,12 @@ impl NonZeroEcPointCopy of Copy::<NonZeroEcPoint>;
 impl OptionNonZeroEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
 impl NonZeroEcPointDrop of Drop::<NonZeroEcPoint>;
 
+/// Returns the zero point of the curve ("the point at infinity").
+extern fn ec_point_zero() -> EcPoint nopanic;
+/// Constructs a non-zero point from its (x, y) coordinates.
+///
+/// * `ec_point_try_new` returns `None` if the point (x, y) is not on the curve.
+/// * `ec_point_new` panics in that case.
 #[panic_with('not on EC', ec_point_new)]
 extern fn ec_point_try_new(x: felt, y: felt) -> Option::<NonZeroEcPoint> nopanic;
 extern fn ec_point_from_x(x: felt) -> Option::<NonZeroEcPoint> nopanic;
