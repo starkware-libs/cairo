@@ -178,6 +178,7 @@ use array::array_at;
 use array::array_len;
 use array::ArrayTrait;
 use array::ArrayImpl;
+impl ArrayFeltDrop of Drop::<Array::<felt>>;
 
 // Dictionary.
 mod dict;
@@ -197,6 +198,8 @@ use result::Result;
 // Option.
 mod option;
 use option::Option;
+use option::OptionUnitCopy;
+use option::OptionUnitDrop;
 
 // EC.
 mod ec;

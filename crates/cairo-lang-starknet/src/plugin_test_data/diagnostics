@@ -300,6 +300,11 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
     fn foo<T>(x: T) {
           ^*^
 
+error: Variable not dropped.
+ --> contract:7:15
+    fn foo<T>(x: T) {
+              ^
+
 error: Type not found.
  --> contract:34:38
                 match serde::Serde::<T>::deserialize(ref data) {
