@@ -99,6 +99,8 @@ fn get_function_code(
                 &return_statement_location,
             )?);
         }
+        lowering::FlatBlockEnd::Fallthrough(_block_id, _remapping)
+        | lowering::FlatBlockEnd::Goto(_block_id, _remapping) => todo!(),
         lowering::FlatBlockEnd::Unreachable => {}
     };
 
