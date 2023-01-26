@@ -67,19 +67,19 @@ fn check_ecdsa_signature(
     //   zG +/- rQ = +/- sR, or more efficiently that:
     //   (zG +/- rQ).x = sR.x.
 
-    let sR: Option::<NonZeroEcPoint> = ec_mul(signature_r_point, signature_s);
-    let sR_x = match sR {
-        Option::Some(pt) => {
+    let sR: EcPoint = ec_mul(signature_r_point, signature_s);
+    let sR_x = match ec_point_is_zero(sR) {
+        IsZeroResult::NonZero(pt) => {
             let (x, y) = ec_point_unwrap(pt);
             x
         },
-        Option::None(()) => {
+        IsZeroResult::Zero(()) => {
             return false;
         },
     };
 
-    let zG: Option::<NonZeroEcPoint> = ec_mul(gen_point, message_hash);
-    let rQ: Option::<NonZeroEcPoint> = ec_mul(public_key_point, signature_r);
+    let zG: EcPoint = ec_mul(gen_point, message_hash);
+    let rQ: EcPoint = ec_mul(public_key_point, signature_r);
     match zG + rQ {
         Option::Some(pt) => {
             let (x, y) = ec_point_unwrap(pt);

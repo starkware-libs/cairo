@@ -61,10 +61,15 @@ fn ec_state_finalize(s: EcState) -> EcPoint nopanic {
 }
 
 /// Computes the product of an EC point `p` by the given scalar `m`.
-fn ec_mul(p: NonZeroEcPoint, m: felt) -> Option::<NonZeroEcPoint> {
-    let mut state = ec_state_init();
-    ec_state_add_mul(ref state, m, p);
-    ec_state_finalize_opt(state)
+fn ec_mul(p: EcPoint, m: felt) -> EcPoint {
+    match ec_point_is_zero(p) {
+        IsZeroResult::Zero(()) => p,
+        IsZeroResult::NonZero(p_nz) => {
+            let mut state = ec_state_init();
+            ec_state_add_mul(ref state, m, p_nz);
+            ec_state_finalize(state)
+        }
+    }
 }
 
 impl EcPointAdd of Add::<Option::<NonZeroEcPoint>> {
