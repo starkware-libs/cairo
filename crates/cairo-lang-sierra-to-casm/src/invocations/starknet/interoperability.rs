@@ -1,3 +1,4 @@
+use cairo_felt::PRIME_STR;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
@@ -90,7 +91,7 @@ pub fn build_contract_address_try_from_felt(
         deref value;
     };
     casm_build_extend! {casm_builder,
-        const limit = addr_bound;
+        const limit = addr_bound.clone();
         tempvar is_valid_address;
         tempvar x;
         tempvar y;
@@ -102,8 +103,9 @@ pub fn build_contract_address_try_from_felt(
     }
     validate_in_range::<1>(
         &mut casm_builder,
-        0x8000000000000000000000000000000,
-        0x8000000000000000000000000000000,
+        &(BigInt::parse_bytes(PRIME_STR[2..].as_bytes(), 16).unwrap() - addr_bound.clone()),
+        0x110000000000000000,
+        0x110000000000000001,
         shifted_value,
         range_check,
         &[x, y, x_part, y_fixed],
@@ -114,8 +116,9 @@ pub fn build_contract_address_try_from_felt(
     };
     validate_in_range::<1>(
         &mut casm_builder,
-        0x110000000000000000,
-        0x110000000000000001,
+        &addr_bound,
+        0x8000000000000000000000000000000,
+        0x8000000000000000000000000000000,
         value,
         range_check,
         &[x, y, x_part, y_fixed],

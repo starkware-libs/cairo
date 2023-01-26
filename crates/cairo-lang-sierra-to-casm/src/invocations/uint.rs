@@ -1,3 +1,4 @@
+use cairo_felt::PRIME_STR;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
@@ -197,6 +198,7 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, con
         1 => {
             validate_in_range::<K>(
                 &mut casm_builder,
+                &(BigInt::parse_bytes(PRIME_STR[2..].as_bytes(), 16).unwrap() - LIMIT),
                 A,
                 B,
                 shifted_value,
@@ -209,6 +211,7 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, con
             casm_build_extend! {casm_builder, tempvar diff;};
             validate_in_range::<K>(
                 &mut casm_builder,
+                &(BigInt::parse_bytes(PRIME_STR[2..].as_bytes(), 16).unwrap() - LIMIT),
                 A,
                 B,
                 shifted_value,
