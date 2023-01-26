@@ -10,29 +10,29 @@ description = "Cairo tests runner. Used to run tests written in Cairo."
 anyhow.workspace = true
 cairo-felt.workspace = true
 cairo-vm.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "0.1.0" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.2" }
 clap.workspace = true
 colored.workspace = true
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "0.1.0" }
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "0.1.0" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "0.1.0" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "0.1.0" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "0.1.0" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-alpha.2" }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.2" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.2" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.2" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.2" }
 itertools.workspace = true
 num-bigint.workspace = true
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "0.1.0" }
-cairo-lang-project = { path = "../cairo-lang-project", version = "0.1.0" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-alpha.2" }
+cairo-lang-project = { path = "../cairo-lang-project", version = "1.0.0-alpha.2" }
 rayon.workspace = true
-cairo-lang-runner = { path = "../cairo-lang-runner", version = "0.1.0" }
+cairo-lang-runner = { path = "../cairo-lang-runner", version = "1.0.0-alpha.2" }
 salsa.workspace = true
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "0.1.0" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "0.1.0" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "0.1.0" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "0.1.0" }
-cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "0.1.0" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "0.1.0" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.2" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.2" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "1.0.0-alpha.2" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "1.0.0-alpha.2" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "1.0.0-alpha.2" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.2" }
 thiserror.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.2" }
 
 [[bin]]
 name = "cairo-test"
