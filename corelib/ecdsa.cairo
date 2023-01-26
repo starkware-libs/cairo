@@ -80,27 +80,25 @@ fn check_ecdsa_signature(
 
     let zG: Option::<EcPoint> = ec_mul(gen_point, message_hash);
     let rQ: Option::<EcPoint> = ec_mul(public_key_point, signature_r);
-    match zG
-        + rQ {
-            Option::Some(pt) => {
-                let (x, y) = ec_point_unwrap(pt);
-                if (x == sR_x) {
-                    return true;
-                }
-            },
-            Option::None(()) => {},
-        };
+    match zG + rQ {
+        Option::Some(pt) => {
+            let (x, y) = ec_point_unwrap(pt);
+            if (x == sR_x) {
+                return true;
+            }
+        },
+        Option::None(()) => {},
+    };
 
-    match zG
-        - rQ {
-            Option::Some(pt) => {
-                let (x, y) = ec_point_unwrap(pt);
-                if (x == sR_x) {
-                    return true;
-                }
-            },
-            Option::None(()) => {},
-        };
+    match zG - rQ {
+        Option::Some(pt) => {
+            let (x, y) = ec_point_unwrap(pt);
+            if (x == sR_x) {
+                return true;
+            }
+        },
+        Option::None(()) => {},
+    };
 
     return false;
 }
