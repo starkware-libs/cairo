@@ -26,7 +26,7 @@ foo
 //! > sierra_code
 label0:
 dup<felt>([0]) -> ([0], [1])
-felt_jump_nz([1]) { fallthrough() label1([2]) }
+felt_is_zero([1]) { fallthrough() label1([2]) }
 branch_align() -> ()
 dup<felt>([0]) -> ([0], [3])
 struct_construct<Tuple<felt, felt>>([3], [0]) -> ([4])

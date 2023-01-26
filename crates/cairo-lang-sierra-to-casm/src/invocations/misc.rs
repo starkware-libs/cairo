@@ -36,13 +36,13 @@ pub fn build_drop(
 /// Handles a jump non zero statement.
 /// For example, this "Sierra statement"
 /// ```ignore
-/// felt_jump_nz(var=[ap-10]) { fallthrough() 1000(var) };
+/// felt_is_zero(var=[ap-10]) { fallthrough() 1000(var) };
 /// ```
 /// translates to these casm instructions:
 /// ```ignore
 /// jmp rel <jump_offset_1000> if [ap-10] != 0
 /// ```
-pub fn build_jump_nz(
+pub fn build_is_zero(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [value] = builder.try_get_single_cells()?;

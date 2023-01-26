@@ -6,7 +6,7 @@ use cairo_lang_sierra::extensions::felt::{
 };
 use num_bigint::BigInt;
 
-use super::misc::build_jump_nz;
+use super::misc::build_is_zero;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::add_input_variables;
 use crate::references::ReferenceExpression;
@@ -27,7 +27,7 @@ pub fn build(
         FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibfunc::Const(
             FeltOperationWithConstConcreteLibfunc { operator, c, .. },
         )) => build_felt_op_with_const(builder, *operator, c.clone()),
-        FeltConcrete::JumpNotZero(_) => build_jump_nz(builder),
+        FeltConcrete::IsZero(_) => build_is_zero(builder),
         FeltConcrete::Const(libfunc) => Ok(builder.build_only_reference_changes(
             [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))]
                 .into_iter(),

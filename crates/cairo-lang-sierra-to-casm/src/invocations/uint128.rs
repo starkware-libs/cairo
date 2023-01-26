@@ -19,7 +19,7 @@ pub fn build(
         },
         Uint128Concrete::DivMod(_) => build_u128_divmod(builder),
         Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
-        Uint128Concrete::JumpNotZero(_) => misc::build_jump_nz(builder),
+        Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),
         Uint128Concrete::FromFelt(_) => build_u128_from_felt(builder),
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),

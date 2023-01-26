@@ -344,7 +344,7 @@ fn u128_libfunc_cost<Ops: CostOperations>(
         Uint128Concrete::FromFelt(_) => {
             vec![ops.const_cost(2), ops.const_cost(11)]
         }
-        Uint128Concrete::JumpNotZero(_) => {
+        Uint128Concrete::IsZero(_) => {
             vec![ops.const_cost(1), ops.const_cost(1)]
         }
         Uint128Concrete::LessThan(_) => {
@@ -363,7 +363,7 @@ fn u128_libfunc_cost<Ops: CostOperations>(
 fn felt_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &FeltConcrete) -> Vec<Ops::CostType> {
     match libfunc {
         FeltConcrete::Const(_) | FeltConcrete::BinaryOperation(_) => vec![ops.const_cost(0)],
-        FeltConcrete::JumpNotZero(_) => {
+        FeltConcrete::IsZero(_) => {
             vec![ops.const_cost(1), ops.const_cost(1)]
         }
     }

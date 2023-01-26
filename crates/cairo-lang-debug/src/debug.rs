@@ -166,7 +166,7 @@ pub mod helper {
     use super::{DebugWith, DebugWithDb};
 
     pub trait Fallback<T: fmt::Debug, Db: ?Sized> {
-        fn helper_debug<'a, 'b>(a: &'a T, _db: &'b Db) -> &'a dyn fmt::Debug {
+        fn helper_debug<'a>(a: &'a T, _db: &Db) -> &'a dyn fmt::Debug {
             a
         }
     }
