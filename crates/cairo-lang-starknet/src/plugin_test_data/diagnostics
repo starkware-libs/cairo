@@ -36,7 +36,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -110,7 +109,7 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
- --> contract:34:23
+ --> contract:33:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
@@ -130,7 +129,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -202,7 +200,7 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
                              ^
 
 error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
- --> contract:55:13
+ --> contract:54:13
             serde::Serde::<(felt, felt)>::serialize(ref arr, res)
             ^***************************************************^
 
@@ -222,7 +220,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -301,17 +298,17 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
           ^*^
 
 error: Variable not dropped.
- --> contract:7:15
+ --> contract:6:15
     fn foo<T>(x: T) {
               ^
 
 error: Type not found.
- --> contract:34:38
+ --> contract:33:38
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
 error: Function `deserialize` of trait `core::serde::Serde` has multiple implementations, in: core::serde::FeltSerde, core::serde::BoolSerde, core::serde::U8Serde, core::serde::U128Serde, core::serde::U256Serde, core::serde::ArrayFeltSerde
- --> contract:34:23
+ --> contract:33:23
                 match serde::Serde::<T>::deserialize(ref data) {
                       ^**************************************^
 
@@ -336,7 +333,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -427,17 +423,17 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
                                                              ^
 
 error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
- --> contract:34:23
+ --> contract:33:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
 error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
- --> contract:44:23
+ --> contract:43:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
 error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
- --> contract:74:13
+ --> contract:73:13
             serde::Serde::<(felt, felt)>::serialize(ref arr, res)
             ^***************************************************^
 
@@ -458,7 +454,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -504,7 +499,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -550,7 +544,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -596,7 +589,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -643,7 +635,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
