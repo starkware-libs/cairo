@@ -1355,7 +1355,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalImpl => {
                 let impl_kw = self.take::<TerminalImpl>();
                 let name = self.parse_identifier();
-                Some(GenericParamImpl::new_green(self.db, impl_kw, name).into())
+                let colon = self.parse_token::<TerminalColon>();
+                let trait_path = self.parse_path();
+                Some(GenericParamImpl::new_green(self.db, impl_kw, name, colon, trait_path).into())
             }
             _ => Some(GenericParamType::new_green(self.db, self.try_parse_identifier()?).into()),
         }

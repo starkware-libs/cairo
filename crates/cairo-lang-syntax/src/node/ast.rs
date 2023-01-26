@@ -9893,12 +9893,16 @@ pub struct GenericParamImpl {
 impl GenericParamImpl {
     pub const INDEX_IMPL_KW: usize = 0;
     pub const INDEX_NAME: usize = 1;
+    pub const INDEX_COLON: usize = 2;
+    pub const INDEX_TRAIT_PATH: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         impl_kw: TerminalImplGreen,
         name: TerminalIdentifierGreen,
+        colon: TerminalColonGreen,
+        trait_path: ExprPathGreen,
     ) -> GenericParamImplGreen {
-        let children: Vec<GreenId> = vec![impl_kw.0, name.0];
+        let children: Vec<GreenId> = vec![impl_kw.0, name.0, colon.0, trait_path.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         GenericParamImplGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::GenericParamImpl,
@@ -9912,6 +9916,12 @@ impl GenericParamImpl {
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
+        TerminalColon::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -9939,7 +9949,12 @@ impl TypedSyntaxNode for GenericParamImpl {
         GenericParamImplGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::GenericParamImpl,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalImpl::missing(db).0, TerminalIdentifier::missing(db).0],
+                children: vec![
+                    TerminalImpl::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TerminalColon::missing(db).0,
+                    ExprPath::missing(db).0,
+                ],
                 width: 0,
             },
         }))
