@@ -5,10 +5,11 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::plugin::DynPluginAuxData;
 use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
 
-use crate::plugin::{ABI_TRAIT, GENERATED_CONTRACT_ATTR};
+use crate::plugin::{StarkNetContractAuxData, ABI_TRAIT};
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -44,15 +45,25 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
     for crate_id in crate_ids {
         let modules = db.crate_modules(*crate_id);
         for module_id in modules.iter() {
-            let Ok(submodules) = db.module_submodules_ids(*module_id) else {
-                continue;
-            };
+            let generated_file_info = db.module_generated_file_info(*module_id).unwrap_or_default();
 
-            for submodule_id in submodules {
-                if let Ok(attrs) = db.module_attributes(ModuleId::Submodule(submodule_id)) {
-                    if attrs.iter().any(|attr| attr.id == GENERATED_CONTRACT_ATTR) {
+            // Note that we skip generated_file_info[0] because we are interested in modules
+            // that the plugin acted on and not modules that were created by the plugin.
+            for generated_info in generated_file_info.iter().skip(1) {
+                let Some(generated_info) = generated_info else { continue; };
+                let Some(mapper) = generated_info.aux_data.0.as_any(
+                ).downcast_ref::<DynPluginAuxData>() else { continue; };
+                let Some(aux_data) = mapper.0.as_any(
+                ).downcast_ref::<StarkNetContractAuxData>() else { continue; };
+
+                for contract_name in &aux_data.contracts {
+                    if let Ok(Some(ModuleItemId::Submodule(submodule_id))) =
+                        db.module_item_by_name(*module_id, contract_name.clone())
+                    {
                         contracts.push(ContractDeclaration { submodule_id });
-                    };
+                    } else {
+                        panic!("{contract_name} was not found.");
+                    }
                 }
             }
         }
