@@ -42,10 +42,8 @@ pub fn calc_metadata(
         .map(|(func, costs)| {
             (
                 func.clone(),
-                costs
-                    .iter()
-                    .filter(|(token, _cost)| !matches!(token, CostTokenType::Step))
-                    .map(|(k, v)| (*k, *v))
+                CostTokenType::iter_precost()
+                    .filter_map(|token| costs.get(token).map(|v| (*token, *v)))
                     .collect(),
             )
         })
@@ -53,6 +51,7 @@ pub fn calc_metadata(
     let pre_gas_info = calc_gas_precost_info(program, pre_function_set_costs)?;
 
     let ap_change_info = calc_ap_changes(program, |idx, token_type| {
+        println!("{}", token_type.camel_case_name());
         pre_gas_info.variable_values[(idx, token_type)] as usize
     })?;
 
@@ -62,10 +61,8 @@ pub fn calc_metadata(
         .map(|(func, costs)| {
             (
                 func.clone(),
-                costs
-                    .iter()
-                    .filter(|(token, _cost)| matches!(token, CostTokenType::Step))
-                    .map(|(k, v)| (*k, *v))
+                CostTokenType::iter_postcost()
+                    .filter_map(|token| costs.get(token).map(|v| (*token, *v)))
                     .collect(),
             )
         })
