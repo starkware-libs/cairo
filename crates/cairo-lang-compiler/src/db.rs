@@ -119,37 +119,23 @@ impl RootDatabaseBuilder {
 
     /// Setup to 'db' to compile the file at the given path.
     /// Returns the id of the generated crate.
-    fn setup_project_from_single_file(&mut self, path: &Path) -> Result<CrateId, ProjectError> {
-        match path.extension().and_then(OsStr::to_str) {
-            Some("cairo") => (),
-            _ => {
-                return Err(ProjectError::BadFileExtension);
-            }
-        }
-        if !path.exists() {
-            return Err(ProjectError::NoSuchFile { path: path.to_string_lossy().to_string() });
-        }
+    fn setup_project_from_single_file(
+        &mut self,
+        path: &Path,
+    ) -> Result<Vec<CrateId>, ProjectError> {
         let bad_path_err = || ProjectError::BadPath { path: path.to_string_lossy().to_string() };
-        let file_stemp = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
-        if file_stemp == "lib" {
-            let canonical = path.canonicalize().map_err(|_| bad_path_err())?;
-            let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
-            let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
-            let crate_id = self.db.intern_crate(CrateLongId(crate_name.into()));
-            self.db.set_crate_root(crate_id, Some(Directory(file_dir.to_path_buf())));
-            Ok(crate_id)
-        } else {
-            // If file_stemp is not lib, create a fake lib file.
-            let crate_id = self.db.intern_crate(CrateLongId(file_stemp.into()));
-            self.db.set_crate_root(crate_id, Some(Directory(path.parent().unwrap().to_path_buf())));
+        let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
 
-            let module_id = ModuleId::CrateRoot(crate_id);
-            let file_id = self.db.module_main_file(module_id).unwrap();
-            self.db
-                .as_files_group_mut()
-                .override_file_content(file_id, Some(Arc::new(format!("mod {};", file_stemp))));
-            Ok(crate_id)
-        }
+        // Create a fake lib file.
+        let crate_id = self.db.intern_crate(CrateLongId(file_stem.into()));
+        self.db.set_crate_root(crate_id, Some(Directory(path.parent().unwrap().to_path_buf())));
+
+        let module_id = ModuleId::CrateRoot(crate_id);
+        let file_id = self.db.module_main_file(module_id).unwrap();
+        self.db
+            .as_files_group_mut()
+            .override_file_content(file_id, Some(Arc::new(format!("mod {};", file_stem))));
+        Ok(vec![crate_id])
     }
 
     fn setup_project_from_directory(&mut self, path: &Path) -> Result<Vec<CrateId>, ProjectError> {
@@ -167,14 +153,31 @@ impl RootDatabaseBuilder {
         }
     }
 
+    fn parse_project_path(path: &Path) -> Result<&Path, ProjectError> {
+        if !path.exists() {
+            return Err(ProjectError::NoSuchFile { path: path.to_string_lossy().to_string() });
+        }
+        if path.is_dir() {
+            return Ok(path);
+        }
+        if Some("cairo") != path.extension().and_then(OsStr::to_str) {
+            return Err(ProjectError::BadFileExtension);
+        }
+
+        let bad_path_err = || ProjectError::BadPath { path: path.to_string_lossy().to_string() };
+        let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
+        if file_stem == "lib" { Ok(path.parent().ok_or_else(bad_path_err)?) } else { Ok(path) }
+    }
+
     /// Setup the 'db' to compile the project in the given path.
     /// The path can be either a directory with cairo project file or a .cairo file.
     /// Returns the ids of the project crates.
     pub fn with_project_setup(&mut self, path: &Path) -> Result<&mut Self, ProjectError> {
+        let path = Self::parse_project_path(path)?;
         let crate_ids = if path.is_dir() {
             self.setup_project_from_directory(path)?
         } else {
-            vec![self.setup_project_from_single_file(path)?]
+            self.setup_project_from_single_file(path)?
         };
         self.main_crate_ids = Some(crate_ids);
         Ok(self)
