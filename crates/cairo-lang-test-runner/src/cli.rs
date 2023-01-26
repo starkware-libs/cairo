@@ -7,7 +7,6 @@ use std::sync::{Arc, Mutex};
 use anyhow::{bail, Context};
 use cairo_lang_compiler::db::RootDatabaseBuilder;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
-use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
@@ -74,10 +73,9 @@ fn main() -> anyhow::Result<()> {
     }
     let mut builder = RootDatabaseBuilder::empty();
     builder.with_plugins(plugins).with_dev_corelib().unwrap();
-    let mut db_val = builder.build();
-    let db = &mut db_val;
-
-    let main_crate_ids = setup_project(db, Path::new(&args.path))?;
+    builder.with_project_setup(Path::new(&args.path))?;
+    let main_crate_ids = builder.get_main_crate_ids().unwrap();
+    let db = &mut builder.build();
 
     if check_and_eprint_diagnostics(db) {
         anyhow::bail!("failed to compile: {}", args.path);

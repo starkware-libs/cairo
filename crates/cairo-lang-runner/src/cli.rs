@@ -5,7 +5,6 @@ use std::path::Path;
 use anyhow::{Context, Ok};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
-use cairo_lang_compiler::project::setup_project;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_runner::SierraCasmRunner;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -33,10 +32,9 @@ fn main() -> anyhow::Result<()> {
 
     let mut builder = RootDatabase::builder();
     builder.with_dev_corelib().unwrap();
-    let mut db_val = builder.build();
-    let db = &mut db_val;
-
-    let main_crate_ids = setup_project(db, Path::new(&args.path))?;
+    builder.with_project_setup(Path::new(&args.path))?;
+    let main_crate_ids = builder.get_main_crate_ids().unwrap();
+    let db = &mut builder.build();
 
     if check_and_eprint_diagnostics(db) {
         anyhow::bail!("failed to compile: {}", args.path);

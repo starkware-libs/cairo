@@ -14,7 +14,7 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
 use crate::db::RootDatabase;
 use crate::diagnostics::{check_diagnostics, eprint_diagnostic};
-use crate::project::{get_main_crate_ids_from_project, setup_project, ProjectConfig};
+use crate::project::ProjectConfig;
 
 pub mod db;
 pub mod diagnostics;
@@ -53,8 +53,10 @@ pub fn compile_cairo_project_at_path(
 ) -> Result<SierraProgram> {
     let mut builder = RootDatabase::builder();
     builder.with_dev_corelib().unwrap();
-    let mut db = builder.build();
-    let main_crate_ids = setup_project(&mut db, path)?;
+    builder.with_project_setup(path)?;
+    let main_crate_ids = builder.get_main_crate_ids().unwrap();
+    let db = builder.build();
+
     compile_prepared_db(db, main_crate_ids, compiler_config)
 }
 
@@ -71,11 +73,10 @@ pub fn compile(
     compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
     let mut builder = RootDatabase::builder();
-    builder.with_project_config(project_config.clone());
-    let mut db = builder.build();
-    let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
+    builder.with_project_config(project_config);
+    let main_crate_ids = builder.get_main_crate_ids().unwrap();
 
-    compile_prepared_db(db, main_crate_ids, compiler_config)
+    compile_prepared_db(builder.build(), main_crate_ids, compiler_config)
 }
 
 fn compile_prepared_db(

@@ -1,9 +1,8 @@
 use std::path::Path;
 
 use anyhow::Context;
-use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::db::{RootDatabase, RootDatabaseBuilder};
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
-use cairo_lang_compiler::project::setup_project;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -65,10 +64,10 @@ pub struct ContractEntryPoint {
 // Compile the contract given by path.
 // If `replace_ids` is true, replaces sierra ids with human readable ones.
 pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractClass> {
-    let mut db_val = get_starknet_database();
-    let db = &mut db_val;
-
-    let main_crate_ids = setup_project(db, Path::new(&path))?;
+    let mut builder = RootDatabaseBuilder::new(get_starknet_database());
+    builder.with_project_setup(Path::new(&path))?;
+    let main_crate_ids = builder.get_main_crate_ids().unwrap();
+    let db = &mut builder.build();
 
     if check_and_eprint_diagnostics(db) {
         anyhow::bail!("Failed to compile: {}", path.display());
