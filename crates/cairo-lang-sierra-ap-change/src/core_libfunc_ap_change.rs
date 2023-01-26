@@ -87,6 +87,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             EcConcreteLibfunc::StateAddMul(_) => vec![ApChange::Known(0)],
             EcConcreteLibfunc::PointFromX(_) => vec![ApChange::Known(7), ApChange::Known(7)],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ApChange::Known(0)],
+            EcConcreteLibfunc::Zero(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Drop(_) | CoreConcreteLibfunc::Dup(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::Felt(libfunc) => match libfunc {
