@@ -378,7 +378,7 @@ impl LanguageServer for Backend {
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let db = self.db().await;
         let file_uri = params.text_document_position_params.text_document.uri;
-        eprintln!("Hover {}", file_uri);
+        eprintln!("Hover {file_uri}");
         let file = self.file(&db, file_uri);
         let position = params.text_document_position_params.position;
         let Some((node, lookup_items)) =
@@ -734,6 +734,6 @@ fn detect_crate_for(db: &mut RootDatabase, file_path: &str) {
     }
     // Fallback to a single file.
     if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
-        eprintln!("Error loading file {} as a single crate: {}", file_path, err);
+        eprintln!("Error loading file {file_path} as a single crate: {err}");
     }
 }

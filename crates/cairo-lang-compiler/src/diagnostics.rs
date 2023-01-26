@@ -70,7 +70,7 @@ pub fn check_and_eprint_diagnostics(db: &mut RootDatabase) -> bool {
 }
 
 pub fn eprint_diagnostic(diag: String) {
-    eprint!("{}", diag);
+    eprint!("{diag}");
 }
 
 /// Returns a string with all the diagnostics in the db.

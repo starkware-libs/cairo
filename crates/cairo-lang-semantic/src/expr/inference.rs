@@ -205,7 +205,6 @@ impl<'db> Inference<'db> {
                     return Err(InferenceError::KindMismatch { ty0, ty1 });
                 }
                 let tys = zip_eq(tys0, tys1)
-                    .into_iter()
                     .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
                     .collect::<Result<Vec<_>, _>>()?;
                 Ok(self.db.intern_type(TypeLongId::Tuple(tys)))
@@ -223,7 +222,6 @@ impl<'db> Inference<'db> {
         gargs1: &[GenericArgumentId],
     ) -> Result<Vec<GenericArgumentId>, InferenceError> {
         zip_eq(gargs0, gargs1)
-            .into_iter()
             .map(|(garg0, garg1)| self.conform_generic_arg(*garg0, *garg1))
             .collect::<Result<Vec<_>, _>>()
     }

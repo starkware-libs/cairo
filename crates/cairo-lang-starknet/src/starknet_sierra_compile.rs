@@ -34,7 +34,7 @@ fn main() -> anyhow::Result<()> {
 
     match args.output {
         Some(path) => fs::write(path, res).with_context(|| "Failed to write output.")?,
-        None => println!("{}", res),
+        None => println!("{res}"),
     }
 
     Ok(())

@@ -202,7 +202,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             ],
             SierraApChange::Known { new_vars_only: true },
         ),
-        _ => panic!("get_branch_signatures() is not implemented for '{}'.", name),
+        _ => panic!("get_branch_signatures() is not implemented for '{name}'."),
     }
 }
 
