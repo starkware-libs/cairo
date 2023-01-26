@@ -9,6 +9,7 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use lowering::FlatLowered;
 
@@ -103,6 +104,7 @@ pub fn find_variable_lifetime(
         lowered_function,
         local_vars,
         res: VariableLifetimeResult::default(),
+        block_state: UnorderedHashMap::default(),
     };
     let mut state = VariableLifetimeState::default();
     let root_block_id = lowered_function.root?;
@@ -116,6 +118,9 @@ struct VariableLifetimeContext<'a> {
     lowered_function: &'a FlatLowered,
     local_vars: &'a OrderedHashSet<VariableId>,
     res: VariableLifetimeResult,
+
+    // A mapping BlockId to the life time state at the begging of that block.
+    block_state: UnorderedHashMap<BlockId, VariableLifetimeState>,
 }
 
 /// Helper function for [find_variable_lifetime].
@@ -136,8 +141,21 @@ fn inner_find_variable_lifetime(
             state.clear();
             state.use_variables(context, vars, (block_id, block.statements.len()));
         }
-        lowering::FlatBlockEnd::Fallthrough(_block_id, _remapping)
-        | lowering::FlatBlockEnd::Goto(_block_id, _remapping) => todo!(),
+        lowering::FlatBlockEnd::Fallthrough(target_block_id, remapping) => {
+            inner_find_variable_lifetime(context, *target_block_id, state);
+            let vars = remapping.values().copied().collect_vec();
+            state.use_variables(context, &vars, (block_id, block.statements.len()));
+
+            if context.block_state.insert(*target_block_id, state.clone()).is_some() {
+                panic!("block {target_block_id:?} lifetime was computed more than once.")
+            }
+        }
+        lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
+            *state = context.block_state[*target_block_id].clone();
+            let vars = remapping.values().copied().collect_vec();
+
+            state.use_variables(context, &vars, (block_id, block.statements.len()));
+        }
         lowering::FlatBlockEnd::Unreachable => {}
     }
 
