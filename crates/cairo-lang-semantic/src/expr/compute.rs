@@ -239,6 +239,7 @@ fn compute_expr_unary_semantic(
         function,
         vec![(expr, None, Mutability::Immutable)],
         syntax.stable_ptr().into(),
+        unary_op.stable_ptr().untyped(),
     )
 }
 
@@ -302,6 +303,7 @@ fn compute_expr_binary_semantic(
         function,
         vec![(lexpr, None, Mutability::Immutable), (rexpr, None, Mutability::Immutable)],
         stable_ptr,
+        binary_op.stable_ptr().untyped(),
     )
 }
 
@@ -377,9 +379,13 @@ fn compute_expr_function_call_semantic(
                 stable_ptr: syntax.stable_ptr().into(),
             }))
         }
-        ResolvedConcreteItem::Function(function) => {
-            expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
-        }
+        ResolvedConcreteItem::Function(function) => expr_function_call(
+            ctx,
+            function,
+            named_args,
+            syntax.stable_ptr().into(),
+            path.stable_ptr().untyped(),
+        ),
         ResolvedConcreteItem::TraitFunction(trait_function) => {
             let function = db.intern_function(FunctionLongId {
                 function: ConcreteFunction {
@@ -387,7 +393,13 @@ fn compute_expr_function_call_semantic(
                     generic_args: vec![],
                 },
             });
-            expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
+            expr_function_call(
+                ctx,
+                function,
+                named_args,
+                syntax.stable_ptr().into(),
+                path.stable_ptr().untyped(),
+            )
         }
         _ => Err(ctx.diagnostics.report(
             &path,
@@ -1256,15 +1268,18 @@ fn method_call_expr(
             // Check if trait function signature's first param can fit our expr type.
             let mut inference = ctx.inference.clone();
             let Some(concrete_trait_id) = inference.infer_concrete_trait_by_self(
-                trait_function, lexpr.ty(),stable_ptr.untyped()
-            ) else {continue};
+                trait_function, lexpr.ty(), stable_ptr.untyped()
+            ) else {
+                continue;
+            };
 
             // Find impls for it.
             let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
             let Ok(impls) = find_impls_at_context(
-                ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()) else {
-                    continue
-                };
+                ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()
+            ) else {
+                continue;
+            };
 
             if impls.is_empty() {
                 continue;
@@ -1276,7 +1291,9 @@ fn method_call_expr(
 
     let trait_function = match candidates[..] {
         [] => {
-            return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnknownFunction));
+            return Err(ctx
+                .diagnostics
+                .report_by_ptr(path.stable_ptr().untyped(), UnknownFunction));
         }
         [trait_function] => trait_function,
         [trait_function_id0, trait_function_id1, ..] => {
@@ -1324,7 +1341,7 @@ fn method_call_expr(
     )
     .collect();
 
-    expr_function_call(ctx, function_id, named_args, stable_ptr)
+    expr_function_call(ctx, function_id, named_args, stable_ptr, path.stable_ptr().untyped())
 }
 
 /// Computes the semantic model of a member access expression (e.g. "expr.member").
@@ -1450,13 +1467,14 @@ fn expr_function_call(
     function_id: FunctionId,
     named_args: Vec<(Expr, Option<ast::TerminalIdentifier>, Mutability)>,
     stable_ptr: ast::ExprPtr,
+    function_name_stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Expr> {
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let signature = ctx
         .db
         .concrete_function_signature(function_id)
-        .map_err(|_| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnknownFunction))?;
+        .map_err(|_| ctx.diagnostics.report_by_ptr(function_name_stable_ptr, UnknownFunction))?;
 
     if named_args.len() != signature.params.len() {
         return Err(ctx.diagnostics.report_by_ptr(
