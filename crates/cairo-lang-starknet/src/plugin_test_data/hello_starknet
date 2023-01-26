@@ -22,7 +22,6 @@ mod HelloStarknet {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod HelloStarknet {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
