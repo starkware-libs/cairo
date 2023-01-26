@@ -1,0 +1,123 @@
+//! > Test variable lifetime in simple inlining scenario
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_code
+fn foo(a: felt) -> felt {
+  bar(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar(a: felt) -> felt {
+  if a == 0 {
+    return 1;
+  }
+  0
+}
+
+//! > lowering_format
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero => blk3,
+  }
+  (v1: core::felt) <- 0u
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+End:
+  Goto(1, {v2 -> v1})
+
+blk3:
+Inputs: v3: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite({})
+
+//! > last_use
+((BlockId(1), 0), 0)
+((BlockId(2), 1), 0)
+((BlockId(0), 0), 0)
+
+//! > drops
+BeginningOfBlock(BlockId(3)): v3, v1
+
+//! > ==========================================================================
+
+//! > Test variable lifetime in inlining scenario with callsite
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_code
+fn foo(a: felt) -> felt {
+  bar(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar(a: felt) -> felt {
+  if a == 0 {
+    return 1;
+  }
+  0
+}
+
+//! > lowering_format
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero => blk3,
+  }
+  (v1: core::felt) <- 0u
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+End:
+  Goto(1, {v2 -> v1})
+
+blk3:
+Inputs: v3: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite({})
+
+//! > last_use
+((BlockId(1), 0), 0)
+((BlockId(2), 1), 0)
+((BlockId(0), 0), 0)
+
+//! > drops
+BeginningOfBlock(BlockId(3)): v3, v1
