@@ -2,7 +2,7 @@ use num_bigint::BigInt;
 use num_traits::Zero;
 
 use super::jump_not_zero::{JumpNotZeroLibfunc, JumpNotZeroTraits};
-use super::non_zero::NonZeroType;
+use super::non_zero::nonzero_ty;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext, SpecializationContext,
@@ -90,7 +90,7 @@ impl GenericLibfunc for FeltBinaryOperationLibfunc {
                     ParamSignature::new(ty.clone()),
                     ParamSignature {
                         ty: if matches!(self.operator, FeltBinaryOperator::Div) {
-                            context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?
+                            nonzero_ty(context, &ty)?
                         } else {
                             ty.clone()
                         },

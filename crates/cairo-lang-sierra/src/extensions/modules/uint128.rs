@@ -1,6 +1,6 @@
 use super::felt::FeltType;
 use super::jump_not_zero::{JumpNotZeroLibfunc, JumpNotZeroTraits};
-use super::non_zero::NonZeroType;
+use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
 use super::uint::{
     IntOperator, UintConstLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
@@ -171,9 +171,7 @@ impl NoGenericArgsGenericLibfunc for Uint128DivModLibfunc {
                     allow_const: false,
                 },
                 ParamSignature::new(ty.clone()),
-                ParamSignature::new(
-                    context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?,
-                ),
+                ParamSignature::new(nonzero_ty(context, &ty)?),
             ],
             vec![
                 OutputVarInfo {
