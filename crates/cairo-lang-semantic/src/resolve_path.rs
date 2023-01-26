@@ -5,8 +5,8 @@ mod test;
 use std::iter::Peekable;
 
 use cairo_lang_defs::ids::{
-    ConstantId, GenericParamId, GenericTypeId, ImplId, LanguageElementId, ModuleFileId, ModuleId,
-    ModuleItemId, TraitFunctionId, TraitId, TypeAliasId,
+    ConstantId, GenericKind, GenericParamId, GenericTypeId, ImplId, LanguageElementId,
+    ModuleFileId, ModuleId, ModuleItemId, TraitFunctionId, TraitId, TypeAliasId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -613,7 +613,7 @@ impl<'db> Resolver<'db> {
                     &generic_params,
                     &mut generic_args,
                     identifier.stable_ptr().untyped(),
-                );
+                )?;
                 let substitution = GenericSubstitution(
                     generic_params.into_iter().zip(generic_args.into_iter()).collect(),
                 );
@@ -774,7 +774,7 @@ fn specialize_trait(
         &generic_params,
         &mut generic_args,
         stable_ptr,
-    );
+    )?;
 
     Ok(db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }))
 }
@@ -804,7 +804,7 @@ fn specialize_impl(
         &generic_params,
         &mut generic_args,
         stable_ptr,
-    );
+    )?;
 
     Ok(db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args }))
 }
@@ -830,7 +830,7 @@ pub fn specialize_function(
         &generic_params,
         &mut generic_args,
         stable_ptr,
-    );
+    )?;
 
     Ok(db.intern_function(FunctionLongId {
         function: ConcreteFunction { generic_function, generic_args },
@@ -857,7 +857,7 @@ pub fn specialize_type(
         &generic_params,
         &mut generic_args,
         stable_ptr,
-    );
+    )?;
 
     Ok(db.intern_type(TypeLongId::Concrete(ConcreteTypeId::new(db, generic_type, generic_args))))
 }
@@ -869,27 +869,59 @@ pub fn conform_generic_args(
     generic_params: &[GenericParamId],
     generic_args: &mut Vec<GenericArgumentId>,
     stable_ptr: SyntaxStablePtrId,
-) {
-    let mut diag_added = None;
-    let err = WrongNumberOfGenericArguments {
-        expected: generic_params.len(),
-        actual: generic_args.len(),
-    };
-    let mut report =
-        || *diag_added.get_or_insert_with(|| diagnostics.report_by_ptr(stable_ptr, err.clone()));
+) -> Maybe<()> {
+    // If too many generic argument are given, trim and report.
+    // TODO(spapini): Better locations for generic arguments.
     if generic_args.len() > generic_params.len() {
-        generic_args
-            .resize(generic_params.len(), GenericArgumentId::Type(TypeId::missing(db, report())));
+        diagnostics.report_by_ptr(
+            stable_ptr,
+            WrongNumberOfGenericArguments {
+                expected: generic_params.len(),
+                actual: generic_args.len(),
+            },
+        );
+        generic_args.drain(generic_params.len()..);
     }
-    for (i, _) in generic_params.iter().enumerate() {
+
+    for (i, generic_param) in generic_params.iter().enumerate() {
         // TODO(spapini): Handle `_` passed as generic argument.
         if i >= generic_args.len() {
-            if inference.enabled {
-                // Infer.
-                generic_args.push(GenericArgumentId::Type(inference.new_var(stable_ptr)))
-            } else {
-                generic_args.push(GenericArgumentId::Type(TypeId::missing(db, report())))
+            match generic_param.kind(db.upcast()) {
+                GenericKind::Type => {
+                    if inference.enabled {
+                        // Infer.
+                        generic_args.push(GenericArgumentId::Type(inference.new_var(stable_ptr)))
+                    } else {
+                        let diag_added = diagnostics.report_by_ptr(
+                            stable_ptr,
+                            WrongNumberOfGenericArguments {
+                                expected: generic_params.len(),
+                                actual: generic_args.len(),
+                            },
+                        );
+                        generic_args.push(GenericArgumentId::Type(TypeId::missing(db, diag_added)))
+                    }
+                }
+                GenericKind::Const => {
+                    return Err(
+                        diagnostics.report_by_ptr(stable_ptr, ConstGenericInferenceUnsupported)
+                    );
+                }
+                GenericKind::Impl => {
+                    return Err(diagnostics.report_by_ptr(stable_ptr, ImplGenericsUnsupported));
+                }
             }
         }
+        if generic_args[i].kind() != generic_params[i].kind(db.upcast()) {
+            diagnostics.report_by_ptr(
+                stable_ptr,
+                WrongGenericKind {
+                    expected: generic_params[i].kind(db.upcast()),
+                    actual: generic_args[i].kind(),
+                },
+            );
+        }
     }
+
+    Ok(())
 }

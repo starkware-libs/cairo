@@ -23,8 +23,11 @@
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, OptionFrom};
@@ -458,9 +461,60 @@ define_language_element_id!(
     GenericParamId,
     GenericParamLongId,
     ast::GenericParam,
-    lookup_intern_generic_param,
-    name
+    lookup_intern_generic_param
 );
+impl GenericParamLongId {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let SyntaxStablePtr::Child {key_fields, .. }=
+            db.lookup_intern_stable_ptr(self.1.0) else {
+                unreachable!()
+            };
+        let name_green = TerminalIdentifierGreen(key_fields[0]);
+        name_green.identifier(db)
+    }
+    pub fn kind(&self, db: &dyn SyntaxGroup) -> GenericKind {
+        let SyntaxStablePtr::Child { kind, .. } =
+            db.lookup_intern_stable_ptr(self.1.0) else {
+                unreachable!()
+            };
+        match kind {
+            SyntaxKind::GenericParamType => GenericKind::Type,
+            SyntaxKind::GenericParamConst => GenericKind::Const,
+            SyntaxKind::GenericParamImpl => GenericKind::Impl,
+            _ => unreachable!(),
+        }
+    }
+}
+impl GenericParamId {
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        db.lookup_intern_generic_param(*self).name(db.upcast())
+    }
+    pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
+        db.lookup_intern_generic_param(*self).kind(db.upcast())
+    }
+}
+impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
+        write!(f, "GenericParam{}({})", self.kind(db.upcast()), self.name(db.upcast()))
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum GenericKind {
+    Type,
+    Const,
+    Impl,
+}
+impl std::fmt::Display for GenericKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GenericKind::Type => write!(f, "Type"),
+            GenericKind::Const => write!(f, "Const"),
+            GenericKind::Impl => write!(f, "Impl"),
+        }
+    }
+}
+
 // TODO(spapini): change this to a binding inside a pattern.
 // TODO(spapini): Override full_path to include parents, for better debug.
 define_language_element_id!(

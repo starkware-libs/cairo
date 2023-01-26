@@ -6,7 +6,7 @@ use std::fmt::Display;
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionSignatureId, ImplFunctionId, ImplId, ModuleFileId, StructId,
+    EnumId, FunctionSignatureId, GenericKind, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -156,6 +156,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::WrongNumberOfGenericArguments { expected, actual } => {
                 format!("Wrong number of generic arguments. Expected {expected}, found: {actual}")
+            }
+            SemanticDiagnosticKind::WrongGenericKind { expected, actual } => {
+                format!("Wrong kind of generic argument. Expected {expected}, found: {actual}")
+            }
+            SemanticDiagnosticKind::ConstGenericInferenceUnsupported => {
+                "Const generic inference not yet supported.".to_string()
+            }
+            SemanticDiagnosticKind::ImplGenericsUnsupported => {
+                "Impl generics not yet supported.".to_string()
             }
             SemanticDiagnosticKind::WrongParameterType {
                 impl_id,
@@ -571,6 +580,12 @@ pub enum SemanticDiagnosticKind {
         expected: usize,
         actual: usize,
     },
+    WrongGenericKind {
+        expected: GenericKind,
+        actual: GenericKind,
+    },
+    ConstGenericInferenceUnsupported,
+    ImplGenericsUnsupported,
     WrongParameterType {
         impl_id: ImplId,
         impl_function_id: ImplFunctionId,

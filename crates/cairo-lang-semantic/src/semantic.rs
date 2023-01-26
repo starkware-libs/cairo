@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::LocalVarId;
+use cairo_lang_defs::ids::{GenericKind, LocalVarId};
 // Reexport objects
 pub use cairo_lang_defs::ids::{ParamId, VarId};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -98,6 +98,14 @@ pub enum GenericArgumentId {
     Type(TypeId),
     Literal(LiteralId),
     // TODO(spapini): impls and constants as generic values.
+}
+impl GenericArgumentId {
+    pub fn kind(&self) -> GenericKind {
+        match self {
+            GenericArgumentId::Type(_) => GenericKind::Type,
+            GenericArgumentId::Literal(_) => GenericKind::Const,
+        }
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
     fn fmt(

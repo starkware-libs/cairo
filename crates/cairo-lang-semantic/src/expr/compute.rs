@@ -1308,7 +1308,8 @@ fn method_call_expr(
         &trait_func_generic_params,
         &mut generic_args,
         stable_ptr.untyped(),
-    );
+    )
+    .expect("Conformity has already been checked in previous calls.");
     let function_id = ctx.db.intern_function(FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Trait(concrete_trait_function_id),

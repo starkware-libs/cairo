@@ -305,7 +305,7 @@ fn foo(a : Array::<felt, 5>) -> felt {
 foo
 
 //! > module_code
-extern type Array<T, N>;
+extern type Array<T, const N>;
 
 //! > semantic_diagnostics
 
