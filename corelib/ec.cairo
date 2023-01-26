@@ -41,11 +41,24 @@ extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult::<EcPoint> nopanic;
 #[derive(Drop)]
 extern type EcState;
 
+/// Initializes an EC computation with the zero point.
 extern fn ec_state_init() -> EcState nopanic;
+/// Adds a point to the computation.
 extern fn ec_state_add(ref s: EcState, p: NonZeroEcPoint) nopanic;
+/// Finalizes the EC computation and returns the result (returns `None` if the result is the
+/// zero point).
 extern fn ec_state_try_finalize_nz(s: EcState) -> Option::<NonZeroEcPoint> nopanic;
 /// Adds the product p * m to the state.
 extern fn ec_state_add_mul(ref s: EcState, m: felt, p: NonZeroEcPoint) implicits(EcOp) nopanic;
+
+/// Finalizes the EC computation and returns the result.
+#[inline(always)]
+fn ec_state_finalize(s: EcState) -> EcPoint nopanic {
+    match ec_state_try_finalize_nz(s) {
+        Option::Some(pt) => unwrap_nz(pt),
+        Option::None(()) => ec_point_zero(),
+    }
+}
 
 /// Computes the product of an EC point `p` by the given scalar `m`.
 fn ec_mul(p: NonZeroEcPoint, m: felt) -> Option::<NonZeroEcPoint> {
