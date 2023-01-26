@@ -222,6 +222,7 @@ use ec::ec_point_zero;
 use ec::ec_state_add_mul;
 use ec::ec_state_add;
 use ec::ec_state_finalize_opt;
+use ec::ec_state_finalize;
 use ec::ec_state_init;
 
 mod ecdsa;
