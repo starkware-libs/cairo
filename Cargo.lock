@@ -703,6 +703,7 @@ name = "cairo-lang-sierra-to-casm"
 version = "1.0.0-alpha.2"
 dependencies = [
  "assert_matches",
+ "cairo-felt",
  "cairo-lang-casm",
  "cairo-lang-sierra",
  "cairo-lang-sierra-ap-change",

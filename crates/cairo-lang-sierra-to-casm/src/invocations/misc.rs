@@ -3,6 +3,7 @@ use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use itertools::Itertools;
+use num_bigint::BigInt;
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
@@ -170,12 +171,16 @@ pub fn build_cell_eq(
 /// As long as A <= B, every number in the range can be represented.
 pub fn validate_in_range<const K: u8>(
     casm_builder: &mut CasmBuilder,
+    limit: &BigInt,
     a_imm: u128,
     b_imm: u128,
     value: Var,
     range_check: Var,
     auxiliary_vars: &[Var],
 ) {
+    assert!(a_imm <= b_imm, "{a_imm} > {b_imm}");
+    assert_eq!(limit / (u128::MAX - (K - 1) as u128), a_imm.into());
+    assert_eq!(limit % (u128::MAX - (K - 1) as u128), b_imm.into());
     casm_build_extend! {casm_builder,
         const a_imm = a_imm;
         // 2**128 - B.
