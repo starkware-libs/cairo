@@ -1,9 +1,7 @@
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
-use cairo_lang_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
-};
+use cairo_lang_sierra::extensions::builtin_cost::{BuiltinCostConcreteLibfunc, CostTokenType};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
@@ -65,10 +63,13 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         CoreConcreteLibfunc::BuiltinCost(libfunc) => match libfunc {
             BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => {
-                let cost_computation_ap_change =
-                    BuiltinCostGetGasLibfunc::cost_computation_steps(|token_type| {
-                        info_provider.token_usages(token_type)
-                    });
+                let cost_computation_ap_change: usize = CostTokenType::iter_precost()
+                    .map(|token_type| match info_provider.token_usages(*token_type) {
+                        0 => 0,
+                        1 => 2,
+                        _ => 3,
+                    })
+                    .sum();
                 vec![
                     ApChange::Known(cost_computation_ap_change + 2),
                     ApChange::Known(cost_computation_ap_change + 3),
