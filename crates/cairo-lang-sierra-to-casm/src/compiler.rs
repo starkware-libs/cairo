@@ -153,13 +153,14 @@ pub fn compile(
                     metadata,
                     &return_refs,
                 )?;
+                eprintln!("got here!");
                 check_references_on_stack(&return_refs).map_err(|error| match error {
                     InvocationError::InvalidReferenceExpressionForArgument => {
                         CompilationError::ReturnArgumentsNotOnStack { statement_idx }
                     }
                     _ => CompilationError::InvocationError { statement_idx, error },
                 })?;
-
+                eprintln!("not got here!");
                 let ret_instruction = RetInstruction {};
                 program_offset += ret_instruction.op_size();
                 instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
