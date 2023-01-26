@@ -51,7 +51,9 @@ pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    let mut db = RootDatabase::default();
+    let mut builder = RootDatabase::builder();
+    builder.with_dev_corelib().unwrap();
+    let mut db = builder.build();
     let main_crate_ids = setup_project(&mut db, path)?;
     compile_prepared_db(db, main_crate_ids, compiler_config)
 }
