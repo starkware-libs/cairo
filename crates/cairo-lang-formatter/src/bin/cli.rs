@@ -148,7 +148,7 @@ fn format_directory(
 
 /// Gets a path to a file or directory and, if exists, calls the respective formatting function,
 /// and returns if it was formatted correctly.
-fn format_path(
+pub fn format_path(
     path: &str,
     args: &FormatterArgs,
     recursion_depth: usize,
@@ -218,7 +218,7 @@ fn print_diff(input: &Input<'_>, original_text: &str, formatted_text: &str) {
 /// Exits with 0/1 if the the compilation fails.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
-struct FormatterArgs {
+pub struct FormatterArgs {
     /// Check mode, don't write the formatted files,
     /// just output the diff between the original and the formatted file.
     #[arg(short, long, default_value_t = false)]
