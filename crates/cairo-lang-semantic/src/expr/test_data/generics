@@ -67,7 +67,7 @@ fn foo() {
 }
 
 //! > module_code
-fn bar<A, const B, impl C>(){}
+fn bar<A, const B, impl C: MyTrait::<felt>>(){}
 
 //! > function_name
 foo
