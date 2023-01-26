@@ -97,9 +97,9 @@ impl NonZeroU128Drop of Drop::<NonZero::<u128>>;
 
 #[panic_with('u128 is 0', u128_as_non_zero)]
 fn u128_checked_as_non_zero(a: u128) -> Option::<NonZero::<u128>> implicits() nopanic {
-    match u128_jump_nz(a) {
-        JumpNzResult::Zero(()) => Option::<NonZero::<u128>>::None(()),
-        JumpNzResult::NonZero(x) => Option::<NonZero::<u128>>::Some(x),
+    match u128_is_zero(a) {
+        IsZeroResult::Zero(()) => Option::<NonZero::<u128>>::None(()),
+        IsZeroResult::NonZero(x) => Option::<NonZero::<u128>>::Some(x),
     }
 }
 
@@ -189,7 +189,7 @@ impl U128BitOr of BitOr::<u128> {
     }
 }
 
-extern fn u128_jump_nz(a: u128) -> JumpNzResult::<u128> implicits() nopanic;
+extern fn u128_is_zero(a: u128) -> IsZeroResult::<u128> implicits() nopanic;
 
 #[derive(Copy, Drop)]
 extern type u8;
