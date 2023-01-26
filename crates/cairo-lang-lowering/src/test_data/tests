@@ -197,7 +197,11 @@ fn foo(x: MyEnum) -> felt {
   match x {
     MyEnum::A(inner) => {return 5;},
     MyEnum::B(inner) => {inner},
-    MyEnum::C(inner) => {7}
+    MyEnum::C(inner) => {
+      // A workaround to drop inner.
+      let (a, b) = unbox(inner);
+      7
+    }
   }
 }
 
@@ -229,15 +233,16 @@ Inputs: v3: core::felt
 Initial refs:
 Statements:
 End:
-  Callsite(v3 -> v6)
+  Callsite(v3 -> v8)
 
 blk2:
 Inputs: v4: core::box::Box::<((), core::felt)>
 Initial refs:
 Statements:
-  (v5: core::felt) <- 7u
+  (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
+  (v7: core::felt) <- 7u
 End:
-  Callsite(v5 -> v6)
+  Callsite(v7 -> v8)
 
 blk3 (root):
 Inputs: v0: test::MyEnum
@@ -249,7 +254,7 @@ Statements:
     MyEnum::C => blk2,
   }
 End:
-  Return(v6)
+  Return(v8)
 
 //! > lowering_flat
 blk0:
@@ -263,14 +268,15 @@ blk1:
 Inputs: v3: core::felt
 Statements:
 End:
-  Callsite(v3 -> v6)
+  Callsite(v3 -> v8)
 
 blk2:
 Inputs: v4: core::box::Box::<((), core::felt)>
 Statements:
-  (v5: core::felt) <- 7u
+  (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
+  (v7: core::felt) <- 7u
 End:
-  Callsite(v5 -> v6)
+  Callsite(v7 -> v8)
 
 blk3 (root):
 Inputs: v0: test::MyEnum
@@ -281,7 +287,7 @@ Statements:
     MyEnum::C => blk2,
   }
 End:
-  Return(v6)
+  Return(v8)
 
 //! > ==========================================================================
 
@@ -304,6 +310,10 @@ extern type Array<T, N>;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Variable not dropped.
+ --> lib.cairo:2:8
+fn foo(a : Array::<felt, 5>) -> felt {
+       ^
 
 //! > lowering_structured
 blk0 (root):

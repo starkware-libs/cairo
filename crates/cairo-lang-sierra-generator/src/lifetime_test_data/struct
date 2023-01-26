@@ -20,6 +20,8 @@ struct MyStruct {
     b: felt,
 }
 
+impl MyStructDrop of Drop::<MyStruct>;
+
 //! > lowering_format
 blk0 (root):
 Inputs: v0: test::MyStruct
