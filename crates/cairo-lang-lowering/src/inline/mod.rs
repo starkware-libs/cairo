@@ -10,7 +10,7 @@ use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{chain, izip};
+use itertools::{chain, izip, Itertools};
 
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
@@ -101,7 +101,6 @@ fn gather_inlining_info(
                 }
 
                 info.has_early_return = true;
-                return Ok(info);
             }
             FlatBlockEnd::Return(returns) if returns.iter().any(|r| input_vars.contains(r)) => {
                 if report_diagnostics {
@@ -175,6 +174,9 @@ pub struct FunctionInlinerRewriter<'db> {
     block_queue: BlockQueue,
     /// rewritten statements.
     statements: Vec<Statement>,
+
+    /// The end of the current block.
+    block_end: FlatBlockEnd,
     /// stack for statements that require rewriting.
     statement_rewrite_stack: StatementStack,
 }
@@ -191,6 +193,13 @@ impl StatementStack {
     /// they need to be pushed in reverse order.
     fn push_statments(&mut self, statements: impl DoubleEndedIterator<Item = Statement>) {
         self.stack.extend(statements.rev());
+    }
+
+    // Consumes all the statement in the stack.
+    fn consume(&mut self) -> Vec<Statement> {
+        let res = self.stack.iter().cloned().rev().collect_vec();
+        self.stack.clear();
+        res
     }
 
     fn pop_statement(&mut self) -> Option<Statement> {
@@ -239,6 +248,14 @@ impl<'a, 'b> Mapper<'a, 'b> {
                 location: self.lowered.variables[*old_var_id].location,
             })
         })
+    }
+
+    pub fn update_remapping(&mut self, remapping: &VarRemapping) -> VarRemapping {
+        VarRemapping {
+            remapping: OrderedHashMap::from_iter(
+                remapping.iter().map(|(dst, src)| (self.rename_var(dst), self.rename_var(src))),
+            ),
+        }
     }
 
     /// Rebuilds the statement with renamed var and block ids.
@@ -306,21 +323,23 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 flat_blocks: FlatBlocks::new(),
             },
             statements: vec![],
+            block_end: FlatBlockEnd::Unreachable,
             statement_rewrite_stack: StatementStack::default(),
         };
 
         rewriter.ctx.variables = flat_lower.variables.clone();
         while let Some(block) = rewriter.block_queue.dequeue() {
+            rewriter.block_end = block.end;
             rewriter.statement_rewrite_stack.push_statments(block.statements.into_iter());
 
-            while let Some(statements) = rewriter.statement_rewrite_stack.pop_statement() {
-                rewriter.rewrite(statements)?;
+            while let Some(statement) = rewriter.statement_rewrite_stack.pop_statement() {
+                rewriter.rewrite(statement)?;
             }
 
             rewriter.block_queue.finalize(FlatBlock {
                 inputs: block.inputs,
                 statements: std::mem::take(&mut rewriter.statements),
-                end: block.end,
+                end: rewriter.block_end,
             });
         }
 
@@ -346,7 +365,34 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 if inline_data.config == InlineConfiguration::Always
                     && inline_data.info.is_inlineable
                 {
-                    return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
+                    let optional_return_block_id = if inline_data.info.has_early_return {
+                        // if the inlined function has an early return then we need to split the
+                        // current block after the call instruction.
+
+                        // Create a new block with all the instructions that instructions following
+                        // the call instruction.
+                        let block_id = self.block_queue.enqueue_block(FlatBlock {
+                            inputs: vec![],
+                            statements: self.statement_rewrite_stack.consume(),
+                            end: self.block_end.clone(),
+                        });
+
+                        // Once the current block ends it should fallthrough to the above block.
+                        self.block_end = FlatBlockEnd::Fallthrough(
+                            block_id,
+                            VarRemapping { remapping: OrderedHashMap::default() },
+                        );
+                        Some(block_id)
+                    } else {
+                        None
+                    };
+
+                    return self.inline_function(
+                        function_id,
+                        &stmt.inputs,
+                        &stmt.outputs,
+                        optional_return_block_id,
+                    );
                 }
             }
         }
@@ -359,11 +405,13 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// The statements that needs to replace the call statement in the original block
     /// are pushed into the statement_rewrite_stack.
     /// May also push additional blocks to the block queue.
+    /// The function takes an optional return block id to handle early returns.
     pub fn inline_function(
         &mut self,
         function_id: ConcreteFunctionWithBodyId,
         inputs: &[VariableId],
         outputs: &[VariableId],
+        optional_return_block_id: Option<BlockId>,
     ) -> Maybe<()> {
         let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
         let root_block_id = lowered.root?;
@@ -399,18 +447,24 @@ impl<'db> FunctionInlinerRewriter<'db> {
             }
             let end = match &block.end {
                 FlatBlockEnd::Callsite(remapping) => {
-                    let remapping =
-                        VarRemapping {
-                            remapping: OrderedHashMap::from_iter(remapping.iter().map(
-                                |(dst, src)| (mapper.rename_var(dst), mapper.rename_var(src)),
-                            )),
-                        };
-                    FlatBlockEnd::Callsite(remapping)
+                    FlatBlockEnd::Callsite(mapper.update_remapping(remapping))
                 }
-                FlatBlockEnd::Return(_) => {
-                    panic!("Cannot inline a function an early return.");
-                }
+                FlatBlockEnd::Return(returns) => FlatBlockEnd::Goto(
+                    optional_return_block_id.unwrap(),
+                    VarRemapping {
+                        remapping: OrderedHashMap::from_iter(izip!(
+                            returns.iter().map(|var_id| mapper.rename_var(var_id)),
+                            outputs.iter().cloned(),
+                        )),
+                    },
+                ),
+
                 FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
+                FlatBlockEnd::Fallthrough(block_id, remapping)
+                | FlatBlockEnd::Goto(block_id, remapping) => FlatBlockEnd::Goto(
+                    mapper.renamed_blocks[block_id],
+                    mapper.update_remapping(remapping),
+                ),
             };
 
             let inputs = block.inputs.iter().map(|v| mapper.rename_var(v)).collect();

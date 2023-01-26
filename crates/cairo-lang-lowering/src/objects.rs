@@ -128,6 +128,10 @@ pub enum FlatBlockEnd {
     Callsite(VarRemapping),
     /// This block ends with a `return` statement, exiting the function.
     Return(Vec<VariableId>),
+    /// This block ends with a jump to a different block.
+    Goto(BlockId, VarRemapping),
+    /// This block ends with a fallthrough to a different block.
+    Fallthrough(BlockId, VarRemapping),
     /// The last statement ended the flow (e.g., match will all arms ending in return),
     /// and the end of this block is unreachable.
     Unreachable,
