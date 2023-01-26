@@ -423,7 +423,7 @@ test::foo@0([0]: EcState, [1]: NonZero<EcPoint>) -> (EcState, Unit);
 
 //! > ==========================================================================
 
-//! > ec_state_finalize_opt libfunc
+//! > ec_state_finalize_opt libfunc and ec_state_finalize
 
 //! > test_comments
 
@@ -431,8 +431,8 @@ test::foo@0([0]: EcState, [1]: NonZero<EcPoint>) -> (EcState, Unit);
 run_small_e2e_test
 
 //! > cairo
-fn foo(s: EcState) -> Option::<NonZeroEcPoint> {
-    ec_state_finalize_opt(s)
+fn foo(s: EcState) -> EcPoint {
+    ec_state_finalize(s)
 }
 
 //! > casm
@@ -441,7 +441,7 @@ fn foo(s: EcState) -> Option::<NonZeroEcPoint> {
 [fp + -5] = [ap + 0] + [ap + -2], ap++;
 jmp rel 5 if [ap + -1] != 0;
 [fp + -4] = [ap + -2];
-jmp rel 16;
+jmp rel 14;
 [ap + 0] = [fp + -4] + [ap + -2], ap++;
 [ap + -1] = [ap + 0] * [ap + -2], ap++;
 [ap + 0] = [ap + -1] * [ap + -1], ap++;
@@ -450,50 +450,45 @@ jmp rel 16;
 [fp + -5] = [ap + 0] + [ap + -1], ap++;
 [ap + 0] = [ap + -5] * [ap + -1], ap++;
 [ap + -1] = [ap + 0] + [fp + -4], ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -3], ap++;
-jmp rel 10;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -2], ap++;
+jmp rel 8;
 ap += 8;
-[ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 19})
+test::foo: OrderedHashMap({Step: 17})
 
 //! > sierra_code
 type EcState = EcState;
 type EcPoint = EcPoint;
 type NonZero<EcPoint> = NonZero<EcPoint>;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit>;
 
 libfunc ec_state_finalize_opt = ec_state_finalize_opt;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 0> = enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 0>;
-libfunc store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>> = store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>;
-libfunc rename<core::option::Option::<core::NonZero::<core::ec::EcPoint>>> = rename<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>;
+libfunc store_temp<NonZero<EcPoint>> = store_temp<NonZero<EcPoint>>;
+libfunc unwrap_nz<EcPoint> = unwrap_nz<EcPoint>;
+libfunc rename<EcPoint> = rename<EcPoint>;
 libfunc jump = jump;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 1> = enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 1>;
+libfunc ec_point_zero = ec_point_zero;
+libfunc store_temp<EcPoint> = store_temp<EcPoint>;
 
 ec_state_finalize_opt([0]) { fallthrough([1]) 6() };
 branch_align() -> ();
-enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 0>([1]) -> ([2]);
-store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([2]) -> ([2]);
-rename<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([2]) -> ([3]);
-jump() { 11() };
+store_temp<NonZero<EcPoint>>([1]) -> ([1]);
+unwrap_nz<EcPoint>([1]) -> ([2]);
+rename<EcPoint>([2]) -> ([3]);
+jump() { 10() };
 branch_align() -> ();
-struct_construct<Unit>() -> ([4]);
-enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 1>([4]) -> ([5]);
-store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([5]) -> ([5]);
-rename<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([5]) -> ([3]);
-rename<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([3]) -> ([6]);
-return([6]);
+ec_point_zero() -> ([4]);
+store_temp<EcPoint>([4]) -> ([4]);
+rename<EcPoint>([4]) -> ([3]);
+rename<EcPoint>([3]) -> ([5]);
+return([5]);
 
-test::foo@0([0]: EcState) -> (core::option::Option::<core::NonZero::<core::ec::EcPoint>>);
+test::foo@0([0]: EcState) -> (EcPoint);
 
 //! > ==========================================================================
 
