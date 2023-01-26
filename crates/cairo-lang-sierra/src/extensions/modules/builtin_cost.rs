@@ -19,6 +19,10 @@ use crate::ids::GenericTypeId;
 pub enum CostTokenType {
     /// A single Cairo step, or some cost which is equivalent to it.
     Step,
+    /// The cost of adding uninitialized memory cell.
+    Hole,
+    /// One invocation of the range check builtin.
+    RangeCheck,
     /// One invocation of the pedersen hash function.
     Pedersen,
     /// One invocation of the bitwise builtin.
@@ -37,13 +41,15 @@ impl CostTokenType {
     }
 
     pub fn iter_postcost() -> std::slice::Iter<'static, Self> {
-        [CostTokenType::Step].iter()
+        [CostTokenType::Step, CostTokenType::Hole, CostTokenType::RangeCheck].iter()
     }
 
     /// Returns the name of the token type, in snake_case.
     pub fn name(&self) -> String {
         match self {
             CostTokenType::Step => "step",
+            CostTokenType::Hole => "hole",
+            CostTokenType::RangeCheck => "range_check",
             CostTokenType::Pedersen => "pedersen",
             CostTokenType::Bitwise => "bitwise",
             CostTokenType::EcOp => "ec_op",
@@ -57,7 +63,9 @@ impl CostTokenType {
 
     pub fn offset_in_builtin_costs(&self) -> i16 {
         match self {
-            CostTokenType::Step => panic!("offset_in_builtin_costs is not supported for 'Step'."),
+            CostTokenType::Step | CostTokenType::Hole | CostTokenType::RangeCheck => {
+                panic!("offset_in_builtin_costs is not supported for '{}'.", self.camel_case_name())
+            }
             CostTokenType::Pedersen => 0,
             CostTokenType::Bitwise => 1,
             CostTokenType::EcOp => 2,
@@ -88,26 +96,7 @@ define_libfunc_hierarchy! {
 
 /// Libfunc for getting gas to be used by a builtin.
 #[derive(Default)]
-pub struct BuiltinCostGetGasLibfunc {}
-impl BuiltinCostGetGasLibfunc {
-    /// Returns the number of steps required for the computation of the requested cost, given the
-    /// number of requested token usages. The number of steps is also the change in `ap` (every
-    /// step includes `ap++`).
-    pub fn cost_computation_steps<TokenUsages: Fn(CostTokenType) -> usize>(
-        token_usages: TokenUsages,
-    ) -> usize {
-        CostTokenType::iter()
-            .map(|token_type| match token_type {
-                CostTokenType::Step => 0,
-                _ => match token_usages(*token_type) {
-                    0 => 0,
-                    1 => 2,
-                    _ => 3,
-                },
-            })
-            .sum()
-    }
-}
+pub struct BuiltinCostGetGasLibfunc;
 
 impl NoGenericArgsGenericLibfunc for BuiltinCostGetGasLibfunc {
     const STR_ID: &'static str = "get_gas_all";

@@ -87,19 +87,16 @@ pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: InvocationCostInf
             vec![ops.const_cost_token(1, CostTokenType::EcOp)]
         }
         BranchAlign(_) => {
-            let cost = CostTokenType::iter_precost()
-                .map(|token_type| ops.statement_var_cost(*token_type))
-                .reduce(|x, y| ops.add(x, y));
-            vec![cost.unwrap()]
+            vec![statement_vars_cost(ops, CostTokenType::iter_precost())]
         }
         Pedersen(_) => {
             vec![ops.const_cost_token(1, CostTokenType::Pedersen)]
         }
         BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinGetGas(_)) => {
-            let cost = CostTokenType::iter_precost()
-                .map(|token_type| ops.statement_var_cost(*token_type))
-                .reduce(|x, y| ops.add(x, y));
-            vec![ops.sub(ops.const_cost(0), cost.unwrap()), ops.const_cost(0)]
+            vec![
+                ops.sub(ops.const_cost(0), statement_vars_cost(ops, CostTokenType::iter_precost())),
+                ops.const_cost(0),
+            ]
         }
         _ => libfunc.branch_signatures().iter().map(|_| ops.const_cost(0)).collect(),
     }
@@ -156,16 +153,21 @@ pub fn core_libfunc_postcost<
         },
         Gas(GetGas(_)) => {
             vec![
-                ops.sub(ops.const_cost(3), ops.statement_var_cost(CostTokenType::Step)),
+                ops.sub(
+                    ops.const_cost(3),
+                    statement_vars_cost(ops, CostTokenType::iter_postcost()),
+                ),
                 ops.const_cost(4),
             ]
         }
-        Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Step)],
+        Gas(RefundGas(_)) => vec![statement_vars_cost(ops, CostTokenType::iter_postcost())],
         BranchAlign(_) => {
-            let cost = CostTokenType::iter_postcost()
-                .map(|token_type| ops.statement_var_cost(*token_type))
-                .reduce(|x, y| ops.add(x, y));
-            vec![ops.add(cost.unwrap(), ops.const_cost(1))]
+            vec![
+                ops.add(
+                    statement_vars_cost(ops, CostTokenType::iter_postcost()),
+                    ops.const_cost(1),
+                ),
+            ]
         }
         Array(ArrayConcreteLibfunc::New(_)) => vec![ops.const_cost(1)],
         Array(ArrayConcreteLibfunc::Append(libfunc)) => {
@@ -225,9 +227,6 @@ pub fn core_libfunc_postcost<
         }
         BuiltinCost(builtin_libfunc) => match builtin_libfunc {
             BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => {
-                let cost = CostTokenType::iter_postcost()
-                    .map(|token_type| ops.statement_var_cost(*token_type))
-                    .reduce(|x, y| ops.add(x, y));
                 // Compute the (maximal) number of steps for the computation of the requested cost.
                 let [cost_branch0, cost_branch1] =
                     <[_; 2]>::try_from(core_libfunc_ap_change(libfunc, ap_info_provider))
@@ -238,7 +237,10 @@ pub fn core_libfunc_postcost<
                 let cost_branch1: i32 =
                     extract_matches!(cost_branch1, ApChange::Known).try_into().unwrap();
                 vec![
-                    ops.sub(ops.const_cost(cost_branch0 + 3), cost.unwrap()),
+                    ops.sub(
+                        ops.const_cost(cost_branch0 + 3),
+                        statement_vars_cost(ops, CostTokenType::iter_postcost()),
+                    ),
                     ops.const_cost(cost_branch1 + 5),
                 ]
             }
@@ -252,6 +254,17 @@ pub fn core_libfunc_postcost<
         },
         CoreConcreteLibfunc::Debug(_) => vec![ops.const_cost(0)],
     }
+}
+
+/// Returns the sum of statement variables for all the requested tokens.
+fn statement_vars_cost<'a, Ops: CostOperations, TokenTypes: Iterator<Item = &'a CostTokenType>>(
+    ops: &Ops,
+    token_types: TokenTypes,
+) -> Ops::CostType {
+    token_types
+        .map(|token_type| ops.statement_var_cost(*token_type))
+        .reduce(|x, y| ops.add(x, y))
+        .unwrap()
 }
 
 /// Returns costs for u8 libfuncs.

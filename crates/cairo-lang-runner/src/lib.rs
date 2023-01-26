@@ -106,10 +106,7 @@ impl SierraCasmRunner {
                 let vm = context.vm;
                 // Create the builtin cost segment, with dummy values.
                 let builtin_cost_segment = vm.add_memory_segment();
-                for token_type in CostTokenType::iter() {
-                    if *token_type == CostTokenType::Step {
-                        continue;
-                    }
+                for token_type in CostTokenType::iter_precost() {
                     vm.insert_value(
                         &(builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)),
                         Felt::from(DUMMY_BUILTIN_GAS_COST),
