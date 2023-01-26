@@ -30,6 +30,8 @@ enum MyEnum {
     C: (felt, felt),
 }
 
+impl MyEnumDrop of Drop::<MyEnum>;
+
 //! > lowering_format
 blk0:
 Inputs: v4: core::felt

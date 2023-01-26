@@ -41,3 +41,6 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
         array_len(ref self)
     }
 }
+
+// Impls for common generic types
+impl ArrayFeltDrop of Drop::<Array::<felt>>;

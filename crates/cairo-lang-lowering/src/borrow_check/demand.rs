@@ -36,7 +36,7 @@ impl Demand {
                 // Currently disabled, since Drop is not properly implemented everywhere.
                 let var = &borrow_checker.lowered.variables[*var];
                 #[allow(clippy::overly_complex_bool_expr)]
-                if false && !var.droppable {
+                if !var.droppable {
                     borrow_checker.diagnostics.report_by_location(var.location, VariableNotDropped);
                 }
             }
