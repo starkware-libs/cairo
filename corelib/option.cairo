@@ -1,3 +1,5 @@
+use array::ArrayTrait;
+
 enum Option<T> {
     Some: T,
     None: (),
@@ -17,8 +19,8 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
         match self {
             Option::Some(x) => x,
             Option::None(()) => {
-                let mut data = array_new::<felt>();
-                array_append::<felt>(ref data, err)
+                let mut data = ArrayTrait::new();
+                data.append(err)
                 panic(data)
             },
         }

@@ -286,15 +286,12 @@ fn compute_expr_binary_semantic(
             _ => Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
         };
     }
-    // TODO(spapini): Use a trait here.
-    let lty = ctx.reduce_ty(lexpr.ty());
-    let rty = ctx.reduce_ty(rexpr.ty());
+    ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
+    ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
     let function = match core_binary_operator(
         db,
         &mut ctx.inference,
         &binary_op,
-        lty,
-        rty,
         syntax.stable_ptr().untyped(),
     )? {
         Err(err_kind) => {
@@ -453,7 +450,7 @@ pub fn resolve_trait_function(
     let impl_id = db.lookup_intern_concrete_impl(concrete_impl).impl_id;
     let impl_function = db
         .impl_function_by_trait_function(impl_id, concrete_trait_function.function_id(db))?
-        .unwrap();
+        .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
     Ok(ConcreteImplGenericFunctionId { concrete_impl, function: impl_function })
 }
 
@@ -1262,13 +1259,15 @@ fn method_call_expr(
             // Check if trait function signature's first param can fit our expr type.
             let mut inference = ctx.inference.clone();
             let Some(concrete_trait_id) = inference.infer_concrete_trait_by_self(
-                trait_function, lexpr.ty()
+                trait_function, lexpr.ty(),stable_ptr.untyped()
             ) else {continue};
 
             // Find impls for it.
             let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
             let Ok(impls) = find_impls_at_context(
-                ctx.db, &inference, &lookup_context, concrete_trait_id) else { continue; };
+                ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()) else {
+                    continue
+                };
 
             if impls.is_empty() {
                 continue;
@@ -1291,8 +1290,10 @@ fn method_call_expr(
         }
     };
 
-    let concrete_trait_id =
-        ctx.inference.infer_concrete_trait_by_self(trait_function, lexpr.ty()).unwrap();
+    let concrete_trait_id = ctx
+        .inference
+        .infer_concrete_trait_by_self(trait_function, lexpr.ty(), stable_ptr.untyped())
+        .unwrap();
     let signature = ctx.db.trait_function_signature(trait_function).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();
     let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(

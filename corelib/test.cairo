@@ -1,3 +1,5 @@
+use array::ArrayTrait;
+use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
 
@@ -477,10 +479,10 @@ fn test_u256_mul_overflow_2() {
 
 // TODO(orizi): Switch to operators and literals when added.
 fn test_array_helper(idx: u128) -> felt {
-    let mut arr = array_new::<felt>();
-    array_append::<felt>(ref arr, 10);
-    array_append::<felt>(ref arr, 11);
-    array_append::<felt>(ref arr, 12);
+    let mut arr = ArrayTrait::new();
+    arr.append(10);
+    arr.append(11);
+    arr.append(12);
     array_at(ref arr, idx)
 }
 
@@ -505,27 +507,27 @@ fn test_array_out_of_bound_2() {
 
 #[test]
 fn test_dict_new() -> DictFeltTo::<felt> {
-    dict_felt_to_new::<felt>()
+    DictFeltToTrait::new()
 }
 
 #[test]
 fn test_dict_default_val() {
-    let mut dict = dict_felt_to_new::<felt>();
-    let default_val = dict_felt_to_read::<felt>(ref dict, 0);
-    let squashed_dict = dict_felt_to_squash::<felt>(dict);
+    let mut dict = DictFeltToTrait::new();
+    let default_val = dict.get(0);
+    let squashed_dict = dict.squash();
     assert(default_val == 0, 'default_val == 0');
 }
 
 // TODO(Gil): Assert before the squash when drop will autosquash the dict.
 #[test]
 fn test_dict_write_read() {
-    let mut dict = dict_felt_to_new::<felt>();
-    dict_felt_to_write::<felt>(ref dict, 10, 110);
-    dict_felt_to_write::<felt>(ref dict, 11, 111);
-    let val10 = dict_felt_to_read::<felt>(ref dict, 10);
-    let val11 = dict_felt_to_read::<felt>(ref dict, 11);
-    let val12 = dict_felt_to_read::<felt>(ref dict, 12);
-    let squashed_dict = dict_felt_to_squash::<felt>(dict);
+    let mut dict = DictFeltToTrait::new();
+    dict.insert(10, 110);
+    dict.insert(11, 111);
+    let val10 = dict.get(10);
+    let val11 = dict.get(11);
+    let val12 = dict.get(12);
+    let squashed_dict = dict.squash();
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');

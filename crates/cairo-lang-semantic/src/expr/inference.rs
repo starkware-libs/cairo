@@ -295,12 +295,18 @@ impl<'db> Inference<'db> {
         generic_params: &[GenericParamId],
         generic_args: &[GenericArgumentId],
         expected_generic_args: &[GenericArgumentId],
+        stable_ptr: SyntaxStablePtrId,
     ) -> bool {
         if generic_args.len() != expected_generic_args.len() {
             return false;
         }
         let mut inference = self.clone();
-        let res = inference.infer_generics(generic_params, generic_args, expected_generic_args);
+        let res = inference.infer_generics(
+            generic_params,
+            generic_args,
+            expected_generic_args,
+            stable_ptr,
+        );
         res.is_ok()
     }
 
@@ -312,19 +318,13 @@ impl<'db> Inference<'db> {
         generic_params: &[GenericParamId],
         generic_args: &[GenericArgumentId],
         expected_generic_args: &[GenericArgumentId],
+        stable_ptr: SyntaxStablePtrId,
     ) -> Result<Vec<GenericArgumentId>, InferenceError> {
         // TODO(spapini): Handle non-type generic args.
         let substitution = GenericSubstitution(
             generic_params
                 .iter()
-                .map(|param| {
-                    (
-                        *param,
-                        GenericArgumentId::Type(
-                            self.new_var(param.stable_ptr(self.db.upcast()).untyped()),
-                        ),
-                    )
-                })
+                .map(|param| (*param, GenericArgumentId::Type(self.new_var(stable_ptr))))
                 .collect(),
         );
         let mut generic_args = generic_args.iter().copied().collect_vec();
@@ -340,6 +340,7 @@ impl<'db> Inference<'db> {
         &mut self,
         trait_function: TraitFunctionId,
         self_ty: TypeId,
+        stable_ptr: SyntaxStablePtrId,
     ) -> Option<ConcreteTraitId> {
         let trait_id = trait_function.trait_id(self.db.upcast());
         let signature = self.db.trait_function_signature(trait_function).ok()?;
@@ -354,6 +355,7 @@ impl<'db> Inference<'db> {
                 &generic_params,
                 &[GenericArgumentId::Type(first_param.ty)],
                 &[GenericArgumentId::Type(self_ty)],
+                stable_ptr,
             )
             .ok()?;
         Some(self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }))

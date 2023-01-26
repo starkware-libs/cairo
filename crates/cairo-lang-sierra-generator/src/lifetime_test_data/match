@@ -124,7 +124,7 @@ blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 3u
-  () <- blk3()
+  (v4: core::felt) <- core::felt_add(v1, v3)
 End:
   Callsite()
 
@@ -139,18 +139,10 @@ Statements:
 End:
   Return(v6)
 
-blk3:
-Inputs:
-Statements:
-  (v7: core::felt) <- core::felt_add(v1, v3)
-End:
-  Callsite(v7 -> v4)
-
 //! > last_use
 ((BlockId(2), 2), 0)
-((BlockId(3), 1), 0)
-((BlockId(3), 0), 1)
-((BlockId(3), 0), 0)
+((BlockId(1), 1), 1)
+((BlockId(1), 1), 0)
 ((BlockId(2), 0), 0)
 
 //! > drops

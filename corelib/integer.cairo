@@ -77,12 +77,18 @@ impl U128Sub of Sub::<u128> {
     }
 }
 
-#[panic_with('u128_mul OF', u128_mul)]
 fn u128_checked_mul(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) nopanic {
     let (top_word, bottom_word) = u128_wide_mul(a, b);
     match u128_to_felt(top_word) {
         0 => Option::<u128>::Some(bottom_word),
         _ => Option::<u128>::None(()),
+    }
+}
+
+impl U128Mul of Mul::<u128> {
+    #[inline(always)]
+    fn mul(a: u128, b: u128) -> u128 {
+        u128_checked_mul(a, b).expect('u128_mul Overflow')
     }
 }
 
@@ -102,8 +108,11 @@ fn u128_safe_div(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopa
     q
 }
 
-fn u128_div(a: u128, b: u128) -> u128 implicits(RangeCheck) {
-    u128_safe_div(a, u128_as_non_zero(b))
+impl U128Div of Div::<u128> {
+    #[inline(always)]
+    fn div(a: u128, b: u128) -> u128 {
+        u128_safe_div(a, u128_as_non_zero(b))
+    }
 }
 
 fn u128_safe_mod(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopanic {
@@ -111,8 +120,11 @@ fn u128_safe_mod(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopa
     r
 }
 
-fn u128_mod(a: u128, b: u128) -> u128 implicits(RangeCheck) {
-    u128_safe_mod(a, u128_as_non_zero(b))
+impl U128Rem of Rem::<u128> {
+    #[inline(always)]
+    fn rem(a: u128, b: u128) -> u128 {
+        u128_safe_mod(a, u128_as_non_zero(b))
+    }
 }
 
 extern fn u128_safe_divmod(
@@ -123,31 +135,58 @@ extern fn u128_lt(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic;
 extern fn u128_eq(a: u128, b: u128) -> bool implicits() nopanic;
 extern fn u128_le(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic;
 
-fn u128_gt(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic {
-    u128_lt(b, a)
+impl U128PartialEq of PartialEq::<u128> {
+    #[inline(always)]
+    fn eq(a: u128, b: u128) -> bool {
+        u128_eq(a, b)
+    }
+    #[inline(always)]
+    fn ne(a: u128, b: u128) -> bool {
+        !(a == b)
+    }
 }
 
-fn u128_ge(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic {
-    u128_le(b, a)
-}
-
-fn u128_ne(a: u128, b: u128) -> bool implicits() nopanic {
-    !(a == b)
+impl U128PartialOrd of PartialOrd::<u128> {
+    #[inline(always)]
+    fn le(a: u128, b: u128) -> bool {
+        u128_le(a, b)
+    }
+    #[inline(always)]
+    fn ge(a: u128, b: u128) -> bool {
+        u128_le(b, a)
+    }
+    #[inline(always)]
+    fn lt(a: u128, b: u128) -> bool {
+        u128_lt(a, b)
+    }
+    #[inline(always)]
+    fn gt(a: u128, b: u128) -> bool {
+        u128_lt(b, a)
+    }
 }
 
 extern type Bitwise;
 extern fn bitwise(a: u128, b: u128) -> (u128, u128, u128) implicits(Bitwise) nopanic;
-fn u128_and(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
-    let (v, _, _) = bitwise(a, b);
-    v
+impl U128BitAnd of BitAnd::<u128> {
+    #[inline(always)]
+    fn bitand(a: u128, b: u128) -> u128 {
+        let (v, _, _) = bitwise(a, b);
+        v
+    }
 }
-fn u128_xor(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
-    let (_, v, _) = bitwise(a, b);
-    v
+impl U128BitXor of BitXor::<u128> {
+    #[inline(always)]
+    fn bitxor(a: u128, b: u128) -> u128 {
+        let (_, v, _) = bitwise(a, b);
+        v
+    }
 }
-fn u128_or(a: u128, b: u128) -> u128 implicits(Bitwise) nopanic {
-    let (_, _, v) = bitwise(a, b);
-    v
+impl U128BitOr of BitOr::<u128> {
+    #[inline(always)]
+    fn bitor(a: u128, b: u128) -> u128 {
+        let (_, _, v) = bitwise(a, b);
+        v
+    }
 }
 
 extern fn u128_jump_nz(a: u128) -> JumpNzResult::<u128> implicits() nopanic;
@@ -164,19 +203,34 @@ extern fn u8_lt(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
 extern fn u8_eq(a: u8, b: u8) -> bool implicits() nopanic;
 extern fn u8_le(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
 
-#[inline(always)]
-fn u8_gt(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic {
-    u8_lt(b, a)
+impl U8PartialEq of PartialEq::<u8> {
+    #[inline(always)]
+    fn eq(a: u8, b: u8) -> bool {
+        u8_eq(a, b)
+    }
+    #[inline(always)]
+    fn ne(a: u8, b: u8) -> bool {
+        !(a == b)
+    }
 }
 
-#[inline(always)]
-fn u8_ge(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic {
-    u8_le(b, a)
-}
-
-#[inline(always)]
-fn u8_ne(a: u8, b: u8) -> bool implicits() nopanic {
-    !(a == b)
+impl U8PartialOrd of PartialOrd::<u8> {
+    #[inline(always)]
+    fn le(a: u8, b: u8) -> bool {
+        u8_le(a, b)
+    }
+    #[inline(always)]
+    fn ge(a: u8, b: u8) -> bool {
+        u8_le(b, a)
+    }
+    #[inline(always)]
+    fn lt(a: u8, b: u8) -> bool {
+        u8_lt(a, b)
+    }
+    #[inline(always)]
+    fn gt(a: u8, b: u8) -> bool {
+        u8_lt(b, a)
+    }
 }
 
 extern fn u8_overflowing_add(a: u8, b: u8) -> Result::<u8, u8> implicits(RangeCheck) nopanic;
@@ -236,19 +290,34 @@ extern fn u64_lt(a: u64, b: u64) -> bool implicits(RangeCheck) nopanic;
 extern fn u64_eq(a: u64, b: u64) -> bool implicits() nopanic;
 extern fn u64_le(a: u64, b: u64) -> bool implicits(RangeCheck) nopanic;
 
-#[inline(always)]
-fn u64_gt(a: u64, b: u64) -> bool implicits(RangeCheck) nopanic {
-    u64_lt(b, a)
+impl U64PartialEq of PartialEq::<u64> {
+    #[inline(always)]
+    fn eq(a: u64, b: u64) -> bool {
+        u64_eq(a, b)
+    }
+    #[inline(always)]
+    fn ne(a: u64, b: u64) -> bool {
+        !(a == b)
+    }
 }
 
-#[inline(always)]
-fn u64_ge(a: u64, b: u64) -> bool implicits(RangeCheck) nopanic {
-    u64_le(b, a)
-}
-
-#[inline(always)]
-fn u64_ne(a: u64, b: u64) -> bool implicits() nopanic {
-    !(a == b)
+impl U64PartialOrd of PartialOrd::<u64> {
+    #[inline(always)]
+    fn le(a: u64, b: u64) -> bool {
+        u64_le(a, b)
+    }
+    #[inline(always)]
+    fn ge(a: u64, b: u64) -> bool {
+        u64_le(b, a)
+    }
+    #[inline(always)]
+    fn lt(a: u64, b: u64) -> bool {
+        u64_lt(a, b)
+    }
+    #[inline(always)]
+    fn gt(a: u64, b: u64) -> bool {
+        u64_lt(b, a)
+    }
 }
 
 extern fn u64_overflowing_add(a: u64, b: u64) -> Result::<u64, u64> implicits(RangeCheck) nopanic;
@@ -334,7 +403,7 @@ fn u256_overflow_sub(a: u256, b: u256) -> (u256, bool) implicits(RangeCheck) nop
     }
 }
 
-fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) nopanic {
+fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) {
     let (high1, low) = u128_wide_mul(a.low, b.low);
     let (overflow_value1, high2) = u128_wide_mul(a.low, b.high);
     let (overflow_value2, high3) = u128_wide_mul(a.high, b.low);
@@ -385,8 +454,7 @@ impl U256Sub of Sub::<u256> {
     }
 }
 
-#[panic_with('u256_mul OF', u256_mul)]
-fn u256_checked_mul(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) nopanic {
+fn u256_checked_mul(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) {
     let (r, overflow) = u256_overflow_mul(a, b);
     if overflow {
         Option::<u256>::None(())
@@ -394,47 +462,66 @@ fn u256_checked_mul(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) no
         Option::<u256>::Some(r)
     }
 }
-#[inline(always)]
-fn u256_eq(a: u256, b: u256) -> bool implicits() {
-    a.low == b.low & a.high == b.high
-}
-#[inline(always)]
-fn u256_ne(a: u256, b: u256) -> bool implicits() {
-    !(a == b)
-}
 
-fn u256_lt(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
-    if a.high < b.high {
-        true
-    } else if a.high == b.high {
-        a.low < b.low
-    } else {
-        false
+impl U256Mul of Mul::<u256> {
+    #[inline(always)]
+    fn mul(a: u256, b: u256) -> u256 {
+        u256_checked_mul(a, b).expect('u256_mul Overflow')
     }
 }
-#[inline(always)]
-fn u256_le(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
-    !u256_lt(b, a)
+
+impl U256PartialEq of PartialEq::<u256> {
+    #[inline(always)]
+    fn eq(a: u256, b: u256) -> bool {
+        a.low == b.low & a.high == b.high
+    }
+    #[inline(always)]
+    fn ne(a: u256, b: u256) -> bool {
+        !(a == b)
+    }
 }
-#[inline(always)]
-fn u256_gt(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
-    u256_lt(b, a)
+
+impl U256PartialOrd of PartialOrd::<u256> {
+    #[inline(always)]
+    fn le(a: u256, b: u256) -> bool {
+        !(b < a)
+    }
+    #[inline(always)]
+    fn ge(a: u256, b: u256) -> bool {
+        !(a < b)
+    }
+    fn lt(a: u256, b: u256) -> bool {
+        if a.high < b.high {
+            true
+        } else if a.high == b.high {
+            a.low < b.low
+        } else {
+            false
+        }
+    }
+    #[inline(always)]
+    fn gt(a: u256, b: u256) -> bool {
+        b < a
+    }
 }
-#[inline(always)]
-fn u256_ge(a: u256, b: u256) -> bool implicits(RangeCheck) nopanic {
-    !u256_lt(a, b)
+
+impl U256BitAnd of BitAnd::<u256> {
+    #[inline(always)]
+    fn bitand(a: u256, b: u256) -> u256 {
+        u256 { low: a.low & b.low, high: a.high & b.high }
+    }
 }
-#[inline(always)]
-fn u256_and(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
-    u256 { low: a.low & b.low, high: a.high & b.high }
+impl U256BitXor of BitXor::<u256> {
+    #[inline(always)]
+    fn bitxor(a: u256, b: u256) -> u256 {
+        u256 { low: a.low ^ b.low, high: a.high ^ b.high }
+    }
 }
-#[inline(always)]
-fn u256_or(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
-    u256 { low: a.low | b.low, high: a.high | b.high }
-}
-#[inline(always)]
-fn u256_xor(a: u256, b: u256) -> u256 implicits(Bitwise) nopanic {
-    u256 { low: a.low ^ b.low, high: a.high ^ b.high }
+impl U256BitOr of BitOr::<u256> {
+    #[inline(always)]
+    fn bitor(a: u256, b: u256) -> u256 {
+        u256 { low: a.low | b.low, high: a.high | b.high }
+    }
 }
 
 fn u256_from_felt(a: felt) -> u256 implicits(RangeCheck) nopanic {
