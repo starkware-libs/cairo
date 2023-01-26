@@ -32,5 +32,5 @@ fn main() {
     )
     .expect("Compilation failed.");
 
-    fs::write(args.output, format!("{}", cairo_program)).expect("Failed to write output.");
+    fs::write(args.output, format!("{cairo_program}")).expect("Failed to write output.");
 }

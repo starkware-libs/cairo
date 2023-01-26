@@ -163,9 +163,8 @@ fn compare_printed_and_expected_maybe_fix(
     if printed != expected {
         if fix {
             println!(
-                "Test failed, fixing expected output file: {}. Please make sure that the result \
-                 is correct.",
-                expected_output_filename
+                "Test failed, fixing expected output file: {expected_output_filename}. Please \
+                 make sure that the result is correct."
             );
             std::fs::write(expected_output_filename, printed)
                 .expect("Failed writing to the expected output file");

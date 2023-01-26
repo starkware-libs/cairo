@@ -144,7 +144,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 
     /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
     pub fn expect(&self, error_message: &str) {
-        assert!(self.0.leaves.is_empty(), "{}\n{:?}", error_message, self);
+        assert!(self.0.leaves.is_empty(), "{error_message}\n{self:?}");
         for subtree in &self.0.subtrees {
             subtree.expect(error_message);
         }

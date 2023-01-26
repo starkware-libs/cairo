@@ -31,5 +31,5 @@ fn test_solve_gas(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<Str
     let gas_info1 = calc_gas_postcost_info(&program, Default::default(), &gas_info0).unwrap();
     let gas_info = gas_info0.combine(gas_info1);
 
-    OrderedHashMap::from([("gas_solution".into(), format!("{}", gas_info))])
+    OrderedHashMap::from([("gas_solution".into(), format!("{gas_info}"))])
 }

@@ -37,7 +37,7 @@ pub enum RunnerError {
     #[error(transparent)]
     ProgramRegistryError(#[from] Box<ProgramRegistryError>),
     #[error(transparent)]
-    SierraCompilationError(#[from] CompilationError),
+    SierraCompilationError(#[from] Box<CompilationError>),
     #[error(transparent)]
     ApChangeError(#[from] ApChangeError),
     #[error(transparent)]

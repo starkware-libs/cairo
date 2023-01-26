@@ -450,12 +450,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Invalid drop trait implementation.".into()
             }
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
-                format!("`{}` is not allowed inside impl.", item_kw)
+                format!("`{item_kw}` is not allowed inside impl.")
             }
             SemanticDiagnosticKind::MissingItemsInImpl { item_names } => {
                 format!(
                     "Not all trait items are implemented. Missing: {}.",
-                    item_names.iter().map(|name| format!("'{}'", name)).join(", ")
+                    item_names.iter().map(|name| format!("'{name}'")).join(", ")
                 )
             }
             SemanticDiagnosticKind::PassPanicAsNopanic { impl_function_id, trait_id } => {

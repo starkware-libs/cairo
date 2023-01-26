@@ -17,7 +17,7 @@ pub enum ApChange {
 impl Display for ApChange {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ApChange::Known(change) => write!(f, "ApChange::Known({})", change),
+            ApChange::Known(change) => write!(f, "ApChange::Known({change})"),
             ApChange::Unknown => write!(f, "ApChange::Unknown"),
         }
     }

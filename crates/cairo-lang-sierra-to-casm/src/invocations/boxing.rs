@@ -59,10 +59,7 @@ fn build_unbox(
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression {
-            cells: (0..size)
-                .into_iter()
-                .map(|idx| CellExpression::DoubleDeref(operand, idx))
-                .collect(),
+            cells: (0..size).map(|idx| CellExpression::DoubleDeref(operand, idx)).collect(),
         }]
         .into_iter(),
     ))

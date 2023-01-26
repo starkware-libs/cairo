@@ -63,7 +63,7 @@ impl Display for GasInfo {
         }
         writeln!(f)?;
         for (function_id, costs) in self.function_costs.iter() {
-            writeln!(f, "{}:", function_id)?;
+            writeln!(f, "{function_id}:")?;
             for (cost_type, value) in costs.iter() {
                 writeln!(f, "{}({value})", cost_type.name())?;
             }

@@ -58,7 +58,7 @@ pub struct CairoProgram {
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for instruction in &self.instructions {
-            writeln!(f, "{};", instruction)?
+            writeln!(f, "{instruction};")?
         }
         Ok(())
     }
@@ -106,7 +106,7 @@ pub fn compile(
     program: &Program,
     metadata: &Metadata,
     gas_usage_check: bool,
-) -> Result<CairoProgram, CompilationError> {
+) -> Result<CairoProgram, Box<CompilationError>> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
 
@@ -127,7 +127,8 @@ pub fn compile(
         metadata,
         gas_usage_check,
         &type_sizes,
-    )?;
+    )
+    .map_err(|err| Box::new(err.into()))?;
 
     let mut program_offset: usize = 0;
 
@@ -137,22 +138,25 @@ pub fn compile(
         match statement {
             Statement::Return(ref_ids) => {
                 let (annotations, return_refs) = program_annotations
-                    .get_annotations_after_take_args(statement_idx, ref_ids.iter())?;
+                    .get_annotations_after_take_args(statement_idx, ref_ids.iter())
+                    .map_err(|err| Box::new(err.into()))?;
 
                 if let Some(var_id) = annotations.refs.keys().next() {
-                    return Err(CompilationError::DanglingReferences {
+                    return Err(Box::new(CompilationError::DanglingReferences {
                         statement_idx,
                         var_id: var_id.clone(),
-                    });
+                    }));
                 };
 
-                program_annotations.validate_final_annotations(
-                    statement_idx,
-                    &annotations,
-                    &program.funcs,
-                    metadata,
-                    &return_refs,
-                )?;
+                program_annotations
+                    .validate_final_annotations(
+                        statement_idx,
+                        &annotations,
+                        &program.funcs,
+                        metadata,
+                        &return_refs,
+                    )
+                    .map_err(|err| Box::new(err.into()))?;
                 check_references_on_stack(&return_refs).map_err(|error| match error {
                     InvocationError::InvalidReferenceExpressionForArgument => {
                         CompilationError::ReturnArgumentsNotOnStack { statement_idx }
@@ -166,7 +170,8 @@ pub fn compile(
             }
             Statement::Invocation(invocation) => {
                 let (annotations, invoke_refs) = program_annotations
-                    .get_annotations_after_take_args(statement_idx, invocation.args.iter())?;
+                    .get_annotations_after_take_args(statement_idx, invocation.args.iter())
+                    .map_err(|err| Box::new(err.into()))?;
 
                 let libfunc = registry
                     .get_libfunc(&invocation.libfunc_id)
@@ -178,8 +183,9 @@ pub fn compile(
                     .iter()
                     .map(|param_signature| param_signature.ty.clone())
                     .collect();
-                check_types_match(&invoke_refs, &param_types)
-                    .map_err(|error| AnnotationError::ReferencesError { statement_idx, error })?;
+                check_types_match(&invoke_refs, &param_types).map_err(|error| {
+                    Box::new(AnnotationError::ReferencesError { statement_idx, error }.into())
+                })?;
                 let compiled_invocation = compile_invocation(
                     ProgramInfo { metadata, type_sizes: &type_sizes },
                     invocation,
@@ -219,20 +225,22 @@ pub fn compile(
                             &program.statements[destination_statement_idx.0],
                         )?
                     {
-                        return Err(CompilationError::ExpectedBranchAlign {
+                        return Err(Box::new(CompilationError::ExpectedBranchAlign {
                             source_statement_idx: statement_idx,
                             destination_statement_idx,
-                        });
+                        }));
                     }
 
-                    program_annotations.propagate_annotations(
-                        statement_idx,
-                        destination_statement_idx,
-                        &updated_annotations,
-                        branch_info,
-                        branch_changes,
-                        branching_libfunc,
-                    )?;
+                    program_annotations
+                        .propagate_annotations(
+                            statement_idx,
+                            destination_statement_idx,
+                            &updated_annotations,
+                            branch_info,
+                            branch_changes,
+                            branching_libfunc,
+                        )
+                        .map_err(|err| Box::new(err.into()))?;
                 }
             }
         }

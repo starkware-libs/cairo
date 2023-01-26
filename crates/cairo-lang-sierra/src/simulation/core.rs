@@ -312,7 +312,7 @@ pub fn simulate<
                     bytes.extend(limb_bytes);
                 }
                 if let Ok(s) = String::from_utf8(bytes) {
-                    print!("{}", s);
+                    print!("{s}");
                 } else {
                     println!("Not utf8");
                 }

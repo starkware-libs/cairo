@@ -1173,7 +1173,7 @@ fn short_string_to_semantic(
             db.core_felt_ty()
         };
         let unescaped_literal = unescape(literal).map_err(|err| {
-            ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{}", err)))
+            ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{err}")))
         })?;
         if unescaped_literal.is_ascii() {
             Ok(ExprLiteral {

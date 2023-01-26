@@ -25,7 +25,7 @@ fn main() -> anyhow::Result<()> {
     let res = serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?;
     match args.output {
         Some(path) => fs::write(path, res).with_context(|| "Failed to write output.")?,
-        None => println!("{}", res),
+        None => println!("{res}"),
     }
 
     Ok(())
