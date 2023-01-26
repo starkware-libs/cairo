@@ -220,6 +220,8 @@ use ec::ec_state_add;
 use ec::ec_state_finalize;
 use ec::ec_state_init;
 
+mod ecdsa;
+
 // Integer.
 mod integer;
 use integer::u128;
