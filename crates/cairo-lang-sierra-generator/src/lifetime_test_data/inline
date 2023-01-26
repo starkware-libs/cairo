@@ -52,9 +52,9 @@ End:
   Callsite({})
 
 //! > last_use
-((BlockId(1), 0), 0)
-((BlockId(2), 1), 0)
-((BlockId(0), 0), 0)
+v1: ((BlockId(1), 0), 0)
+v2: ((BlockId(2), 1), 0)
+v0: ((BlockId(0), 0), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(3)): v3, v1
@@ -137,13 +137,13 @@ End:
   Callsite({})
 
 //! > last_use
-((BlockId(2), 3), 0)
-((BlockId(3), 0), 0)
-((BlockId(4), 1), 0)
-((BlockId(0), 0), 0)
-((BlockId(1), 0), 0)
-((BlockId(2), 2), 0)
-((BlockId(2), 1), 1)
+v5: ((BlockId(2), 3), 0)
+v3: ((BlockId(3), 0), 0)
+v6: ((BlockId(4), 1), 0)
+v0: ((BlockId(0), 0), 0)
+v0: ((BlockId(1), 0), 0)
+v2: ((BlockId(2), 2), 0)
+v1: ((BlockId(2), 1), 1)
 
 //! > drops
 BeginningOfBlock(BlockId(5)): v7, v3

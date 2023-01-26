@@ -106,8 +106,38 @@ pub fn generate_block_code(
             )?);
             Ok((statements, false))
         }
-        lowering::FlatBlockEnd::Fallthrough(_block_id, _remapping)
-        | lowering::FlatBlockEnd::Goto(_block_id, _remapping) => todo!(),
+        lowering::FlatBlockEnd::Fallthrough(block_id, remapping) => {
+            statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
+                id: context.block_label(*block_id),
+            }));
+
+            statements.push(generate_push_values_statement_for_remapping(
+                context,
+                statement_location,
+                remapping,
+            )?);
+
+            let (code, fallthrough) = generate_block_code(context, *block_id)?;
+            statements.extend(code);
+            Ok((statements, fallthrough))
+        }
+        lowering::FlatBlockEnd::Goto(block_id, remapping) => {
+            statements.push(generate_push_values_statement_for_remapping(
+                context,
+                statement_location,
+                remapping,
+            )?);
+
+            statements.push(jump_statement(
+                jump_libfunc_id(context.get_db()),
+                context.block_label(*block_id),
+            ));
+            // Here we might reach the next statement through after jumping to
+            // *block_id, but we don't fallthrough into the next statement.
+            // I.e. if this is a match arm, there is no need to add a jump to the statment that
+            // follows the match after this block.
+            Ok((statements, false))
+        }
         lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),
     }
 }

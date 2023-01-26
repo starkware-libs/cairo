@@ -17,8 +17,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         block: "block",
         construct_enum: "construct_enum",
-        // TODO(ilya): Enable inline test.
-        //  inline: "inline",
+        inline: "inline",
         match_enum: "match_enum",
         match_extern: "match_extern",
         simple: "simple",

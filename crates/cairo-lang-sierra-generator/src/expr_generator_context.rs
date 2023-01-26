@@ -6,7 +6,7 @@ use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use lowering::{FlatLowered, VariableId};
+use lowering::{BlockId, FlatLowered, VariableId};
 
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
@@ -25,6 +25,7 @@ pub struct ExprGeneratorContext<'a> {
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
     variables: UnorderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
+    block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -42,6 +43,7 @@ impl<'a> ExprGeneratorContext<'a> {
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
             variables: UnorderedHashMap::default(),
+            block_labels: OrderedHashMap::default(),
         }
     }
 
@@ -79,14 +81,26 @@ impl<'a> ExprGeneratorContext<'a> {
         vars.iter().map(|var| self.get_sierra_variable(*var)).collect()
     }
 
+    /// Allocates a label id inside the given function.
+    pub fn alloc_label_id(&mut self) -> pre_sierra::LabelId {
+        // TODO(lior): Consider using stable ids, instead of allocating sequential ids.
+        alloc_label_id(self.db, self.function_id, &mut self.label_id_allocator)
+    }
+
     /// Generates a label id and a label statement.
-    // TODO(lior): Consider using stable ids, instead of allocating sequential ids.
     pub fn new_label(&mut self) -> (pre_sierra::Statement, pre_sierra::LabelId) {
-        let id = self.db.intern_label_id(pre_sierra::LabelLongId {
-            parent: self.function_id,
-            id: self.label_id_allocator.allocate(),
-        });
+        let id = self.alloc_label_id();
         (pre_sierra::Statement::Label(pre_sierra::Label { id }), id)
+    }
+
+    /// Adds the block to pending_blocks and returns the label id of the block.
+    pub fn block_label(&mut self, block_id: BlockId) -> pre_sierra::LabelId {
+        match self.block_labels.entry(block_id) {
+            indexmap::map::Entry::Occupied(e) => *e.get(),
+            indexmap::map::Entry::Vacant(e) => {
+                *e.insert(alloc_label_id(self.db, self.function_id, &mut self.label_id_allocator))
+            }
+        }
     }
 
     /// Returns the [cairo_lang_sierra::ids::ConcreteTypeId] associated with
@@ -131,4 +145,17 @@ impl<'a> ExprGeneratorContext<'a> {
     pub fn get_var_type(&self, var_id: VariableId) -> TypeId {
         self.lowered.variables[var_id].ty
     }
+}
+
+/// A variant of ExprGeneratorContext::alloc_label_id that allows the caller to avoid
+/// allocate labels while parts of the context are borrowed.
+pub fn alloc_label_id(
+    db: &dyn SierraGenGroup,
+    function_id: ConcreteFunctionWithBodyId,
+    label_id_allocator: &mut IdAllocator,
+) -> pre_sierra::LabelId {
+    db.intern_label_id(pre_sierra::LabelLongId {
+        parent: function_id,
+        id: label_id_allocator.allocate(),
+    })
 }
