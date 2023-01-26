@@ -5,12 +5,12 @@ use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionSignatureId, FunctionWithBodyId, GenericParamId,
     ImplFunctionId, ModuleItemId, ParamLongId, TopLevelLanguageElementId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
-use itertools::chain;
+use itertools::{chain, zip_eq};
 
 use super::attribute::Attribute;
 use super::modifiers;
@@ -459,14 +459,10 @@ pub fn concrete_function_signature(
     let ConcreteFunction { generic_function, generic_args, .. } =
         db.lookup_intern_function(function_id).function;
     let generic_params = db.function_signature_generic_params(generic_function.signature(db))?;
-    if generic_params.len() != generic_args.len() {
-        // TODO(spapini): Uphold the invariant that constructed ConcreteFunction instances
-        //   always have the correct number of generic arguments.
-        return Err(skip_diagnostic());
-    }
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
-    let function_subs = generic_params.into_iter().zip(generic_args.into_iter());
+    // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
+    let function_subs = zip_eq(generic_params, generic_args);
     let substitution = match generic_function {
         GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => {
             GenericSubstitution(function_subs.collect())

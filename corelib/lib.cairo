@@ -70,7 +70,7 @@ extern type RangeCheck;
 
 #[derive(Copy, Drop)]
 extern type felt;
-extern fn felt_const<value>() -> felt nopanic;
+extern fn felt_const<const value>() -> felt nopanic;
 
 // TODO(spapini): Make unnamed.
 impl FeltCopy of Copy::<felt>;

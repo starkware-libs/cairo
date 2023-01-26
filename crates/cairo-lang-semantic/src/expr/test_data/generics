@@ -51,3 +51,54 @@ impl MyImpl of MyTrait::<felt> {
 foo
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test generic kind failures
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    bar::<1,1,1,1>();
+    bar::<felt,felt>();
+    bar::<felt>();
+}
+
+//! > module_code
+fn bar<A, const B, impl C>(){}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error: Wrong number of generic arguments. Expected 3, found: 4
+ --> lib.cairo:3:5
+    bar::<1,1,1,1>();
+    ^*^
+
+error: Wrong kind of generic argument. Expected Type, found: Const
+ --> lib.cairo:3:5
+    bar::<1,1,1,1>();
+    ^*^
+
+error: Wrong kind of generic argument. Expected Impl, found: Const
+ --> lib.cairo:3:5
+    bar::<1,1,1,1>();
+    ^*^
+
+error: Wrong kind of generic argument. Expected Const, found: Type
+ --> lib.cairo:4:5
+    bar::<felt,felt>();
+    ^*^
+
+error: Impl generics not yet supported.
+ --> lib.cairo:4:5
+    bar::<felt,felt>();
+    ^*^
+
+error: Const generic inference not yet supported.
+ --> lib.cairo:5:5
+    bar::<felt>();
+    ^*^

@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use cairo_lang_defs::ids::{GenericParamId, TraitFunctionId};
+use cairo_lang_defs::ids::{GenericKind, GenericParamId, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use itertools::{zip_eq, Itertools};
 
@@ -298,6 +298,10 @@ impl<'db> Inference<'db> {
         stable_ptr: SyntaxStablePtrId,
     ) -> bool {
         if generic_args.len() != expected_generic_args.len() {
+            return false;
+        }
+        if generic_params.iter().any(|param| param.kind(self.db.upcast()) != GenericKind::Type) {
+            // Inference for non type generics are not supported yet.
             return false;
         }
         let mut inference = self.clone();

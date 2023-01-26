@@ -350,10 +350,10 @@
     │   │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   │   ├── langle (kind: TokenLT): '<'
     │   │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   │   ├── item #0 (kind: GenericParamType)
     │   │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
     │   │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   │   └── item #1 (kind: GenericParamType)
     │   │   │   │   │       └── name (kind: TokenIdentifier): 'B'
     │   │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   │   └── signature (kind: FunctionSignature)
@@ -390,10 +390,10 @@
     │   │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   │   ├── langle (kind: TokenLT): '<'
     │   │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   │   ├── item #0 (kind: GenericParamType)
     │   │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
     │   │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   │   └── item #1 (kind: GenericParamType)
     │   │   │   │   │       └── name (kind: TokenIdentifier): 'b'
     │   │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   │   └── signature (kind: FunctionSignature)
@@ -427,10 +427,10 @@
     │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   ├── langle (kind: TokenLT): '<'
     │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   ├── item #0 (kind: GenericParamType)
     │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
     │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   └── item #1 (kind: GenericParamType)
     │   │   │   │       └── name (kind: TokenIdentifier): 'B'
     │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   ├── lbrace (kind: TokenLBrace): '{'
@@ -487,7 +487,7 @@
     │       ├── generic_params (kind: WrappedGenericParamList)
     │       │   ├── langle (kind: TokenLT): '<'
     │       │   ├── generic_params (kind: GenericParamList)
-    │       │   │   └── item #0 (kind: GenericParam)
+    │       │   │   └── item #0 (kind: GenericParamType)
     │       │   │       └── name (kind: TokenIdentifier): 'T'
     │       │   └── rangle (kind: TokenGT): '>'
     │       ├── eq (kind: TokenEq): '='

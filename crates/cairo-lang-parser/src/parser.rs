@@ -1346,7 +1346,19 @@ impl<'a> Parser<'a> {
     }
 
     fn try_parse_generic_param(&mut self) -> Option<GenericParamGreen> {
-        self.try_parse_identifier().map(|name| GenericParam::new_green(self.db, name))
+        match self.peek().kind {
+            SyntaxKind::TerminalConst => {
+                let const_kw = self.take::<TerminalConst>();
+                let name = self.parse_identifier();
+                Some(GenericParamConst::new_green(self.db, const_kw, name).into())
+            }
+            SyntaxKind::TerminalImpl => {
+                let impl_kw = self.take::<TerminalImpl>();
+                let name = self.parse_identifier();
+                Some(GenericParamImpl::new_green(self.db, impl_kw, name).into())
+            }
+            _ => Some(GenericParamType::new_green(self.db, self.try_parse_identifier()?).into()),
+        }
     }
 
     // ------------------------------- Helpers -------------------------------

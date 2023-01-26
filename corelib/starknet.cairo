@@ -10,7 +10,7 @@ extern type ContractAddress;
 fn use_system_implicit() implicits(System) {}
 
 // Storage.
-extern fn storage_base_address_const<address>() -> StorageBaseAddress nopanic;
+extern fn storage_base_address_const<const address>() -> StorageBaseAddress nopanic;
 extern fn storage_base_address_from_felt(
     addr: felt
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
@@ -30,7 +30,7 @@ extern fn storage_write_syscall(
 ) -> SyscallResult::<()> implicits(GasBuiltin, System) nopanic;
 
 // Interoperability.
-extern fn contract_address_const<address>() -> ContractAddress nopanic;
+extern fn contract_address_const<const address>() -> ContractAddress nopanic;
 extern fn call_contract_syscall(
     address: ContractAddress, calldata: Array::<felt>
 ) -> SyscallResult::<Array::<felt>> implicits(GasBuiltin, System) nopanic;

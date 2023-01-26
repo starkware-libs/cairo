@@ -978,7 +978,7 @@
     │   │   │   │   │   ├── token (kind: TokenLT): '<'
     │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   │   ├── item #0 (kind: GenericParamType)
     │   │   │   │   │   │   └── name (kind: TerminalIdentifier)
     │   │   │   │   │   │       ├── leading_trivia (kind: Trivia) []
     │   │   │   │   │   │       ├── token (kind: TokenIdentifier): 'A'
@@ -988,7 +988,7 @@
     │   │   │   │   │   │   ├── token (kind: TokenComma): ','
     │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   │   └── item #1 (kind: GenericParamType)
     │   │   │   │   │       └── name (kind: TerminalIdentifier)
     │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
     │   │   │   │   │           ├── token (kind: TokenIdentifier): 'B'
@@ -1090,7 +1090,7 @@
     │   │   │   │   │   ├── token (kind: TokenLT): '<'
     │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   │   ├── item #0 (kind: GenericParamType)
     │   │   │   │   │   │   └── name (kind: TerminalIdentifier)
     │   │   │   │   │   │       ├── leading_trivia (kind: Trivia) []
     │   │   │   │   │   │       ├── token (kind: TokenIdentifier): 'A'
@@ -1100,7 +1100,7 @@
     │   │   │   │   │   │   ├── token (kind: TokenComma): ','
     │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   │   └── item #1 (kind: GenericParamType)
     │   │   │   │   │       └── name (kind: TerminalIdentifier)
     │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
     │   │   │   │   │           ├── token (kind: TokenIdentifier): 'b'
@@ -1194,7 +1194,7 @@
     │   │   │   │   ├── token (kind: TokenLT): '<'
     │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   ├── item #0 (kind: GenericParamType)
     │   │   │   │   │   └── name (kind: TerminalIdentifier)
     │   │   │   │   │       ├── leading_trivia (kind: Trivia) []
     │   │   │   │   │       ├── token (kind: TokenIdentifier): 'A'
@@ -1204,7 +1204,7 @@
     │   │   │   │   │   ├── token (kind: TokenComma): ','
     │   │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   └── item #1 (kind: GenericParamType)
     │   │   │   │       └── name (kind: TerminalIdentifier)
     │   │   │   │           ├── leading_trivia (kind: Trivia) []
     │   │   │   │           ├── token (kind: TokenIdentifier): 'B'
@@ -1368,7 +1368,7 @@
     │       │   │   ├── token (kind: TokenLT): '<'
     │       │   │   └── trailing_trivia (kind: Trivia) []
     │       │   ├── generic_params (kind: GenericParamList)
-    │       │   │   └── item #0 (kind: GenericParam)
+    │       │   │   └── item #0 (kind: GenericParamType)
     │       │   │       └── name (kind: TerminalIdentifier)
     │       │   │           ├── leading_trivia (kind: Trivia) []
     │       │   │           ├── token (kind: TokenIdentifier): 'T'
