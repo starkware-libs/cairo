@@ -1062,8 +1062,8 @@
     "0x322b90ebc1d8b531",
     "0x322b90ebc1d8b531",
     "0x0",
-    "0x38def535d6e0705a",
-    "0x38def535d6e0705a",
+    "0xedf829efa9de77e8",
+    "0xedf829efa9de77e8",
     "0x0",
     "0x3ac04ad97833d21a",
     "0xf1a2a766dcd55bac",
@@ -22596,7 +22596,7 @@
     "0x1",
     "0x36",
     "0x0",
-    "0x38def535d6e0705a",
+    "0xedf829efa9de77e8",
     "0x1",
     "0x36",
     "0x2",
@@ -26126,7 +26126,7 @@
     "0x1",
     "0x8",
     "0x0",
-    "0x38def535d6e0705a",
+    "0xedf829efa9de77e8",
     "0x1",
     "0x8",
     "0x2",
@@ -26424,7 +26424,7 @@
     "0x1",
     "0x1e",
     "0x0",
-    "0x38def535d6e0705a",
+    "0xedf829efa9de77e8",
     "0x1",
     "0x1e",
     "0x2",
@@ -29177,7 +29177,7 @@
     "0x1",
     "0x8",
     "0x0",
-    "0x38def535d6e0705a",
+    "0xedf829efa9de77e8",
     "0x1",
     "0x8",
     "0x2",
@@ -39889,10 +39889,6 @@
         "store_temp<core::PanicResult::<core::felt>>"
       ],
       [
-        4097982322540834906,
-        "felt_jump_nz"
-      ],
-      [
         4117522671886556530,
         "function_call<user@core::serde::FeltSerde::deserialize>"
       ],
@@ -40687,6 +40683,10 @@
       [
         16961241085505617321,
         "function_call<user@core::starknet::use_system_implicit>"
+      ],
+      [
+        17147501690537015272,
+        "felt_is_zero"
       ],
       [
         17169700324154535323,

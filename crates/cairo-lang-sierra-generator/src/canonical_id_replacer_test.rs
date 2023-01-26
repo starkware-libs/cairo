@@ -17,7 +17,7 @@ fn test_replacer() {
             libfunc felt_mul_2 = felt_mul<2>;
             libfunc felt_sub = felt_sub;
             libfunc felt_dup = dup<felt>;
-            libfunc felt_jump_nz = felt_jump_nz;
+            libfunc felt_is_zero = felt_is_zero;
             libfunc store_temp_felt = store_temp<felt>;
             libfunc call_foo = function_call<user@foo>;
 
@@ -48,7 +48,7 @@ fn test_replacer() {
             libfunc [2] = felt_mul<2>;
             libfunc [3] = felt_sub;
             libfunc [4] = dup<[0]>;
-            libfunc [5] = felt_jump_nz;
+            libfunc [5] = felt_is_zero;
             libfunc [6] = store_temp<[0]>;
             libfunc [7] = function_call<user@[1]>;
 

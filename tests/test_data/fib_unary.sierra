@@ -13,7 +13,7 @@ libfunc function_call<user@fib_unary::fib_unary::inner::inner::fib_inner> = func
 libfunc felt_const<0> = felt_const<0>;
 libfunc dup<felt> = dup<felt>;
 libfunc felt_sub = felt_sub;
-libfunc felt_jump_nz = felt_jump_nz;
+libfunc felt_is_zero = felt_is_zero;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
@@ -53,7 +53,7 @@ felt_const<0>() -> ([3]);
 dup<felt>([2]) -> ([2], [5]);
 felt_sub([5], [3]) -> ([4]);
 store_temp<felt>([4]) -> ([4]);
-felt_jump_nz([4]) { fallthrough() 32([6]) };
+felt_is_zero([4]) { fallthrough() 32([6]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([7]);
 enum_init<core::bool, 1>([7]) -> ([8]);

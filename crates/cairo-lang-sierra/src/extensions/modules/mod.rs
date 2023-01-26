@@ -23,7 +23,7 @@ pub mod enm;
 pub mod felt;
 pub mod function_call;
 pub mod gas;
-pub mod jump_not_zero;
+pub mod is_zero;
 pub mod mem;
 pub mod non_zero;
 pub mod nullable;
