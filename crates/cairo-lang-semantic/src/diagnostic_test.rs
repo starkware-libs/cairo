@@ -16,7 +16,7 @@ use test_log::test;
 use crate::db::SemanticGroup;
 use crate::patcher::{PatchBuilder, Patches, RewriteNode};
 use crate::plugin::{
-    AsDynGeneratedFileAuxData, AsDynMacroPlugin, DiagnosticMapper, DynDiagnosticMapper,
+    AsDynGeneratedFileAuxData, AsDynMacroPlugin, DynPluginAuxData, PluginAuxData,
     PluginMappedDiagnostic, SemanticPlugin,
 };
 use crate::test_utils::{
@@ -120,7 +120,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                     code: Some(PluginGeneratedFile {
                         name: "virt2".into(),
                         content: builder.code,
-                        aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(
+                        aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(
                             PatchMapper { patches: builder.patches },
                         )),
                     }),
@@ -159,7 +159,7 @@ impl AsDynGeneratedFileAuxData for PatchMapper {
         self
     }
 }
-impl DiagnosticMapper for PatchMapper {
+impl PluginAuxData for PatchMapper {
     fn map_diag(
         &self,
         db: &(dyn SemanticGroup + 'static),

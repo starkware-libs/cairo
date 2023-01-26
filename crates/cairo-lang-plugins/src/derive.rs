@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
+use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
 use cairo_lang_syntax::node::ast::AttributeList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -84,7 +84,7 @@ fn generate_derive_code_for_type(
             Some(PluginGeneratedFile {
                 name: "impls".into(),
                 content: impls.join(""),
-                aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
+                aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
             })
         },
         diagnostics,

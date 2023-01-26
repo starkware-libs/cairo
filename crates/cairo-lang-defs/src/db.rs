@@ -124,7 +124,7 @@ pub trait DefsGroup:
         module_id: ModuleId,
     ) -> Maybe<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>;
     fn module_extern_functions_ids(&self, module_id: ModuleId) -> Maybe<Vec<ExternFunctionId>>;
-    fn module_generated_file_info(
+    fn module_generated_file_infos(
         &self,
         module_id: ModuleId,
     ) -> Maybe<Vec<Option<GeneratedFileInfo>>>;
@@ -244,7 +244,7 @@ pub struct ModuleData {
     extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
     files: Vec<FileId>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
-    generated_file_info: Vec<Option<GeneratedFileInfo>>,
+    generated_file_infos: Vec<Option<GeneratedFileInfo>>,
     plugin_diagnostics: Vec<(ModuleFileId, PluginDiagnostic)>,
 }
 
@@ -269,7 +269,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
 
                     // If this is an inline module, copy its generation file info from the parent
                     // module, from the file where this submodule was defined.
-                    main_file_info = parent_module_data.generated_file_info
+                    main_file_info = parent_module_data.generated_file_infos
                         [submodule_id.file_index(db).0]
                         .clone();
                     body.items(syntax_db)
@@ -284,7 +284,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let mut res = ModuleData::default();
 
     let mut items = vec![];
-    res.generated_file_info.push(main_file_info);
+    res.generated_file_infos.push(main_file_info);
     while let Some((module_file, item_asts)) = module_queue.pop_front() {
         let file_index = FileIndex(res.files.len());
         let module_file_id = ModuleFileId(module_id, file_index);
@@ -310,7 +310,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         name: generated.name,
                         content: Arc::new(generated.content),
                     }));
-                    res.generated_file_info.push(Some(GeneratedFileInfo {
+                    res.generated_file_infos.push(Some(GeneratedFileInfo {
                         aux_data: generated.aux_data,
                         origin: module_file_id,
                     }));
@@ -538,12 +538,12 @@ pub fn module_extern_functions_ids(
     Ok(db.module_extern_functions(module_id)?.keys().copied().collect())
 }
 
-/// Returns the generated_file_info of the given module.
-pub fn module_generated_file_info(
+/// Returns the generated_file_infos of the given module.
+pub fn module_generated_file_infos(
     db: &dyn DefsGroup,
     module_id: ModuleId,
 ) -> Maybe<Vec<Option<GeneratedFileInfo>>> {
-    Ok(db.priv_module_data(module_id)?.generated_file_info)
+    Ok(db.priv_module_data(module_id)?.generated_file_infos)
 }
 
 /// Returns all the plugin diagnostics of the given module.
