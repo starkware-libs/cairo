@@ -4,8 +4,10 @@ cairo_lang_test_utils::test_file_test!(
     function_generator,
     "src/function_generator_test_data",
     {
+        inline: "inline",
         match_: "match",
         simple: "simple",
+
     },
     test_function_generator
 );
