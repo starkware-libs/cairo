@@ -26,6 +26,8 @@ extern fn ec_point_from_x(x: felt) -> Option::<NonZeroEcPoint> nopanic;
 extern fn ec_point_unwrap(p: NonZeroEcPoint) -> (felt, felt) nopanic;
 /// Computes the negation of an elliptic curve point (-p).
 extern fn ec_neg(p: NonZeroEcPoint) -> NonZeroEcPoint nopanic;
+/// Checks whether the given `EcPoint` is the zero point.
+extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult::<EcPoint> nopanic;
 
 // EC state.
 

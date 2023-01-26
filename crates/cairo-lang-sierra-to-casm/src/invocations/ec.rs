@@ -20,6 +20,7 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
+        EcConcreteLibfunc::IsZero(_) => build_is_zero(builder),
         EcConcreteLibfunc::Neg(_) => build_ec_neg(builder),
         EcConcreteLibfunc::StateAdd(_) => build_ec_state_add(builder),
         EcConcreteLibfunc::TryNew(_) => build_ec_point_try_new(builder),
@@ -188,7 +189,28 @@ fn build_ec_point_unwrap(
     Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[x], &[y]], None)]))
 }
 
-/// Generates casm instructions for ec_neg().
+/// Generates casm instructions for `ec_point_is_zero()`.
+fn build_is_zero(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables!(casm_builder, deref x; deref y; );
+    casm_build_extend! {casm_builder,
+        // To check whether `(x, y) = (0, 0)` (the zero point), it is enough to check
+        // whether `y = 0`, since there is no point on the curve with y = 0.
+        jump Target if y != 0;
+    };
+
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[], None), ("Target", &[&[x, y]], Some(target_statement_id))],
+    ))
+}
+
+/// Generates casm instructions for `ec_neg()`.
 fn build_ec_neg(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
