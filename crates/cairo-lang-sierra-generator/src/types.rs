@@ -68,6 +68,9 @@ pub fn get_concrete_type_id(
                                         db.lookup_intern_literal(literal_id).value,
                                     )
                                 }
+                                semantic::GenericArgumentId::Impl(_) => {
+                                    panic!("Extern function with impl generics are not supported.")
+                                }
                             })
                             .collect(),
                     }))

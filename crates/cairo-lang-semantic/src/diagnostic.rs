@@ -284,15 +284,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 let trait_path = long_concrete_trait.trait_id.full_path(db.upcast());
                 let generic_args = long_concrete_trait.generic_args;
                 format!(
-                    "Function `{function_name}` of trait `{trait_path}::<{}>` has has no \
+                    "Function `{function_name}` of trait `{trait_path}::<{}>` has no \
                      implementation in the context.",
-                    generic_args
-                        .iter()
-                        .map(|arg| match arg {
-                            crate::GenericArgumentId::Type(ty) => ty.format(db),
-                            crate::GenericArgumentId::Literal(literal_id) => literal_id.format(db),
-                        })
-                        .join(", ")
+                    generic_args.iter().map(|arg| arg.format(db)).join(", ")
                 )
             }
             SemanticDiagnosticKind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {
@@ -501,6 +495,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::OnlyLiteralConstants => {
                 "Only literal constants are currently supported.".into()
+            }
+            SemanticDiagnosticKind::ExternFunctionWithImplGenericsNotSupported => {
+                "Extern functions with impl generics are not supported".into()
             }
         }
     }
@@ -745,6 +742,7 @@ pub enum SemanticDiagnosticKind {
         feature_name: UnsupportedOutsideOfFunctionFeatureName,
     },
     OnlyLiteralConstants,
+    ExternFunctionWithImplGenericsNotSupported,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

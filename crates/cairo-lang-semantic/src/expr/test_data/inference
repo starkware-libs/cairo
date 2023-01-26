@@ -234,7 +234,7 @@ error: Function `foo` of trait `test::MyTrait` has multiple implementations, in:
    MyTrait::foo(5);
    ^*************^
 
-error: Function `foo` of trait `test::MyTrait::<?1>` has has no implementation in the context.
+error: Function `foo` of trait `test::MyTrait::<?1>` has no implementation in the context.
  --> lib.cairo:18:4
    MyTrait::foo(true);
    ^****************^
