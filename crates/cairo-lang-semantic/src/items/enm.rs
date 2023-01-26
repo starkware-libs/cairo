@@ -14,7 +14,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_generics, GenericSubstitution};
+use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
 use crate::{semantic, ConcreteEnumId, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -155,7 +155,7 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let substitution =
             GenericSubstitution(generic_params.into_iter().zip(generic_args.into_iter()).collect());
 
-        let ty = substitute_generics(db, &substitution, variant.ty);
+        let ty = substitute_ty(db, &substitution, variant.ty);
         Ok(ConcreteVariant { concrete_enum_id, id: variant.id, ty, idx: variant.idx })
     }
 

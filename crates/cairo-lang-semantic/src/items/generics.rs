@@ -14,6 +14,7 @@ pub fn semantic_generic_params(
 ) -> Vec<GenericParamId> {
     let syntax_db = db.upcast();
 
+    // TODO(spapini): Resolve the concrete trait of the trait generic parameters.
     match generic_params {
         syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax

@@ -20,7 +20,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_generics, GenericSubstitution};
+use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
 use crate::{semantic, ConcreteImplId, GenericArgumentId, Parameter, SemanticDiagnostic};
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -499,13 +499,13 @@ pub fn substitute_signature(
     let concretize_param = |param: semantic::Parameter| Parameter {
         id: param.id,
         name: param.name,
-        ty: substitute_generics(db, &substitution, param.ty),
+        ty: substitute_ty(db, &substitution, param.ty),
         mutability: param.mutability,
         stable_ptr: param.stable_ptr,
     };
     Signature {
         params: generic_signature.params.into_iter().map(concretize_param).collect(),
-        return_type: substitute_generics(db, &substitution, generic_signature.return_type),
+        return_type: substitute_ty(db, &substitution, generic_signature.return_type),
         implicits: generic_signature.implicits,
         panicable: generic_signature.panicable,
         stable_ptr: generic_signature.stable_ptr,
