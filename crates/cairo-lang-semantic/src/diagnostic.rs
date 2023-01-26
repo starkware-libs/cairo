@@ -4,6 +4,7 @@ mod test;
 
 use std::fmt::Display;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionSignatureId, ImplFunctionId, ImplId, ModuleFileId, StructId,
@@ -286,13 +287,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!(
                     "Function `{function_name}` of trait `{trait_path}::<{}>` has has no \
                      implementation in the context.",
-                    generic_args
-                        .iter()
-                        .map(|arg| match arg {
-                            crate::GenericArgumentId::Type(ty) => ty.format(db),
-                            crate::GenericArgumentId::Literal(literal_id) => literal_id.format(db),
-                        })
-                        .join(", ")
+                    generic_args.iter().map(|arg| format!("{:?}", arg.debug(db))).join(", ")
                 )
             }
             SemanticDiagnosticKind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {

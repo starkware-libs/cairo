@@ -83,7 +83,7 @@ error: Unknown type.
     bar::<1,1,1,1>();
           ^
 
-error: Impl generics not yet supported.
+error: Unknown impl.
  --> lib.cairo:3:15
     bar::<1,1,1,1>();
               ^
@@ -97,3 +97,25 @@ error: Const generic inference not yet supported.
  --> lib.cairo:5:5
     bar::<felt>();
     ^*^
+
+//! > ==========================================================================
+
+//! > Test generic impl
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    bar::<MyImpl>();
+}
+
+//! > module_code
+trait MyTrait<T> {}
+impl MyImpl of MyTrait::<felt> {}
+fn bar<impl C: MyTrait::<felt>>(){}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics

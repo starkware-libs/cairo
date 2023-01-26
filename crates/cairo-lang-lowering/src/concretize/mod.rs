@@ -1,5 +1,5 @@
 use cairo_lang_semantic::types::{
-    substitute_function, substitute_generics, substitute_variant, GenericSubstitution,
+    substitute_function, substitute_ty, substitute_variant, GenericSubstitution,
 };
 
 use crate::db::LoweringGroup;
@@ -15,7 +15,7 @@ pub fn concretize_lowered(
     let semantic_db = db.upcast();
     // Substitute all types.
     for (_, var) in lowered.variables.iter_mut() {
-        var.ty = substitute_generics(semantic_db, substitution, var.ty);
+        var.ty = substitute_ty(semantic_db, substitution, var.ty);
     }
     // Substitute all statements.
     for block in lowered.blocks.0.iter_mut() {

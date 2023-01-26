@@ -97,13 +97,21 @@ impl Variable {
 pub enum GenericArgumentId {
     Type(TypeId),
     Literal(LiteralId),
-    // TODO(spapini): impls and constants as generic values.
+    Impl(ConcreteImplId), // TODO(spapini): impls and constants as generic values.
 }
 impl GenericArgumentId {
     pub fn kind(&self) -> GenericKind {
         match self {
             GenericArgumentId::Type(_) => GenericKind::Type,
             GenericArgumentId::Literal(_) => GenericKind::Const,
+            GenericArgumentId::Impl(_) => GenericKind::Impl,
+        }
+    }
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        match self {
+            GenericArgumentId::Type(ty) => ty.format(db),
+            GenericArgumentId::Literal(lit) => lit.format(db),
+            GenericArgumentId::Impl(imp) => format!("{:?}", imp.debug(db.elongate())),
         }
     }
 }
@@ -116,6 +124,7 @@ impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
         match self {
             GenericArgumentId::Type(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::Literal(id) => write!(f, "{:?}", id.debug(db)),
+            GenericArgumentId::Impl(id) => write!(f, "{:?}", id.debug(db)),
         }
     }
 }
