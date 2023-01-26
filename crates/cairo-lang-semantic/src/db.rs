@@ -27,7 +27,7 @@ use crate::items::function_with_body::FunctionBody;
 use crate::items::imp::ImplLookupContext;
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::ConcreteTraitId;
-use crate::plugin::{DynDiagnosticMapper, SemanticPlugin};
+use crate::plugin::{DynPluginAuxData, SemanticPlugin};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
     corelib, items, literals, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
@@ -774,7 +774,7 @@ fn module_semantic_diagnostics(
     Ok(map_diagnostics(
         db.elongate(),
         module_id,
-        &db.module_generated_file_info(module_id)?,
+        &db.module_generated_file_infos(module_id)?,
         diagnostics.build(),
     )
     .1)
@@ -806,7 +806,7 @@ fn map_diagnostics(
                 .aux_data
                 .0
                 .as_any()
-                .downcast_ref::<DynDiagnosticMapper>()
+                .downcast_ref::<DynPluginAuxData>()
                 .and_then(|mapper| mapper.map_diag(db.upcast(), diag));
             if let Some(plugin_diag) = opt_diag {
                 // We don't have a real location, so we give a dummy location in the correct file.
