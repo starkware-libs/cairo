@@ -123,6 +123,8 @@ pub fn generate_block_code_and_push_values(
             )?);
             Ok((statements, false))
         }
+        lowering::FlatBlockEnd::Fallthrough(_block_id, _remapping)
+        | lowering::FlatBlockEnd::Goto(_block_id, _remapping) => todo!(),
         lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),
     }
 }
