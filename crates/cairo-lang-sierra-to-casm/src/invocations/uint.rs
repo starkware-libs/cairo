@@ -1,10 +1,11 @@
+use cairo_felt::Felt;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc, UintTraits,
 };
-use num_bigint::BigInt;
+use num_bigint::{BigInt, ToBigInt};
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::validate_in_range;
@@ -197,6 +198,7 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, con
         1 => {
             validate_in_range::<K>(
                 &mut casm_builder,
+                &(-Felt::from(LIMIT)).to_biguint().to_bigint().unwrap(),
                 A,
                 B,
                 shifted_value,
@@ -209,6 +211,7 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, con
             casm_build_extend! {casm_builder, tempvar diff;};
             validate_in_range::<K>(
                 &mut casm_builder,
+                &(-Felt::from(LIMIT)).to_biguint().to_bigint().unwrap(),
                 A,
                 B,
                 shifted_value,

@@ -11,6 +11,7 @@ testing = []
 
 [dependencies]
 assert_matches.workspace = true
+cairo-felt.workspace = true
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "0.1.0" }
 clap.workspace = true
 itertools.workspace = true
