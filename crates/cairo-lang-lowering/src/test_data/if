@@ -117,9 +117,9 @@ blk2 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
 End:
   Return(v3)
@@ -141,9 +141,9 @@ End:
 blk2 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
 End:
   Return(v3)
@@ -192,9 +192,9 @@ blk2 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
   (v3: core::felt) <- 20u
 End:
@@ -217,9 +217,9 @@ End:
 blk2 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
   (v3: core::felt) <- 20u
 End:
@@ -274,9 +274,9 @@ Statements:
   (v4: core::felt) <- core::FeltAdd::add(v0, v1)
   (v5: core::felt) <- core::FeltSub::sub(v2, v3)
   (v6: core::felt) <- core::FeltSub::sub(v4, v5)
-  () <- match core::felt_jump_nz(v6) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v6) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
 End:
   Return(v10)
@@ -302,9 +302,9 @@ Statements:
   (v4: core::felt) <- core::felt_add(v0, v1)
   (v5: core::felt) <- core::felt_sub(v2, v3)
   (v6: core::felt) <- core::felt_sub(v4, v5)
-  () <- match core::felt_jump_nz(v6) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v6) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
 End:
   Return(v10)

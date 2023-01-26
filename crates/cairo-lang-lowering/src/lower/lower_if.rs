@@ -154,7 +154,7 @@ pub fn lower_expr_if_eq(
 
     // Emit the statement.
     scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
-        function: corelib::core_jump_nz_func(semantic_db),
+        function: corelib::core_felt_is_zero(semantic_db),
         inputs: vec![condition_var],
         arms: vec![
             (corelib::jump_nz_zero_variant(ctx.db.upcast()), merged.blocks[0]),
