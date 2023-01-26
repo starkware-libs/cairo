@@ -17,6 +17,7 @@ pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
 
 use self::getter::{GetCallerAddressTrait, GetterLibfunc};
+use self::interoperability::ContractAddressTryFromFeltLibfunc;
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc, StorageAddressType,
     StorageBaseAddressFromFeltLibfunc,
@@ -35,6 +36,7 @@ define_libfunc_hierarchy! {
     pub enum StarkNetLibfunc {
          CallContract(CallContractLibfunc),
          ContractAddressConst(ContractAddressConstLibfunc),
+         ContractAddressTryFromFelt(ContractAddressTryFromFeltLibfunc),
          StorageRead(StorageReadLibfunc),
          StorageWrite(StorageWriteLibfunc),
          StorageBaseAddressConst(StorageBaseAddressConstLibfunc),
