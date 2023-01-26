@@ -187,21 +187,19 @@ impl BlockQueue {
 }
 
 /// Context for mapping ids from `lowered` to a new `FlatLowered` object.
-pub struct Mapper<'a> {
+pub struct Mapper<'a, 'b> {
+    ctx: &'a mut LoweringContext<'b>,
     lowered: &'a FlatLowered,
+
     renamed_vars: HashMap<VariableId, VariableId>,
     renamed_blocks: HashMap<BlockId, BlockId>,
 }
-impl<'a> Mapper<'a> {
+impl<'a, 'b> Mapper<'a, 'b> {
     /// Renames a var from lowered.variable, if the variable wasn't assigned an id yet,
     /// a new id is assigned and stored for future renames.
-    pub fn rename_var(
-        &mut self,
-        ctx: &mut LoweringContext<'_>,
-        old_var_id: &VariableId,
-    ) -> VariableId {
+    pub fn rename_var(&mut self, old_var_id: &VariableId) -> VariableId {
         *self.renamed_vars.entry(*old_var_id).or_insert_with(|| {
-            ctx.new_var(VarRequest {
+            self.ctx.new_var(VarRequest {
                 ty: self.lowered.variables[*old_var_id].ty,
                 location: self.lowered.variables[*old_var_id].location,
             })
@@ -209,24 +207,20 @@ impl<'a> Mapper<'a> {
     }
 
     /// Rebuilds the statement with renamed var and block ids.
-    fn rebuild_statement(
-        &mut self,
-        ctx: &mut LoweringContext<'_>,
-        statement: &Statement,
-    ) -> Statement {
+    fn rebuild_statement(&mut self, statement: &Statement) -> Statement {
         match statement {
             Statement::Literal(stmt) => Statement::Literal(StatementLiteral {
                 value: stmt.value.clone(),
-                output: self.rename_var(ctx, &stmt.output),
+                output: self.rename_var(&stmt.output),
             }),
             Statement::Call(stmt) => Statement::Call(StatementCall {
                 function: stmt.function,
-                inputs: stmt.inputs.iter().map(|v| self.rename_var(ctx, v)).collect(),
-                outputs: stmt.outputs.iter().map(|v| self.rename_var(ctx, v)).collect(),
+                inputs: stmt.inputs.iter().map(|v| self.rename_var(v)).collect(),
+                outputs: stmt.outputs.iter().map(|v| self.rename_var(v)).collect(),
             }),
             Statement::MatchExtern(stmt) => Statement::MatchExtern(StatementMatchExtern {
                 function: stmt.function,
-                inputs: stmt.inputs.iter().map(|v| self.rename_var(ctx, v)).collect(),
+                inputs: stmt.inputs.iter().map(|v| self.rename_var(v)).collect(),
                 arms: stmt
                     .arms
                     .iter()
@@ -237,24 +231,24 @@ impl<'a> Mapper<'a> {
             }),
             Statement::StructConstruct(stmt) => {
                 Statement::StructConstruct(StatementStructConstruct {
-                    inputs: stmt.inputs.iter().map(|v| self.rename_var(ctx, v)).collect(),
-                    output: self.rename_var(ctx, &stmt.output),
+                    inputs: stmt.inputs.iter().map(|v| self.rename_var(v)).collect(),
+                    output: self.rename_var(&stmt.output),
                 })
             }
             Statement::StructDestructure(stmt) => {
                 Statement::StructDestructure(StatementStructDestructure {
-                    input: self.rename_var(ctx, &stmt.input),
-                    outputs: stmt.outputs.iter().map(|v| self.rename_var(ctx, v)).collect(),
+                    input: self.rename_var(&stmt.input),
+                    outputs: stmt.outputs.iter().map(|v| self.rename_var(v)).collect(),
                 })
             }
             Statement::EnumConstruct(stmt) => Statement::EnumConstruct(StatementEnumConstruct {
                 variant: stmt.variant.clone(),
-                input: self.rename_var(ctx, &stmt.input),
-                output: self.rename_var(ctx, &stmt.output),
+                input: self.rename_var(&stmt.input),
+                output: self.rename_var(&stmt.output),
             }),
             Statement::MatchEnum(stmt) => Statement::MatchEnum(StatementMatchEnum {
                 concrete_enum_id: stmt.concrete_enum_id,
-                input: self.rename_var(ctx, &stmt.input),
+                input: self.rename_var(&stmt.input),
                 arms: stmt
                     .arms
                     .iter()
@@ -281,8 +275,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
         rewriter.ctx.variables = flat_lower.variables.clone();
         while let Some(block) = rewriter.block_queue.dequeue() {
             let mut statements = vec![];
-            for stmt in &block.statements {
-                rewriter.rewrite(stmt, &mut statements)?;
+            for stmt in block.statements.iter().cloned() {
+                statements.extend(rewriter.rewrite(stmt)?);
             }
             rewriter.block_queue.finalize(FlatBlock {
                 inputs: block.inputs.clone(),
@@ -300,8 +294,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
         })
     }
 
-    fn rewrite(&mut self, statement: &Statement, statements: &mut Vec<Statement>) -> Maybe<()> {
-        if let Statement::Call(stmt) = statement {
+    fn rewrite(&mut self, statement: Statement) -> Maybe<Vec<Statement>> {
+        if let Statement::Call(ref stmt) = statement {
             let concrete_function = self.ctx.db.lookup_intern_function(stmt.function).function;
             let semantic_db = self.ctx.db.upcast();
             if let Some(function_id) = concrete_function.get_body(semantic_db) {
@@ -309,24 +303,30 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
                 if inline_data.config == InlineConfiguration::Always && inline_data.is_inlineable {
-                    self.inline_function(function_id, &stmt.inputs, &stmt.outputs, statements)?;
-                    return Ok(());
+                    let mut statements = vec![];
+
+                    for statement in
+                        self.inline_function(function_id, &stmt.inputs, &stmt.outputs)?.into_iter()
+                    {
+                        statements.extend(self.rewrite(statement)?);
+                    }
+                    return Ok(statements);
                 }
             }
         }
-        statements.push(statement.clone());
-        Ok(())
+
+        Ok(vec![statement])
     }
 
-    /// Inlines the given function, with the given input and outputs variables into the statements.
+    /// Inlines the given function, with the given input and outputs variables.
+    /// Returns a vector of statement that needs to replace the call statement in the orignal block.
     /// May add additional blocks to the block to support the inlining.
     pub fn inline_function(
         &mut self,
         function_id: ConcreteFunctionWithBodyId,
         inputs: &[VariableId],
         outputs: &[VariableId],
-        statements: &mut Vec<Statement>,
-    ) -> Maybe<()> {
+    ) -> Maybe<Vec<Statement>> {
         let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
         let root_block_id = lowered.root?;
         let root_block = &lowered.blocks[root_block_id];
@@ -338,6 +338,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         // The input variables need to be renamed to match the inputs to the function call.
         // The returned variables needs to be renamed to match the outputs from the function call.
         let mut mapper = Mapper {
+            ctx: &mut self.ctx,
             lowered: &lowered,
             renamed_vars: HashMap::<VariableId, VariableId>::from_iter(chain!(
                 izip!(lowered.blocks[root_block_id].inputs.iter().cloned(), inputs.iter().cloned()),
@@ -354,19 +355,18 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 continue;
             }
             let mut statements = vec![];
+
             for stmt in &block.statements {
-                statements.push(mapper.rebuild_statement(&mut self.ctx, stmt));
+                statements.push(mapper.rebuild_statement(stmt));
             }
             let end = match &block.end {
                 FlatBlockEnd::Callsite(remapping) => {
-                    let remapping = VarRemapping {
-                        remapping: OrderedHashMap::from_iter(remapping.iter().map(|(dst, src)| {
-                            (
-                                mapper.rename_var(&mut self.ctx, dst),
-                                mapper.rename_var(&mut self.ctx, src),
-                            )
-                        })),
-                    };
+                    let remapping =
+                        VarRemapping {
+                            remapping: OrderedHashMap::from_iter(remapping.iter().map(
+                                |(dst, src)| (mapper.rename_var(dst), mapper.rename_var(src)),
+                            )),
+                        };
                     FlatBlockEnd::Callsite(remapping)
                 }
                 FlatBlockEnd::Return(_) => {
@@ -375,15 +375,12 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
             };
 
-            let inputs = block.inputs.iter().map(|v| mapper.rename_var(&mut self.ctx, v)).collect();
+            let inputs = block.inputs.iter().map(|v| mapper.rename_var(v)).collect();
             let new_block = FlatBlock { inputs, statements, end };
             mapper.renamed_blocks.insert(block_id, self.block_queue.enqueue_block(new_block));
         }
-        for stmt in &root_block.statements {
-            let new_stmt = mapper.rebuild_statement(&mut self.ctx, stmt);
-            self.rewrite(&new_stmt, statements)?;
-        }
-        Ok(())
+
+        Ok(root_block.statements.iter().map(|stmt| mapper.rebuild_statement(stmt)).collect())
     }
 }
 
