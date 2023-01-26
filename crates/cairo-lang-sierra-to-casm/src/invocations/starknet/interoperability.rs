@@ -6,6 +6,7 @@ use num_bigint::BigInt;
 use num_traits::Signed;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::misc::validate_in_range;
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
@@ -73,5 +74,57 @@ pub fn build_contract_address_const(
 
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))].into_iter(),
+    ))
+}
+
+/// Handles the contract_address_try_from_felt libfunc.
+pub fn build_contract_address_try_from_felt(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let addr_bound: BigInt = BigInt::from(1) << 251;
+    let [range_check, value] = builder.try_get_single_cells()?;
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref value;
+    };
+    casm_build_extend! {casm_builder,
+        const limit = addr_bound;
+        tempvar is_valid_address;
+        tempvar x;
+        tempvar y;
+        tempvar x_part;
+        tempvar y_fixed;
+        hint TestLessThan {lhs: value, rhs: limit} into {dst: is_valid_address};
+        jump IsValidAddress if is_valid_address != 0;
+        tempvar shifted_value = value - limit;
+    }
+    validate_in_range::<1>(
+        &mut casm_builder,
+        0x8000000000000000000000000000000,
+        0x8000000000000000000000000000000,
+        shifted_value,
+        range_check,
+        &[x, y, x_part, y_fixed],
+    );
+    casm_build_extend! {casm_builder,
+        jump Failure;
+        IsValidAddress:
+    };
+    validate_in_range::<1>(
+        &mut casm_builder,
+        0x110000000000000000,
+        0x110000000000000001,
+        value,
+        range_check,
+        &[x, y, x_part, y_fixed],
+    );
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[range_check], &[value]], None),
+            ("Failure", &[&[range_check]], Some(failure_handle_statement_id)),
+        ],
     ))
 }
