@@ -15,7 +15,6 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
@@ -191,8 +190,8 @@ impl<'db> Resolver<'db> {
         // Follow modules.
         while segments.peek().is_some() {
             let segment = segments.next().unwrap();
-            let (identifier, generic_args) =
-                self.resolve_segment(diagnostics, inference, segment)?;
+            let identifier = segment.identifier_ast(syntax_db);
+            let generic_args = segment.generic_args(syntax_db);
 
             // If this is not the last segment, set the expected type to
             // [NotFoundItemType::Identifier].
@@ -209,61 +208,6 @@ impl<'db> Resolver<'db> {
             self.lookback.mark_concrete(self.db, segment, item.clone());
         }
         Ok(item)
-    }
-
-    /// Resolves a path segment's identifier and generic args.
-    pub fn resolve_segment(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        inference: &mut Inference<'_>,
-        segment: &ast::PathSegment,
-    ) -> Maybe<(ast::TerminalIdentifier, Option<Vec<GenericArgumentId>>)> {
-        let syntax_db = self.db.upcast();
-        let (identifier, generic_args) = match segment {
-            syntax::node::ast::PathSegment::WithGenericArgs(segment) => {
-                let mut generic_args = vec![];
-                for generic_arg_syntax in
-                    segment.generic_args(syntax_db).generic_args(syntax_db).elements(syntax_db)
-                {
-                    match generic_arg_syntax {
-                        ast::Expr::Literal(literal_syntax) => {
-                            let literal = LiteralLongId::try_from(literal_syntax.text(syntax_db))
-                                .map_err(|_| {
-                                diagnostics.report(&literal_syntax, UnknownLiteral)
-                            })?;
-                            generic_args
-                                .push(GenericArgumentId::Literal(self.db.intern_literal(literal)));
-                        }
-                        ast::Expr::Unary(unary)
-                            if matches!(unary.expr(syntax_db), ast::Expr::Literal(_))
-                                && matches!(unary.op(syntax_db), ast::UnaryOperator::Minus(_)) =>
-                        {
-                            let mut literal = LiteralLongId::try_from(
-                                extract_matches!(unary.expr(syntax_db), ast::Expr::Literal)
-                                    .text(syntax_db),
-                            )
-                            .map_err(|_| diagnostics.report(&unary, UnknownLiteral))?;
-                            literal.value *= -1;
-                            generic_args
-                                .push(GenericArgumentId::Literal(self.db.intern_literal(literal)));
-                        }
-                        _ => {
-                            let ty = resolve_type_with_inference(
-                                self.db,
-                                diagnostics,
-                                inference,
-                                self,
-                                &generic_arg_syntax,
-                            );
-                            generic_args.push(GenericArgumentId::Type(ty));
-                        }
-                    }
-                }
-                (segment.ident(syntax_db), Some(generic_args))
-            }
-            syntax::node::ast::PathSegment::Simple(segment) => (segment.ident(syntax_db), None),
-        };
-        Ok((identifier, generic_args))
     }
 
     /// Resolves the first segment of a concrete path.
@@ -411,7 +355,7 @@ impl<'db> Resolver<'db> {
         inference: &mut Inference<'_>,
         item: &ResolvedConcreteItem,
         identifier: &ast::TerminalIdentifier,
-        generic_args: Option<Vec<GenericArgumentId>>,
+        generic_args_syntax: Option<Vec<ast::Expr>>,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedConcreteItem> {
         let syntax_db = self.db.upcast();
@@ -431,7 +375,7 @@ impl<'db> Resolver<'db> {
                     inference,
                     identifier,
                     generic_item,
-                    generic_args,
+                    generic_args_syntax,
                 )?)
             }
             ResolvedConcreteItem::Type(ty) => {
@@ -471,13 +415,12 @@ impl<'db> Resolver<'db> {
                     ),
                 );
 
-                Ok(ResolvedConcreteItem::Function(specialize_function(
-                    self.db,
+                Ok(ResolvedConcreteItem::Function(self.specialize_function(
                     diagnostics,
                     inference,
                     identifier.stable_ptr().untyped(),
                     GenericFunctionId::Trait(trait_function),
-                    generic_args.unwrap_or_default(),
+                    generic_args_syntax.unwrap_or_default(),
                 )?))
             }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
@@ -568,34 +511,32 @@ impl<'db> Resolver<'db> {
         inference: &mut Inference<'_>,
         identifier: &syntax::node::ast::TerminalIdentifier,
         generic_item: ResolvedGenericItem,
-        generic_args: Option<Vec<GenericArgumentId>>,
+        generic_args_syntax: Option<Vec<ast::Expr>>,
     ) -> Maybe<ResolvedConcreteItem> {
         Ok(match generic_item {
             ResolvedGenericItem::Constant(id) => ResolvedConcreteItem::Constant(id),
             ResolvedGenericItem::Module(module_id) => {
-                if generic_args.is_some() {
+                if generic_args_syntax.is_some() {
                     return Err(diagnostics.report(identifier, UnexpectedGenericArgs));
                 }
                 ResolvedConcreteItem::Module(module_id)
             }
             ResolvedGenericItem::GenericFunction(generic_function) => {
-                ResolvedConcreteItem::Function(specialize_function(
-                    self.db,
+                ResolvedConcreteItem::Function(self.specialize_function(
                     diagnostics,
                     inference,
                     identifier.stable_ptr().untyped(),
                     generic_function,
-                    generic_args.unwrap_or_default(),
+                    generic_args_syntax.unwrap_or_default(),
                 )?)
             }
             ResolvedGenericItem::GenericType(generic_type) => {
-                ResolvedConcreteItem::Type(specialize_type(
-                    self.db,
+                ResolvedConcreteItem::Type(self.specialize_type(
                     diagnostics,
                     inference,
                     identifier.stable_ptr().untyped(),
                     generic_type,
-                    generic_args.unwrap_or_default(),
+                    generic_args_syntax.unwrap_or_default(),
                 )?)
             }
             ResolvedGenericItem::GenericTypeAlias(type_alias_id) => {
@@ -604,14 +545,12 @@ impl<'db> Resolver<'db> {
                 self.db.priv_type_alias_semantic_data(type_alias_id)?.check_no_cycle()?;
 
                 let ty = self.db.type_alias_resolved_type(type_alias_id)?;
-                let mut generic_args = generic_args.unwrap_or_default();
                 let generic_params = self.db.type_alias_generic_params(type_alias_id)?;
-                conform_generic_args(
-                    self.db,
+                let generic_args = self.resolve_generic_args(
                     diagnostics,
                     inference,
                     &generic_params,
-                    &mut generic_args,
+                    generic_args_syntax.unwrap_or_default(),
                     identifier.stable_ptr().untyped(),
                 )?;
                 let substitution = GenericSubstitution(
@@ -620,22 +559,24 @@ impl<'db> Resolver<'db> {
 
                 ResolvedConcreteItem::Type(substitute_generics(self.db, &substitution, ty))
             }
-            ResolvedGenericItem::Trait(trait_id) => ResolvedConcreteItem::Trait(specialize_trait(
-                self.db,
-                diagnostics,
-                inference,
-                identifier.stable_ptr().untyped(),
-                trait_id,
-                generic_args.unwrap_or_default(),
-            )?),
-            ResolvedGenericItem::Impl(impl_id) => ResolvedConcreteItem::Impl(specialize_impl(
-                self.db,
-                diagnostics,
-                inference,
-                identifier.stable_ptr().untyped(),
-                impl_id,
-                generic_args.unwrap_or_default(),
-            )?),
+            ResolvedGenericItem::Trait(trait_id) => {
+                ResolvedConcreteItem::Trait(self.specialize_trait(
+                    diagnostics,
+                    inference,
+                    identifier.stable_ptr().untyped(),
+                    trait_id,
+                    generic_args_syntax.unwrap_or_default(),
+                )?)
+            }
+            ResolvedGenericItem::Impl(impl_id) => {
+                ResolvedConcreteItem::Impl(self.specialize_impl(
+                    diagnostics,
+                    inference,
+                    identifier.stable_ptr().untyped(),
+                    impl_id,
+                    generic_args_syntax.unwrap_or_default(),
+                )?)
+            }
             ResolvedGenericItem::Variant(_) => panic!("Variant is not a module item."),
             ResolvedGenericItem::TraitFunction(_) => panic!("TraitFunction is not a module item."),
         })
@@ -751,177 +692,198 @@ impl<'db> Resolver<'db> {
         // Last resort, use the `core` crate root module as the base module.
         Some(core_module(self.db))
     }
-}
 
-/// Specializes a trait.
-fn specialize_trait(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    inference: &mut Inference<'_>,
-    stable_ptr: SyntaxStablePtrId,
-    trait_id: TraitId,
-    mut generic_args: Vec<GenericArgumentId>,
-) -> Maybe<ConcreteTraitId> {
-    // TODO(lior): Should we report diagnostic if `trait_generic_params` failed?
-    let generic_params = db
-        .trait_generic_params(trait_id)
-        .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownTrait))?;
+    /// Specializes a trait.
+    fn specialize_trait(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        inference: &mut Inference<'_>,
+        stable_ptr: SyntaxStablePtrId,
+        trait_id: TraitId,
+        generic_args: Vec<ast::Expr>,
+    ) -> Maybe<ConcreteTraitId> {
+        // TODO(lior): Should we report diagnostic if `trait_generic_params` failed?
+        let generic_params = self
+            .db
+            .trait_generic_params(trait_id)
+            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownTrait))?;
 
-    conform_generic_args(
-        db,
-        diagnostics,
-        inference,
-        &generic_params,
-        &mut generic_args,
-        stable_ptr,
-    )?;
-
-    Ok(db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }))
-}
-
-/// Specializes an impl.
-fn specialize_impl(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    inference: &mut Inference<'_>,
-    stable_ptr: SyntaxStablePtrId,
-    impl_id: ImplId,
-    mut generic_args: Vec<GenericArgumentId>,
-) -> Maybe<ConcreteImplId> {
-    // Check for cycles in this type alias definition.
-    // TODO(orizi): Handle this without using `priv_impl_declaration_data`.
-    db.priv_impl_declaration_data(impl_id)?.check_no_cycle()?;
-
-    // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
-    let generic_params = db
-        .impl_generic_params(impl_id)
-        .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownImpl))?;
-
-    conform_generic_args(
-        db,
-        diagnostics,
-        inference,
-        &generic_params,
-        &mut generic_args,
-        stable_ptr,
-    )?;
-
-    Ok(db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args }))
-}
-
-/// Specializes a generic function.
-pub fn specialize_function(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    inference: &mut Inference<'_>,
-    stable_ptr: SyntaxStablePtrId,
-    generic_function: GenericFunctionId,
-    mut generic_args: Vec<GenericArgumentId>,
-) -> Maybe<FunctionId> {
-    // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
-    let generic_params: Vec<_> = db
-        .function_signature_generic_params(generic_function.signature(db))
-        .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
-
-    conform_generic_args(
-        db,
-        diagnostics,
-        inference,
-        &generic_params,
-        &mut generic_args,
-        stable_ptr,
-    )?;
-
-    Ok(db.intern_function(FunctionLongId {
-        function: ConcreteFunction { generic_function, generic_args },
-    }))
-}
-
-/// Specializes a generic type.
-pub fn specialize_type(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    inference: &mut Inference<'_>,
-    stable_ptr: SyntaxStablePtrId,
-    generic_type: GenericTypeId,
-    mut generic_args: Vec<GenericArgumentId>,
-) -> Maybe<TypeId> {
-    let generic_params = db
-        .generic_type_generic_params(generic_type)
-        .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownType))?;
-
-    conform_generic_args(
-        db,
-        diagnostics,
-        inference,
-        &generic_params,
-        &mut generic_args,
-        stable_ptr,
-    )?;
-
-    Ok(db.intern_type(TypeLongId::Concrete(ConcreteTypeId::new(db, generic_type, generic_args))))
-}
-
-pub fn conform_generic_args(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    inference: &mut Inference<'_>,
-    generic_params: &[GenericParamId],
-    generic_args: &mut Vec<GenericArgumentId>,
-    stable_ptr: SyntaxStablePtrId,
-) -> Maybe<()> {
-    // If too many generic argument are given, trim and report.
-    // TODO(spapini): Better locations for generic arguments.
-    if generic_args.len() > generic_params.len() {
-        diagnostics.report_by_ptr(
+        let generic_args = self.resolve_generic_args(
+            diagnostics,
+            inference,
+            &generic_params,
+            generic_args,
             stable_ptr,
-            WrongNumberOfGenericArguments {
-                expected: generic_params.len(),
-                actual: generic_args.len(),
-            },
-        );
-        generic_args.drain(generic_params.len()..);
+        )?;
+
+        Ok(self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }))
     }
 
-    for (i, generic_param) in generic_params.iter().enumerate() {
-        // TODO(spapini): Handle `_` passed as generic argument.
-        if i >= generic_args.len() {
-            match generic_param.kind(db.upcast()) {
-                GenericKind::Type => {
-                    if inference.enabled {
-                        // Infer.
-                        generic_args.push(GenericArgumentId::Type(inference.new_var(stable_ptr)))
-                    } else {
-                        let diag_added = diagnostics.report_by_ptr(
-                            stable_ptr,
-                            WrongNumberOfGenericArguments {
-                                expected: generic_params.len(),
-                                actual: generic_args.len(),
-                            },
-                        );
-                        generic_args.push(GenericArgumentId::Type(TypeId::missing(db, diag_added)))
-                    }
-                }
-                GenericKind::Const => {
-                    return Err(
-                        diagnostics.report_by_ptr(stable_ptr, ConstGenericInferenceUnsupported)
-                    );
-                }
-                GenericKind::Impl => {
-                    return Err(diagnostics.report_by_ptr(stable_ptr, ImplGenericsUnsupported));
-                }
-            }
-        }
-        if generic_args[i].kind() != generic_params[i].kind(db.upcast()) {
+    /// Specializes an impl.
+    fn specialize_impl(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        inference: &mut Inference<'_>,
+        stable_ptr: SyntaxStablePtrId,
+        impl_id: ImplId,
+        generic_args: Vec<ast::Expr>,
+    ) -> Maybe<ConcreteImplId> {
+        // Check for cycles in this type alias definition.
+        // TODO(orizi): Handle this without using `priv_impl_declaration_data`.
+        self.db.priv_impl_declaration_data(impl_id)?.check_no_cycle()?;
+
+        // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
+        let generic_params = self
+            .db
+            .impl_generic_params(impl_id)
+            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownImpl))?;
+
+        let generic_args = self.resolve_generic_args(
+            diagnostics,
+            inference,
+            &generic_params,
+            generic_args,
+            stable_ptr,
+        )?;
+
+        Ok(self.db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args }))
+    }
+
+    /// Specializes a generic function.
+    pub fn specialize_function(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        inference: &mut Inference<'_>,
+        stable_ptr: SyntaxStablePtrId,
+        generic_function: GenericFunctionId,
+        generic_args: Vec<ast::Expr>,
+    ) -> Maybe<FunctionId> {
+        // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
+        let generic_params: Vec<_> = self
+            .db
+            .function_signature_generic_params(generic_function.signature(self.db))
+            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
+
+        let generic_args = self.resolve_generic_args(
+            diagnostics,
+            inference,
+            &generic_params,
+            generic_args,
+            stable_ptr,
+        )?;
+
+        Ok(self.db.intern_function(FunctionLongId {
+            function: ConcreteFunction { generic_function, generic_args },
+        }))
+    }
+
+    /// Specializes a generic type.
+    pub fn specialize_type(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        inference: &mut Inference<'_>,
+        stable_ptr: SyntaxStablePtrId,
+        generic_type: GenericTypeId,
+        generic_args: Vec<ast::Expr>,
+    ) -> Maybe<TypeId> {
+        let generic_params = self
+            .db
+            .generic_type_generic_params(generic_type)
+            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownType))?;
+
+        let generic_args = self.resolve_generic_args(
+            diagnostics,
+            inference,
+            &generic_params,
+            generic_args,
+            stable_ptr,
+        )?;
+
+        Ok(self.db.intern_type(TypeLongId::Concrete(ConcreteTypeId::new(
+            self.db,
+            generic_type,
+            generic_args,
+        ))))
+    }
+
+    pub fn resolve_generic_args(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        inference: &mut Inference<'_>,
+        generic_params: &[GenericParamId],
+        generic_args_syntax: Vec<ast::Expr>,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Maybe<Vec<GenericArgumentId>> {
+        let mut resolved_args = Vec::new();
+
+        // If too many generic argument are given, trim and report.
+        if generic_args_syntax.len() > generic_params.len() {
             diagnostics.report_by_ptr(
                 stable_ptr,
-                WrongGenericKind {
-                    expected: generic_params[i].kind(db.upcast()),
-                    actual: generic_args[i].kind(),
+                WrongNumberOfGenericArguments {
+                    expected: generic_params.len(),
+                    actual: generic_args_syntax.len(),
                 },
             );
         }
-    }
 
-    Ok(())
+        for (i, generic_param) in generic_params.iter().enumerate() {
+            let resolved_arg = match generic_args_syntax.get(i) {
+                Some(generic_arg_syntax) => match generic_param.kind(self.db.upcast()) {
+                    GenericKind::Type => {
+                        let ty = resolve_type_with_inference(
+                            self.db,
+                            diagnostics,
+                            inference,
+                            self,
+                            generic_arg_syntax,
+                        );
+                        GenericArgumentId::Type(ty)
+                    }
+                    GenericKind::Const => {
+                        let text = generic_arg_syntax
+                            .as_syntax_node()
+                            .get_text_without_trivia(self.db.upcast());
+                        let literal = LiteralLongId::try_from(SmolStr::from(text))
+                            .map_err(|_| diagnostics.report(generic_arg_syntax, UnknownLiteral))?;
+                        GenericArgumentId::Literal(self.db.intern_literal(literal))
+                    }
+                    GenericKind::Impl => {
+                        return Err(diagnostics.report(generic_arg_syntax, ImplGenericsUnsupported));
+                    }
+                },
+                None => {
+                    match generic_param.kind(self.db.upcast()) {
+                        GenericKind::Type => {
+                            if inference.enabled {
+                                // Infer.
+                                GenericArgumentId::Type(inference.new_var(stable_ptr))
+                            } else {
+                                let diag_added = diagnostics.report_by_ptr(
+                                    stable_ptr,
+                                    WrongNumberOfGenericArguments {
+                                        expected: generic_params.len(),
+                                        actual: generic_args_syntax.len(),
+                                    },
+                                );
+                                GenericArgumentId::Type(TypeId::missing(self.db, diag_added))
+                            }
+                        }
+                        GenericKind::Const => {
+                            return Err(diagnostics
+                                .report_by_ptr(stable_ptr, ConstGenericInferenceUnsupported));
+                        }
+                        GenericKind::Impl => {
+                            return Err(
+                                diagnostics.report_by_ptr(stable_ptr, ImplGenericsUnsupported)
+                            );
+                        }
+                    }
+                }
+            };
+            resolved_args.push(resolved_arg);
+        }
+
+        Ok(resolved_args)
+    }
 }

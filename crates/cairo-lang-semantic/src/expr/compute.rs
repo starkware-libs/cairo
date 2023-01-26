@@ -44,9 +44,7 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::strct::SemanticStructEx;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::literals::LiteralLongId;
-use crate::resolve_path::{
-    conform_generic_args, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
-};
+use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type_with_inference, ConcreteTypeId};
 use crate::{ConcreteFunction, FunctionLongId, Mutability, Parameter, PatternStruct, Signature};
@@ -1246,9 +1244,8 @@ fn method_call_expr(
     let syntax_db = ctx.db.upcast();
     let path = expr.path(syntax_db);
     let segment = path.elements(syntax_db).last().unwrap().clone();
-    let (identifier, generic_args) =
-        ctx.resolver.resolve_segment(ctx.diagnostics, &mut ctx.inference, &segment)?;
-    let func_name = identifier.text(syntax_db);
+    let func_name = segment.identifier(syntax_db);
+    let generic_args_syntax = segment.generic_args(syntax_db);
     let mut candidates = vec![];
     for trait_id in all_module_trait_ids(ctx)? {
         for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
@@ -1300,16 +1297,16 @@ fn method_call_expr(
         ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function),
     );
     let trait_func_generic_params = ctx.db.trait_function_generic_params(trait_function)?;
-    let mut generic_args = generic_args.unwrap_or_default();
-    conform_generic_args(
-        ctx.db,
-        ctx.diagnostics,
-        &mut ctx.inference,
-        &trait_func_generic_params,
-        &mut generic_args,
-        stable_ptr.untyped(),
-    )
-    .expect("Conformity has already been checked in previous calls.");
+    let generic_args = ctx
+        .resolver
+        .resolve_generic_args(
+            ctx.diagnostics,
+            &mut ctx.inference,
+            &trait_func_generic_params,
+            generic_args_syntax.unwrap_or_default(),
+            stable_ptr.untyped(),
+        )
+        .expect("Conformity has already been checked in previous calls.");
     let function_id = ctx.db.intern_function(FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Trait(concrete_trait_function_id),
