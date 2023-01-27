@@ -89,7 +89,7 @@ jmp rel 3;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 4})
+test::foo: OrderedHashMap({Step: 3})
 
 //! > sierra_code
 type felt = felt;
@@ -146,7 +146,7 @@ jmp rel 3;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 6})
+test::foo: OrderedHashMap({Step: 5})
 
 //! > sierra_code
 type felt = felt;

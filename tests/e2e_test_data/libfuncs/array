@@ -156,7 +156,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 9})
+test::foo: OrderedHashMap({Step: 8})
 
 //! > sierra_code
 type felt = felt;
@@ -235,7 +235,7 @@ ap += 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 12})
+test::foo: OrderedHashMap({Step: 11, Hole: 2})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -326,7 +326,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 13})
+test::foo: OrderedHashMap({Step: 12, Hole: 1})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;

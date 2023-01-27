@@ -158,12 +158,16 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         }
         Gas(RefundGas(_)) => vec![statement_vars_cost(ops, CostTokenType::iter_postcost())],
         BranchAlign(_) => {
-            vec![
+            let ap_change = info_provider.ap_change_var_value();
+            let burnt_cost = statement_vars_cost(ops, CostTokenType::iter_postcost());
+            vec![if ap_change == 0 {
+                burnt_cost
+            } else {
                 ops.add(
-                    statement_vars_cost(ops, CostTokenType::iter_postcost()),
-                    ops.const_cost(1),
-                ),
-            ]
+                    ops.add(burnt_cost, ops.const_cost(1)),
+                    ops.const_cost_token(ap_change as i32, CostTokenType::Hole),
+                )
+            }]
         }
         Array(ArrayConcreteLibfunc::New(_)) => vec![ops.const_cost(1)],
         Array(ArrayConcreteLibfunc::Append(libfunc)) => {
@@ -185,10 +189,23 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             }
             BoxConcreteLibfunc::Unbox(_) => vec![ops.const_cost(0)],
         },
-        Mem(StoreLocal(libfunc) | StoreTemp(libfunc)) => {
+        Mem(StoreTemp(libfunc) | StoreLocal(libfunc)) => {
             vec![ops.const_cost(info_provider.type_size(&libfunc.ty) as i32)]
         }
-        Mem(AllocLocal(_) | AlignTemps(_) | FinalizeLocals(_)) | UnconditionalJump(_) => {
+        Mem(AllocLocal(_)) => {
+            // TODO(orizi): Add holes costs for alloc local.
+            vec![ops.const_cost(0)]
+        }
+        Mem(AlignTemps(libfunc)) => {
+            vec![ops.add(
+                ops.const_cost(1),
+                ops.const_cost_token(
+                    info_provider.type_size(&libfunc.ty) as i32,
+                    CostTokenType::Hole,
+                ),
+            )]
+        }
+        Mem(FinalizeLocals(_)) | UnconditionalJump(_) => {
             vec![ops.const_cost(1)]
         }
         Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.const_cost(1)],
