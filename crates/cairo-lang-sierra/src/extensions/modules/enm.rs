@@ -68,6 +68,7 @@ impl EnumConcreteType {
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let mut duplicatable = true;
         let mut droppable = true;
+        let mut zero_constructible = true;
         let mut variants: Vec<ConcreteTypeId> = Vec::new();
         let mut variant_max_size = 0;
         for arg in args_iter {
@@ -78,15 +79,14 @@ impl EnumConcreteType {
             if !info.storable {
                 return Err(SpecializationError::UnsupportedGenericArg);
             }
-            if !info.duplicatable {
-                duplicatable = false;
-            }
-            if !info.droppable {
-                droppable = false;
-            }
+            duplicatable &= info.duplicatable;
+            droppable &= info.droppable;
+            zero_constructible &= info.zero_constructible;
             variants.push(ty);
             variant_max_size = cmp::max(variant_max_size, info.size);
         }
+        // A 0 valued variant indicator must be supported.
+        zero_constructible &= variants.len() <= 2;
         Ok(EnumConcreteType {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId {
@@ -96,6 +96,7 @@ impl EnumConcreteType {
                 duplicatable,
                 droppable,
                 storable: true,
+                zero_constructible,
                 size: 1 + variant_max_size,
             },
             variants,

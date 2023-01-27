@@ -54,6 +54,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: true,
                 duplicatable: true,
+                zero_constructible: true,
                 size: 1,
             })
         } else if id == "ArrayFelt".into() || id == "ArrayU128".into() {
@@ -62,6 +63,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: true,
                 duplicatable: false,
+                zero_constructible: false,
                 size: 2,
             })
         } else if id == "UninitializedFelt".into() || id == "UninitializedU128".into() {
@@ -70,6 +72,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: false,
                 droppable: true,
                 duplicatable: false,
+                zero_constructible: false,
                 size: 0,
             })
         } else if id == "GasBuiltin".into() || id == "System".into() {
@@ -78,6 +81,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: false,
                 duplicatable: false,
+                zero_constructible: false,
                 size: 1,
             })
         } else {

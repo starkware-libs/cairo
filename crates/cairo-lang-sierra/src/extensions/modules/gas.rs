@@ -19,6 +19,7 @@ impl NoGenericArgsGenericType for GasBuiltinType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
+    const ZERO_CONSTRUCTIBLE: bool = false;
     const SIZE: i16 = 1;
 }
 

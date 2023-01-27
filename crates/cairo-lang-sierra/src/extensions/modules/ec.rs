@@ -19,6 +19,7 @@ impl NoGenericArgsGenericType for EcOpType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
+    const ZERO_CONSTRUCTIBLE: bool = false;
     const SIZE: i16 = 1;
 }
 
@@ -30,6 +31,7 @@ impl NoGenericArgsGenericType for EcPointType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
+    const ZERO_CONSTRUCTIBLE: bool = false;
     const SIZE: i16 = 2;
 }
 
@@ -41,6 +43,7 @@ impl NoGenericArgsGenericType for EcStateType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
+    const ZERO_CONSTRUCTIBLE: bool = false;
     const SIZE: i16 = 3;
 }
 

@@ -24,7 +24,7 @@ impl GenericTypeArgGenericType for BoxTypeWrapped {
         if !wrapped_info.storable {
             Err(SpecializationError::UnsupportedGenericArg)
         } else {
-            Ok(TypeInfo { long_id, size: 1, ..wrapped_info })
+            Ok(TypeInfo { long_id, size: 1, zero_constructible: false, ..wrapped_info })
         }
     }
 }

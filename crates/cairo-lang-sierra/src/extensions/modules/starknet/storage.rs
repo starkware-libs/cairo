@@ -24,6 +24,7 @@ impl NoGenericArgsGenericType for StorageBaseAddressType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
+    const ZERO_CONSTRUCTIBLE: bool = true;
     const SIZE: i16 = 1;
 }
 
@@ -46,6 +47,7 @@ impl NoGenericArgsGenericType for StorageAddressType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
+    const ZERO_CONSTRUCTIBLE: bool = true;
     const SIZE: i16 = 1;
 }
 

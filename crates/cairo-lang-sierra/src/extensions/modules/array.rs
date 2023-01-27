@@ -34,6 +34,7 @@ impl GenericTypeArgGenericType for ArrayTypeWrapped {
                 duplicatable: false,
                 droppable: wrapped_info.droppable,
                 storable: true,
+                zero_constructible: false,
                 size: 2,
             })
         }

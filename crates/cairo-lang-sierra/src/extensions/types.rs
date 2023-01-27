@@ -86,6 +86,7 @@ pub trait NoGenericArgsGenericType: Default {
     const STORABLE: bool;
     const DUPLICATABLE: bool;
     const DROPPABLE: bool;
+    const ZERO_CONSTRUCTIBLE: bool;
     const SIZE: i16;
 }
 impl<T: NoGenericArgsGenericType> NamedType for T {
@@ -104,6 +105,7 @@ impl<T: NoGenericArgsGenericType> NamedType for T {
                     storable: T::STORABLE,
                     droppable: T::DROPPABLE,
                     duplicatable: T::DUPLICATABLE,
+                    zero_constructible: T::ZERO_CONSTRUCTIBLE,
                     size: T::SIZE,
                 },
             })
@@ -155,6 +157,8 @@ pub struct TypeInfo {
     pub droppable: bool,
     /// Can the type be (trivially) duplicated.
     pub duplicatable: bool,
+    /// Can the type be (trivially) parsed from zeroed out memory.
+    pub zero_constructible: bool,
     /// The size of an element of this type.
     pub size: i16,
 }
