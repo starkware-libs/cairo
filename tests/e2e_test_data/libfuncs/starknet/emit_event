@@ -35,7 +35,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 58})
+test::foo: OrderedHashMap({Step: 57})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;

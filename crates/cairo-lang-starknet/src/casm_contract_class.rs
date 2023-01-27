@@ -15,7 +15,6 @@ use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use convert_case::{Case, Casing};
 use itertools::chain;
 use num_bigint::BigUint;
@@ -29,7 +28,8 @@ use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
 
 /// The expected gas cost of an entrypoint that begins with get_gas() immediately.
-pub const ENTRY_POINT_COST: i32 = 100;
+const ENTRY_POINT_COSTS: [(CostTokenType, i32); 3] =
+    [(CostTokenType::Step, 100), (CostTokenType::Hole, 50), (CostTokenType::RangeCheck, 1)];
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum StarknetSierraCompilationError {
@@ -79,9 +79,7 @@ impl CasmContractClass {
         )
         .map(|entrypoint| program.funcs[entrypoint.function_idx].id.clone());
         let metadata_computation_config = MetadataComputationConfig {
-            function_set_costs: entrypoint_ids
-                .map(|id| (id, [(CostTokenType::Step, ENTRY_POINT_COST)].into()))
-                .collect(),
+            function_set_costs: entrypoint_ids.map(|id| (id, ENTRY_POINT_COSTS.into())).collect(),
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
@@ -170,12 +168,10 @@ impl CasmContractClass {
                 .get(statement_id.0)
                 .ok_or(StarknetSierraCompilationError::EntryPointError)?
                 .code_offset;
-            // TODO(orizi): Convert back into an assert when there's a valid const cost.
-            if metadata.gas_info.function_costs[function.id.clone()]
-                != OrderedHashMap::from_iter([(CostTokenType::Step, ENTRY_POINT_COST as i64)])
-            {
-                eprintln!("Unexpected entry point cost.");
-            }
+            itertools::assert_equal(
+                metadata.gas_info.function_costs[function.id.clone()].iter().map(|(k, v)| (*k, *v)),
+                ENTRY_POINT_COSTS.map(|(k, v)| (k, v as i64)),
+            );
             Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {
                 selector: contract_entry_point.selector,
                 offset: code_offset,
