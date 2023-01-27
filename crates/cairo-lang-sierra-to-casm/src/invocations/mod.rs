@@ -192,6 +192,16 @@ impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
         self.program_info.type_sizes[ty] as usize
     }
 
+    fn ap_change_var_value(&self) -> usize {
+        self.program_info
+            .metadata
+            .ap_change_info
+            .variable_values
+            .get(&self.idx)
+            .copied()
+            .unwrap_or_default()
+    }
+
     fn token_usages(&self, token_type: CostTokenType) -> usize {
         InvocationApChangeInfoProvider::token_usages(self, token_type)
     }
