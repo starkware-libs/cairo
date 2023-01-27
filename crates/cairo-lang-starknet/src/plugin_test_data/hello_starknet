@@ -80,6 +80,7 @@ mod HelloStarknet {
 
     mod __external {
         fn increase_balance(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -123,6 +124,7 @@ mod HelloStarknet {
             arr
         }
         fn get_balance(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },

@@ -747,6 +747,7 @@ fn generate_entry_point_wrapper(
     Ok(RewriteNode::interpolate_patched(
         format!(
             "fn $function_name$(mut data: Array::<felt>) -> Array::<felt> {{
+            internal::revoke_ap_tracking();
             match get_gas() {{
                 Option::Some(_) => {{
                 }},
