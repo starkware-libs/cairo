@@ -25,7 +25,7 @@ impl GenericTypeArgGenericType for NonZeroTypeWrapped {
         if !wrapped_info.storable {
             Err(SpecializationError::UnsupportedGenericArg)
         } else {
-            Ok(TypeInfo { long_id, ..wrapped_info })
+            Ok(TypeInfo { long_id, zero_constructible: false, ..wrapped_info })
         }
     }
 }

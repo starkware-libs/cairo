@@ -38,12 +38,8 @@ impl MockSpecializationContext {
 
 impl TypeSpecializationContext for MockSpecializationContext {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        if id == "T".into()
-            || id == "felt".into()
+        if id == "felt".into()
             || id == "u128".into()
-            || id == "Option".into()
-            || id == "NonZeroFelt".into()
-            || id == "NonZeroInt".into()
             || id == "Tuple<>".into()
             || id == "U128AndFelt".into()
             || id == "StorageAddress".into()
@@ -54,6 +50,20 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: true,
                 duplicatable: true,
+                zero_constructible: true,
+                size: 1,
+            })
+        } else if id == "T".into()
+            || id == "NonZeroFelt".into()
+            || id == "NonZeroInt".into()
+            || id == "Option".into()
+        {
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: true,
+                duplicatable: true,
+                zero_constructible: false,
                 size: 1,
             })
         } else if id == "ArrayFelt".into() || id == "ArrayU128".into() {
@@ -62,6 +72,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: true,
                 duplicatable: false,
+                zero_constructible: false,
                 size: 2,
             })
         } else if id == "UninitializedFelt".into() || id == "UninitializedU128".into() {
@@ -70,6 +81,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: false,
                 droppable: true,
                 duplicatable: false,
+                zero_constructible: false,
                 size: 0,
             })
         } else if id == "GasBuiltin".into() || id == "System".into() {
@@ -78,6 +90,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: false,
                 duplicatable: false,
+                zero_constructible: false,
                 size: 1,
             })
         } else {

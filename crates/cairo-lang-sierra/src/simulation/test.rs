@@ -62,6 +62,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: true,
                 duplicatable: true,
+                zero_constructible: true,
                 size: 1,
             })
         } else if id == "UninitializedInt".into() {
@@ -70,6 +71,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: false,
                 droppable: true,
                 duplicatable: false,
+                zero_constructible: false,
                 size: 0,
             })
         } else {

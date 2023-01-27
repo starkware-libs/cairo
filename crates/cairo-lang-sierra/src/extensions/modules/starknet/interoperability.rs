@@ -23,6 +23,7 @@ impl NoGenericArgsGenericType for ContractAddressType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
+    const ZERO_CONSTRUCTIBLE: bool = true;
     const SIZE: i16 = 1;
 }
 
