@@ -296,7 +296,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let enum_name = self.concrete_enum_id.enum_id(ctx.db.upcast()).name(ctx.db.upcast());
         let variant_name = self.id.name(ctx.db.upcast());
-        write!(f, "{}::{}", enum_name, variant_name)
+        write!(f, "{enum_name}::{variant_name}")
     }
 }
 

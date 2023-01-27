@@ -134,7 +134,7 @@ impl RootDatabaseBuilder {
         let file_id = self.db.module_main_file(module_id).unwrap();
         self.db
             .as_files_group_mut()
-            .override_file_content(file_id, Some(Arc::new(format!("mod {};", file_stem))));
+            .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
         Ok(vec![crate_id])
     }
 

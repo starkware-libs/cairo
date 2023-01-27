@@ -312,7 +312,7 @@ pub fn simulate<
                     bytes.extend(limb_bytes);
                 }
                 if let Ok(s) = String::from_utf8(bytes) {
-                    print!("{}", s);
+                    print!("{s}");
                 } else {
                     println!("Not utf8");
                 }
@@ -473,7 +473,7 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::JumpNotZero(_) => {
+        Uint128Concrete::IsZero(_) => {
             match inputs {
                 [CoreValue::Uint128(value)] if *value == 0 => {
                     // Zero - jumping to the failure branch.
@@ -709,7 +709,7 @@ fn simulate_felt_libfunc(
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        FeltConcrete::JumpNotZero(_) => {
+        FeltConcrete::IsZero(_) => {
             match inputs {
                 [CoreValue::Felt(value)] if value.is_zero() => {
                     // Zero - jumping to the failure branch.

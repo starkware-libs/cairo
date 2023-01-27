@@ -1,8 +1,9 @@
+use cairo_felt::Felt;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
-use num_bigint::BigInt;
+use num_bigint::{BigInt, ToBigInt};
 use num_traits::Signed;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -51,7 +52,7 @@ pub fn build_storage_base_address_from_felt(
         deref addr;
     };
     casm_build_extend! {casm_builder,
-        const addr_bound = addr_bound;
+        const limit = addr_bound.clone();
         // Allocating all vars in the beginning for easier AP-Alignment between the two branches,
         // as well as making sure we use `res` as the last cell, making it the last on stack.
         tempvar is_small;
@@ -61,12 +62,13 @@ pub fn build_storage_base_address_from_felt(
         tempvar y_fixed;
         tempvar diff;
         tempvar res;
-        hint TestLessThan {lhs: addr, rhs: addr_bound} into {dst: is_small};
+        hint TestLessThan {lhs: addr, rhs: limit} into {dst: is_small};
         jump IsSmall if is_small != 0;
-        assert res = addr - addr_bound;
+        assert res = addr - limit;
     }
     validate_in_range::<1>(
         &mut casm_builder,
+        &(-Felt::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
         0x110000000000000000_u128,
         0x110000000000000101u128,
         res,
@@ -80,6 +82,7 @@ pub fn build_storage_base_address_from_felt(
     }
     validate_in_range::<2>(
         &mut casm_builder,
+        &addr_bound,
         0x8000000000000000000000000000000_u128,
         0xfffffffffffffffffffffffffffff00_u128,
         res,

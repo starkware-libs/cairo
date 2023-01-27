@@ -1,5 +1,5 @@
 use super::felt::FeltType;
-use super::jump_not_zero::{JumpNotZeroLibfunc, JumpNotZeroTraits};
+use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
 use super::uint::{
@@ -33,7 +33,7 @@ define_libfunc_hierarchy! {
         Const(UintConstLibfunc<Uint128Traits>),
         FromFelt(Uint128sFromFeltLibfunc),
         ToFelt(UintToFeltLibfunc<Uint128Traits>),
-        JumpNotZero(JumpNotZeroLibfunc<Uint128Traits>),
+        IsZero(IsZeroLibfunc<Uint128Traits>),
     }, Uint128Concrete
 }
 
@@ -54,8 +54,8 @@ impl UintTraits for Uint128Traits {
     const TRY_FROM_FELT: &'static str = "u128_try_from_felt";
 }
 
-impl JumpNotZeroTraits for Uint128Traits {
-    const JUMP_NOT_ZERO: &'static str = "u128_jump_nz";
+impl IsZeroTraits for Uint128Traits {
+    const IS_ZERO: &'static str = "u128_is_zero";
     const GENERIC_TYPE_ID: GenericTypeId = <Uint128Type as NamedType>::ID;
 }
 

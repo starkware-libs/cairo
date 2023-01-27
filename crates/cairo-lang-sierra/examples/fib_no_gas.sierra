@@ -8,12 +8,12 @@ libfunc felt_const_minus_1 = felt_const<-1>;
 libfunc felt_add = felt_add;
 libfunc felt_dup = dup<felt>;
 libfunc felt_drop = drop<felt>;
-libfunc felt_jump_nz = felt_jump_nz;
+libfunc felt_is_zero = felt_is_zero;
 libfunc felt_unwrap_nz = unwrap_nz<felt>;
 libfunc call_lib = function_call<user@Fibonacci>;
 
 // Statement #  0 - tests if n == 0.
-felt_jump_nz(n) { fallthrough() 5(n) };
+felt_is_zero(n) { fallthrough() 5(n) };
 // Statement #1
 branch_align() -> ();
 // Statement #  1 - n == 0, so we return a.

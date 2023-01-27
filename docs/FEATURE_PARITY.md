@@ -7,20 +7,20 @@
 ## Cairo features
 | name                   | status |
 |------------------------|--------|
-| `if (x == y)`            | ✅      |
+| `if (x == y)`          | ✅      |
 | `if (x == y & z == w)` | ✅     |
 | Short strings          | ✅      |
 | Structs                | ✅      |
 | Builtin Range check    | ✅      |
 | Builtin Pedersen       | ✅      |
 | Builtin Bitwise        | ✅      |
+| Uint256                | ✅      |
+| Builtin ec-op          | ✅      |
+| Append-only arrays     | ✅       |
+| Named arguments        | ✅       |
+| Serde (serialization)  | ✅       |
 | Dict                   | ⏳      |
-| Uint256                | ⏳      |
-| Builtin ec-op          | ⏳      |
 | `if (cond1 && cond2)`  |        |
-| Append-only arrays     |        |
-| Named arguments        |        |
-| Serde (serialization)  |        |
 | Find element           |        |
 
 
@@ -33,9 +33,9 @@
 | Contract interface                        | ✅      |
 | External functions and view functions     | ✅      |
 | Storage variables - felts                 | ✅      |
-| Storage variables - mapping               | ⏳      |
-| Storage variables - other types as values | ⏳      |
-| Events                                    |        |
+| Storage variables - mapping               | ✅      |
+| Storage variables - other types as values | ✅      |
+| Events                                    | ✅     |
 
 
 ---
@@ -46,12 +46,12 @@
 |-----------------------|--------|
 | storage_read          | ✅      |
 | storage_write         | ✅      |
-| call_contract         | ⏳      |
+| get_caller_address    | ✅     |
+| call_contract         | ⏳     |
 | library_call          |        |
 | deploy                |        |
 | get_block_number      |        |
 | get_block_timestamp   |        |
-| get_caller_address    |        |
 | get_contract_address  |        |
 | get_sequencer_address |        |
 | get_transaction_info  |        |

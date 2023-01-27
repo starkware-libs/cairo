@@ -107,21 +107,21 @@ pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
     get_enum_concrete_variant(db, "bool", vec![], "True")
 }
 
-/// Generates a ConcreteVariant instance for `JumpNzResult::<felt>::Zero`.
+/// Generates a ConcreteVariant instance for `IsZeroResult::<felt>::Zero`.
 pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
     get_enum_concrete_variant(
         db,
-        "JumpNzResult",
+        "IsZeroResult",
         vec![GenericArgumentId::Type(core_felt_ty(db))],
         "Zero",
     )
 }
 
-/// Generates a ConcreteVariant instance for `JumpNzResult::<felt>::NonZero`.
+/// Generates a ConcreteVariant instance for `IsZeroResult::<felt>::NonZero`.
 pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
     get_enum_concrete_variant(
         db,
-        "JumpNzResult",
+        "IsZeroResult",
         vec![GenericArgumentId::Type(core_felt_ty(db))],
         "NonZero",
     )
@@ -343,8 +343,8 @@ fn get_core_function_impl_method(
     })
 }
 
-pub fn core_jump_nz_func(db: &dyn SemanticGroup) -> FunctionId {
-    get_core_function_id(db, "felt_jump_nz".into(), vec![])
+pub fn core_felt_is_zero(db: &dyn SemanticGroup) -> FunctionId {
+    get_core_function_id(db, "felt_is_zero".into(), vec![])
 }
 
 /// Given a core library function name and its generic arguments, returns [FunctionId].

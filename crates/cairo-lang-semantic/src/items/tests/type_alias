@@ -152,10 +152,10 @@ foo
 type A<T> = (felt, T);
 
 //! > expected_diagnostics
-error: Wrong kind of generic argument. Expected Type, found: Const
- --> lib.cairo:2:11
+error: Unknown type.
+ --> lib.cairo:2:15
 fn foo(a: A::<5>) -> felt {
-          ^
+              ^
 
 //! > ==========================================================================
 

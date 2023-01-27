@@ -6,7 +6,7 @@ use std::fmt::Display;
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionSignatureId, GenericKind, ImplFunctionId, ImplId, ModuleFileId, StructId,
+    EnumId, FunctionSignatureId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -156,9 +156,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::WrongNumberOfGenericArguments { expected, actual } => {
                 format!("Wrong number of generic arguments. Expected {expected}, found: {actual}")
-            }
-            SemanticDiagnosticKind::WrongGenericKind { expected, actual } => {
-                format!("Wrong kind of generic argument. Expected {expected}, found: {actual}")
             }
             SemanticDiagnosticKind::ConstGenericInferenceUnsupported => {
                 "Const generic inference not yet supported.".to_string()
@@ -453,12 +450,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Invalid drop trait implementation.".into()
             }
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
-                format!("`{}` is not allowed inside impl.", item_kw)
+                format!("`{item_kw}` is not allowed inside impl.")
             }
             SemanticDiagnosticKind::MissingItemsInImpl { item_names } => {
                 format!(
                     "Not all trait items are implemented. Missing: {}.",
-                    item_names.iter().map(|name| format!("'{}'", name)).join(", ")
+                    item_names.iter().map(|name| format!("'{name}'")).join(", ")
                 )
             }
             SemanticDiagnosticKind::PassPanicAsNopanic { impl_function_id, trait_id } => {
@@ -579,10 +576,6 @@ pub enum SemanticDiagnosticKind {
     WrongNumberOfGenericArguments {
         expected: usize,
         actual: usize,
-    },
-    WrongGenericKind {
-        expected: GenericKind,
-        actual: GenericKind,
     },
     ConstGenericInferenceUnsupported,
     ImplGenericsUnsupported,

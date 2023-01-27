@@ -104,7 +104,7 @@ fn felt_neg(a: felt) -> felt {
 
 extern type NonZero<T>;
 // TODO(spapini): Add generic impls for NonZero for Copy, Drop.
-enum JumpNzResult<T> {
+enum IsZeroResult<T> {
     Zero: (),
     NonZero: NonZero::<T>,
 }
@@ -147,7 +147,7 @@ impl PartialOrdFelt of PartialOrd::<felt> {
     }
 }
 
-extern fn felt_jump_nz(a: felt) -> JumpNzResult::<felt> nopanic;
+extern fn felt_is_zero(a: felt) -> IsZeroResult::<felt> nopanic;
 
 // TODO(spapini): Constraint using Copy and Drop traits.
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
@@ -239,7 +239,7 @@ use integer::U128PartialEq;
 use integer::U128BitAnd;
 use integer::U128BitOr;
 use integer::U128BitXor;
-use integer::u128_jump_nz;
+use integer::u128_is_zero;
 use integer::u8;
 use integer::u8_const;
 use integer::u8_from_felt;

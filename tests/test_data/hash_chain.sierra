@@ -4,7 +4,7 @@ type Pedersen = Pedersen;
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc dup<felt> = dup<felt>;
-libfunc felt_jump_nz = felt_jump_nz;
+libfunc felt_is_zero = felt_is_zero;
 libfunc branch_align = branch_align;
 libfunc drop<felt> = drop<felt>;
 libfunc felt_const<0> = felt_const<0>;
@@ -20,7 +20,7 @@ libfunc rename<Pedersen> = rename<Pedersen>;
 
 revoke_ap_tracking() -> ();
 dup<felt>([1]) -> ([1], [2]);
-felt_jump_nz([2]) { fallthrough() 9([3]) };
+felt_is_zero([2]) { fallthrough() 9([3]) };
 branch_align() -> ();
 drop<felt>([1]) -> ();
 felt_const<0>() -> ([4]);

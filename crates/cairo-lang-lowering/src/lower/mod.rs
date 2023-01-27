@@ -9,7 +9,7 @@ use itertools::{chain, zip_eq};
 use num_traits::Zero;
 use scope::BlockBuilder;
 use semantic::corelib::{
-    core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
+    core_felt_is_zero, core_felt_ty, core_nonzero_ty, get_core_function_id,
     jump_nz_nonzero_variant, jump_nz_zero_variant, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
@@ -681,7 +681,7 @@ fn lower_expr_match_felt(
 
     // Emit the statement.
     scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
-        function: core_jump_nz_func(semantic_db),
+        function: core_felt_is_zero(semantic_db),
         inputs: vec![expr_var],
         arms,
     }));
