@@ -59,15 +59,16 @@ pub trait InvocationCostInfoProvider {
     /// Number of tokens provided by the libfunc invocation (currently only relevant for
     /// `get_gas_all`).
     fn token_usages(&self, token_type: CostTokenType) -> usize;
+    /// Provides the ap change variable value of the current statement.
+    fn ap_change_var_value(&self) -> usize;
 }
 
 /// Returns a precost value for a libfunc - the cost of non-step tokens.
 /// This is a helper function to implement costing both for creating
 /// gas equations and getting actual gas usage after having a solution.
-pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: InvocationCostInfoProvider>(
+pub fn core_libfunc_precost<Ops: CostOperations>(
     ops: &mut Ops,
     libfunc: &CoreConcreteLibfunc,
-    _info_provider: &InfoProvider,
 ) -> Vec<Ops::CostType> {
     match libfunc {
         FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
