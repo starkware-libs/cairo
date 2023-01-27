@@ -1,15 +1,7 @@
 //! Compiles and runs a Cairo program.
-
-use anyhow::Context;
-use cairo_lang_sierra::ProgramParser;
-use cairo_lang_sierra::program::Program;
-use casm_generator::SierraCasmGenerator;
-use std::fs;
-
 use clap::Parser;
 
-// use casm_generator::SierraCasmGenerator;
-mod casm_generator;
+use cairo_lang_protostar::build_protostar_casm_from_file;
 
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
@@ -22,20 +14,9 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    
-    let sierra_code = fs::read_to_string(args.file).expect("Could not read file!");
-    let program: Program = ProgramParser::new().parse(&sierra_code).unwrap();
-    let casm_generator = match SierraCasmGenerator::new(program, false) {
-        Ok(casm_generator) => casm_generator,
-        Err(e) => panic!("{}", e)
-    };
-    let protostar_casm = casm_generator.build_casm().context("Failed to build CASM")?;
-    let res =
-        serde_json::to_string_pretty(&protostar_casm).context("Serialization failed.")?;
-
-    match args.output {
-        Some(path) => fs::write(path, res).with_context(|| "Failed to write output.")?,
-        None => println!("{}", res),
+    if let Some(output_contents) = build_protostar_casm_from_file(None, args.file, args.output)? {
+        println!("{}", output_contents);
     }
+
     Ok(())
 }

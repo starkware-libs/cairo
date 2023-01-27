@@ -92,8 +92,11 @@ impl SierraCasmGenerator {
         .collect()
     }
     
-    pub fn build_casm(&self) -> Result<ProtostarCasm, GeneratorError> {
-        let tests = self.collect_tests();
+    pub fn build_casm(&self, maybe_attributed_tests: Option<Vec<String>>) -> Result<ProtostarCasm, GeneratorError> {
+        let tests = match maybe_attributed_tests {
+            Some(result) => result,
+            None => self.collect_tests().into_iter().map(|item| item.to_string()).collect(),
+        };
         let mut entry_codes_offsets = Vec::new();
         for test in &tests {
             let func = self.find_function(test)?;
