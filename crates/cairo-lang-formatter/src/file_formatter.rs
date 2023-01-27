@@ -12,10 +12,11 @@ use diffy::{create_patch, PatchFormatter};
 
 use crate::{get_formatted_file, FormatterConfig};
 
+#[derive(Default)]
 pub struct FileFormatterArgs {
     pub check: bool,
-    pub verbose: bool,
     pub recursive: bool,
+    pub verbose: bool,
     pub config: FormatterConfig,
 }
 
@@ -26,9 +27,10 @@ enum Input<'a> {
 }
 
 #[derive(Debug)]
-enum FormatResult {
+pub enum FormatResult {
     Identical,
     DiffFound,
+    NotFound,
 }
 
 impl<'a> Input<'a> {
@@ -135,27 +137,38 @@ fn print_diff(input: &Input<'_>, original_text: &str, formatted_text: &str) {
 
 /// Formats all files in a directory and sub directories (if specified), and return true if all
 /// files were formatted correctly.
-fn format_directory(path: &str, args: &FileFormatterArgs, recursion_depth: usize) -> bool {
+fn format_directory(
+    path: &str,
+    args: &FileFormatterArgs,
+    recursion_depth: usize,
+) -> Result<FormatResult> {
     if !args.recursive && recursion_depth > 0 {
-        return true;
+        return Ok(FormatResult::Identical);
     }
     for sub_path in fs::read_dir(path).unwrap() {
         if sub_path.unwrap().file_name() == ".cairofmtignore" {
             eprintln_if_verbose(&format!("The directory {path} was ignored."), args.verbose);
-            return true;
+            return Ok(FormatResult::Identical);
         }
     }
-    let mut all_correct = true;
-    for sub_path in fs::read_dir(path).unwrap() {
-        all_correct &=
-            format_path(sub_path.unwrap().path().to_str().unwrap(), args, recursion_depth + 1);
-    }
-    all_correct
+
+    let all_correct = fs::read_dir(path)
+        .unwrap()
+        .map(|sub_path| {
+            format_path(sub_path.unwrap().path().to_str().unwrap(), args, recursion_depth + 1)
+        })
+        .all(|result| matches!(result, Ok(FormatResult::Identical)));
+
+    Ok(if all_correct { FormatResult::Identical } else { FormatResult::DiffFound })
 }
 
 /// Gets a path to a file or directory and, if exists, calls the respective formatting function,
 /// and returns if it was formatted correctly.
-pub fn format_path(path: &str, args: &FileFormatterArgs, recursion_depth: usize) -> bool {
+pub fn format_path(
+    path: &str,
+    args: &FileFormatterArgs,
+    recursion_depth: usize,
+) -> Result<FormatResult> {
     match fs::metadata(path) {
         // File exists
         Ok(metadata) => {
@@ -165,13 +178,10 @@ pub fn format_path(path: &str, args: &FileFormatterArgs, recursion_depth: usize)
                         &format!("The file: {path}, is not a cairo file, nothing was done.").red(),
                         args.verbose,
                     );
-                    true
+                    Ok(FormatResult::Identical)
                 } else {
                     eprintln_if_verbose(&format!("Formatting file: {path}."), args.verbose);
-                    matches!(
-                        (format_input(&Input::File { path }, &args.config, args.check), args.check),
-                        (Ok(FormatResult::Identical), _) | (Ok(FormatResult::DiffFound), false)
-                    )
+                    format_input(&Input::File { path }, &args.config, args.check)
                 }
             } else if metadata.is_dir() {
                 eprintln_if_verbose(&format!("Formatting directory: {path}."), args.verbose);
@@ -179,23 +189,24 @@ pub fn format_path(path: &str, args: &FileFormatterArgs, recursion_depth: usize)
             } else {
                 // A symlink.
                 eprintln!("{}", format!("The file {path} is a symlink. It was ignored.").red());
-                true
+                Ok(FormatResult::Identical)
             }
         }
         Err(_) => {
             eprintln!("{}", format!("The file: {path}, was not found.").red());
-            false
+            Ok(FormatResult::NotFound)
         }
     }
 }
 
 /// Calls the respective formatting function, on input from stdin
 /// and returns if it was formatted correctly.
-pub fn format_stdin(args: &FileFormatterArgs) -> bool {
-    matches!(
-        (format_input(&Input::Stdin, &args.config, args.check), args.check),
-        (Ok(FormatResult::Identical), _) | (Ok(FormatResult::DiffFound), false)
-    )
+pub fn format_stdin(args: &FileFormatterArgs) -> Result<FormatResult> {
+    format_input(&Input::Stdin, &args.config, args.check)
+}
+
+pub fn check_result(result: FormatResult, check: bool) -> bool {
+    matches!((result, check), (FormatResult::Identical, _) | (FormatResult::DiffFound, false))
 }
 
 /// Checks if the file extension is "cairo".

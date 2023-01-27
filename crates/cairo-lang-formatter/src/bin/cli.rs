@@ -1,6 +1,8 @@
 use std::process::ExitCode;
 
-use cairo_lang_formatter::file_formatter::{format_path, format_stdin, FileFormatterArgs};
+use cairo_lang_formatter::file_formatter::{
+    check_result, format_path, format_stdin, FileFormatterArgs, FormatResult,
+};
 use cairo_lang_formatter::FormatterConfig;
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
@@ -9,7 +11,7 @@ use clap::Parser;
 /// Exits with 0/1 if the the compilation fails.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
-pub struct FormatterArgs {
+struct FormatterArgs {
     /// Check mode, don't write the formatted files,
     /// just output the diff between the original and the formatted file.
     #[arg(short, long, default_value_t = false)]
@@ -42,19 +44,23 @@ fn main() -> ExitCode {
         eprintln!("Start formatting. Check: {}, Recursive: {}.", args.check, args.recursive);
     }
 
-    let mut all_correct = true;
+    let result;
     if formatter_args.files.len() == 1 && formatter_args.files[0] == "-" {
         // Input comes from stdin
-        all_correct = format_stdin(&args);
+        result = format_stdin(&args);
     } else if formatter_args.files.is_empty() {
         // Format current directory
-        all_correct = format_path(".", &args, 0);
+        result = format_path(".", &args, 0);
     } else {
         // Format listed files and directories
-        for file in formatter_args.files.iter() {
-            all_correct &= format_path(file, &args, 0);
-        }
+        let success = formatter_args
+            .files
+            .iter()
+            .map(|file| format_path(file, &args, 0))
+            .all(|res| matches!(res, Ok(FormatResult::Identical)));
+
+        result = Ok(if success { FormatResult::Identical } else { FormatResult::DiffFound });
     }
 
-    if !all_correct && args.check { ExitCode::FAILURE } else { ExitCode::SUCCESS }
+    if check_result(result.unwrap(), args.check) { ExitCode::SUCCESS } else { ExitCode::FAILURE }
 }
