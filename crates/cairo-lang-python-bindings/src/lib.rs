@@ -1,6 +1,8 @@
 use std::path::Path;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::collections::HashSet;
 
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
@@ -8,6 +10,7 @@ use pyo3::exceptions::RuntimeError;
 use anyhow::Context;
 
 use cairo_lang_compiler::{
+    db::RootDatabase,
     compile_cairo_project_at_path as compile_cairo_to_sierra_at_path,
     CompilerConfig,
 };
@@ -20,6 +23,20 @@ use cairo_lang_starknet::contract_class::{
     compile_path as compile_starknet
 };
 use cairo_lang_starknet::casm_contract_class::CasmContractClass;
+use cairo_lang_semantic::plugin::SemanticPlugin;
+use cairo_lang_plugins::derive::DerivePlugin;
+use cairo_lang_plugins::panicable::PanicablePlugin;
+use cairo_lang_plugins::config::ConfigPlugin;
+use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_lang_compiler::project::setup_project;
+use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_defs::ids::FunctionWithBodyId;
+use cairo_lang_diagnostics::ToOption;
+
+mod find_tests;
+
+use find_tests::find_all_tests;
 
 #[pyfunction]
 fn call_cairo_to_sierra_compiler(input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
@@ -87,11 +104,38 @@ fn starknet_cairo_to_casm(input_path: &str) -> Result<String, anyhow::Error> {
     Ok(casm)
 }
 
+#[pyfunction]
+fn call_test_collector(path: &str) -> PyResult<String> {
+    let plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
+        Arc::new(DerivePlugin {}),
+        Arc::new(PanicablePlugin {}),
+        Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
+    ];
+    let mut db_val = RootDatabase::new(plugins);
+    let db = &mut db_val;
+
+    let main_crate_ids = setup_project(db, Path::new(&path)).map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
+
+    if check_and_eprint_diagnostics(db) {
+        return Err(PyErr::new::<RuntimeError, _>(format!("failed to compile: {}", path)));
+    }
+    let all_tests = find_all_tests(db, main_crate_ids);
+    let sierra_program = db
+        .get_sierra_program_for_functions(
+            all_tests.iter().map(|t| FunctionWithBodyId::Free(t.func_id)).collect(),
+        )
+        .to_option()
+        .with_context(|| "Compilation failed without any diagnostics.").map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
+    let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
+    Ok(sierra_program.to_string())
+}
+
 #[pymodule]
 fn cairo_python_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(call_cairo_to_sierra_compiler))?;
     m.add_wrapped(wrap_pyfunction!(call_sierra_to_casm_compiler))?;
     m.add_wrapped(wrap_pyfunction!(call_cairo_to_casm_compiler))?;
     m.add_wrapped(wrap_pyfunction!(call_starknet_contract_compiler))?;
+    m.add_wrapped(wrap_pyfunction!(call_test_collector))?;
     Ok(())
 }
