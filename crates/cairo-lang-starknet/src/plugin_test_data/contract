@@ -86,6 +86,7 @@ mod TestContract {
 
     mod __external {
         fn get_something(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -142,6 +143,7 @@ mod TestContract {
             arr
         }
         fn set_something(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },

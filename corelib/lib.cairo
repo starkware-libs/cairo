@@ -314,5 +314,8 @@ mod starknet;
 use starknet::System;
 use starknet::ContractAddress;
 
+// Internals.
+mod internal;
+
 #[cfg(test)]
 mod test;
