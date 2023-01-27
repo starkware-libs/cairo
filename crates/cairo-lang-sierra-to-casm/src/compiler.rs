@@ -1,4 +1,6 @@
 use std::fmt::Display;
+use std::fs;
+use thiserror::Error;
 
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
@@ -6,16 +8,18 @@ use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use thiserror::Error;
+use cairo_lang_sierra::ProgramParser;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::invocations::{
     check_references_on_stack, compile_invocation, InvocationError, ProgramInfo,
 };
-use crate::metadata::Metadata;
+use crate::metadata::{calc_metadata, Metadata};
 use crate::references::{check_types_match, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
 use crate::type_sizes::get_type_size_map;
+
+use clap::Parser;
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -220,4 +224,32 @@ pub fn compile(
                 .collect(),
         },
     })
+}
+
+/// Command line args parser.
+/// Exits with 0/1 if the input is formatted correctly/incorrectly.
+#[derive(Parser, Debug)]
+#[clap(version, verbatim_doc_comment)]
+pub struct Args {
+    /// The file to compile
+    pub file: String,
+    pub output: String,
+}
+
+pub fn compile_at_path(path: &str) -> Result<CairoProgram, CompilationError> {
+    let sierra_code = fs::read_to_string(path).expect("Could not read file!");
+    compile_contents(&sierra_code)
+}
+
+pub fn compile_contents(contents: &str) -> Result<CairoProgram, CompilationError> {
+    let program = ProgramParser::new().parse(&contents).unwrap();
+
+    let gas_usage_check = true;
+    let cairo_program = compile(
+        &program,
+        &calc_metadata(&program).expect("Failed calculating Sierra variables."),
+        gas_usage_check,
+    )?;
+
+    Ok(cairo_program)
 }
