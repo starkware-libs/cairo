@@ -14,6 +14,8 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 use crate::formatter::Formatter;
 
+pub mod file_formatter;
+
 #[cfg(test)]
 mod test;
 
