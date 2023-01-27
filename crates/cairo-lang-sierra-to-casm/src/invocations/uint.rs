@@ -8,7 +8,7 @@ use cairo_lang_sierra::extensions::uint::{
 use num_bigint::{BigInt, ToBigInt};
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::misc::validate_in_range;
+use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
@@ -173,7 +173,7 @@ fn build_small_uint_overflowing_sub(
 }
 
 /// Handles a small uint conversion from felt.
-fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, const B: u128>(
+fn build_small_uint_from_felt<const LIMIT: u128, const K: u8>(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, value] = builder.try_get_single_cells()?;
@@ -189,34 +189,27 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, con
         hint TestLessThan {lhs: value, rhs: limit} into {dst: is_small};
         jump IsSmall if is_small != 0;
         tempvar shifted_value = value - limit;
-        tempvar x;
-        tempvar y;
-        tempvar x_part;
-        tempvar y_fixed;
     }
     match K {
         1 => {
-            validate_in_range::<K>(
+            let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
+            validate_under_limit::<K>(
                 &mut casm_builder,
                 &(-Felt::from(LIMIT)).to_biguint().to_bigint().unwrap(),
-                A,
-                B,
                 shifted_value,
                 range_check,
-                &[x, y, x_part, y_fixed],
+                &auxiliary_vars,
             );
             casm_build_extend! {casm_builder, jump Done;};
         }
         2 => {
-            casm_build_extend! {casm_builder, tempvar diff;};
-            validate_in_range::<K>(
+            let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
+            validate_under_limit::<K>(
                 &mut casm_builder,
                 &(-Felt::from(LIMIT)).to_biguint().to_bigint().unwrap(),
-                A,
-                B,
                 shifted_value,
                 range_check,
-                &[x, y, x_part, y_fixed, diff],
+                &auxiliary_vars,
             );
         }
         _ => unreachable!("Only K value of 1 or 2 are supported."),
@@ -257,12 +250,7 @@ pub fn build_u8(
             }
         },
         Uint8Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<
-            256,
-            2,
-            0x8000000000000110000000000000000_u128,
-            0x1000000000000021ffffffffffffff01_u128,
-        >(builder),
+        Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<256, 2>(builder),
     }
 }
 
@@ -285,11 +273,8 @@ pub fn build_u64(
             }
         },
         Uint64Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint64Concrete::FromFelt(_) => build_small_uint_from_felt::<
-            0x10000000000000000,
-            2,
-            0x8000000000000110000000000000000_u128,
-            0x10000000000000210000000000000001_u128,
-        >(builder),
+        Uint64Concrete::FromFelt(_) => {
+            build_small_uint_from_felt::<0x10000000000000000, 2>(builder)
+        }
     }
 }

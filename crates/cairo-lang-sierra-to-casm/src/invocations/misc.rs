@@ -147,18 +147,18 @@ pub fn build_cell_eq(
     ))
 }
 
-/// Helper to add code that validates that variable `value` is smaller than some `bound`, with
-/// `a_imm`, `b_imm` and `K` constants for checking this bound.
-/// `auxiliary_vars` are the variables already allocated used for execution of the algorithm,
-/// requires different sizes for different `K`s, for 1 requires 4, for 2 requires 5.
+/// Helper to add code that validates that variable `value` is smaller than `limit`, with `K`
+/// constant for checking this bound. `auxiliary_vars` are the variables already allocated used for
+/// execution of the algorithm, requires different sizes for different `K`s, for 1 requires 4, for 2
+/// requires 5.
 ///
-/// We show that a number is in the range [0, bound) by writing it as:
+/// We show that a number is in the range [0, `limit`) by writing it as:
 ///   A * x + y,
 /// where:
 ///   * K = low positive number (the lower the better, here we support only 1 or 2).
 ///   * max_x = 2**128 - K.
-///   * A = bound // max_x.
-///   * B = bound % max_x.
+///   * A = `limit` / max_x.
+///   * B = `limit` % max_x.
 ///   * x is in the range [0, max_x],
 ///   * y is in the range [0, B):
 ///     * y is in the range [0, 2**128).
@@ -166,25 +166,24 @@ pub fn build_cell_eq(
 ///
 /// Note that the minimal possible value of the expression A * x + y is min_val = 0 (where x = y
 /// = 0), and the maximal value is obtained where x = max_x and y = B - 1:
-///   max_val = (A * max_x + B) - 1 = bound - 1.
+///   max_val = (A * max_x + B) - 1 = `limit` - 1.
 ///
 /// As long as A <= B, every number in the range can be represented.
-pub fn validate_in_range<const K: u8>(
+/// So provided `K` must supply such A and B.
+pub fn validate_under_limit<const K: u8>(
     casm_builder: &mut CasmBuilder,
     limit: &BigInt,
-    a_imm: u128,
-    b_imm: u128,
     value: Var,
     range_check: Var,
     auxiliary_vars: &[Var],
 ) {
-    assert!(a_imm <= b_imm, "{a_imm} > {b_imm}");
-    assert_eq!(limit / (u128::MAX - (K - 1) as u128), a_imm.into());
-    assert_eq!(limit % (u128::MAX - (K - 1) as u128), b_imm.into());
+    let a_imm = limit / (u128::MAX - (K - 1) as u128);
+    let b_imm = limit % (u128::MAX - (K - 1) as u128);
+    assert!(a_imm <= b_imm, "Must choose `K` such that `{a_imm} (`A`) <= {b_imm} (`B`)");
     casm_build_extend! {casm_builder,
         const a_imm = a_imm;
         // 2**128 - B.
-        const b_imm_fix = (u128::MAX - b_imm + 1);
+        const b_imm_fix = (BigInt::from(u128::MAX) - b_imm + 1) as BigInt;
         const u128_limit_minus_1 = u128::MAX;
     }
     match K {
