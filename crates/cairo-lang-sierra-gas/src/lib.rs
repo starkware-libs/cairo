@@ -39,9 +39,23 @@ pub enum CostError {
     SolvingGasEquationFailed,
 }
 
-impl InvocationCostInfoProvider for ProgramRegistry<CoreType, CoreLibfunc> {
+/// Helper to implement the `InvocationCostInfoProvider` for the equation generation.
+struct InvocationCostInfoProviderForEqGen<'a, TokenUsages: Fn(CostTokenType) -> usize> {
+    /// Registry for providing the sizes of the types.
+    registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
+    /// Closure providing the token usages for the invocation.
+    token_usages: TokenUsages,
+}
+
+impl<'a, TokenUsages: Fn(CostTokenType) -> usize> InvocationCostInfoProvider
+    for InvocationCostInfoProviderForEqGen<'a, TokenUsages>
+{
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.get_type(ty).unwrap().info().size as usize
+        self.registry.get_type(ty).unwrap().info().size as usize
+    }
+
+    fn token_usages(&self, token_type: CostTokenType) -> usize {
+        (self.token_usages)(token_type)
     }
 }
 
@@ -53,7 +67,7 @@ pub fn calc_gas_precost_info(
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     calc_gas_info_inner(
         program,
-        |statement_future_cost, idx, libfunc_id| {
+        |statement_future_cost, idx, libfunc_id| -> Vec<OrderedHashMap<CostTokenType, Expr<Var>>> {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registery creation would have already failed.");
@@ -61,7 +75,10 @@ pub fn calc_gas_precost_info(
                 statement_future_cost,
                 idx,
                 libfunc,
-                &registry,
+                &InvocationCostInfoProviderForEqGen {
+                    registry: &registry,
+                    token_usages: |_| panic!("Token costs not available at precost calculation."),
+                },
             )
         },
         function_set_costs,
@@ -86,8 +103,12 @@ pub fn calc_gas_postcost_info(
                 statement_future_cost,
                 idx,
                 libfunc,
-                &registry,
-                precost_gas_info,
+                &InvocationCostInfoProviderForEqGen {
+                    registry: &registry,
+                    token_usages: |token_type| {
+                        precost_gas_info.variable_values[(*idx, token_type)] as usize
+                    },
+                },
             )
         },
         function_set_costs,

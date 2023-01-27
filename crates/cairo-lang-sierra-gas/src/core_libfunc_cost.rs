@@ -7,7 +7,6 @@ use itertools::zip_eq;
 
 pub use crate::core_libfunc_cost_base::InvocationCostInfoProvider;
 use crate::core_libfunc_cost_base::{core_libfunc_postcost, core_libfunc_precost, CostOperations};
-use crate::core_libfunc_cost_expr::GasApInfoProvider;
 use crate::gas_info::GasInfo;
 
 /// Cost operations for getting `Option<i64>` costs values.
@@ -63,12 +62,7 @@ pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     info_provider: &InfoProvider,
 ) -> Vec<Option<OrderedHashMap<CostTokenType, i64>>> {
     let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
-    let postcost = core_libfunc_postcost(
-        &mut Ops { gas_info, idx: *idx },
-        libfunc,
-        info_provider,
-        &GasApInfoProvider { info_provider, gas_info, idx: *idx },
-    );
+    let postcost = core_libfunc_postcost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
     zip_eq(precost, postcost)
         .map(|(precost, postcost)| {
             let precost = precost?;

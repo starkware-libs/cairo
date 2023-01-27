@@ -9,7 +9,6 @@ description = "Sierra gas computation."
 [dependencies]
 itertools.workspace = true
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.2" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.0.0-alpha.2" }
 cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "1.0.0-alpha.2" }
 thiserror.workspace = true
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.2" }
