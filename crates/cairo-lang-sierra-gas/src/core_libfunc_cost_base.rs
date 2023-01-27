@@ -59,6 +59,8 @@ pub trait InvocationCostInfoProvider {
     /// Number of tokens provided by the libfunc invocation (currently only relevant for
     /// `get_gas_all`).
     fn token_usages(&self, token_type: CostTokenType) -> usize;
+    /// Provides the ap change variable value of the current statement.
+    fn ap_change_var_value(&self) -> usize;
 }
 
 /// Returns a precost value for a libfunc - the cost of non-step tokens.
