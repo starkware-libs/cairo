@@ -191,6 +191,10 @@ impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self.program_info.type_sizes[ty] as usize
     }
+
+    fn token_usages(&self, token_type: CostTokenType) -> usize {
+        InvocationApChangeInfoProvider::token_usages(self, token_type)
+    }
 }
 
 /// Helper for building compiled invocations.
