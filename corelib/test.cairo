@@ -84,7 +84,7 @@ fn test_ec_operations() {
     assert(ec_point_is_zero(unwrap_nz(p) - unwrap_nz(p)).to_bool(), 'p - p did not return 0.');
 
     // Compute `(-p) - p`.
-    let (sub2_x, sub2_y) = ec_point_unwrap(ec_point_non_zero(unwrap_nz(ec_neg(p)) - unwrap_nz(p)));
+    let (sub2_x, sub2_y) = ec_point_unwrap(ec_point_non_zero(ec_neg(unwrap_nz(p)) - unwrap_nz(p)));
     assert(sub2_x == double_x, 'bad x for (-p) - p');
     assert(sub2_y == -double_y, 'bad y for (-p) - p');
 }
