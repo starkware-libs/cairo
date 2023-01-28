@@ -1,5 +1,5 @@
 // TODO(lior): Remove this once the impl of ec.cairo is automatically found.
-impl OptionEcPointCopy of Copy::<Option::<EcPoint>>;
+impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
 
 // Checks if (`signature_r`, `signature_s`) is a valid ECDSA signature for the given `public_key`
 // on the given `message`.
@@ -67,7 +67,7 @@ fn check_ecdsa_signature(
     //   zG +/- rQ = +/- sR, or more efficiently that:
     //   (zG +/- rQ).x = sR.x.
 
-    let sR: Option::<EcPoint> = ec_mul(signature_r_point, signature_s);
+    let sR: Option::<NonZeroEcPoint> = ec_mul(signature_r_point, signature_s);
     let sR_x = match sR {
         Option::Some(pt) => {
             let (x, y) = ec_point_unwrap(pt);
@@ -78,8 +78,8 @@ fn check_ecdsa_signature(
         },
     };
 
-    let zG: Option::<EcPoint> = ec_mul(gen_point, message_hash);
-    let rQ: Option::<EcPoint> = ec_mul(public_key_point, signature_r);
+    let zG: Option::<NonZeroEcPoint> = ec_mul(gen_point, message_hash);
+    let rQ: Option::<NonZeroEcPoint> = ec_mul(public_key_point, signature_r);
     match zG + rQ {
         Option::Some(pt) => {
             let (x, y) = ec_point_unwrap(pt);

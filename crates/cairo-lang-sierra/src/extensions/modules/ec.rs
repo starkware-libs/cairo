@@ -1,4 +1,5 @@
 use super::felt::FeltType;
+use super::non_zero::nonzero_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -68,6 +69,9 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
+
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(felt_ty.clone()),
@@ -77,7 +81,7 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
                 // Success.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: context.get_concrete_type(EcPointType::id(), &[])?,
+                        ty: nonzero_ecpoint_ty,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -107,13 +111,16 @@ impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
+
         Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(felt_ty)],
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: context.get_concrete_type(EcPointType::id(), &[])?,
+                        ty: nonzero_ecpoint_ty,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -140,8 +147,11 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
+
         Ok(LibfuncSignature::new_non_branch(
-            vec![context.get_concrete_type(EcPointType::id(), &[])?],
+            vec![nonzero_ecpoint_ty],
             vec![
                 OutputVarInfo {
                     ty: felt_ty.clone(),
@@ -167,11 +177,13 @@ impl NoGenericArgsGenericLibfunc for EcNegLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let point_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
+
         Ok(LibfuncSignature::new_non_branch(
-            vec![point_ty.clone()],
+            vec![nonzero_ecpoint_ty.clone()],
             vec![OutputVarInfo {
-                ty: point_ty,
+                ty: nonzero_ecpoint_ty,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
             SierraApChange::Known { new_vars_only: true },
@@ -211,8 +223,11 @@ impl NoGenericArgsGenericLibfunc for EcStateAddLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let state_ty = context.get_concrete_type(EcStateType::id(), &[])?;
+        let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
+
         Ok(LibfuncSignature::new_non_branch(
-            vec![state_ty.clone(), context.get_concrete_type(EcPointType::id(), &[])?],
+            vec![state_ty.clone(), nonzero_ecpoint_ty],
             vec![OutputVarInfo {
                 ty: state_ty,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -232,6 +247,9 @@ impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
+        let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
+
         Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(
                 context.get_concrete_type(EcStateType::id(), &[])?,
@@ -239,7 +257,7 @@ impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
             branch_signatures: vec![
                 BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: context.get_concrete_type(EcPointType::id(), &[])?,
+                        ty: nonzero_ecpoint_ty,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -267,12 +285,15 @@ impl NoGenericArgsGenericLibfunc for EcStateAddMulLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ec_builtin_ty = context.get_concrete_type(EcOpType::id(), &[])?;
         let ec_state_ty = context.get_concrete_type(EcStateType::id(), &[])?;
+        let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
+
         Ok(LibfuncSignature::new_non_branch(
             vec![
                 ec_builtin_ty.clone(),
                 ec_state_ty.clone(),
                 context.get_concrete_type(FeltType::id(), &[])?,
-                context.get_concrete_type(EcPointType::id(), &[])?,
+                nonzero_ecpoint_ty,
             ],
             vec![
                 OutputVarInfo {

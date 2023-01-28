@@ -204,11 +204,12 @@ use option::OptionUnitDrop;
 // EC.
 mod ec;
 use ec::EcOp;
-use ec::EcPoint;
 use ec::EcPointAdd;
 use ec::EcPointSub;
 use ec::EcState;
-use ec::OptionEcPointCopy;
+use ec::NonZeroEcPoint;
+use ec::NonZeroEcPointCopy;
+use ec::OptionNonZeroEcPointCopy;
 use ec::ec_mul;
 use ec::ec_neg;
 use ec::ec_point_from_x;
