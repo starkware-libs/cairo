@@ -38,6 +38,7 @@ fn test_bool_operators() {
 
 impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
 impl NonZeroEcPointDrop of Drop::<NonZeroEcPoint>;
+use core::ToBool;
 
 #[test]
 fn test_ec_operations() {
@@ -64,8 +65,8 @@ fn test_ec_operations() {
     assert(qy == y, 'bad EC op y');
 
     // Try computing `p + p` using the ec_mul function.
-    let double_p = ec_mul(p, 2);
-    let (double_x, double_y) = ec_point_unwrap(double_p.unwrap());
+    let double_p = ec_mul(unwrap_nz(p), 2);
+    let (double_x, double_y) = ec_point_unwrap(ec_point_non_zero(double_p));
     let expected_double_y =
         3572434102142093425782752266058856056057826477682467661647843687948039943621;
     assert(
@@ -75,15 +76,15 @@ fn test_ec_operations() {
     assert(double_y == expected_double_y | double_y == -expected_double_y, 'bad double y');
 
     // Compute `2p - p`.
-    let (sub_x, sub_y) = ec_point_unwrap((double_p - Option::Some(p)).unwrap());
+    let (sub_x, sub_y) = ec_point_unwrap(ec_point_non_zero(double_p - unwrap_nz(p)));
     assert(sub_x == x, 'bad x for 2p - p');
     assert(sub_y == y, 'bad y for 2p - p');
 
     // Compute `p - p`.
-    assert((Option::Some(p) - Option::Some(p)).is_none(), 'p - p did not return 0.');
+    assert(ec_point_is_zero(unwrap_nz(p) - unwrap_nz(p)).to_bool(), 'p - p did not return 0.');
 
     // Compute `(-p) - p`.
-    let (sub2_x, sub2_y) = ec_point_unwrap((Option::Some(ec_neg(p)) - Option::Some(p)).unwrap());
+    let (sub2_x, sub2_y) = ec_point_unwrap(ec_point_non_zero(unwrap_nz(ec_neg(p)) - unwrap_nz(p)));
     assert(sub2_x == double_x, 'bad x for (-p) - p');
     assert(sub2_y == -double_y, 'bad y for (-p) - p');
 }
@@ -115,12 +116,12 @@ fn test_ecdsa() {
 
 #[test]
 fn test_ec_mul() {
-    let p = ec_point_new(
+    let p = unwrap_nz(ec_point_new(
         x: 336742005567258698661916498343089167447076063081786685068305785816009957563,
         y: 1706004133033694959518200210163451614294041810778629639790706933324248611779,
-    );
+    ));
     let m = 2713877091499598330239944961141122840311015265600950719674787125185463975936;
-    let (x, y) = ec_point_unwrap(ec_mul(p, m).unwrap());
+    let (x, y) = ec_point_unwrap(ec_point_non_zero(ec_mul(p, m)));
 
     assert(
         x == 2881632108168892236043523177391659237686965655035240771134509747985978822780,

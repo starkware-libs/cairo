@@ -110,6 +110,18 @@ enum IsZeroResult<T> {
 }
 extern fn unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
 
+trait ToBool<T> {
+    fn to_bool(self: T) -> bool;
+}
+impl IsZeroResultToBool<T> of ToBool::<IsZeroResult::<T>> {
+    fn to_bool(self: IsZeroResult::<T>) -> bool {
+        match self {
+            IsZeroResult::Zero(()) => true,
+            IsZeroResult::NonZero(_) => false,
+        }
+    }
+}
+
 impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
 impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
 extern fn felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
@@ -216,6 +228,7 @@ use ec::ec_neg;
 use ec::ec_point_from_x;
 use ec::ec_point_is_zero;
 use ec::ec_point_new;
+use ec::ec_point_non_zero;
 use ec::ec_point_try_new;
 use ec::ec_point_unwrap;
 use ec::ec_point_zero;
