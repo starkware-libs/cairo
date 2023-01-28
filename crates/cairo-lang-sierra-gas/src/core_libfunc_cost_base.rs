@@ -151,6 +151,7 @@ pub fn core_libfunc_postcost<
                 ops.const_cost(9), // Failure.
             ],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ops.const_cost(0)],
+            EcConcreteLibfunc::Zero(_) => vec![ops.const_cost(0)],
         },
         Gas(GetGas(_)) => {
             vec![

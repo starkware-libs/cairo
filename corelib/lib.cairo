@@ -218,6 +218,7 @@ use ec::ec_point_is_zero;
 use ec::ec_point_new;
 use ec::ec_point_try_new;
 use ec::ec_point_unwrap;
+use ec::ec_point_zero;
 use ec::ec_state_add_mul;
 use ec::ec_state_add;
 use ec::ec_state_finalize;
