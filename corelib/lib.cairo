@@ -204,6 +204,7 @@ use option::OptionUnitDrop;
 // EC.
 mod ec;
 use ec::EcOp;
+use ec::EcPoint;
 use ec::EcPointAdd;
 use ec::EcPointSub;
 use ec::EcState;
@@ -213,6 +214,7 @@ use ec::OptionNonZeroEcPointCopy;
 use ec::ec_mul;
 use ec::ec_neg;
 use ec::ec_point_from_x;
+use ec::ec_point_is_zero;
 use ec::ec_point_new;
 use ec::ec_point_try_new;
 use ec::ec_point_unwrap;

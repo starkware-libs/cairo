@@ -186,6 +186,64 @@ test::foo@0([0]: NonZero<EcPoint>) -> (Tuple<felt, felt>);
 
 //! > ==========================================================================
 
+//! > ec_point_is_zero libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(p: EcPoint) -> felt {
+    match ec_point_is_zero(p) {
+        IsZeroResult::Zero(()) => 1,
+        IsZeroResult::NonZero(p_nz) => {
+            let (x, y) = ec_point_unwrap(p_nz);
+            x
+        },
+    }
+}
+
+//! > casm
+jmp rel 6 if [fp + -3] != 0;
+[ap + 0] = 1, ap++;
+jmp rel 3;
+[ap + 0] = [fp + -4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 4})
+
+//! > sierra_code
+type EcPoint = EcPoint;
+type NonZero<EcPoint> = NonZero<EcPoint>;
+type felt = felt;
+
+libfunc ec_point_is_zero = ec_point_is_zero;
+libfunc branch_align = branch_align;
+libfunc felt_const<1> = felt_const<1>;
+libfunc store_temp<felt> = store_temp<felt>;
+libfunc jump = jump;
+libfunc ec_point_unwrap = ec_point_unwrap;
+libfunc drop<felt> = drop<felt>;
+libfunc rename<felt> = rename<felt>;
+
+ec_point_is_zero([0]) { fallthrough() 5([1]) };
+branch_align() -> ();
+felt_const<1>() -> ([2]);
+store_temp<felt>([2]) -> ([3]);
+jump() { 9() };
+branch_align() -> ();
+ec_point_unwrap([1]) -> ([4], [5]);
+drop<felt>([5]) -> ();
+store_temp<felt>([4]) -> ([3]);
+rename<felt>([3]) -> ([6]);
+return([6]);
+
+test::foo@0([0]: EcPoint) -> (felt);
+
+//! > ==========================================================================
+
 //! > ec_neg libfunc
 
 //! > test_comments

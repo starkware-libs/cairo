@@ -46,6 +46,7 @@ impl NoGenericArgsGenericType for EcStateType {
 
 define_libfunc_hierarchy! {
     pub enum EcLibfunc {
+        IsZero(EcIsZeroLibfunc),
         Neg(EcNegLibfunc),
         StateAdd(EcStateAddLibfunc),
         TryNew(EcCreatePointLibfunc),
@@ -188,6 +189,41 @@ impl NoGenericArgsGenericLibfunc for EcNegLibfunc {
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
+    }
+}
+
+/// Libfunc for checking whether the given `EcPoint` is the zero point.
+#[derive(Default)]
+pub struct EcIsZeroLibfunc {}
+impl NoGenericArgsGenericLibfunc for EcIsZeroLibfunc {
+    const STR_ID: &'static str = "ec_point_is_zero";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
+        let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
+
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(ecpoint_ty)],
+            branch_signatures: vec![
+                // Zero.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+                // NonZero.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: nonzero_ecpoint_ty,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+            ],
+            fallthrough: Some(0),
+        })
     }
 }
 
