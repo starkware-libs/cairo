@@ -203,12 +203,11 @@ impl NoGenericArgsGenericLibfunc for EcNegLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
-        let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
 
         Ok(LibfuncSignature::new_non_branch(
-            vec![nonzero_ecpoint_ty.clone()],
+            vec![ecpoint_ty.clone()],
             vec![OutputVarInfo {
-                ty: nonzero_ecpoint_ty,
+                ty: ecpoint_ty,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
             SierraApChange::Known { new_vars_only: true },
