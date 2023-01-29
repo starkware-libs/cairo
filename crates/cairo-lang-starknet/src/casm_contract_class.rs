@@ -29,7 +29,7 @@ use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
 
 /// The expected gas cost of an entrypoint that begins with get_gas() immediately.
-pub const ENTRY_POINT_COST: i32 = 100;
+pub const ENTRY_POINT_COST: i32 = 10000;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum StarknetSierraCompilationError {
@@ -80,7 +80,7 @@ impl CasmContractClass {
         .map(|entrypoint| program.funcs[entrypoint.function_idx].id.clone());
         let metadata_computation_config = MetadataComputationConfig {
             function_set_costs: entrypoint_ids
-                .map(|id| (id, [(CostTokenType::Step, ENTRY_POINT_COST)].into()))
+                .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
                 .collect(),
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
@@ -170,12 +170,11 @@ impl CasmContractClass {
                 .get(statement_id.0)
                 .ok_or(StarknetSierraCompilationError::EntryPointError)?
                 .code_offset;
-            // TODO(orizi): Convert back into an assert when there's a valid const cost.
-            if metadata.gas_info.function_costs[function.id.clone()]
-                != OrderedHashMap::from_iter([(CostTokenType::Step, ENTRY_POINT_COST as i64)])
-            {
-                eprintln!("Unexpected entry point cost.");
-            }
+            assert_eq!(
+                metadata.gas_info.function_costs[function.id.clone()],
+                OrderedHashMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
+                "Unexpected entry point cost."
+            );
             Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {
                 selector: contract_entry_point.selector,
                 offset: code_offset,

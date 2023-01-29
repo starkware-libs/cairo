@@ -20,11 +20,7 @@ struct Ops<'a> {
 impl CostOperations for Ops<'_> {
     type CostType = CostExprMap;
 
-    fn const_cost(&self, value: i32) -> Self::CostType {
-        self.const_cost_token(value, CostTokenType::Step)
-    }
-
-    fn const_cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
+    fn cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
         Self::CostType::from_iter([(token_type, CostExpr::from_const(value))])
     }
 

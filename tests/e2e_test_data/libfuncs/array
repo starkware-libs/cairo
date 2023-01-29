@@ -18,7 +18,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 3})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt = felt;
@@ -54,7 +54,7 @@ fn foo(ref arr: Array::<felt>, value: felt) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 3})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt = felt;
@@ -101,7 +101,7 @@ fn foo(ref arr: Array::<felt>, value1: felt, value2: felt) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 4})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type felt = felt;
@@ -156,7 +156,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 9})
+test::foo: OrderedHashMap({Const: 900})
 
 //! > sierra_code
 type felt = felt;
@@ -235,7 +235,7 @@ ap += 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 12})
+test::foo: OrderedHashMap({Const: 1200})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -326,7 +326,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 13})
+test::foo: OrderedHashMap({Const: 1300})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -395,7 +395,7 @@ fn foo(ref arr: Array::<felt>) -> usize {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 3})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt = felt;
@@ -437,7 +437,7 @@ fn foo(ref arr: Array::<u256>) -> usize {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 3})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type u128 = u128;
