@@ -162,11 +162,11 @@ pub fn simulate<
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Array(ArrayConcreteLibfunc::At(_)) => match &inputs[..] {
-            [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint128(_)] => {
+            [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint64(_)] => {
                 let mut iter = inputs.into_iter();
                 iter.next(); // Ignore range check.
                 let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
-                let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint128) as usize;
+                let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint64) as usize;
                 match arr.get(idx).cloned() {
                     Some(element) => {
                         Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr), element], 0))
@@ -181,7 +181,7 @@ pub fn simulate<
             [CoreValue::Array(_)] => {
                 let arr = extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Array);
                 let len = arr.len();
-                Ok((vec![CoreValue::Array(arr), CoreValue::Uint128(len as u128)], 0))
+                Ok((vec![CoreValue::Array(arr), CoreValue::Uint64(len as u64)], 0))
             }
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),

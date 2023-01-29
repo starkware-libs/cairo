@@ -241,7 +241,7 @@ test::foo: OrderedHashMap({Step: 12})
 type RangeCheck = RangeCheck;
 type felt = felt;
 type Array<felt> = Array<felt>;
-type u128 = u128;
+type u64 = u64;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::felt> = Enum<ut@core::option::Option::<core::felt>, felt, Unit>;
 
@@ -280,7 +280,7 @@ rename<Array<felt>>([10]) -> ([15]);
 rename<core::option::Option::<core::felt>>([11]) -> ([16]);
 return([14], [15], [16]);
 
-test::foo@0([0]: RangeCheck, [1]: Array<felt>, [2]: u128) -> (RangeCheck, Array<felt>, core::option::Option::<core::felt>);
+test::foo@0([0]: RangeCheck, [1]: Array<felt>, [2]: u64) -> (RangeCheck, Array<felt>, core::option::Option::<core::felt>);
 
 //! > ==========================================================================
 
@@ -333,6 +333,7 @@ type RangeCheck = RangeCheck;
 type u128 = u128;
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
 type Array<core::integer::u256> = Array<core::integer::u256>;
+type u64 = u64;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::integer::u256> = Enum<ut@core::option::Option::<core::integer::u256>, core::integer::u256, Unit>;
 
@@ -371,7 +372,7 @@ rename<Array<core::integer::u256>>([10]) -> ([15]);
 rename<core::option::Option::<core::integer::u256>>([11]) -> ([16]);
 return([14], [15], [16]);
 
-test::foo@0([0]: RangeCheck, [1]: Array<core::integer::u256>, [2]: u128) -> (RangeCheck, Array<core::integer::u256>, core::option::Option::<core::integer::u256>);
+test::foo@0([0]: RangeCheck, [1]: Array<core::integer::u256>, [2]: u64) -> (RangeCheck, Array<core::integer::u256>, core::option::Option::<core::integer::u256>);
 
 //! > ==========================================================================
 
@@ -399,20 +400,20 @@ test::foo: OrderedHashMap({Step: 3})
 //! > sierra_code
 type felt = felt;
 type Array<felt> = Array<felt>;
-type u128 = u128;
+type u64 = u64;
 
 libfunc array_len<felt> = array_len<felt>;
 libfunc store_temp<Array<felt>> = store_temp<Array<felt>>;
-libfunc store_temp<u128> = store_temp<u128>;
-libfunc rename<u128> = rename<u128>;
+libfunc store_temp<u64> = store_temp<u64>;
+libfunc rename<u64> = rename<u64>;
 
 array_len<felt>([0]) -> ([1], [2]);
 store_temp<Array<felt>>([1]) -> ([3]);
-store_temp<u128>([2]) -> ([2]);
-rename<u128>([2]) -> ([4]);
+store_temp<u64>([2]) -> ([2]);
+rename<u64>([2]) -> ([4]);
 return([3], [4]);
 
-test::foo@0([0]: Array<felt>) -> (Array<felt>, u128);
+test::foo@0([0]: Array<felt>) -> (Array<felt>, u64);
 
 //! > ==========================================================================
 
@@ -442,16 +443,17 @@ test::foo: OrderedHashMap({Step: 3})
 type u128 = u128;
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
 type Array<core::integer::u256> = Array<core::integer::u256>;
+type u64 = u64;
 
 libfunc array_len<core::integer::u256> = array_len<core::integer::u256>;
 libfunc store_temp<Array<core::integer::u256>> = store_temp<Array<core::integer::u256>>;
-libfunc store_temp<u128> = store_temp<u128>;
-libfunc rename<u128> = rename<u128>;
+libfunc store_temp<u64> = store_temp<u64>;
+libfunc rename<u64> = rename<u64>;
 
 array_len<core::integer::u256>([0]) -> ([1], [2]);
 store_temp<Array<core::integer::u256>>([1]) -> ([3]);
-store_temp<u128>([2]) -> ([2]);
-rename<u128>([2]) -> ([4]);
+store_temp<u64>([2]) -> ([2]);
+rename<u64>([2]) -> ([4]);
 return([3], [4]);
 
-test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u128);
+test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u64);

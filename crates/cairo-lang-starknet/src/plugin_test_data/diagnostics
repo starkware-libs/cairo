@@ -313,7 +313,7 @@ error: Type not found.
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
-error: Function `deserialize` of trait `core::serde::Serde` has multiple implementations, in: core::serde::FeltSerde, core::serde::BoolSerde, core::serde::U8Serde, core::serde::U128Serde, core::serde::U256Serde, core::serde::ArrayFeltSerde
+error: Function `deserialize` of trait `core::serde::Serde` has multiple implementations, in: core::serde::FeltSerde, core::serde::BoolSerde, core::serde::U8Serde, core::serde::U64Serde, core::serde::U128Serde, core::serde::U256Serde, core::serde::ArrayFeltSerde
  --> contract:35:23
                 match serde::Serde::<T>::deserialize(ref data) {
                       ^**************************************^
