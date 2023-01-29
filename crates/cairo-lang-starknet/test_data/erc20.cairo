@@ -7,8 +7,8 @@ mod ERC20 {
         symbol: felt,
         decimals: u8,
         total_supply: u256,
-        balances: Map::<felt, u256>,
-        allowances: Map::<(felt, felt), u256>,
+        balances: LegacyMap::<felt, u256>,
+        allowances: LegacyMap::<(felt, felt), u256>,
     }
 
     #[event]

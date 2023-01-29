@@ -6,8 +6,8 @@ mod TestContract {
 
     struct Storage {
         value: felt,
-        mapping: Map::<u128, bool>,
-        large_mapping: Map::<u256, u256>,
+        mapping: LegacyMap::<u128, bool>,
+        large_mapping: LegacyMap::<u256, u256>,
     }
 
     #[view]

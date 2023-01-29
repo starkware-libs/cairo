@@ -22,6 +22,52 @@ error: Module file not found. Expected path: src/TestContract.cairo
 
 //! > ==========================================================================
 
+//! > Test diagnostics non legacy storage variable.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    struct Storage {
+        mapping: Map::<felt, felt>,
+    }
+}
+
+//! > generated_cairo_code
+#[generated_contract]
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+
+    
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        
+    }
+
+    mod __constructor {
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
+ --> lib.cairo:4:18
+        mapping: Map::<felt, felt>,
+                 ^***************^
+
+//! > ==========================================================================
+
 //! > Test diagnostics of non-serializable parameter in entry point.
 
 //! > test_function_name
