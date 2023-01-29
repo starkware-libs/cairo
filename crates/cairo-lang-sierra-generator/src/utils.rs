@@ -12,6 +12,7 @@ use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semant
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
+use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 
 pub fn simple_statement(
@@ -191,14 +192,19 @@ pub fn get_libfunc_signature(
     db: &dyn SierraGenGroup,
     concrete_lib_func_id: ConcreteLibfuncId,
 ) -> LibfuncSignature {
-    let libfunc_long_id = db.lookup_intern_concrete_lib_func(concrete_lib_func_id);
+    let libfunc_long_id = db.lookup_intern_concrete_lib_func(concrete_lib_func_id.clone());
     // TODO(lior): replace expect() with a diagnostic (unless this can never happen).
     CoreLibfunc::specialize_signature_by_id(
         &SierraSignatureSpecializationContext(db),
         &libfunc_long_id.generic_id,
         &libfunc_long_id.generic_args,
     )
-    .expect("Specialization failure.")
+    .unwrap_or_else(|_| {
+        panic!(
+            "Failed to specialize: `{}`",
+            DebugReplacer { db }.replace_libfunc_id(&concrete_lib_func_id)
+        )
+    })
 }
 
 /// Returns the [ConcreteLibfuncId] for calling a user-defined function.
