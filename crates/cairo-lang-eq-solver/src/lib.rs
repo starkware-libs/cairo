@@ -18,6 +18,9 @@ use indexmap::map::Entry;
 pub fn try_solve_equations<Var: Clone + Debug + PartialEq + Eq + Hash>(
     equations: Vec<Expr<Var>>,
 ) -> Option<OrderedHashMap<Var, i64>> {
+    if equations.is_empty() {
+        return Some(Default::default());
+    }
     let mut vars = variables!();
     let mut orig_to_solver_var = OrderedHashMap::default();
     // Add all variables to structure and map.
@@ -26,7 +29,7 @@ pub fn try_solve_equations<Var: Clone + Debug + PartialEq + Eq + Hash>(
             match orig_to_solver_var.entry(var.clone()) {
                 Entry::Occupied(_) => {}
                 Entry::Vacant(e) => {
-                    e.insert(vars.add(variable().min(0).name(format!("{var:?}"))));
+                    e.insert(vars.add(variable().integer().min(0).name(format!("{var:?}"))));
                 }
             }
         }
