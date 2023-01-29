@@ -35,7 +35,14 @@ pub struct PrivInlineData {
     /// Diagnostics produced while collecting inlining Info.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
     pub config: InlineConfiguration,
+    pub info: InlineInfo,
+}
+
+/// Per function information for the inlining phase.
+#[derive(Debug, PartialEq, Eq)]
+pub struct InlineInfo {
     pub is_inlineable: bool,
+    pub has_early_return: bool,
 }
 
 pub fn priv_inline_data(
@@ -48,19 +55,20 @@ pub fn priv_inline_data(
     // If the the function is marked as #[inline(always)], we need to report
     // inlining problems.
     let report_diagnostics = config == InlineConfiguration::Always;
-    let is_inlineable = check_inlinable(db, &mut diagnostics, report_diagnostics, function_id)?;
+    let info = gather_inlining_info(db, &mut diagnostics, report_diagnostics, function_id)?;
 
-    Ok(Arc::new(PrivInlineData { diagnostics: diagnostics.build(), config, is_inlineable }))
+    Ok(Arc::new(PrivInlineData { diagnostics: diagnostics.build(), config, info }))
 }
 
-/// Checks if the given function can be inlined.
+/// Gathers inlining information for the given function.
 /// If report_diagnostics is true, adds a diagnostics with the reason that prevents inlining.
-fn check_inlinable(
+fn gather_inlining_info(
     db: &dyn LoweringGroup,
     diagnostics: &mut LoweringDiagnostics,
     report_diagnostics: bool,
     function_id: FunctionWithBodyId,
-) -> Maybe<bool> {
+) -> Maybe<InlineInfo> {
+    let mut info = InlineInfo { is_inlineable: false, has_early_return: false };
     let defs_db = db.upcast();
     if db
             .function_with_body_direct_function_with_body_callees(function_id)?
@@ -75,7 +83,7 @@ fn check_inlinable(
                 LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
             );
         }
-        return Ok(false);
+        return Ok(info);
     }
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
@@ -91,7 +99,9 @@ fn check_inlinable(
                         LoweringDiagnosticKind::InliningFunctionWithEarlyReturnNotSupported,
                     );
                 }
-                return Ok(false);
+
+                info.has_early_return = true;
+                return Ok(info);
             }
             FlatBlockEnd::Return(returns) if returns.iter().any(|r| input_vars.contains(r)) => {
                 if report_diagnostics {
@@ -100,13 +110,14 @@ fn check_inlinable(
                         LoweringDiagnosticKind::InliningFunctionWithIdentityVarsNotSupported,
                     );
                 }
-                return Ok(false);
+                return Ok(info);
             }
             _ => {}
         };
     }
 
-    Ok(true)
+    info.is_inlineable = true;
+    Ok(info)
 }
 
 /// Parses the inline attributes for a given function.
@@ -332,7 +343,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 let inline_data =
                     self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
-                if inline_data.config == InlineConfiguration::Always && inline_data.is_inlineable {
+                if inline_data.config == InlineConfiguration::Always
+                    && inline_data.info.is_inlineable
+                {
                     return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
                 }
             }
