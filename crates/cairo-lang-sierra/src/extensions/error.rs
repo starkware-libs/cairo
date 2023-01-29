@@ -33,7 +33,11 @@ pub enum ExtensionError {
     #[error("Could not specialize type")]
     TypeSpecialization { type_id: GenericTypeId, error: SpecializationError },
     #[error("Could not specialize libfunc")]
-    LibfuncSpecialization { libfunc_id: GenericLibfuncId, error: SpecializationError },
+    LibfuncSpecialization {
+        libfunc_id: GenericLibfuncId,
+        generic_args: Vec<GenericArg>,
+        error: SpecializationError,
+    },
     #[error("The requested functionality is not implemented yet")]
     NotImplemented,
 }
