@@ -16,6 +16,7 @@ use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -35,7 +36,7 @@ use crate::items::trt::{
     ConcreteTraitLongId,
 };
 use crate::literals::LiteralLongId;
-use crate::types::{resolve_type_with_inference, substitute_generics, GenericSubstitution};
+use crate::types::{resolve_type_with_inference, substitute_ty, GenericSubstitution};
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
     TypeLongId, Variant,
@@ -557,7 +558,7 @@ impl<'db> Resolver<'db> {
                     generic_params.into_iter().zip(generic_args.into_iter()).collect(),
                 );
 
-                ResolvedConcreteItem::Type(substitute_generics(self.db, &substitution, ty))
+                ResolvedConcreteItem::Type(substitute_ty(self.db, &substitution, ty))
             }
             ResolvedGenericItem::Trait(trait_id) => {
                 ResolvedConcreteItem::Trait(self.specialize_trait(
@@ -849,7 +850,25 @@ impl<'db> Resolver<'db> {
                         GenericArgumentId::Literal(self.db.intern_literal(literal))
                     }
                     GenericKind::Impl => {
-                        return Err(diagnostics.report(generic_arg_syntax, ImplGenericsUnsupported));
+                        let expr_path = try_extract_matches!(generic_arg_syntax, ast::Expr::Path)
+                            .ok_or_else(|| {
+                            diagnostics.report(generic_arg_syntax, UnknownImpl)
+                        })?;
+                        // TODO(spapini): Resolve impls also from generic params of the resolver
+                        // context.
+                        let resolved_impl = try_extract_matches!(
+                            self.resolve_concrete_path(
+                                diagnostics,
+                                inference,
+                                expr_path,
+                                NotFoundItemType::Impl,
+                            )?,
+                            ResolvedConcreteItem::Impl
+                        )
+                        .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
+
+                        // TODO(spapini): Check that the impl matches the requested trait.
+                        GenericArgumentId::Impl(resolved_impl)
                     }
                 },
                 None => {
