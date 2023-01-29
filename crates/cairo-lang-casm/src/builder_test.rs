@@ -37,6 +37,7 @@ fn test_ap_change_fixes() {
         CellExpression::from_res_operand(res!([fp - 3] + [ap + 3]))
     );
     assert_eq!(state.ap_change, 2);
+    assert_eq!(state.steps, 1);
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
         indoc! {"
@@ -56,6 +57,7 @@ fn test_awaiting_relocations() {
     let CasmBuildResult { instructions, branches: [(state, awaiting_relocations)] } =
         builder.build(["Target"]);
     assert_eq!(state.ap_change, 5);
+    assert_eq!(state.steps, 2);
     assert_eq!(awaiting_relocations, [1]);
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
@@ -78,6 +80,7 @@ fn test_noop_branch() {
         builder.build(["Fallthrough"]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(state.ap_change, 3);
+    assert_eq!(state.steps, 2);
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
         indoc! {"
@@ -102,6 +105,7 @@ fn test_allocations() {
         builder.build(["Fallthrough"]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(state.ap_change, 3);
+    assert_eq!(state.steps, 3);
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
         indoc! {"
@@ -142,6 +146,7 @@ fn test_aligned_branch_intersect() {
     assert!(awaiting_relocations.is_empty());
     assert_eq!(state.ap_change, 1);
     assert_eq!(state.allocated, 1);
+    assert_eq!(state.steps, 2);
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
         indoc! {"
