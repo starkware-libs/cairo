@@ -20,7 +20,7 @@ fn foo(a: u128, b: u128) -> (u128, u128, u128) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Bitwise: 1, Step: 6})
+test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
 type Bitwise = Bitwise;

@@ -16,7 +16,7 @@ fn foo() -> EcPoint {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type EcPoint = EcPoint;
@@ -62,7 +62,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 12})
+test::foo: OrderedHashMap({Const: 1200})
 
 //! > sierra_code
 type felt = felt;
@@ -143,7 +143,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 14})
+test::foo: OrderedHashMap({Const: 1400})
 
 //! > sierra_code
 type felt = felt;
@@ -197,7 +197,7 @@ fn foo(p: NonZeroEcPoint) -> (felt, felt) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type EcPoint = EcPoint;
@@ -246,7 +246,7 @@ jmp rel 3;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 4})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type EcPoint = EcPoint;
@@ -296,7 +296,7 @@ fn foo(a: EcPoint) -> EcPoint {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type EcPoint = EcPoint;
@@ -347,7 +347,7 @@ from starkware.python.math_utils import random_ec_point
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 11})
+test::foo: OrderedHashMap({Const: 1100})
 
 //! > sierra_code
 type EcState = EcState;
@@ -395,7 +395,7 @@ jmp rel 0;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 12})
+test::foo: OrderedHashMap({Const: 1200})
 
 //! > sierra_code
 type EcState = EcState;
@@ -458,7 +458,7 @@ ap += 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 17})
+test::foo: OrderedHashMap({Const: 1700})
 
 //! > sierra_code
 type EcState = EcState;
@@ -515,7 +515,7 @@ fn foo(ref s: EcState, m: felt, p: NonZeroEcPoint) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({EcOp: 1, Step: 9})
+test::foo: OrderedHashMap({EcOp: 1, Const: 900})
 
 //! > sierra_code
 type EcOp = EcOp;
