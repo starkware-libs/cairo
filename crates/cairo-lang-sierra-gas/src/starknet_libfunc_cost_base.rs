@@ -10,22 +10,22 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
 ) -> Vec<Ops::CostType> {
     match libfunc {
         // TODO(Ilya): Revisit the real cost.
-        StarkNetConcreteLibfunc::CallContract(_) => vec![ops.const_cost(50), ops.const_cost(50)],
-        StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ops.const_cost(0)],
+        StarkNetConcreteLibfunc::CallContract(_) => vec![ops.steps(50), ops.steps(50)],
+        StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_) => {
-            vec![ops.const_cost(6), ops.const_cost(7)]
+            vec![ops.steps(6), ops.steps(7)]
         }
         // TODO(Ilya): Consider adding a `CostTokenType::StorageRead` or make storage read a branch.
-        StarkNetConcreteLibfunc::StorageRead(_) => vec![ops.const_cost(50), ops.const_cost(50)],
+        StarkNetConcreteLibfunc::StorageRead(_) => vec![ops.steps(50), ops.steps(50)],
         // TODO(yuval): Revisit the real cost.
-        StarkNetConcreteLibfunc::StorageWrite(_) => vec![ops.const_cost(50), ops.const_cost(50)],
-        StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ops.const_cost(0)],
-        StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => vec![ops.const_cost(10)],
-        StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ops.const_cost(0)],
-        StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ops.const_cost(0)],
-        StarkNetConcreteLibfunc::EmitEvent(_) => vec![ops.const_cost(50), ops.const_cost(50)],
+        StarkNetConcreteLibfunc::StorageWrite(_) => vec![ops.steps(50), ops.steps(50)],
+        StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ops.steps(0)],
+        StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => vec![ops.steps(10)],
+        StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ops.steps(0)],
+        StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ops.steps(0)],
+        StarkNetConcreteLibfunc::EmitEvent(_) => vec![ops.steps(50), ops.steps(50)],
         StarkNetConcreteLibfunc::GetCallerAddress(_) => {
-            vec![ops.const_cost(50), ops.const_cost(50)]
+            vec![ops.steps(50), ops.steps(50)]
         }
     }
 }
