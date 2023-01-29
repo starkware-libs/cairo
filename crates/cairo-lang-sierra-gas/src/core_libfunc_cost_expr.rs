@@ -56,13 +56,12 @@ impl CostOperations for Ops<'_> {
 }
 
 /// Returns an expression for the gas cost for core libfuncs.
-pub fn core_libfunc_precost_expr<InfoProvider: InvocationCostInfoProvider>(
+pub fn core_libfunc_precost_expr(
     statement_future_cost: &mut dyn StatementFutureCost,
     idx: &StatementIdx,
     libfunc: &CoreConcreteLibfunc,
-    info_provider: &InfoProvider,
 ) -> Vec<CostExprMap> {
-    core_libfunc_precost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+    core_libfunc_precost(&mut Ops { statement_future_cost, idx: *idx }, libfunc)
 }
 
 /// Returns an expression for the gas cost for core libfuncs.
