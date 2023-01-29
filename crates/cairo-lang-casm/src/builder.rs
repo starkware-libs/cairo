@@ -31,6 +31,8 @@ pub struct State {
     allocated: i16,
     /// The AP change since the beginging of the run.
     pub ap_change: usize,
+    /// The number of casm steps since the beginging of the run.
+    pub steps: usize,
 }
 impl State {
     /// Returns the value, in relation to the initial ap value.
@@ -64,6 +66,8 @@ impl State {
             self.allocated, other.allocated,
             "Merged branches not aligned on number of allocations."
         );
+        println!("{} {}", self.steps, other.steps);
+        self.steps = self.steps.max(other.steps);
         self.vars.retain(|var, value| {
             other
                 .vars
@@ -365,6 +369,7 @@ impl CasmBuilder {
     /// Sets the label to have the set states, otherwise tests if the state matches the existing one
     /// by merging.
     fn set_or_test_label_state(&mut self, label: String, state: State) {
+        println!("{label}");
         match self.label_state.entry(label) {
             Entry::Occupied(mut e) => {
                 e.get_mut().intersect(&state);
@@ -410,13 +415,12 @@ impl CasmBuilder {
     pub fn label(&mut self, name: String) {
         if self.reachable {
             self.set_or_test_label_state(name.clone(), self.main_state.clone());
-        } else {
-            self.main_state = self
-                .label_state
-                .get(&name)
-                .unwrap_or_else(|| panic!("No known value for state on reaching {name}."))
-                .clone();
         }
+        self.main_state = self
+            .label_state
+            .get(&name)
+            .unwrap_or_else(|| panic!("No known value for state on reaching {name}."))
+            .clone();
         self.statements.push(Statement::Label(name));
         self.reachable = true;
     }
@@ -497,8 +501,9 @@ impl CasmBuilder {
         self.statements.push(Statement::Jump(label.clone(), instruction));
 
         self.main_state.vars = main_vars;
-        self.main_state.ap_change = 0;
         self.main_state.allocated = 0;
+        self.main_state.ap_change = 0;
+        self.main_state.steps = 0;
         let function_state = State { vars: function_vars, ..Default::default() };
         self.set_or_test_label_state(label, function_state);
     }
@@ -558,6 +563,7 @@ impl CasmBuilder {
         if inc_ap {
             self.main_state.ap_change += 1;
         }
+        self.main_state.steps += 1;
         let mut hints = vec![];
         std::mem::swap(&mut hints, &mut self.current_hints);
         Instruction { body, inc_ap, hints }
