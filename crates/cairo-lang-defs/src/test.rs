@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
@@ -5,14 +6,18 @@ use cairo_lang_filesystem::db::{
     init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
-use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches, Upcast};
 use indoc::indoc;
 
 use crate::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
-use crate::ids::{ModuleId, ModuleItemId};
+use crate::ids::{
+    FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, SubmoduleLongId,
+};
 use crate::plugin::{
     DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginDiagnostic,
     PluginGeneratedFile, PluginResult,
@@ -62,6 +67,61 @@ impl HasMacroPlugins for DatabaseForTesting {
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
         self.plugins.clone()
     }
+}
+
+cairo_lang_test_utils::test_file_test!(
+    defs,
+    "src/test_data",
+    {
+        generic_item_id: "generic_item_id",
+    },
+    test_generic_item_id
+);
+fn test_generic_item_id(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+    let mut db_val = DatabaseForTesting::default();
+    let module_id = setup_test_module(&mut db_val, inputs["module_code"].as_str());
+
+    let module_file_id = ModuleFileId(module_id, FileIndex(0));
+    let db = &db_val;
+    let file_id = db.module_main_file(module_id).unwrap();
+    let syntax = db.file_syntax(file_id).unwrap();
+    let node = syntax.as_syntax_node();
+    let mut output = String::new();
+
+    fn find_generics(
+        db: &DatabaseForTesting,
+        mut module_file_id: ModuleFileId,
+        node: SyntaxNode,
+        output: &mut String,
+    ) {
+        match node.kind(db) {
+            SyntaxKind::ItemModule => {
+                let submodule_id = db.intern_submodule(SubmoduleLongId(
+                    module_file_id,
+                    ast::ItemModulePtr(node.stable_ptr()),
+                ));
+                module_file_id = ModuleFileId(ModuleId::Submodule(submodule_id), FileIndex(0));
+            }
+            SyntaxKind::GenericParamType
+            | SyntaxKind::GenericParamConst
+            | SyntaxKind::GenericParamImpl => {
+                let param_id = db.intern_generic_param(GenericParamLongId(
+                    module_file_id,
+                    ast::GenericParamPtr(node.stable_ptr()),
+                ));
+                let generic_item = param_id.generic_item(db);
+                writeln!(output, "{:?} -> {:?}", param_id.debug(db), generic_item.debug(db))
+                    .unwrap();
+            }
+            _ => {}
+        }
+        for child in node.children(db) {
+            find_generics(db, module_file_id, child, output);
+        }
+    }
+    find_generics(db, module_file_id, node, &mut output);
+
+    OrderedHashMap::from([("output".into(), output)])
 }
 
 pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
