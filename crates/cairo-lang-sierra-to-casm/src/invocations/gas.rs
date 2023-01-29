@@ -10,16 +10,6 @@ use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
-/// Returns the cost of CostTokenType with constant costs.
-pub fn get_const_cost(token_type: CostTokenType) -> i64 {
-    match token_type {
-        CostTokenType::Step => 100,
-        CostTokenType::Hole => 10,
-        CostTokenType::RangeCheck => 50,
-        _ => panic!("Got unexpected non const token type {}.", token_type.camel_case_name()),
-    }
-}
-
 /// Builds instructions for Sierra gas operations.
 pub fn build(
     libfunc: &GasConcreteLibfunc,
@@ -36,14 +26,10 @@ fn build_get_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-    if !CostTokenType::iter_postcost()
-        .all(|token| variable_values.contains_key(&(builder.idx, *token)))
-    {
-        return Err(InvocationError::UnknownVariableData);
-    }
-    let requested_count: i64 = CostTokenType::iter_postcost()
-        .map(|token_type| variable_values[(builder.idx, *token_type)] * get_const_cost(*token_type))
-        .sum();
+    let requested_count: i64 = variable_values
+        .get(&(builder.idx, CostTokenType::Const))
+        .copied()
+        .ok_or(InvocationError::UnknownVariableData)?;
     let [range_check, gas_counter] = builder.try_get_single_cells()?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
@@ -82,14 +68,10 @@ fn build_refund_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-    if !CostTokenType::iter_postcost()
-        .all(|token| variable_values.contains_key(&(builder.idx, *token)))
-    {
-        return Err(InvocationError::UnknownVariableData);
-    }
-    let requested_count: i64 = CostTokenType::iter_postcost()
-        .map(|token_type| variable_values[(builder.idx, *token_type)] * get_const_cost(*token_type))
-        .sum();
+    let requested_count: i64 = variable_values
+        .get(&(builder.idx, CostTokenType::Const))
+        .copied()
+        .ok_or(InvocationError::UnknownVariableData)?;
     let gas_counter_value = builder.try_get_single_cells::<1>()?[0]
         .to_deref()
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
