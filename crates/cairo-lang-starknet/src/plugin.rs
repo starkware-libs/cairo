@@ -758,7 +758,7 @@ fn generate_entry_point_wrapper(
                 }},
             }}
             {arg_definitions}
-            if array_len(ref data) != 0_u128 {{
+            if array_len(ref data) != 0_usize {{
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

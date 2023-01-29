@@ -50,6 +50,15 @@ pub fn try_get_core_ty_by_name(
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericType)
             })
         }
+        ModuleItemId::TypeAlias(type_alias_id) => {
+            let ty =
+                db.type_alias_resolved_type(type_alias_id).expect("Could not find type alias.");
+            assert!(
+                db.type_alias_generic_params(type_alias_id).unwrap().is_empty(),
+                "Cannot get type aliases with params from corelib."
+            );
+            return Ok(ty);
+        }
         _ => GenericTypeId::option_from(module_item_id),
     }
     .unwrap_or_else(|| panic!("{name} is not a type."));
