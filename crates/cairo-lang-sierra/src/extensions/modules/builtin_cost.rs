@@ -97,6 +97,22 @@ define_libfunc_hierarchy! {
 /// Libfunc for getting gas to be used by a builtin.
 #[derive(Default)]
 pub struct BuiltinCostGetGasLibfunc;
+impl BuiltinCostGetGasLibfunc {
+    /// Returns the number of steps required for the computation of the requested cost, given the
+    /// number of requested token usages. The number of steps is also the change in `ap` (every
+    /// step includes `ap++`).
+    pub fn cost_computation_steps<TokenUsages: Fn(CostTokenType) -> usize>(
+        token_usages: TokenUsages,
+    ) -> usize {
+        CostTokenType::iter_precost()
+            .map(|token_type| match token_usages(*token_type) {
+                0 => 0,
+                1 => 2,
+                _ => 3,
+            })
+            .sum()
+    }
+}
 
 impl NoGenericArgsGenericLibfunc for BuiltinCostGetGasLibfunc {
     const STR_ID: &'static str = "get_gas_all";
