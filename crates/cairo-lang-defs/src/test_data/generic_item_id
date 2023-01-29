@@ -1,0 +1,34 @@
+//! > Test ParamId::generic_item_id()
+
+//! > test_function_name
+test_generic_item_id
+
+//! > module_code
+fn f0<A>(){}
+mod m {
+    fn f0<A>(){}
+}
+extern fn f1<A>();
+struct MyStruct<A>{}
+enum MyEnum<A>{}
+extern type MyType<const A>;
+trait MyTrait<A>{
+    fn foo<B>();
+}
+impl MyImpl<A> of MyTrait::<A>{
+    fn foo<B>(){}
+}
+type MyAlias<A> = MyStruct::<A>;
+
+//! > output
+GenericParamType(A) -> FreeFunctionId(test::f0)
+GenericParamType(A) -> FreeFunctionId(test::m::f0)
+GenericParamType(A) -> ExternFunctionId(test::f1)
+GenericParamType(A) -> StructId(test::MyStruct)
+GenericParamType(A) -> EnumId(test::MyEnum)
+GenericParamConst(A) -> ExternTypeId(test::MyType)
+GenericParamType(A) -> TraitId(test::MyTrait)
+GenericParamType(B) -> TraitFunctionId(test::foo)
+GenericParamType(A) -> ImplId(test::MyImpl)
+GenericParamType(B) -> ImplFunctionId(test::foo)
+GenericParamType(A) -> TypeAliasId(test::MyAlias)

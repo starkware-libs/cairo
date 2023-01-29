@@ -19,6 +19,8 @@ smol_str.workspace = true
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.2" }
 
 [dev-dependencies]
+env_logger.workspace = true
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.0.0-alpha.2" }
 indoc.workspace = true
 pretty_assertions.workspace = true
 test-log.workspace = true
