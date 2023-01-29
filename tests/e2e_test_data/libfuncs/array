@@ -205,7 +205,7 @@ test::foo@0([0]: Array<felt>) -> (Array<felt>, core::option::Option::<core::felt
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<felt>, idx: u128) -> Option::<felt> {
+fn foo(ref arr: Array::<felt>, idx: usize) -> Option::<felt> {
     array_get::<felt>(ref arr, idx)
 }
 
@@ -292,7 +292,7 @@ test::foo@0([0]: RangeCheck, [1]: Array<felt>, [2]: u128) -> (RangeCheck, Array<
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<u256>, idx: u128) -> Option::<u256> {
+fn foo(ref arr: Array::<u256>, idx: usize) -> Option::<u256> {
     array_get::<u256>(ref arr, idx)
 }
 
@@ -383,7 +383,7 @@ test::foo@0([0]: RangeCheck, [1]: Array<core::integer::u256>, [2]: u128) -> (Ran
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<felt>) -> u128 {
+fn foo(ref arr: Array::<felt>) -> usize {
     array_len::<felt>(ref arr)
 }
 
@@ -424,7 +424,7 @@ test::foo@0([0]: Array<felt>) -> (Array<felt>, u128);
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<u256>) -> u128 {
+fn foo(ref arr: Array::<u256>) -> usize {
     array_len::<u256>(ref arr)
 }
 
