@@ -174,7 +174,20 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         }
         Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
         BranchAlign(_) => {
-            vec![ops.add(ops.statement_var_cost(CostTokenType::Const), ops.steps(1))]
+            let ap_change = info_provider.ap_change_var_value();
+            let burnt_cost = ops.statement_var_cost(CostTokenType::Const);
+            vec![if ap_change == 0 {
+                burnt_cost
+            } else {
+                ops.add(
+                    burnt_cost,
+                    ops.const_cost(ConstCost {
+                        steps: 1,
+                        holes: ap_change as i32,
+                        range_checks: 0,
+                    }),
+                )
+            }]
         }
         Array(ArrayConcreteLibfunc::New(_)) => vec![ops.steps(1)],
         Array(ArrayConcreteLibfunc::Append(libfunc)) => {
@@ -196,10 +209,18 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             }
             BoxConcreteLibfunc::Unbox(_) => vec![ops.steps(0)],
         },
-        Mem(StoreLocal(libfunc) | StoreTemp(libfunc)) => {
+        Mem(StoreTemp(libfunc)) => {
             vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
         }
-        Mem(AllocLocal(_) | AlignTemps(_) | FinalizeLocals(_)) | UnconditionalJump(_) => {
+        Mem(StoreLocal(libfunc)) => {
+            let size = info_provider.type_size(&libfunc.ty) as i32;
+            vec![ops.const_cost(ConstCost { steps: size, holes: -size, range_checks: 0 })]
+        }
+        Mem(AllocLocal(libfunc) | AlignTemps(libfunc)) => {
+            vec![ops.holes(info_provider.type_size(&libfunc.ty) as i32)]
+        }
+
+        Mem(FinalizeLocals(_)) | UnconditionalJump(_) => {
             vec![ops.steps(1)]
         }
         Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(1)],
