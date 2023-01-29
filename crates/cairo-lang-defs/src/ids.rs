@@ -484,6 +484,16 @@ impl GenericParamLongId {
             _ => unreachable!(),
         }
     }
+    /// Retrieves the ID of the generic item holding this generic parameter.
+    pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
+        let SyntaxStablePtr::Child { parent, .. } =
+            db.lookup_intern_stable_ptr(self.1.0) else { panic!() };
+        let SyntaxStablePtr::Child { parent, .. } =
+            db.lookup_intern_stable_ptr(parent) else { panic!() };
+        let SyntaxStablePtr::Child { parent, .. } =
+            db.lookup_intern_stable_ptr(parent) else { panic!() };
+        GenericItemId::from_ptr(db, self.0, parent)
+    }
 }
 impl GenericParamId {
     pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
@@ -492,10 +502,108 @@ impl GenericParamId {
     pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
         db.lookup_intern_generic_param(*self).kind(db.upcast())
     }
+    pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
+        db.lookup_intern_generic_param(*self).generic_item(db.upcast())
+    }
 }
 impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
         write!(f, "GenericParam{}({})", self.kind(db.upcast()), self.name(db.upcast()))
+    }
+}
+
+define_language_element_id_as_enum! {
+    #[toplevel]
+    /// The ID of an item with generic parameters.
+    pub enum GenericItemId {
+        FreeFunc(FreeFunctionId),
+        ExternFunc(ExternFunctionId),
+        TraitFunc(TraitFunctionId),
+        ImplFunc(ImplFunctionId),
+        Trait(TraitId),
+        Impl(ImplId),
+        Struct(StructId),
+        Enum(EnumId),
+        ExternType(ExternTypeId),
+        TypeAlias(TypeAliasId),
+    }
+}
+impl GenericItemId {
+    pub fn from_ptr(
+        db: &dyn DefsGroup,
+        module_file: ModuleFileId,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Self {
+        let SyntaxStablePtr::Child { parent: parent0, kind,.. } =
+            db.lookup_intern_stable_ptr(stable_ptr) else { panic!() };
+        match kind {
+            SyntaxKind::FunctionDeclaration => {
+                let SyntaxStablePtr::Child { parent: parent1, kind,.. } =
+                    db.lookup_intern_stable_ptr(parent0) else { panic!() };
+                match kind {
+                    SyntaxKind::FunctionWithBody => {
+                        let SyntaxStablePtr::Child { parent: parent2,.. } =
+                            db.lookup_intern_stable_ptr(parent1) else { panic!() };
+
+                        match db.lookup_intern_stable_ptr(parent2) {
+                            SyntaxStablePtr::Root => GenericItemId::FreeFunc(
+                                db.intern_free_function(FreeFunctionLongId(
+                                    module_file,
+                                    ast::FunctionWithBodyPtr(parent0),
+                                )),
+                            ),
+                            SyntaxStablePtr::Child { kind, .. } => match kind {
+                                SyntaxKind::ModuleBody => GenericItemId::FreeFunc(
+                                    db.intern_free_function(FreeFunctionLongId(
+                                        module_file,
+                                        ast::FunctionWithBodyPtr(parent0),
+                                    )),
+                                ),
+                                SyntaxKind::ImplBody => GenericItemId::ImplFunc(
+                                    db.intern_impl_function(ImplFunctionLongId(
+                                        module_file,
+                                        ast::FunctionWithBodyPtr(parent0),
+                                    )),
+                                ),
+                                _ => panic!(),
+                            },
+                        }
+                    }
+                    SyntaxKind::ItemExternFunction => {
+                        GenericItemId::ExternFunc(db.intern_extern_function(ExternFunctionLongId(
+                            module_file,
+                            ast::ItemExternFunctionPtr(parent0),
+                        )))
+                    }
+                    SyntaxKind::TraitItemFunction => {
+                        GenericItemId::TraitFunc(db.intern_trait_function(TraitFunctionLongId(
+                            module_file,
+                            ast::TraitItemFunctionPtr(parent0),
+                        )))
+                    }
+                    _ => panic!(),
+                }
+            }
+            SyntaxKind::ItemImpl => GenericItemId::Impl(
+                db.intern_impl(ImplLongId(module_file, ast::ItemImplPtr(stable_ptr))),
+            ),
+            SyntaxKind::ItemTrait => GenericItemId::Trait(
+                db.intern_trait(TraitLongId(module_file, ast::ItemTraitPtr(stable_ptr))),
+            ),
+            SyntaxKind::ItemStruct => GenericItemId::Struct(
+                db.intern_struct(StructLongId(module_file, ast::ItemStructPtr(stable_ptr))),
+            ),
+            SyntaxKind::ItemEnum => GenericItemId::Enum(
+                db.intern_enum(EnumLongId(module_file, ast::ItemEnumPtr(stable_ptr))),
+            ),
+            SyntaxKind::ItemExternType => GenericItemId::ExternType(db.intern_extern_type(
+                ExternTypeLongId(module_file, ast::ItemExternTypePtr(stable_ptr)),
+            )),
+            SyntaxKind::ItemTypeAlias => GenericItemId::TypeAlias(db.intern_type_alias(
+                TypeAliasLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
+            )),
+            _ => panic!(),
+        }
     }
 }
 
