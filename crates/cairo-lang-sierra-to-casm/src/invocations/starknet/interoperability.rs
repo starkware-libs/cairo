@@ -7,7 +7,7 @@ use num_bigint::{BigInt, ToBigInt};
 use num_traits::Signed;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::misc::validate_in_range;
+use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
@@ -90,39 +90,26 @@ pub fn build_contract_address_try_from_felt(
         buffer(2) range_check;
         deref value;
     };
+    let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     casm_build_extend! {casm_builder,
         const limit = addr_bound.clone();
         tempvar is_valid_address;
-        tempvar x;
-        tempvar y;
-        tempvar x_part;
-        tempvar y_fixed;
         hint TestLessThan {lhs: value, rhs: limit} into {dst: is_valid_address};
         jump IsValidAddress if is_valid_address != 0;
         tempvar shifted_value = value - limit;
     }
-    validate_in_range::<1>(
+    validate_under_limit::<1>(
         &mut casm_builder,
         &(-Felt::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
-        0x110000000000000000,
-        0x110000000000000001,
         shifted_value,
         range_check,
-        &[x, y, x_part, y_fixed],
+        &auxiliary_vars,
     );
     casm_build_extend! {casm_builder,
         jump Failure;
         IsValidAddress:
     };
-    validate_in_range::<1>(
-        &mut casm_builder,
-        &addr_bound,
-        0x8000000000000000000000000000000,
-        0x8000000000000000000000000000000,
-        value,
-        range_check,
-        &[x, y, x_part, y_fixed],
-    );
+    validate_under_limit::<1>(&mut casm_builder, &addr_bound, value, range_check, &auxiliary_vars);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [

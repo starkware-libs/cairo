@@ -7,7 +7,7 @@ use num_bigint::{BigInt, ToBigInt};
 use num_traits::Signed;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::misc::validate_in_range;
+use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
@@ -51,44 +51,30 @@ pub fn build_storage_base_address_from_felt(
         buffer(2) range_check;
         deref addr;
     };
+    let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     casm_build_extend! {casm_builder,
         const limit = addr_bound.clone();
         // Allocating all vars in the beginning for easier AP-Alignment between the two branches,
         // as well as making sure we use `res` as the last cell, making it the last on stack.
         tempvar is_small;
-        tempvar x;
-        tempvar y;
-        tempvar x_part;
-        tempvar y_fixed;
-        tempvar diff;
         tempvar res;
         hint TestLessThan {lhs: addr, rhs: limit} into {dst: is_small};
         jump IsSmall if is_small != 0;
         assert res = addr - limit;
     }
-    validate_in_range::<1>(
+    validate_under_limit::<1>(
         &mut casm_builder,
         &(-Felt::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
-        0x110000000000000000_u128,
-        0x110000000000000101u128,
         res,
         range_check,
-        &[x, y, x_part, y_fixed],
+        &auxiliary_vars[..4],
     );
     casm_build_extend! {casm_builder,
         jump Done;
         IsSmall:
         assert res = addr;
     }
-    validate_in_range::<2>(
-        &mut casm_builder,
-        &addr_bound,
-        0x8000000000000000000000000000000_u128,
-        0xfffffffffffffffffffffffffffff00_u128,
-        res,
-        range_check,
-        &[x, y, x_part, y_fixed, diff],
-    );
+    validate_under_limit::<2>(&mut casm_builder, &addr_bound, res, range_check, &auxiliary_vars);
     casm_build_extend! {casm_builder,
         Done:
     };
