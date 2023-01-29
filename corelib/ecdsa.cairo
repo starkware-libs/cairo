@@ -53,7 +53,7 @@ fn check_ecdsa_signature(
     };
 
     // Retrieve the generator point.
-    let gen_point = match ec_point_try_new(ec::StarkCurve::GEN_X, ec::StarkCurve::GEN_Y) {
+    let gen_point = match ec_point_try_new_nz(ec::StarkCurve::GEN_X, ec::StarkCurve::GEN_Y) {
         Option::Some(point) => point,
         Option::None(()) => {
             return false;

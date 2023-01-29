@@ -23,7 +23,7 @@ pub fn build(
         EcConcreteLibfunc::IsZero(_) => build_is_zero(builder),
         EcConcreteLibfunc::Neg(_) => build_ec_neg(builder),
         EcConcreteLibfunc::StateAdd(_) => build_ec_state_add(builder),
-        EcConcreteLibfunc::TryNew(_) => build_ec_point_try_new(builder),
+        EcConcreteLibfunc::TryNew(_) => build_ec_point_try_new_nz(builder),
         EcConcreteLibfunc::StateFinalize(_) => build_ec_state_finalize(builder),
         EcConcreteLibfunc::StateInit(_) => build_ec_state_init(builder),
         EcConcreteLibfunc::StateAddMul(_) => build_ec_state_add_mul(builder),
@@ -108,7 +108,7 @@ fn build_ec_zero(
 }
 
 /// Handles instruction for creating an EC point.
-fn build_ec_point_try_new(
+fn build_ec_point_try_new_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y] = builder.try_get_single_cells()?;
