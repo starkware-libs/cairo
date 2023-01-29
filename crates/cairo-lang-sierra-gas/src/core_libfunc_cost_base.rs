@@ -203,18 +203,18 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.const_cost(99)]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Read(_)) => {
-            // 4 for the dict_read + 82 for the variable cost of dict_squash (see below).
-            vec![ops.const_cost(86)]
+            // 4 for the dict_read + 84 for the variable cost of dict_squash (see below).
+            vec![ops.const_cost(88)]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Write(_)) => {
-            // 4 for the dict_write + 82 for the variable cost of dict_squash (see below).
-            vec![ops.const_cost(86)]
+            // 4 for the dict_write + 84 for the variable cost of dict_squash (see below).
+            vec![ops.const_cost(88)]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Squash(_)) => {
             // Dict squash have a fixed cost of 92 + 82 for each dict access. The fixed cost is
             // precharged in dict_new to for pay dict_squash in case of out of gas.
-            // The cost of the proccesing of the first key is 82, and each access for an existing
-            // key costs only 12. In each read/write we charge 82 gas and 70 gas are
+            // The cost of the proccesing of the first key is 84, and each access for an existing
+            // key costs only 12. In each read/write we charge 84 gas and 72 gas are
             // refunded per each succesive access in dict squash.
             vec![ops.const_cost(0)]
         }

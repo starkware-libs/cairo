@@ -133,7 +133,7 @@ fn build_dict_felt_to_squash(
             const dict_info_size = 3;
             const one = 1;
             const zero = 0;
-            const gas_refund_per_access = 70;
+            const gas_refund_per_access = 72;
             // Push DestructDict arguments.
             tempvar dict_destruct_arg_range_check_ptr = range_check_ptr;
             tempvar dict_destruct_arg_gas_builtin = gas_builtin;
@@ -374,10 +374,11 @@ fn build_dict_felt_to_squash(
             tempvar n_accesses = ptr_diff / dict_access_size;
             hint InitSquashData {dict_accesses: squash_dict_arg_dict_accesses_start, ptr_diff: ptr_diff, n_accesses: n_accesses} into {big_keys: big_keys, first_key: first_key};
             let temp_range_check_ptr = squash_dict_arg_range_check_ptr;
+            tempvar squash_dict_inner_arg_range_check_ptr;
             // Order of if branches is reversed w.r.t. the original code.
             jump SquashDictIfBigKeys if big_keys != 0;
             assert first_key = *(temp_range_check_ptr++);
-            tempvar squash_dict_inner_arg_range_check_ptr = temp_range_check_ptr;
+            assert squash_dict_inner_arg_range_check_ptr = temp_range_check_ptr;
             rescope {
                 squash_dict_inner_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr,
                 squash_dict_arg_dict_accesses_start = squash_dict_arg_dict_accesses_start,
@@ -390,7 +391,7 @@ fn build_dict_felt_to_squash(
             };
             jump SquashDictEndIfBigKeys;
             SquashDictIfBigKeys:
-            tempvar squash_dict_inner_arg_range_check_ptr = temp_range_check_ptr;
+            assert squash_dict_inner_arg_range_check_ptr = temp_range_check_ptr;
             rescope {
                 squash_dict_inner_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr,
                 squash_dict_arg_dict_accesses_start = squash_dict_arg_dict_accesses_start,
@@ -430,6 +431,13 @@ fn build_dict_felt_to_squash(
             // Inner tail-recursive function for squash_dict.
             // Loops over a single key accesses and verify a valid order.
             SquashDictInner:
+            localvar aligned_range_check_ptr;
+            localvar aligned_dict_accesses;
+            localvar aligned_dict_accesses_end_minus1;
+            localvar aligned_next_key;
+            localvar aligned_remaining_accesses;
+            // These local vars are used only after the loop rescopes so me need to adjust the ap.
+            ap += 5;
             const dict_access_size = 3;
             const one = 1;
             localvar next_key;
@@ -467,7 +475,12 @@ fn build_dict_felt_to_squash(
                 squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
                 squash_dict_inner_arg_remaining_accesses = squash_dict_inner_arg_remaining_accesses,
                 next_key = next_key,
-                new_remaining_accesses = new_remaining_accesses
+                new_remaining_accesses = new_remaining_accesses,
+                aligned_range_check_ptr = aligned_range_check_ptr,
+                aligned_dict_accesses = aligned_dict_accesses,
+                aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
+                aligned_next_key = aligned_next_key,
+                aligned_remaining_accesses = aligned_remaining_accesses
             };
         }
         // Split just to avoid recursion limit when the macro is parsed.
@@ -519,7 +532,12 @@ fn build_dict_felt_to_squash(
                 squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
                 squash_dict_inner_arg_remaining_accesses = squash_dict_inner_arg_remaining_accesses,
                 next_key = next_key,
-                new_remaining_accesses = new_remaining_accesses
+                new_remaining_accesses = new_remaining_accesses,
+                aligned_range_check_ptr = aligned_range_check_ptr,
+                aligned_dict_accesses = aligned_dict_accesses,
+                aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
+                aligned_next_key = aligned_next_key,
+                aligned_remaining_accesses = aligned_remaining_accesses
             };
             jump SquashDictInnerLoop if loop_temps_should_continue != 0;
             SquashDictInnerSkipLoop:
@@ -552,11 +570,11 @@ fn build_dict_felt_to_squash(
             tempvar key_diff = next_key - key_plus1;
             assert key_diff = *(arg_range_check_ptr++);
             // Writing the needed invalidated variables because of the branch.
-            tempvar aligned_range_check_ptr = arg_range_check_ptr;
-            tempvar aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
-            tempvar aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
-            tempvar aligned_next_key = next_key;
-            tempvar aligned_remaining_accesses = new_remaining_accesses;
+            assert aligned_range_check_ptr = arg_range_check_ptr;
+            assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
+            assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
+            assert aligned_next_key = next_key;
+            assert aligned_remaining_accesses = new_remaining_accesses;
             rescope {
                 aligned_dict_accesses = aligned_dict_accesses,
                 aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
@@ -576,11 +594,11 @@ fn build_dict_felt_to_squash(
             tempvar assert_lt_arg_b = next_key;
             let (squash_dict_inner_arg_range_check_ptr) = call AssertLtFelt;
             // Writing the needed invalidated variables because of the branch.
-            tempvar aligned_range_check_ptr = squash_dict_inner_arg_range_check_ptr;
-            tempvar aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
-            tempvar aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
-            tempvar aligned_next_key = next_key;
-            tempvar aligned_remaining_accesses = new_remaining_accesses;
+            assert aligned_range_check_ptr = squash_dict_inner_arg_range_check_ptr;
+            assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
+            assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
+            assert aligned_next_key = next_key;
+            assert aligned_remaining_accesses = new_remaining_accesses;
             rescope {
                 aligned_dict_accesses = aligned_dict_accesses,
                 aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
