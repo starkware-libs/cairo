@@ -35,6 +35,15 @@ impl U8Serde of Serde::<u8> {
     }
 }
 
+impl U64Serde of Serde::<u64> {
+    fn serialize(ref serialized: Array::<felt>, input: u64) {
+        Serde::<felt>::serialize(ref serialized, u64_to_felt(input));
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<u64> {
+        Option::Some(u64_try_from_felt(Serde::<felt>::deserialize(ref serialized)?)?)
+    }
+}
+
 impl U128Serde of Serde::<u128> {
     fn serialize(ref serialized: Array::<felt>, input: u128) {
         Serde::<felt>::serialize(ref serialized, u128_to_felt(input));
@@ -61,7 +70,7 @@ impl U256Serde of Serde::<u256> {
 
 impl ArrayFeltSerde of Serde::<Array::<felt>> {
     fn serialize(ref serialized: Array::<felt>, mut input: Array::<felt>) {
-        Serde::<u128>::serialize(ref serialized, input.len())
+        Serde::<usize>::serialize(ref serialized, input.len())
         serialize_array_felt_helper(ref serialized, ref input);
     }
     fn deserialize(ref serialized: Array::<felt>) -> Option::<Array::<felt>> {

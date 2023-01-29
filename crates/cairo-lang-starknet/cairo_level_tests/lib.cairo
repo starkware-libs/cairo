@@ -19,7 +19,7 @@ mod TestContract {
     fn get_appended_array(arr: Array::<felt>) -> Array::<felt> {
         // `mut` is currently not allowed in the signature.
         let mut arr = arr;
-        let elem = u128_to_felt(arr.len());
+        let elem = u64_to_felt(arr.len());
         arr.append(elem);
         arr
     }
@@ -94,7 +94,7 @@ fn pop_and_compare(ref arr: Array::<felt>, value: felt, err: felt) {
 }
 
 fn assert_empty(mut arr: Array::<felt>) {
-    assert(arr.len() == 0_u128, 'Array not empty');
+    assert(arr.len() == 0_u64, 'Array not empty');
 }
 
 #[test]
