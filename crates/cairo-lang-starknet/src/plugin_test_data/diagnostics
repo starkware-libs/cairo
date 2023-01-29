@@ -58,6 +58,7 @@ mod TestContract {
 
     mod __external {
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -110,7 +111,7 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:34:23
+ --> contract:35:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
@@ -152,6 +153,7 @@ mod TestContract {
 
     mod __external {
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -202,7 +204,7 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
                              ^
 
 error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:55:13
+ --> contract:56:13
             serde::Serde::<(felt, felt)>::serialize(ref arr, res)
             ^***************************************************^
 
@@ -244,6 +246,7 @@ mod TestContract {
 
     mod __external {
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -306,12 +309,12 @@ error: Variable not dropped.
               ^
 
 error: Type not found.
- --> contract:34:38
+ --> contract:35:38
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
 error: Function `deserialize` of trait `core::serde::Serde` has multiple implementations, in: core::serde::FeltSerde, core::serde::BoolSerde, core::serde::U8Serde, core::serde::U128Serde, core::serde::U256Serde, core::serde::ArrayFeltSerde
- --> contract:34:23
+ --> contract:35:23
                 match serde::Serde::<T>::deserialize(ref data) {
                       ^**************************************^
 
@@ -358,6 +361,7 @@ mod TestContract {
 
     mod __external {
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -427,17 +431,17 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
                                                              ^
 
 error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:34:23
+ --> contract:35:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
 error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:44:23
+ --> contract:45:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
 error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:74:13
+ --> contract:75:13
             serde::Serde::<(felt, felt)>::serialize(ref arr, res)
             ^***************************************************^
 

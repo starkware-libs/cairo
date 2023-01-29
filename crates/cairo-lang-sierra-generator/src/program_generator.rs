@@ -140,7 +140,10 @@ pub fn get_sierra_program_for_functions(
         if !matches!(db.get_ap_change(function_id), Ok(SierraApChange::Known { .. })) {
             // If AP change is unknown for the function, adding a revoke so that AP balancing would
             // not occur.
-            statements.push(simple_statement(revoke_ap_tracking_libfunc_id(db), &[], &[]));
+            let revoke_statement = simple_statement(revoke_ap_tracking_libfunc_id(db), &[], &[]);
+            if function.body.get(function.prolog_size) != Some(&revoke_statement) {
+                statements.push(revoke_statement);
+            }
         }
         statements.extend_from_slice(&function.body[function.prolog_size..]);
         for statement in &function.body {
