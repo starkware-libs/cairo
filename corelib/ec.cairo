@@ -31,7 +31,7 @@ extern fn ec_point_try_new(x: felt, y: felt) -> Option::<NonZeroEcPoint> nopanic
 extern fn ec_point_from_x(x: felt) -> Option::<NonZeroEcPoint> nopanic;
 extern fn ec_point_unwrap(p: NonZeroEcPoint) -> (felt, felt) nopanic;
 /// Computes the negation of an elliptic curve point (-p).
-extern fn ec_neg(p: NonZeroEcPoint) -> NonZeroEcPoint nopanic;
+extern fn ec_neg(p: EcPoint) -> EcPoint nopanic;
 /// Checks whether the given `EcPoint` is the zero point.
 extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult::<EcPoint> nopanic;
 
@@ -110,14 +110,14 @@ impl EcPointAdd of Add::<EcPoint> {
 impl EcPointSub of Sub::<EcPoint> {
     /// Computes the difference between two points on the curve.
     fn sub(p: EcPoint, q: EcPoint) -> EcPoint {
-        let q_nz = match ec_point_is_zero(q) {
+        match ec_point_is_zero(q) {
             IsZeroResult::Zero(()) => {
                 // p - 0 = p.
                 return p;
             },
-            IsZeroResult::NonZero(q_nz) => q_nz,
+            IsZeroResult::NonZero(_) => {},
         };
         // p - q = p + (-q).
-        p + unwrap_nz(ec_neg(q_nz))
+        p + ec_neg(q)
     }
 }

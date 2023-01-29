@@ -286,7 +286,7 @@ test::foo@0([0]: EcPoint) -> (felt);
 run_small_e2e_test
 
 //! > cairo
-fn foo(a: NonZeroEcPoint) -> NonZeroEcPoint {
+fn foo(a: EcPoint) -> EcPoint {
     ec_neg(a)
 }
 
@@ -300,18 +300,17 @@ test::foo: OrderedHashMap({Step: 2})
 
 //! > sierra_code
 type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
 
 libfunc ec_neg = ec_neg;
-libfunc store_temp<NonZero<EcPoint>> = store_temp<NonZero<EcPoint>>;
-libfunc rename<NonZero<EcPoint>> = rename<NonZero<EcPoint>>;
+libfunc store_temp<EcPoint> = store_temp<EcPoint>;
+libfunc rename<EcPoint> = rename<EcPoint>;
 
 ec_neg([0]) -> ([1]);
-store_temp<NonZero<EcPoint>>([1]) -> ([1]);
-rename<NonZero<EcPoint>>([1]) -> ([2]);
+store_temp<EcPoint>([1]) -> ([1]);
+rename<EcPoint>([1]) -> ([2]);
 return([2]);
 
-test::foo@0([0]: NonZero<EcPoint>) -> (NonZero<EcPoint>);
+test::foo@0([0]: EcPoint) -> (EcPoint);
 
 //! > ==========================================================================
 
