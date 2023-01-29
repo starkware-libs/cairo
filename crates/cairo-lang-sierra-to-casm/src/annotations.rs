@@ -51,8 +51,12 @@ pub enum AnnotationError {
     },
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
-    #[error(transparent)]
-    GasWalletError(#[from] GasWalletError),
+    #[error("#{source_statement_idx} -> #{destination_statement_idx}: Gas wallet error")]
+    GasWalletError {
+        source_statement_idx: StatementIdx,
+        destination_statement_idx: StatementIdx,
+        error: GasWalletError,
+    },
     #[error("#{statement_idx}: {error}")]
     ReferencesError { statement_idx: StatementIdx, error: ReferencesError },
     #[error(
@@ -230,7 +234,6 @@ impl ProgramAnnotations {
                 },
             );
         }
-
         self.set_or_assert(
             destination_statement_idx,
             StatementAnnotations {
@@ -257,7 +260,12 @@ impl ProgramAnnotations {
                     gas_wallet: annotations
                         .environment
                         .gas_wallet
-                        .update(branch_changes.gas_change)?,
+                        .update(branch_changes.gas_change)
+                        .map_err(|error| AnnotationError::GasWalletError {
+                            source_statement_idx: statement_idx,
+                            destination_statement_idx,
+                            error,
+                        })?,
                 },
             },
         )
