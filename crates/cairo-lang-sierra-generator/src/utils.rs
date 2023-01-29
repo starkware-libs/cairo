@@ -193,7 +193,6 @@ pub fn get_libfunc_signature(
     concrete_lib_func_id: ConcreteLibfuncId,
 ) -> LibfuncSignature {
     let libfunc_long_id = db.lookup_intern_concrete_lib_func(concrete_lib_func_id.clone());
-    // TODO(lior): replace expect() with a diagnostic (unless this can never happen).
     CoreLibfunc::specialize_signature_by_id(
         &SierraSignatureSpecializationContext(db),
         &libfunc_long_id.generic_id,
