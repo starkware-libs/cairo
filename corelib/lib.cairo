@@ -1,16 +1,17 @@
 mod traits;
-use traits::Copy;
-use traits::Drop;
 use traits::Add;
-use traits::Sub;
-use traits::Mul;
-use traits::Div;
-use traits::Rem;
-use traits::PartialEq;
 use traits::BitAnd;
 use traits::BitOr;
 use traits::BitXor;
+use traits::Copy;
+use traits::Div;
+use traits::Drop;
+use traits::Mul;
+use traits::PartialEq;
 use traits::PartialOrd;
+use traits::Rem;
+use traits::Sub;
+use traits::ToBool;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -109,6 +110,15 @@ enum IsZeroResult<T> {
     NonZero: NonZero::<T>,
 }
 extern fn unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
+
+impl IsZeroResultToBool<T> of ToBool::<IsZeroResult::<T>> {
+    fn to_bool(self: IsZeroResult::<T>) -> bool {
+        match self {
+            IsZeroResult::Zero(()) => true,
+            IsZeroResult::NonZero(_) => false,
+        }
+    }
+}
 
 impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
 impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
@@ -216,6 +226,7 @@ use ec::ec_neg;
 use ec::ec_point_from_x;
 use ec::ec_point_is_zero;
 use ec::ec_point_new;
+use ec::ec_point_non_zero;
 use ec::ec_point_try_new;
 use ec::ec_point_unwrap;
 use ec::ec_point_zero;
