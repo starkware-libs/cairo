@@ -47,7 +47,11 @@ fn build_felt_op(
         deref_or_immediate b;
     };
     let res = casm_builder.bin_op(felt_to_cell_operator(op), a, b);
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)], None))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res]], None)],
+        Some(Default::default()),
+    ))
 }
 
 /// Handles a felt operation with a const.
@@ -61,7 +65,11 @@ fn build_felt_op_with_const(
     add_input_variables! {casm_builder, deref a; };
     let c = casm_builder.add_var(CellExpression::Immediate(c));
     let res = casm_builder.bin_op(felt_to_cell_operator(op), a, c);
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)], None))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res]], None)],
+        Some(Default::default()),
+    ))
 }
 
 /// Converts a felt operator to the corresponding cell operator.

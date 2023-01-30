@@ -153,7 +153,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.steps(1)],
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.steps(1)],
         Bool(BoolConcreteLibfunc::Or(_)) => vec![ops.steps(2)],
-        Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.steps(2), ops.steps(2)],
+        Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.steps(2), ops.steps(3)],
         Ec(libfunc) => match libfunc {
             EcConcreteLibfunc::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
             EcConcreteLibfunc::Neg(_) => vec![ops.steps(0)],
@@ -336,7 +336,7 @@ fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> V
             vec![ops.steps(4), ops.steps(3)]
         }
         Uint8Concrete::Equal(_) => {
-            vec![ops.steps(2), ops.steps(2)]
+            vec![ops.steps(2), ops.steps(3)]
         }
         Uint8Concrete::LessThanOrEqual(_) => {
             vec![ops.steps(3), ops.steps(4)]
@@ -366,7 +366,7 @@ fn u64_libfunc_cost<Ops: CostOperations>(
             vec![ops.steps(4), ops.steps(3)]
         }
         Uint64Concrete::Equal(_) => {
-            vec![ops.steps(2), ops.steps(2)]
+            vec![ops.steps(2), ops.steps(3)]
         }
         Uint64Concrete::LessThanOrEqual(_) => {
             vec![ops.steps(3), ops.steps(4)]
@@ -404,7 +404,7 @@ fn u128_libfunc_cost<Ops: CostOperations>(
             vec![ops.steps(4), ops.steps(3)]
         }
         Uint128Concrete::Equal(_) => {
-            vec![ops.steps(2), ops.steps(2)]
+            vec![ops.steps(2), ops.steps(3)]
         }
         Uint128Concrete::LessThanOrEqual(_) => {
             vec![ops.steps(3), ops.steps(4)]
