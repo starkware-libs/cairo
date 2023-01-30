@@ -16,7 +16,7 @@ fn foo(mut a: bool, b: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -54,7 +54,7 @@ fn foo(a: bool, b: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 3})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -90,7 +90,7 @@ fn foo(a: bool, b: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 1})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -128,7 +128,7 @@ fn foo(a: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -169,7 +169,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 6})
+test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;

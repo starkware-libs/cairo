@@ -60,7 +60,8 @@ pub fn calc_metadata(
         .map(|(func, costs)| {
             (
                 func.clone(),
-                CostTokenType::iter_postcost()
+                [CostTokenType::Const]
+                    .iter()
                     .filter_map(|token| costs.get(token).map(|v| (*token, *v)))
                     .collect(),
             )

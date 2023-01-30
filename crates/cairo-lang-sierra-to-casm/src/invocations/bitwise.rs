@@ -37,5 +37,6 @@ fn build_bitwise(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[bitwise], &[and], &[xor], &[or]], None)],
+        Some(Default::default()),
     ))
 }

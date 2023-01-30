@@ -4,7 +4,9 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -31,8 +33,11 @@ fn build_array_new(
         hint AllocSegment {} into {dst: arr_start};
         ap += 1;
     };
-    Ok(builder
-        .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[arr_start, arr_start]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[arr_start, arr_start]], None)],
+        Some(Default::default()),
+    ))
 }
 
 /// Handles a Sierra statement for appending an element to an array.
@@ -51,8 +56,11 @@ fn build_array_append(
         add_input_variables!(casm_builder, deref cell;);
         casm_build_extend!(casm_builder, assert cell = *(arr_end++););
     }
-    Ok(builder
-        .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[arr_start, arr_end]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[arr_start, arr_end]], None)],
+        Some(Default::default()),
+    ))
 }
 
 /// Handles a Sierra statement for popping an element from the begining of an array.
@@ -85,6 +93,7 @@ fn build_pop_front(
             ("Fallthrough", &[&[new_start, arr_end], &elem_cells], None),
             ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
         ],
+        Some(Default::default()),
     ))
 }
 
@@ -108,6 +117,7 @@ fn build_array_get(
         deref range_check;
     };
     casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
         // Compute the length of the array (in felts).
         tempvar array_cell_size = arr_end - arr_start;
     };
@@ -167,6 +177,10 @@ fn build_array_get(
             ("Fallthrough", &[&[range_check], &[arr_start, arr_end], &elem_cells], None),
             ("FailureHandle", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
         ],
+        Some(CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        }),
     ))
 }
 
@@ -198,5 +212,6 @@ fn build_array_len(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[arr_start, arr_end], &[length]], None)],
+        Some(Default::default()),
     ))
 }

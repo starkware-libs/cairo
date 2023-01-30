@@ -50,5 +50,6 @@ pub fn build_getter(
                 Some(failure_handle_statement_id),
             ),
         ],
+        None,
     ))
 }

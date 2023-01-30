@@ -19,7 +19,7 @@ __boxed_segment += 1
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 1})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type felt = felt;
@@ -51,7 +51,7 @@ fn foo(x: Box::<felt>) -> felt {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 1})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type felt = felt;
@@ -92,7 +92,7 @@ __boxed_segment += 2
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type u128 = u128;
@@ -126,7 +126,7 @@ fn foo(x: Box::<u256>) -> u256 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type u128 = u128;
@@ -161,7 +161,7 @@ fn foo() -> Box::<()> {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -199,7 +199,7 @@ fn foo(x: Box::<()>) -> Box::<()> {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 1})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -230,7 +230,7 @@ fn foo() -> Box::<Empty> {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type test::Empty = Struct<ut@test::Empty>;

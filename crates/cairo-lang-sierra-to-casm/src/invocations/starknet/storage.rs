@@ -37,7 +37,7 @@ pub fn build_storage_address_from_base_and_offset(
         deref_or_immediate offset;
     };
     casm_build_extend!(casm_builder, let res = base + offset;);
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)], None))
 }
 
 /// Handles the storage_base_address_const libfunc.
@@ -78,8 +78,11 @@ pub fn build_storage_base_address_from_felt(
     casm_build_extend! {casm_builder,
         Done:
     };
-    Ok(builder
-        .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[range_check], &[res]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[res]], None)],
+        None,
+    ))
 }
 
 /// Builds instructions for StarkNet read system call.
@@ -132,6 +135,7 @@ pub fn build_storage_read(
                 Some(failure_handle_statement_id),
             ),
         ],
+        None,
     ))
 }
 
@@ -181,5 +185,6 @@ pub fn build_storage_write(
                 Some(failure_handle_statement_id),
             ),
         ],
+        None,
     ))
 }

@@ -50,7 +50,7 @@ jmp rel 0;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 12})
+test::foo: OrderedHashMap({Const: 1200})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -89,7 +89,7 @@ fn foo(base: starknet::StorageBaseAddress, offset: u8) -> starknet::StorageAddre
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 1})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type StorageBaseAddress = StorageBaseAddress;
@@ -146,7 +146,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 58})
+test::foo: OrderedHashMap({Const: 5700})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -233,7 +233,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 58})
+test::foo: OrderedHashMap({Const: 5700})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
