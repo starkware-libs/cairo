@@ -24,6 +24,7 @@ salsa.workspace = true
 smol_str.workspace = true
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.2" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.2" }
+ignore.workspace = true
 
 [dev-dependencies]
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.2" }
