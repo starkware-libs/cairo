@@ -51,8 +51,12 @@ pub enum AnnotationError {
     },
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
-    #[error(transparent)]
-    GasWalletError(#[from] GasWalletError),
+    #[error("#{source_statement_idx}->#{destination_statement_idx}: {error}")]
+    GasWalletError {
+        source_statement_idx: StatementIdx,
+        destination_statement_idx: StatementIdx,
+        error: GasWalletError,
+    },
     #[error("#{statement_idx}: {error}")]
     ReferencesError { statement_idx: StatementIdx, error: ReferencesError },
     #[error(
@@ -192,11 +196,11 @@ impl ProgramAnnotations {
     /// Propagates the annotations from `statement_idx` to 'destination_statement_idx'.
 
     /// `annotations` is the result of calling get_annotations_after_take_args at
-    /// `statement_idx` and `branch_changes` are the reference changes at each branch.
+    /// `source_statement_idx` and `branch_changes` are the reference changes at each branch.
     ///  if `must_set` is true, asserts that destination_statement_idx wasn't annotated before.
     pub fn propagate_annotations(
         &mut self,
-        statement_idx: StatementIdx,
+        source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
         annotations: &StatementAnnotations,
         branch_info: &BranchInfo,
@@ -205,7 +209,7 @@ impl ProgramAnnotations {
     ) -> Result<(), AnnotationError> {
         if must_set && self.per_statement_annotations[destination_statement_idx.0].is_some() {
             return Err(AnnotationError::AnnotationAlreadySet {
-                source_statement_idx: statement_idx,
+                source_statement_idx,
                 destination_statement_idx,
             });
         }
@@ -222,7 +226,7 @@ impl ProgramAnnotations {
                         .apply_ap_change(branch_changes.ap_change)
                         .map_err(|error| AnnotationError::ApChangeError {
                             var_id: var_id.clone(),
-                            source_statement_idx: statement_idx,
+                            source_statement_idx,
                             destination_statement_idx,
                             error,
                         })?,
@@ -230,13 +234,12 @@ impl ProgramAnnotations {
                 },
             );
         }
-
         self.set_or_assert(
             destination_statement_idx,
             StatementAnnotations {
                 refs: put_results(new_refs, zip_eq(&branch_info.results, branch_changes.refs))
                     .map_err(|error| AnnotationError::OverrideReferenceError {
-                        source_statement_idx: statement_idx,
+                        source_statement_idx,
                         destination_statement_idx,
                         var_id: error.var_id(),
                     })?,
@@ -249,7 +252,7 @@ impl ProgramAnnotations {
                         branch_changes.ap_change,
                     )
                     .map_err(|error| AnnotationError::ApTrackingError {
-                        source_statement_idx: statement_idx,
+                        source_statement_idx,
                         destination_statement_idx,
                         error,
                     })?,
@@ -257,7 +260,12 @@ impl ProgramAnnotations {
                     gas_wallet: annotations
                         .environment
                         .gas_wallet
-                        .update(branch_changes.gas_change)?,
+                        .update(branch_changes.gas_change)
+                        .map_err(|error| AnnotationError::GasWalletError {
+                            source_statement_idx,
+                            destination_statement_idx,
+                            error,
+                        })?,
                 },
             },
         )
