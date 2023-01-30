@@ -157,9 +157,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Ec(libfunc) => match libfunc {
             EcConcreteLibfunc::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
             EcConcreteLibfunc::Neg(_) => vec![ops.steps(0)],
-            EcConcreteLibfunc::StateAdd(_) => vec![ops.steps(9)],
-            EcConcreteLibfunc::TryNew(_) => vec![ops.steps(6), ops.steps(6)],
-            EcConcreteLibfunc::StateFinalize(_) => vec![ops.steps(13), ops.steps(6)],
+            EcConcreteLibfunc::StateAdd(_) => vec![ops.steps(10)],
+            EcConcreteLibfunc::TryNew(_) => vec![ops.steps(7), ops.steps(7)],
+            EcConcreteLibfunc::StateFinalize(_) => vec![ops.steps(12), ops.steps(6)],
             EcConcreteLibfunc::StateInit(_) => vec![ops.steps(8)],
             EcConcreteLibfunc::StateAddMul(_) => {
                 vec![ops.steps(5)]
