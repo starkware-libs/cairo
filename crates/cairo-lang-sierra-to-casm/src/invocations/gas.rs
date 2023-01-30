@@ -8,7 +8,7 @@ use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo, ExtraCost,
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
 };
 use crate::references::ReferenceExpression;
 
@@ -65,10 +65,7 @@ fn build_get_gas(
         ],
         Some(CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
-            extra_costs: Some([
-                ExtraCost { run_cost: Default::default(), external_cost: -requested_count as i32 },
-                ExtraCost::default(),
-            ]),
+            extra_costs: Some([-requested_count as i32, 0]),
         }),
     ))
 }

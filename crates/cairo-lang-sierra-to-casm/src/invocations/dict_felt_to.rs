@@ -3,10 +3,10 @@ use std::vec;
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
-use cairo_lang_sierra_gas::core_libfunc_cost::{ConstCost, DICT_SQUASH_ACCESS_COST};
+use cairo_lang_sierra_gas::core_libfunc_cost::DICT_SQUASH_ACCESS_COST;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{CostValidationInfo, ExtraCost};
+use crate::invocations::CostValidationInfo;
 use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra single cell dict operations.
@@ -78,10 +78,7 @@ fn build_dict_felt_to_read(
         [("Fallthrough", &[&[dict_ptr], &[value]], None)],
         Some(CostValidationInfo {
             range_check_info: None,
-            extra_costs: Some([ExtraCost {
-                run_cost: ConstCost::default(),
-                external_cost: DICT_SQUASH_ACCESS_COST,
-            }]),
+            extra_costs: Some([DICT_SQUASH_ACCESS_COST]),
         }),
     ))
 }
@@ -111,10 +108,7 @@ fn build_dict_felt_to_write(
         [("Fallthrough", &[&[dict_ptr]], None)],
         Some(CostValidationInfo {
             range_check_info: None,
-            extra_costs: Some([ExtraCost {
-                run_cost: ConstCost::default(),
-                external_cost: DICT_SQUASH_ACCESS_COST,
-            }]),
+            extra_costs: Some([DICT_SQUASH_ACCESS_COST]),
         }),
     ))
 }
