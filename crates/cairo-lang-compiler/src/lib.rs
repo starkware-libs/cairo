@@ -60,6 +60,7 @@ pub fn compile_cairo_project_at_path(
 
 /// Compiles a Cairo project.
 /// The project must be a valid Cairo project.
+/// This function is a wrapper over [`RootDatabase::builder()`] and [`compile_prepared_db`].
 /// # Arguments
 /// * `project_config` - The project configuration.
 /// * `compiler_config` - The compiler configuration.
@@ -78,7 +79,18 @@ pub fn compile(
     compile_prepared_db(db, main_crate_ids, compiler_config)
 }
 
-fn compile_prepared_db(
+/// Runs Cairo compiler.
+///
+/// # Arguments
+/// * `db` - Preloaded compilation database.
+/// * `main_crate_ids` - [`CrateId`]s to compile. Do not include dependencies here, only pass
+///   top-level crates in order to eliminate unused code. Use `db.intern_crate(CrateLongId(name))`
+///   in order to obtain [`CrateId`] from its name.
+/// * `compiler_config` - The compiler configuration.
+/// # Returns
+/// * `Ok(SierraProgram)` - The compiled program.
+/// * `Err(anyhow::Error)` - Compilation failed.
+pub fn compile_prepared_db(
     mut db: RootDatabase,
     main_crate_ids: Vec<CrateId>,
     compiler_config: CompilerConfig,
