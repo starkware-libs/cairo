@@ -28,14 +28,14 @@ Initial refs:
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Callsite(v3 -> v5)
+  Callsite({v3 -> v5})
 
 blk1:
 Inputs: v4: ()
 Initial refs:
 Statements:
 End:
-  Callsite(v1 -> v5)
+  Callsite({v1 -> v5})
 
 blk2 (root):
 Inputs: v0: core::bool, v1: core::felt
@@ -54,13 +54,13 @@ Inputs: v2: ()
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Callsite(v3 -> v5)
+  Callsite({v3 -> v5})
 
 blk1:
 Inputs: v4: ()
 Statements:
 End:
-  Callsite(v1 -> v5)
+  Callsite({v1 -> v5})
 
 blk2 (root):
 Inputs: v0: core::bool, v1: core::felt
@@ -104,14 +104,14 @@ Initial refs:
 Statements:
   (v1: core::felt) <- 1u
 End:
-  Callsite(v1 -> v3)
+  Callsite({v1 -> v3})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Initial refs:
 Statements:
 End:
-  Callsite(v0 -> v3)
+  Callsite({v0 -> v3})
 
 blk2 (root):
 Inputs: v0: core::felt
@@ -130,13 +130,13 @@ Inputs:
 Statements:
   (v1: core::felt) <- 1u
 End:
-  Callsite(v1 -> v3)
+  Callsite({v1 -> v3})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite(v0 -> v3)
+  Callsite({v0 -> v3})
 
 blk2 (root):
 Inputs: v0: core::felt
@@ -186,7 +186,7 @@ Inputs: v2: core::NonZero::<core::felt>
 Initial refs:
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk2 (root):
 Inputs: v0: core::felt
@@ -212,7 +212,7 @@ blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk2 (root):
 Inputs: v0: core::felt
@@ -257,7 +257,7 @@ Initial refs:
 Statements:
   (v7: core::felt) <- 0u
 End:
-  Callsite(v7 -> v10)
+  Callsite({v7 -> v10})
 
 blk1:
 Inputs: v8: core::NonZero::<core::felt>
@@ -265,7 +265,7 @@ Initial refs:
 Statements:
   (v9: core::felt) <- 1u
 End:
-  Callsite(v9 -> v10)
+  Callsite({v9 -> v10})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
@@ -287,14 +287,14 @@ Inputs:
 Statements:
   (v7: core::felt) <- 0u
 End:
-  Callsite(v7 -> v10)
+  Callsite({v7 -> v10})
 
 blk1:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
   (v9: core::felt) <- 1u
 End:
-  Callsite(v9 -> v10)
+  Callsite({v9 -> v10})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt

@@ -25,7 +25,7 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite(v0 -> v5)
+  Callsite({v0 -> v5})
 
 blk1:
 Inputs: v1: core::NonZero::<core::felt>
@@ -34,7 +34,7 @@ Statements:
   (v3: core::felt) <- 0u
   (v4: core::felt) <- test::foo(v3)
 End:
-  Callsite(v2 -> v5)
+  Callsite({v2 -> v5})
 
 blk2 (root):
 Inputs: v0: core::felt

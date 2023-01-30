@@ -113,7 +113,7 @@ Initial refs:
 Statements:
   (v6: core::felt) <- 6u
 End:
-  Callsite(v6 -> v9)
+  Callsite({v6 -> v9})
 
 blk1:
 Inputs: v7: core::NonZero::<core::felt>
@@ -121,7 +121,7 @@ Initial refs:
 Statements:
   (v8: core::felt) <- 7u
 End:
-  Callsite(v8 -> v9)
+  Callsite({v8 -> v9})
 
 blk2 (root):
 Inputs: v0: core::felt
@@ -153,14 +153,14 @@ Inputs:
 Statements:
   (v6: core::felt) <- 6u
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v7: core::NonZero::<core::felt>
 Statements:
   (v8: core::felt) <- 7u
 End:
-  Callsite()
+  Callsite({})
 
 blk2 (root):
 Inputs: v0: core::felt
@@ -233,7 +233,7 @@ Inputs: v3: core::felt
 Initial refs:
 Statements:
 End:
-  Callsite(v3 -> v8)
+  Callsite({v3 -> v8})
 
 blk2:
 Inputs: v4: core::box::Box::<((), core::felt)>
@@ -242,7 +242,7 @@ Statements:
   (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
   (v7: core::felt) <- 7u
 End:
-  Callsite(v7 -> v8)
+  Callsite({v7 -> v8})
 
 blk3 (root):
 Inputs: v0: test::MyEnum
@@ -268,7 +268,7 @@ blk1:
 Inputs: v3: core::felt
 Statements:
 End:
-  Callsite(v3 -> v8)
+  Callsite({v3 -> v8})
 
 blk2:
 Inputs: v4: core::box::Box::<((), core::felt)>
@@ -276,7 +276,7 @@ Statements:
   (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
   (v7: core::felt) <- 7u
 End:
-  Callsite(v7 -> v8)
+  Callsite({v7 -> v8})
 
 blk3 (root):
 Inputs: v0: test::MyEnum

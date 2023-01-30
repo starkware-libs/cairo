@@ -41,7 +41,7 @@ Statements:
   (v7: core::felt) <- 2u
   (v8: test::MyEnum) <- MyEnum::A(v7)
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v9: core::felt
@@ -50,7 +50,7 @@ Statements:
   (v11: core::felt) <- core::felt_add(v10, v2)
   (v12: test::MyEnum) <- MyEnum::A(v11)
 End:
-  Callsite()
+  Callsite({})
 
 blk2:
 Inputs: v13: (core::felt, core::felt)
@@ -59,7 +59,7 @@ Statements:
   (v16: (core::felt, core::felt)) <- struct_construct(v2, v3)
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Callsite()
+  Callsite({})
 
 blk3 (root):
 Inputs: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt

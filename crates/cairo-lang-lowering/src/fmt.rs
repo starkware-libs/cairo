@@ -74,6 +74,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
 impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let mut remapping = self.iter().peekable();
+        write!(f, "{{")?;
         while let Some((dst, src)) = remapping.next() {
             src.fmt(f, ctx)?;
             write!(f, " -> ")?;
@@ -82,6 +83,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
                 write!(f, ", ")?;
             }
         }
+        write!(f, "}}")?;
         Ok(())
     }
 }

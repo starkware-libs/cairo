@@ -39,7 +39,7 @@ Inputs:
 Statements:
   (v1: core::felt) <- 1u
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
@@ -47,14 +47,14 @@ Statements:
   (v3: core::felt) <- test::revoke_ap()
   (v4: core::felt) <- core::unwrap_nz::<core::felt>(v2)
 End:
-  Callsite()
+  Callsite({})
 
 blk2:
 Inputs:
 Statements:
   (v7: core::felt) <- 1u
 End:
-  Callsite(v7 -> v11)
+  Callsite({v7 -> v11})
 
 blk3:
 Inputs: v8: core::NonZero::<core::felt>
@@ -62,7 +62,7 @@ Statements:
   (v9: core::felt) <- test::revoke_ap()
   (v10: core::felt) <- core::unwrap_nz::<core::felt>(v8)
 End:
-  Callsite(v10 -> v11)
+  Callsite({v10 -> v11})
 
 blk4 (root):
 Inputs: v0: core::felt
@@ -116,28 +116,28 @@ Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Callsite(v3 -> v6)
+  Callsite({v3 -> v6})
 
 blk1:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
   (v5: core::felt) <- 2u
 End:
-  Callsite(v5 -> v6)
+  Callsite({v5 -> v6})
 
 blk2:
 Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
-  Callsite(v8 -> v11)
+  Callsite({v8 -> v11})
 
 blk3:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 2u
 End:
-  Callsite(v10 -> v11)
+  Callsite({v10 -> v11})
 
 blk4 (root):
 Inputs: v0: core::felt
@@ -209,7 +209,7 @@ Inputs:
 Statements:
   (v2: core::felt) <- 1u
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v3: core::NonZero::<core::felt>
@@ -224,14 +224,14 @@ Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
-  Callsite()
+  Callsite({})
 
 blk3:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 2u
 End:
-  Callsite()
+  Callsite({})
 
 blk4 (root):
 Inputs: v0: core::felt

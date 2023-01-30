@@ -86,14 +86,14 @@ blk1:
 Inputs: v3: core::felt
 Statements:
 End:
-  Callsite(v3 -> v2)
+  Callsite({v3 -> v2})
 
 blk2:
 Inputs: v4: ()
 Statements:
   () <- struct_destructure(v4)
 End:
-  Callsite(v1 -> v2)
+  Callsite({v1 -> v2})
 
 //! > lowering_diagnostics
 
