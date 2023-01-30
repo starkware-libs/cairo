@@ -9,7 +9,9 @@ use num_bigint::{BigInt, ToBigInt};
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::validate_under_limit;
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 use crate::references::ReferenceExpression;
 
 /// Builds invocations for uint const values.
@@ -36,6 +38,7 @@ pub fn build_less_than(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar a_ge_b;
             tempvar a_minus_b = a - b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
@@ -53,7 +56,10 @@ pub fn build_less_than(
             ("Fallthrough", &[&[range_check]], None),
             ("True", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
-        None,
+        Some(CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        }),
     ))
 }
 
@@ -71,6 +77,7 @@ pub fn build_less_than_or_equal(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar a_gt_b;
             tempvar b_minus_a = b - a;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
@@ -88,7 +95,10 @@ pub fn build_less_than_or_equal(
             ("Fallthrough", &[&[range_check]], None),
             ("True", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
-        None,
+        Some(CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        }),
     ))
 }
 
@@ -107,6 +117,7 @@ fn build_small_uint_overflowing_add(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar no_overflow;
             tempvar fixed_a_plus_b;
             tempvar a_plus_b = a + b;
@@ -132,7 +143,10 @@ fn build_small_uint_overflowing_add(
             ("Fallthrough", &[&[range_check], &[a_plus_b]], None),
             ("Target", &[&[range_check], &[fixed_a_plus_b]], Some(failure_handle_statement_id)),
         ],
-        None,
+        Some(CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        }),
     ))
 }
 
@@ -151,6 +165,7 @@ fn build_small_uint_overflowing_sub(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar no_overflow;
             tempvar a_minus_b = a - b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
@@ -172,7 +187,10 @@ fn build_small_uint_overflowing_sub(
             ("Fallthrough", &[&[range_check], &[a_minus_b]], None),
             ("Target", &[&[range_check], &[wrapping_a_minus_b]], Some(failure_handle_statement_id)),
         ],
-        None,
+        Some(CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        }),
     ))
 }
 
@@ -188,6 +206,7 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8>(
         deref value;
     };
     casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
         const limit = LIMIT;
         tempvar is_small;
         hint TestLessThan {lhs: value, rhs: limit} into {dst: is_small};
@@ -232,7 +251,10 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8>(
             ("Fallthrough", &[&[range_check], &[value]], None),
             ("Done", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
-        None,
+        Some(CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        }),
     ))
 }
 
