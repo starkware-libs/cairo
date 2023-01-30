@@ -221,7 +221,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         }
         Box(libfunc) => match libfunc {
             BoxConcreteLibfunc::Into(libfunc) => {
-                vec![ops.steps(info_provider.type_size(&libfunc.ty).try_into().unwrap())]
+                vec![ops.steps(1.max(info_provider.type_size(&libfunc.ty).try_into().unwrap()))]
             }
             BoxConcreteLibfunc::Unbox(_) => vec![ops.steps(0)],
         },
@@ -291,7 +291,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             NullableConcreteLibfunc::IntoNullable(_) => vec![ops.steps(0)],
             NullableConcreteLibfunc::FromNullable(_) => vec![ops.steps(1), ops.steps(1)],
         },
-        CoreConcreteLibfunc::Debug(_) => vec![ops.steps(0)],
+        CoreConcreteLibfunc::Debug(_) => vec![ops.steps(1)],
     }
 }
 

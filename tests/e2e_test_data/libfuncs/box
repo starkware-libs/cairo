@@ -161,7 +161,7 @@ fn foo() -> Box::<()> {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -230,7 +230,7 @@ fn foo() -> Box::<Empty> {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type test::Empty = Struct<ut@test::Empty>;
