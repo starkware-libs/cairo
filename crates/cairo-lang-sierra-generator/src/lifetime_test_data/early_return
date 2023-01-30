@@ -28,7 +28,7 @@ blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk2 (root):
 Inputs: v0: core::felt

@@ -82,7 +82,7 @@ Initial refs: v0: core::felt, v1: core::bool
 Statements:
   (v5: core::felt) <- 7u
 End:
-  Callsite(v5 -> v8)
+  Callsite({v5 -> v8})
 
 blk1:
 Inputs: v6: ()
@@ -90,7 +90,7 @@ Initial refs: v0: core::felt, v1: core::bool
 Statements:
   (v7: core::felt) <- 6u
 End:
-  Callsite(v7 -> v8)
+  Callsite({v7 -> v8})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::bool
@@ -115,14 +115,14 @@ Inputs: v4: ()
 Statements:
   (v5: core::felt) <- 7u
 End:
-  Callsite(v5 -> v8)
+  Callsite({v5 -> v8})
 
 blk1:
 Inputs: v6: ()
 Statements:
   (v7: core::felt) <- 6u
 End:
-  Callsite(v7 -> v8)
+  Callsite({v7 -> v8})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::bool
@@ -146,7 +146,7 @@ blk3:
 Inputs: v12: core::felt
 Statements:
 End:
-  Callsite(v12 -> v9)
+  Callsite({v12 -> v9})
 
 blk4:
 Inputs: v13: core::array::Array::<core::felt>

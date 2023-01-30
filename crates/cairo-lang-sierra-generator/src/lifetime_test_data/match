@@ -18,14 +18,14 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite(v1 -> v4)
+  Callsite({v1 -> v4})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Callsite(v3 -> v4)
+  Callsite({v3 -> v4})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
@@ -69,14 +69,14 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Callsite()
+  Callsite({})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
@@ -118,7 +118,7 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
@@ -126,7 +126,7 @@ Statements:
   (v3: core::felt) <- 3u
   (v4: core::felt) <- core::felt_add(v1, v3)
 End:
-  Callsite()
+  Callsite({})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
@@ -184,14 +184,14 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v6: core::NonZero::<core::felt>
 Statements:
   (v7: core::felt) <- 1234u
 End:
-  Callsite()
+  Callsite({})
 
 blk2:
 Inputs:
@@ -202,20 +202,20 @@ Statements:
     IsZeroResult::NonZero => blk1,
   }
 End:
-  Callsite()
+  Callsite({})
 
 blk3:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 1000u
 End:
-  Callsite()
+  Callsite({})
 
 blk4:
 Inputs:
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk5:
 Inputs: v2: core::NonZero::<core::felt>
@@ -227,7 +227,7 @@ Statements:
     IsZeroResult::NonZero => blk3,
   }
 End:
-  Callsite()
+  Callsite({})
 
 blk6 (root):
 Inputs: v0: core::felt, v1: core::felt
