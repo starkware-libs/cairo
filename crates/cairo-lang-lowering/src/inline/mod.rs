@@ -4,6 +4,7 @@ mod test;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_semantic::ConcreteFunctionWithBodyId;
@@ -349,6 +350,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
                 if !inline_data.diagnostics.is_empty() {
+                    eprintln!(
+                        "{:?}",
+                        function_id.concrete(semantic_db).debug(semantic_db.elongate())
+                    );
+                    inline_data.diagnostics.expect_with_db(self.ctx.db.elongate(), "error");
                     self.inlining_failed = true;
                 }
 

@@ -1,3 +1,4 @@
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::corelib::get_const_libfunc_name_by_type;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::LibfuncSignature;
@@ -235,12 +236,16 @@ pub fn generic_libfunc_id(
 pub fn get_concrete_libfunc_id(
     db: &dyn SierraGenGroup,
     function: semantic::FunctionId,
-) -> (semantic::ConcreteFunction, ConcreteLibfuncId) {
+) -> Maybe<(semantic::ConcreteFunction, ConcreteLibfuncId)> {
     // Check if this is a user-defined function or a libfunc.
     let concrete_function = db.lookup_intern_function(function).function;
     match concrete_function.generic_function {
         GenericFunctionId::Free(_) | GenericFunctionId::Impl(_) => {
-            (concrete_function, function_call_libfunc_id(db, function))
+            db.concrete_function_with_body_lowered(
+                concrete_function.get_body(db.upcast()).expect("Expected a function with body."),
+            )?
+            .root?;
+            Ok((concrete_function, function_call_libfunc_id(db, function)))
         }
         GenericFunctionId::Extern(extern_id) => {
             let mut generic_args = vec![];
@@ -263,7 +268,7 @@ pub fn get_concrete_libfunc_id(
                 });
             }
 
-            (concrete_function, generic_libfunc_id(db, extern_id, generic_args))
+            Ok((concrete_function, generic_libfunc_id(db, extern_id, generic_args)))
         }
         GenericFunctionId::Trait(_) => unreachable!(),
     }

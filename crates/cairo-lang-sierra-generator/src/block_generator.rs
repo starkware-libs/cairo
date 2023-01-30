@@ -225,7 +225,7 @@ fn generate_statement_call_code(
 
     // Check if this is a user defined function or a libfunc.
     let (function_long_id, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), statement.function);
+        get_concrete_libfunc_id(context.get_db(), statement.function)?;
 
     match function_long_id.generic_function {
         GenericFunctionId::Free(_) | GenericFunctionId::Impl(_) => {
@@ -344,7 +344,7 @@ fn generate_statement_match_extern_code(
 
     // Get the [ConcreteLibfuncId].
     let (_function_long_id, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), statement.function);
+        get_concrete_libfunc_id(context.get_db(), statement.function)?;
 
     // Create the arm branches.
     let arm_targets: Vec<program::GenBranchTarget<pre_sierra::LabelId>> = chain!(
