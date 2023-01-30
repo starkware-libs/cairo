@@ -6,7 +6,6 @@ use cairo_lang_sierra::extensions::builtin_cost::{BuiltinCostConcreteLibfunc, Co
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::gas::get_const_cost;
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 use crate::relocations::{Relocation, RelocationEntry};
@@ -42,9 +41,7 @@ fn build_builtin_get_gas(
         deref gas_counter;
         deref builtin_cost;
     };
-    let requested_count: i64 = CostTokenType::iter_postcost()
-        .map(|token_type| variable_values[(builder.idx, *token_type)] * get_const_cost(*token_type))
-        .sum();
+    let requested_count: i64 = variable_values[(builder.idx, CostTokenType::Const)];
     let mut total_requested_count =
         casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
     for token_type in CostTokenType::iter_precost() {

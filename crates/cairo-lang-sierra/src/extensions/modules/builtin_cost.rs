@@ -17,12 +17,8 @@ use crate::ids::GenericTypeId;
 /// Represents different type of costs.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum CostTokenType {
-    /// A single Cairo step, or some cost which is equivalent to it.
-    Step,
-    /// The cost of adding uninitialized memory cell.
-    Hole,
-    /// One invocation of the range check builtin.
-    RangeCheck,
+    /// A compile time known cost unit.
+    Const,
     /// One invocation of the pedersen hash function.
     Pedersen,
     /// One invocation of the bitwise builtin.
@@ -33,23 +29,17 @@ pub enum CostTokenType {
 impl CostTokenType {
     pub fn iter()
     -> std::iter::Chain<std::slice::Iter<'static, Self>, std::slice::Iter<'static, Self>> {
-        chain!(Self::iter_precost(), Self::iter_postcost())
+        chain!(Self::iter_precost(), [CostTokenType::Const].iter())
     }
 
     pub fn iter_precost() -> std::slice::Iter<'static, Self> {
         [CostTokenType::Pedersen, CostTokenType::Bitwise, CostTokenType::EcOp].iter()
     }
 
-    pub fn iter_postcost() -> std::slice::Iter<'static, Self> {
-        [CostTokenType::Step, CostTokenType::Hole, CostTokenType::RangeCheck].iter()
-    }
-
     /// Returns the name of the token type, in snake_case.
     pub fn name(&self) -> String {
         match self {
-            CostTokenType::Step => "step",
-            CostTokenType::Hole => "hole",
-            CostTokenType::RangeCheck => "range_check",
+            CostTokenType::Const => "const",
             CostTokenType::Pedersen => "pedersen",
             CostTokenType::Bitwise => "bitwise",
             CostTokenType::EcOp => "ec_op",
@@ -63,7 +53,7 @@ impl CostTokenType {
 
     pub fn offset_in_builtin_costs(&self) -> i16 {
         match self {
-            CostTokenType::Step | CostTokenType::Hole | CostTokenType::RangeCheck => {
+            CostTokenType::Const => {
                 panic!("offset_in_builtin_costs is not supported for '{}'.", self.camel_case_name())
             }
             CostTokenType::Pedersen => 0,

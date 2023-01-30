@@ -17,11 +17,7 @@ struct Ops<'a> {
 impl CostOperations for Ops<'_> {
     type CostType = Option<OrderedHashMap<CostTokenType, i64>>;
 
-    fn const_cost(&self, value: i32) -> Self::CostType {
-        self.const_cost_token(value, CostTokenType::Step)
-    }
-
-    fn const_cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
+    fn cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
         Some(OrderedHashMap::from_iter([(token_type, value as i64)]))
     }
 

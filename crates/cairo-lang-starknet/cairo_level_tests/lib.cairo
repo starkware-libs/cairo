@@ -106,7 +106,7 @@ fn test_wrapper_valid_args() {
 }
 
 #[test]
-#[available_gas(200)]
+#[available_gas(5000)]
 #[should_panic]
 fn test_wrapper_valid_args_out_of_gas() {
     TestContract::__external::get_plus_2(single_element_arr(1));
@@ -126,7 +126,7 @@ fn test_wrapper_array_arg_and_output() {
 }
 
 #[test]
-#[available_gas(20000)]
+#[available_gas(200000)]
 fn read_first_value() {
     let mut retdata = TestContract::__external::get_value(ArrayTrait::new());
     pop_and_compare(ref retdata, 0, 'Wrong result');
@@ -134,7 +134,7 @@ fn read_first_value() {
 }
 
 #[test]
-#[available_gas(30000)]
+#[available_gas(300000)]
 fn write_read_value() {
     assert_empty(TestContract::__external::set_value(single_element_arr(4)));
     let mut retdata = TestContract::__external::get_value(ArrayTrait::new());
