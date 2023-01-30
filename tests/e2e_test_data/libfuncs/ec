@@ -62,7 +62,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1100})
+test::foo: OrderedHashMap({Const: 1200})
 
 //! > sierra_code
 type felt = felt;
@@ -395,7 +395,7 @@ jmp rel 0;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1200})
+test::foo: OrderedHashMap({Const: 1300})
 
 //! > sierra_code
 type EcState = EcState;
@@ -458,7 +458,7 @@ ap += 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1600})
+test::foo: OrderedHashMap({Const: 1500})
 
 //! > sierra_code
 type EcState = EcState;
