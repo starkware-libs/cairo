@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::extract_matches;
@@ -177,6 +177,9 @@ pub struct FunctionInlinerRewriter<'db> {
     statements: Vec<Statement>,
     /// stack for statements that require rewriting.
     statement_rewrite_stack: StatementStack,
+
+    /// Indicates that there was an error during inlining.
+    inlining_failed: bool,
 }
 
 #[derive(Default)]
@@ -307,6 +310,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
             },
             statements: vec![],
             statement_rewrite_stack: StatementStack::default(),
+            inlining_failed: false,
         };
 
         rewriter.ctx.variables = flat_lower.variables.clone();
@@ -324,10 +328,12 @@ impl<'db> FunctionInlinerRewriter<'db> {
             });
         }
 
+        let root = if rewriter.inlining_failed { Err(skip_diagnostic()) } else { Ok(orig_root) };
+
         assert!(rewriter.ctx.diagnostics.build().is_empty());
         Ok(FlatLowered {
             diagnostics: flat_lower.diagnostics.clone(),
-            root: Ok(orig_root),
+            root,
             variables: rewriter.ctx.variables,
             blocks: rewriter.block_queue.flat_blocks,
         })
@@ -342,6 +348,10 @@ impl<'db> FunctionInlinerRewriter<'db> {
             if let Some(function_id) = concrete_function.get_body(semantic_db) {
                 let inline_data =
                     self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
+
+                if !inline_data.diagnostics.is_empty() {
+                    self.inlining_failed = true;
+                }
 
                 if inline_data.config == InlineConfiguration::Always
                     && inline_data.info.is_inlineable
