@@ -19,6 +19,8 @@ use crate::formatter::Formatter;
 #[cfg(test)]
 mod test;
 
+pub const CAIRO_FMT_IGNORE: &str = ".cairofmtignore";
+
 /// Returns the formatted syntax tree as a string.
 /// # Arguments
 /// * `db` - The syntax group.
