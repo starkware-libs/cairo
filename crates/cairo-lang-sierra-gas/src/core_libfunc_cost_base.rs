@@ -172,7 +172,13 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             EcConcreteLibfunc::Zero(_) => vec![ops.steps(0)],
         },
         Gas(GetGas(_)) => {
-            vec![ops.sub(ops.steps(3), ops.statement_var_cost(CostTokenType::Const)), ops.steps(4)]
+            vec![
+                ops.sub(
+                    ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                    ops.statement_var_cost(CostTokenType::Const),
+                ),
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+            ]
         }
         Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
         BranchAlign(_) => {
@@ -277,10 +283,18 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                     }) as i32;
                 vec![
                     ops.sub(
-                        ops.steps(cost_computation + 3),
+                        ops.const_cost(ConstCost {
+                            steps: cost_computation + 3,
+                            holes: 0,
+                            range_checks: 1,
+                        }),
                         ops.statement_var_cost(CostTokenType::Const),
                     ),
-                    ops.steps(cost_computation + 4),
+                    ops.const_cost(ConstCost {
+                        steps: cost_computation + 5,
+                        holes: 0,
+                        range_checks: 1,
+                    }),
                 ]
             }
             BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => vec![ops.steps(3)],
