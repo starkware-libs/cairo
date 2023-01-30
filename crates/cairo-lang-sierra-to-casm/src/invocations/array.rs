@@ -177,7 +177,10 @@ fn build_array_get(
             ("Fallthrough", &[&[range_check], &[arr_start, arr_end], &elem_cells], None),
             ("FailureHandle", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
         ],
-        Some(CostValidationInfo { range_check_info: Some((orig_range_check, range_check)) }),
+        Some(CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        }),
     ))
 }
 

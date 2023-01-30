@@ -29,7 +29,7 @@ use itertools::Itertools;
 
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ConstCost {
     pub steps: i32,
     pub holes: i32,
