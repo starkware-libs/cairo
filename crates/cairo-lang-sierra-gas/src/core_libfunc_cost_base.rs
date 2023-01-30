@@ -326,23 +326,38 @@ fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> V
         Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) => vec![ops.steps(0)],
         Uint8Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
-                vec![ops.steps(4), ops.steps(4)]
+                vec![
+                    ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+                ]
             }
             IntOperator::OverflowingSub => {
-                vec![ops.steps(3), ops.steps(5)]
+                vec![
+                    ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                ]
             }
         },
         Uint8Concrete::LessThan(_) => {
-            vec![ops.steps(4), ops.steps(3)]
+            vec![
+                ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+            ]
         }
         Uint8Concrete::Equal(_) => {
             vec![ops.steps(2), ops.steps(3)]
         }
         Uint8Concrete::LessThanOrEqual(_) => {
-            vec![ops.steps(3), ops.steps(4)]
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+            ]
         }
         Uint8Concrete::FromFelt(_) => {
-            vec![ops.steps(3), ops.steps(8)]
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 2 }),
+                ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
+            ]
         }
     }
 }
@@ -356,23 +371,38 @@ fn u64_libfunc_cost<Ops: CostOperations>(
         Uint64Concrete::Const(_) | Uint64Concrete::ToFelt(_) => vec![ops.steps(0)],
         Uint64Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
-                vec![ops.steps(4), ops.steps(4)]
+                vec![
+                    ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+                ]
             }
             IntOperator::OverflowingSub => {
-                vec![ops.steps(3), ops.steps(5)]
+                vec![
+                    ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                ]
             }
         },
         Uint64Concrete::LessThan(_) => {
-            vec![ops.steps(4), ops.steps(3)]
+            vec![
+                ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+            ]
         }
         Uint64Concrete::Equal(_) => {
             vec![ops.steps(2), ops.steps(3)]
         }
         Uint64Concrete::LessThanOrEqual(_) => {
-            vec![ops.steps(3), ops.steps(4)]
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+            ]
         }
         Uint64Concrete::FromFelt(_) => {
-            vec![ops.steps(3), ops.steps(8)]
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 2 }),
+                ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
+            ]
         }
     }
 }
@@ -386,28 +416,44 @@ fn u128_libfunc_cost<Ops: CostOperations>(
     match libfunc {
         Uint128Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
-                vec![ops.steps(3), ops.steps(4)]
+                vec![
+                    ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+                ]
             }
         },
-        Uint128Concrete::DivMod(_) => vec![ops.steps(7)],
-        Uint128Concrete::WideMul(_) => vec![ops.steps(25)],
+        Uint128Concrete::DivMod(_) => {
+            vec![ops.const_cost(ConstCost { steps: 11, holes: 0, range_checks: 4 })]
+        }
+        Uint128Concrete::WideMul(_) => {
+            vec![ops.const_cost(ConstCost { steps: 23, holes: 0, range_checks: 9 })]
+        }
         Uint128Concrete::Const(_) | Uint128Concrete::ToFelt(_) => {
             vec![ops.steps(0)]
         }
         Uint128Concrete::FromFelt(_) => {
-            vec![ops.steps(2), ops.steps(11)]
+            vec![
+                ops.const_cost(ConstCost { steps: 2, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 11, holes: 0, range_checks: 3 }),
+            ]
         }
         Uint128Concrete::IsZero(_) => {
             vec![ops.steps(1), ops.steps(1)]
         }
         Uint128Concrete::LessThan(_) => {
-            vec![ops.steps(4), ops.steps(3)]
+            vec![
+                ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+            ]
         }
         Uint128Concrete::Equal(_) => {
             vec![ops.steps(2), ops.steps(3)]
         }
         Uint128Concrete::LessThanOrEqual(_) => {
-            vec![ops.steps(3), ops.steps(4)]
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+            ]
         }
     }
 }
