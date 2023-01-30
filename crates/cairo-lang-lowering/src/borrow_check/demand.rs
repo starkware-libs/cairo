@@ -33,9 +33,7 @@ impl Demand {
         for var in vars {
             if !self.vars.swap_remove(var) {
                 // Variable introduced, but not demanded. If it's not drop, that is an issue.
-                // Currently disabled, since Drop is not properly implemented everywhere.
                 let var = &borrow_checker.lowered.variables[*var];
-                #[allow(clippy::overly_complex_bool_expr)]
                 if !var.droppable {
                     borrow_checker.diagnostics.report_by_location(var.location, VariableNotDropped);
                 }
