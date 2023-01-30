@@ -55,6 +55,7 @@ pub fn build_is_zero(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Target", &[&[value]], Some(target_statement_id))],
+        None,
     ))
 }
 
@@ -70,7 +71,11 @@ pub fn build_jump(
     casm_build_extend! {casm_builder,
         jump Target;
     };
-    Ok(builder.build_from_casm_builder(casm_builder, [("Target", &[], Some(*target_statement_id))]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Target", &[], Some(*target_statement_id))],
+        None,
+    ))
 }
 
 /// Handles an operations that does no changes to the reference expressions.
@@ -144,6 +149,7 @@ pub fn build_cell_eq(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
+        None,
     ))
 }
 

@@ -56,5 +56,6 @@ pub fn build_emit_event(
                 Some(failure_handle_statement_id),
             ),
         ],
+        None,
     ))
 }

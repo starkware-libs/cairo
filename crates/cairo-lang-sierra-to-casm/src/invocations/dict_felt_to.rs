@@ -48,6 +48,7 @@ fn build_dict_felt_to_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[new_dict_manager_ptr], &[new_dict_end]], None)],
+        None,
     ))
 }
 
@@ -70,8 +71,11 @@ fn build_dict_felt_to_read(
         assert value = *(dict_ptr++);
         assert value = *(dict_ptr++);
     }
-    Ok(builder
-        .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[dict_ptr], &[value]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[dict_ptr], &[value]], None)],
+        None,
+    ))
 }
 
 /// Handles instruction for writing to a single cell dict.
@@ -94,7 +98,7 @@ fn build_dict_felt_to_write(
         assert prev_value = *(dict_ptr++);
         assert value = *(dict_ptr++);
     }
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[dict_ptr]], None)]))
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[dict_ptr]], None)], None))
 }
 
 /// Handles the dict_squash instruction.
