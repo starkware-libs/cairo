@@ -4,7 +4,9 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -115,6 +117,7 @@ fn build_array_get(
         deref range_check;
     };
     casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
         // Compute the length of the array (in felts).
         tempvar array_cell_size = arr_end - arr_start;
     };
@@ -174,7 +177,7 @@ fn build_array_get(
             ("Fallthrough", &[&[range_check], &[arr_start, arr_end], &elem_cells], None),
             ("FailureHandle", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
         ],
-        None,
+        Some(CostValidationInfo { range_check_info: Some((orig_range_check, range_check)) }),
     ))
 }
 

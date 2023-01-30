@@ -213,7 +213,9 @@ impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
 #[derive(Default)]
 struct CostValidationInfo<const BRANCH_COUNT: usize> {
     // TODO(orizi): Add extra steps info for amortized costing cases.
-    // TODO(orizi): Handle range check pointer usages.
+    /// Range check variables at start and end of the libfunc.
+    /// Assumes only directly used as buffer.
+    pub range_check_info: Option<(Var, Var)>,
 }
 
 /// Helper for building compiled invocations.
@@ -326,7 +328,7 @@ impl CompiledInvocationBuilder<'_> {
                 .iter()
                 .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change)),
         );
-        if let Some(_cost_validation) = cost_validation {
+        if let Some(cost_validation) = cost_validation {
             let gas_changes = core_libfunc_cost(
                 &self.program_info.metadata.gas_info,
                 &self.idx,
@@ -342,7 +344,18 @@ impl CompiledInvocationBuilder<'_> {
             itertools::assert_equal(
                 gas_changes,
                 branches.iter().map(|(state, _)| {
-                    ConstCost { steps: state.steps as i32, holes: 0, range_checks: 0 }.cost() as i64
+                    let range_checks = if let Some((start, end)) = cost_validation.range_check_info
+                    {
+                        let (start_base, start_offset) =
+                            state.get_adjusted(start).to_deref_with_offset().unwrap();
+                        let (end_base, end_offset) =
+                            state.get_adjusted(end).to_deref_with_offset().unwrap();
+                        assert_eq!(start_base, end_base);
+                        (end_offset - start_offset) as i32
+                    } else {
+                        0
+                    };
+                    ConstCost { steps: state.steps as i32, holes: 0, range_checks }.cost() as i64
                 }),
             );
         }
