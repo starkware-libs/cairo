@@ -60,6 +60,7 @@ pub fn build_call_contract(
                 Some(failure_handle_statement_id),
             ),
         ],
+        None,
     ))
 }
 
@@ -116,5 +117,6 @@ pub fn build_contract_address_try_from_felt(
             ("Fallthrough", &[&[range_check], &[value]], None),
             ("Failure", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
+        None,
     ))
 }

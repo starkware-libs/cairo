@@ -31,8 +31,11 @@ fn build_array_new(
         hint AllocSegment {} into {dst: arr_start};
         ap += 1;
     };
-    Ok(builder
-        .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[arr_start, arr_start]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[arr_start, arr_start]], None)],
+        Some(Default::default()),
+    ))
 }
 
 /// Handles a Sierra statement for appending an element to an array.
@@ -51,8 +54,11 @@ fn build_array_append(
         add_input_variables!(casm_builder, deref cell;);
         casm_build_extend!(casm_builder, assert cell = *(arr_end++););
     }
-    Ok(builder
-        .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[arr_start, arr_end]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[arr_start, arr_end]], None)],
+        Some(Default::default()),
+    ))
 }
 
 /// Handles a Sierra statement for popping an element from the begining of an array.
@@ -85,6 +91,7 @@ fn build_pop_front(
             ("Fallthrough", &[&[new_start, arr_end], &elem_cells], None),
             ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
         ],
+        Some(Default::default()),
     ))
 }
 
@@ -167,6 +174,7 @@ fn build_array_get(
             ("Fallthrough", &[&[range_check], &[arr_start, arr_end], &elem_cells], None),
             ("FailureHandle", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
         ],
+        None,
     ))
 }
 
@@ -198,5 +206,6 @@ fn build_array_len(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[arr_start, arr_end], &[length]], None)],
+        Some(Default::default()),
     ))
 }

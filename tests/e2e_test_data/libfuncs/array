@@ -437,7 +437,7 @@ fn foo(ref arr: Array::<u256>) -> usize {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type u128 = u128;

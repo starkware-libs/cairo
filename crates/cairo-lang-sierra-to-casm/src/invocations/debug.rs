@@ -30,5 +30,5 @@ fn build_print(
         // Since we can't have hints not carried on actual instructions.
         ap += 0;
     };
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[], None)]))
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[], None)], None))
 }

@@ -31,9 +31,14 @@ use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
 #[derive(Default)]
 pub struct ConstCost {
-    steps: i32,
-    holes: i32,
-    range_checks: i32,
+    pub steps: i32,
+    pub holes: i32,
+    pub range_checks: i32,
+}
+impl ConstCost {
+    pub fn cost(&self) -> i32 {
+        self.steps * 100 + self.holes * 10 + self.range_checks * 50
+    }
 }
 
 /// The operation required for extracting a libfunc's cost.
@@ -42,10 +47,7 @@ pub trait CostOperations {
 
     /// Gets a cost from a constant value (of type [CostTokenType::Const]).
     fn const_cost(&self, value: ConstCost) -> Self::CostType {
-        self.cost_token(
-            value.steps * 100 + value.holes * 10 + value.range_checks * 50,
-            CostTokenType::Const,
-        )
+        self.cost_token(value.cost(), CostTokenType::Const)
     }
 
     /// Gets a cost from step count.
@@ -195,7 +197,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         }
         Array(ArrayConcreteLibfunc::PopFront(_)) => vec![ops.steps(2), ops.steps(3)],
         Array(ArrayConcreteLibfunc::At(_)) => vec![ops.steps(4), ops.steps(3)],
-        Array(ArrayConcreteLibfunc::Len(_)) => vec![ops.steps(0)],
+        Array(ArrayConcreteLibfunc::Len(libfunc)) => {
+            vec![ops.steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
+        }
         Uint128(libfunc) => u128_libfunc_cost(ops, libfunc),
         Uint8(libfunc) => u8_libfunc_cost(ops, libfunc),
         Uint64(libfunc) => u64_libfunc_cost(ops, libfunc),

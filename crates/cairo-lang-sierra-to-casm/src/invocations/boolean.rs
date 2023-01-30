@@ -30,7 +30,7 @@ fn build_bool_and(
         deref b;
     };
     casm_build_extend!(casm_builder, let res = a * b;);
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)], None))
 }
 
 /// Handles instructions for boolean NOT.
@@ -45,7 +45,7 @@ fn build_bool_not(
         tempvar one = one_imm;
         let res = one - a;
     };
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)], None))
 }
 
 /// Handles instructions for boolean XOR.
@@ -65,7 +65,7 @@ fn build_bool_xor(
         tempvar diff = a - b;
         let res = diff * diff;
     }
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)], None))
 }
 
 /// Handles instructions for boolean OR.
@@ -86,5 +86,5 @@ fn build_bool_or(
         tempvar prod = a * b;
         let res = sum - prod;
     }
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)], None))
 }

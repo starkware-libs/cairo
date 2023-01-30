@@ -53,6 +53,7 @@ pub fn build_less_than(
             ("Fallthrough", &[&[range_check]], None),
             ("True", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
+        None,
     ))
 }
 
@@ -87,6 +88,7 @@ pub fn build_less_than_or_equal(
             ("Fallthrough", &[&[range_check]], None),
             ("True", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
+        None,
     ))
 }
 
@@ -130,6 +132,7 @@ fn build_small_uint_overflowing_add(
             ("Fallthrough", &[&[range_check], &[a_plus_b]], None),
             ("Target", &[&[range_check], &[fixed_a_plus_b]], Some(failure_handle_statement_id)),
         ],
+        None,
     ))
 }
 
@@ -169,6 +172,7 @@ fn build_small_uint_overflowing_sub(
             ("Fallthrough", &[&[range_check], &[a_minus_b]], None),
             ("Target", &[&[range_check], &[wrapping_a_minus_b]], Some(failure_handle_statement_id)),
         ],
+        None,
     ))
 }
 
@@ -228,6 +232,7 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8>(
             ("Fallthrough", &[&[range_check], &[value]], None),
             ("Done", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
+        None,
     ))
 }
 

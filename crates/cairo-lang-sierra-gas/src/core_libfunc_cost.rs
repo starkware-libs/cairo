@@ -5,8 +5,8 @@ use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 
-pub use crate::core_libfunc_cost_base::InvocationCostInfoProvider;
 use crate::core_libfunc_cost_base::{core_libfunc_postcost, core_libfunc_precost, CostOperations};
+pub use crate::core_libfunc_cost_base::{ConstCost, InvocationCostInfoProvider};
 use crate::gas_info::GasInfo;
 
 /// Cost operations for getting `Option<i64>` costs values.

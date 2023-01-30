@@ -92,6 +92,7 @@ fn build_builtin_get_gas(
             ("Fallthrough", &[&[range_check], &[updated_gas]], None),
             ("Failure", &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
         ],
+        None,
     ))
 }
 

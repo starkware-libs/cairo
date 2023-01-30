@@ -13,7 +13,9 @@ use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, Statement
 use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
     core_libfunc_ap_change, InvocationApChangeInfoProvider,
 };
-use cairo_lang_sierra_gas::core_libfunc_cost::InvocationCostInfoProvider;
+use cairo_lang_sierra_gas::core_libfunc_cost::{
+    core_libfunc_cost, ConstCost, InvocationCostInfoProvider,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
 use thiserror::Error;
@@ -207,6 +209,13 @@ impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
     }
 }
 
+/// Information required for validating libfunc cost.
+#[derive(Default)]
+struct CostValidationInfo<const BRANCH_COUNT: usize> {
+    // TODO(orizi): Add extra steps info for amortized costing cases.
+    // TODO(orizi): Handle range check pointer usages.
+}
+
 /// Helper for building compiled invocations.
 pub struct CompiledInvocationBuilder<'a> {
     pub program_info: ProgramInfo<'a>,
@@ -226,12 +235,8 @@ impl CompiledInvocationBuilder<'_> {
             Item = impl ExactSizeIterator<Item = ReferenceExpression>,
         >,
     ) -> CompiledInvocation {
-        let gas_changes = cairo_lang_sierra_gas::core_libfunc_cost::core_libfunc_cost(
-            &self.program_info.metadata.gas_info,
-            &self.idx,
-            self.libfunc,
-            &self,
-        );
+        let gas_changes =
+            core_libfunc_cost(&self.program_info.metadata.gas_info, &self.idx, self.libfunc, &self);
 
         let branch_signatures = self.libfunc.branch_signatures();
         assert_eq!(
@@ -311,6 +316,7 @@ impl CompiledInvocationBuilder<'_> {
         self,
         casm_builder: CasmBuilder,
         branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
+        cost_validation: Option<CostValidationInfo<BRANCH_COUNT>>,
     ) -> CompiledInvocation {
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
@@ -320,6 +326,26 @@ impl CompiledInvocationBuilder<'_> {
                 .iter()
                 .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change)),
         );
+        if let Some(_cost_validation) = cost_validation {
+            let gas_changes = core_libfunc_cost(
+                &self.program_info.metadata.gas_info,
+                &self.idx,
+                self.libfunc,
+                &self,
+            )
+            .into_iter()
+            .map(|costs| {
+                costs
+                    .and_then(|costs| costs.get(&CostTokenType::Const).copied())
+                    .unwrap_or_default()
+            });
+            itertools::assert_equal(
+                gas_changes,
+                branches.iter().map(|(state, _)| {
+                    ConstCost { steps: state.steps as i32, holes: 0, range_checks: 0 }.cost() as i64
+                }),
+            );
+        }
         let relocations = branches
             .iter()
             .zip_eq(branch_extractions.iter())
