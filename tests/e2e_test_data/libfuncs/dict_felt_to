@@ -87,7 +87,7 @@ dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 87})
+test::foo: OrderedHashMap({Step: 89})
 
 //! > sierra_code
 type felt = felt;
@@ -139,7 +139,7 @@ dict_tracker.current_ptr += 3
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 88})
+test::foo: OrderedHashMap({Step: 90})
 
 //! > sierra_code
 type felt = felt;
@@ -180,7 +180,7 @@ fn foo(dict: DictFeltTo::<felt>) -> SquashedDictFeltTo::<felt> {
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 257;
+jmp rel 259;
 [fp + 2] = [fp + -5], ap++;
 %{
 expected_segment_index = memory[fp + -3].segment_index
@@ -216,7 +216,7 @@ call rel 15;
 [ap + -1] = [ap + 0] + [ap + -2], ap++;
 [fp + 1] = [ap + 0] + [ap + -1], ap++;
 [ap + -1] = [ap + 0] * 3, ap++;
-[ap + 0] = [ap + -1] * 70, ap++;
+[ap + 0] = [ap + -1] * 72, ap++;
 [ap + 0] = [ap + -7], ap++;
 [ap + 0] = [fp + 2] + [ap + -2], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
@@ -303,8 +303,8 @@ memory[fp + 2] = 1 if keys[0] >= range_check_builtin.bound else 0
 memory[fp + 1] = key = keys.pop()
 %}
 jmp rel 7 if [fp + 2] != 0, ap++;
-[fp + 1] = [[fp + -6] + 0];
-[ap + 0] = [fp + -6] + 1, ap++;
+[fp + 1] = [[fp + -6] + 0], ap++;
+[ap + -1] = [fp + -6] + 1;
 jmp rel 3;
 [ap + 0] = [fp + -6], ap++;
 [ap + 0] = [fp + -5], ap++;
@@ -318,6 +318,7 @@ call rel 5;
 [ap + 0] = [ap + -2], ap++;
 %{ vm_exit_scope() %}
 ret;
+ap += 5;
 %{
 current_access_indices = sorted(access_indices[key])[::-1]
 current_access_index = current_access_indices.pop()
@@ -358,43 +359,43 @@ jmp rel -14 if [ap + -7] != 0;
 [ap + -2] = [ap + 0] + [fp + -9], ap++;
 %{  assert memory[ap + -1] == len(access_indices[key])  %}
 [ap + -4] = [[fp + -4] + 2];
-[fp + -5] = [fp + 1] + [ap + -1];
-jmp rel 7 if [fp + 1] != 0;
+[fp + -5] = [fp + 6] + [ap + -1];
+jmp rel 7 if [fp + 6] != 0;
 %{  assert len(keys) == 0  %}
 [ap + 0] = [ap + -3] + 1, ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 ret;
 %{ assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
-memory[fp + 0] = key = keys.pop()
+memory[fp + 5] = key = keys.pop()
  %}
 jmp rel 14 if [fp + -3] != 0;
 [ap + 0] = [fp + -6] + 1, ap++;
-[fp + 0] = [ap + 0] + [ap + -1], ap++;
+[fp + 5] = [ap + 0] + [ap + -1], ap++;
 [ap + -1] = [[ap + -5] + 1];
-[ap + 0] = [ap + -5] + 2, ap++;
-[ap + 0] = [fp + -8], ap++;
-[ap + 0] = [fp + -7], ap++;
-[ap + 0] = [fp + 0], ap++;
-[ap + 0] = [fp + 1], ap++;
+[fp + 0] = [ap + -5] + 2;
+[fp + 1] = [fp + -8];
+[fp + 2] = [fp + -7];
+[fp + 3] = [fp + 5];
+[fp + 4] = [fp + 6];
 jmp rel 14;
 ap += 2;
 [ap + -2] = [fp + -9];
 [ap + -1] = [fp + -6];
-[ap + 0] = [fp + 0], ap++;
+[ap + 0] = [fp + 5], ap++;
 call rel 18;
-[ap + 0] = [ap + -1], ap++;
-[ap + 0] = [fp + -8], ap++;
-[ap + 0] = [fp + -7], ap++;
+[fp + 0] = [ap + -1];
+[fp + 1] = [fp + -8];
+[fp + 2] = [fp + -7];
+[fp + 3] = [fp + 5];
+[fp + 4] = [fp + 6];
 [ap + 0] = [fp + 0], ap++;
 [ap + 0] = [fp + 1], ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [fp + 2], ap++;
+[ap + 0] = [fp + 3], ap++;
+[ap + 0] = [fp + 4], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel -75;
+call rel -77;
 ret;
 %{
 from starkware.cairo.common.math_utils import assert_integer
