@@ -3,8 +3,10 @@ use std::vec;
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
+use cairo_lang_sierra_gas::core_libfunc_cost::{ConstCost, DICT_SQUASH_ACCESS_COST};
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::{CostValidationInfo, ExtraCost};
 use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra single cell dict operations.
@@ -48,7 +50,7 @@ fn build_dict_felt_to_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[new_dict_manager_ptr], &[new_dict_end]], None)],
-        None,
+        Some(Default::default()),
     ))
 }
 
@@ -74,7 +76,13 @@ fn build_dict_felt_to_read(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[dict_ptr], &[value]], None)],
-        None,
+        Some(CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([ExtraCost {
+                run_cost: ConstCost::default(),
+                external_cost: DICT_SQUASH_ACCESS_COST,
+            }]),
+        }),
     ))
 }
 
@@ -98,7 +106,17 @@ fn build_dict_felt_to_write(
         assert prev_value = *(dict_ptr++);
         assert value = *(dict_ptr++);
     }
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[dict_ptr]], None)], None))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[dict_ptr]], None)],
+        Some(CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([ExtraCost {
+                run_cost: ConstCost::default(),
+                external_cost: DICT_SQUASH_ACCESS_COST,
+            }]),
+        }),
+    ))
 }
 
 /// Handles the dict_squash instruction.
