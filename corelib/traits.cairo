@@ -3,27 +3,47 @@ trait Drop<T>;
 
 // TODO(spapini): When associated types are supported, support the general trait Add<X, Y>.
 trait Add<T> {
+    // TODO(yuval): consider changing to self/other.
     fn add(a: T, b: T) -> T;
+    // TODO(yuval): once default trait function implementation is supported, implement this here
+    // instead of in each impl.
+    fn add_eq(ref self: T, other: T);
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Sub<X, Y>.
 trait Sub<T> {
+    // TODO(yuval): consider changing to self/other.
     fn sub(a: T, b: T) -> T;
+    // TODO(yuval): once default trait function implementation is supported, implement this here
+    // instead of in each impl.
+    fn sub_eq(ref self: T, other: T);
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Mul<X, Y>.
 trait Mul<T> {
+    // TODO(yuval): consider changing to self/other.
     fn mul(a: T, b: T) -> T;
+    // TODO(yuval): once default trait function implementation is supported, implement this here
+    // instead of in each impl.
+    fn mul_eq(ref self: T, other: T);
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Div<X, Y>.
 trait Div<T> {
+    // TODO(yuval): consider changing to self/other.
     fn div(a: T, b: T) -> T;
+    // TODO(yuval): once default trait function implementation is supported, implement this here
+    // instead of in each impl.
+    fn div_eq(ref self: T, other: T);
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Rem<X, Y>.
 trait Rem<T> {
+    // TODO(yuval): consider changing to self/other.
     fn rem(a: T, b: T) -> T;
+    // TODO(yuval): once default trait function implementation is supported, implement this here
+    // instead of in each impl.
+    fn rem_eq(ref self: T, other: T);
 }
 
 trait PartialEq<T> {

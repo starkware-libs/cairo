@@ -105,6 +105,10 @@ impl EcPointAdd of Add::<EcPoint> {
         ec_state_add(ref state, q_nz);
         ec_state_finalize(state)
     }
+    #[inline(always)]
+    fn add_eq(ref self: EcPoint, other: EcPoint) {
+        self = Add::add(self, other);
+    }
 }
 
 impl EcPointSub of Sub::<EcPoint> {
@@ -119,5 +123,9 @@ impl EcPointSub of Sub::<EcPoint> {
         };
         // p - q = p + (-q).
         p + ec_neg(q)
+    }
+    #[inline(always)]
+    fn sub_eq(ref self: EcPoint, other: EcPoint) {
+        self = Sub::sub(self, other);
     }
 }

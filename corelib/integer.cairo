@@ -60,6 +60,10 @@ impl U128Add of Add::<u128> {
     fn add(a: u128, b: u128) -> u128 {
         u128_overflowing_add(a, b).expect('u128_add Overflow')
     }
+    #[inline(always)]
+    fn add_eq(ref self: u128, other: u128) {
+        self = Add::add(self, other);
+    }
 }
 
 #[panic_with('u128_sub OF', u128_sub)]
@@ -75,6 +79,10 @@ impl U128Sub of Sub::<u128> {
     fn sub(a: u128, b: u128) -> u128 {
         u128_overflowing_sub(a, b).expect('u128_sub Overflow')
     }
+    #[inline(always)]
+    fn sub_eq(ref self: u128, other: u128) {
+        self = Sub::sub(self, other);
+    }
 }
 
 fn u128_checked_mul(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) nopanic {
@@ -89,6 +97,10 @@ impl U128Mul of Mul::<u128> {
     #[inline(always)]
     fn mul(a: u128, b: u128) -> u128 {
         u128_checked_mul(a, b).expect('u128_mul Overflow')
+    }
+    #[inline(always)]
+    fn mul_eq(ref self: u128, other: u128) {
+        self = Mul::mul(self, other);
     }
 }
 
@@ -113,6 +125,10 @@ impl U128Div of Div::<u128> {
     fn div(a: u128, b: u128) -> u128 {
         u128_safe_div(a, u128_as_non_zero(b))
     }
+    #[inline(always)]
+    fn div_eq(ref self: u128, other: u128) {
+        self = Div::div(self, other);
+    }
 }
 
 fn u128_safe_mod(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopanic {
@@ -124,6 +140,10 @@ impl U128Rem of Rem::<u128> {
     #[inline(always)]
     fn rem(a: u128, b: u128) -> u128 {
         u128_safe_mod(a, u128_as_non_zero(b))
+    }
+    #[inline(always)]
+    fn rem_eq(ref self: u128, other: u128) {
+        self = Rem::rem(self, other);
     }
 }
 
@@ -262,6 +282,10 @@ impl U8Add of Add::<u8> {
     fn add(a: u8, b: u8) -> u8 {
         u8_overflowing_add(a, b).expect('u8_add Overflow')
     }
+    #[inline(always)]
+    fn add_eq(ref self: u8, other: u8) {
+        self = Add::add(self, other);
+    }
 }
 
 fn u8_checked_sub(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
@@ -275,6 +299,10 @@ impl U8Sub of Sub::<u8> {
     #[inline(always)]
     fn sub(a: u8, b: u8) -> u8 {
         u8_overflowing_sub(a, b).expect('u8_sub Overflow')
+    }
+    #[inline(always)]
+    fn sub_eq(ref self: u8, other: u8) {
+        self = Sub::sub(self, other);
     }
 }
 
@@ -349,6 +377,10 @@ impl U64Add of Add::<u64> {
     fn add(a: u64, b: u64) -> u64 {
         u64_overflowing_add(a, b).expect('u64_add Overflow')
     }
+    #[inline(always)]
+    fn add_eq(ref self: u64, other: u64) {
+        self = Add::add(self, other);
+    }
 }
 
 fn u64_checked_sub(a: u64, b: u64) -> Option::<u64> implicits(RangeCheck) nopanic {
@@ -362,6 +394,10 @@ impl U64Sub of Sub::<u64> {
     #[inline(always)]
     fn sub(a: u64, b: u64) -> u64 {
         u64_overflowing_sub(a, b).expect('u64_sub Overflow')
+    }
+    #[inline(always)]
+    fn sub_eq(ref self: u64, other: u64) {
+        self = Sub::sub(self, other);
     }
 }
 
@@ -435,6 +471,10 @@ impl U256Add of Add::<u256> {
     fn add(a: u256, b: u256) -> u256 {
         u256_checked_add(a, b).expect('u256_add Overflow')
     }
+    #[inline(always)]
+    fn add_eq(ref self: u256, other: u256) {
+        self = Add::add(self, other);
+    }
 }
 
 #[panic_with('u256_sub OF', u256_sub)]
@@ -452,6 +492,10 @@ impl U256Sub of Sub::<u256> {
     fn sub(a: u256, b: u256) -> u256 {
         u256_checked_sub(a, b).expect('u256_sub Overflow')
     }
+    #[inline(always)]
+    fn sub_eq(ref self: u256, other: u256) {
+        self = Sub::sub(self, other);
+    }
 }
 
 fn u256_checked_mul(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) {
@@ -467,6 +511,10 @@ impl U256Mul of Mul::<u256> {
     #[inline(always)]
     fn mul(a: u256, b: u256) -> u256 {
         u256_checked_mul(a, b).expect('u256_mul Overflow')
+    }
+    #[inline(always)]
+    fn mul_eq(ref self: u256, other: u256) {
+        self = Mul::mul(self, other);
     }
 }
 

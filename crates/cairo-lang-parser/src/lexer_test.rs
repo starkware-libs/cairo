@@ -51,7 +51,9 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalColonColon => vec!["::"],
         SyntaxKind::TerminalComma => vec![","],
         SyntaxKind::TerminalDiv => vec!["/"],
+        SyntaxKind::TerminalDivEq => vec!["/="],
         SyntaxKind::TerminalMod => vec!["%"],
+        SyntaxKind::TerminalModEq => vec!["%="],
         SyntaxKind::TerminalDot => vec!["."],
         SyntaxKind::TerminalDotDot => vec![".."],
         SyntaxKind::TerminalEq => vec!["="],
@@ -61,13 +63,16 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalLE => vec!["<="],
         SyntaxKind::TerminalLT => vec!["<"],
         SyntaxKind::TerminalMinus => vec!["-"],
+        SyntaxKind::TerminalMinusEq => vec!["-="],
         SyntaxKind::TerminalMul => vec!["*"],
+        SyntaxKind::TerminalMulEq => vec!["*="],
         SyntaxKind::TerminalNeq => vec!["!="],
         SyntaxKind::TerminalNot => vec!["!"],
         SyntaxKind::TerminalOr => vec!["|"],
         SyntaxKind::TerminalOrOr => vec!["||"],
         SyntaxKind::TerminalXor => vec!["^"],
         SyntaxKind::TerminalPlus => vec!["+"],
+        SyntaxKind::TerminalPlusEq => vec!["+="],
         SyntaxKind::TerminalSemicolon => vec![";"],
         SyntaxKind::TerminalQuestionMark => vec!["?"],
         SyntaxKind::TerminalUnderscore => vec!["_"],
@@ -124,10 +129,15 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalLT,
         SyntaxKind::TerminalNot,
         SyntaxKind::TerminalPlus,
+        SyntaxKind::TerminalPlusEq,
         SyntaxKind::TerminalMinus,
+        SyntaxKind::TerminalMinusEq,
         SyntaxKind::TerminalMul,
+        SyntaxKind::TerminalMulEq,
         SyntaxKind::TerminalDiv,
+        SyntaxKind::TerminalDivEq,
         SyntaxKind::TerminalMod,
+        SyntaxKind::TerminalModEq,
         SyntaxKind::TerminalColon,
         SyntaxKind::TerminalColonColon,
         SyntaxKind::TerminalComma,
@@ -169,13 +179,15 @@ fn need_separator(
     }
     if (text0 == "&" && text1.starts_with('&'))
         || (text0 == "|" && text1.starts_with('|'))
-        || (text0 == "/" && text1 == "/")
+        || (text0 == "/" && text1.starts_with('/'))
         || ((text0 == "=" || text0 == "!") && text1.starts_with('='))
         || ((text0 == "=") && text1.starts_with('>'))
         || ((text0 == "<" || text0 == ">") && text1.starts_with('='))
         || (text0 == ":" && text1.starts_with(':'))
         || (text0 == "." && text1.starts_with('.'))
-        || (text0 == "-" && text1.starts_with('>'))
+        || (text0 == "-" && (text1.starts_with('>') || text1.starts_with('=')))
+        || ((text0 == "+" || text0 == "*" || text0 == "/" || text0 == "%")
+            && text1.starts_with('='))
         || (kind0 == SyntaxKind::TerminalLiteralNumber && kind0 == kind1)
     {
         return true;
@@ -259,18 +271,26 @@ fn test_lex_double_token() {
 
                 let terminal = lexer.next().unwrap();
                 let token_text = terminal.text;
-                assert_eq!(terminal.kind, kind0, "Wrong token kind0, with text: \"{token_text}\".",);
+                assert_eq!(
+                    terminal.kind, kind0,
+                    "Wrong first token kind: {}, expected: {kind0}. Text: \"{token_text}\".",
+                    terminal.kind
+                );
                 assert_eq!(
                     token_text, text0,
-                    "Wrong token text0, with total text: \"{token_text}\".",
+                    "Wrong first token text, with total text: \"{token_text}\".",
                 );
 
                 let terminal = lexer.next().unwrap();
                 let token_text = terminal.text;
-                assert_eq!(terminal.kind, kind1, "Wrong token kind1, with text: \"{token_text}\".",);
+                assert_eq!(
+                    terminal.kind, kind1,
+                    "Wrong second token kind {}, expected: {kind1}. Text: \"{token_text}\".",
+                    terminal.kind
+                );
                 assert_eq!(
                     token_text, text1,
-                    "Wrong token text1, with total text: \"{token_text}\".",
+                    "Wrong second token text, with total text: \"{token_text}\".",
                 );
 
                 assert_eq!(

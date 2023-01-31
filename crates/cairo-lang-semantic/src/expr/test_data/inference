@@ -57,7 +57,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: ref argument must be a passed with a preceding 'ref'.
+error: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:3:18
     array_append(arr, arr)
                  ^*^

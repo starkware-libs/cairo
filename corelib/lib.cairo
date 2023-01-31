@@ -82,6 +82,10 @@ impl FeltAdd of Add::<felt> {
     fn add(a: felt, b: felt) -> felt {
         felt_add(a, b)
     }
+    #[inline(always)]
+    fn add_eq(ref self: felt, other: felt) {
+        self = Add::add(self, other);
+    }
 }
 extern fn felt_add(a: felt, b: felt) -> felt nopanic;
 impl FeltSub of Sub::<felt> {
@@ -89,12 +93,20 @@ impl FeltSub of Sub::<felt> {
     fn sub(a: felt, b: felt) -> felt {
         felt_sub(a, b)
     }
+    #[inline(always)]
+    fn sub_eq(ref self: felt, other: felt) {
+        self = Sub::sub(self, other);
+    }
 }
 extern fn felt_sub(a: felt, b: felt) -> felt nopanic;
 impl FeltMul of Mul::<felt> {
     #[inline(always)]
     fn mul(a: felt, b: felt) -> felt {
         felt_mul(a, b)
+    }
+    #[inline(always)]
+    fn mul_eq(ref self: felt, other: felt) {
+        self = Mul::mul(self, other);
     }
 }
 extern fn felt_mul(a: felt, b: felt) -> felt nopanic;
