@@ -92,8 +92,16 @@ fn format_input(
     if !diagnostics.0.leaves.is_empty() {
         eprintln!(
             "{}",
-            format!("A parsing error occurred in {input}. The content was not formatted. Run with --verbose to see error details.").red()
+            format!("There were parsing errors while trying to format the code of {input}. The content was not formatted.").red()
         );
+        if args.pring_parsing_errors {
+            eprintln!("{}", diagnostics.format(&db));
+        } else {
+            eprintln!(
+                "{}",
+                format!("Run with '--pring-parsing-errors' to see error details.").red()
+            );
+        }
         bail!("Unable to parse input");
     }
 
@@ -171,7 +179,7 @@ fn format_path(
                 } else {
                     eprintln_if_verbose(&format!("Formatting file: {path}."), args.verbose);
                     matches!(
-                        (format_input(&Input::File { path }, config, args.check), args.check),
+                        (format_input(&Input::File { path }, config, args), args.check),
                         (Ok(FormatResult::Identical), _) | (Ok(FormatResult::DiffFound), false)
                     )
                 }
@@ -233,6 +241,9 @@ struct FormatterArgs {
     /// Print verbose output.
     #[arg(short, long, default_value_t = false)]
     verbose: bool,
+    /// Print parsing errors.
+    #[arg(short, long, default_value_t = false)]
+    pring_parsing_errors: bool,
     /// A list of files and directories to format. Use "-" for stdin.
     files: Vec<String>,
 }
@@ -250,7 +261,7 @@ fn main() -> ExitCode {
 
     if args.files.len() == 1 && args.files[0] == "-" {
         // Input comes from stdin
-        match (format_input(&Input::Stdin, &config, args.check), args.check) {
+        match (format_input(&Input::Stdin, &config, &args), args.check) {
             (Ok(FormatResult::Identical), _) => ExitCode::SUCCESS,
             (Ok(FormatResult::DiffFound), false) => ExitCode::SUCCESS,
             _ => ExitCode::FAILURE,
