@@ -54,6 +54,32 @@ foo
 
 //! > ==========================================================================
 
+//! > Test ref self in trait functions.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let mut x = 5;
+    x.foo();
+}
+
+//! > module_code
+trait MyTrait<T> {
+    fn foo(ref self: T);
+}
+impl MyImpl of MyTrait::<felt> {
+    fn foo(ref self: felt) {}
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
 //! > Test generic kind failures
 
 //! > test_function_name

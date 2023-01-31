@@ -377,10 +377,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "ref argument must be a mutable variable.".into()
             }
             SemanticDiagnosticKind::RefArgNotExplicit => {
-                "ref argument must be a passed with a preceding 'ref'.".into()
+                "ref argument must be passed with a preceding 'ref'.".into()
             }
             SemanticDiagnosticKind::ImmutableArgWithModifiers => {
-                "Argument cannot have modifiers.".into()
+                "Argument to immutable parameter cannot have modifiers.".into()
             }
             SemanticDiagnosticKind::AssignmentToImmutableVar => {
                 "Cannot assign to an immutable variable.".into()
