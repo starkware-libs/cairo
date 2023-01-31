@@ -11,13 +11,7 @@ use crate::plugin::EXTERNAL_MODULE;
 
 #[test]
 fn test_contract_resolving() {
-    let mut db_val = {
-        let mut b = RootDatabase::builder();
-        b.with_dev_corelib().unwrap();
-        b.with_starknet();
-        b.build()
-    };
-    let db = &mut db_val;
+    let db = &mut RootDatabase::builder().detect_corelib().with_starknet().build().unwrap();
     let _crate_id = setup_test_crate(
         db,
         indoc! {"
