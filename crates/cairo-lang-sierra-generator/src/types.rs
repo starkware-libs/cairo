@@ -1,4 +1,4 @@
-use cairo_lang_diagnostics::{skip_diagnostic, Maybe};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::strct::SemanticStructEx;
@@ -68,6 +68,9 @@ pub fn get_concrete_type_id(
                                         db.lookup_intern_literal(literal_id).value,
                                     )
                                 }
+                                semantic::GenericArgumentId::Impl(_) => {
+                                    panic!("Extern function with impl generics are not supported.")
+                                }
                             })
                             .collect(),
                     }))
@@ -86,7 +89,13 @@ pub fn get_concrete_type_id(
                 .collect(),
             }))
         }
-        semantic::TypeLongId::GenericParameter(_) => Err(skip_diagnostic()),
-        semantic::TypeLongId::Missing(diag_added) => Err(diag_added),
+        semantic::TypeLongId::GenericParameter(_)
+        | semantic::TypeLongId::Var(_)
+        | semantic::TypeLongId::Missing(_) => {
+            panic!(
+                "Types should be fully resolved at this point. Got: `{}`.",
+                type_id.format(db.upcast())
+            )
+        }
     }
 }

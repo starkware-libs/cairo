@@ -52,7 +52,10 @@ impl DiagnosticEntry for LoweringDiagnostic {
             }
             LoweringDiagnosticKind::VariableMoved => "Variable was previously moved.".into(),
             LoweringDiagnosticKind::VariableNotDropped => "Variable not dropped.".into(),
-            LoweringDiagnosticKind::UnsupportedMatch => "Unsupported match.".into(),
+            LoweringDiagnosticKind::UnsupportedMatch => "Unsupported match. Currently, matches \
+                                                         require one arm per variant, in the \
+                                                         order of variant definition."
+                .into(),
             LoweringDiagnosticKind::UnsupportedMatchArm => "Unsupported match arm.".into(),
             LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => {
                 "Cannot inline a function that might call itself.".into()
@@ -67,7 +70,11 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "`inline` without arguments is not supported.".into()
             }
             LoweringDiagnosticKind::InliningFunctionWithEarlyReturnNotSupported => {
-                "Inlining of function with an early return is not supported.".into()
+                "Inlining of functions with an early return is not supported.".into()
+            }
+            LoweringDiagnosticKind::InliningFunctionWithIdentityVarsNotSupported => {
+                "Inlining of functions that directly returns one of its inputs is not supported."
+                    .into()
             }
         }
     }
@@ -101,5 +108,6 @@ pub enum LoweringDiagnosticKind {
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
     InliningFunctionWithEarlyReturnNotSupported,
+    InliningFunctionWithIdentityVarsNotSupported,
     InlineWithoutArgumentNotSupported,
 }

@@ -284,9 +284,9 @@ checksum = "dfb24e866b15a1af2a1b663f10c6b6b8f397a84aadb828f12e5b289ec23a3a3c"
 
 [[package]]
 name = "cairo-felt"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "445e0fdaf20ab3e1597c1e9ef3bd6965b468acc1ce0b196c290864ffae25029b"
+checksum = "a792f409586c42c2d62cff582989e573d45b0855be95e022421d25f608364cc1"
 dependencies = [
  "lazy_static",
  "num-bigint",
@@ -297,7 +297,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-casm"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -313,7 +313,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-compiler"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "anyhow",
  "cairo-lang-defs",
@@ -337,7 +337,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-debug"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
@@ -348,14 +348,16 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-defs"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
  "cairo-lang-parser",
  "cairo-lang-syntax",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
+ "env_logger",
  "indexmap",
  "indoc 1.0.7",
  "itertools",
@@ -363,12 +365,11 @@ dependencies = [
  "salsa",
  "smol_str",
  "test-log",
- "thiserror",
 ]
 
 [[package]]
 name = "cairo-lang-diagnostics"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-proc-macros",
@@ -383,7 +384,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-eq-solver"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -397,10 +398,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-filesystem"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-debug",
- "cairo-lang-project",
  "cairo-lang-utils",
  "env_logger",
  "path-clean",
@@ -411,7 +411,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-formatter"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "anyhow",
  "cairo-lang-diagnostics",
@@ -433,7 +433,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-language-server"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-compiler",
  "cairo-lang-debug",
@@ -460,7 +460,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-lowering"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -488,7 +488,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-parser"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
@@ -509,7 +509,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-plugins"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -532,7 +532,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-proc-macros"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-debug",
  "quote",
@@ -541,9 +541,10 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-project"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
- "indoc 1.0.7",
+ "cairo-lang-filesystem",
+ "indoc",
  "serde",
  "smol_str",
  "test-log",
@@ -591,7 +592,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runner"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "anyhow",
  "ark-ff 0.4.0-alpha.7",
@@ -619,7 +620,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-semantic"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "assert_matches",
  "cairo-lang-debug",
@@ -649,7 +650,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "assert_matches",
  "bimap",
@@ -664,6 +665,7 @@ dependencies = [
  "lalrpop-util",
  "num-bigint",
  "num-traits 0.2.15",
+ "pretty_assertions",
  "regex",
  "salsa",
  "serde",
@@ -675,7 +677,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-ap-change"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -690,10 +692,11 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-gas"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "env_logger",
  "indoc 1.0.7",
@@ -706,7 +709,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-generator"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -736,9 +739,10 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-to-casm"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "assert_matches",
+ "cairo-felt",
  "cairo-lang-casm",
  "cairo-lang-sierra",
  "cairo-lang-sierra-ap-change",
@@ -759,7 +763,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -800,7 +804,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -815,7 +819,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax-codegen"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -827,7 +831,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-runner"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "anyhow",
  "cairo-felt",
@@ -859,7 +863,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-utils"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -870,7 +874,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-utils"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "chrono",
  "env_logger",
@@ -883,9 +887,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-vm"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5c9338e2637a4f3598061f3466192156e7873a70ec9904693755d88537855a0"
+checksum = "c4fa1ade23dd2a6e671a923e748406c2c5f6c27fc186950ed04fae392b552a51"
 dependencies = [
  "bincode",
  "cairo-felt",
@@ -2852,7 +2856,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "assert_matches",
  "cairo-felt",

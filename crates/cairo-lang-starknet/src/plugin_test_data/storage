@@ -11,233 +11,176 @@ mod TestContract {
         var_felt: felt,
         var_u128: u128,
         var_bool: bool,
-        felt_to_u128: Map::<felt, u128>,
-        u128_to_bool: Map::<u128, bool>,
-        bool_to_felt: Map::<bool, felt>,
+        felt_to_u128: LegacyMap::<felt, u128>,
+        u128_to_bool: LegacyMap::<u128, bool>,
+        bool_to_felt: LegacyMap::<bool, felt>,
     }
 }
 
 //! > generated_cairo_code
 #[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
     mod var_felt {
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address() -> starknet::StorageBaseAddress {
             starknet::storage_base_address_const::<0x10a7472546cff66beb36d7b4e019221087eee8337c7bfc1dc1aac20a10c024d>()
         }
         fn read() -> felt {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
+            starknet::StorageAccess::<felt>::read(
                 address_domain,
-                starknet::storage_address_from_base(address()),
-            ) {
-                Result::Ok(value) => value,
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+                address(),
+            ).unwrap_syscall()
         }
         fn write(value: felt) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            starknet::StorageAccess::<felt>::write(
                 address_domain,
-                starknet::storage_address_from_base(address()),
+                address(),
                 value,
-            ) {
-                Result::Ok(()) => {},
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+            ).unwrap_syscall()
         }
     }
     mod var_u128 {
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address() -> starknet::StorageBaseAddress {
             starknet::storage_base_address_const::<0x1ba472df0f88c033d4e0c12eb95fd291de570db0f2df241297c6ebf905889a>()
         }
         fn read() -> u128 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
+            starknet::StorageAccess::<u128>::read(
                 address_domain,
-                starknet::storage_address_from_base(address()),
-            ) {
-                Result::Ok(value) => u128_from_felt(value),
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+                address(),
+            ).unwrap_syscall()
         }
         fn write(value: u128) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            starknet::StorageAccess::<u128>::write(
                 address_domain,
-                starknet::storage_address_from_base(address()),
-                u128_to_felt(value),
-            ) {
-                Result::Ok(()) => {},
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+                address(),
+                value,
+            ).unwrap_syscall()
         }
     }
     mod var_bool {
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address() -> starknet::StorageBaseAddress {
             starknet::storage_base_address_const::<0x379caae8ce359ad2da9b1cd83d4df406d959c199192b9c9e787595a50e0db27>()
         }
         fn read() -> bool {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
+            starknet::StorageAccess::<bool>::read(
                 address_domain,
-                starknet::storage_address_from_base(address()),
-            ) {
-                Result::Ok(value) => if value == 0 { false } else { true },
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+                address(),
+            ).unwrap_syscall()
         }
         fn write(value: bool) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            starknet::StorageAccess::<bool>::write(
                 address_domain,
-                starknet::storage_address_from_base(address()),
-                if value { 1 } else { 0 },
-            ) {
-                Result::Ok(()) => {},
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+                address(),
+                value,
+            ).unwrap_syscall()
         }
     }
     mod felt_to_u128 {
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address(key: felt) -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_from_felt(pedersen(0x15175cf0328aa18a0a81843d18051cb34c3c8dfb6630b7f1876e0f32874f713, key))
+            starknet::storage_base_address_from_felt(
+                hash::LegacyHash::<felt>::hash(0x15175cf0328aa18a0a81843d18051cb34c3c8dfb6630b7f1876e0f32874f713, key))
         }
         fn read(key: felt) -> u128 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
+            starknet::StorageAccess::<u128>::read(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
-            ) {
-                Result::Ok(value) => u128_from_felt(value),
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+                address(key),
+            ).unwrap_syscall()
         }
         fn write(key: felt, value: u128) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            starknet::StorageAccess::<u128>::write(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
-                u128_to_felt(value),
-            ) {
-                Result::Ok(()) => {},
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+                address(key),
+                value,
+            ).unwrap_syscall()
         }
     }
     mod u128_to_bool {
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address(key: u128) -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_from_felt(pedersen(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, u128_to_felt(key)))
+            starknet::storage_base_address_from_felt(
+                hash::LegacyHash::<u128>::hash(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, key))
         }
         fn read(key: u128) -> bool {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
+            starknet::StorageAccess::<bool>::read(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
-            ) {
-                Result::Ok(value) => if value == 0 { false } else { true },
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+                address(key),
+            ).unwrap_syscall()
         }
         fn write(key: u128, value: bool) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            starknet::StorageAccess::<bool>::write(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
-                if value { 1 } else { 0 },
-            ) {
-                Result::Ok(()) => {},
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+                address(key),
+                value,
+            ).unwrap_syscall()
         }
     }
     mod bool_to_felt {
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address(key: bool) -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_from_felt(pedersen(0x3c31d0ad7707ffa998b560cd96f530ee47a702c8bc179f068375322b19448e9, if key { 1 } else { 0 }))
+            starknet::storage_base_address_from_felt(
+                hash::LegacyHash::<bool>::hash(0x3c31d0ad7707ffa998b560cd96f530ee47a702c8bc179f068375322b19448e9, key))
         }
         fn read(key: bool) -> felt {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
+            starknet::StorageAccess::<felt>::read(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
-            ) {
-                Result::Ok(value) => value,
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+                address(key),
+            ).unwrap_syscall()
         }
         fn write(key: bool, value: felt) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            starknet::StorageAccess::<felt>::write(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
+                address(key),
                 value,
-            ) {
-                Result::Ok(()) => {},
-                Result::Err(revert_reason) => {
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                },
-            }
+            ).unwrap_syscall()
         }
     }
+
+    
+
     trait __abi {
         
         
@@ -245,6 +188,9 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }

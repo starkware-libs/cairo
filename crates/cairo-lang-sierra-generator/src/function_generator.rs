@@ -4,13 +4,11 @@ mod test;
 
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use semantic::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
-use semantic::ConcreteImplLongId;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::block_generator::{generate_block_code, generate_return_code};
@@ -32,7 +30,7 @@ pub struct SierraFreeFunctionData {
 /// Query implementation of [SierraGenGroup::priv_function_with_body_sierra_data].
 pub fn priv_function_with_body_sierra_data(
     db: &dyn SierraGenGroup,
-    function_id: FunctionWithBodyId,
+    function_id: ConcreteFunctionWithBodyId,
 ) -> SierraFreeFunctionData {
     let function = get_function_code(db, function_id);
     SierraFreeFunctionData { function }
@@ -41,17 +39,17 @@ pub fn priv_function_with_body_sierra_data(
 /// Query implementation of [SierraGenGroup::function_with_body_sierra].
 pub fn function_with_body_sierra(
     db: &dyn SierraGenGroup,
-    function_id: FunctionWithBodyId,
+    function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
     db.priv_function_with_body_sierra_data(function_id).function
 }
 
 fn get_function_code(
     db: &dyn SierraGenGroup,
-    function_id: FunctionWithBodyId,
+    function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = db.function_with_body_signature(function_id)?;
-    let lowered_function = &*db.function_with_body_lowered(function_id)?;
+    let signature = db.concrete_function_signature(function_id.function_id(db.upcast()))?;
+    let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
     let block_id = lowered_function.root?;
     let block = &lowered_function.blocks[block_id];
 
@@ -117,25 +115,7 @@ fn get_function_code(
     // be regarded as private.
     Ok(pre_sierra::Function {
         id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
-            function: semantic::ConcreteFunction {
-                generic_function: match function_id {
-                    FunctionWithBodyId::Free(free_function_id) => {
-                        GenericFunctionId::Free(free_function_id)
-                    }
-                    FunctionWithBodyId::Impl(impl_function_id) => {
-                        GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
-                            concrete_impl: db.intern_concrete_impl(ConcreteImplLongId {
-                                impl_id: impl_function_id.impl_id(db.upcast()),
-                                // TODO(yuval): Add generic arguments.
-                                generic_args: vec![],
-                            }),
-                            function: impl_function_id,
-                        })
-                    }
-                },
-                // TODO(lior): Add generic arguments.
-                generic_args: vec![],
-            },
+            function: function_id.concrete(db.upcast()),
         })),
         prolog_size,
         body: statements,

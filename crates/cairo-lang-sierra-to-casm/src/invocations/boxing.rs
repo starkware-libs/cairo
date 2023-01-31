@@ -3,6 +3,7 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
+use num_bigint::ToBigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::add_input_variables;
@@ -34,8 +35,9 @@ fn build_into_box(
         addr
     } else {
         casm_build_extend!(casm_builder,
+            const operand_size = operand.cells.len().to_bigint().unwrap();
             tempvar addr;
-            hint AllocSegment {} into {dst: addr};
+            hint AllocConstantSize { size: operand_size } into { dst: addr };
         );
         for (index, cell) in operand.cells.iter().enumerate() {
             add_input_variables!(casm_builder, deref cell;);
@@ -43,7 +45,11 @@ fn build_into_box(
         }
         addr
     };
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[addr]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[addr]], None)],
+        Some(Default::default()),
+    ))
 }
 
 /// Handles instruction for unboxing a box.
@@ -57,10 +63,7 @@ fn build_unbox(
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression {
-            cells: (0..size)
-                .into_iter()
-                .map(|idx| CellExpression::DoubleDeref(operand, idx))
-                .collect(),
+            cells: (0..size).map(|idx| CellExpression::DoubleDeref(operand, idx)).collect(),
         }]
         .into_iter(),
     ))

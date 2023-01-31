@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    ExternFunctionId, FunctionSignatureId, GenericParamId, LanguageElementId,
+    ExternFunctionId, FunctionSignatureId, GenericKind, GenericParamId, LanguageElementId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_utils::extract_matches;
@@ -11,7 +11,7 @@ use super::functions::{FunctionDeclarationData, GenericFunctionId};
 use super::generics::semantic_generic_params;
 use crate::corelib::get_core_generic_function_id;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind::PanicableExternFunction;
+use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
@@ -86,7 +86,7 @@ pub fn priv_extern_function_declaration_data(
     extern_function_id: ExternFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
-    let module_file_id = extern_function_id.module_file(db.upcast());
+    let module_file_id = extern_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_extern_functions = db.module_extern_functions(module_file_id.0)?;
     let function_syntax = module_extern_functions.get(&extern_function_id).to_maybe()?;
@@ -97,6 +97,14 @@ pub fn priv_extern_function_declaration_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     );
+    if let Some(param) =
+        generic_params.iter().find(|param| param.kind(db.upcast()) == GenericKind::Impl)
+    {
+        diagnostics.report_by_ptr(
+            param.stable_ptr(db.upcast()).untyped(),
+            ExternFunctionWithImplGenericsNotSupported,
+        );
+    }
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
     let mut environment = Environment::default();
     let signature_syntax = declaration.signature(syntax_db);

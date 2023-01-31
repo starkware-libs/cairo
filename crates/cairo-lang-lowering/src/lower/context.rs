@@ -26,7 +26,7 @@ use crate::{Statement, StatementMatchExtern, VariableId};
 pub struct LoweringContextBuilder<'db> {
     pub db: &'db dyn LoweringGroup,
     pub function_id: FunctionWithBodyId,
-    pub function_def: Arc<semantic::items::function_with_body::FunctionBody>,
+    pub function_body: Arc<semantic::items::function_with_body::FunctionBody>,
     /// Semantic signature for current function.
     pub signature: semantic::Signature,
     // TODO(spapini): Document. (excluding implicits).
@@ -36,7 +36,7 @@ pub struct LoweringContextBuilder<'db> {
 }
 impl<'db> LoweringContextBuilder<'db> {
     pub fn new(db: &'db dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
-        let function_def = db.function_body(function_id)?;
+        let function_body = db.function_body(function_id)?;
         let signature = db.function_with_body_signature(function_id)?;
         let implicits = db.function_with_body_all_implicits_vec(function_id)?;
         let ref_params = signature
@@ -48,7 +48,7 @@ impl<'db> LoweringContextBuilder<'db> {
         Ok(LoweringContextBuilder {
             db,
             function_id,
-            function_def,
+            function_body,
             signature,
             ref_params,
             implicits,
@@ -59,9 +59,11 @@ impl<'db> LoweringContextBuilder<'db> {
         Ok(LoweringContext {
             db: self.db,
             function_id: self.function_id,
-            function_body: &self.function_def,
+            function_body: &self.function_body,
             signature: &self.signature,
-            diagnostics: LoweringDiagnostics::new(self.function_id.module_file(self.db.upcast())),
+            diagnostics: LoweringDiagnostics::new(
+                self.function_id.module_file_id(self.db.upcast()),
+            ),
             variables: Arena::default(),
             blocks: StructuredBlocks::new(),
             semantic_defs: UnorderedHashMap::default(),

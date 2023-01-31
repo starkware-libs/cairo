@@ -1,66 +1,102 @@
-fn serialize_felt(ref serialized: Array::<felt>, input: felt) {
-    array_append::<felt>(serialized, input);
+use array::ArrayTrait;
+trait Serde<T> {
+    fn serialize(ref serialized: Array::<felt>, input: T);
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<T>;
 }
 
-fn deserialize_felt(ref serialized: Array::<felt>) -> Option::<felt> {
-    array_pop_front::<felt>(serialized)
+impl FeltSerde of Serde::<felt> {
+    fn serialize(ref serialized: Array::<felt>, input: felt) {
+        serialized.append(input);
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<felt> {
+        serialized.pop_front()
+    }
 }
 
-fn serialize_bool(ref serialized: Array::<felt>, input: bool) {
-        serialize_felt(serialized, if input {
+impl BoolSerde of Serde::<bool> {
+    fn serialize(ref serialized: Array::<felt>, input: bool) {
+        Serde::<felt>::serialize(ref serialized, if input {
             1
         } else {
             0
-    });
+        });
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<bool> {
+        Option::Some(Serde::<felt>::deserialize(ref serialized)? != 0)
+    }
 }
 
-fn deserialize_bool(ref serialized: Array::<felt>) -> Option::<bool> {
-    Option::<bool>::Some(deserialize_felt(serialized)? != 0)
+impl U8Serde of Serde::<u8> {
+    fn serialize(ref serialized: Array::<felt>, input: u8) {
+        Serde::<felt>::serialize(ref serialized, u8_to_felt(input));
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<u8> {
+        Option::Some(u8_try_from_felt(Serde::<felt>::deserialize(ref serialized)?)?)
+    }
 }
 
-fn serialize_u128(ref serialized: Array::<felt>, input: u128) {
-    serialize_felt(serialized, u128_to_felt(input));
+impl U64Serde of Serde::<u64> {
+    fn serialize(ref serialized: Array::<felt>, input: u64) {
+        Serde::<felt>::serialize(ref serialized, u64_to_felt(input));
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<u64> {
+        Option::Some(u64_try_from_felt(Serde::<felt>::deserialize(ref serialized)?)?)
+    }
 }
 
-fn deserialize_u128(ref serialized: Array::<felt>) -> Option::<u128> {
-    u128_try_from_felt(deserialize_felt(serialized)?)
+impl U128Serde of Serde::<u128> {
+    fn serialize(ref serialized: Array::<felt>, input: u128) {
+        Serde::<felt>::serialize(ref serialized, u128_to_felt(input));
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<u128> {
+        Option::Some(u128_try_from_felt(Serde::<felt>::deserialize(ref serialized)?)?)
+    }
 }
 
-fn serialize_u256(ref serialized: Array::<felt>, input: u256) {
-    serialize_u128(serialized, input.low);
-    serialize_u128(serialized, input.high);
+impl U256Serde of Serde::<u256> {
+    fn serialize(ref serialized: Array::<felt>, input: u256) {
+        Serde::<u128>::serialize(ref serialized, input.low);
+        Serde::<u128>::serialize(ref serialized, input.high);
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<u256> {
+        Option::Some(
+            u256 {
+                low: Serde::<u128>::deserialize(ref serialized)?,
+                high: Serde::<u128>::deserialize(ref serialized)?,
+            }
+        )
+    }
 }
 
-fn deserialize_u256(ref serialized: Array::<felt>) -> Option::<u256> {
-    Option::<u256>::Some(
-        u256 { low: deserialize_u128(serialized)?, high: deserialize_u128(serialized)?, }
-    )
+impl ArrayFeltSerde of Serde::<Array::<felt>> {
+    fn serialize(ref serialized: Array::<felt>, mut input: Array::<felt>) {
+        Serde::<usize>::serialize(ref serialized, input.len())
+        serialize_array_felt_helper(ref serialized, ref input);
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<Array::<felt>> {
+        let length = Serde::<felt>::deserialize(ref serialized)?;
+        let mut arr = ArrayTrait::new();
+        deserialize_array_felt_helper(ref serialized, arr, length)
+    }
 }
 
 fn serialize_array_felt_helper(ref serialized: Array::<felt>, ref input: Array::<felt>) {
     // TODO(orizi): Replace with simple call once inlining is supported.
     match get_gas() {
-        Option::Some(_) => {
-        },
+        Option::Some(_) => {},
         Option::None(_) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(data, 'Out of gas');
+            let mut data = ArrayTrait::new();
+            data.append('Out of gas');
             panic(data);
         },
     }
-    match array_pop_front::<felt>(input) {
+    match input.pop_front() {
         Option::Some(value) => {
-            serialize_felt(serialized, value);
-            serialize_array_felt_helper(serialized, input);
+            Serde::<felt>::serialize(ref serialized, value);
+            serialize_array_felt_helper(ref serialized, ref input);
         },
-        Option::None(_) => {
-        },
+        Option::None(_) => {},
     }
-}
-
-fn serialize_array_felt(ref serialized: Array::<felt>, mut input: Array::<felt>) {
-    serialize_u128(serialized, array_len::<felt>(input))
-    serialize_array_felt_helper(serialized, input);
 }
 
 fn deserialize_array_felt_helper(
@@ -68,24 +104,16 @@ fn deserialize_array_felt_helper(
 ) -> Option::<Array::<felt>> {
     // TODO(orizi): Replace with simple call once inlining is supported.
     match get_gas() {
-        Option::Some(_) => {
-        },
+        Option::Some(_) => {},
         Option::None(_) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(data, 'Out of gas');
+            let mut data = ArrayTrait::new();
+            data.append('Out of gas');
             panic(data);
         },
     }
     if remaining == 0 {
         return Option::<Array::<felt>>::Some(curr_output);
     }
-    let value = deserialize_felt(serialized)?;
-    array_append::<felt>(curr_output, value);
-    deserialize_array_felt_helper(serialized, curr_output, remaining - 1)
-}
-
-fn deserialize_array_felt(ref serialized: Array::<felt>) -> Option::<Array::<felt>> {
-    let length = deserialize_felt(serialized)?;
-    let mut arr = array_new::<felt>();
-    deserialize_array_felt_helper(serialized, arr, length)
+    curr_output.append(Serde::<felt>::deserialize(ref serialized)?);
+    deserialize_array_felt_helper(ref serialized, curr_output, remaining - 1)
 }

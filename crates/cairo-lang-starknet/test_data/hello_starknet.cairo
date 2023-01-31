@@ -1,6 +1,8 @@
 #[contract]
 mod HelloStarknet {
-    struct Storage { balance: felt, }
+    struct Storage {
+        balance: felt, 
+    }
 
     // Increases the balance by the given amount.
     #[external]

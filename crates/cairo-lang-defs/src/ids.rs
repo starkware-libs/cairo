@@ -23,8 +23,11 @@
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, OptionFrom};
@@ -36,12 +39,14 @@ use crate::db::DefsGroup;
 // A trait for an id for a language element.
 pub trait LanguageElementId {
     fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId;
-    fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId;
-    fn file_index(&self, db: &dyn DefsGroup) -> FileIndex;
-    fn module_file(&self, db: &dyn DefsGroup) -> ModuleFileId {
-        ModuleFileId(self.parent_module(db), self.file_index(db))
-    }
     fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId;
+
+    fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId {
+        self.module_file_id(db).0
+    }
+    fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
+        self.module_file_id(db).1
+    }
 }
 pub trait TopLevelLanguageElementId: LanguageElementId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
@@ -58,6 +63,19 @@ pub trait TopLevelLanguageElementId: LanguageElementId {
 /// Gets an optional parameter `name`. If specified, implements the Named trait using a key_field
 /// with this name. See the documentation of 'define_short_id' and `stable_ptr.rs` for more details.
 macro_rules! define_language_element_id {
+    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(, $name:ident)?) => {
+        define_language_element_id_partial!($short_id, $long_id, $ast_ty, $lookup $(, $name)?);
+        impl_top_level_language_element_id!($short_id, $lookup $(, $name)?);
+    };
+}
+
+/// Utility macro for *partially* defining an id for a language element.
+/// This is used by `define_language_element_id` (see its documentation), but doesn't implement
+/// TopLevelLanguageElementId for the type.
+///
+/// Note: prefer to use `define_language_element_id`, unless you need to overwrite the behavior of
+/// TopLevelLanguageElementId for the type.
+macro_rules! define_language_element_id_partial {
     ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(,$name:ident)?) => {
         #[derive(Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $long_id(pub ModuleFileId, pub <$ast_ty as TypedSyntaxNode>::StablePtr);
@@ -100,16 +118,19 @@ macro_rules! define_language_element_id {
             fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
                 db.$lookup(*self).0
             }
-            fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId {
-                self.module_file_id(db).0
-            }
-            fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
-                self.module_file_id(db).1
-            }
             fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
                 self.stable_ptr(db).untyped()
             }
         }
+    };
+}
+
+/// A macro to implement TopLevelLanguageElementId for a type. Used by define_language_element_id.
+///
+/// Note: prefer to use `define_language_element_id`, unless you need to overwrite the behavior of
+/// TopLevelLanguageElementId for the type.
+macro_rules! impl_top_level_language_element_id {
+    ($short_id:ident, $lookup:ident $(,$name:ident)?) => {
         $(
             impl TopLevelLanguageElementId for $short_id {
                 fn $name(&self, db: &dyn DefsGroup) -> SmolStr {
@@ -173,20 +194,6 @@ macro_rules! define_language_element_id_as_enum {
                 match self {
                     $(
                         $enum_name::$variant(id) => id.module_file_id(db),
-                    )*
-                }
-            }
-            fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId {
-                match self {
-                    $(
-                        $enum_name::$variant(id) => id.parent_module(db),
-                    )*
-                }
-            }
-            fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
-                match self {
-                    $(
-                        $enum_name::$variant(id) => id.file_index(db),
                     )*
                 }
             }
@@ -313,7 +320,8 @@ impl UnstableSalsaId for FreeFunctionId {
     }
 }
 
-define_language_element_id!(
+define_language_element_id!(ImplId, ImplLongId, ast::ItemImpl, lookup_intern_impl, name);
+define_language_element_id_partial!(
     ImplFunctionId,
     ImplFunctionLongId,
     ast::FunctionWithBody,
@@ -340,6 +348,15 @@ impl ImplFunctionId {
 impl UnstableSalsaId for ImplFunctionId {
     fn get_internal_id(&self) -> &salsa::InternId {
         &self.0
+    }
+}
+impl TopLevelLanguageElementId for ImplFunctionId {
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.impl_id(db).name(db), self.name(db))
+    }
+
+    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        db.lookup_intern_impl_function(*self).name(db)
     }
 }
 
@@ -388,7 +405,7 @@ define_language_element_id!(
     name
 );
 define_language_element_id!(TraitId, TraitLongId, ast::ItemTrait, lookup_intern_trait, name);
-define_language_element_id!(
+define_language_element_id_partial!(
     TraitFunctionId,
     TraitFunctionLongId,
     ast::TraitItemFunction,
@@ -414,7 +431,15 @@ impl TraitFunctionId {
         db.intern_trait(TraitLongId(module_file_id, trait_ptr))
     }
 }
-define_language_element_id!(ImplId, ImplLongId, ast::ItemImpl, lookup_intern_impl, name);
+impl TopLevelLanguageElementId for TraitFunctionId {
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+    }
+
+    fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        db.lookup_intern_trait_function(*self).name(db)
+    }
+}
 
 // Struct items.
 // TODO(spapini): Override full_path for to include parents, for better debug.
@@ -436,9 +461,168 @@ define_language_element_id!(
     GenericParamId,
     GenericParamLongId,
     ast::GenericParam,
-    lookup_intern_generic_param,
-    name
+    lookup_intern_generic_param
 );
+impl GenericParamLongId {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let SyntaxStablePtr::Child {key_fields, .. }=
+            db.lookup_intern_stable_ptr(self.1.0) else {
+                unreachable!()
+            };
+        let name_green = TerminalIdentifierGreen(key_fields[0]);
+        name_green.identifier(db)
+    }
+    pub fn kind(&self, db: &dyn SyntaxGroup) -> GenericKind {
+        let SyntaxStablePtr::Child { kind, .. } =
+            db.lookup_intern_stable_ptr(self.1.0) else {
+                unreachable!()
+            };
+        match kind {
+            SyntaxKind::GenericParamType => GenericKind::Type,
+            SyntaxKind::GenericParamConst => GenericKind::Const,
+            SyntaxKind::GenericParamImpl => GenericKind::Impl,
+            _ => unreachable!(),
+        }
+    }
+    /// Retrieves the ID of the generic item holding this generic parameter.
+    pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
+        let SyntaxStablePtr::Child { parent, .. } =
+            db.lookup_intern_stable_ptr(self.1.0) else { panic!() };
+        let SyntaxStablePtr::Child { parent, .. } =
+            db.lookup_intern_stable_ptr(parent) else { panic!() };
+        let SyntaxStablePtr::Child { parent, .. } =
+            db.lookup_intern_stable_ptr(parent) else { panic!() };
+        GenericItemId::from_ptr(db, self.0, parent)
+    }
+}
+impl GenericParamId {
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        db.lookup_intern_generic_param(*self).name(db.upcast())
+    }
+    pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
+        db.lookup_intern_generic_param(*self).kind(db.upcast())
+    }
+    pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
+        db.lookup_intern_generic_param(*self).generic_item(db.upcast())
+    }
+}
+impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
+        write!(f, "GenericParam{}({})", self.kind(db.upcast()), self.name(db.upcast()))
+    }
+}
+
+define_language_element_id_as_enum! {
+    #[toplevel]
+    /// The ID of an item with generic parameters.
+    pub enum GenericItemId {
+        FreeFunc(FreeFunctionId),
+        ExternFunc(ExternFunctionId),
+        TraitFunc(TraitFunctionId),
+        ImplFunc(ImplFunctionId),
+        Trait(TraitId),
+        Impl(ImplId),
+        Struct(StructId),
+        Enum(EnumId),
+        ExternType(ExternTypeId),
+        TypeAlias(TypeAliasId),
+    }
+}
+impl GenericItemId {
+    pub fn from_ptr(
+        db: &dyn DefsGroup,
+        module_file: ModuleFileId,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Self {
+        let SyntaxStablePtr::Child { parent: parent0, kind,.. } =
+            db.lookup_intern_stable_ptr(stable_ptr) else { panic!() };
+        match kind {
+            SyntaxKind::FunctionDeclaration => {
+                let SyntaxStablePtr::Child { parent: parent1, kind,.. } =
+                    db.lookup_intern_stable_ptr(parent0) else { panic!() };
+                match kind {
+                    SyntaxKind::FunctionWithBody => {
+                        let SyntaxStablePtr::Child { parent: parent2,.. } =
+                            db.lookup_intern_stable_ptr(parent1) else { panic!() };
+
+                        match db.lookup_intern_stable_ptr(parent2) {
+                            SyntaxStablePtr::Root => GenericItemId::FreeFunc(
+                                db.intern_free_function(FreeFunctionLongId(
+                                    module_file,
+                                    ast::FunctionWithBodyPtr(parent0),
+                                )),
+                            ),
+                            SyntaxStablePtr::Child { kind, .. } => match kind {
+                                SyntaxKind::ModuleBody => GenericItemId::FreeFunc(
+                                    db.intern_free_function(FreeFunctionLongId(
+                                        module_file,
+                                        ast::FunctionWithBodyPtr(parent0),
+                                    )),
+                                ),
+                                SyntaxKind::ImplBody => GenericItemId::ImplFunc(
+                                    db.intern_impl_function(ImplFunctionLongId(
+                                        module_file,
+                                        ast::FunctionWithBodyPtr(parent0),
+                                    )),
+                                ),
+                                _ => panic!(),
+                            },
+                        }
+                    }
+                    SyntaxKind::ItemExternFunction => {
+                        GenericItemId::ExternFunc(db.intern_extern_function(ExternFunctionLongId(
+                            module_file,
+                            ast::ItemExternFunctionPtr(parent0),
+                        )))
+                    }
+                    SyntaxKind::TraitItemFunction => {
+                        GenericItemId::TraitFunc(db.intern_trait_function(TraitFunctionLongId(
+                            module_file,
+                            ast::TraitItemFunctionPtr(parent0),
+                        )))
+                    }
+                    _ => panic!(),
+                }
+            }
+            SyntaxKind::ItemImpl => GenericItemId::Impl(
+                db.intern_impl(ImplLongId(module_file, ast::ItemImplPtr(stable_ptr))),
+            ),
+            SyntaxKind::ItemTrait => GenericItemId::Trait(
+                db.intern_trait(TraitLongId(module_file, ast::ItemTraitPtr(stable_ptr))),
+            ),
+            SyntaxKind::ItemStruct => GenericItemId::Struct(
+                db.intern_struct(StructLongId(module_file, ast::ItemStructPtr(stable_ptr))),
+            ),
+            SyntaxKind::ItemEnum => GenericItemId::Enum(
+                db.intern_enum(EnumLongId(module_file, ast::ItemEnumPtr(stable_ptr))),
+            ),
+            SyntaxKind::ItemExternType => GenericItemId::ExternType(db.intern_extern_type(
+                ExternTypeLongId(module_file, ast::ItemExternTypePtr(stable_ptr)),
+            )),
+            SyntaxKind::ItemTypeAlias => GenericItemId::TypeAlias(db.intern_type_alias(
+                TypeAliasLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
+            )),
+            _ => panic!(),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum GenericKind {
+    Type,
+    Const,
+    Impl,
+}
+impl std::fmt::Display for GenericKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GenericKind::Type => write!(f, "Type"),
+            GenericKind::Const => write!(f, "Const"),
+            GenericKind::Impl => write!(f, "Impl"),
+        }
+    }
+}
+
 // TODO(spapini): change this to a binding inside a pattern.
 // TODO(spapini): Override full_path to include parents, for better debug.
 define_language_element_id!(
@@ -470,7 +654,12 @@ define_language_element_id_as_enum! {
 }
 impl FunctionSignatureId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
-        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
+        let function_name = match *self {
+            FunctionSignatureId::Free(_) | FunctionSignatureId::Extern(_) => self.name(db).into(),
+            FunctionSignatureId::Trait(id) => id.full_path(db),
+            FunctionSignatureId::Impl(id) => id.full_path(db),
+        };
+        format!("{}::{}", self.parent_module(db).full_path(db), function_name)
     }
 }
 

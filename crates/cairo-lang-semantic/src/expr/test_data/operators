@@ -15,10 +15,15 @@ foo
 extern type MyType;
 
 //! > expected_diagnostics
-error: Binary operator '*' is not supported for types 'test::MyType' and 'test::MyType'.
- --> lib.cairo:3:11
+error: Function `mul` of trait `core::traits::Mul::<?0>` has no implementation in the context.
+ --> lib.cairo:3:9
     a + a * a;
-          ^
+        ^***^
+
+error: Function `add` of trait `core::traits::Add::<?1>` has no implementation in the context.
+ --> lib.cairo:3:5
+    a + a * a;
+    ^*******^
 
 //! > ==========================================================================
 
@@ -44,15 +49,25 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Binary operator '>' is not supported for types 'core::bool' and 'core::felt'.
- --> lib.cairo:7:8
+error: Unexpected argument type. Expected: "core::bool", found: "core::felt".
+ --> lib.cairo:7:9
     a>a>a;
-       ^
+        ^
 
-error: Binary operator '-' is not supported for types 'core::felt' and 'core::bool'.
- --> lib.cairo:8:7
+error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
+ --> lib.cairo:8:9
     a - b
-      ^
+        ^
+
+error: Unexpected return type. Expected: "()", found: "?17".
+ --> lib.cairo:1:48
+fn foo(a: felt, b: bool) implicits(RangeCheck) {
+                                               ^
+
+error: Function `gt` of trait `core::traits::PartialOrd::<?16>` has no implementation in the context.
+ --> lib.cairo:7:5
+    a>a>a;
+    ^***^
 
 //! > ==========================================================================
 

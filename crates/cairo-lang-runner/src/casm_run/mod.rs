@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
-use cairo_felt::{self as felt, felt_str, Felt, FeltOps, PRIME_STR};
+use cairo_felt::{self as felt, felt_str, Felt, PRIME_STR};
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
@@ -112,6 +112,12 @@ macro_rules! insert_value_to_cellref {
 struct StarknetExecScope {
     /// The values of addresses in the simulated storage.
     storage: HashMap<Felt, Felt>,
+}
+
+/// Execution scope for constant memory allocation.
+struct MemoryExecScope {
+    /// The first free address in the segment.
+    next_address: Relocatable,
 }
 
 impl HintProcessor for CairoHintProcessor {
@@ -283,9 +289,13 @@ impl HintProcessor for CairoHintProcessor {
                         vm.insert_value(&result_ptr, value)?;
                     } else {
                         vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
-                        vm.insert_value(&revert_reason_ptr, Felt::from(1))?;
+                        let revert_reason_start = vm.add_memory_segment();
+                        // TODO(ilya): Add revert reason.
+                        let revert_reason_end = revert_reason_start;
+                        vm.insert_value(&revert_reason_ptr, revert_reason_start)?;
+                        vm.insert_value(&revert_reason_ptr, revert_reason_end)?;
                     }
-                } else if selector == "call_contract".as_bytes() {
+                } else if selector == "CallContract".as_bytes() {
                     todo!()
                 } else {
                     panic!("Unknown selector for system call!");
@@ -534,6 +544,22 @@ impl HintProcessor for CairoHintProcessor {
                 }
                 println!();
             }
+            Hint::AllocConstantSize { size, dst } => {
+                let object_size = get_val(size)?.to_usize().expect("Object size too large.");
+                let memory_exec_scope =
+                    match exec_scopes.get_mut_ref::<MemoryExecScope>("memory_exec_scope") {
+                        Ok(memory_exec_scope) => memory_exec_scope,
+                        Err(_) => {
+                            exec_scopes.assign_or_update_variable(
+                                "memory_exec_scope",
+                                Box::new(MemoryExecScope { next_address: vm.add_memory_segment() }),
+                            );
+                            exec_scopes.get_mut_ref::<MemoryExecScope>("memory_exec_scope")?
+                        }
+                    };
+                insert_value_to_cellref!(vm, dst, memory_exec_scope.next_address)?;
+                memory_exec_scope.next_address.offset += object_size;
+            }
         };
         Ok(())
     }
@@ -603,7 +629,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     let mut runner = CairoRunner::new(&program, "all", false)
         .map_err(VirtualMachineError::from)
         .map_err(Box::new)?;
-    let mut vm = VirtualMachine::new(true, vec![]);
+    let mut vm = VirtualMachine::new(true);
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 

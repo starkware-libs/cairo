@@ -8,7 +8,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::GenericTypeId;
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type wrapping a value as non zero.
@@ -31,6 +31,14 @@ impl GenericTypeArgGenericType for NonZeroTypeWrapped {
 }
 pub type NonZeroType = GenericTypeArgGenericTypeWrapper<NonZeroTypeWrapped>;
 
+/// Returns the type `NonZero<T>` for a given type `T`.
+pub fn nonzero_ty(
+    context: &dyn SignatureSpecializationContext,
+    ty: &ConcreteTypeId,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())
+}
+
 /// Libfunc for unwrapping a `NonZero<T>` back into a T.
 #[derive(Default)]
 pub struct UnwrapNonZeroLibfunc {}
@@ -44,7 +52,7 @@ impl SignatureOnlyGenericLibfunc for UnwrapNonZeroLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
         Ok(LibfuncSignature::new_non_branch(
-            vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?],
+            vec![nonzero_ty(context, &ty)?],
             vec![OutputVarInfo {
                 ty,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },

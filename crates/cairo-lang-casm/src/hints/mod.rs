@@ -160,6 +160,11 @@ pub enum Hint {
         start: ResOperand,
         end: ResOperand,
     },
+    /// Returns an address with `size` free locations afterwards.
+    AllocConstantSize {
+        size: ResOperand,
+        dst: CellRef,
+    },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -509,6 +514,19 @@ impl Display for Hint {
                 ResOperandFormatter(start),
                 ResOperandFormatter(end),
             ),
+            Hint::AllocConstantSize { size, dst } => {
+                writedoc!(
+                    f,
+                    "
+
+                        if '__boxed_segment' not in globals():
+                            __boxed_segment = segments.add()
+                        memory{dst} = __boxed_segment
+                        __boxed_segment += {}
+                    ",
+                    ResOperandFormatter(size)
+                )
+            }
         }
     }
 }

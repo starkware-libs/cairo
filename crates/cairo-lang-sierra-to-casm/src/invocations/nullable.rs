@@ -4,7 +4,7 @@ use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::misc::build_jump_nz;
+use crate::invocations::misc::build_is_zero;
 use crate::references::ReferenceExpression;
 
 /// Builds Casm instructions for Nullable operations.
@@ -57,5 +57,5 @@ fn build_nullable_from_nullable(
         .to_deref()
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
-    build_jump_nz(builder)
+    build_is_zero(builder)
 }

@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{MemberId, StructId, VarId};
+use cairo_lang_defs::ids::{ConstantId, MemberId, StructId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{self};
@@ -93,6 +93,7 @@ pub enum Expr {
     StructCtor(ExprStructCtor),
     EnumVariantCtor(ExprEnumVariantCtor),
     PropagateError(ExprPropagateError),
+    Constant(ExprConstant),
     Missing(ExprMissing),
 }
 impl Expr {
@@ -110,6 +111,7 @@ impl Expr {
             Expr::StructCtor(expr) => expr.ty,
             Expr::EnumVariantCtor(expr) => expr.ty,
             Expr::PropagateError(expr) => expr.ok_variant.ty,
+            Expr::Constant(expr) => expr.ty,
             Expr::Missing(expr) => expr.ty,
         }
     }
@@ -127,6 +129,7 @@ impl Expr {
             Expr::StructCtor(expr) => expr.stable_ptr,
             Expr::EnumVariantCtor(expr) => expr.stable_ptr,
             Expr::PropagateError(expr) => expr.stable_ptr,
+            Expr::Constant(expr) => expr.stable_ptr,
             Expr::Missing(expr) => expr.stable_ptr,
         }
     }
@@ -261,6 +264,15 @@ pub struct ExprPropagateError {
     pub ok_variant: semantic::ConcreteVariant,
     pub err_variant: semantic::ConcreteVariant,
     pub func_err_variant: semantic::ConcreteVariant,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprConstant {
+    pub constant_id: ConstantId,
+    pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,
 }

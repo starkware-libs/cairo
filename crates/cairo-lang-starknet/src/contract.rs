@@ -8,7 +8,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
 
-use crate::plugin::{ABI_TRAIT, EXTERNAL_MODULE, GENERATED_CONTRACT_ATTR};
+use crate::plugin::{ABI_TRAIT, GENERATED_CONTRACT_ATTR};
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -60,16 +60,17 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
     contracts
 }
 
-/// Returns the list of external functions for a given contract.
-pub fn get_external_functions(
+/// Returns the list of functions in a given module.
+pub fn get_module_functions(
     db: &(dyn SemanticGroup + 'static),
     contract: &ContractDeclaration,
+    module_name: &str,
 ) -> anyhow::Result<Vec<FreeFunctionId>> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
     match db
-        .module_item_by_name(generated_module_id, EXTERNAL_MODULE.into())
+        .module_item_by_name(generated_module_id, module_name.into())
         .to_option()
-        .with_context(|| "Failed to initiate a lookup in the the generated module.")?
+        .with_context(|| "Failed to initiate a lookup in the {module_name} module.")?
     {
         Some(ModuleItemId::Submodule(external_module_id)) => Ok(db
             .module_free_functions_ids(ModuleId::Submodule(external_module_id))
@@ -111,6 +112,6 @@ fn get_generated_contract_module(
         Some(ModuleItemId::Submodule(generated_module_id)) => {
             Ok(ModuleId::Submodule(generated_module_id))
         }
-        _ => anyhow::bail!(format!("Failed to get generated module {}.", contract_name)),
+        _ => anyhow::bail!(format!("Failed to get generated module {contract_name}.")),
     }
 }

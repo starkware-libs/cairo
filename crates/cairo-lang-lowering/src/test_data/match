@@ -27,25 +27,25 @@ Inputs:
 Initial refs:
 Statements:
   (v3: core::felt) <- 1u
-  (v4: core::felt) <- core::felt_add(v0, v3)
+  (v4: core::felt) <- core::FeltAdd::add(v0, v3)
 End:
-  Callsite(v4 -> v5)
+  Callsite({v4 -> v5})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Initial refs:
 Statements:
 End:
-  Callsite(v1 -> v5)
+  Callsite({v1 -> v5})
 
 blk2 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
   (v1: core::felt) <- 7u
-  () <- match core::felt_jump_nz(v1) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v1) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
 End:
   Return(v5)
@@ -57,21 +57,21 @@ Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- core::felt_add(v0, v3)
 End:
-  Callsite(v4 -> v5)
+  Callsite({v4 -> v5})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite(v1 -> v5)
+  Callsite({v1 -> v5})
 
 blk2 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
-  () <- match core::felt_jump_nz(v1) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v1) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
 End:
   Return(v5)
@@ -137,6 +137,64 @@ error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported
  --> lib.cairo:3:3
   match x {
   ^*******^
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test empty enum match.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  match Option::Some(5) {};
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match. Currently, matches require one arm per variant, in the order of variant definition.
+ --> lib.cairo:2:3
+  match Option::Some(5) {};
+  ^**********************^
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test empty extern match.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  match felt_is_zero(5) {};
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match. Currently, matches require one arm per variant, in the order of variant definition.
+ --> lib.cairo:2:9
+  match felt_is_zero(5) {};
+        ^*************^
 
 //! > lowering_structured
 

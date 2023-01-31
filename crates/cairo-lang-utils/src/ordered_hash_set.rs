@@ -1,3 +1,4 @@
+use std::collections::hash_map::RandomState;
 use std::hash::Hash;
 use std::ops::Sub;
 
@@ -5,7 +6,7 @@ use indexmap::{Equivalent, IndexSet};
 use itertools::zip_eq;
 
 #[derive(Clone, Debug)]
-pub struct OrderedHashSet<Key: Hash + Eq>(IndexSet<Key>);
+pub struct OrderedHashSet<Key: Hash + Eq, S = RandomState>(IndexSet<Key, S>);
 
 pub type Iter<'a, Key> = indexmap::set::Iter<'a, Key>;
 
@@ -62,6 +63,16 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
     /// Returns true if the value was present in the set.
     pub fn swap_remove<Q: ?Sized + Hash + Equivalent<Key>>(&mut self, value: &Q) -> bool {
         self.0.swap_remove(value)
+    }
+
+    pub fn difference<'a, S2>(
+        &'a self,
+        other: &'a OrderedHashSet<Key, S2>,
+    ) -> indexmap::set::Difference<'a, Key, S2>
+    where
+        S2: std::hash::BuildHasher,
+    {
+        self.0.difference(&other.0)
     }
 }
 

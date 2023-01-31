@@ -18,21 +18,21 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite(v1 -> v4)
+  Callsite({v1 -> v4})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Callsite(v3 -> v4)
+  Callsite({v3 -> v4})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
 End:
   Return(v4)
@@ -69,21 +69,21 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Callsite()
+  Callsite({})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
 End:
   Return(v1)
@@ -118,7 +118,7 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
@@ -126,14 +126,14 @@ Statements:
   (v3: core::felt) <- 3u
   (v4: core::felt) <- core::felt_add(v1, v3)
 End:
-  Callsite()
+  Callsite({})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
   (v6: ()) <- struct_construct()
 End:
@@ -184,57 +184,57 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v6: core::NonZero::<core::felt>
 Statements:
   (v7: core::felt) <- 1234u
 End:
-  Callsite()
+  Callsite({})
 
 blk2:
 Inputs:
 Statements:
   (v5: core::felt) <- core::felt_sub(v0, v1)
-  () <- match core::felt_jump_nz(v5) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v5) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
 End:
-  Callsite()
+  Callsite({})
 
 blk3:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 1000u
 End:
-  Callsite()
+  Callsite({})
 
 blk4:
 Inputs:
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk5:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- core::felt_sub(v0, v3)
-  () <- match core::felt_jump_nz(v4) {
-    JumpNzResult::Zero => blk2,
-    JumpNzResult::NonZero => blk3,
+  () <- match core::felt_is_zero(v4) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero => blk3,
   }
 End:
-  Callsite()
+  Callsite({})
 
 blk6 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk4,
-    JumpNzResult::NonZero => blk5,
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk4,
+    IsZeroResult::NonZero => blk5,
   }
   (v13: ()) <- struct_construct()
 End:

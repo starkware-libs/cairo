@@ -30,11 +30,6 @@ impl abc of abc;
 
 //! > expected_diagnostics
 error: The name `abc` is defined multiple times.
- --> lib.cairo:1:1
-fn abc() {}
-^*********^
-
-error: The name `abc` is defined multiple times.
  --> lib.cairo:3:1
 fn abc(a : felt) {}
 ^*****************^
@@ -47,6 +42,11 @@ struct abc {
 error: The name `abc` is defined multiple times.
  --> lib.cairo:9:1
 enum abc {
+^********^
+
+error: The name `abc` is defined multiple times.
+ --> lib.cairo:13:1
+mod abc {}
 ^********^
 
 error: The name `abc` is defined multiple times.

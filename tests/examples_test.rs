@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use assert_matches::assert_matches;
-use cairo_felt::{self as felt, felt_str, Felt, FeltOps};
+use cairo_felt::{self as felt, felt_str, Felt};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
@@ -22,7 +22,9 @@ fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
     path.push("examples");
     path.push(format!("{name}.cairo"));
 
-    let mut db = RootDatabase::default();
+    let mut builder = RootDatabase::builder();
+    builder.with_dev_corelib().unwrap();
+    let mut db = builder.build();
     let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
     assert!(!check_and_eprint_diagnostics(&mut db));
     (db, main_crate_ids)
@@ -167,7 +169,7 @@ fn lowering_test(name: &str) {
 #[test_case(
     "fib_u128",
     &[1, 1, 200].map(Felt::from), None, None =>
-    RunResultValue::Panic(vec![Felt::from_bytes_be(b"u128_add OF")]);
+    RunResultValue::Panic(vec![Felt::from_bytes_be(b"u128_add Overflow")]);
     "fib_u128_overflow"
 )]
 #[test_case(
@@ -190,7 +192,7 @@ fn lowering_test(name: &str) {
     "hash_chain")]
 #[test_case(
     "hash_chain_gas",
-    &[3].map(Felt::from), Some(100000), Some(9631 + 3 * DUMMY_BUILTIN_GAS_COST) =>
+    &[3].map(Felt::from), Some(100000), Some(11100 + 3 * DUMMY_BUILTIN_GAS_COST) =>
     RunResultValue::Success(vec![felt_str!(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]);
     "hash_chain_gas")]
@@ -207,7 +209,10 @@ fn run_function_test(
         .run_function(/* find first */ "", params, available_gas)
         .expect("Failed running the function.");
     if let Some(expected_cost) = expected_cost {
-        assert_eq!(available_gas.unwrap() - result.gas_counter.unwrap(), Felt::from(expected_cost));
+        assert_eq!(
+            available_gas.unwrap() - result.gas_counter.as_ref().unwrap(),
+            Felt::from(expected_cost)
+        );
     }
     result.value
 }

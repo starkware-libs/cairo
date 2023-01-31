@@ -7,6 +7,7 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
+use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -35,6 +36,58 @@ impl ConstGenLibfunc for ContractAddressConstLibfuncWrapped {
 
 pub type ContractAddressConstLibfunc = WrapConstGenLibfunc<ContractAddressConstLibfuncWrapped>;
 
+/// Libfunc for attempting to convert a felt into a contract address.
+#[derive(Default)]
+pub struct ContractAddressTryFromFeltLibfunc;
+impl NoGenericArgsGenericLibfunc for ContractAddressTryFromFeltLibfunc {
+    const STR_ID: &'static str = "contract_address_try_from_felt";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
+            ],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: range_check_type.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: context.get_concrete_type(ContractAddressType::id(), &[])?,
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: range_check_type,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 0,
+                        }),
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
 /// Libfunc for a storage call contract system call.
 #[derive(Default)]
 pub struct CallContractLibfunc {}
@@ -50,7 +103,7 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
         let addr_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         let felt_array_ty =
-            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty.clone())])?;
+            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty)])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -106,11 +159,6 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
                             ),
                         },
                         // Revert reason
-                        OutputVarInfo {
-                            ty: felt_ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-                        },
-                        // result
                         OutputVarInfo {
                             ty: felt_array_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),

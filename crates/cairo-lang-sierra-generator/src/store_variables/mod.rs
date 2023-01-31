@@ -112,7 +112,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                                 // otherwise should be stored as locals.
                                 self.store_variables_as_locals();
                             }
-                            SierraApChange::Known { .. } => {}
+                            SierraApChange::BranchAlign | SierraApChange::Known { .. } => {}
                         }
 
                         self.state().register_outputs(

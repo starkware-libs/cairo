@@ -214,11 +214,15 @@
     │           │   │       │       │           └── arguments (kind: ArgListParenthesized)
     │           │   │       │       │               ├── lparen (kind: TokenLParen): '('
     │           │   │       │       │               ├── args (kind: ArgList)
-    │           │   │       │       │               │   ├── item #0 (kind: ArgUnnamed)
-    │           │   │       │       │               │   │   └── value (kind: TokenLiteralNumber): '1'
+    │           │   │       │       │               │   ├── item #0 (kind: Arg)
+    │           │   │       │       │               │   │   ├── modifiers (kind: ModifierList) []
+    │           │   │       │       │               │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │           │   │       │       │               │   │       └── value (kind: TokenLiteralNumber): '1'
     │           │   │       │       │               │   ├── separator #0 (kind: TokenComma): ','
-    │           │   │       │       │               │   └── item #1 (kind: ArgUnnamed)
-    │           │   │       │       │               │       └── value (kind: TokenLiteralNumber): '3'
+    │           │   │       │       │               │   └── item #1 (kind: Arg)
+    │           │   │       │       │               │       ├── modifiers (kind: ModifierList) []
+    │           │   │       │       │               │       └── arg_clause (kind: ArgClauseUnnamed)
+    │           │   │       │       │               │           └── value (kind: TokenLiteralNumber): '3'
     │           │   │       │       │               └── rparen (kind: TokenRParen): ')'
     │           │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │           │   │       └── rbrace (kind: TokenRBrace): '}'

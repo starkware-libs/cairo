@@ -54,6 +54,7 @@ impl GetIdentifier for ast::ExprPath {
 /// Helper trait for ast::PathSegment.
 pub trait PathSegmentEx {
     fn identifier_ast(&self, db: &dyn SyntaxGroup) -> ast::TerminalIdentifier;
+    fn generic_args(&self, db: &dyn SyntaxGroup) -> Option<Vec<ast::Expr>>;
 }
 impl PathSegmentEx for ast::PathSegment {
     /// Retrieves the identifier ast of a path segment.
@@ -61,6 +62,14 @@ impl PathSegmentEx for ast::PathSegment {
         match self {
             ast::PathSegment::Simple(segment) => segment.ident(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.ident(db),
+        }
+    }
+    fn generic_args(&self, db: &dyn SyntaxGroup) -> Option<Vec<ast::Expr>> {
+        match self {
+            ast::PathSegment::Simple(_) => None,
+            ast::PathSegment::WithGenericArgs(segment) => {
+                Some(segment.generic_args(db).generic_args(db).elements(db))
+            }
         }
     }
 }

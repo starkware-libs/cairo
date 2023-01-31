@@ -1,26 +1,27 @@
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionSignatureId, FunctionWithBodyId, GenericParamId,
-    ImplFunctionId, ModuleItemId, ParamLongId,
+    ImplFunctionId, ModuleItemId, ParamLongId, TopLevelLanguageElementId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
+use itertools::{chain, zip_eq};
 
 use super::attribute::Attribute;
 use super::modifiers;
+use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_generics};
-use crate::{semantic, ConcreteImplId, Parameter, SemanticDiagnostic};
+use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
+use crate::{semantic, ConcreteImplId, GenericArgumentId, Parameter, SemanticDiagnostic};
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteImplGenericFunctionId {
@@ -37,17 +38,61 @@ pub enum GenericFunctionId {
     Extern(ExternFunctionId),
     /// A generic function of a concrete impl.
     Impl(ConcreteImplGenericFunctionId),
+    // TODO(spapini): Remove when we separate semantic representations.
+    Trait(ConcreteTraitGenericFunctionId),
 }
 impl GenericFunctionId {
-    pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
-        self.signature().format(db)
+    pub fn generic_args_apply<F: FnOnce(&mut Vec<GenericArgumentId>)>(
+        &mut self,
+        db: &dyn SemanticGroup,
+        functor: F,
+    ) {
+        match self {
+            GenericFunctionId::Impl(f) => {
+                let mut long_impl = db.lookup_intern_concrete_impl(f.concrete_impl);
+                functor(&mut long_impl.generic_args);
+                f.concrete_impl = db.intern_concrete_impl(long_impl);
+            }
+            GenericFunctionId::Trait(f) => {
+                let mut long_trait = db.lookup_intern_concrete_trait(f.concrete_trait_id(db));
+                functor(&mut long_trait.generic_args);
+                *f = db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
+                    db,
+                    db.intern_concrete_trait(long_trait),
+                    f.function_id(db),
+                ));
+            }
+            _ => {}
+        };
+    }
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        let defs_db = db.upcast();
+        match self {
+            GenericFunctionId::Free(id) => id.full_path(defs_db),
+            GenericFunctionId::Extern(id) => id.full_path(defs_db),
+            GenericFunctionId::Impl(id) => {
+                format!(
+                    "{:?}::{}",
+                    id.concrete_impl.debug(db.elongate()),
+                    id.function.name(defs_db)
+                )
+            }
+            GenericFunctionId::Trait(id) => {
+                format!(
+                    "{:?}::{}",
+                    id.concrete_trait_id(db).debug(db.elongate()),
+                    id.function_id(db).name(defs_db)
+                )
+            }
+        }
     }
     /// Gets the FunctionSignatureId of the generic function.
-    pub fn signature(&self) -> FunctionSignatureId {
+    pub fn signature(&self, db: &dyn SemanticGroup) -> FunctionSignatureId {
         match *self {
             GenericFunctionId::Free(id) => FunctionSignatureId::Free(id),
             GenericFunctionId::Extern(id) => FunctionSignatureId::Extern(id),
             GenericFunctionId::Impl(id) => FunctionSignatureId::Impl(id.function),
+            GenericFunctionId::Trait(id) => FunctionSignatureId::Trait(id.function_id(db)),
         }
     }
 }
@@ -112,16 +157,140 @@ impl FunctionId {
             GenericFunctionId::Impl(impl_function_id) => {
                 Some(FunctionWithBodyId::Impl(impl_function_id.function))
             }
+            GenericFunctionId::Trait(_) => None,
             GenericFunctionId::Extern(_) => None,
         }
     }
 }
 
-// TODO(spapini): Refactor to an enum.
+/// The ID of a generic function with body that can be concretized.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GenericFunctionWithBodyId {
+    Free(FreeFunctionId),
+    Impl(ConcreteImplGenericFunctionId),
+}
+impl From<GenericFunctionWithBodyId> for GenericFunctionId {
+    fn from(val: GenericFunctionWithBodyId) -> Self {
+        match val {
+            GenericFunctionWithBodyId::Free(id) => GenericFunctionId::Free(id),
+            GenericFunctionWithBodyId::Impl(id) => GenericFunctionId::Impl(id),
+        }
+    }
+}
+impl OptionFrom<GenericFunctionId> for GenericFunctionWithBodyId {
+    fn option_from(other: GenericFunctionId) -> Option<Self> {
+        Some(match other {
+            GenericFunctionId::Free(id) => GenericFunctionWithBodyId::Free(id),
+            GenericFunctionId::Impl(id) => GenericFunctionWithBodyId::Impl(id),
+            _ => return None,
+        })
+    }
+}
+
+/// A long Id of a concrete function with body.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ConcreteFunctionWithBody {
+    pub generic_function: GenericFunctionWithBodyId,
+    pub generic_args: Vec<semantic::GenericArgumentId>,
+}
+impl ConcreteFunctionWithBody {
+    pub fn function_with_body_id(&self) -> FunctionWithBodyId {
+        match self.generic_function {
+            GenericFunctionWithBodyId::Free(id) => FunctionWithBodyId::Free(id),
+            GenericFunctionWithBodyId::Impl(id) => FunctionWithBodyId::Impl(id.function),
+        }
+    }
+    pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
+        Ok(match self.generic_function {
+            GenericFunctionWithBodyId::Free(f) => GenericSubstitution(
+                db.free_function_generic_params(f)?
+                    .into_iter()
+                    .zip(self.generic_args.iter().copied())
+                    .collect(),
+            ),
+            GenericFunctionWithBodyId::Impl(f) => {
+                let concrete_impl = db.lookup_intern_concrete_impl(f.concrete_impl);
+                GenericSubstitution(
+                    chain!(
+                        db.impl_function_generic_params(f.function)?
+                            .into_iter()
+                            .zip(self.generic_args.iter().copied()),
+                        db.impl_generic_params(concrete_impl.impl_id)?
+                            .into_iter()
+                            .zip(concrete_impl.generic_args.iter().copied())
+                    )
+                    .collect(),
+                )
+            }
+        })
+    }
+    pub fn from_no_generics_free(
+        db: &dyn SemanticGroup,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Self> {
+        if !db.free_function_generic_params(free_function_id).ok()?.is_empty() {
+            return None;
+        }
+        Some(ConcreteFunctionWithBody {
+            generic_function: GenericFunctionWithBodyId::Free(free_function_id),
+            generic_args: vec![],
+        })
+    }
+    pub fn concrete(&self) -> ConcreteFunction {
+        ConcreteFunction {
+            generic_function: self.generic_function.into(),
+            generic_args: self.generic_args.clone(),
+        }
+    }
+    pub fn function_id(&self, db: &dyn SemanticGroup) -> FunctionId {
+        db.intern_function(FunctionLongId { function: self.concrete() })
+    }
+}
+
+define_short_id!(
+    ConcreteFunctionWithBodyId,
+    ConcreteFunctionWithBody,
+    SemanticGroup,
+    lookup_intern_concrete_function_with_body
+);
+impl ConcreteFunctionWithBodyId {
+    fn get(&self, db: &dyn SemanticGroup) -> ConcreteFunctionWithBody {
+        db.lookup_intern_concrete_function_with_body(*self)
+    }
+    pub fn function_with_body_id(&self, db: &dyn SemanticGroup) -> FunctionWithBodyId {
+        self.get(db).function_with_body_id()
+    }
+    pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
+        self.get(db).substitution(db)
+    }
+    pub fn from_no_generics_free(
+        db: &dyn SemanticGroup,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Self> {
+        Some(db.intern_concrete_function_with_body(
+            ConcreteFunctionWithBody::from_no_generics_free(db, free_function_id)?,
+        ))
+    }
+    pub fn concrete(&self, db: &dyn SemanticGroup) -> ConcreteFunction {
+        self.get(db).concrete()
+    }
+    pub fn function_id(&self, db: &dyn SemanticGroup) -> FunctionId {
+        self.get(db).function_id(db)
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteFunction {
     pub generic_function: GenericFunctionId,
     pub generic_args: Vec<semantic::GenericArgumentId>,
+}
+impl ConcreteFunction {
+    pub fn get_body(&self, db: &dyn SemanticGroup) -> Option<ConcreteFunctionWithBodyId> {
+        Some(db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
+            generic_function: OptionFrom::option_from(self.generic_function)?,
+            generic_args: self.generic_args.clone(),
+        }))
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
     fn fmt(
@@ -131,9 +300,12 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
     ) -> std::fmt::Result {
         write!(f, "{}", self.generic_function.format(db.upcast()))?;
         if !self.generic_args.is_empty() {
-            write!(f, "<")?;
-            for arg in self.generic_args.iter() {
-                write!(f, "{:?},", arg.debug(db))?;
+            write!(f, "::<")?;
+            for (i, arg) in self.generic_args.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{:?}", arg.debug(db))?;
             }
             write!(f, ">")?;
         }
@@ -286,30 +458,58 @@ pub fn concrete_function_signature(
 ) -> Maybe<Signature> {
     let ConcreteFunction { generic_function, generic_args, .. } =
         db.lookup_intern_function(function_id).function;
-    let generic_params = db.function_signature_generic_params(generic_function.signature())?;
-    if generic_params.len() != generic_args.len() {
-        // TODO(spapini): Uphold the invariant that constructed ConcreteFunction instances
-        //   always have the correct number of generic arguments.
-        return Err(skip_diagnostic());
-    }
+    let generic_params = db.function_signature_generic_params(generic_function.signature(db))?;
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
-    let substitution_map = generic_params.into_iter().zip(generic_args.into_iter()).collect();
-    let generic_signature = db.function_signature_signature(generic_function.signature())?;
+    // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
+    let function_subs = zip_eq(generic_params, generic_args);
+    let substitution = match generic_function {
+        GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => {
+            GenericSubstitution(function_subs.collect())
+        }
+        GenericFunctionId::Impl(id) => {
+            let long_concrete_impl = db.lookup_intern_concrete_impl(id.concrete_impl);
+            let generic_params = db.impl_generic_params(long_concrete_impl.impl_id)?;
+            let generic_args = long_concrete_impl.generic_args;
+            GenericSubstitution(
+                chain!(function_subs, generic_params.into_iter().zip(generic_args.into_iter()))
+                    .collect(),
+            )
+        }
+        GenericFunctionId::Trait(id) => {
+            let long_concrete_trait = db.lookup_intern_concrete_trait(id.concrete_trait_id(db));
+            let generic_params = db.trait_generic_params(long_concrete_trait.trait_id)?;
+            let generic_args = long_concrete_trait.generic_args;
+            GenericSubstitution(
+                chain!(function_subs, generic_params.into_iter().zip(generic_args.into_iter()))
+                    .collect(),
+            )
+        }
+    };
+    let generic_signature = db.function_signature_signature(generic_function.signature(db))?;
+    Ok(substitute_signature(db, substitution, generic_signature))
+}
+
+/// Substitutes a generic args in a generic signature.
+pub fn substitute_signature(
+    db: &dyn SemanticGroup,
+    substitution: GenericSubstitution,
+    generic_signature: Signature,
+) -> Signature {
     let concretize_param = |param: semantic::Parameter| Parameter {
         id: param.id,
         name: param.name,
-        ty: substitute_generics(db, &substitution_map, param.ty),
+        ty: substitute_ty(db, &substitution, param.ty),
         mutability: param.mutability,
         stable_ptr: param.stable_ptr,
     };
-    Ok(Signature {
+    Signature {
         params: generic_signature.params.into_iter().map(concretize_param).collect(),
-        return_type: substitute_generics(db, &substitution_map, generic_signature.return_type),
+        return_type: substitute_ty(db, &substitution, generic_signature.return_type),
         implicits: generic_signature.implicits,
         panicable: generic_signature.panicable,
         stable_ptr: generic_signature.stable_ptr,
-    })
+    }
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the

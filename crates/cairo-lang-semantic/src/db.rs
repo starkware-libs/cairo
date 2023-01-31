@@ -22,8 +22,9 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
+use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
-use crate::items::imp::{ConcreteImplId, ImplLookupContext};
+use crate::items::imp::ImplLookupContext;
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::ConcreteTraitId;
 use crate::plugin::{DynDiagnosticMapper, SemanticPlugin};
@@ -56,6 +57,11 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
     #[salsa::interned]
+    fn intern_concrete_function_with_body(
+        &self,
+        id: items::functions::ConcreteFunctionWithBody,
+    ) -> semantic::ConcreteFunctionWithBodyId;
+    #[salsa::interned]
     fn intern_concrete_struct(&self, id: types::ConcreteStructLongId) -> types::ConcreteStructId;
     #[salsa::interned]
     fn intern_concrete_enum(&self, id: types::ConcreteEnumLongId) -> types::ConcreteEnumId;
@@ -72,8 +78,8 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_concrete_trait_function(
         &self,
-        id: items::trt::ConcreteTraitFunctionLongId,
-    ) -> items::trt::ConcreteTraitFunctionId;
+        id: items::trt::ConcreteTraitGenericFunctionLongId,
+    ) -> items::trt::ConcreteTraitGenericFunctionId;
     #[salsa::interned]
     fn intern_concrete_impl(
         &self,
@@ -98,6 +104,9 @@ pub trait SemanticGroup:
         &self,
         const_id: ConstantId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the semantic data of a constant definition.
+    #[salsa::invoke(items::constant::constant_semantic_data)]
+    fn constant_semantic_data(&self, use_id: ConstantId) -> Maybe<Constant>;
     #[salsa::invoke(items::constant::constant_resolved_lookback)]
     fn constant_resolved_lookback(&self, use_id: ConstantId) -> Maybe<Arc<ResolvedLookback>>;
 
@@ -306,13 +315,6 @@ pub trait SemanticGroup:
         &self,
         impl_id: ImplId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Find implementation for a concrete trait in a module.
-    #[salsa::invoke(items::imp::find_impls_at_module)]
-    fn find_impls_at_module(
-        &self,
-        module_id: ModuleId,
-        concrete_trait_id: ConcreteTraitId,
-    ) -> Maybe<Vec<ConcreteImplId>>;
     /// Returns the functions in the impl.
     #[salsa::invoke(items::imp::impl_functions)]
     fn impl_functions(&self, impl_id: ImplId) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>>;
@@ -749,7 +751,7 @@ fn module_semantic_diagnostics(
 
                         diagnostics.add(SemanticDiagnostic {
                             stable_location: StableLocation::new(
-                                submodule_id.module_file(db.upcast()),
+                                submodule_id.module_file_id(db.upcast()),
                                 submodule_id.stable_ptr(db.upcast()).untyped(),
                             ),
                             kind: SemanticDiagnosticKind::ModuleFileNotFound { path },

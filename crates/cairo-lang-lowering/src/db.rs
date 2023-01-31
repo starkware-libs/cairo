@@ -9,8 +9,10 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
+use semantic::items::functions::ConcreteFunctionWithBodyId;
 
 use crate::borrow_check::borrow_check;
+use crate::concretize::concretize_lowered;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
@@ -36,10 +38,16 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: FunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
-    /// Computes the final lowered representation (after all the internal transformations).
-    fn function_with_body_lowered(
+    /// A concrete version of priv_function_with_body_lowered_flat
+    fn priv_concrete_function_with_body_lowered_flat(
         &self,
-        function_id: FunctionWithBodyId,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the final lowered representation (after all the internal transformations).
+    fn concrete_function_with_body_lowered(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
     /// Aggregates function level semantic diagnostics.
@@ -141,16 +149,29 @@ fn priv_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
-fn function_with_body_lowered(
+fn priv_concrete_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
-    function_id: FunctionWithBodyId,
+    function: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
-    Ok(if let Ok(lowered_with_inlining) = apply_inlining(db, function_id, &lowered) {
-        Arc::new(lowered_with_inlining)
-    } else {
-        lowered
-    })
+    let semantic_db = db.upcast();
+    let mut lowered = (*db
+        .priv_function_with_body_lowered_flat(function.function_with_body_id(semantic_db))?)
+    .clone();
+    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?);
+    Ok(Arc::new(lowered))
+}
+
+fn concrete_function_with_body_lowered(
+    db: &dyn LoweringGroup,
+    function: ConcreteFunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    let semantic_db = db.upcast();
+    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
+
+    // TODO(spapini): passing function.function_with_body_id might be weird here.
+    // It's not really needed for inlining, so try to remove.
+    apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
+    Ok(Arc::new(lowered))
 }
 
 fn function_with_body_lowering_diagnostics(
@@ -198,7 +219,22 @@ fn module_lowering_diagnostics(
             ModuleItemId::Enum(_) => {}
             ModuleItemId::TypeAlias(_) => {}
             ModuleItemId::Trait(_) => {}
-            ModuleItemId::Impl(_) => {}
+            ModuleItemId::Impl(impl_id) => {
+                // TODO(ilya): Enable diagnostics for generic impls once we resolve
+                // `Variable not dropped.` error on variables with generic types.
+
+                // Skip diagnostics for impls with generic params.
+                if !db.impl_generic_params(*impl_id)?.is_empty() {
+                    continue;
+                }
+
+                for impl_func in db.impl_functions(*impl_id)?.values() {
+                    let function_id = FunctionWithBodyId::Impl(*impl_func);
+                    diagnostics.extend(
+                        db.function_with_body_lowering_diagnostics(function_id)?.deref().clone(),
+                    );
+                }
+            }
             ModuleItemId::ExternType(_) => {}
             ModuleItemId::ExternFunction(_) => {}
         }

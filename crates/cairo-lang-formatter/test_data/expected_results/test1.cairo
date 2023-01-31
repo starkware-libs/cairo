@@ -23,6 +23,9 @@ fn foo(x: T) -> S {
 
         5; // Comment.
     } // Comment.
+
+    // A long comment that shouldn't affect the breaking of the next line. Make it a little longer.
+    let var = 1 + 2 + 3;
 }
 
 fn bar<T>(x: T) -> T {
@@ -30,8 +33,8 @@ fn bar<T>(x: T) -> T {
 }
 
 
-struct A { }
-struct B { }
+struct A {}
+struct B {}
 
 // Calculates fib, but all variables are boxes.
 fn fib(a: Box::<felt>, b: Box::<felt>, n: Box::<felt>) -> Box::<felt> {

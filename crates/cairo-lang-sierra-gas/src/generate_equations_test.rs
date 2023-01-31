@@ -13,12 +13,12 @@ use crate::CostError;
 
 /// Returns a cost expression for a statement future variable.
 fn future_statement_cost(idx: usize) -> CostExpr {
-    CostExpr::from_var(Var::StatementFuture(StatementIdx(idx), CostTokenType::Step))
+    CostExpr::from_var(Var::StatementFuture(StatementIdx(idx), CostTokenType::Const))
 }
 
 /// Returns a cost expression for a libfunc variable.
 fn libfunc_cost(idx: usize) -> CostExpr {
-    CostExpr::from_var(Var::LibfuncImplicitGasVariable(StatementIdx(idx), CostTokenType::Step))
+    CostExpr::from_var(Var::LibfuncImplicitGasVariable(StatementIdx(idx), CostTokenType::Const))
 }
 
 #[test_case(indoc! {"
@@ -108,9 +108,9 @@ fn generate(
                 .get(libfunc_id)
                 .unwrap()
                 .iter()
-                .map(|x| CostExprMap::from_iter([(CostTokenType::Step, x.clone())]))
+                .map(|x| CostExprMap::from_iter([(CostTokenType::Const, x.clone())]))
                 .collect()
         },
-    )?[CostTokenType::Step]
+    )?[CostTokenType::Const]
         .clone())
 }

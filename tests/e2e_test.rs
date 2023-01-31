@@ -21,6 +21,7 @@ cairo_lang_test_utils::test_file_test!(
         nullable: "nullable",
         u128: "u128",
         u8: "u8",
+        u64: "u64",
         bool: "bool",
     },
     run_small_e2e_test
@@ -32,12 +33,16 @@ cairo_lang_test_utils::test_file_test!(
     {
         storage: "storage",
         interoperability: "interoperability",
+        emit_event: "emit_event",
+        getters: "getters",
     },
     run_small_e2e_test
 );
 
 fn run_small_e2e_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
-    let db = &mut RootDatabase::default();
+    let mut builder = RootDatabase::builder();
+    builder.with_dev_corelib().unwrap();
+    let db = &mut builder.build();
     // Parse code and create semantic model.
     let test_module = setup_test_module(db, inputs["cairo"].as_str()).unwrap();
     assert!(!check_and_eprint_diagnostics(db));

@@ -7,7 +7,6 @@ use std::sync::Arc;
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{bail, Context, Result};
-use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -52,13 +51,16 @@ pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    let mut db = RootDatabase::default();
+    let mut builder = RootDatabase::builder();
+    builder.with_dev_corelib().unwrap();
+    let mut db = builder.build();
     let main_crate_ids = setup_project(&mut db, path)?;
     compile_prepared_db(db, main_crate_ids, compiler_config)
 }
 
 /// Compiles a Cairo project.
 /// The project must be a valid Cairo project.
+/// This function is a wrapper over [`RootDatabase::builder()`] and [`compile_prepared_db`].
 /// # Arguments
 /// * `project_config` - The project configuration.
 /// * `compiler_config` - The compiler configuration.
@@ -69,14 +71,26 @@ pub fn compile(
     project_config: ProjectConfig,
     compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    let mut db = RootDatabase::default();
-    db.with_project_config(project_config.clone());
+    let mut builder = RootDatabase::builder();
+    builder.with_project_config(project_config.clone());
+    let mut db = builder.build();
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
 
     compile_prepared_db(db, main_crate_ids, compiler_config)
 }
 
-fn compile_prepared_db(
+/// Runs Cairo compiler.
+///
+/// # Arguments
+/// * `db` - Preloaded compilation database.
+/// * `main_crate_ids` - [`CrateId`]s to compile. Do not include dependencies here, only pass
+///   top-level crates in order to eliminate unused code. Use `db.intern_crate(CrateLongId(name))`
+///   in order to obtain [`CrateId`] from its name.
+/// * `compiler_config` - The compiler configuration.
+/// # Returns
+/// * `Ok(SierraProgram)` - The compiled program.
+/// * `Err(anyhow::Error)` - Compilation failed.
+pub fn compile_prepared_db(
     mut db: RootDatabase,
     main_crate_ids: Vec<CrateId>,
     compiler_config: CompilerConfig,

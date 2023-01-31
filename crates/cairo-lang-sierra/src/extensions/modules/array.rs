@@ -1,5 +1,5 @@
 use super::range_check::RangeCheckType;
-use super::uint128::Uint128Type;
+use super::uint::Uint64Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -94,7 +94,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
                 OutputVarInfo {
-                    ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                    ty: context.get_concrete_type(Uint64Type::id(), &[])?,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
@@ -186,7 +186,7 @@ pub type ArrayPopFrontLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayPopFront
 #[derive(Default)]
 pub struct ArrayAtLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayAtLibfuncWrapped {
-    const STR_ID: &'static str = "array_at";
+    const STR_ID: &'static str = "array_get";
 
     fn specialize_signature(
         &self,
@@ -199,7 +199,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayAtLibfuncWrapped {
         }
         let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let uint128_type = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let uint128_type = context.get_concrete_type(Uint64Type::id(), &[])?;
         let param_signatures = vec![
             ParamSignature::new(range_check_type.clone()),
             ParamSignature::new(arr_type.clone()),

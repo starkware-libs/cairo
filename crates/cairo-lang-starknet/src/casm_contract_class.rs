@@ -12,9 +12,12 @@ use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::NoGenericArgsGenericType;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra_to_casm::compiler::CompilationError;
-use cairo_lang_sierra_to_casm::metadata::{calc_metadata, MetadataError};
+use cairo_lang_sierra_to_casm::metadata::{
+    calc_metadata, MetadataComputationConfig, MetadataError,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use convert_case::{Case, Casing};
+use itertools::chain;
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
@@ -26,12 +29,12 @@ use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
 
 /// The expected gas cost of an entrypoint that begins with get_gas() immediately.
-const ENTRY_POINT_COST: i64 = 15;
+pub const ENTRY_POINT_COST: i32 = 10000;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum StarknetSierraCompilationError {
     #[error(transparent)]
-    CompilationError(#[from] CompilationError),
+    CompilationError(#[from] Box<CompilationError>),
     #[error(transparent)]
     FeltSerdeError(#[from] FeltSerdeError),
     #[error(transparent)]
@@ -69,8 +72,20 @@ impl CasmContractClass {
 
         let program = sierra_from_felts(&contract_class.sierra_program)?;
 
+        let entrypoint_ids = chain!(
+            &contract_class.entry_points_by_type.constructor,
+            &contract_class.entry_points_by_type.external,
+            &contract_class.entry_points_by_type.l1_handler,
+        )
+        .map(|entrypoint| program.funcs[entrypoint.function_idx].id.clone());
+        let metadata_computation_config = MetadataComputationConfig {
+            function_set_costs: entrypoint_ids
+                .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
+                .collect(),
+        };
+        let metadata = calc_metadata(&program, metadata_computation_config)?;
+
         let gas_usage_check = true;
-        let metadata = calc_metadata(&program)?;
         let cairo_program =
             cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
 
@@ -157,7 +172,7 @@ impl CasmContractClass {
                 .code_offset;
             assert_eq!(
                 metadata.gas_info.function_costs[function.id.clone()],
-                OrderedHashMap::from_iter([(CostTokenType::Step, ENTRY_POINT_COST)]),
+                OrderedHashMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
                 "Unexpected entry point cost."
             );
             Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {
@@ -214,7 +229,7 @@ pub fn serialize_big_uint<S>(num: &BigUint, serializer: S) -> Result<S::Ok, S::E
 where
     S: Serializer,
 {
-    serializer.serialize_str(&format!("{:#x}", num))
+    serializer.serialize_str(&format!("{num:#x}"))
 }
 
 pub fn deserialize_big_uint<'a, D>(deserializer: D) -> Result<BigUint, D::Error>
@@ -224,7 +239,7 @@ where
     let s = &String::deserialize(deserializer)?;
     match s.strip_prefix("0x") {
         Some(num_no_prefix) => BigUint::from_str_radix(num_no_prefix, 16)
-            .map_err(|error| serde::de::Error::custom(format!("{}", error))),
+            .map_err(|error| serde::de::Error::custom(format!("{error}"))),
         None => Err(serde::de::Error::custom(format!("{s} does not start with `0x` is missing."))),
     }
 }

@@ -15,8 +15,10 @@ cairo_lang_test_utils::test_file_test!(
         assignment :"assignment",
         borrow_check :"borrow_check",
         call :"call",
+        constant :"constant",
         enums :"enums",
         error_propagate :"error_propagate",
+        generics :"generics",
         extern_ :"extern",
         arm_pattern_destructure :"arm_pattern_destructure",
         if_ :"if",
@@ -45,7 +47,8 @@ fn test_function_lowering(
     .split();
     let structured_lowered =
         db.priv_function_with_body_lowered_structured(test_function.function_id).unwrap();
-    let lowered = db.function_with_body_lowered(test_function.function_id).unwrap();
+    let lowered =
+        db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
     let diagnostics =
         db.function_with_body_lowering_diagnostics(test_function.function_id).unwrap();
 

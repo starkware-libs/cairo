@@ -25,7 +25,7 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite(v0 -> v5)
+  Callsite({v0 -> v5})
 
 blk1:
 Inputs: v1: core::NonZero::<core::felt>
@@ -34,14 +34,14 @@ Statements:
   (v3: core::felt) <- 0u
   (v4: core::felt) <- test::foo(v3)
 End:
-  Callsite(v2 -> v5)
+  Callsite({v2 -> v5})
 
 blk2 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
 End:
   Return(v5)

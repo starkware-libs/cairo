@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::get_core_ty_by_name;
-use cairo_lang_semantic::{GenericArgumentId, Mutability};
+use cairo_lang_semantic::{ConcreteFunctionWithBodyId, GenericArgumentId, Mutability};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -66,13 +65,13 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::invoke(function_generator::priv_function_with_body_sierra_data)]
     fn priv_function_with_body_sierra_data(
         &self,
-        function_id: FunctionWithBodyId,
+        function_id: ConcreteFunctionWithBodyId,
     ) -> function_generator::SierraFreeFunctionData;
     /// Returns the Sierra code (as [pre_sierra::Function]) for a given free function.
     #[salsa::invoke(function_generator::function_with_body_sierra)]
     fn function_with_body_sierra(
         &self,
-        function_id: FunctionWithBodyId,
+        function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<pre_sierra::Function>>;
 
     /// Returns `true` if the function calls (possibly indirectly) itself, or if it calls (possibly
@@ -80,18 +79,18 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     /// calls f2, then [Self::contains_cycle] will return `true` for all of these functions.
     #[salsa::invoke(ap_change::contains_cycle)]
     #[salsa::cycle(ap_change::contains_cycle_handle_cycle)]
-    fn contains_cycle(&self, function_id: FunctionWithBodyId) -> Maybe<bool>;
+    fn contains_cycle(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool>;
 
     /// Returns the ap change of a given function if it is known at compile time or
     /// [SierraApChange::Unknown] otherwise.
     #[salsa::invoke(ap_change::get_ap_change)]
-    fn get_ap_change(&self, function_id: FunctionWithBodyId) -> Maybe<SierraApChange>;
+    fn get_ap_change(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<SierraApChange>;
 
     /// Returns the [cairo_lang_sierra::program::Program] object of the requested functions.
     #[salsa::invoke(program_generator::get_sierra_program_for_functions)]
     fn get_sierra_program_for_functions(
         &self,
-        requested_function_ids: Vec<FunctionWithBodyId>,
+        requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
     ) -> Maybe<Arc<cairo_lang_sierra::program::Program>>;
 
     /// Returns the [cairo_lang_sierra::program::Program] object of the requested crates.

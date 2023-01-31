@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::FunctionWithBodyId;
-use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, ToMaybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
@@ -9,7 +9,7 @@ use itertools::{chain, zip_eq};
 use num_traits::Zero;
 use scope::BlockBuilder;
 use semantic::corelib::{
-    core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
+    core_felt_is_zero, core_felt_ty, core_nonzero_ty, get_core_function_id,
     jump_nz_nonzero_variant, jump_nz_zero_variant, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
@@ -303,8 +303,8 @@ fn lower_expr(
     expr_id: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
     let expr = &ctx.function_body.exprs[expr_id];
-    let location = ctx.get_location(expr.stable_ptr().untyped());
     match expr {
+        semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, scope),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, scope),
         semantic::Expr::Assignment(expr) => lower_expr_assignment(ctx, expr, scope),
         semantic::Expr::Block(expr) => lower_expr_block(ctx, scope, expr),
@@ -315,13 +315,7 @@ fn lower_expr(
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
             Ok(LoweredExpr::AtVariable(scope.get_semantic(expr.var)))
         }
-        semantic::Expr::Literal(expr) => {
-            log::trace!("Lowering a literal: {:?}", expr.debug(&ctx.expr_formatter));
-            Ok(LoweredExpr::AtVariable(
-                generators::Literal { value: expr.value.clone(), ty: expr.ty, location }
-                    .add(ctx, scope),
-            ))
-        }
+        semantic::Expr::Literal(expr) => lower_expr_literal(ctx, expr, scope),
         semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, scope),
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, scope),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, scope),
@@ -330,6 +324,32 @@ fn lower_expr(
             Err(LoweringFlowError::Failed(*diag_added))
         }
     }
+}
+
+fn lower_expr_literal(
+    ctx: &mut LoweringContext<'_>,
+    expr: &semantic::ExprLiteral,
+    scope: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a literal: {:?}", expr.debug(&ctx.expr_formatter));
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    Ok(LoweredExpr::AtVariable(
+        generators::Literal { value: expr.value.clone(), ty: expr.ty, location }.add(ctx, scope),
+    ))
+}
+
+fn lower_expr_constant(
+    ctx: &mut LoweringContext<'_>,
+    expr: &semantic::ExprConstant,
+    scope: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
+    let const_expr =
+        &ctx.db.constant_semantic_data(expr.constant_id).map_err(LoweringFlowError::Failed)?.value;
+    let semantic::Expr::Literal(const_expr_literal) = const_expr else {
+        panic!("Only literal constants are supported.");
+    };
+    lower_expr_literal(ctx, const_expr_literal, scope)
 }
 
 /// Lowers an expression of type [semantic::ExprTuple].
@@ -542,7 +562,9 @@ fn lower_optimized_extern_match(
         .concrete_enum_variants(extern_enum.concrete_enum_id)
         .map_err(LoweringFlowError::Failed)?;
     if match_arms.len() != concrete_variants.len() {
-        return Err(LoweringFlowError::Failed(skip_diagnostic()));
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report_by_location(location, UnsupportedMatch),
+        ));
     }
     // Merge arm blocks.
     let sealed_blocks = zip_eq(&concrete_variants, match_arms)
@@ -659,7 +681,7 @@ fn lower_expr_match_felt(
 
     // Emit the statement.
     scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
-        function: core_jump_nz_func(semantic_db),
+        function: core_felt_is_zero(semantic_db),
         inputs: vec![expr_var],
         arms,
     }));

@@ -1,10 +1,13 @@
+use cairo_felt::Felt;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
-use num_bigint::BigInt;
+use num_bigint::{BigInt, ToBigInt};
+use num_traits::Signed;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
@@ -13,7 +16,7 @@ pub fn build_call_contract(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let selector_imm = BigInt::from_bytes_le(num_bigint::Sign::Plus, "call_contract".as_bytes());
+    let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, "CallContract".as_bytes());
 
     let [expr_gas_builtin, expr_system, expr_address, expr_arr] = builder.try_get_refs()?;
     let gas_builtin = expr_gas_builtin.try_unpack_single()?;
@@ -41,11 +44,11 @@ pub fn build_call_contract(
         hint SystemCall { system: original_system };
 
         let updated_gas_builtin = *(system++);
-        // `revert_reason` is 0 on success, nonzero on failure/revert.
-        tempvar revert_reason = *(system++);
+        // `failure_flag` is 0 on success, nonzero on failure/revert.
+        tempvar failure_flag = *(system++);
         let res_start = *(system++);
         let res_end = *(system++);
-        jump Failure if revert_reason != 0;
+        jump Failure if failure_flag != 0;
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
@@ -53,10 +56,11 @@ pub fn build_call_contract(
             ("Fallthrough", &[&[updated_gas_builtin], &[system], &[res_start, res_end]], None),
             (
                 "Failure",
-                &[&[updated_gas_builtin], &[system], &[revert_reason], &[res_start, res_end]],
+                &[&[updated_gas_builtin], &[system], &[res_start, res_end]],
                 Some(failure_handle_statement_id),
             ),
         ],
+        None,
     ))
 }
 
@@ -66,11 +70,53 @@ pub fn build_contract_address_const(
     libfunc: &SignatureAndConstConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound = BigInt::from(1) << 251;
-    if libfunc.c >= addr_bound {
+    if libfunc.c.is_negative() || libfunc.c >= addr_bound {
         return Err(InvocationError::InvalidGenericArg);
     }
 
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))].into_iter(),
+    ))
+}
+
+/// Handles the contract_address_try_from_felt libfunc.
+pub fn build_contract_address_try_from_felt(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let addr_bound: BigInt = BigInt::from(1) << 251;
+    let [range_check, value] = builder.try_get_single_cells()?;
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref value;
+    };
+    let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
+    casm_build_extend! {casm_builder,
+        const limit = addr_bound.clone();
+        tempvar is_valid_address;
+        hint TestLessThan {lhs: value, rhs: limit} into {dst: is_valid_address};
+        jump IsValidAddress if is_valid_address != 0;
+        tempvar shifted_value = value - limit;
+    }
+    validate_under_limit::<1>(
+        &mut casm_builder,
+        &(-Felt::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
+        shifted_value,
+        range_check,
+        &auxiliary_vars,
+    );
+    casm_build_extend! {casm_builder,
+        jump Failure;
+        IsValidAddress:
+    };
+    validate_under_limit::<1>(&mut casm_builder, &addr_bound, value, range_check, &auxiliary_vars);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[range_check], &[value]], None),
+            ("Failure", &[&[range_check]], Some(failure_handle_statement_id)),
+        ],
+        None,
     ))
 }

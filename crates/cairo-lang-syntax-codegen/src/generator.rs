@@ -133,7 +133,7 @@ fn generate_kinds_code() -> rust::Tokens {
         }
         impl fmt::Display for SyntaxKind {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(f, "{:?}", self)
+                write!(f, "{self:?}")
             }
         }
     });

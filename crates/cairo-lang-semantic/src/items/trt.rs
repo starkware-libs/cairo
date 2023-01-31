@@ -9,6 +9,7 @@ use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
@@ -39,12 +40,12 @@ impl ConcreteTraitId {
 /// The ID of a generic function in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct ConcreteTraitFunctionLongId {
+pub struct ConcreteTraitGenericFunctionLongId {
     // Note the members are private to prevent direct call to the constructor.
-    trait_id: ConcreteTraitId,
+    concrete_trait_id: ConcreteTraitId,
     function_id: TraitFunctionId,
 }
-impl ConcreteTraitFunctionLongId {
+impl ConcreteTraitGenericFunctionLongId {
     pub fn new(
         db: &dyn SemanticGroup,
         concrete_trait_id: ConcreteTraitId,
@@ -55,22 +56,22 @@ impl ConcreteTraitFunctionLongId {
             function_id.trait_id(db.upcast()),
             "Concrete trait a trait function must belong to the same generic trait."
         );
-        Self { trait_id: concrete_trait_id, function_id }
+        Self { concrete_trait_id, function_id }
     }
 }
 define_short_id!(
-    ConcreteTraitFunctionId,
-    ConcreteTraitFunctionLongId,
+    ConcreteTraitGenericFunctionId,
+    ConcreteTraitGenericFunctionLongId,
     SemanticGroup,
     lookup_intern_concrete_trait_function
 );
-impl ConcreteTraitFunctionId {
+impl ConcreteTraitGenericFunctionId {
     pub fn function_id(&self, db: &dyn SemanticGroup) -> TraitFunctionId {
         db.lookup_intern_concrete_trait_function(*self).function_id
     }
 
-    pub fn trait_id(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
-        db.lookup_intern_concrete_trait_function(*self).trait_id
+    pub fn concrete_trait_id(&self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+        db.lookup_intern_concrete_trait_function(*self).concrete_trait_id
     }
 }
 
@@ -143,7 +144,7 @@ pub fn trait_function_by_name(
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_data].
 pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<TraitData> {
     let syntax_db = db.upcast();
-    let module_file_id = trait_id.module_file(db.upcast());
+    let module_file_id = trait_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -234,18 +235,21 @@ pub fn priv_trait_function_data(
     trait_function_id: TraitFunctionId,
 ) -> Maybe<TraitFunctionData> {
     let syntax_db = db.upcast();
-    let module_file_id = trait_function_id.module_file(db.upcast());
+    let module_file_id = trait_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_semantic_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
     let declaration = function_syntax.declaration(syntax_db);
-    let generic_params = semantic_generic_params(
+    let function_generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         module_file_id,
         &declaration.generic_params(syntax_db),
     );
+    let trait_generic_params = db.trait_generic_params(trait_id)?;
+    let generic_params =
+        chain!(trait_generic_params, function_generic_params.clone()).collect_vec();
     let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let signature_syntax = declaration.signature(syntax_db);
@@ -284,7 +288,7 @@ pub fn priv_trait_function_data(
     Ok(TraitFunctionData {
         diagnostics: diagnostics.build(),
         signature,
-        generic_params,
+        generic_params: function_generic_params,
         attributes,
         resolved_lookback,
     })

@@ -12,6 +12,7 @@ use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semant
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
+use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 
 pub fn simple_statement(
@@ -191,14 +192,18 @@ pub fn get_libfunc_signature(
     db: &dyn SierraGenGroup,
     concrete_lib_func_id: ConcreteLibfuncId,
 ) -> LibfuncSignature {
-    let libfunc_long_id = db.lookup_intern_concrete_lib_func(concrete_lib_func_id);
-    // TODO(lior): replace expect() with a diagnostic (unless this can never happen).
+    let libfunc_long_id = db.lookup_intern_concrete_lib_func(concrete_lib_func_id.clone());
     CoreLibfunc::specialize_signature_by_id(
         &SierraSignatureSpecializationContext(db),
         &libfunc_long_id.generic_id,
         &libfunc_long_id.generic_args,
     )
-    .expect("Specialization failure.")
+    .unwrap_or_else(|_| {
+        panic!(
+            "Failed to specialize: `{}`",
+            DebugReplacer { db }.replace_libfunc_id(&concrete_lib_func_id)
+        )
+    })
 }
 
 /// Returns the [ConcreteLibfuncId] for calling a user-defined function.
@@ -252,11 +257,15 @@ pub fn get_concrete_libfunc_id(
                             db.lookup_intern_literal(*literal_id).value,
                         )
                     }
+                    semantic::GenericArgumentId::Impl(_) => {
+                        panic!("Extern function with impl generics are not supported.")
+                    }
                 });
             }
 
             (concrete_function, generic_libfunc_id(db, extern_id, generic_args))
         }
+        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -266,9 +275,6 @@ pub fn statement_outputs(
     lowered_function: &lowering::FlatLowered,
 ) -> Vec<lowering::VariableId> {
     match statement {
-        lowering::Statement::CallBlock(statement_call_block) => {
-            collect_outputs(lowered_function, &[statement_call_block.block])
-        }
         lowering::Statement::MatchExtern(lowering::StatementMatchExtern { arms, .. })
         | lowering::Statement::MatchEnum(lowering::StatementMatchEnum { arms, .. }) => {
             let blocks = arms.iter().map(|(_, block)| *block).collect_vec();

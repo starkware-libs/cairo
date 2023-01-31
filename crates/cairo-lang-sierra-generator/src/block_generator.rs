@@ -181,9 +181,6 @@ pub fn generate_statement_code(
                 statement_location,
             )
         }
-        lowering::Statement::CallBlock(statement_call_block) => {
-            generate_statement_call_block_code(context, statement_call_block)
-        }
         lowering::Statement::EnumConstruct(statement_enum_construct) => {
             generate_statement_enum_construct(context, statement_enum_construct, statement_location)
         }
@@ -271,6 +268,7 @@ fn generate_statement_call_code(
             statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
             Ok(statements)
         }
+        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -393,15 +391,6 @@ fn generate_statement_match_extern_code(
     statements.push(end_label);
 
     Ok(statements)
-}
-
-/// Generates Sierra code for [lowering::StatementCallBlock].
-fn generate_statement_call_block_code(
-    context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementCallBlock,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    // TODO(lior): Rename instead of using PushValues.
-    Ok(generate_block_code_and_push_values(context, statement.block)?.0)
 }
 
 /// Generates Sierra code for [lowering::StatementEnumConstruct].

@@ -5,7 +5,7 @@ use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::core_libfunc_cost_base::{
-    core_libfunc_cost_base, CostOperations, InvocationCostInfoProvider,
+    core_libfunc_postcost, core_libfunc_precost, CostOperations, InvocationCostInfoProvider,
 };
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
@@ -20,16 +20,19 @@ struct Ops<'a> {
 impl CostOperations for Ops<'_> {
     type CostType = CostExprMap;
 
-    fn const_cost(&self, value: i32) -> Self::CostType {
-        self.const_cost_token(value, CostTokenType::Step)
-    }
-
-    fn const_cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
+    fn cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
         Self::CostType::from_iter([(token_type, CostExpr::from_const(value))])
     }
 
-    fn function_cost(&mut self, function: &cairo_lang_sierra::program::Function) -> Self::CostType {
-        self.statement_future_cost.get_future_cost(&function.entry_point).clone()
+    fn function_token_cost(
+        &mut self,
+        function: &cairo_lang_sierra::program::Function,
+        token_type: CostTokenType,
+    ) -> Self::CostType {
+        Self::CostType::from_iter([(
+            token_type,
+            self.statement_future_cost.get_future_cost(&function.entry_point)[token_type].clone(),
+        )])
     }
 
     fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
@@ -49,11 +52,20 @@ impl CostOperations for Ops<'_> {
 }
 
 /// Returns an expression for the gas cost for core libfuncs.
-pub fn core_libfunc_cost_expr<InfoProvider: InvocationCostInfoProvider>(
+pub fn core_libfunc_precost_expr(
+    statement_future_cost: &mut dyn StatementFutureCost,
+    idx: &StatementIdx,
+    libfunc: &CoreConcreteLibfunc,
+) -> Vec<CostExprMap> {
+    core_libfunc_precost(&mut Ops { statement_future_cost, idx: *idx }, libfunc)
+}
+
+/// Returns an expression for the gas cost for core libfuncs.
+pub fn core_libfunc_postcost_expr<InfoProvider: InvocationCostInfoProvider>(
     statement_future_cost: &mut dyn StatementFutureCost,
     idx: &StatementIdx,
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<CostExprMap> {
-    core_libfunc_cost_base(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+    core_libfunc_postcost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
 }

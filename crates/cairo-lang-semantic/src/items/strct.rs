@@ -14,7 +14,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_generics, ConcreteStructId};
+use crate::types::{resolve_type, substitute_ty, ConcreteStructId, GenericSubstitution};
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -76,7 +76,7 @@ pub fn struct_resolved_lookback(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_semantic_data].
 pub fn priv_struct_semantic_data(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<StructData> {
-    let module_file_id = struct_id.module_file(db.upcast());
+    let module_file_id = struct_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -133,14 +133,15 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let db = self.upcast();
         let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
         let generic_args = db.lookup_intern_concrete_struct(concrete_struct_id).generic_args;
-        let substitution = &generic_params.into_iter().zip(generic_args.into_iter()).collect();
+        let substitution =
+            GenericSubstitution(generic_params.into_iter().zip(generic_args.into_iter()).collect());
 
         let generic_members =
             self.upcast().struct_members(concrete_struct_id.struct_id(self.upcast()))?;
         Ok(generic_members
             .into_iter()
             .map(|(name, member)| {
-                let ty = substitute_generics(db, substitution, member.ty);
+                let ty = substitute_ty(db, &substitution, member.ty);
                 let member = semantic::Member { ty, ..member };
                 (name, member)
             })

@@ -71,20 +71,6 @@ fn inner_find_local_variables(
                     &statement_call.outputs,
                 );
             }
-            lowering::Statement::CallBlock(statement_call_block) => {
-                let block_known_ap_change = inner_find_local_variables(
-                    db,
-                    lowered_function,
-                    statement_call_block.block,
-                    state.clone(),
-                    res,
-                )?;
-                if !block_known_ap_change {
-                    state.revoke_temporary_variables();
-                    known_ap_change = false;
-                }
-                state.mark_outputs_as_temporary(lowered_function, statement);
-            }
             lowering::Statement::MatchExtern(statement_match_extern) => {
                 let (_, concrete_function_id) =
                     get_concrete_libfunc_id(db, statement_match_extern.function);

@@ -5,7 +5,7 @@ use itertools::chain;
 
 use crate::db::LoweringGroup;
 use crate::objects::{
-    BlockId, Statement, StatementCall, StatementCallBlock, StatementLiteral, StatementMatchExtern,
+    BlockId, Statement, StatementCall, StatementLiteral, StatementMatchExtern,
     StatementStructDestructure, StructuredBlock, StructuredBlockEnd, VariableId,
 };
 use crate::{
@@ -74,6 +74,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
 impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let mut remapping = self.iter().peekable();
+        write!(f, "{{")?;
         while let Some((dst, src)) = remapping.next() {
             src.fmt(f, ctx)?;
             write!(f, " -> ")?;
@@ -82,6 +83,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
                 write!(f, ", ")?;
             }
         }
+        write!(f, "}}")?;
         Ok(())
     }
 }
@@ -241,7 +243,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
         match self {
             Statement::Literal(stmt) => stmt.fmt(f, ctx),
             Statement::Call(stmt) => stmt.fmt(f, ctx),
-            Statement::CallBlock(stmt) => stmt.fmt(f, ctx),
             Statement::MatchExtern(stmt) => stmt.fmt(f, ctx),
             Statement::StructConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::StructDestructure(stmt) => stmt.fmt(f, ctx),
@@ -275,12 +276,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementCallBlock {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}()", self.block.debug(ctx))
-    }
-}
-
 impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchExtern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match {:?}(", self.function.debug(ctx.db))?;
@@ -303,7 +298,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let enum_name = self.concrete_enum_id.enum_id(ctx.db.upcast()).name(ctx.db.upcast());
         let variant_name = self.id.name(ctx.db.upcast());
-        write!(f, "{}::{}", enum_name, variant_name)
+        write!(f, "{enum_name}::{variant_name}")
     }
 }
 

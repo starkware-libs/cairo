@@ -5,8 +5,9 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
 };
+use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
@@ -16,7 +17,7 @@ use pretty_assertions::assert_eq;
 
 use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use crate::items::functions::GenericFunctionId;
-use crate::{semantic, SemanticDiagnostic};
+use crate::{semantic, ConcreteFunctionWithBodyId, SemanticDiagnostic};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SemanticDatabaseForTesting {
@@ -28,6 +29,8 @@ impl Default for SemanticDatabaseForTesting {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         res.set_semantic_plugins(vec![]);
+        let corelib_path = detect_corelib().expect("Corelib not found in default location.");
+        init_dev_corelib(&mut res, corelib_path);
         res
     }
 }
@@ -122,6 +125,7 @@ pub fn setup_test_module(
 pub struct TestFunction {
     pub module_id: ModuleId,
     pub function_id: FunctionWithBodyId,
+    pub concrete_function_id: ConcreteFunctionWithBodyId,
     pub signature: semantic::Signature,
     pub body: semantic::ExprId,
 }
@@ -146,12 +150,17 @@ pub fn setup_test_function(
         .expect("Failed to load module")
         .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function {function_name} was not found."));
-    let function_id =
-        FunctionWithBodyId::Free(extract_matches!(generic_function_id, GenericFunctionId::Free));
+    let free_function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
+    let function_id = FunctionWithBodyId::Free(free_function_id);
     WithStringDiagnostics {
         value: TestFunction {
             module_id: test_module.module_id,
             function_id,
+            concrete_function_id: ConcreteFunctionWithBodyId::from_no_generics_free(
+                db,
+                free_function_id,
+            )
+            .unwrap(),
             signature: db.function_with_body_signature(function_id).unwrap(),
             body: db.function_body_expr(function_id).unwrap(),
         },

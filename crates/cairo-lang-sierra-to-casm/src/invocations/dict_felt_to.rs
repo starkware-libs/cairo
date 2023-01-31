@@ -3,8 +3,10 @@ use std::vec;
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
+use cairo_lang_sierra_gas::core_libfunc_cost::DICT_SQUASH_ACCESS_COST;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::CostValidationInfo;
 use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra single cell dict operations.
@@ -48,6 +50,7 @@ fn build_dict_felt_to_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[new_dict_manager_ptr], &[new_dict_end]], None)],
+        Some(Default::default()),
     ))
 }
 
@@ -70,8 +73,14 @@ fn build_dict_felt_to_read(
         assert value = *(dict_ptr++);
         assert value = *(dict_ptr++);
     }
-    Ok(builder
-        .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[dict_ptr], &[value]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[dict_ptr], &[value]], None)],
+        Some(CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([DICT_SQUASH_ACCESS_COST]),
+        }),
+    ))
 }
 
 /// Handles instruction for writing to a single cell dict.
@@ -94,19 +103,28 @@ fn build_dict_felt_to_write(
         assert prev_value = *(dict_ptr++);
         assert value = *(dict_ptr++);
     }
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[dict_ptr]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[dict_ptr]], None)],
+        Some(CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([DICT_SQUASH_ACCESS_COST]),
+        }),
+    ))
 }
 
 /// Handles the dict_squash instruction.
 fn build_dict_felt_to_squash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check_ptr, dict_manager_ptr, dict_end_address] = builder.try_get_single_cells()?;
+    let [range_check_ptr, gas_builtin, dict_manager_ptr, dict_end_address] =
+        builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     super::add_input_variables! {casm_builder,
         buffer(2) dict_manager_ptr;
-        deref range_check_ptr;
+        buffer(0) range_check_ptr;
+        deref gas_builtin;
         buffer(0) dict_end_address;
     };
 
@@ -115,10 +133,13 @@ fn build_dict_felt_to_squash(
         dict_info_size,
         one,
         zero,
+        gas_refund_per_access,
         dict_destruct_arg_range_check_ptr,
+        dict_destruct_arg_gas_builtin,
         dict_destruct_arg_dict_manager_ptr,
         dict_destruct_arg_dict_end_address,
         final_range_check_ptr,
+        final_gas_builtin,
         final_dict_manager_ptr,
         final_squashed_dict_start,
         final_squashed_dict_end,
@@ -128,11 +149,13 @@ fn build_dict_felt_to_squash(
             const dict_info_size = 3;
             const one = 1;
             const zero = 0;
+            const gas_refund_per_access = 72;
             // Push DestructDict arguments.
             tempvar dict_destruct_arg_range_check_ptr = range_check_ptr;
+            tempvar dict_destruct_arg_gas_builtin = gas_builtin;
             tempvar dict_destruct_arg_dict_manager_ptr = dict_manager_ptr;
             tempvar dict_destruct_arg_dict_end_address = dict_end_address;
-            let (final_range_check_ptr, final_dict_manager_ptr, final_squashed_dict_start, final_squashed_dict_end) = call DestructDict;
+            let (final_range_check_ptr, final_gas_builtin, final_dict_manager_ptr, final_squashed_dict_start, final_squashed_dict_end) = call DestructDict;
             jump DONE;
         };
         (
@@ -140,10 +163,13 @@ fn build_dict_felt_to_squash(
             dict_info_size,
             one,
             zero,
+            gas_refund_per_access,
             dict_destruct_arg_range_check_ptr,
+            dict_destruct_arg_gas_builtin,
             dict_destruct_arg_dict_manager_ptr,
             dict_destruct_arg_dict_end_address,
             final_range_check_ptr,
+            final_gas_builtin,
             final_dict_manager_ptr,
             final_squashed_dict_start,
             final_squashed_dict_end,
@@ -160,6 +186,8 @@ fn build_dict_felt_to_squash(
             // Destructs a given dictionary.
             DestructDict:
             localvar dict_index;
+            localvar dict_accesses_len;
+            localvar local_gas_builtin = dict_destruct_arg_gas_builtin;
             // Guess the index of the dictionary.
             hint GetDictIndex {dict_manager_ptr: dict_destruct_arg_dict_manager_ptr, dict_end_ptr: dict_destruct_arg_dict_end_address} into {dict_index: dict_index};
             localvar infos = *(dict_destruct_arg_dict_manager_ptr++);
@@ -182,14 +210,26 @@ fn build_dict_felt_to_squash(
             assert n_dicts = *(dict_destruct_arg_dict_manager_ptr++);
             tempvar n_destructed_plus_1 = n_destructed + one;
             assert n_destructed_plus_1 = *(dict_destruct_arg_dict_manager_ptr++);
+            // Find the len of the accesses segment.
+            tempvar dict_accesses_start = info_ptr[0];
+            assert dict_accesses_len = dict_destruct_arg_dict_end_address - dict_accesses_start;
             // Push DefaultDictFinalize arguments.
             tempvar dict_finalize_arg_range_check_ptr = dict_destruct_arg_range_check_ptr;
             tempvar dict_finalize_arg_dict_accesses_start = info_ptr[0];
             tempvar dict_finalize_arg_dict_accesses_end = dict_destruct_arg_dict_end_address;
             tempvar dict_finalize_arg_default_value = zero;
             let (returned_range_check_ptr, returned_squashed_dict_start, returned_squashed_dict_end) = call DefaultDictFinalize;
+            // Find the number of keys
+            tempvar squashed_dict_len = returned_squashed_dict_end - returned_squashed_dict_start;
+            // The number of refunded acceesses is number_of_accesses - number_of_keys, which equals
+            // to dict_accesses_len / dict_access_size - squashed_dict_len / dict_access_size.
+            // Use distributivity to conserve one operation.
+            tempvar accesses_len_minus_squashed_len = dict_accesses_len - squashed_dict_len;
+            tempvar n_refunded_accesses = accesses_len_minus_squashed_len / dict_access_size;
+            tempvar gas_to_refund = n_refunded_accesses * gas_refund_per_access;
             // Push the returned variables.
             tempvar final_range_check_ptr = returned_range_check_ptr;
+            tempvar final_gas_builtin = local_gas_builtin + gas_to_refund;
             tempvar final_dict_manager_ptr = new_dict_manager_ptr;
             tempvar final_squashed_dict_start = returned_squashed_dict_start;
             tempvar final_squashed_dict_end = returned_squashed_dict_end;
@@ -350,10 +390,11 @@ fn build_dict_felt_to_squash(
             tempvar n_accesses = ptr_diff / dict_access_size;
             hint InitSquashData {dict_accesses: squash_dict_arg_dict_accesses_start, ptr_diff: ptr_diff, n_accesses: n_accesses} into {big_keys: big_keys, first_key: first_key};
             let temp_range_check_ptr = squash_dict_arg_range_check_ptr;
+            tempvar squash_dict_inner_arg_range_check_ptr;
             // Order of if branches is reversed w.r.t. the original code.
             jump SquashDictIfBigKeys if big_keys != 0;
             assert first_key = *(temp_range_check_ptr++);
-            tempvar squash_dict_inner_arg_range_check_ptr = temp_range_check_ptr;
+            assert squash_dict_inner_arg_range_check_ptr = temp_range_check_ptr;
             rescope {
                 squash_dict_inner_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr,
                 squash_dict_arg_dict_accesses_start = squash_dict_arg_dict_accesses_start,
@@ -366,7 +407,7 @@ fn build_dict_felt_to_squash(
             };
             jump SquashDictEndIfBigKeys;
             SquashDictIfBigKeys:
-            tempvar squash_dict_inner_arg_range_check_ptr = temp_range_check_ptr;
+            assert squash_dict_inner_arg_range_check_ptr = temp_range_check_ptr;
             rescope {
                 squash_dict_inner_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr,
                 squash_dict_arg_dict_accesses_start = squash_dict_arg_dict_accesses_start,
@@ -406,6 +447,13 @@ fn build_dict_felt_to_squash(
             // Inner tail-recursive function for squash_dict.
             // Loops over a single key accesses and verify a valid order.
             SquashDictInner:
+            localvar aligned_range_check_ptr;
+            localvar aligned_dict_accesses;
+            localvar aligned_dict_accesses_end_minus1;
+            localvar aligned_next_key;
+            localvar aligned_remaining_accesses;
+            // These local vars are used only after the loop rescopes so me need to adjust the ap.
+            ap += 5;
             const dict_access_size = 3;
             const one = 1;
             localvar next_key;
@@ -443,7 +491,12 @@ fn build_dict_felt_to_squash(
                 squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
                 squash_dict_inner_arg_remaining_accesses = squash_dict_inner_arg_remaining_accesses,
                 next_key = next_key,
-                new_remaining_accesses = new_remaining_accesses
+                new_remaining_accesses = new_remaining_accesses,
+                aligned_range_check_ptr = aligned_range_check_ptr,
+                aligned_dict_accesses = aligned_dict_accesses,
+                aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
+                aligned_next_key = aligned_next_key,
+                aligned_remaining_accesses = aligned_remaining_accesses
             };
         }
         // Split just to avoid recursion limit when the macro is parsed.
@@ -495,7 +548,12 @@ fn build_dict_felt_to_squash(
                 squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
                 squash_dict_inner_arg_remaining_accesses = squash_dict_inner_arg_remaining_accesses,
                 next_key = next_key,
-                new_remaining_accesses = new_remaining_accesses
+                new_remaining_accesses = new_remaining_accesses,
+                aligned_range_check_ptr = aligned_range_check_ptr,
+                aligned_dict_accesses = aligned_dict_accesses,
+                aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
+                aligned_next_key = aligned_next_key,
+                aligned_remaining_accesses = aligned_remaining_accesses
             };
             jump SquashDictInnerLoop if loop_temps_should_continue != 0;
             SquashDictInnerSkipLoop:
@@ -528,11 +586,11 @@ fn build_dict_felt_to_squash(
             tempvar key_diff = next_key - key_plus1;
             assert key_diff = *(arg_range_check_ptr++);
             // Writing the needed invalidated variables because of the branch.
-            tempvar aligned_range_check_ptr = arg_range_check_ptr;
-            tempvar aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
-            tempvar aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
-            tempvar aligned_next_key = next_key;
-            tempvar aligned_remaining_accesses = new_remaining_accesses;
+            assert aligned_range_check_ptr = arg_range_check_ptr;
+            assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
+            assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
+            assert aligned_next_key = next_key;
+            assert aligned_remaining_accesses = new_remaining_accesses;
             rescope {
                 aligned_dict_accesses = aligned_dict_accesses,
                 aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
@@ -552,11 +610,11 @@ fn build_dict_felt_to_squash(
             tempvar assert_lt_arg_b = next_key;
             let (squash_dict_inner_arg_range_check_ptr) = call AssertLtFelt;
             // Writing the needed invalidated variables because of the branch.
-            tempvar aligned_range_check_ptr = squash_dict_inner_arg_range_check_ptr;
-            tempvar aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
-            tempvar aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
-            tempvar aligned_next_key = next_key;
-            tempvar aligned_remaining_accesses = new_remaining_accesses;
+            assert aligned_range_check_ptr = squash_dict_inner_arg_range_check_ptr;
+            assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
+            assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
+            assert aligned_next_key = next_key;
+            assert aligned_remaining_accesses = new_remaining_accesses;
             rescope {
                 aligned_dict_accesses = aligned_dict_accesses,
                 aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
@@ -676,6 +734,7 @@ fn build_dict_felt_to_squash(
         vec![],
         [[
             ReferenceExpression { cells: vec![state.get_adjusted(final_range_check_ptr)] },
+            ReferenceExpression { cells: vec![state.get_adjusted(final_gas_builtin)] },
             ReferenceExpression { cells: vec![state.get_adjusted(final_dict_manager_ptr)] },
             ReferenceExpression {
                 cells: vec![

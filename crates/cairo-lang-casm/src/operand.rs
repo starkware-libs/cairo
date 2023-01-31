@@ -31,10 +31,10 @@ pub enum ResOperand {
 impl Display for ResOperand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ResOperand::Deref(operand) => write!(f, "{}", operand),
-            ResOperand::DoubleDeref(operand, offset) => write!(f, "[{} + {}]", operand, offset),
-            ResOperand::Immediate(operand) => write!(f, "{}", operand),
-            ResOperand::BinOp(operand) => write!(f, "{}", operand),
+            ResOperand::Deref(operand) => write!(f, "{operand}"),
+            ResOperand::DoubleDeref(operand, offset) => write!(f, "[{operand} + {offset}]"),
+            ResOperand::Immediate(operand) => write!(f, "{operand}"),
+            ResOperand::BinOp(operand) => write!(f, "{operand}"),
         }
     }
 }
@@ -87,8 +87,8 @@ pub enum DerefOrImmediate {
 impl Display for DerefOrImmediate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DerefOrImmediate::Deref(operand) => write!(f, "{}", operand),
-            DerefOrImmediate::Immediate(operand) => write!(f, "{}", operand),
+            DerefOrImmediate::Deref(operand) => write!(f, "{operand}"),
+            DerefOrImmediate::Immediate(operand) => write!(f, "{operand}"),
         }
     }
 }

@@ -1,34 +1,22 @@
+use array::ArrayTrait;
+
 // Returns an array of size n with the values of the Fibonacci sequence, the length of the array,
 // and the value of the last element.
-fn fib(n: u128) -> (Array::<felt>, felt, u128) {
-    let mut arr = array_new::<felt>();
-    array_append::<felt>(arr, 1);
-    array_append::<felt>(arr, 1);
+fn fib(n: usize) -> (Array::<felt>, felt, usize) {
+    let mut arr = ArrayTrait::new();
+    arr.append(1);
+    arr.append(1);
     let mut arr = fib_inner(:n, :arr);
-    let len = array_len::<felt>(arr);
-    let last = unchecked_array_at(arr, len - 1_u128);
+    let len = arr.len();
+    let last = arr.at(len - 1_usize);
     return (arr, last, len);
 }
 
-fn fib_inner(n: u128, mut arr: Array::<felt>) -> Array::<felt> {
-    let length = array_len::<felt>(arr);
+fn fib_inner(n: usize, mut arr: Array::<felt>) -> Array::<felt> {
+    let length = arr.len();
     if n <= length {
         return arr;
     }
-    array_append::<felt>(
-        arr, unchecked_array_at(arr, length - 1_u128) + unchecked_array_at(arr, length - 2_u128)
-    );
+    arr.append(arr.at(length - 1_usize) + arr.at(length - 2_usize));
     fib_inner(:n, :arr)
-}
-
-// TODO(orizi): Remove when a panicable `array_at` is introduced.
-fn unchecked_array_at(ref arr: Array::<felt>, idx: u128) -> felt {
-    match array_at::<felt>(arr, idx) {
-        Option::Some(v) => v,
-        Option::None(()) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(data, 1);
-            panic(data)
-        },
-    }
 }

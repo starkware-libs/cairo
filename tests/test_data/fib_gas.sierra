@@ -21,7 +21,7 @@ libfunc enum_init<core::PanicResult::<core::felt>, 1> = enum_init<core::PanicRes
 libfunc store_temp<core::PanicResult::<core::felt>> = store_temp<core::PanicResult::<core::felt>>;
 libfunc rename<core::PanicResult::<core::felt>> = rename<core::PanicResult::<core::felt>>;
 libfunc dup<felt> = dup<felt>;
-libfunc felt_jump_nz = felt_jump_nz;
+libfunc felt_is_zero = felt_is_zero;
 libfunc drop<NonZero<felt>> = drop<NonZero<felt>>;
 libfunc felt_add = felt_add;
 libfunc felt_const<1> = felt_const<1>;
@@ -54,7 +54,7 @@ store_temp<core::PanicResult::<core::felt>>([14]) -> ([14]);
 rename<core::PanicResult::<core::felt>>([14]) -> ([17]);
 return([15], [16], [17]);
 dup<felt>([4]) -> ([4], [18]);
-felt_jump_nz([18]) { fallthrough() 31([19]) };
+felt_is_zero([18]) { fallthrough() 31([19]) };
 branch_align() -> ();
 drop<felt>([4]) -> ();
 drop<felt>([3]) -> ();

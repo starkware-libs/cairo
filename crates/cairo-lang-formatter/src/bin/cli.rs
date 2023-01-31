@@ -59,7 +59,7 @@ impl<'a> std::fmt::Display for Input<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Stdin => write!(f, "stdin"),
-            Self::File { path } => write!(f, "file {}", path),
+            Self::File { path } => write!(f, "file {path}"),
         }
     }
 }
@@ -165,18 +165,18 @@ fn format_path(
                     );
                     true
                 } else {
-                    eprintln_if_verbose(&format!("Formatting file: {}.", path), args.verbose);
+                    eprintln_if_verbose(&format!("Formatting file: {path}."), args.verbose);
                     matches!(
                         (format_input(&Input::File { path }, config, args.check), args.check),
                         (Ok(FormatResult::Identical), _) | (Ok(FormatResult::DiffFound), false)
                     )
                 }
             } else if metadata.is_dir() {
-                eprintln_if_verbose(&format!("Formatting directory: {}.", path), args.verbose);
+                eprintln_if_verbose(&format!("Formatting directory: {path}."), args.verbose);
                 format_directory(path, args, recursion_depth, config)
             } else {
                 // A symlink.
-                eprintln!("{}", format!("The file {} is a symlink. It was ignored.", path).red());
+                eprintln!("{}", format!("The file {path} is a symlink. It was ignored.").red());
                 true
             }
         }

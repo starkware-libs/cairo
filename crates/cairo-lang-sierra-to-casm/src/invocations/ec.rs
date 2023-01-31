@@ -20,13 +20,16 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        EcConcreteLibfunc::AddToState(_) => build_ec_add_to_state(builder),
-        EcConcreteLibfunc::CreatePoint(_) => build_ec_point_try_create(builder),
-        EcConcreteLibfunc::FinalizeState(_) => build_ec_try_finalize_state(builder),
-        EcConcreteLibfunc::InitState(_) => build_ec_init_state(builder),
-        EcConcreteLibfunc::Op(_) => build_ec_op_builtin(builder),
+        EcConcreteLibfunc::IsZero(_) => build_is_zero(builder),
+        EcConcreteLibfunc::Neg(_) => build_ec_neg(builder),
+        EcConcreteLibfunc::StateAdd(_) => build_ec_state_add(builder),
+        EcConcreteLibfunc::TryNew(_) => build_ec_point_try_new(builder),
+        EcConcreteLibfunc::StateFinalize(_) => build_ec_state_finalize(builder),
+        EcConcreteLibfunc::StateInit(_) => build_ec_state_init(builder),
+        EcConcreteLibfunc::StateAddMul(_) => build_ec_state_add_mul(builder),
         EcConcreteLibfunc::PointFromX(_) => build_ec_point_from_x(builder),
         EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
+        EcConcreteLibfunc::Zero(_) => build_ec_zero(builder),
     }
 }
 
@@ -91,8 +94,25 @@ fn add_ec_points(
     (result_x, result_y)
 }
 
+/// Generates casm instructions for `ec_point_zero()`.
+fn build_ec_zero(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let mut casm_builder = CasmBuilder::default();
+
+    casm_build_extend!(casm_builder,
+        const zero = 0;
+    );
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[zero, zero]], None)],
+        Some(Default::default()),
+    ))
+}
+
 /// Handles instruction for creating an EC point.
-fn build_ec_point_try_create(
+fn build_ec_point_try_new(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y] = builder.try_get_single_cells()?;
@@ -118,6 +138,7 @@ fn build_ec_point_try_create(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(failure_handle))],
+        Some(Default::default()),
     ))
 }
 
@@ -169,6 +190,7 @@ fn build_ec_point_from_x(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(not_on_curve))],
+        Some(Default::default()),
     ))
 }
 
@@ -184,11 +206,60 @@ fn build_ec_point_unwrap(
         deref y;
     };
 
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[x], &[y]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[x], &[y]], None)],
+        Some(Default::default()),
+    ))
+}
+
+/// Generates casm instructions for `ec_point_is_zero()`.
+fn build_is_zero(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables!(casm_builder, deref x; deref y; );
+    casm_build_extend! {casm_builder,
+        // To check whether `(x, y) = (0, 0)` (the zero point), it is enough to check
+        // whether `y = 0`, since there is no point on the curve with y = 0.
+        jump Target if y != 0;
+    };
+
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[], None), ("Target", &[&[x, y]], Some(target_statement_id))],
+        Some(Default::default()),
+    ))
+}
+
+/// Generates casm instructions for `ec_neg()`.
+fn build_ec_neg(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref x;
+        deref y;
+    };
+    casm_build_extend!(casm_builder,
+        const neg_one = -1;
+        let neg_y = y * neg_one;
+    );
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[x, neg_y]], None)],
+        Some(Default::default()),
+    ))
 }
 
 /// Handles instruction for initializing an EC state.
-fn build_ec_init_state(
+fn build_ec_state_init(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let mut casm_builder = CasmBuilder::default();
@@ -216,11 +287,12 @@ fn build_ec_init_state(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[random_x, random_y, random_ptr]], None)],
+        Some(Default::default()),
     ))
 }
 
 /// Handles instruction for adding a point to an EC state.
-fn build_ec_add_to_state(
+fn build_ec_state_add(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_state, expr_point] = builder.try_get_refs()?;
@@ -254,11 +326,12 @@ fn build_ec_add_to_state(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[result_x, result_y, random_ptr]], None)],
+        Some(Default::default()),
     ))
 }
 
 /// Handles instruction for finalizing an EC state.
-fn build_ec_try_finalize_state(
+fn build_ec_state_finalize(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y, random_ptr] = builder.try_get_refs::<1>()?[0].try_unpack()?;
@@ -277,8 +350,8 @@ fn build_ec_try_finalize_state(
         tempvar random_y = random_ptr[1];
         // If the X coordinate is the same, either the points are equal or their sum is the point at
         // infinity. Either way, we can't compute the slope in this case.
-        // The result may be the point at infinity if the user called ec_try_finalize_state
-        // immediately after ec_init_state.
+        // The result may be the point at infinity if the user called `ec_state_try_finalize_nz`
+        // immediately after ec_state_init.
         tempvar denominator = x - random_x;
         jump NotSameX if denominator != 0;
         // Assert the result is the point at infinity (the other option is the points are the same,
@@ -301,12 +374,13 @@ fn build_ec_try_finalize_state(
             ("Fallthrough", &[&[result_x, result_y]], None),
             ("SumIsInfinity", &[], Some(failure_handle)),
         ],
+        Some(Default::default()),
     ))
 }
 
 /// Handles instruction for computing `S + M * Q` where `S` is an EC state, `M` is a scalar (felt)
 /// and `Q` is an EC point.
-fn build_ec_op_builtin(
+fn build_ec_state_add_mul(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [ec_builtin_expr, expr_state, expr_m, expr_point] = builder.try_get_refs()?;
@@ -337,5 +411,6 @@ fn build_ec_op_builtin(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[ec_builtin], &[result_x, result_y, random_ptr]], None)],
+        Some(Default::default()),
     ))
 }

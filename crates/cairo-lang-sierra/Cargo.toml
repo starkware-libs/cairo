@@ -23,12 +23,13 @@ num-traits.workspace = true
 salsa.workspace = true
 serde.workspace = true
 smol_str.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "0.1.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.2" }
 
 [dev-dependencies]
 assert_matches.workspace = true
 bimap.workspace = true
 env_logger.workspace = true
 indoc.workspace = true
+pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true

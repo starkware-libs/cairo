@@ -1,10 +1,13 @@
+use cairo_felt::Felt;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
-use num_bigint::BigInt;
+use num_bigint::{BigInt, ToBigInt};
+use num_traits::Signed;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
 use crate::references::ReferenceExpression;
 
@@ -14,7 +17,7 @@ pub fn build_storage_base_address_const(
     libfunc: &SignatureAndConstConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound = (BigInt::from(1) << 251) - 256;
-    if libfunc.c >= addr_bound {
+    if libfunc.c.is_negative() || libfunc.c >= addr_bound {
         return Err(InvocationError::InvalidGenericArg);
     }
 
@@ -34,7 +37,7 @@ pub fn build_storage_address_from_base_and_offset(
         deref_or_immediate offset;
     };
     casm_build_extend!(casm_builder, let res = base + offset;);
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)], None))
 }
 
 /// Handles the storage_base_address_const libfunc.
@@ -48,83 +51,38 @@ pub fn build_storage_base_address_from_felt(
         buffer(2) range_check;
         deref addr;
     };
-    // For both checks later:
-    // We show that a number is in the range [0, bound) by writing it as:
-    //   A * x + y,
-    // where:
-    //   * K = low positive number (the lower the better, here it is 1 or 2).
-    //   * max_x = 2**128 - K.
-    //   * A = bound // max_x.
-    //   * B = bound % max_x.
-    //   * x is in the range [0, max_x],
-    //   * y is in the range [0, B):
-    //     * y is in the range [0, 2**128).
-    //     * y + 2**128 - B is in the range [0, 2**128).
-    //
-    // Note that the minimal possible value of the expression A * x + y is min_val = 0 (where x = y
-    // = 0), and the maximal value is obtained where x = max_x and y = B - 1:
-    //   max_val = (A * max_x + B) - 1 = bound - 1.
-    //
-    // As long as A <= B, every number in the range can be represented.
-    // In the second case, we choose K to be 2 in order to find A <= B.
+    let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     casm_build_extend! {casm_builder,
-        const addr_bound = addr_bound;
-        const u128_limit_minus_1 = u128::MAX;
+        const limit = addr_bound.clone();
         // Allocating all vars in the beginning for easier AP-Alignment between the two branches,
         // as well as making sure we use `res` as the last cell, making it the last on stack.
         tempvar is_small;
-        tempvar x;
-        tempvar y;
-        tempvar x_part;
-        tempvar y_fixed;
-        tempvar diff;
         tempvar res;
-        hint TestLessThan {lhs: addr, rhs: addr_bound} into {dst: is_small};
+        hint TestLessThan {lhs: addr, rhs: limit} into {dst: is_small};
         jump IsSmall if is_small != 0;
-        assert res = addr - addr_bound;
-        // Here we want to make sure that `addr` > ADDR_BOUND and `res` < ADDR_BOUND,
-        // for that it is enough to show that `res` < PRIME - ADDR_BOUND.
-        // We use the method described above with (A, B) = divmod(PRIME - ADDR_BOUND, 2**128 - 1)
-        const a_imm = 0x110000000000000000_u128;
-        // 2**128 - B.
-        const b_imm_fix = (u128::MAX - 0x110000000000000101u128 + 1);
-        hint LinearSplit {value: res, scalar: a_imm, max_x: u128_limit_minus_1} into {x: x, y: y};
-        assert x_part = x * a_imm;
-        assert res = x_part + y;
-        // x < 2**128
-        assert x = *(range_check++);
-        // y < 2**128
-        assert y = *(range_check++);
-        // y + 2**128 - B < 2**128 ==> y < B
-        assert y_fixed = y + b_imm_fix;
-        assert y_fixed = *(range_check++);
+        assert res = addr - limit;
+    }
+    validate_under_limit::<1>(
+        &mut casm_builder,
+        &(-Felt::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
+        res,
+        range_check,
+        &auxiliary_vars[..4],
+    );
+    casm_build_extend! {casm_builder,
         jump Done;
         IsSmall:
         assert res = addr;
-        // We now want to make sure `res` is less than ADDR_BOUND.
-        // We use the method described above with (A, B) = divmod(ADDR_BOUND, 2**128 - 2)
-        const a_imm = 0x8000000000000000000000000000000_u128;
-        // 2**128 - B.
-        const b_imm_fix = (u128::MAX - 0xfffffffffffffffffffffffffffff00_u128 + 1);
-        const u128_limit_minus_2 = u128::MAX - 1;
-        hint LinearSplit {value: res, scalar: a_imm, max_x: u128_limit_minus_2} into {x: x, y: y};
-        assert x_part = x * a_imm;
-        assert res = x_part + y;
-        // y < 2**128
-        assert y = *(range_check++);
-        // y + 2**128 - B < 2**128 ==> y < B
-        assert y_fixed = y + b_imm_fix;
-        assert y_fixed = *(range_check++);
-        // x < 2**128 && x != 2**128 - 1 ==> x < 2**128 - 1
-        assert x = *(range_check++);
-        assert diff = x - u128_limit_minus_1;
-        jump Done if diff != 0;
-        InfiniteLoop:
-        jump InfiniteLoop;
+    }
+    validate_under_limit::<2>(&mut casm_builder, &addr_bound, res, range_check, &auxiliary_vars);
+    casm_build_extend! {casm_builder,
         Done:
     };
-    Ok(builder
-        .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[range_check], &[res]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[res]], None)],
+        None,
+    ))
 }
 
 /// Builds instructions for StarkNet read system call.
@@ -139,7 +97,7 @@ pub fn build_storage_read(
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
         deref gas_builtin;
-        buffer(3) system;
+        buffer(7) system;
         deref address_domain;
         deref storage_address;
     };
@@ -153,22 +111,31 @@ pub fn build_storage_read(
         assert address_domain = *(system++);
         assert storage_address = *(system++);
         hint SystemCall { system: original_system };
-        // `revert_reason` is 0 on success, nonzero on failure/revert.
         let updated_gas_builtin = *(system++);
-        tempvar revert_reason = *(system++);
-        let read_value = *(system++);
-        jump Failure if revert_reason != 0;
+        tempvar failure_flag = *(system++);
+        let response_0 = *(system++);
+
+        // The response in the success case is smaller than in the failure case.
+        let success_final_system = system;
+        let response_1 = *(system++);
+        jump Failure if failure_flag != 0;
+
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[updated_gas_builtin], &[system], &[read_value]], None),
+            (
+                "Fallthrough",
+                &[&[updated_gas_builtin], &[success_final_system], &[response_0]],
+                None,
+            ),
             (
                 "Failure",
-                &[&[updated_gas_builtin], &[system], &[revert_reason]],
+                &[&[updated_gas_builtin], &[system], &[response_0, response_1]],
                 Some(failure_handle_statement_id),
             ),
         ],
+        None,
     ))
 }
 
@@ -184,7 +151,7 @@ pub fn build_storage_write(
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
-        buffer(6) system;
+        buffer(8) system;
         deref gas_builtin;
         deref address_domain;
         deref storage_address;
@@ -201,19 +168,23 @@ pub fn build_storage_write(
         assert value = *(system++);
         hint SystemCall { system: original_system };
         let updated_gas_builtin = *(system++);
-        // `revert_reason` is 0 on success, nonzero on failure/revert.
-        tempvar revert_reason = *(system++);
-        jump Failure if revert_reason != 0;
+        tempvar failure_flag = *(system++);
+        // The response in the success case is smaller than in the failure case.
+        let success_final_system = system;
+        let revert_reason_start = *(system++);
+        let revert_reason_end = *(system++);
+        jump Failure if failure_flag != 0;
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[updated_gas_builtin], &[system]], None),
+            ("Fallthrough", &[&[updated_gas_builtin], &[success_final_system]], None),
             (
                 "Failure",
-                &[&[updated_gas_builtin], &[system], &[revert_reason]],
+                &[&[updated_gas_builtin], &[system], &[revert_reason_start, revert_reason_end]],
                 Some(failure_handle_statement_id),
             ),
         ],
+        None,
     ))
 }

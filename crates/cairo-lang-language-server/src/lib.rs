@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
@@ -378,7 +378,7 @@ impl LanguageServer for Backend {
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let db = self.db().await;
         let file_uri = params.text_document_position_params.text_document.uri;
-        eprintln!("Hover {}", file_uri);
+        eprintln!("Hover {file_uri}");
         let file = self.file(&db, file_uri);
         let position = params.text_document_position_params.position;
         let Some((node, lookup_items)) =
@@ -431,11 +431,16 @@ impl LanguageServer for Backend {
 
             let defs_db = (*db).upcast();
             let (module_id, file_index, stable_ptr) = match item {
+                ResolvedGenericItem::Constant(item) => (
+                    item.parent_module(defs_db),
+                    item.file_index(defs_db),
+                    item.untyped_stable_ptr(defs_db),
+                ),
                 ResolvedGenericItem::Module(item) => {
                     (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
                 }
                 ResolvedGenericItem::GenericFunction(item) => {
-                    let sig = item.signature();
+                    let sig = item.signature((*db).upcast());
                     (
                         sig.parent_module(defs_db),
                         sig.file_index(defs_db),
@@ -718,17 +723,17 @@ fn is_expr(kind: SyntaxKind) -> bool {
 }
 
 /// Tries to detect the crate root the config that contains a cairo file, and add it to the system.
-fn detect_crate_for(db: &mut tokio::sync::MutexGuard<'_, RootDatabase>, file_path: &str) {
+fn detect_crate_for(db: &mut RootDatabase, file_path: &str) {
     let mut path = PathBuf::from(file_path);
     for _ in 0..MAX_CRATE_DETECTION_DEPTH {
         path.pop();
         if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
-            db.with_project_config(config);
+            update_crate_roots_from_project_config(db, config);
             return;
         };
     }
     // Fallback to a single file.
-    if let Err(err) = setup_project(&mut **db, PathBuf::from(file_path).as_path()) {
-        eprintln!("Error loading file {} as a single crate: {}", file_path, err);
+    if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
+        eprintln!("Error loading file {file_path} as a single crate: {err}");
     }
 }

@@ -16,7 +16,7 @@ fn foo(mut a: bool, b: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -29,8 +29,7 @@ libfunc rename<core::bool> = rename<core::bool>;
 bool_xor_impl([0], [1]) -> ([2]);
 store_temp<core::bool>([2]) -> ([2]);
 rename<core::bool>([2]) -> ([3]);
-rename<core::bool>([3]) -> ([4]);
-return([4]);
+return([3]);
 
 test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
@@ -55,7 +54,7 @@ fn foo(a: bool, b: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 3})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -68,8 +67,7 @@ libfunc rename<core::bool> = rename<core::bool>;
 bool_or_impl([0], [1]) -> ([2]);
 store_temp<core::bool>([2]) -> ([2]);
 rename<core::bool>([2]) -> ([3]);
-rename<core::bool>([3]) -> ([4]);
-return([4]);
+return([3]);
 
 test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
@@ -92,7 +90,7 @@ fn foo(a: bool, b: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 1})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -105,8 +103,7 @@ libfunc rename<core::bool> = rename<core::bool>;
 bool_and_impl([0], [1]) -> ([2]);
 store_temp<core::bool>([2]) -> ([2]);
 rename<core::bool>([2]) -> ([3]);
-rename<core::bool>([3]) -> ([4]);
-return([4]);
+return([3]);
 
 test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
@@ -131,7 +128,7 @@ fn foo(a: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -144,8 +141,7 @@ libfunc rename<core::bool> = rename<core::bool>;
 bool_not_impl([0]) -> ([1]);
 store_temp<core::bool>([1]) -> ([1]);
 rename<core::bool>([1]) -> ([2]);
-rename<core::bool>([2]) -> ([3]);
-return([3]);
+return([2]);
 
 test::foo@0([0]: core::bool) -> (core::bool);
 
@@ -173,7 +169,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 6})
+test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;

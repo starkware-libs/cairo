@@ -15,7 +15,8 @@ use cairo_lang_semantic::plugin::{
 };
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_syntax::node::ast::{
-    FunctionWithBody, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause, Param,
+    FunctionWithBody, MaybeModuleBody, MaybeTraitBody, Modifier, OptionReturnTypeClause,
+    OptionWrappedGenericParamList, Param,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -28,11 +29,13 @@ use crate::contract::starknet_keccak;
 const ABI_ATTR: &str = "abi";
 const CONTRACT_ATTR: &str = "contract";
 const EXTERNAL_ATTR: &str = "external";
+const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const VIEW_ATTR: &str = "view";
 pub const EVENT_ATTR: &str = "event";
 pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
+pub const CONSTRUCTOR_MODULE: &str = "__constructor";
 
 /// The diagnostics remapper of the plugin.
 #[derive(Debug, PartialEq, Eq)]
@@ -141,21 +144,16 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
 
                     let param_type = param.type_clause(db).ty(db);
                     let type_name = &param_type.as_syntax_node().get_text(db);
-                    if let Some((ser_func, _)) = get_type_serde_funcs(type_name) {
-                        serialization_code.push(RewriteNode::interpolate_patched(
-                            &formatdoc!("        {ser_func}(calldata, $arg_name$);\n"),
-                            HashMap::from([(
-                                "arg_name".to_string(),
-                                RewriteNode::Trimmed(param.name(db).as_syntax_node()),
-                            )]),
-                        ));
-                    } else {
-                        diagnostics.push(PluginDiagnostic {
-                            stable_ptr: param_type.stable_ptr().untyped(),
-                            message: format!("Could not find serialization for type `{type_name}`"),
-                        });
-                        skip_generation = true;
-                    }
+                    serialization_code.push(RewriteNode::interpolate_patched(
+                        &formatdoc!(
+                            "        serde::Serde::<{type_name}>::serialize(ref calldata, \
+                             $arg_name$);\n"
+                        ),
+                        HashMap::from([(
+                            "arg_name".to_string(),
+                            RewriteNode::Trimmed(param.name(db).as_syntax_node()),
+                        )]),
+                    ));
                 }
 
                 if skip_generation {
@@ -169,16 +167,11 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                     OptionReturnTypeClause::ReturnTypeClause(ty) => {
                         let ret_type_ast = ty.ty(db);
                         let type_name = ret_type_ast.as_syntax_node().get_text(db);
-                        let Some((_, deser_func)) = get_type_serde_funcs(&type_name) else {
-                            diagnostics.push(PluginDiagnostic {
-                                stable_ptr: ret_type_ast.stable_ptr().untyped(),
-                                message: format!(
-                                    "Could not find deserialization for type `{type_name}`"),
-                            });
-                            continue;
-                        };
-
-                        format!("        {deser_func}(ret_data)")
+                        format!(
+                            "
+        serde::Serde::<{type_name}>::deserialize(ref ret_data).expect(
+            'Returned data too short')"
+                        )
                     }
                 };
 
@@ -198,21 +191,12 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
 
                 functions.push(RewriteNode::interpolate_patched(
                     "$func_decl$ {
-        let calldata = array_new::<felt>();
+        let mut calldata = array_new();
 $serialization_code$
-        let ret_data = match starknet::call_contract_syscall(
+        let mut ret_data = starknet::call_contract_syscall(
             contract_address,
             calldata,
-        ) {
-            Result::Ok(ret_data) => ret_data,
-            Result::Err((reason, _ret_data)) => {
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, 'call_contract_syscall failed');
-                array_append::<felt>(err_data, reason);
-                // TODO(ilya): Handle ret_data.
-                panic(err_data)
-            },
-        };
+        ).unwrap_syscall();
 $deserialization_code$
     }
 ",
@@ -234,7 +218,12 @@ $deserialization_code$
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
             "mod {dispatcher_name} {{
-                $body$
+                use starknet::SyscallResultTrait;
+                use starknet::SyscallResultTraitImpl;
+                use option::OptionTrait;
+                use option::OptionTraitImpl;
+
+            $body$
             }}",
         ),
         HashMap::from([(
@@ -278,6 +267,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     let mut diagnostics = vec![];
 
     let mut generated_external_functions = Vec::new();
+    let mut generated_constructor_functions = Vec::new();
 
     let mut storage_code = RewriteNode::Text("".to_string());
     let mut original_items = Vec::new();
@@ -288,23 +278,43 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         let keep_original = match &item {
             ast::Item::FreeFunction(item_function)
                 if item_function.has_attr(db, EXTERNAL_ATTR)
-                    || item_function.has_attr(db, VIEW_ATTR) =>
+                    || item_function.has_attr(db, VIEW_ATTR)
+                    || item_function.has_attr(db, CONSTRUCTOR_ATTR) =>
             {
-                let attr =
-                    if item_function.has_attr(db, EXTERNAL_ATTR) { "external" } else { "view" };
+                let attr = if item_function.has_attr(db, EXTERNAL_ATTR) {
+                    EXTERNAL_ATTR
+                } else if item_function.has_attr(db, VIEW_ATTR) {
+                    VIEW_ATTR
+                } else {
+                    CONSTRUCTOR_ATTR
+                };
+
+                let declaration = item_function.declaration(db);
+                if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
+                    declaration.generic_params(db)
+                {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "Contract entry points cannot have generic arguments".to_string(),
+                        stable_ptr: generic_params.stable_ptr().untyped(),
+                    })
+                }
                 abi_functions.push(RewriteNode::Modified(ModifiedNode {
                     children: vec![
                         RewriteNode::Text(format!("#[{attr}]\n        ")),
-                        RewriteNode::Trimmed(item_function.declaration(db).as_syntax_node()),
+                        RewriteNode::Trimmed(declaration.as_syntax_node()),
                         RewriteNode::Text(";\n        ".to_string()),
                     ],
                 }));
 
                 match generate_entry_point_wrapper(db, item_function) {
                     Ok(generated_function) => {
-                        generated_external_functions.push(generated_function);
-                        generated_external_functions
-                            .push(RewriteNode::Text("\n        ".to_string()));
+                        let generated = if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
+                            &mut generated_constructor_functions
+                        } else {
+                            &mut generated_external_functions
+                        };
+                        generated.push(generated_function);
+                        generated.push(RewriteNode::Text("\n        ".to_string()));
                     }
                     Err(entry_point_diagnostics) => {
                         diagnostics.extend(entry_point_diagnostics);
@@ -342,8 +352,14 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             "
             #[{GENERATED_CONTRACT_ATTR}]
             mod $contract_name$ {{
+                use starknet::SyscallResultTrait;
+                use starknet::SyscallResultTraitImpl;
+
             $original_items$
                 $storage_code$
+
+                $event_functions$
+
                 trait {ABI_TRAIT} {{
                     $abi_functions$
                     $abi_events$
@@ -351,7 +367,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
                 mod {EXTERNAL_MODULE} {{
                     $generated_external_functions$
-                    $event_functions$
+                }}
+
+                mod {CONSTRUCTOR_MODULE} {{
+                    $generated_constructor_functions$
                 }}
             }}
         "
@@ -378,6 +397,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             (
                 "generated_external_functions".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: generated_external_functions }),
+            ),
+            (
+                "generated_constructor_functions".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: generated_constructor_functions }),
             ),
             (
                 "event_functions".to_string(),
@@ -411,6 +434,16 @@ fn handle_event(
 ) -> (Option<(RewriteNode, RewriteNode)>, Vec<PluginDiagnostic>) {
     let mut diagnostics = vec![];
     let declaration = function_ast.declaration(db);
+
+    if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
+        declaration.generic_params(db)
+    {
+        diagnostics.push(PluginDiagnostic {
+            message: "Event functions cannot have generic arguments".to_string(),
+            stable_ptr: generic_params.stable_ptr().untyped(),
+        })
+    }
+
     let signature = declaration.signature(db);
     let ret_ty = declaration.signature(db).ret_ty(db);
     if matches!(ret_ty, OptionReturnTypeClause::ReturnTypeClause(_)) {
@@ -436,24 +469,13 @@ fn handle_event(
         let param_name = param.name(db);
         let param_type_ast = param.type_clause(db).ty(db);
         let type_name = param_type_ast.as_syntax_node().get_text(db);
-        let ser_func = if let Some((ser_func, _)) = get_type_serde_funcs(&type_name) {
-            ser_func
-        } else {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: param_type_ast.stable_ptr().0,
-                message: format!("Could not find serialization for type `{type_name}`"),
-            });
-            skip_param_serialization = true;
-            ""
-        };
-
         if skip_param_serialization {
             continue;
         }
 
         // TODO(yuval): use panicable version of deserializations when supported.
         let param_serialization = RewriteNode::interpolate_patched(
-            &format!("{ser_func}(data, $param_name$);\n            "),
+            &format!("serde::Serde::<{type_name}>::serialize(ref data, $param_name$);\n        "),
             HashMap::from([(
                 "param_name".to_string(),
                 RewriteNode::Trimmed(param_name.as_syntax_node()),
@@ -482,14 +504,14 @@ fn handle_event(
             RewriteNode::interpolate_patched(
                 &format!(
                     "
-        $attrs$
-        $declaration$ {{
-            let mut keys = array_new::<felt>();
-            array_append::<felt>(keys, {event_key});
-            let mut data = array_new::<felt>();
-            $param_serializations$
-            starknet::emit_event_syscall(keys, data);
-        }}
+    $attrs$
+    $declaration$ {{
+        let mut keys = array_new();
+        array_append(ref keys, {event_key});
+        let mut data = array_new();
+        $param_serializations$
+        starknet::emit_event_syscall(keys, data).unwrap_syscall()
+    }}
             "
                 ),
                 HashMap::from([
@@ -531,14 +553,10 @@ fn handle_storage_struct(
         let name = member.name(db).text(db);
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
         let type_ast = member.type_clause(db).ty(db);
-        if let Some((key_type_ast, value_type_ast)) = try_extract_mapping_types(db, &type_ast) {
-            match handle_mapping_storage_var(
-                key_type_ast.as_syntax_node().get_text(db).trim(),
-                value_type_ast.as_syntax_node().get_text(db).trim(),
-                &address,
-            ) {
-                Some(code) => members_code.push(RewriteNode::interpolate_patched(
-                    code.as_str(),
+        match try_extract_mapping_types(db, &type_ast) {
+            Some((key_type_ast, value_type_ast, MappingType::Legacy)) => {
+                members_code.push(RewriteNode::interpolate_patched(
+                    handle_legacy_mapping_storage_var(&address).as_str(),
                     HashMap::from([
                         (
                             "storage_var_name".to_string(),
@@ -553,17 +571,17 @@ fn handle_storage_struct(
                             RewriteNode::Trimmed(value_type_ast.as_syntax_node()),
                         ),
                     ]),
-                )),
-                None => diagnostics.push(PluginDiagnostic {
-                    stable_ptr: type_ast.stable_ptr().untyped(),
-                    message: "Unsupported type for storage var.".to_string(),
-                }),
+                ));
             }
-        } else {
-            match handle_simple_storage_var(type_ast.as_syntax_node().get_text(db).trim(), &address)
-            {
-                Some(code) => members_code.push(RewriteNode::interpolate_patched(
-                    code.as_str(),
+            Some((_, _, MappingType::NonLegacy)) => {
+                diagnostics.push(PluginDiagnostic {
+                    message: "Non `LegacyMap` mapping is not yet supported.".to_string(),
+                    stable_ptr: type_ast.stable_ptr().untyped(),
+                });
+            }
+            None => {
+                members_code.push(RewriteNode::interpolate_patched(
+                    handle_simple_storage_var(&address).as_str(),
                     HashMap::from([
                         (
                             "storage_var_name".to_string(),
@@ -571,157 +589,109 @@ fn handle_storage_struct(
                         ),
                         ("type_name".to_string(), RewriteNode::Trimmed(type_ast.as_syntax_node())),
                     ]),
-                )),
-                None => diagnostics.push(PluginDiagnostic {
-                    stable_ptr: type_ast.stable_ptr().untyped(),
-                    message: "Unsupported type for storage var.".to_string(),
-                }),
+                ));
             }
         }
     }
     (RewriteNode::Modified(ModifiedNode { children: members_code }), diagnostics)
 }
 
-/// Given a type, if it is of form `Map::<K, V>`, returns `K` and `V`. Otherwise, returns None.
+/// The type of the mapping storage variable.
+enum MappingType {
+    /// Pedersen based.
+    Legacy,
+    /// Poseidon based.
+    NonLegacy,
+}
+
+/// Given a type, if it is of form `Map{Legacy,}::<K, V>`, returns `K` and `V` and the mapping type.
+/// Otherwise, returns None.
 fn try_extract_mapping_types(
     db: &dyn SyntaxGroup,
     type_ast: &ast::Expr,
-) -> Option<(ast::Expr, ast::Expr)> {
+) -> Option<(ast::Expr, ast::Expr, MappingType)> {
     let as_path = try_extract_matches!(type_ast, ast::Expr::Path)?;
     let [ast::PathSegment::WithGenericArgs(segment)] = &as_path.elements(db)[..] else {
         return None;
     };
     let ty = segment.ident(db).text(db);
-    if ty == "Map" {
+    if ty == "LegacyMap" || ty == "Map" {
         let [key_ty, value_ty] =
             <[ast::Expr; 2]>::try_from(segment.generic_args(db).generic_args(db).elements(db))
                 .ok()?;
-        Some((key_ty, value_ty))
+        Some((
+            key_ty,
+            value_ty,
+            if ty == "LegacyMap" { MappingType::Legacy } else { MappingType::NonLegacy },
+        ))
     } else {
         None
     }
 }
 
-/// Returns the conversion string to and from felt for the type.
-fn get_conversions(type_name: &str) -> Option<(&str, &str)> {
-    Some(match type_name {
-        "felt" => ("value", "value"),
-        "bool" => ("if value == 0 { false } else { true }", "if value { 1 } else { 0 }"),
-        "u128" => ("u128_from_felt(value)", "u128_to_felt(value)"),
-        _ => return None,
-    })
-}
-
 /// Generate getters and setters skeleton for a non-mapping member in the storage struct.
-fn handle_simple_storage_var(type_name: &str, address: &str) -> Option<String> {
-    let (convert_to, convert_from) = get_conversions(type_name)?;
-    Some(format!(
+fn handle_simple_storage_var(address: &str) -> String {
+    format!(
         "
     mod $storage_var_name$ {{
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address() -> starknet::StorageBaseAddress {{
             starknet::storage_base_address_const::<{address}>()
         }}
         fn read() -> $type_name$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
+            starknet::StorageAccess::<$type_name$>::read(
                 address_domain,
-                starknet::storage_address_from_base(address()),
-            ) {{
-                Result::Ok(value) => {convert_to},
-                Result::Err(revert_reason) => {{
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                }},
-            }}
+                address(),
+            ).unwrap_syscall()
         }}
         fn write(value: $type_name$) {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            starknet::StorageAccess::<$type_name$>::write(
                 address_domain,
-                starknet::storage_address_from_base(address()),
-                {convert_from},
-            ) {{
-                Result::Ok(()) => {{}},
-                Result::Err(revert_reason) => {{
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                }},
-            }}
+                address(),
+                value,
+            ).unwrap_syscall()
         }}
     }}"
-    ))
+    )
 }
 
 /// Generate getters and setters skeleton for a non-mapping member in the storage struct.
-fn handle_mapping_storage_var(
-    key_type_name: &str,
-    value_type_name: &str,
-    address: &str,
-) -> Option<String> {
-    let key_convert_to = match key_type_name {
-        "felt" => "key",
-        "bool" => "if key { 1 } else { 0 }",
-        "u128" => "u128_to_felt(key)",
-        _ => return None,
-    };
-    let (value_convert_to, value_convert_from) = get_conversions(value_type_name)?;
-    Some(format!(
+fn handle_legacy_mapping_storage_var(address: &str) -> String {
+    format!(
         "
     mod $storage_var_name$ {{
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
         fn address(key: $key_type$) -> starknet::StorageBaseAddress {{
-            starknet::storage_base_address_from_felt(pedersen({address}, {key_convert_to}))
+            starknet::storage_base_address_from_felt(
+                hash::LegacyHash::<$key_type$>::hash({address}, key))
         }}
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_read_syscall(
+            starknet::StorageAccess::<$value_type$>::read(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
-            ) {{
-                Result::Ok(value) => {value_convert_to},
-                Result::Err(revert_reason) => {{
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                }},
-            }}
+                address(key),
+            ).unwrap_syscall()
         }}
         fn write(key: $key_type$, value: $value_type$) {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            match starknet::storage_write_syscall(
+            starknet::StorageAccess::<$value_type$>::write(
                 address_domain,
-                starknet::storage_address_from_base(address(key)),
-                {value_convert_from},
-            ) {{
-                Result::Ok(()) => {{}},
-                Result::Err(revert_reason) => {{
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, revert_reason);
-                    panic(err_data)
-                }},
-            }}
+                address(key),
+                value,
+            ).unwrap_syscall()
         }}
     }}"
-    ))
-}
-
-/// Returns the serde functions for a type.
-// TODO(orizi): Use type ids when semantic information is available.
-// TODO(orizi): Use traits for serialization when supported.
-fn get_type_serde_funcs(name: &str) -> Option<(&str, &str)> {
-    match name.trim() {
-        "felt" => Some(("serde::serialize_felt", "serde::deserialize_felt")),
-        "bool" => Some(("serde::serialize_bool", "serde::deserialize_bool")),
-        "u128" => Some(("serde::serialize_u128", "serde::deserialize_u128")),
-        "u256" => Some(("serde::serialize_u256", "serde::deserialize_u256")),
-        "Array::<felt>" => Some(("serde::serialize_array_felt", "serde::deserialize_array_felt")),
-        _ => None,
-    }
+    )
 }
 
 /// Generates Cairo code for an entry point wrapper.
@@ -732,7 +702,7 @@ fn generate_entry_point_wrapper(
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
     let params = sig.parameters(db).elements(db);
-    let mut diagnostics = vec![];
+    let diagnostics = vec![];
     let mut arg_names = Vec::new();
     let mut arg_definitions = Vec::new();
     let mut ref_appends = Vec::new();
@@ -741,34 +711,30 @@ fn generate_entry_point_wrapper(
         let arg_name = format!("__arg_{}", param.name(db).text(db));
         let arg_type_ast = param.type_clause(db).ty(db);
         let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db);
-        let Some((ser_func, deser_func)) = get_type_serde_funcs(&type_name) else {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: arg_type_ast.stable_ptr().0,
-                message: format!("Could not find serialization for type `{type_name}`"),
-            });
-            continue;
-        };
 
         let is_ref = is_ref_param(db, &param);
-        arg_names.push(arg_name.clone());
+        let ref_modifier = if is_ref { "ref " } else { "" };
+        arg_names.push(format!("{ref_modifier}{arg_name}"));
         let mut_modifier = if is_ref { "mut " } else { "" };
         // TODO(yuval): use panicable version of deserializations when supported.
         let arg_definition = format!(
             "
-            let {mut_modifier}{arg_name} = match {deser_func}(data) {{
-                Option::Some(x) => x,
-                Option::None(()) => {{
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, {input_data_short_err});
-                    panic(err_data)
-                }},
-            }};"
+            let {mut_modifier}{arg_name} =
+                match serde::Serde::<{type_name}>::deserialize(ref data) {{
+                    Option::Some(x) => x,
+                    Option::None(()) => {{
+                        let mut err_data = array_new();
+                        array_append(ref err_data, {input_data_short_err});
+                        panic(err_data)
+                    }},
+                }};"
         );
         arg_definitions.push(arg_definition);
 
         if is_ref {
-            ref_appends
-                .push(RewriteNode::Text(format!("\n            {ser_func}(arr, {arg_name});")));
+            ref_appends.push(RewriteNode::Text(format!(
+                "\n            serde::Serde::<{type_name}>::serialize(ref arr, {arg_name});"
+            )));
         }
     }
     let arg_names_str = arg_names.join(", ");
@@ -783,16 +749,10 @@ fn generate_entry_point_wrapper(
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
             let ret_type_ast = ty.ty(db);
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
-            // TODO(orizi): Handle tuple types.
-            if let Some((ser_func, _)) = get_type_serde_funcs(&ret_type_name) {
-                ("\n            let res = ", format!("\n            {ser_func}(arr, res)"))
-            } else {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: ret_type_ast.stable_ptr().0,
-                    message: format!("Could not find serialization for type `{ret_type_name}`"),
-                });
-                ("", "".to_string())
-            }
+            (
+                "\n            let res = ",
+                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res)"),
+            )
         }
     };
     if !diagnostics.is_empty() {
@@ -807,26 +767,36 @@ fn generate_entry_point_wrapper(
     Ok(RewriteNode::interpolate_patched(
         format!(
             "fn $function_name$(mut data: Array::<felt>) -> Array::<felt> {{
+            internal::revoke_ap_tracking();
             match get_gas() {{
                 Option::Some(_) => {{
                 }},
                 Option::None(_) => {{
-                    let mut err_data = array_new::<felt>();
-                    array_append::<felt>(err_data, {oog_err});
-                    panic(err_data);
+                    let mut err_data = array_new();
+                    array_append(ref err_data, {oog_err});
+                    panic(err_data)
                 }},
             }}
             {arg_definitions}
-            if array_len::<felt>(data) != 0_u128 {{
+            if array_len(ref data) != 0_usize {{
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, {input_data_long_err});
+                let mut err_data = array_new();
+                array_append(ref err_data, {input_data_long_err});
                 panic(err_data);
             }}
+            match get_gas_all(get_builtin_costs()) {{
+                Option::Some(_) => {{
+                }},
+                Option::None(_) => {{
+                    let mut err_data = array_new();
+                    array_append(ref err_data, {oog_err});
+                    panic(err_data)
+                }},
+            }}
             {let_res}$wrapped_name$({arg_names_str});
-            let mut arr = array_new::<felt>();
+            let mut arr = array_new();
             // References.$ref_appends$
             // Result.{append_res}
             arr

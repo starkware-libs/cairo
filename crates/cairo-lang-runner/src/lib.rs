@@ -1,7 +1,7 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
-use cairo_felt::{Felt, FeltOps};
+use cairo_felt::Felt;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
@@ -37,7 +37,7 @@ pub enum RunnerError {
     #[error(transparent)]
     ProgramRegistryError(#[from] Box<ProgramRegistryError>),
     #[error(transparent)]
-    SierraCompilationError(#[from] CompilationError),
+    SierraCompilationError(#[from] Box<CompilationError>),
     #[error(transparent)]
     ApChangeError(#[from] ApChangeError),
     #[error(transparent)]
@@ -106,10 +106,7 @@ impl SierraCasmRunner {
                 let vm = context.vm;
                 // Create the builtin cost segment, with dummy values.
                 let builtin_cost_segment = vm.add_memory_segment();
-                for token_type in CostTokenType::iter() {
-                    if *token_type == CostTokenType::Step {
-                        continue;
-                    }
+                for token_type in CostTokenType::iter_precost() {
                     vm.insert_value(
                         &(builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)),
                         Felt::from(DUMMY_BUILTIN_GAS_COST),
@@ -201,7 +198,7 @@ impl SierraCasmRunner {
         for ty in func.signature.ret_types.iter().rev() {
             let size = self.sierra_program_registry.get_type(ty)?.info().size as usize;
             let values: Vec<Felt> =
-                cells[(ap - size)..ap].iter().cloned().map(|cell| cell.unwrap()).collect();
+                ((ap - size)..ap).map(|index| cells[index].clone().unwrap()).collect();
             ap -= size;
             results_data.push((ty.clone(), values));
         }
@@ -320,7 +317,7 @@ impl SierraCasmRunner {
         let Some(available_gas) = available_gas else { return Ok(0); };
         // TODO(lior): Handle the other token types.
         let required_gas =
-            self.metadata.gas_info.function_costs[func.id.clone()][CostTokenType::Step] as usize;
+            self.metadata.gas_info.function_costs[func.id.clone()][CostTokenType::Const] as usize;
         available_gas.checked_sub(required_gas).ok_or(RunnerError::NotEnoughGasToCall)
     }
 
@@ -341,7 +338,7 @@ fn create_metadata(
     calc_gas: bool,
 ) -> Result<Metadata, RunnerError> {
     if calc_gas {
-        calc_metadata(sierra_program).map_err(|err| match err {
+        calc_metadata(sierra_program, Default::default()).map_err(|err| match err {
             MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
             MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
         })

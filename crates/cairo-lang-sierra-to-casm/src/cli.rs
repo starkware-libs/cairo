@@ -13,5 +13,5 @@ fn main() {
 
     let cairo_program = compile_at_path(&args.file[..]).expect("Compilation failed");
 
-    fs::write(args.output, format!("{}", cairo_program)).expect("Failed to write output.");
+    fs::write(args.output, format!("{cairo_program}")).expect("Failed to write output.");
 }

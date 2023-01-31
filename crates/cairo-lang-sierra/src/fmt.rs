@@ -151,7 +151,7 @@ impl<StatementId: fmt::Display> fmt::Display for GenBranchTarget<StatementId> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             GenBranchTarget::Fallthrough => write!(f, "fallthrough"),
-            GenBranchTarget::Statement(id) => write!(f, "{}", id),
+            GenBranchTarget::Statement(id) => write!(f, "{id}"),
         }
     }
 }
