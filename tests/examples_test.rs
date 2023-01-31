@@ -22,9 +22,7 @@ fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
     path.push("examples");
     path.push(format!("{name}.cairo"));
 
-    let mut builder = RootDatabase::builder();
-    builder.with_dev_corelib().unwrap();
-    let mut db = builder.build();
+    let mut db = RootDatabase::builder().with_dev_corelib().build().unwrap();
     let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
     assert!(!check_and_eprint_diagnostics(&mut db));
     (db, main_crate_ids)

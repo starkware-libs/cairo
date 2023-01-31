@@ -13,13 +13,7 @@ use crate::plugin::StarkNetPlugin;
 pub fn test_expand_contract(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
-    let mut db_val = {
-        let mut b = RootDatabase::builder();
-        b.with_dev_corelib().unwrap();
-        b.with_starknet();
-        b.build()
-    };
-    let db = &mut db_val;
+    let db = &mut RootDatabase::builder().with_dev_corelib().with_starknet().build().unwrap();
 
     let (test_module, _semantic_diagnostics) =
         setup_test_module(db, inputs["cairo_code"].as_str()).split();

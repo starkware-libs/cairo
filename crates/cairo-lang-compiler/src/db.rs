@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::{anyhow, Result};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::db::{
@@ -18,7 +19,6 @@ use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
-use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::project::update_crate_roots_from_project_config;
 
@@ -60,53 +60,75 @@ impl Default for RootDatabase {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub struct RootDatabaseBuilder {
-    db: RootDatabase,
+    plugins: Option<Vec<Arc<dyn SemanticPlugin>>>,
+    use_dev_corelib: bool,
+    project_config: Option<Box<ProjectConfig>>,
+    implicit_precedence: Option<Vec<String>>,
 }
 
 impl RootDatabaseBuilder {
     pub fn empty() -> Self {
-        Self { db: RootDatabase::empty() }
+        Default::default()
     }
 
     pub fn with_plugins(&mut self, plugins: Vec<Arc<dyn SemanticPlugin>>) -> &mut Self {
-        self.db.set_semantic_plugins(plugins);
+        self.plugins = Some(plugins);
         self
     }
 
-    pub fn with_dev_corelib(&mut self) -> Option<&mut Self> {
-        if let Some(path) = detect_corelib() {
-            init_dev_corelib(&mut self.db, path);
-            Some(self)
-        } else {
-            None
-        }
+    pub fn with_dev_corelib(&mut self) -> &mut Self {
+        self.use_dev_corelib = true;
+        self
     }
 
     pub fn with_project_config(&mut self, config: ProjectConfig) -> &mut Self {
-        update_crate_roots_from_project_config(&mut self.db, config.clone());
+        self.project_config = Some(Box::new(config));
+        self
+    }
 
-        if let Some(corelib) = config.corelib {
-            let core_crate = self.db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
-            self.db.set_crate_root(core_crate, Some(corelib));
+    pub fn with_implicit_precedence(&mut self, precedence: &[impl ToString]) -> &mut Self {
+        self.implicit_precedence = Some(precedence.iter().map(ToString::to_string).collect());
+        self
+    }
+
+    pub fn build(&mut self) -> Result<RootDatabase> {
+        // NOTE: Order of operations matters here!
+        //   Errors if something is not OK are very subtle, mostly this results in missing
+        //   identifier diagnostics, or panics regarding lack of corelib items.
+
+        let mut db = RootDatabase::default();
+
+        if self.use_dev_corelib {
+            let path =
+                detect_corelib().ok_or_else(|| anyhow!("Failed to find development corelib."))?;
+            init_dev_corelib(&mut db, path);
         }
 
-        self
-    }
+        if let Some(config) = self.project_config.clone() {
+            update_crate_roots_from_project_config(&mut db, *config.clone());
 
-    pub fn with_implicit_precedence(&mut self, precedence: Vec<&str>) -> &mut Self {
-        self.db.set_implicit_precedence(Arc::new(
-            precedence
-                .iter()
-                .map(|name| get_core_ty_by_name(&self.db, name.into(), vec![]))
-                .collect::<Vec<_>>(),
-        ));
-        self
-    }
+            if let Some(corelib) = config.corelib {
+                let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
+                db.set_crate_root(core_crate, Some(corelib));
+            }
+        }
 
-    pub fn build(self) -> RootDatabase {
-        self.db
+        if let Some(precedence) = self.implicit_precedence.clone() {
+            db.set_implicit_precedence(Arc::new(
+                precedence
+                    .into_iter()
+                    .map(|name| get_core_ty_by_name(&db, name.into(), vec![]))
+                    .collect::<Vec<_>>(),
+            ));
+        }
+
+        if let Some(plugins) = self.plugins.clone() {
+            db.set_semantic_plugins(plugins);
+        }
+
+        Ok(db)
     }
 }
 
@@ -126,17 +148,17 @@ impl Upcast<dyn SyntaxGroup> for RootDatabase {
     }
 }
 impl Upcast<dyn DefsGroup> for RootDatabase {
-    fn upcast(&self) -> &(dyn defs::db::DefsGroup + 'static) {
+    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn SemanticGroup> for RootDatabase {
-    fn upcast(&self) -> &(dyn semantic::db::SemanticGroup + 'static) {
+    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
         self
     }
 }
 impl Upcast<dyn LoweringGroup> for RootDatabase {
-    fn upcast(&self) -> &(dyn lowering::db::LoweringGroup + 'static) {
+    fn upcast(&self) -> &(dyn LoweringGroup + 'static) {
         self
     }
 }
