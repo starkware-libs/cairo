@@ -219,7 +219,19 @@ fn module_lowering_diagnostics(
             ModuleItemId::Enum(_) => {}
             ModuleItemId::TypeAlias(_) => {}
             ModuleItemId::Trait(_) => {}
-            ModuleItemId::Impl(_) => {}
+            ModuleItemId::Impl(impl_id) => {
+                // TODO(ilya): Fix `Variable not dropped.` for generic variable.
+                if !db.impl_generic_params(*impl_id)?.is_empty() {
+                    continue;
+                }
+
+                for impl_func in db.impl_functions(*impl_id)?.values() {
+                    let function_id = FunctionWithBodyId::Impl(*impl_func);
+                    diagnostics.extend(
+                        db.function_with_body_lowering_diagnostics(function_id)?.deref().clone(),
+                    );
+                }
+            }
             ModuleItemId::ExternType(_) => {}
             ModuleItemId::ExternFunction(_) => {}
         }

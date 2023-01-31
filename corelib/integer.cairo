@@ -56,7 +56,6 @@ fn u128_checked_add(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) no
 }
 
 impl U128Add of Add::<u128> {
-    #[inline(always)]
     fn add(a: u128, b: u128) -> u128 {
         u128_overflowing_add(a, b).expect('u128_add Overflow')
     }
@@ -71,7 +70,6 @@ fn u128_checked_sub(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) no
 }
 
 impl U128Sub of Sub::<u128> {
-    #[inline(always)]
     fn sub(a: u128, b: u128) -> u128 {
         u128_overflowing_sub(a, b).expect('u128_sub Overflow')
     }
@@ -86,7 +84,6 @@ fn u128_checked_mul(a: u128, b: u128) -> Option::<u128> implicits(RangeCheck) no
 }
 
 impl U128Mul of Mul::<u128> {
-    #[inline(always)]
     fn mul(a: u128, b: u128) -> u128 {
         u128_checked_mul(a, b).expect('u128_mul Overflow')
     }
@@ -109,7 +106,6 @@ fn u128_safe_div(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopa
 }
 
 impl U128Div of Div::<u128> {
-    #[inline(always)]
     fn div(a: u128, b: u128) -> u128 {
         u128_safe_div(a, u128_as_non_zero(b))
     }
@@ -121,7 +117,6 @@ fn u128_safe_mod(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopa
 }
 
 impl U128Rem of Rem::<u128> {
-    #[inline(always)]
     fn rem(a: u128, b: u128) -> u128 {
         u128_safe_mod(a, u128_as_non_zero(b))
     }
@@ -258,7 +253,6 @@ fn u8_checked_add(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
 }
 
 impl U8Add of Add::<u8> {
-    #[inline(always)]
     fn add(a: u8, b: u8) -> u8 {
         u8_overflowing_add(a, b).expect('u8_add Overflow')
     }
@@ -272,7 +266,6 @@ fn u8_checked_sub(a: u8, b: u8) -> Option::<u8> implicits(RangeCheck) nopanic {
 }
 
 impl U8Sub of Sub::<u8> {
-    #[inline(always)]
     fn sub(a: u8, b: u8) -> u8 {
         u8_overflowing_sub(a, b).expect('u8_sub Overflow')
     }
@@ -345,7 +338,6 @@ fn u64_checked_add(a: u64, b: u64) -> Option::<u64> implicits(RangeCheck) nopani
 }
 
 impl U64Add of Add::<u64> {
-    #[inline(always)]
     fn add(a: u64, b: u64) -> u64 {
         u64_overflowing_add(a, b).expect('u64_add Overflow')
     }
@@ -359,7 +351,6 @@ fn u64_checked_sub(a: u64, b: u64) -> Option::<u64> implicits(RangeCheck) nopani
 }
 
 impl U64Sub of Sub::<u64> {
-    #[inline(always)]
     fn sub(a: u64, b: u64) -> u64 {
         u64_overflowing_sub(a, b).expect('u64_sub Overflow')
     }
@@ -431,7 +422,6 @@ fn u256_checked_add(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) no
 }
 
 impl U256Add of Add::<u256> {
-    #[inline(always)]
     fn add(a: u256, b: u256) -> u256 {
         u256_checked_add(a, b).expect('u256_add Overflow')
     }
@@ -448,7 +438,6 @@ fn u256_checked_sub(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) no
 }
 
 impl U256Sub of Sub::<u256> {
-    #[inline(always)]
     fn sub(a: u256, b: u256) -> u256 {
         u256_checked_sub(a, b).expect('u256_sub Overflow')
     }
@@ -464,7 +453,6 @@ fn u256_checked_mul(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) {
 }
 
 impl U256Mul of Mul::<u256> {
-    #[inline(always)]
     fn mul(a: u256, b: u256) -> u256 {
         u256_checked_mul(a, b).expect('u256_mul Overflow')
     }
