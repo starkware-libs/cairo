@@ -1,9 +1,10 @@
 use std::path::Path;
 
-use anyhow::Context;
+use anyhow::{bail, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_lang_compiler::diagnostics::check_diagnostics;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -20,7 +21,7 @@ use thiserror::Error;
 use crate::abi::Contract;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
 use crate::contract::{find_contracts, get_abi, get_module_functions, starknet_keccak};
-use crate::db::get_starknet_database;
+use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::felt_serde::sierra_to_felts;
 use crate::plugin::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE};
 
@@ -63,24 +64,28 @@ pub struct ContractEntryPoint {
 }
 
 /// Compile the contract given by path.
-/// If `replace_ids` is true, replaces sierra ids with human-readable ones.
-pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractClass> {
-    let mut db_val = get_starknet_database();
+pub fn compile_path(path: &Path, compiler_config: CompilerConfig) -> Result<ContractClass> {
+    let mut db_val = {
+        let mut b = RootDatabase::builder();
+        b.with_dev_corelib().unwrap();
+        b.with_starknet();
+        b.build()
+    };
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&path))?;
 
-    if check_and_eprint_diagnostics(db) {
-        anyhow::bail!("Failed to compile: {}", path.display());
+    if check_diagnostics(db, compiler_config.on_diagnostic) {
+        bail!("Compilation failed.");
     }
 
     let contracts = find_contracts(db, &main_crate_ids);
     let contract = match &contracts[..] {
         [contract] => contract,
-        [] => anyhow::bail!("Contract not found."),
+        [] => bail!("Contract not found."),
         _ => {
             // TODO(ilya): Add contract names.
-            anyhow::bail!("Compilation unit must include only one contract.",)
+            bail!("Compilation unit must include only one contract.",)
         }
     };
 
@@ -100,7 +105,7 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
         .with_context(|| "Compilation failed without any diagnostics.")?;
 
     let replacer = CanonicalReplacer::from_program(&sierra_program);
-    let sierra_program = if replace_ids {
+    let sierra_program = if compiler_config.replace_ids {
         replace_sierra_ids_in_program(db, &sierra_program)
     } else {
         replacer.apply(&sierra_program)
@@ -127,7 +132,7 @@ fn get_entry_points(
     db: &mut RootDatabase,
     entry_point_functions: &[ConcreteFunctionWithBodyId],
     replacer: &CanonicalReplacer,
-) -> Result<Vec<ContractEntryPoint>, anyhow::Error> {
+) -> Result<Vec<ContractEntryPoint>> {
     let mut entry_points = vec![];
     for function_with_body_id in entry_point_functions {
         let function_id =
