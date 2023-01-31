@@ -15,6 +15,7 @@ use ignore::WalkBuilder;
 use crate::{get_formatted_file, FormatterConfig};
 
 const CAIRO_FILE_EXTENSION: &str = "cairo";
+const CAIRO_FILE_GLOB: &str = "*.cairo";
 const CAIRO_FMT_IGNORE: &str = ".cairofmtignore";
 
 pub struct FileDiff {
@@ -62,7 +63,7 @@ pub trait FormattableInput {
     }
 }
 
-impl FormattableInput for Path {
+impl FormattableInput for &Path {
     fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
         Ok(FileId::new(db, PathBuf::from(self)))
     }
@@ -139,13 +140,14 @@ impl CairoFormatter {
     }
 
     /// Returns a preconfigured `ignore::WalkBuilder` for the given path.
-    pub fn walk(path: &Path) -> WalkBuilder {
+    pub fn walk(&self, path: &Path) -> WalkBuilder {
         let mut builder = WalkBuilder::new(path);
         builder.add_custom_ignore_filename(CAIRO_FMT_IGNORE);
         builder.follow_links(false);
         builder.skip_stdout(true);
 
         let mut types_builder = TypesBuilder::new();
+        types_builder.add(CAIRO_FILE_EXTENSION, CAIRO_FILE_GLOB).unwrap();
         types_builder.select(CAIRO_FILE_EXTENSION);
         builder.types(types_builder.build().unwrap());
 
