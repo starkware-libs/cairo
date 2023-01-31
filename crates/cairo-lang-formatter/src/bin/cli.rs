@@ -65,7 +65,11 @@ impl<'a> std::fmt::Display for Input<'a> {
 }
 
 /// Formats an input from stdin or file
-fn format_input(input: &Input<'_>, config: &FormatterConfig, check: bool) -> Result<FormatResult> {
+fn format_input(
+    input: &Input<'_>,
+    config: &FormatterConfig,
+    args: &FormatterArgs,
+) -> Result<FormatResult> {
     let db = SimpleParserDatabase::default();
     let file_id = match input.to_file_id(&db) {
         Ok(value) => value,
@@ -88,7 +92,7 @@ fn format_input(input: &Input<'_>, config: &FormatterConfig, check: bool) -> Res
     if !diagnostics.0.leaves.is_empty() {
         eprintln!(
             "{}",
-            format!("A parsing error occurred in {input}. The content was not formatted.").red()
+            format!("A parsing error occurred in {input}. The content was not formatted. Run with --verbose to see error details.").red()
         );
         bail!("Unable to parse input");
     }
@@ -97,11 +101,11 @@ fn format_input(input: &Input<'_>, config: &FormatterConfig, check: bool) -> Res
 
     if &formatted_text == original_text.as_ref() {
         // Always print if input is stdin, unless --check is used
-        if matches!(input, Input::Stdin) && !check {
+        if matches!(input, Input::Stdin) && !args.check {
             print!("{formatted_text}");
         }
         Ok(FormatResult::Identical)
-    } else if check {
+    } else if args.check {
         // Diff found and --check was used
         print_diff(input, &original_text, &formatted_text);
         Ok(FormatResult::DiffFound)
