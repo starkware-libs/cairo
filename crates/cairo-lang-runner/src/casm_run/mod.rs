@@ -203,8 +203,6 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(vm, x, Felt::from(x_value))?;
                 insert_value_to_cellref!(vm, y, Felt::from(y_value))?;
             }
-            Hint::EnterScope => {}
-            Hint::ExitScope => {}
             Hint::RandomEcPoint { x, y } => {
                 // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
                 // residue.
@@ -362,7 +360,6 @@ impl HintProcessor for CairoHintProcessor {
                 let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address);
                 insert_value_to_cellref!(vm, dict_index, Felt::from(dict_infos_index))?;
             }
-            Hint::EnterDictSquashScope { .. } => {}
             Hint::SetDictTrackerEnd { .. } => {}
             Hint::InitSquashData { dict_accesses, n_accesses, first_key, big_keys, .. } => {
                 let dict_access_size = 3;
