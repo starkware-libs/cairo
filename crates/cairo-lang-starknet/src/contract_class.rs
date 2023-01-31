@@ -21,8 +21,9 @@ use crate::abi::Contract;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
 use crate::contract::{find_contracts, get_abi, get_module_functions, starknet_keccak};
 use crate::db::StarknetRootDatabaseBuilderEx;
-use crate::felt_serde::sierra_to_felts;
+use crate::felt_serde::{sierra_from_felts, sierra_to_felts};
 use crate::plugin::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE};
+use crate::sierra_version::{self, lookup_sierra_version, SierraVersionError};
 
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
@@ -32,6 +33,8 @@ mod test;
 pub enum StarknetCompilationError {
     #[error("Invalid entry point.")]
     EntryPointError,
+    #[error(transparent)]
+    SierraVersionError(#[from] SierraVersionError),
 }
 
 /// Represents a contract in the StarkNet network.
@@ -39,8 +42,29 @@ pub enum StarknetCompilationError {
 pub struct ContractClass {
     pub sierra_program: Vec<BigIntAsHex>,
     pub sierra_program_debug_info: cairo_lang_sierra::debug_info::DebugInfo,
+    /// The sierra version used in compilation.
+    pub sierra_version_id: usize,
     pub entry_points_by_type: ContractEntryPoints,
     pub abi: Contract,
+}
+
+impl ContractClass {
+    /// Checks that all the used libfuncs in the contract class are allwed in the contract class
+    /// sierra version.
+    pub fn verify_compatible_sierra_version(&self) -> Result<(), SierraVersionError> {
+        let sierra_version = lookup_sierra_version(self.sierra_version_id)?;
+        let sierra_program = sierra_from_felts(&self.sierra_program)
+            .map_err(|_| SierraVersionError::SierraProgramError)?;
+        let allowed_libfuncs_ids = sierra_version.get_allowed_libfuncs_ids();
+        for libfunc in sierra_program.libfunc_declarations.iter() {
+            if !allowed_libfuncs_ids.contains(&libfunc.long_id.generic_id) {
+                return Err(SierraVersionError::IncompatibleSierraVersion {
+                    invalid_libfunc: libfunc.long_id.generic_id.to_string(),
+                });
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -117,14 +141,17 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> Result<ContractClass> {
         /// TODO(orizi): Validate there is at most one constructor.
         constructor: get_entry_points(db, &constructor_functions, &replacer)?,
     };
-    Ok(ContractClass {
+    let contract_class = ContractClass {
         sierra_program: sierra_to_felts(&sierra_program)?,
         sierra_program_debug_info: cairo_lang_sierra::debug_info::DebugInfo::extract(
             &sierra_program,
         ),
+        sierra_version_id: sierra_version::CURRENT_VERSION_ID,
         entry_points_by_type,
         abi: Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?,
-    })
+    };
+    contract_class.verify_compatible_sierra_version()?;
+    Ok(contract_class)
 }
 
 /// Returns the entry points given their IDs.
