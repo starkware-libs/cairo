@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::Context;
+use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
@@ -20,7 +20,7 @@ use thiserror::Error;
 use crate::abi::Contract;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
 use crate::contract::{find_contracts, get_abi, get_module_functions, starknet_keccak};
-use crate::db::get_starknet_database;
+use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::felt_serde::sierra_to_felts;
 use crate::plugin::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE};
 
@@ -64,8 +64,13 @@ pub struct ContractEntryPoint {
 
 /// Compile the contract given by path.
 /// If `replace_ids` is true, replaces sierra ids with human-readable ones.
-pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractClass> {
-    let mut db_val = get_starknet_database();
+pub fn compile_path(path: &Path, replace_ids: bool) -> Result<ContractClass> {
+    let mut db_val = {
+        let mut b = RootDatabase::builder();
+        b.with_dev_corelib().unwrap();
+        b.with_starknet();
+        b.build()
+    };
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&path))?;
@@ -127,7 +132,7 @@ fn get_entry_points(
     db: &mut RootDatabase,
     entry_point_functions: &[ConcreteFunctionWithBodyId],
     replacer: &CanonicalReplacer,
-) -> Result<Vec<ContractEntryPoint>, anyhow::Error> {
+) -> Result<Vec<ContractEntryPoint>> {
     let mut entry_points = vec![];
     for function_with_body_id in entry_point_functions {
         let function_id =

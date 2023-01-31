@@ -1,5 +1,6 @@
+use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_language_server::{Backend, State};
-use cairo_lang_starknet::db::get_starknet_database;
+use cairo_lang_starknet::db::StarknetRootDatabaseBuilderEx;
 use tower_lsp::{LspService, Server};
 
 #[tokio::main]
@@ -11,7 +12,12 @@ async fn main() {
     #[cfg(feature = "runtime-agnostic")]
     let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
-    let db = get_starknet_database();
+    let db = {
+        let mut b = RootDatabase::builder();
+        b.with_dev_corelib().unwrap();
+        b.with_starknet();
+        b.build()
+    };
 
     let (service, socket) = LspService::build(|client| Backend {
         client,
