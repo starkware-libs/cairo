@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_filesystem::span::{TextOffset, TextSpan};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
@@ -126,8 +126,8 @@ impl Patches {
     pub fn translate(&self, _db: &dyn DefsGroup, span: TextSpan) -> Option<TextSpan> {
         for Patch { span: patch_span, origin_span } in &self.patches {
             if patch_span.contains(span) {
-                let start = origin_span.start.add(span.start - patch_span.start);
-                return Some(TextSpan { start, end: start.add(span.end - span.start) });
+                let start = origin_span.start.add_width(span.start - patch_span.start);
+                return Some(TextSpan { start, end: start.add_width(span.end - span.start) });
             }
         }
         None
@@ -167,9 +167,9 @@ impl<'a> PatchBuilder<'a> {
 
     pub fn add_node(&mut self, node: SyntaxNode) {
         let orig_span = node.span(self.db);
-        let start = TextOffset(self.code.len());
+        let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
         self.patches.patches.push(Patch {
-            span: TextSpan { start, end: start.add(orig_span.end - orig_span.start) },
+            span: TextSpan { start, end: start.add_width(orig_span.end - orig_span.start) },
             origin_span: node.span(self.db),
         });
         self.code += node.get_text(self.db).as_str();
@@ -178,12 +178,13 @@ impl<'a> PatchBuilder<'a> {
     pub fn add_trimmed_node(&mut self, node: SyntaxNode) {
         let origin_span = node.span_without_trivia(self.db);
         let text = node.get_text_of_span(self.db, origin_span);
-        let start = TextOffset(self.code.len());
+        let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
 
         self.code += &text;
 
-        self.patches
-            .patches
-            .push(Patch { span: TextSpan { start, end: start.add(text.len()) }, origin_span });
+        self.patches.patches.push(Patch {
+            span: TextSpan { start, end: start.add_width(TextWidth::from_str(&text)) },
+            origin_span,
+        });
     }
 }
