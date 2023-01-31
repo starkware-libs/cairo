@@ -5,25 +5,40 @@ trait Drop<T>;
 trait Add<T> {
     fn add(a: T, b: T) -> T;
 }
+trait AddEq<T> {
+    fn add_eq(ref self: T, other: T);
+}
 
 // TODO(spapini): When associated types are supported, support the general trait Sub<X, Y>.
 trait Sub<T> {
     fn sub(a: T, b: T) -> T;
+}
+trait SubEq<T> {
+    fn sub_eq(ref self: T, other: T);
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Mul<X, Y>.
 trait Mul<T> {
     fn mul(a: T, b: T) -> T;
 }
+trait MulEq<T> {
+    fn mul_eq(ref self: T, other: T);
+}
 
 // TODO(spapini): When associated types are supported, support the general trait Div<X, Y>.
 trait Div<T> {
     fn div(a: T, b: T) -> T;
 }
+trait DivEq<T> {
+    fn div_eq(ref self: T, other: T);
+}
 
 // TODO(spapini): When associated types are supported, support the general trait Rem<X, Y>.
 trait Rem<T> {
     fn rem(a: T, b: T) -> T;
+}
+trait RemEq<T> {
+    fn rem_eq(ref self: T, other: T);
 }
 
 trait PartialEq<T> {
