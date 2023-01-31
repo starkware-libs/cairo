@@ -39,6 +39,6 @@ fn build_pedersen_hash(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[pedersen], &[result]], None)],
-        None,
+        Some(Default::default()),
     ))
 }

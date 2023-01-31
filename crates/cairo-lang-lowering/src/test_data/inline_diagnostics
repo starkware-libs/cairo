@@ -28,7 +28,7 @@ End:
   Return(v3, v1)
 
 //! > lowering_flat
-blk0 (root):
+blk0:
 Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)

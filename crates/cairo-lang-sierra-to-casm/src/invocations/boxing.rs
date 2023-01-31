@@ -45,7 +45,11 @@ fn build_into_box(
         }
         addr
     };
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[addr]], None)], None))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[addr]], None)],
+        Some(Default::default()),
+    ))
 }
 
 /// Handles instruction for unboxing a box.

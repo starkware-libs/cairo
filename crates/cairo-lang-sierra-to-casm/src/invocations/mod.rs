@@ -212,8 +212,12 @@ impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
 /// Information required for validating libfunc cost.
 #[derive(Default)]
 struct CostValidationInfo<const BRANCH_COUNT: usize> {
-    // TODO(orizi): Add extra steps info for amortized costing cases.
-    // TODO(orizi): Handle range check pointer usages.
+    /// Range check variables at start and end of the libfunc.
+    /// Assumes only directly used as buffer.
+    pub range_check_info: Option<(Var, Var)>,
+    /// Possible extra cost per branch.
+    /// Useful for amortized costs, as well as gas fetching libfuncs.
+    pub extra_costs: Option<[i32; BRANCH_COUNT]>,
 }
 
 /// Helper for building compiled invocations.
@@ -326,7 +330,7 @@ impl CompiledInvocationBuilder<'_> {
                 .iter()
                 .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change)),
         );
-        if let Some(_cost_validation) = cost_validation {
+        if let Some(cost_validation) = cost_validation {
             let gas_changes = core_libfunc_cost(
                 &self.program_info.metadata.gas_info,
                 &self.idx,
@@ -339,12 +343,32 @@ impl CompiledInvocationBuilder<'_> {
                     .and_then(|costs| costs.get(&CostTokenType::Const).copied())
                     .unwrap_or_default()
             });
-            itertools::assert_equal(
+            let mut final_costs: [ConstCost; BRANCH_COUNT] =
+                std::array::from_fn(|_| Default::default());
+            for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
+                cost.steps += state.steps as i32;
+            }
+            if let Some((start, end)) = cost_validation.range_check_info {
+                for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
+                    let (start_base, start_offset) =
+                        state.get_adjusted(start).to_deref_with_offset().unwrap();
+                    let (end_base, end_offset) =
+                        state.get_adjusted(end).to_deref_with_offset().unwrap();
+                    assert_eq!(start_base, end_base);
+                    cost.range_checks += (end_offset - start_offset) as i32;
+                }
+            }
+            let extra_costs =
+                cost_validation.extra_costs.unwrap_or(std::array::from_fn(|_| Default::default()));
+            if !itertools::equal(
                 gas_changes,
-                branches.iter().map(|(state, _)| {
-                    ConstCost { steps: state.steps as i32, holes: 0, range_checks: 0 }.cost() as i64
-                }),
-            );
+                final_costs
+                    .iter()
+                    .zip(extra_costs)
+                    .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64),
+            ) {
+                panic!("Wrong costs for {}. Actual: {final_costs:?}.", self.invocation);
+            }
         }
         let relocations = branches
             .iter()
