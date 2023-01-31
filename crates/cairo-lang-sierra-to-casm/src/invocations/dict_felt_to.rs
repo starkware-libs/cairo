@@ -131,10 +131,12 @@ fn build_dict_felt_to_squash(
     let (
         dict_access_size,
         one,
-        dict_finalize_arg_range_check_ptr,
-        dict_finalize_arg_dict_accesses_start,
-        dict_finalize_arg_dict_accesses_end,
-        dict_finalize_arg_default_value,
+        dict_squash_arg_range_check_ptr,
+        dict_squash_arg_dict_accesses_start,
+        dict_squash_arg_dict_accesses_end,
+        dict_finalize_inner_arg_dict_accesses_start,
+        dict_finalize_inner_arg_n_accesses,
+        dict_finalize_inner_arg_default_value,
         final_range_check_ptr,
         final_gas_builtin,
         final_dict_manager_ptr,
@@ -175,68 +177,16 @@ fn build_dict_felt_to_squash(
             // Find the len of the accesses segment.
             tempvar dict_accesses_start = info_ptr[0];
             assert dict_accesses_len = dict_end_address - dict_accesses_start;
-            // Push DefaultDictFinalize arguments.
-            tempvar dict_finalize_arg_range_check_ptr = range_check_ptr;
-            tempvar dict_finalize_arg_dict_accesses_start = info_ptr[0];
-            tempvar dict_finalize_arg_dict_accesses_end = dict_end_address;
-            tempvar dict_finalize_arg_default_value = zero;
-            let (returned_range_check_ptr, returned_squashed_dict_start, returned_squashed_dict_end) = call DefaultDictFinalize;
-            // Find the number of keys
-            tempvar squashed_dict_len = returned_squashed_dict_end - returned_squashed_dict_start;
-            // The number of refunded acceesses is number_of_accesses - number_of_keys, which equals
-            // to dict_accesses_len / dict_access_size - squashed_dict_len / dict_access_size.
-            // Use distributivity to conserve one operation.
-            tempvar accesses_len_minus_squashed_len = dict_accesses_len - squashed_dict_len;
-            tempvar n_refunded_accesses = accesses_len_minus_squashed_len / dict_access_size;
-            tempvar gas_to_refund = n_refunded_accesses * gas_refund_per_access;
-            // Push the returned variables.
-            tempvar final_range_check_ptr = returned_range_check_ptr;
-            tempvar final_gas_builtin = local_gas_builtin + gas_to_refund;
-            tempvar final_dict_manager_ptr = new_dict_manager_ptr;
-            tempvar final_squashed_dict_start = returned_squashed_dict_start;
-            tempvar final_squashed_dict_end = returned_squashed_dict_end;
-            jump DONE;
-        };
-        (
-            dict_access_size,
-            one,
-            dict_finalize_arg_range_check_ptr,
-            dict_finalize_arg_dict_accesses_start,
-            dict_finalize_arg_dict_accesses_end,
-            dict_finalize_arg_default_value,
-            final_range_check_ptr,
-            final_gas_builtin,
-            final_dict_manager_ptr,
-            final_squashed_dict_start,
-            final_squashed_dict_end,
-        )
-    };
 
-    let (
-        dict_squash_arg_range_check_ptr,
-        dict_squash_arg_dict_accesses_start,
-        dict_squash_arg_dict_accesses_end,
-        dict_finalize_inner_arg_dict_accesses_start,
-        dict_finalize_inner_arg_n_accesses,
-        dict_finalize_inner_arg_default_value,
-    ) = {
-        casm_build_extend! {casm_builder,
-            // Finalizes the given default dictionary, and makes sure the initial values of the dictionary
-            // were indeed 'default_value'.
-            // Returns the squashed dictionary.
-            //
-            // Soundness guarantee: dict_accesses_end >= dict_accesses_start and the difference is
-            // divisible by DictAccess.SIZE.
-            DefaultDictFinalize:
             // Allocates function local variables.
             localvar local_range_check_ptr;
             localvar local_squashed_dict_start;
             localvar local_squashed_dict_end;
             ap += 3;
             // Push DictSquash arguments.
-            tempvar dict_squash_arg_range_check_ptr = dict_finalize_arg_range_check_ptr;
-            tempvar dict_squash_arg_dict_accesses_start = dict_finalize_arg_dict_accesses_start;
-            tempvar dict_squash_arg_dict_accesses_end = dict_finalize_arg_dict_accesses_end;
+            tempvar dict_squash_arg_range_check_ptr = range_check_ptr;
+            tempvar dict_squash_arg_dict_accesses_start = info_ptr[0];
+            tempvar dict_squash_arg_dict_accesses_end = dict_end_address;
             let (range_check_ptr, squashed_dict_start, squashed_dict_end) = call DictSquash;
             // Store the returned values as local as they are needed after DefaultDictFinalizeInner.
             assert local_range_check_ptr = range_check_ptr;
@@ -246,24 +196,40 @@ fn build_dict_felt_to_squash(
             tempvar n_accesses_times_access_size = squashed_dict_end - squashed_dict_start;
             tempvar dict_finalize_inner_arg_dict_accesses_start = squashed_dict_start;
             tempvar dict_finalize_inner_arg_n_accesses = n_accesses_times_access_size / dict_access_size;
-            tempvar dict_finalize_inner_arg_default_value = dict_finalize_arg_default_value;
+            tempvar dict_finalize_inner_arg_default_value = zero;
             let () = call DefaultDictFinalizeInner;
+            // Find the number of keys
+            tempvar squashed_dict_len = local_squashed_dict_end - local_squashed_dict_start;
+            // The number of refunded acceesses is number_of_accesses - number_of_keys, which equals
+            // to dict_accesses_len / dict_access_size - squashed_dict_len / dict_access_size.
+            // Use distributivity to conserve one operation.
+            tempvar accesses_len_minus_squashed_len = dict_accesses_len - squashed_dict_len;
+            tempvar n_refunded_accesses = accesses_len_minus_squashed_len / dict_access_size;
+            tempvar gas_to_refund = n_refunded_accesses * gas_refund_per_access;
             // Push the returned variables.
-            tempvar returned_range_check_ptr = local_range_check_ptr;
-            tempvar returned_squashed_dict_start = local_squashed_dict_start;
-            tempvar returned_squashed_dict_end = local_squashed_dict_end;
-            ret;
-        }
+            tempvar final_range_check_ptr = local_range_check_ptr;
+            tempvar final_gas_builtin = local_gas_builtin + gas_to_refund;
+            tempvar final_dict_manager_ptr = new_dict_manager_ptr;
+            tempvar final_squashed_dict_start = local_squashed_dict_start;
+            tempvar final_squashed_dict_end = local_squashed_dict_end;
+            jump DONE;
+        };
         (
+            dict_access_size,
+            one,
             dict_squash_arg_range_check_ptr,
             dict_squash_arg_dict_accesses_start,
             dict_squash_arg_dict_accesses_end,
             dict_finalize_inner_arg_dict_accesses_start,
             dict_finalize_inner_arg_n_accesses,
             dict_finalize_inner_arg_default_value,
+            final_range_check_ptr,
+            final_gas_builtin,
+            final_dict_manager_ptr,
+            final_squashed_dict_start,
+            final_squashed_dict_end,
         )
     };
-
     {
         casm_build_extend! {casm_builder,
             // Recursively verifies that the initial values of the dictionary  were indeed 'default_value'.
