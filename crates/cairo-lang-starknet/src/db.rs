@@ -13,11 +13,11 @@ pub trait StarknetRootDatabaseBuilderEx {
 impl StarknetRootDatabaseBuilderEx for RootDatabaseBuilder {
     fn with_starknet(&mut self) -> &mut Self {
         // Override implicit precedence for compatibility with the StarkNet OS.
-        let precedence = vec!["Pedersen", "RangeCheck", "Bitwise", "EcOp", "GasBuiltin", "System"];
+        let precedence = ["Pedersen", "RangeCheck", "Bitwise", "EcOp", "GasBuiltin", "System"];
 
         let mut plugins = get_default_plugins();
         plugins.push(Arc::new(StarkNetPlugin {}));
 
-        self.with_implicit_precedence(precedence).with_plugins(plugins)
+        self.with_implicit_precedence(&precedence).with_plugins(plugins)
     }
 }
