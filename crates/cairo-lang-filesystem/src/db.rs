@@ -10,7 +10,7 @@ use std::sync::Arc;
 use cairo_lang_utils::Upcast;
 
 use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
-use crate::span::{FileSummary, TextOffset};
+use crate::span::{FileSummary, TextOffset, TextWidth};
 
 pub const CORELIB_CRATE_NAME: &str = "core";
 
@@ -111,13 +111,13 @@ fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
 }
 fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
     let content = db.file_content(file)?;
-    let mut line_offsets = vec![TextOffset(0)];
-    let mut offset = 0;
+    let mut line_offsets = vec![TextOffset::default()];
+    let mut offset = TextOffset::default();
     for ch in content.chars() {
-        offset += 1;
+        offset = offset.add_width(TextWidth::from_char(ch));
         if ch == '\n' {
-            line_offsets.push(TextOffset(offset));
+            line_offsets.push(offset);
         }
     }
-    Some(Arc::new(FileSummary { line_offsets, total_length: offset }))
+    Some(Arc::new(FileSummary { line_offsets, last_offset: offset }))
 }

@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use test_log::test;
@@ -14,8 +15,8 @@ use crate::node::test_utils::DatabaseForTesting;
 fn traverse(
     db: &dyn SyntaxGroup,
     node: SyntaxNode,
-) -> Vec<(SyntaxKind, Option<SmolStr>, u32, u32)> {
-    let mut res = vec![(node.kind(db), node.text(db), node.offset().0 as u32, node.width(db))];
+) -> Vec<(SyntaxKind, Option<SmolStr>, TextOffset, TextWidth)> {
+    let mut res = vec![(node.kind(db), node.text(db), node.offset(), node.width(db))];
     for child in node.children(db) {
         res.append(&mut traverse(db, child));
     }
@@ -31,23 +32,108 @@ fn test_ast() {
     assert_eq!(
         traverse(db, root),
         [
-            (SyntaxKind::ExprBinary, None, 0, 7),
-            (SyntaxKind::ExprPath, None, 0, 4),
-            (SyntaxKind::PathSegmentSimple, None, 0, 4),
-            (SyntaxKind::TerminalIdentifier, None, 0, 4),
-            (SyntaxKind::Trivia, None, 0, 0),
-            (SyntaxKind::TokenIdentifier, Some("foo".into()), 0, 3),
-            (SyntaxKind::Trivia, None, 3, 1),
-            (SyntaxKind::TokenWhitespace, Some(" ".into()), 3, 1),
-            (SyntaxKind::TerminalPlus, None, 4, 2),
-            (SyntaxKind::Trivia, None, 4, 0),
-            (SyntaxKind::TokenPlus, Some("+".into()), 4, 1),
-            (SyntaxKind::Trivia, None, 5, 1),
-            (SyntaxKind::TokenWhitespace, Some(" ".into()), 5, 1),
-            (SyntaxKind::TerminalLiteralNumber, None, 6, 1),
-            (SyntaxKind::Trivia, None, 6, 0),
-            (SyntaxKind::TokenLiteralNumber, Some("5".into()), 6, 1),
-            (SyntaxKind::Trivia, None, 7, 0)
+            (
+                SyntaxKind::ExprBinary,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
+                TextWidth::new_for_testing(7)
+            ),
+            (
+                SyntaxKind::ExprPath,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
+                TextWidth::new_for_testing(4)
+            ),
+            (
+                SyntaxKind::PathSegmentSimple,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
+                TextWidth::new_for_testing(4)
+            ),
+            (
+                SyntaxKind::TerminalIdentifier,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
+                TextWidth::new_for_testing(4)
+            ),
+            (
+                SyntaxKind::Trivia,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
+                TextWidth::new_for_testing(0)
+            ),
+            (
+                SyntaxKind::TokenIdentifier,
+                Some("foo".into()),
+                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
+                TextWidth::new_for_testing(3)
+            ),
+            (
+                SyntaxKind::Trivia,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(3)),
+                TextWidth::new_for_testing(1)
+            ),
+            (
+                SyntaxKind::TokenWhitespace,
+                Some(" ".into()),
+                TextOffset::default().add_width(TextWidth::new_for_testing(3)),
+                TextWidth::new_for_testing(1)
+            ),
+            (
+                SyntaxKind::TerminalPlus,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(4)),
+                TextWidth::new_for_testing(2)
+            ),
+            (
+                SyntaxKind::Trivia,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(4)),
+                TextWidth::new_for_testing(0)
+            ),
+            (
+                SyntaxKind::TokenPlus,
+                Some("+".into()),
+                TextOffset::default().add_width(TextWidth::new_for_testing(4)),
+                TextWidth::new_for_testing(1)
+            ),
+            (
+                SyntaxKind::Trivia,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(5)),
+                TextWidth::new_for_testing(1)
+            ),
+            (
+                SyntaxKind::TokenWhitespace,
+                Some(" ".into()),
+                TextOffset::default().add_width(TextWidth::new_for_testing(5)),
+                TextWidth::new_for_testing(1)
+            ),
+            (
+                SyntaxKind::TerminalLiteralNumber,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
+                TextWidth::new_for_testing(1)
+            ),
+            (
+                SyntaxKind::Trivia,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
+                TextWidth::new_for_testing(0)
+            ),
+            (
+                SyntaxKind::TokenLiteralNumber,
+                Some("5".into()),
+                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
+                TextWidth::new_for_testing(1)
+            ),
+            (
+                SyntaxKind::Trivia,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(7)),
+                TextWidth::new_for_testing(0)
+            )
         ]
     )
 }
