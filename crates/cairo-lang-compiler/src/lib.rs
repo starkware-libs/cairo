@@ -93,9 +93,9 @@ pub fn compile(
 pub fn compile_prepared_db(
     mut db: RootDatabase,
     main_crate_ids: Vec<CrateId>,
-    compiler_config: CompilerConfig,
+    mut compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    if check_diagnostics(&mut db, compiler_config.on_diagnostic) {
+    if check_diagnostics(&mut db, compiler_config.on_diagnostic.as_deref_mut()) {
         bail!("Compilation failed.");
     }
 

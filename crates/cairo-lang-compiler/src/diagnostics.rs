@@ -16,9 +16,10 @@ mod test;
 /// Returns `true` if diagnostics were found.
 pub fn check_diagnostics<'a>(
     db: &mut RootDatabase,
-    on_diagnostic: Option<Box<dyn FnMut(String) + 'a>>,
+    on_diagnostic: Option<&mut (dyn FnMut(String) + 'a)>,
 ) -> bool {
-    let mut on_diagnostic = on_diagnostic.unwrap_or_else(|| Box::new(|_| ()));
+    let mut ignore = |_| ();
+    let on_diagnostic = on_diagnostic.unwrap_or(&mut ignore);
 
     let mut found_diagnostics = false;
     for crate_id in db.crates() {
@@ -66,7 +67,7 @@ pub fn check_diagnostics<'a>(
 }
 
 pub fn check_and_eprint_diagnostics(db: &mut RootDatabase) -> bool {
-    check_diagnostics(db, Some(Box::new(eprint_diagnostic)))
+    check_diagnostics(db, Some(&mut eprint_diagnostic))
 }
 
 pub fn eprint_diagnostic(diag: String) {
@@ -76,6 +77,6 @@ pub fn eprint_diagnostic(diag: String) {
 /// Returns a string with all the diagnostics in the db.
 pub fn get_diagnostics_as_string(db: &mut RootDatabase) -> String {
     let mut diagnostics = String::default();
-    check_diagnostics(db, Some(Box::new(|s| diagnostics += &s)));
+    check_diagnostics(db, Some(&mut |s| diagnostics += &s));
     diagnostics
 }
