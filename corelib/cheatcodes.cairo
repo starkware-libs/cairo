@@ -5,7 +5,7 @@ fn roll(address: felt, caller_address: felt) -> () {
         Result::Ok(()) => (),
         Result::Err(x) => {
             let mut data = array_new::<felt>();
-            array_append::<felt>(data, x);
+            array_append::<felt>(ref data, x);
             panic(data)
         },
     }

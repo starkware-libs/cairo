@@ -32,6 +32,7 @@ pub fn build_roll(
                 Some(failure_handle_statement_id),
             ),
         ],
+        None
     ))
 
 }

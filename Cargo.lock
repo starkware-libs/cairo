@@ -544,7 +544,7 @@ name = "cairo-lang-project"
 version = "1.0.0-alpha.2"
 dependencies = [
  "cairo-lang-filesystem",
- "indoc",
+ "indoc 1.0.7",
  "serde",
  "smol_str",
  "test-log",
@@ -554,7 +554,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-protostar"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "anyhow",
  "cairo-lang-casm",
@@ -916,7 +916,7 @@ dependencies = [
 
 [[package]]
 name = "cairo_python_bindings"
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",

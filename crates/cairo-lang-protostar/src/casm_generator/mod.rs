@@ -75,7 +75,7 @@ impl SierraCasmGenerator {
         let sierra_program_registry =
             ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)?;
         let casm_program =
-            cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, calc_gas)?;
+            cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, calc_gas).expect("Compilation failed.");
         Ok(Self { sierra_program, sierra_program_registry, casm_program })
     }
     
@@ -297,7 +297,7 @@ fn create_metadata(
     calc_gas: bool,
 ) -> Result<Metadata, GeneratorError> {
     if calc_gas {
-        calc_metadata(sierra_program).map_err(|err| match err {
+        calc_metadata(sierra_program, Default::default()).map_err(|err| match err {
             MetadataError::ApChangeError(err) => GeneratorError::ApChangeError(err),
             MetadataError::CostError(_) => GeneratorError::FailedGasCalculation,
         })

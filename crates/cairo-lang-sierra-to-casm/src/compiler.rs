@@ -1,5 +1,6 @@
 use std::fmt::Display;
 use std::fs;
+use cairo_lang_sierra::ProgramParser;
 use thiserror::Error;
 
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
@@ -10,7 +11,6 @@ use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use itertools::zip_eq;
-use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::invocations::{
@@ -287,9 +287,9 @@ pub fn compile_contents(contents: &str) -> Result<CairoProgram, CompilationError
     let gas_usage_check = true;
     let cairo_program = compile(
         &program,
-        &calc_metadata(&program).expect("Failed calculating Sierra variables."),
+        &calc_metadata(&program, Default::default()).expect("Failed calculating Sierra variables."),
         gas_usage_check,
-    )?;
+    ).expect("Compilation failed.");
 
     Ok(cairo_program)
 }

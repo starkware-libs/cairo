@@ -1,5 +1,7 @@
+const CONSTANT: felt = 1;
+
 fn test_cheatcode_caller() {
-   roll(1, 2)
+   roll(CONSTANT, 2)
 }
 
 fn test_cheatcode_caller_twice() {
