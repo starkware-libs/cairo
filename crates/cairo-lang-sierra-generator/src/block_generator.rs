@@ -19,9 +19,9 @@ use crate::utils::{
     struct_deconstruct_libfunc_id,
 };
 
-/// Generates Sierra code that computes a given [lowering::FlatBlock].
+/// Generates Sierra code for the body of  given [lowering::FlatBlock].
 /// Returns a list of Sierra statements.
-pub fn generate_block_code(
+pub fn generate_block_body_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
     block: &lowering::FlatBlock,
@@ -77,20 +77,18 @@ fn add_drop_statements(
     Ok(())
 }
 
-/// Generates Sierra code that computes a given [lowering::FlatBlock].
-/// Pushes the values "returned" by the block on the top of the stack, and binds them to
-/// the given `binds` variables.
+/// Generates Sierra for a given [lowering::FlatBlock].
 ///
-/// Returns a list of Sierra statements and a boolean indicating whether the block may continue to
-/// the next instruction (true) or not (false).
-pub fn generate_block_code_and_push_values(
+/// Returns a list of Sierra statements and a boolean indicating whether the block may fallthrough
+/// to the next instruction (true) or not (false).
+pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
 ) -> Maybe<(Vec<pre_sierra::Statement>, bool)> {
     let block = context.get_lowered_block(block_id);
     let statement_location: StatementLocation = (block_id, block.statements.len());
 
-    let mut statements = generate_block_code(context, block_id, block)?;
+    let mut statements = generate_block_body_code(context, block_id, block)?;
     match &block.end {
         lowering::FlatBlockEnd::Callsite(remapping) => {
             let mut push_values = Vec::<pre_sierra::PushValue>::new();
@@ -102,8 +100,7 @@ pub fn generate_block_code_and_push_values(
                 let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
                 assert_eq!(
                     ty, var_on_stack_ty,
-                    "Internal compiler error: Inconsistent types in \
-                     generate_block_code_and_push_values()."
+                    "Internal compiler error: Inconsistent types in generate_block_code()."
                 );
                 push_values.push(pre_sierra::PushValue {
                     var: context.get_sierra_variable(*inner_output),
@@ -376,10 +373,10 @@ fn generate_statement_match_extern_code(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let (code, is_reachable) = generate_block_code_and_push_values(context, *block_id)?;
+        let (code, fallthrough) = generate_block_code(context, *block_id)?;
         statements.extend(code);
 
-        if is_reachable {
+        if fallthrough {
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
                 statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
@@ -503,10 +500,10 @@ fn generate_statement_match_enum(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let (code, is_reachable) = generate_block_code_and_push_values(context, *arm)?;
+        let (code, fallthrough) = generate_block_code(context, *arm)?;
         statements.extend(code);
 
-        if is_reachable {
+        if fallthrough {
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
                 statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
