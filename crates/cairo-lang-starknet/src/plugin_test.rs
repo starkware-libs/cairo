@@ -1,3 +1,4 @@
+use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::{MacroPlugin, PluginGeneratedFile, PluginResult};
@@ -6,13 +7,18 @@ use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use crate::db::get_starknet_database;
+use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::plugin::StarkNetPlugin;
 
 pub fn test_expand_contract(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
-    let mut db_val = get_starknet_database();
+    let mut db_val = {
+        let mut b = RootDatabase::builder();
+        b.with_dev_corelib().unwrap();
+        b.with_starknet();
+        b.build()
+    };
     let db = &mut db_val;
 
     let (test_module, _semantic_diagnostics) =
