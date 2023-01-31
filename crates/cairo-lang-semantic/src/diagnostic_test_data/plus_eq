@@ -1,0 +1,112 @@
+//! > Test +=
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+foo()
+
+//! > module_code
+fn foo() {
+    let mut x = 3;
+    x += 4;
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test += for non-variable
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+foo()
+
+//! > module_code
+fn foo() {
+    4 += 4;
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: ref argument must be a variable.
+ --> lib.cairo:2:5
+    4 += 4;
+    ^
+
+//! > ==========================================================================
+
+//! > Test += for non-mutable variable
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+foo()
+
+//! > module_code
+fn foo() {
+    let x = 3;
+    x += 4;
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: ref argument must be a mutable variable.
+ --> lib.cairo:3:5
+    x += 4;
+    ^
+
+//! > ==========================================================================
+
+//! > Test += for unsupported pair of types.
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+foo()
+
+//! > module_code
+fn foo() {
+    let mut x = 3;
+    x += true;
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
+ --> lib.cairo:3:10
+    x += true;
+         ^**^
+
+//! > ==========================================================================
+
+//! > Test /= for an unsupported type.
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+foo()
+
+//! > module_code
+fn foo() {
+    let mut x = true;
+    x /= false;
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Trait `core::traits::DivEq::<?0>` has no implementation in the context.
+ --> lib.cairo:3:5
+    x /= false;
+    ^********^
