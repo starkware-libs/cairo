@@ -1,26 +1,28 @@
 use std::path::Path;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, ensure, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::check_diagnostics;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::{ConcreteFunctionWithBodyId, FunctionLongId};
-use cairo_lang_sierra::{self};
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
-use itertools::chain;
+use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::abi::Contract;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
-use crate::contract::{find_contracts, get_abi, get_module_functions, starknet_keccak};
+use crate::contract::{
+    find_contracts, get_abi, get_module_functions, starknet_keccak, ContractDeclaration,
+};
 use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::felt_serde::sierra_to_felts;
 use crate::plugin::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE};
@@ -64,31 +66,69 @@ pub struct ContractEntryPoint {
 }
 
 /// Compile the contract given by path.
-pub fn compile_path(path: &Path, mut compiler_config: CompilerConfig) -> Result<ContractClass> {
-    let mut db_val = {
+///
+/// Errors if no contracts or more than 1 are found.
+pub fn compile_path(path: &Path, compiler_config: CompilerConfig) -> Result<ContractClass> {
+    let mut db = {
         let mut b = RootDatabase::builder();
         b.with_dev_corelib().unwrap();
         b.with_starknet();
         b.build()
     };
-    let db = &mut db_val;
 
-    let main_crate_ids = setup_project(db, Path::new(&path))?;
+    let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 
+    compile_only_contract_in_prepared_db(&mut db, main_crate_ids, compiler_config)
+}
+
+fn compile_only_contract_in_prepared_db(
+    db: &mut RootDatabase,
+    main_crate_ids: Vec<CrateId>,
+    compiler_config: CompilerConfig,
+) -> Result<ContractClass> {
+    let contracts = find_contracts(db, &main_crate_ids);
+    ensure!(!contracts.is_empty(), "Contract not found.");
+    // TODO(ilya): Add contract names.
+    ensure!(contracts.len() == 1, "Compilation unit must include only one contract.");
+
+    let contracts = contracts.iter().collect::<Vec<_>>();
+    let mut classes = compile_prepared_db(db, &contracts, compiler_config)?;
+    assert_eq!(classes.len(), 1);
+    Ok(classes.remove(0))
+}
+
+/// Runs StarkNet contracts compiler.
+///
+/// # Arguments
+/// * `db` - Preloaded compilation database.
+/// * `contracts` - [`ContractDeclaration`]s to compile. Use [`find_contracts`] to find contracts in
+///   `db`.
+/// * `compiler_config` - The compiler configuration.
+/// # Returns
+/// * `Ok(Vec<ContractClass>)` - List of all compiled contract classes found in main crates.
+/// * `Err(anyhow::Error)` - Compilation failed.
+pub fn compile_prepared_db(
+    db: &mut RootDatabase,
+    contracts: &[&ContractDeclaration],
+    mut compiler_config: CompilerConfig,
+) -> Result<Vec<ContractClass>> {
     if check_diagnostics(db, compiler_config.on_diagnostic.as_deref_mut()) {
         bail!("Compilation failed.");
     }
 
-    let contracts = find_contracts(db, &main_crate_ids);
-    let contract = match &contracts[..] {
-        [contract] => contract,
-        [] => bail!("Contract not found."),
-        _ => {
-            // TODO(ilya): Add contract names.
-            bail!("Compilation unit must include only one contract.",)
-        }
-    };
+    contracts
+        .iter()
+        .map(|contract| {
+            compile_contract_with_prepared_and_checked_db(db, contract, &compiler_config)
+        })
+        .try_collect()
+}
 
+fn compile_contract_with_prepared_and_checked_db(
+    db: &mut RootDatabase,
+    contract: &ContractDeclaration,
+    compiler_config: &CompilerConfig,
+) -> Result<ContractClass> {
     let external_functions: Vec<_> = get_module_functions(db, contract, EXTERNAL_MODULE)?
         .into_iter()
         .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db, f))
