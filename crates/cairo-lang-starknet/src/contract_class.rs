@@ -1,9 +1,10 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_lang_compiler::diagnostics::check_diagnostics;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -63,8 +64,7 @@ pub struct ContractEntryPoint {
 }
 
 /// Compile the contract given by path.
-/// If `replace_ids` is true, replaces sierra ids with human-readable ones.
-pub fn compile_path(path: &Path, replace_ids: bool) -> Result<ContractClass> {
+pub fn compile_path(path: &Path, compiler_config: CompilerConfig) -> Result<ContractClass> {
     let mut db_val = {
         let mut b = RootDatabase::builder();
         b.with_dev_corelib().unwrap();
@@ -75,17 +75,17 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> Result<ContractClass> {
 
     let main_crate_ids = setup_project(db, Path::new(&path))?;
 
-    if check_and_eprint_diagnostics(db) {
-        anyhow::bail!("Failed to compile: {}", path.display());
+    if check_diagnostics(db, compiler_config.on_diagnostic) {
+        bail!("Compilation failed.");
     }
 
     let contracts = find_contracts(db, &main_crate_ids);
     let contract = match &contracts[..] {
         [contract] => contract,
-        [] => anyhow::bail!("Contract not found."),
+        [] => bail!("Contract not found."),
         _ => {
             // TODO(ilya): Add contract names.
-            anyhow::bail!("Compilation unit must include only one contract.",)
+            bail!("Compilation unit must include only one contract.",)
         }
     };
 
@@ -105,7 +105,7 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> Result<ContractClass> {
         .with_context(|| "Compilation failed without any diagnostics.")?;
 
     let replacer = CanonicalReplacer::from_program(&sierra_program);
-    let sierra_program = if replace_ids {
+    let sierra_program = if compiler_config.replace_ids {
         replace_sierra_ids_in_program(db, &sierra_program)
     } else {
         replacer.apply(&sierra_program)
