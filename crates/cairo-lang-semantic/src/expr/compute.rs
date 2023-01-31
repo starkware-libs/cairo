@@ -258,6 +258,17 @@ fn compute_expr_binary_semantic(
     if matches!(binary_op, BinaryOperator::Dot(_)) {
         return dot_expr(ctx, lexpr, rhs_syntax, stable_ptr);
     }
+    if matches!(
+        binary_op,
+        BinaryOperator::PlusEq(_)
+            | BinaryOperator::MinusEq(_)
+            | BinaryOperator::MulEq(_)
+            | BinaryOperator::DivEq(_)
+            | BinaryOperator::ModEq(_)
+    ) {
+        let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
+        return call_core_binary_op(ctx, syntax, lexpr, rexpr, Mutability::Reference);
+    }
     let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
     if matches!(binary_op, BinaryOperator::Eq(_)) {
         return match lexpr {
@@ -285,6 +296,21 @@ fn compute_expr_binary_semantic(
             _ => Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
         };
     }
+    call_core_binary_op(ctx, syntax, lexpr, rexpr, Mutability::Immutable)
+}
+
+/// Get the function call expression of a binary operation that is defined in the corelib.
+fn call_core_binary_op(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprBinary,
+    lexpr: Expr,
+    rexpr: Expr,
+    first_arg_mutability: Mutability,
+) -> Maybe<Expr> {
+    let db = ctx.db;
+    let stable_ptr = syntax.stable_ptr().into();
+    let binary_op = syntax.op(db.upcast());
+
     ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
     let function = match core_binary_operator(
@@ -301,7 +327,7 @@ fn compute_expr_binary_semantic(
     expr_function_call(
         ctx,
         function,
-        vec![(lexpr, None, Mutability::Immutable), (rexpr, None, Mutability::Immutable)],
+        vec![(lexpr, None, first_arg_mutability), (rexpr, None, Mutability::Immutable)],
         stable_ptr,
         binary_op.stable_ptr().untyped(),
     )
@@ -1531,7 +1557,7 @@ fn expr_function_call(
             }
             ref_args.push(expr_var.var);
         } else {
-            // Verify that it is passed explicitly as 'ref'.
+            // Verify that it is passed without modifiers.
             if mutability != Mutability::Immutable {
                 ctx.diagnostics
                     .report_by_ptr(arg.stable_ptr().untyped(), ImmutableArgWithModifiers);
