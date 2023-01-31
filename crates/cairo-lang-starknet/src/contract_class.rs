@@ -17,7 +17,7 @@ use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::abi::{self, Contract};
+use crate::abi::Contract;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
 use crate::contract::{find_contracts, get_abi, get_module_functions, starknet_keccak};
 use crate::db::get_starknet_database;
@@ -40,7 +40,7 @@ pub struct ContractClass {
     pub sierra_program: Vec<BigIntAsHex>,
     pub sierra_program_debug_info: cairo_lang_sierra::debug_info::DebugInfo,
     pub entry_points_by_type: ContractEntryPoints,
-    pub abi: abi::Contract,
+    pub abi: Contract,
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -58,12 +58,12 @@ pub struct ContractEntryPoint {
     /// A field element that encodes the signature of the called function.
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub selector: BigUint,
-    // The idx of the user function declaration in the sierra program.
+    /// The idx of the user function declaration in the sierra program.
     pub function_idx: usize,
 }
 
-// Compile the contract given by path.
-// If `replace_ids` is true, replaces sierra ids with human readable ones.
+/// Compile the contract given by path.
+/// If `replace_ids` is true, replaces sierra ids with human-readable ones.
 pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractClass> {
     let mut db_val = get_starknet_database();
     let db = &mut db_val;
