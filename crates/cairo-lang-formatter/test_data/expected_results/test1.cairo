@@ -5,6 +5,7 @@ fn foo(x: T) -> S {
     let y: T = x * 2 + 3 - 5; // Comment.
 
     let z = 5;
+    z += 4;
     5 + Struct { a: 5, b: Struct2 { _gg: () } };
     let df = 6;
     {

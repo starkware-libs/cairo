@@ -317,6 +317,7 @@ cairo_lang_test_utils::test_file_test!(
         if_else: "if_else",
         literal: "literal",
         module: "module",
+        op_eq: "op_eq",
     },
     test_partial_parser_tree
 );

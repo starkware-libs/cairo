@@ -286,10 +286,15 @@ pub fn core_binary_operator(
 ) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
     let (trait_name, function_name) = match binary_op {
         BinaryOperator::Plus(_) => ("Add", "add"),
+        BinaryOperator::PlusEq(_) => ("AddEq", "add_eq"),
         BinaryOperator::Minus(_) => ("Sub", "sub"),
+        BinaryOperator::MinusEq(_) => ("SubEq", "sub_eq"),
         BinaryOperator::Mul(_) => ("Mul", "mul"),
+        BinaryOperator::MulEq(_) => ("MulEq", "mul_eq"),
         BinaryOperator::Div(_) => ("Div", "div"),
+        BinaryOperator::DivEq(_) => ("DivEq", "div_eq"),
         BinaryOperator::Mod(_) => ("Rem", "rem"),
+        BinaryOperator::ModEq(_) => ("RemEq", "rem_eq"),
         BinaryOperator::EqEq(_) => ("PartialEq", "eq"),
         BinaryOperator::Neq(_) => ("PartialEq", "ne"),
         BinaryOperator::LE(_) => ("PartialOrd", "le"),

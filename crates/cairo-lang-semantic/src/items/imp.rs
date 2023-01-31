@@ -373,8 +373,8 @@ pub fn priv_impl_definition_data(
     // It is later verified that all items in this impl match items from `concrete_trait`.
     // To ensure exact match (up to trait functions with default implementation), it is sufficient
     // to verify here that all items in `concrete_trait` appear in this impl.
-    // TODO(yg): Once default implementation of trait functions is supported, filter such functions
-    // out.
+    // TODO(yuval): Once default implementation of trait functions is supported, filter such
+    // functions out.
     let trait_item_names = db
         .trait_functions(db.lookup_intern_concrete_trait(concrete_trait).trait_id)?
         .into_keys()
