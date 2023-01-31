@@ -1536,6 +1536,10 @@ impl<'a> Parser<'a> {
             let terminal = self.take_raw();
             diag_start.get_or_insert(self.offset as usize);
             diag_end = Some((self.offset as usize) + terminal.text.len());
+
+            self.pending_trivia.extend(terminal.leading_trivia);
+            self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
+            self.pending_trivia.extend(terminal.trailing_trivia);
         }
         if let (Some(diag_start), Some(diag_end)) = (diag_start, diag_end) {
             Err(SkippedError(TextSpan { start: TextOffset(diag_start), end: TextOffset(diag_end) }))

@@ -1,0 +1,80 @@
+//! > Missing :: in path.
+
+//! > test_function_name
+test_partial_parser_tree_with_trivia
+
+//! > cairo_code
+fn foo(a: Option<felt>) {}
+
+//! > top_level_kind
+FunctionSignature
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing token TerminalComma.
+ --> dummy_file.cairo:1:17
+fn foo(a: Option<felt>) {}
+                ^
+
+error: Skipped tokens. Expected: parameter.
+ --> dummy_file.cairo:1:17
+fn foo(a: Option<felt>) {}
+                ^
+
+error: Unexpected token, expected ':' followed by a type.
+ --> dummy_file.cairo:1:22
+fn foo(a: Option<felt>) {}
+                     ^
+
+//! > expected_tree
+└── Top level kind: FunctionSignature
+    ├── lparen (kind: TerminalLParen)
+    │   ├── leading_trivia (kind: Trivia) []
+    │   ├── token (kind: TokenLParen): '('
+    │   └── trailing_trivia (kind: Trivia) []
+    ├── parameters (kind: ParamList)
+    │   ├── item #0 (kind: Param)
+    │   │   ├── modifiers (kind: ModifierList) []
+    │   │   ├── name (kind: TerminalIdentifier)
+    │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   ├── token (kind: TokenIdentifier): 'a'
+    │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   └── type_clause (kind: TypeClause)
+    │   │       ├── colon (kind: TerminalColon)
+    │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   ├── token (kind: TokenColon): ':'
+    │   │       │   └── trailing_trivia (kind: Trivia)
+    │   │       │       └── child #0 (kind: TokenWhitespace).
+    │   │       └── ty (kind: ExprPath)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TerminalIdentifier)
+    │   │                   ├── leading_trivia (kind: Trivia) []
+    │   │                   ├── token (kind: TokenIdentifier): 'Option'
+    │   │                   └── trailing_trivia (kind: Trivia) []
+    │   ├── separator #0 (kind: TerminalComma)
+    │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   ├── token: Missing
+    │   │   └── trailing_trivia (kind: Trivia) []
+    │   └── item #1 (kind: Param)
+    │       ├── modifiers (kind: ModifierList) []
+    │       ├── name (kind: TerminalIdentifier)
+    │       │   ├── leading_trivia (kind: Trivia)
+    │       │   │   └── child #0 (kind: TokenSkipped): '<'
+    │       │   ├── token (kind: TokenIdentifier): 'felt'
+    │       │   └── trailing_trivia (kind: Trivia) []
+    │       └── type_clause (kind: TypeClause)
+    │           ├── colon (kind: TerminalColon)
+    │           │   ├── leading_trivia (kind: Trivia) []
+    │           │   ├── token: Missing
+    │           │   └── trailing_trivia (kind: Trivia) []
+    │           └── ty: Missing []
+    ├── rparen (kind: TerminalRParen)
+    │   ├── leading_trivia (kind: Trivia)
+    │   │   └── child #0 (kind: TokenSkipped): '>'
+    │   ├── token (kind: TokenRParen): ')'
+    │   └── trailing_trivia (kind: Trivia)
+    │       └── child #0 (kind: TokenWhitespace).
+    ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
+    ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
