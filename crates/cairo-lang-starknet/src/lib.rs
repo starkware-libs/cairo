@@ -12,6 +12,7 @@ pub mod db;
 #[allow(dead_code)]
 mod felt_serde;
 pub mod plugin;
+mod sierra_version;
 
 #[cfg(test)]
 mod test_utils;
