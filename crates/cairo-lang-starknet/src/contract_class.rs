@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use anyhow::{bail, ensure, Context, Result};
+use anyhow::{ensure, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::diagnostics::check_diagnostics;
+use cairo_lang_compiler::diagnostics::ensure_diagnostics;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
@@ -135,9 +135,7 @@ pub fn compile_prepared_db(
     contracts: &[&ContractDeclaration],
     mut compiler_config: CompilerConfig,
 ) -> Result<Vec<ContractClass>> {
-    if check_diagnostics(db, compiler_config.on_diagnostic.as_deref_mut()) {
-        bail!("Compilation failed.");
-    }
+    ensure_diagnostics(db, compiler_config.on_diagnostic.as_deref_mut())?;
 
     contracts
         .iter()
@@ -150,8 +148,8 @@ pub fn compile_prepared_db(
 /// Compile declared StarkNet contract.
 ///
 /// The `contract` value **must** come from `db`, for example as a result of calling
-/// [`find_contracts`]. Does not check diagnostics, it is expected that [`check_diagnostics`] is
-/// called by caller of this function.
+/// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked by caller
+/// of this function.
 fn compile_contract_with_prepared_and_checked_db(
     db: &mut RootDatabase,
     contract: &ContractDeclaration,
