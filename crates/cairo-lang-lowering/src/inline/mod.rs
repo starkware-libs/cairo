@@ -42,7 +42,6 @@ pub struct PrivInlineData {
 #[derive(Debug, PartialEq, Eq)]
 pub struct InlineInfo {
     pub is_inlineable: bool,
-    pub has_early_return: bool,
 }
 
 pub fn priv_inline_data(
@@ -68,7 +67,7 @@ fn gather_inlining_info(
     report_diagnostics: bool,
     function_id: FunctionWithBodyId,
 ) -> Maybe<InlineInfo> {
-    let mut info = InlineInfo { is_inlineable: false, has_early_return: false };
+    let mut info = InlineInfo { is_inlineable: false };
     let defs_db = db.upcast();
     if db
             .function_with_body_direct_function_with_body_callees(function_id)?
@@ -92,9 +91,6 @@ fn gather_inlining_info(
         lowered.blocks[root_block_id].inputs.iter().copied().collect();
     for (block_id, block) in lowered.blocks.iter() {
         match &block.end {
-            FlatBlockEnd::Return { .. } if block_id != root_block_id => {
-                info.has_early_return = true;
-            }
             FlatBlockEnd::Return(returns) => {
                 if returns.iter().any(|r| input_vars.contains(r)) {
                     // TODO(ilya): Remove the following limitation.
@@ -385,34 +381,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 if inline_data.config == InlineConfiguration::Always
                     && inline_data.info.is_inlineable
                 {
-                    let optional_return_block_id = if inline_data.info.has_early_return {
-                        // if the inlined function has an early return then we need to split the
-                        // current block after the call instruction.
-
-                        // Create a new block with all the instructions that follow the call
-                        // instruction.
-                        let block_id = self.block_queue.enqueue_block(FlatBlock {
-                            inputs: vec![],
-                            statements: self.statement_rewrite_stack.consume(),
-                            end: self.block_end.clone(),
-                        });
-
-                        // Once the current block ends it should fallthrough to the above block.
-                        self.block_end = FlatBlockEnd::Fallthrough(
-                            block_id,
-                            VarRemapping { remapping: OrderedHashMap::default() },
-                        );
-                        Some(block_id)
-                    } else {
-                        None
-                    };
-
-                    return self.inline_function(
-                        function_id,
-                        &stmt.inputs,
-                        &stmt.outputs,
-                        optional_return_block_id,
-                    );
+                    return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
                 }
             }
         }
@@ -431,18 +400,24 @@ impl<'db> FunctionInlinerRewriter<'db> {
         function_id: ConcreteFunctionWithBodyId,
         inputs: &[VariableId],
         outputs: &[VariableId],
-        optional_return_block_id: Option<BlockId>,
     ) -> Maybe<()> {
         let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
         let root_block_id = lowered.root?;
         let root_block = &lowered.blocks[root_block_id];
+
+        // Create a new block with all the statements that follow
+        // the call statement.
+        let return_block_id = self.block_queue.enqueue_block(FlatBlock {
+            inputs: vec![],
+            statements: self.statement_rewrite_stack.consume(),
+            end: self.block_end.clone(),
+        });
 
         // As the block_ids and variable_ids are per function, we need to rename all
         // the blocks and variables before we enqueue the blocks from the function that
         // we are inlining.
 
         // The input variables need to be renamed to match the inputs to the function call.
-        // The returned variables needs to be renamed to match the outputs from the function call.
         let mut mapper = Mapper {
             ctx: &mut self.ctx,
             lowered: &lowered,
@@ -455,6 +430,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
             )),
             renamed_blocks: HashMap::new(),
         };
+
+        self.block_end = FlatBlockEnd::Fallthrough(
+            return_block_id,
+            VarRemapping { remapping: OrderedHashMap::default() },
+        );
 
         for (block_id, block) in lowered.blocks.iter() {
             if block_id == root_block_id {
@@ -470,7 +450,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     FlatBlockEnd::Callsite(mapper.update_remapping(remapping))
                 }
                 FlatBlockEnd::Return(returns) => FlatBlockEnd::Goto(
-                    optional_return_block_id.unwrap(),
+                    return_block_id,
                     VarRemapping {
                         remapping: OrderedHashMap::from_iter(izip!(
                             outputs.iter().cloned(),
@@ -495,6 +475,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         self.statement_rewrite_stack.push_statments(
             root_block.statements.iter().map(|statement| mapper.rebuild_statement(statement)),
         );
+
         Ok(())
     }
 }
