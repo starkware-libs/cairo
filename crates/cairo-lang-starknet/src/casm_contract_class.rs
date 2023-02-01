@@ -27,6 +27,7 @@ use thiserror::Error;
 
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
+use crate::sierra_version::SierraVersionError;
 
 /// The expected gas cost of an entrypoint that begins with get_gas() immediately.
 pub const ENTRY_POINT_COST: i32 = 10000;
@@ -39,6 +40,8 @@ pub enum StarknetSierraCompilationError {
     FeltSerdeError(#[from] FeltSerdeError),
     #[error(transparent)]
     MetadataError(#[from] MetadataError),
+    #[error(transparent)]
+    SierraVersionError(#[from] SierraVersionError),
     #[error("Invalid entry point.")]
     EntryPointError,
     #[error("{0} is not a supported builtin type.")]
@@ -64,6 +67,7 @@ impl CasmContractClass {
     pub fn from_contract_class(
         contract_class: ContractClass,
     ) -> Result<Self, StarknetSierraCompilationError> {
+        contract_class.verify_compatible_sierra_version()?;
         let prime = BigUint::from_str_radix(
             "800000000000011000000000000000000000000000000000000000000000001",
             16,
