@@ -330,10 +330,8 @@ fn build_dict_felt_to_squash(
 
             localvar squashed_dict_start;
             ap += 1;
-            hint EnterDictSquashScope {dict_end_ptr: dict_squash_arg_dict_accesses_end} into {};
             let (returned_squashed_dict_start) = call SquashedDictNew;
             assert squashed_dict_start = returned_squashed_dict_start;
-            hint ExitScope {} into {};
             // Push SquashDict arguments.
             tempvar squash_dict_arg_range_check_ptr = dict_squash_arg_range_check_ptr;
             tempvar squash_dict_arg_dict_accesses_start = dict_squash_arg_dict_accesses_start;
@@ -382,7 +380,6 @@ fn build_dict_felt_to_squash(
             localvar first_key;
             localvar big_keys;
             jump SquashDictNotEmpty if ptr_diff != 0;
-            hint ExitScope {} into {};
             tempvar returned_range_check_ptr = squash_dict_arg_range_check_ptr;
             tempvar returned_squashed_dict_end = squash_dict_arg_squashed_dict_start;
             ret;
@@ -429,7 +426,6 @@ fn build_dict_felt_to_squash(
             let (range_check_ptr, squashed_dict_end) = call SquashDictInner;
             tempvar returned_range_check_ptr = range_check_ptr;
             tempvar returned_squashed_dict_end = squashed_dict_end;
-            hint ExitScope {} into {};
             ret;
         };
         (
