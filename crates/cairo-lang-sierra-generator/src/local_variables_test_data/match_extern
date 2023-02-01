@@ -72,6 +72,12 @@ Statements:
     IsZeroResult::NonZero => blk1,
   }
   (v6: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(5, {})
+
+blk5:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v6) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
@@ -145,12 +151,30 @@ blk4 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(5, {})
+
+blk5:
+Inputs:
+Statements:
   (v2: core::felt) <- core::felt_add(v1, v1)
+End:
+  Fallthrough(6, {})
+
+blk6:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v2) {
     IsZeroResult::Zero => blk0,
     IsZeroResult::NonZero => blk1,
   }
   (v7: core::felt) <- core::felt_add(v1, v6)
+End:
+  Fallthrough(7, {})
+
+blk7:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v1) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
@@ -241,16 +265,34 @@ blk4 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(5, {})
+
+blk5:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk0,
     IsZeroResult::NonZero => blk1,
   }
   (v7: core::felt) <- core::felt_add(v1, v0)
+End:
+  Fallthrough(6, {})
+
+blk6:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
   }
   (v12: core::felt) <- core::felt_add(v7, v0)
+End:
+  Fallthrough(7, {})
+
+blk7:
+Inputs:
+Statements:
 End:
   Return(v12)
 

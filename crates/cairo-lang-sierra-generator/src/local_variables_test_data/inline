@@ -58,12 +58,24 @@ Statements:
   (v2: core::felt) <- 1u
   (v3: core::felt) <- core::felt_add(v0, v2)
 End:
-  Goto(1, {v3 -> v1})
+  Fallthrough(4, {})
 
 blk3:
 Inputs: v6: core::NonZero::<core::felt>
 Statements:
   (v4: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(5, {})
+
+blk4:
+Inputs:
+Statements:
+End:
+  Goto(1, {v3 -> v1})
+
+blk5:
+Inputs:
+Statements:
   (v5: ()) <- test::revoke_ap()
 End:
   Callsite({v4 -> v1})
@@ -130,7 +142,7 @@ Inputs:
 Statements:
   (v2: core::felt) <- core::felt_add(v1, v0)
 End:
-  Return(v2)
+  Fallthrough(4, {})
 
 blk2:
 Inputs:
@@ -139,12 +151,30 @@ Statements:
   (v4: core::felt) <- 1u
   (v5: core::felt) <- core::felt_add(v0, v4)
 End:
-  Goto(1, {v5 -> v1})
+  Fallthrough(5, {})
 
 blk3:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(6, {})
+
+blk4:
+Inputs:
+Statements:
+End:
+  Return(v2)
+
+blk5:
+Inputs:
+Statements:
+End:
+  Goto(1, {v5 -> v1})
+
+blk6:
+Inputs:
+Statements:
   (v7: ()) <- test::revoke_ap()
 End:
   Callsite({v6 -> v1})
@@ -153,4 +183,4 @@ End:
 v6
 
 //! > block_infos
-blk1: known_ap_change: false.
+blk1: known_ap_change: true.
