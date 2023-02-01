@@ -194,8 +194,9 @@ fn generate_ast_code() -> rust::Tokens {
         #![allow(unused_variables)]
         use std::ops::Deref;
 
-        use smol_str::SmolStr;
+        use cairo_lang_filesystem::span::TextWidth;
         use cairo_lang_utils::extract_matches;
+        use smol_str::SmolStr;
 
         use super::element_list::ElementList;
         use super::green::GreenNodeDetails;
@@ -347,7 +348,7 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
                 $green_name(db.intern_green(
                     GreenNode {
                         kind: SyntaxKind::$name,
-                        details: GreenNodeDetails::Node { children: vec![], width: 0 },
+                        details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
                     })
                 )
             }
@@ -642,7 +643,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
                         children: vec![$arg_missings],
-                        width: 0,
+                        width: TextWidth::default(),
                     },
                 }))
             }

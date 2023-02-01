@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
-use cairo_lang_filesystem::span::{TextOffset, TextSpan};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
 use indoc::indoc;
 use test_log::test;
@@ -24,7 +24,10 @@ impl DiagnosticEntry for SimpleDiag {
     fn location(&self, _db: &dyn cairo_lang_filesystem::db::FilesGroup) -> DiagnosticLocation {
         DiagnosticLocation {
             file_id: self.file_id,
-            span: TextSpan { start: TextOffset(0), end: TextOffset(6) },
+            span: TextSpan {
+                start: TextOffset::default().add_width(TextWidth::new_for_testing(0)),
+                end: TextOffset::default().add_width(TextWidth::new_for_testing(6)),
+            },
         }
     }
 }

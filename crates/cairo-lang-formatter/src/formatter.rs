@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt;
 
+use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
@@ -594,7 +595,7 @@ impl<'a> Formatter<'a> {
         let children = syntax_node.children(self.db);
         let n_children = children.len();
         for (i, child) in children.enumerate() {
-            if child.width(self.db) == 0 {
+            if child.width(self.db) == TextWidth::default() {
                 continue;
             }
             self.format_node(&child, no_space_after && i == n_children - 1);
