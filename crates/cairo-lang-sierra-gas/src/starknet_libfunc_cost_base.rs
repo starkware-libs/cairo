@@ -1,6 +1,10 @@
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
-use crate::core_libfunc_cost_base::CostOperations;
+use crate::core_libfunc_cost_base::{ConstCost, CostOperations};
+
+const SYSTEM_CALL_STEPS: i32 = 100;
+pub const SYSTEM_CALL_COST: i32 =
+    ConstCost { steps: SYSTEM_CALL_STEPS, holes: 0, range_checks: 0 }.cost();
 
 /// Returns some cost value for a StarkNet libfunc - a helper function to implement costing both for
 /// creating gas equations and getting actual gas usage after having a solution.
@@ -9,23 +13,35 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
     libfunc: &StarkNetConcreteLibfunc,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        // TODO(Ilya): Revisit the real cost.
-        StarkNetConcreteLibfunc::CallContract(_) => vec![ops.steps(50), ops.steps(50)],
+        StarkNetConcreteLibfunc::CallContract(_) => syscall_cost(ops, 8, 8),
         StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_) => {
-            vec![ops.steps(6), ops.steps(7)]
+            vec![ops.steps(7), ops.steps(9)]
         }
-        // TODO(Ilya): Consider adding a `CostTokenType::StorageRead` or make storage read a branch.
-        StarkNetConcreteLibfunc::StorageRead(_) => vec![ops.steps(50), ops.steps(50)],
-        // TODO(yuval): Revisit the real cost.
-        StarkNetConcreteLibfunc::StorageWrite(_) => vec![ops.steps(50), ops.steps(50)],
+        StarkNetConcreteLibfunc::StorageRead(_) => syscall_cost(ops, 4, 7),
+        StarkNetConcreteLibfunc::StorageWrite(_) => syscall_cost(ops, 8, 8),
         StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => vec![ops.steps(10)],
         StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ops.steps(0)],
-        StarkNetConcreteLibfunc::EmitEvent(_) => vec![ops.steps(50), ops.steps(50)],
-        StarkNetConcreteLibfunc::GetCallerAddress(_) => {
-            vec![ops.steps(50), ops.steps(50)]
-        }
+        StarkNetConcreteLibfunc::EmitEvent(_) => syscall_cost(ops, 9, 9),
+        StarkNetConcreteLibfunc::GetCallerAddress(_) => syscall_cost(ops, 5, 5),
     }
+}
+
+/// Returns the costs for system calls.
+fn syscall_cost<Ops: CostOperations>(
+    ops: &mut Ops,
+    success: i32,
+    failure: i32,
+) -> Vec<Ops::CostType> {
+    [success, failure]
+        .map(|steps| {
+            ops.const_cost(ConstCost {
+                steps: SYSTEM_CALL_STEPS + steps,
+                holes: 0,
+                range_checks: 0,
+            })
+        })
+        .to_vec()
 }
