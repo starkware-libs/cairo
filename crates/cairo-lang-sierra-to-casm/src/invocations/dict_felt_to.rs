@@ -138,6 +138,7 @@ fn build_dict_felt_to_squash(
         final_squashed_dict_end,
     ) = {
         casm_build_extend! {casm_builder,
+            validate steps == 0;
             const dict_access_size = 3;
             const dict_info_size = 3;
             const one = 1;
@@ -228,7 +229,9 @@ fn build_dict_felt_to_squash(
         casm_build_extend! {casm_builder,
             // Recursively verifies that the initial values of the dictionary  were indeed 'default_value'.
             DefaultDictFinalizeInner:
+            validate steps == 0;
             jump DictFinalizeInnerAssert if dict_finalize_inner_arg_n_accesses != 0;
+            validate steps == 1;
             ret;
             DictFinalizeInnerAssert:
             assert dict_finalize_inner_arg_default_value = dict_finalize_inner_arg_dict_accesses_start[1];
@@ -236,6 +239,7 @@ fn build_dict_felt_to_squash(
             tempvar rec_arg_n_accesses = dict_finalize_inner_arg_n_accesses - one;
             tempvar rec_arg_default_value = dict_finalize_inner_arg_default_value;
             let () = call DefaultDictFinalizeInner;
+            validate steps == 8;
             ret;
         }
     };
@@ -256,6 +260,7 @@ fn build_dict_felt_to_squash(
             //
             // This is a wrapper of SquashDict.
             DictSquash:
+            validate steps == 0;
 
             localvar squashed_dict_start;
             ap += 1;
@@ -271,6 +276,7 @@ fn build_dict_felt_to_squash(
             tempvar returned_range_check_ptr = range_check_ptr;
             tempvar returned_squashed_dict_start = squashed_dict_start;
             tempvar returned_squashed_dict_end = squashed_dict_end;
+            validate steps == 11;
             ret;
         };
         (
@@ -294,12 +300,14 @@ fn build_dict_felt_to_squash(
             // to a mutable dictionary and outputs a squashed dict with one DictAccess instance per key
             // (value before and value after) which summarizes all the changes to that key.
             SquashDict:
+            validate steps == 0;
             localvar ptr_diff = squash_dict_arg_dict_accesses_end - squash_dict_arg_dict_accesses_start;
             localvar first_key;
             localvar big_keys;
             jump SquashDictNotEmpty if ptr_diff != 0;
             tempvar returned_range_check_ptr = squash_dict_arg_range_check_ptr;
             tempvar returned_squashed_dict_end = squash_dict_arg_squashed_dict_start;
+            validate steps == 4;
             ret;
             SquashDictNotEmpty:
             tempvar n_accesses = ptr_diff / dict_access_size;
@@ -344,6 +352,7 @@ fn build_dict_felt_to_squash(
             let (range_check_ptr, squashed_dict_end) = call SquashDictInner;
             tempvar returned_range_check_ptr = range_check_ptr;
             tempvar returned_squashed_dict_end = squashed_dict_end;
+            validate steps == 18;
             ret;
         };
         (
@@ -361,6 +370,7 @@ fn build_dict_felt_to_squash(
             // Inner tail-recursive function for squash_dict.
             // Loops over a single key accesses and verify a valid order.
             SquashDictInner:
+            validate steps == 0;
             localvar aligned_range_check_ptr;
             localvar aligned_dict_accesses;
             localvar aligned_dict_accesses_end_minus1;
@@ -415,6 +425,8 @@ fn build_dict_felt_to_squash(
         }
         // Split just to avoid recursion limit when the macro is parsed.
         casm_build_extend! {casm_builder,
+            validate steps == 10;  // pre-loop steps.
+            reset steps;
             // Skip loop nondeterministically if necessary.
             // The verifier doesn't care if the loop is skipped or not. The only thing it checks is that
             // the function iterated over remaining_accesses accesses in total
@@ -469,6 +481,8 @@ fn build_dict_felt_to_squash(
                 aligned_next_key = aligned_next_key,
                 aligned_remaining_accesses = aligned_remaining_accesses
             };
+            validate steps == 12; // loop steps.
+            reset steps;
             jump SquashDictInnerLoop if loop_temps_should_continue != 0;
             SquashDictInnerSkipLoop:
             let last_loop_locals_access_ptr = prev_loop_locals_access_ptr;
@@ -487,6 +501,7 @@ fn build_dict_felt_to_squash(
             // Return from squash_dict_inner, push values to the stack and return;
             tempvar retuened_range_check_ptr = arg_range_check_ptr;
             tempvar retuened_squashed_dict = squash_dict_inner_arg_squashed_dict_end+dict_access_size;
+            validate steps == 9;  // post-loop, non-recursion steps.
             ret;
         }
         // Split just to avoid recursion limit when the macro is parsed.
@@ -550,11 +565,13 @@ fn build_dict_felt_to_squash(
             tempvar rec_arg_squashed_dict = squash_dict_inner_arg_squashed_dict_end + dict_access_size;
             tempvar rec_arg_big_keys = squash_dict_inner_arg_big_keys;
             let () = call SquashDictInner;
+            validate steps == 44; // recursion cost.
             ret;
         };
     }
     casm_build_extend! {casm_builder,
         DONE:
+        validate steps == 45;
     }
 
     let CasmBuildResult { instructions, branches: [(state, _)] } =
