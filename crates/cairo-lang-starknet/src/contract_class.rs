@@ -89,7 +89,7 @@ pub struct ContractEntryPoint {
 }
 
 /// Compile the contract given by path.
-pub fn compile_path(path: &Path, compiler_config: CompilerConfig) -> Result<ContractClass> {
+pub fn compile_path(path: &Path, mut compiler_config: CompilerConfig) -> Result<ContractClass> {
     let mut db_val = {
         let mut b = RootDatabase::builder();
         b.with_dev_corelib().unwrap();
@@ -100,7 +100,7 @@ pub fn compile_path(path: &Path, compiler_config: CompilerConfig) -> Result<Cont
 
     let main_crate_ids = setup_project(db, Path::new(&path))?;
 
-    if check_diagnostics(db, compiler_config.on_diagnostic) {
+    if check_diagnostics(db, compiler_config.on_diagnostic.as_deref_mut()) {
         bail!("Compilation failed.");
     }
 
