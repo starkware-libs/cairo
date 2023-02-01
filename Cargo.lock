@@ -750,6 +750,7 @@ dependencies = [
  "genco",
  "indoc",
  "itertools",
+ "lazy_static",
  "log",
  "num-bigint",
  "num-integer",

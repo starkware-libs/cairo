@@ -3,7 +3,7 @@ use itertools::Itertools;
 use super::args_as_single_type;
 use super::error::{ExtensionError, SpecializationError};
 use super::type_specialization_context::TypeSpecializationContext;
-use crate::ids::{id_from_string, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
 /// Trait for the specialization of libfunc signatures.
@@ -173,7 +173,7 @@ impl<TNamedLibfunc: NamedLibfunc> GenericLibfunc for TNamedLibfunc {
     type Concrete = <Self as NamedLibfunc>::Concrete;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        if id_from_string(Self::STR_ID) == id.id { Some(Self::default()) } else { None }
+        if Self::STR_ID == id.0 { Some(Self::default()) } else { None }
     }
 
     fn specialize_signature(

@@ -16,6 +16,7 @@ cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.2" }
 genco.workspace = true
 itertools.workspace = true
+lazy_static.workspace = true
 log.workspace = true
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.2" }
 serde.workspace = true
