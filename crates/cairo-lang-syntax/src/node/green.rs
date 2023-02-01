@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::span::TextWidth;
 use smol_str::SmolStr;
 
 use super::ids::GreenId;
@@ -6,7 +7,7 @@ use super::kind::SyntaxKind;
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GreenNodeDetails {
     Token(SmolStr),
-    Node { children: Vec<GreenId>, width: u32 },
+    Node { children: Vec<GreenId>, width: TextWidth },
 }
 /// Green node. Underlying untyped representation of the syntax tree.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -15,9 +16,9 @@ pub struct GreenNode {
     pub details: GreenNodeDetails,
 }
 impl GreenNode {
-    pub fn width(&self) -> u32 {
+    pub fn width(&self) -> TextWidth {
         match &self.details {
-            GreenNodeDetails::Token(text) => text.len() as u32,
+            GreenNodeDetails::Token(text) => TextWidth::from_str(text),
             GreenNodeDetails::Node { width, .. } => *width,
         }
     }
