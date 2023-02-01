@@ -1,0 +1,156 @@
+//! > inlining of a function with a local var.
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt) -> felt {
+   bar(x)
+}
+
+//! > module_code
+#[inline(always)]
+fn bar(x: felt) -> felt {
+    if x == 0 {
+        return x + 1;
+    } else {
+        let a = x + x;
+        // The call will force `a` to be a local variable.
+        revoke_ap();
+        a
+    }
+}
+
+// Revokes ap since this function is recursive.
+fn revoke_ap() {
+  revoke_ap()
+}
+
+
+struct MyStruct {
+    a: felt,
+    b: felt,
+}
+
+//! > lowering_format
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero => blk3,
+  }
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+  (v3: core::felt) <- core::felt_add(v0, v2)
+End:
+  Goto(1, {v3 -> v1})
+
+blk3:
+Inputs: v6: core::NonZero::<core::felt>
+Statements:
+  (v4: core::felt) <- core::felt_add(v0, v0)
+  (v5: ()) <- test::revoke_ap()
+End:
+  Callsite({v4 -> v1})
+
+//! > local_variables
+v4
+
+//! > block_infos
+blk1: known_ap_change: true.
+
+//! > ==========================================================================
+
+//! > inlining of a function with a revoking goto.
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt) -> felt {
+   bar(x) + x
+}
+
+//! > module_code
+#[inline(always)]
+fn bar(x: felt) -> felt {
+    if x == 0 {
+        revoke_ap();
+        return x + 1;
+    } else {
+        let a = x + x;
+        // The call will force `a` to be a local variable.
+        revoke_ap();
+        a
+    }
+}
+
+// Revokes ap since this function is recursive.
+fn revoke_ap() {
+  revoke_ap()
+}
+
+
+struct MyStruct {
+    a: felt,
+    b: felt,
+}
+
+//! > lowering_format
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero => blk3,
+  }
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
+  (v2: core::felt) <- core::felt_add(v1, v0)
+End:
+  Return(v2)
+
+blk2:
+Inputs:
+Statements:
+  (v3: ()) <- test::revoke_ap()
+  (v4: core::felt) <- 1u
+  (v5: core::felt) <- core::felt_add(v0, v4)
+End:
+  Goto(1, {v5 -> v1})
+
+blk3:
+Inputs: v8: core::NonZero::<core::felt>
+Statements:
+  (v6: core::felt) <- core::felt_add(v0, v0)
+  (v7: ()) <- test::revoke_ap()
+End:
+  Callsite({v6 -> v1})
+
+//! > local_variables
+v6
+
+//! > block_infos
+blk1: known_ap_change: false.
