@@ -10,7 +10,7 @@ use pyo3::exceptions::RuntimeError;
 use anyhow::Context;
 
 use cairo_lang_compiler::{
-    db::RootDatabase,
+    db::RootDatabaseBuilder,
     compile_cairo_project_at_path as compile_cairo_to_sierra_at_path,
     CompilerConfig,
 };
@@ -31,7 +31,6 @@ use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
-use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::ToOption;
 
 mod find_tests;
@@ -40,6 +39,7 @@ use find_tests::find_all_tests;
 use cairo_lang_protostar::build_protostar_casm_from_file;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::items::functions::ConcreteFunctionWithBodyId;
 use cairo_lang_debug::debug::DebugWithDb;
 use itertools::Itertools;
 
@@ -111,12 +111,15 @@ fn starknet_cairo_to_casm(input_path: &str) -> Result<String, anyhow::Error> {
 
 #[pyfunction]
 fn call_test_collector(path: &str, output_path: Option<&str>) -> PyResult<(Option<String>, Vec<String>)> {
+    // code taken from crates/cairo-lang-test-runner/src/cli.rs
     let plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
         Arc::new(DerivePlugin {}),
         Arc::new(PanicablePlugin {}),
         Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
     ];
-    let mut db_val = RootDatabase::new(plugins);
+    let mut builder = RootDatabaseBuilder::empty();
+    builder.with_plugins(plugins).with_dev_corelib().unwrap();
+    let mut db_val = builder.build();
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&path)).map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
@@ -125,15 +128,19 @@ fn call_test_collector(path: &str, output_path: Option<&str>) -> PyResult<(Optio
         return Err(PyErr::new::<RuntimeError, _>(format!("failed to compile: {}", path)));
     }
     let all_tests = find_all_tests(db, main_crate_ids);
+
     let sierra_program = db
         .get_sierra_program_for_functions(
-            all_tests.iter().map(|t| FunctionWithBodyId::Free(t.func_id)).collect(),
+            all_tests
+                .iter()
+                .flat_map(|t| ConcreteFunctionWithBodyId::from_no_generics_free(db, t.func_id))
+                .collect(),
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.").map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
-    let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
 
-    let named_tests: Vec<String> = all_tests
+    let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
+    let named_tests = all_tests
         .into_iter()
         .map(|test| {
             (
