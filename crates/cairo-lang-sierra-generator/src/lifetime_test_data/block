@@ -27,19 +27,37 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
   (v2: core::felt) <- core::felt_add(v1, v1)
+End:
+  Fallthrough(2, {})
+
+blk2:
+Inputs:
+Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- core::felt_add(v1, v3)
+End:
+  Fallthrough(3, {})
+
+blk3:
+Inputs:
+Statements:
   (v5: core::felt) <- 20u
 End:
   Return(v5)
 
 //! > last_use
-v5: ((BlockId(0), 5), 0)
-v3: ((BlockId(0), 3), 1)
-v1: ((BlockId(0), 3), 0)
+v5: ((BlockId(3), 1), 0)
+v3: ((BlockId(2), 1), 1)
+v1: ((BlockId(2), 1), 0)
 v0: ((BlockId(0), 0), 1)
 
 //! > drops
-PostStatement((BlockId(0), 3)): v4
-PostStatement((BlockId(0), 1)): v2
+PostStatement((BlockId(2), 1)): v4
+PostStatement((BlockId(1), 0)): v2

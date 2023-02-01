@@ -110,12 +110,8 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
   (v2: core::felt) <- core::felt_sub(v0, v1)
-  () <- match core::felt_is_zero(v2) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
-  Return(v5)
+  Fallthrough(6, {})
 
 blk3:
 Inputs:
@@ -136,15 +132,105 @@ Statements:
 End:
   Callsite({})
 
+blk6:
+Inputs:
+Statements:
+  () <- match core::felt_is_zero(v2) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
+  }
+End:
+  Return(v5)
+
 //! > last_use
-v5: ((BlockId(2), 3), 0)
+v5: ((BlockId(6), 1), 0)
 v3: ((BlockId(3), 0), 0)
 v6: ((BlockId(4), 1), 0)
 v0: ((BlockId(0), 0), 0)
 v0: ((BlockId(1), 0), 0)
-v2: ((BlockId(2), 2), 0)
+v2: ((BlockId(6), 0), 0)
 v1: ((BlockId(2), 1), 1)
 
 //! > drops
 BeginningOfBlock(BlockId(5)): v7, v3
 BeginningOfBlock(BlockId(1)): v4, v3
+
+//! > ==========================================================================
+
+//! > Test variable lifetime with local variables
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt) -> felt {
+   bar(x)
+}
+
+//! > module_code
+#[inline(always)]
+fn bar(x: felt) -> felt {
+    if x == 0 {
+        x
+    } else {
+        let a = x + x;
+        // The call will force `a` to be a local variable.
+        revoke_tempvars();
+        a
+    }
+}
+
+fn revoke_tempvars() {
+  revoke_tempvars()
+}
+
+//! > lowering_format
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero => blk3,
+  }
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Inputs:
+Statements:
+End:
+  Callsite({v0 -> v1})
+
+blk3:
+Inputs: v4: core::NonZero::<core::felt>
+Statements:
+  (v2: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(4, {})
+
+blk4:
+Inputs:
+Statements:
+  (v3: ()) <- test::revoke_tempvars()
+End:
+  Callsite({v2 -> v1})
+
+//! > last_use
+v1: ((BlockId(1), 0), 0)
+v0: ((BlockId(2), 0), 0)
+v2: ((BlockId(4), 1), 0)
+v0: ((BlockId(3), 0), 1)
+
+//! > drops
+PostStatement((BlockId(4), 0)): v3
+BeginningOfBlock(BlockId(3)): v4
+BeginningOfBlock(BlockId(2)): UninitializedLocal(v2)

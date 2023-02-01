@@ -37,11 +37,6 @@ function_call<user@test::bar>([5], [6], [7]) -> ([3], [4])
 dup<felt>([4]) -> ([4], [9])
 dup<felt>([4]) -> ([4], [10])
 felt_add([9], [10]) -> ([8])
-PushValues([3]: MyStruct, [4]: felt, [8]: felt) -> ([13], [14], [15])
-function_call<user@test::bar>([13], [14], [15]) -> ([11], [12])
-drop<MyStruct>([11]) -> ()
-drop<felt>([12]) -> ()
-struct_construct<Unit>() -> ([16])
 
 //! > ==========================================================================
 
