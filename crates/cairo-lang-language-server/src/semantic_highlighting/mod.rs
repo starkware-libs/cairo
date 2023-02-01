@@ -21,7 +21,7 @@ pub struct SemanticTokensTraverser {
     /// For example: when we see the "fn" keyword, the name token is added
     /// to the map, so that instead of marking it as an identifier, we will mark it
     /// as a function name.
-    offset_to_kind_lookahead: UnorderedHashMap<u32, SemanticTokenKind>,
+    offset_to_kind_lookahead: UnorderedHashMap<TextOffset, SemanticTokenKind>,
 }
 impl SemanticTokensTraverser {
     pub fn find_semantic_tokens(
@@ -41,7 +41,7 @@ impl SemanticTokensTraverser {
                 let width = text.len() as u32;
                 let maybe_semantic_kind = self
                     .offset_to_kind_lookahead
-                    .remove(&(node.offset().0 as u32))
+                    .remove(&node.offset())
                     .or_else(|| SemanticTokenKind::from_syntax_kind(green_node.kind));
                 if let Some(semantic_kind) = maybe_semantic_kind {
                     let EncodedToken { delta_line, delta_start } = self.encoder.encode(width);
@@ -102,6 +102,6 @@ impl SemanticTokensTraverser {
     }
 
     fn mark_future_token(&mut self, offset: TextOffset, semantic_kind: SemanticTokenKind) {
-        self.offset_to_kind_lookahead.insert(offset.0 as u32, semantic_kind);
+        self.offset_to_kind_lookahead.insert(offset, semantic_kind);
     }
 }

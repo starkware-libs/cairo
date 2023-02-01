@@ -180,7 +180,7 @@ fn foo(dict: DictFeltTo::<felt>) -> SquashedDictFeltTo::<felt> {
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 259;
+jmp rel 253;
 [fp + 2] = [fp + -5], ap++;
 %{
 expected_segment_index = memory[fp + -3].segment_index
@@ -249,24 +249,12 @@ ret;
 call rel -9;
 ret;
 ap += 1;
-%{
-   # Prepare arguments for dict_new. In particular, the same dictionary values should be copied
-   # to the new (squashed) dictionary.
-   vm_enter_scope({
-       # Make __dict_manager accessible.
-       '__dict_manager': __dict_manager,
-       # Create a copy of the dict, in case it changes in the future.
-       'initial_dict': dict(__dict_manager.get_dict(memory[fp + -3])),
-   })
-%}
-call rel 13;
-[fp + 0] = [ap + -1];
-%{ vm_exit_scope() %}
+%{ memory[fp + 0] = segments.add() %}
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [fp + 0], ap++;
-call rel 9;
+call rel 6;
 %{ # Update the DictTracker's current_ptr to point to the end of the squashed dict.
 __dict_manager.get_tracker(memory[fp + 0]).current_ptr = memory[ap + -1].address_
  %}
@@ -274,12 +262,8 @@ __dict_manager.get_tracker(memory[fp + 0]).current_ptr = memory[ap + -1].address
 [ap + 0] = [fp + 0], ap++;
 [ap + 0] = [ap + -3], ap++;
 ret;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-ret;
 [fp + -4] = [fp + 0] + [fp + -5], ap++;
 jmp rel 5 if [fp + 0] != 0, ap++;
-%{ vm_exit_scope() %}
 [ap + 1] = [fp + -6], ap++;
 [ap + 1] = [fp + -3], ap++;
 ret;
@@ -316,7 +300,6 @@ jmp rel 3;
 call rel 5;
 [ap + 0] = [ap + -2], ap++;
 [ap + 0] = [ap + -2], ap++;
-%{ vm_exit_scope() %}
 ret;
 ap += 5;
 %{
