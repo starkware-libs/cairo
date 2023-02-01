@@ -63,10 +63,10 @@ pub fn build_call_contract(
                 Some(failure_handle_statement_id),
             ),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: None,
             extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
-        }),
+        },
     ))
 }
 
@@ -100,6 +100,7 @@ pub fn build_contract_address_try_from_felt(
     let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     casm_build_extend! {casm_builder,
         const limit = addr_bound.clone();
+        let orig_range_check = range_check;
         tempvar is_valid_address;
         hint TestLessThan {lhs: value, rhs: limit} into {dst: is_valid_address};
         jump IsValidAddress if is_valid_address != 0;
@@ -123,6 +124,9 @@ pub fn build_contract_address_try_from_felt(
             ("Fallthrough", &[&[range_check], &[value]], None),
             ("Failure", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
-        Some(Default::default()),
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }

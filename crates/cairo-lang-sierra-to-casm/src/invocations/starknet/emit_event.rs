@@ -59,9 +59,9 @@ pub fn build_emit_event(
                 Some(failure_handle_statement_id),
             ),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: None,
             extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
-        }),
+        },
     ))
 }

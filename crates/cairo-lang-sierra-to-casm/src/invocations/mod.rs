@@ -320,7 +320,7 @@ impl CompiledInvocationBuilder<'_> {
         self,
         casm_builder: CasmBuilder,
         branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
-        cost_validation: Option<CostValidationInfo<BRANCH_COUNT>>,
+        cost_validation: CostValidationInfo<BRANCH_COUNT>,
     ) -> CompiledInvocation {
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
@@ -330,45 +330,39 @@ impl CompiledInvocationBuilder<'_> {
                 .iter()
                 .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change)),
         );
-        if let Some(cost_validation) = cost_validation {
-            let gas_changes = core_libfunc_cost(
-                &self.program_info.metadata.gas_info,
-                &self.idx,
-                self.libfunc,
-                &self,
-            )
-            .into_iter()
-            .map(|costs| {
-                costs
-                    .and_then(|costs| costs.get(&CostTokenType::Const).copied())
-                    .unwrap_or_default()
-            });
-            let mut final_costs: [ConstCost; BRANCH_COUNT] =
-                std::array::from_fn(|_| Default::default());
+        let gas_changes =
+            core_libfunc_cost(&self.program_info.metadata.gas_info, &self.idx, self.libfunc, &self)
+                .into_iter()
+                .map(|costs| {
+                    costs
+                        .and_then(|costs| costs.get(&CostTokenType::Const).copied())
+                        .unwrap_or_default()
+                });
+        let mut final_costs: [ConstCost; BRANCH_COUNT] =
+            std::array::from_fn(|_| Default::default());
+        for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
+            cost.steps += state.steps as i32;
+        }
+        if let Some((start, end)) = cost_validation.range_check_info {
             for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
-                cost.steps += state.steps as i32;
+                let (start_base, start_offset) =
+                    state.get_adjusted(start).to_deref_with_offset().unwrap();
+                let (end_base, end_offset) =
+                    state.get_adjusted(end).to_deref_with_offset().unwrap();
+                assert_eq!(start_base, end_base);
+                cost.range_checks += (end_offset - start_offset) as i32;
             }
-            if let Some((start, end)) = cost_validation.range_check_info {
-                for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
-                    let (start_base, start_offset) =
-                        state.get_adjusted(start).to_deref_with_offset().unwrap();
-                    let (end_base, end_offset) =
-                        state.get_adjusted(end).to_deref_with_offset().unwrap();
-                    assert_eq!(start_base, end_base);
-                    cost.range_checks += (end_offset - start_offset) as i32;
-                }
-            }
-            let extra_costs =
-                cost_validation.extra_costs.unwrap_or(std::array::from_fn(|_| Default::default()));
-            if !itertools::equal(
-                gas_changes,
-                final_costs
-                    .iter()
-                    .zip(extra_costs)
-                    .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64),
-            ) {
-                panic!("Wrong costs for {}. Actual: {final_costs:?}.", self.invocation);
-            }
+        }
+        let extra_costs =
+            cost_validation.extra_costs.unwrap_or(std::array::from_fn(|_| Default::default()));
+        if !itertools::equal(
+            gas_changes,
+            final_costs
+                .iter()
+                .zip(extra_costs)
+                .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64),
+        ) {
+            panic!("Wrong costs for {}. Actual: {final_costs:?}.", self.invocation);
         }
         let relocations = branches
             .iter()

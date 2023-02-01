@@ -43,7 +43,7 @@ pub fn build_storage_address_from_base_and_offset(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -61,6 +61,7 @@ pub fn build_storage_base_address_from_felt(
     let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     casm_build_extend! {casm_builder,
         const limit = addr_bound.clone();
+        let orig_range_check = range_check;
         // Allocating all vars in the beginning for easier AP-Alignment between the two branches,
         // as well as making sure we use `res` as the last cell, making it the last on stack.
         tempvar is_small;
@@ -88,7 +89,10 @@ pub fn build_storage_base_address_from_felt(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[res]], None)],
-        Some(Default::default()),
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
@@ -142,7 +146,10 @@ pub fn build_storage_read(
                 Some(failure_handle_statement_id),
             ),
         ],
-        None,
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
+        },
     ))
 }
 
@@ -192,9 +199,9 @@ pub fn build_storage_write(
                 Some(failure_handle_statement_id),
             ),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: None,
             extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
-        }),
+        },
     ))
 }

@@ -50,7 +50,7 @@ fn build_dict_felt_to_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[new_dict_manager_ptr], &[new_dict_end]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -76,10 +76,7 @@ fn build_dict_felt_to_read(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[dict_ptr], &[value]], None)],
-        Some(CostValidationInfo {
-            range_check_info: None,
-            extra_costs: Some([DICT_SQUASH_ACCESS_COST]),
-        }),
+        CostValidationInfo { range_check_info: None, extra_costs: Some([DICT_SQUASH_ACCESS_COST]) },
     ))
 }
 
@@ -106,10 +103,7 @@ fn build_dict_felt_to_write(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[dict_ptr]], None)],
-        Some(CostValidationInfo {
-            range_check_info: None,
-            extra_costs: Some([DICT_SQUASH_ACCESS_COST]),
-        }),
+        CostValidationInfo { range_check_info: None, extra_costs: Some([DICT_SQUASH_ACCESS_COST]) },
     ))
 }
 

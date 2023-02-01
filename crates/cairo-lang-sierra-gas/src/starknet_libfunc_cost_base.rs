@@ -16,12 +16,17 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
         StarkNetConcreteLibfunc::CallContract(_) => syscall_cost(ops, 8, 8),
         StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_) => {
-            vec![ops.steps(7), ops.steps(9)]
+            vec![
+                ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 }),
+                ops.const_cost(ConstCost { steps: 9, holes: 0, range_checks: 3 }),
+            ]
         }
-        StarkNetConcreteLibfunc::StorageRead(_) => syscall_cost(ops, 4, 7),
+        StarkNetConcreteLibfunc::StorageRead(_) => syscall_cost(ops, 7, 7),
         StarkNetConcreteLibfunc::StorageWrite(_) => syscall_cost(ops, 8, 8),
         StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ops.steps(0)],
-        StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => vec![ops.steps(10)],
+        StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => {
+            vec![ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 })]
+        }
         StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::EmitEvent(_) => syscall_cost(ops, 9, 9),

@@ -50,7 +50,7 @@ fn build_felt_op(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -68,7 +68,7 @@ fn build_felt_op_with_const(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
