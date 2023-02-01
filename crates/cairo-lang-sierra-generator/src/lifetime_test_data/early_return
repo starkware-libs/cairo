@@ -41,8 +41,8 @@ End:
   Return(v0)
 
 //! > last_use
-((BlockId(2), 1), 0)
-((BlockId(0), 1), 0)
+v0: ((BlockId(2), 1), 0)
+v1: ((BlockId(0), 1), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(1)): v2
@@ -76,7 +76,7 @@ End:
   Return(v1)
 
 //! > last_use
-((BlockId(0), 0), 0)
+v1: ((BlockId(0), 0), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(0)): v0
@@ -129,9 +129,9 @@ End:
   Unreachable
 
 //! > last_use
-((BlockId(0), 1), 0)
-((BlockId(1), 1), 0)
-((BlockId(2), 0), 0)
+v2: ((BlockId(0), 1), 0)
+v4: ((BlockId(1), 1), 0)
+v0: ((BlockId(2), 0), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(1)): v3

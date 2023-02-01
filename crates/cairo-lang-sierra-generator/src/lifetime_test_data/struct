@@ -39,15 +39,15 @@ End:
   Return(v13)
 
 //! > last_use
-((BlockId(0), 9), 0)
-((BlockId(0), 8), 1)
-((BlockId(0), 8), 0)
-((BlockId(0), 5), 1)
-((BlockId(0), 5), 0)
-((BlockId(0), 4), 0)
-((BlockId(0), 2), 1)
-((BlockId(0), 2), 0)
-((BlockId(0), 1), 0)
+v13: ((BlockId(0), 9), 0)
+v12: ((BlockId(0), 8), 1)
+v11: ((BlockId(0), 8), 0)
+v9: ((BlockId(0), 5), 1)
+v6: ((BlockId(0), 5), 0)
+v5: ((BlockId(0), 4), 0)
+v4: ((BlockId(0), 2), 1)
+v1: ((BlockId(0), 2), 0)
+v0: ((BlockId(0), 1), 0)
 
 //! > drops
 PostStatement((BlockId(0), 5)): v10
