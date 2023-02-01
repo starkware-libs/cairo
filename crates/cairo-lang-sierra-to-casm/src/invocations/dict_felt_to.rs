@@ -1,6 +1,6 @@
 use std::vec;
 
-use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder};
+use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use cairo_lang_sierra_gas::core_libfunc_cost::DICT_SQUASH_ACCESS_COST;
@@ -130,14 +130,11 @@ fn build_dict_felt_to_squash(
 
     let (
         dict_access_size,
-        dict_info_size,
         one,
-        zero,
-        gas_refund_per_access,
-        dict_destruct_arg_range_check_ptr,
-        dict_destruct_arg_gas_builtin,
-        dict_destruct_arg_dict_manager_ptr,
-        dict_destruct_arg_dict_end_address,
+        dict_finalize_arg_range_check_ptr,
+        dict_finalize_arg_dict_accesses_start,
+        dict_finalize_arg_dict_accesses_end,
+        dict_finalize_arg_default_value,
         final_range_check_ptr,
         final_gas_builtin,
         final_dict_manager_ptr,
@@ -150,73 +147,38 @@ fn build_dict_felt_to_squash(
             const one = 1;
             const zero = 0;
             const gas_refund_per_access = 72;
-            // Push DestructDict arguments.
-            tempvar dict_destruct_arg_range_check_ptr = range_check_ptr;
-            tempvar dict_destruct_arg_gas_builtin = gas_builtin;
-            tempvar dict_destruct_arg_dict_manager_ptr = dict_manager_ptr;
-            tempvar dict_destruct_arg_dict_end_address = dict_end_address;
-            let (final_range_check_ptr, final_gas_builtin, final_dict_manager_ptr, final_squashed_dict_start, final_squashed_dict_end) = call DestructDict;
-            jump DONE;
-        };
-        (
-            dict_access_size,
-            dict_info_size,
-            one,
-            zero,
-            gas_refund_per_access,
-            dict_destruct_arg_range_check_ptr,
-            dict_destruct_arg_gas_builtin,
-            dict_destruct_arg_dict_manager_ptr,
-            dict_destruct_arg_dict_end_address,
-            final_range_check_ptr,
-            final_gas_builtin,
-            final_dict_manager_ptr,
-            final_squashed_dict_start,
-            final_squashed_dict_end,
-        )
-    };
-
-    let (
-        dict_finalize_arg_range_check_ptr,
-        dict_finalize_arg_dict_accesses_start,
-        dict_finalize_arg_dict_accesses_end,
-        dict_finalize_arg_default_value,
-    ) = {
-        casm_build_extend! {casm_builder,
-            // Destructs a given dictionary.
-            DestructDict:
             localvar dict_index;
             localvar dict_accesses_len;
-            localvar local_gas_builtin = dict_destruct_arg_gas_builtin;
+            localvar local_gas_builtin = gas_builtin;
             // Guess the index of the dictionary.
-            hint GetDictIndex {dict_manager_ptr: dict_destruct_arg_dict_manager_ptr, dict_end_ptr: dict_destruct_arg_dict_end_address} into {dict_index: dict_index};
-            localvar infos = *(dict_destruct_arg_dict_manager_ptr++);
-            localvar n_dicts = *(dict_destruct_arg_dict_manager_ptr++);
-            localvar n_destructed = *(dict_destruct_arg_dict_manager_ptr++);
+            hint GetDictIndex {dict_manager_ptr: dict_manager_ptr, dict_end_ptr: dict_end_address} into {dict_index: dict_index};
+            localvar infos = *(dict_manager_ptr++);
+            localvar n_dicts = *(dict_manager_ptr++);
+            localvar n_destructed = *(dict_manager_ptr++);
             // Add a reference the new dict manager pointer to return.
-            let new_dict_manager_ptr = dict_destruct_arg_dict_manager_ptr;
+            let new_dict_manager_ptr = dict_manager_ptr;
             // Verify that dict_index < n_dicts.
-            assert dict_index = *(dict_destruct_arg_range_check_ptr++);
+            assert dict_index = *(range_check_ptr++);
             tempvar n_dicts_minus_1 = n_dicts - one;
             tempvar n_dicts_minus_1_minus_index = n_dicts_minus_1 - dict_index;
-            assert n_dicts_minus_1_minus_index = *(dict_destruct_arg_range_check_ptr++);
+            assert n_dicts_minus_1_minus_index = *(range_check_ptr++);
             // Write the missing data in the dict_info (destruction index and the end of the dict_segment).
             tempvar info_offset = dict_index * dict_info_size;
             tempvar info_ptr = infos + info_offset;
             assert n_destructed = info_ptr[2];
-            assert dict_destruct_arg_dict_end_address = info_ptr[1];
+            assert dict_end_address = info_ptr[1];
             // Write a new dict_manager data to the dict_manager segment (same except for the n_destructed which is incremented).
-            assert infos = *(dict_destruct_arg_dict_manager_ptr++);
-            assert n_dicts = *(dict_destruct_arg_dict_manager_ptr++);
+            assert infos = *(dict_manager_ptr++);
+            assert n_dicts = *(dict_manager_ptr++);
             tempvar n_destructed_plus_1 = n_destructed + one;
-            assert n_destructed_plus_1 = *(dict_destruct_arg_dict_manager_ptr++);
+            assert n_destructed_plus_1 = *(dict_manager_ptr++);
             // Find the len of the accesses segment.
             tempvar dict_accesses_start = info_ptr[0];
-            assert dict_accesses_len = dict_destruct_arg_dict_end_address - dict_accesses_start;
+            assert dict_accesses_len = dict_end_address - dict_accesses_start;
             // Push DefaultDictFinalize arguments.
-            tempvar dict_finalize_arg_range_check_ptr = dict_destruct_arg_range_check_ptr;
+            tempvar dict_finalize_arg_range_check_ptr = range_check_ptr;
             tempvar dict_finalize_arg_dict_accesses_start = info_ptr[0];
-            tempvar dict_finalize_arg_dict_accesses_end = dict_destruct_arg_dict_end_address;
+            tempvar dict_finalize_arg_dict_accesses_end = dict_end_address;
             tempvar dict_finalize_arg_default_value = zero;
             let (returned_range_check_ptr, returned_squashed_dict_start, returned_squashed_dict_end) = call DefaultDictFinalize;
             // Find the number of keys
@@ -233,13 +195,20 @@ fn build_dict_felt_to_squash(
             tempvar final_dict_manager_ptr = new_dict_manager_ptr;
             tempvar final_squashed_dict_start = returned_squashed_dict_start;
             tempvar final_squashed_dict_end = returned_squashed_dict_end;
-            ret;
+            jump DONE;
         };
         (
+            dict_access_size,
+            one,
             dict_finalize_arg_range_check_ptr,
             dict_finalize_arg_dict_accesses_start,
             dict_finalize_arg_dict_accesses_end,
             dict_finalize_arg_default_value,
+            final_range_check_ptr,
+            final_gas_builtin,
+            final_dict_manager_ptr,
+            final_squashed_dict_start,
+            final_squashed_dict_end,
         )
     };
 
@@ -427,7 +396,7 @@ fn build_dict_felt_to_squash(
             squash_dict_inner_arg_big_keys,
         )
     };
-    let (assert_lt_arg_range_check_ptr, assert_lt_arg_a, assert_lt_arg_b) = {
+    {
         casm_build_extend! {casm_builder,
             // Inner tail-recursive function for squash_dict.
             // Loops over a single key accesses and verify a valid order.
@@ -588,12 +557,14 @@ fn build_dict_felt_to_squash(
             };
             jump SquashDictInnerEndIfBigKeys;
             SquashDictInnerIfBigKeys:
-            // Align the branches
-            ap += 2;
-            tempvar assert_lt_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr;
-            tempvar assert_lt_arg_a = squash_dict_inner_arg_key;
-            tempvar assert_lt_arg_b = next_key;
-            let (squash_dict_inner_arg_range_check_ptr) = call AssertLtFelt;
+        }
+        validate_felt_lt(
+            &mut casm_builder,
+            squash_dict_inner_arg_range_check_ptr,
+            squash_dict_inner_arg_key,
+            next_key,
+        );
+        casm_build_extend! {casm_builder,
             // Writing the needed invalidated variables because of the branch.
             assert aligned_range_check_ptr = squash_dict_inner_arg_range_check_ptr;
             assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
@@ -621,92 +592,7 @@ fn build_dict_felt_to_squash(
             let () = call SquashDictInner;
             ret;
         };
-        (assert_lt_arg_range_check_ptr, assert_lt_arg_a, assert_lt_arg_b)
-    };
-    let (assert_le_arg_range_check_ptr, assert_le_arg_a, assert_le_arg_b) = {
-        casm_build_extend! {casm_builder,
-            AssertLtFelt:
-            const one = 1;
-            hint AssertLtAssertValidInput {a: assert_lt_arg_a, b: assert_lt_arg_b} into {};
-            tempvar a_minus_b = assert_lt_arg_a - assert_lt_arg_b;
-            tempvar assert_le_arg_range_check_ptr = assert_lt_arg_range_check_ptr;
-            tempvar assert_le_arg_a;
-            jump AssertLtFeltNEQ if a_minus_b != 0;
-            assert assert_le_arg_a = assert_lt_arg_a + one;
-            jump AssertLtFeltEnd;
-            AssertLtFeltNEQ:
-            assert assert_le_arg_a = assert_lt_arg_a;
-            AssertLtFeltEnd:
-            tempvar assert_le_arg_b = assert_lt_arg_b;
-            let (temp_range_check_ptr) = call AssertLeFelt;
-            tempvar returned_range_check_ptr = temp_range_check_ptr;
-            ret;
-        };
-        (assert_le_arg_range_check_ptr, assert_le_arg_a, assert_le_arg_b)
-    };
-    {
-        casm_build_extend! {casm_builder,
-            // Asserts that the unsigned integer lift (as a number in the range [0, PRIME)) of a is lower than
-            // or equal to that of b.
-            // The numbers [0, a, b, PRIME - 1] should be ordered. To prove that, we show that two of the
-            // 3 arcs {0 -> a, a -> b, b -> PRIME - 1} are small:
-            //   One is less than PRIME / 3 + 2 ** 129.
-            //   Another is less than PRIME / 2 + 2 ** 129.
-            // Since the sum of the lengths of these two arcs is less than PRIME, there is no wrap-around.
-            AssertLeFelt:
-            const one = 1;
-            const minus_1 = -1;
-            // ceil((PRIME / 2) / 2 ** 128).
-            const prime_over_2_high = 3544607988759775765608368578435044694_u128;
-            // ceil((PRIME / 3) / 2 ** 128).
-            const prime_over_3_high = 5316911983139663648412552867652567041_u128;
-            // Guess two arc lengths.
-            hint AssertLeFindSmallArcs {range_check_ptr: assert_le_arg_range_check_ptr, a: assert_le_arg_a, b: assert_le_arg_b} into {};
-            // Calculate the arc lengths.
-            tempvar arc_short_low = *(assert_le_arg_range_check_ptr++);
-            tempvar arc_short_high_temp = *(assert_le_arg_range_check_ptr++);
-            tempvar arc_short_high = arc_short_high_temp * prime_over_3_high;
-            tempvar arc_short = arc_short_low+arc_short_high;
-            tempvar arc_long_low = *(assert_le_arg_range_check_ptr++);
-            tempvar arc_long_high_temp = *(assert_le_arg_range_check_ptr++);
-            tempvar arc_long_high = arc_long_high_temp * prime_over_2_high;
-            tempvar arc_long = arc_long_low+arc_long_high;
-            tempvar arc_sum = arc_short + arc_long;
-            tempvar arc_prod = arc_short * arc_long;
-            // First, choose which arc to exclude from {0 -> a, a -> b, b -> PRIME - 1}.
-            // Then, to compare the set of two arc lengths, compare their sum and product.
-            tempvar skip_exclude_a_flag;
-            hint AssertLeIsFirstArcExcluded {} into {skip_exclude_a_flag: skip_exclude_a_flag};
-            jump AssertLeFeltSkipExcludeA if skip_exclude_a_flag != 0;
-            // Exclude "0 -> a".
-            tempvar minus_arg_a = assert_le_arg_a*minus_1;
-            assert arc_sum = minus_arg_a + minus_1;
-            tempvar a_minus_b = assert_le_arg_a - assert_le_arg_b;
-            tempvar b_plus_1 = assert_le_arg_b + one;
-            assert arc_prod = a_minus_b * b_plus_1;
-            tempvar returned_range_check_ptr = assert_le_arg_range_check_ptr;
-            ret;
-            AssertLeFeltSkipExcludeA:
-            tempvar skip_exclude_b_minus_a;
-            hint AssertLeIsSecondArcExcluded {} into {skip_exclude_b_minus_a: skip_exclude_b_minus_a};
-            jump AssertLeFeltSkipExcludeBMinusA if skip_exclude_b_minus_a != 0;
-            // Exclude "a -> b".
-            tempvar minus_arg_b = assert_le_arg_b*minus_1;
-            tempvar minus_b_minus_1 = assert_le_arg_b + minus_1;
-            assert arc_sum = assert_le_arg_a + minus_b_minus_1;
-            assert arc_prod = assert_le_arg_a * minus_b_minus_1;
-            tempvar returned_range_check_ptr = assert_le_arg_range_check_ptr;
-            ret;
-            AssertLeFeltSkipExcludeBMinusA:
-            hint AssertLeAssertThirdArcExcluded {} into {};
-            // Exclude "b -> PRIME - 1".
-            assert arc_sum = assert_le_arg_b;
-            tempvar b_minus_a = assert_le_arg_b - assert_le_arg_a;
-            assert arc_prod = assert_le_arg_a * b_minus_a;
-            tempvar returned_range_check_ptr = assert_le_arg_range_check_ptr;
-            ret;
-        };
-    };
+    }
     casm_build_extend! {casm_builder,
         DONE:
     }
@@ -731,4 +617,84 @@ fn build_dict_felt_to_squash(
         .into_iter()]
         .into_iter(),
     ))
+}
+
+/// Asserts that the unsigned integer lift (as a number in the range [0, PRIME)) of a is lower than
+/// to that of b.
+fn validate_felt_lt(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b: Var) {
+    casm_build_extend! {casm_builder,
+        AssertLtFelt:
+        const one = 1;
+        hint AssertLtAssertValidInput {a: a, b: b} into {};
+        tempvar a_minus_b = a - b;
+        tempvar assert_le_arg_a;
+        jump AssertLtFeltNEQ if a_minus_b != 0;
+        assert assert_le_arg_a = a + one;
+        jump AssertLtFeltEnd;
+        AssertLtFeltNEQ:
+        assert assert_le_arg_a = a;
+        AssertLtFeltEnd:
+    }
+    validate_felt_le(casm_builder, range_check, assert_le_arg_a, b);
+}
+
+/// Asserts that the unsigned integer lift (as a number in the range [0, PRIME)) of a is lower than
+/// or equal to that of b.
+/// The numbers [0, a, b, PRIME - 1] should be ordered. To prove that, we show that two of the
+/// 3 arcs {0 -> a, a -> b, b -> PRIME - 1} are small:
+///   One is less than PRIME / 3 + 2 ** 129.
+///   Another is less than PRIME / 2 + 2 ** 129.
+/// Since the sum of the lengths of these two arcs is less than PRIME, there is no wrap-around.
+fn validate_felt_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b: Var) {
+    casm_build_extend! {casm_builder,
+        const one = 1;
+        const minus_1 = -1;
+        // ceil((PRIME / 2) / 2 ** 128).
+        const prime_over_2_high = 3544607988759775765608368578435044694_u128;
+        // ceil((PRIME / 3) / 2 ** 128).
+        const prime_over_3_high = 5316911983139663648412552867652567041_u128;
+        // Guess two arc lengths.
+        hint AssertLeFindSmallArcs {range_check_ptr: range_check, a: a, b: b} into {};
+        // Calculate the arc lengths.
+        tempvar arc_short_low = *(range_check++);
+        tempvar arc_short_high_temp = *(range_check++);
+        tempvar arc_short_high = arc_short_high_temp * prime_over_3_high;
+        tempvar arc_short = arc_short_low+arc_short_high;
+        tempvar arc_long_low = *(range_check++);
+        tempvar arc_long_high_temp = *(range_check++);
+        tempvar arc_long_high = arc_long_high_temp * prime_over_2_high;
+        tempvar arc_long = arc_long_low+arc_long_high;
+        tempvar arc_sum = arc_short + arc_long;
+        tempvar arc_prod = arc_short * arc_long;
+        // First, choose which arc to exclude from {0 -> a, a -> b, b -> PRIME - 1}.
+        // Then, to compare the set of two arc lengths, compare their sum and product.
+        tempvar skip_exclude_a_flag;
+        hint AssertLeIsFirstArcExcluded {} into {skip_exclude_a_flag: skip_exclude_a_flag};
+        jump AssertLeFeltSkipExcludeA if skip_exclude_a_flag != 0;
+        // Exclude "0 -> a".
+        tempvar minus_arg_a = a*minus_1;
+        assert arc_sum = minus_arg_a + minus_1;
+        tempvar a_minus_b = a - b;
+        tempvar b_plus_1 = b + one;
+        assert arc_prod = a_minus_b * b_plus_1;
+        jump EndOfFeltLe;
+        AssertLeFeltSkipExcludeA:
+        tempvar skip_exclude_b_minus_a;
+        hint AssertLeIsSecondArcExcluded {} into {skip_exclude_b_minus_a: skip_exclude_b_minus_a};
+        jump AssertLeFeltSkipExcludeBMinusA if skip_exclude_b_minus_a != 0;
+        // Exclude "a -> b".
+        tempvar minus_arg_b = b*minus_1;
+        tempvar minus_b_minus_1 = b + minus_1;
+        assert arc_sum = a + minus_b_minus_1;
+        assert arc_prod = a * minus_b_minus_1;
+        jump EndOfFeltLe;
+        AssertLeFeltSkipExcludeBMinusA:
+        tempvar _padding;
+        hint AssertLeAssertThirdArcExcluded {} into {};
+        // Exclude "b -> PRIME - 1".
+        assert arc_sum = b;
+        tempvar b_minus_a = b - a;
+        assert arc_prod = a * b_minus_a;
+        EndOfFeltLe:
+    };
 }
