@@ -29,11 +29,28 @@ extern fn ec_point_zero() -> EcPoint nopanic;
 #[panic_with('not on EC', ec_point_new_nz)]
 extern fn ec_point_try_new_nz(x: felt, y: felt) -> Option::<NonZeroEcPoint> nopanic;
 
+#[inline(always)]
+fn ec_point_try_new(x: felt, y: felt) -> Option::<EcPoint> {
+    match ec_point_try_new_nz(:x, :y) {
+        Option::Some(pt) => Option::Some(unwrap_nz(pt)),
+        Option::None(()) => Option::None(()),
+    }
+}
+
 fn ec_point_new(x: felt, y: felt) -> EcPoint {
     unwrap_nz(ec_point_new_nz(:x, :y))
 }
 
-extern fn ec_point_from_x(x: felt) -> Option::<NonZeroEcPoint> nopanic;
+extern fn ec_point_from_x_nz(x: felt) -> Option::<NonZeroEcPoint> nopanic;
+
+#[inline(always)]
+fn ec_point_from_x(x: felt) -> Option::<EcPoint> {
+    match ec_point_from_x_nz(:x) {
+        Option::Some(pt) => Option::Some(unwrap_nz(pt)),
+        Option::None(()) => Option::None(()),
+    }
+}
+
 extern fn ec_point_unwrap(p: NonZeroEcPoint) -> (felt, felt) nopanic;
 /// Computes the negation of an elliptic curve point (-p).
 extern fn ec_neg(p: EcPoint) -> EcPoint nopanic;

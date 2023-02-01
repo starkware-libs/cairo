@@ -53,7 +53,7 @@ fn check_ecdsa_signature(
     };
 
     // Retrieve the generator point.
-    let gen_point = match ec_point_try_new_nz(ec::StarkCurve::GEN_X, ec::StarkCurve::GEN_Y) {
+    let gen_point = match ec_point_try_new(ec::StarkCurve::GEN_X, ec::StarkCurve::GEN_Y) {
         Option::Some(point) => point,
         Option::None(()) => {
             return false;
@@ -68,7 +68,7 @@ fn check_ecdsa_signature(
     //   zG +/- rQ = +/- sR, or more efficiently that:
     //   (zG +/- rQ).x = sR.x.
 
-    let sR: EcPoint = ec_mul(unwrap_nz(signature_r_point), signature_s);
+    let sR: EcPoint = ec_mul(signature_r_point, signature_s);
     let sR_x = match ec_point_is_zero(sR) {
         IsZeroResult::Zero(()) => {
             return false;
@@ -79,8 +79,8 @@ fn check_ecdsa_signature(
         },
     };
 
-    let zG: EcPoint = ec_mul(unwrap_nz(gen_point), message_hash);
-    let rQ: EcPoint = ec_mul(unwrap_nz(public_key_point), signature_r);
+    let zG: EcPoint = ec_mul(gen_point, message_hash);
+    let rQ: EcPoint = ec_mul(public_key_point, signature_r);
     match ec_point_is_zero(zG + rQ) {
         IsZeroResult::Zero(()) => {},
         IsZeroResult::NonZero(pt) => {

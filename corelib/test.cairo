@@ -45,12 +45,13 @@ fn test_ec_operations() {
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
     let beta_p2_root = 2487829544412206244690656897973144572467842667075005257202960243805141046681;
     let p = ec_point_from_x(1).unwrap();
-    let (x, y) = ec_point_unwrap(p);
+    let p_nz = ec_point_non_zero(p);
+    let (x, y) = ec_point_unwrap(p_nz);
     assert(x == 1, 'x != 1');
     assert(y == beta_p2_root | y == -beta_p2_root, 'y is wrong');
 
     let mut state = ec_state_init();
-    ec_state_add(ref state, p);
+    ec_state_add(ref state, p_nz);
     let q = ec_state_try_finalize_nz(state).expect('zero point');
     let (qx, qy) = ec_point_unwrap(q);
     assert(qx == x, 'bad finalize x');
@@ -58,14 +59,14 @@ fn test_ec_operations() {
 
     // Try doing the same thing with the EC op builtin.
     let mut state = ec_state_init();
-    ec_state_add_mul(ref state, 1, p);
+    ec_state_add_mul(ref state, 1, p_nz);
     let q3 = ec_state_try_finalize_nz(state).expect('zero point');
     let (qx, qy) = ec_point_unwrap(q3);
     assert(qx == x, 'bad EC op x');
     assert(qy == y, 'bad EC op y');
 
     // Try computing `p + p` using the ec_mul function.
-    let double_p = ec_mul(unwrap_nz(p), 2);
+    let double_p = ec_mul(p, 2);
     let (double_x, double_y) = ec_point_unwrap(ec_point_non_zero(double_p));
     let expected_double_y =
         3572434102142093425782752266058856056057826477682467661647843687948039943621;
@@ -76,15 +77,15 @@ fn test_ec_operations() {
     assert(double_y == expected_double_y | double_y == -expected_double_y, 'bad double y');
 
     // Compute `2p - p`.
-    let (sub_x, sub_y) = ec_point_unwrap(ec_point_non_zero(double_p - unwrap_nz(p)));
+    let (sub_x, sub_y) = ec_point_unwrap(ec_point_non_zero(double_p - p));
     assert(sub_x == x, 'bad x for 2p - p');
     assert(sub_y == y, 'bad y for 2p - p');
 
     // Compute `p - p`.
-    assert(ec_point_is_zero(unwrap_nz(p) - unwrap_nz(p)).to_bool(), 'p - p did not return 0.');
+    assert(ec_point_is_zero(p - p).to_bool(), 'p - p did not return 0.');
 
     // Compute `(-p) - p`.
-    let (sub2_x, sub2_y) = ec_point_unwrap(ec_point_non_zero(ec_neg(unwrap_nz(p)) - unwrap_nz(p)));
+    let (sub2_x, sub2_y) = ec_point_unwrap(ec_point_non_zero(ec_neg(p) - p));
     assert(sub2_x == double_x, 'bad x for (-p) - p');
     assert(sub2_y == -double_y, 'bad y for (-p) - p');
 }
