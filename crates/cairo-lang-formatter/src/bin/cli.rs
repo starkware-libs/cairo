@@ -65,7 +65,11 @@ impl<'a> std::fmt::Display for Input<'a> {
 }
 
 /// Formats an input from stdin or file
-fn format_input(input: &Input<'_>, config: &FormatterConfig, check: bool) -> Result<FormatResult> {
+fn format_input(
+    input: &Input<'_>,
+    config: &FormatterConfig,
+    args: &FormatterArgs,
+) -> Result<FormatResult> {
     let db = SimpleParserDatabase::default();
     let file_id = match input.to_file_id(&db) {
         Ok(value) => value,
@@ -88,8 +92,17 @@ fn format_input(input: &Input<'_>, config: &FormatterConfig, check: bool) -> Res
     if !diagnostics.0.leaves.is_empty() {
         eprintln!(
             "{}",
-            format!("A parsing error occurred in {input}. The content was not formatted.").red()
+            format!(
+                "There were parsing errors while trying to format the code of {input}. The \
+                 content was not formatted."
+            )
+            .red()
         );
+        if args.print_parsing_errors {
+            eprintln!("{}", diagnostics.format(&db));
+        } else {
+            eprintln!("{}", "Run with '--print-parsing-errors' to see error details.".red());
+        }
         bail!("Unable to parse input");
     }
 
@@ -97,11 +110,11 @@ fn format_input(input: &Input<'_>, config: &FormatterConfig, check: bool) -> Res
 
     if &formatted_text == original_text.as_ref() {
         // Always print if input is stdin, unless --check is used
-        if matches!(input, Input::Stdin) && !check {
+        if matches!(input, Input::Stdin) && !args.check {
             print!("{formatted_text}");
         }
         Ok(FormatResult::Identical)
-    } else if check {
+    } else if args.check {
         // Diff found and --check was used
         print_diff(input, &original_text, &formatted_text);
         Ok(FormatResult::DiffFound)
@@ -167,7 +180,7 @@ fn format_path(
                 } else {
                     eprintln_if_verbose(&format!("Formatting file: {path}."), args.verbose);
                     matches!(
-                        (format_input(&Input::File { path }, config, args.check), args.check),
+                        (format_input(&Input::File { path }, config, args), args.check),
                         (Ok(FormatResult::Identical), _) | (Ok(FormatResult::DiffFound), false)
                     )
                 }
@@ -229,6 +242,9 @@ struct FormatterArgs {
     /// Print verbose output.
     #[arg(short, long, default_value_t = false)]
     verbose: bool,
+    /// Print parsing errors.
+    #[arg(short, long, default_value_t = false)]
+    print_parsing_errors: bool,
     /// A list of files and directories to format. Use "-" for stdin.
     files: Vec<String>,
 }
@@ -246,7 +262,7 @@ fn main() -> ExitCode {
 
     if args.files.len() == 1 && args.files[0] == "-" {
         // Input comes from stdin
-        match (format_input(&Input::Stdin, &config, args.check), args.check) {
+        match (format_input(&Input::Stdin, &config, &args), args.check) {
             (Ok(FormatResult::Identical), _) => ExitCode::SUCCESS,
             (Ok(FormatResult::DiffFound), false) => ExitCode::SUCCESS,
             _ => ExitCode::FAILURE,
