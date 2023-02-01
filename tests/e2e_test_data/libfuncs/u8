@@ -29,7 +29,7 @@ jmp rel 7;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 950})
+test::foo: OrderedHashMap({Const: 970})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -100,7 +100,7 @@ jmp rel 7;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1050})
+test::foo: OrderedHashMap({Const: 1070})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -168,7 +168,7 @@ jmp rel 6;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 860})
+test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -240,7 +240,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 860})
+test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -386,7 +386,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1550})
+test::foo: OrderedHashMap({Const: 1610})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;

@@ -235,7 +235,7 @@ ap += 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1350})
+test::foo: OrderedHashMap({Const: 1370})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -326,7 +326,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1560})
+test::foo: OrderedHashMap({Const: 1580})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;

@@ -29,7 +29,7 @@ jmp rel 7;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 960})
+test::foo: OrderedHashMap({Const: 980})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -99,7 +99,7 @@ jmp rel 7;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 960})
+test::foo: OrderedHashMap({Const: 980})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -183,7 +183,7 @@ fn foo(a: u128, b: u128) -> (u128, u128) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 3050})
+test::foo: OrderedHashMap({Const: 3230})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -242,7 +242,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1600})
+test::foo: OrderedHashMap({Const: 1680})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -311,7 +311,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1750})
+test::foo: OrderedHashMap({Const: 1810})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -383,7 +383,7 @@ jmp rel 6;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 860})
+test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -455,7 +455,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 860})
+test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
