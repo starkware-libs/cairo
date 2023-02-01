@@ -688,6 +688,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "id-arena",
+ "indexmap",
  "indoc",
  "itertools",
  "log",
