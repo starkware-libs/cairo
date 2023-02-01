@@ -330,8 +330,7 @@ fn build_dict_felt_to_squash(
 
             localvar squashed_dict_start;
             ap += 1;
-            let (returned_squashed_dict_start) = call SquashedDictNew;
-            assert squashed_dict_start = returned_squashed_dict_start;
+            hint AllocSegment {} into {dst: squashed_dict_start};
             // Push SquashDict arguments.
             tempvar squash_dict_arg_range_check_ptr = dict_squash_arg_range_check_ptr;
             tempvar squash_dict_arg_dict_accesses_start = dict_squash_arg_dict_accesses_start;
@@ -352,16 +351,6 @@ fn build_dict_felt_to_squash(
             squash_dict_arg_squashed_dict_start,
         )
     };
-    casm_build_extend! {casm_builder,
-        // Inputs:
-        // Outputs: new_dict_end_ptr
-        SquashedDictNew:
-        // Simply allocates a new segments.
-        tempvar new_dict_end_ptr;
-        hint AllocSegment {} into {dst: new_dict_end_ptr};
-        ap += 1;
-        ret;
-    }
     let (
         squash_dict_inner_arg_range_check_ptr,
         squash_dict_inner_arg_dict_accesses_start,
