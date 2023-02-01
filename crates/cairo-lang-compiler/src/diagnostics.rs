@@ -5,6 +5,7 @@ use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
+use thiserror::Error;
 
 use crate::db::RootDatabase;
 
@@ -12,11 +13,18 @@ use crate::db::RootDatabase;
 #[path = "diagnostics_test.rs"]
 mod test;
 
+#[derive(Error, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum DiagnosticsError {
+    #[error("Compilation failed.")]
+    Fatal,
+}
+
 /// Checks if there are diagnostics and reports them to the provided callback as strings.
 /// Returns `true` if diagnostics were found.
-pub fn check_diagnostics<'a>(
+pub fn check_diagnostics(
     db: &mut RootDatabase,
-    on_diagnostic: Option<&mut (dyn FnMut(String) + 'a)>,
+    on_diagnostic: Option<&mut (dyn FnMut(String) + '_)>,
 ) -> bool {
     let mut ignore = |_| ();
     let on_diagnostic = on_diagnostic.unwrap_or(&mut ignore);
@@ -64,6 +72,15 @@ pub fn check_diagnostics<'a>(
         }
     }
     found_diagnostics
+}
+
+/// Checks if there are diagnostics and reports them to the provided callback as strings.
+/// Returns `Err` if diagnostics were found.
+pub fn ensure_diagnostics(
+    db: &mut RootDatabase,
+    on_diagnostic: Option<&mut (dyn FnMut(String) + '_)>,
+) -> Result<(), DiagnosticsError> {
+    if check_diagnostics(db, on_diagnostic) { Err(DiagnosticsError::Fatal) } else { Ok(()) }
 }
 
 pub fn check_and_eprint_diagnostics(db: &mut RootDatabase) -> bool {
