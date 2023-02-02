@@ -489,6 +489,7 @@ define_libfunc_hierarchy! {
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
         ToFelt(UintToFeltLibfunc<Uint8Traits>),
         FromFelt(UintFromFeltLibfunc<Uint8Traits>),
+        Divmod(UintDivmodLibfunc<Uint8Traits>),
     }, Uint8Concrete
 }
 
@@ -522,5 +523,6 @@ define_libfunc_hierarchy! {
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint64Traits>),
         ToFelt(UintToFeltLibfunc<Uint64Traits>),
         FromFelt(UintFromFeltLibfunc<Uint64Traits>),
+        Divmod(UintDivmodLibfunc<Uint64Traits>),
     }, Uint64Concrete
 }
