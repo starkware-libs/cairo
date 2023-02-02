@@ -10,9 +10,9 @@ use crate::replace_ids::SierraIdReplacer;
 
 #[derive(Default)]
 pub struct CanonicalReplacer {
-    type_ids: HashMap<ConcreteTypeId, ConcreteTypeId>,
-    function_ids: HashMap<FunctionId, FunctionId>,
-    libfunc_ids: HashMap<ConcreteLibfuncId, ConcreteLibfuncId>,
+    type_ids: HashMap<ConcreteTypeId, u64>,
+    function_ids: HashMap<FunctionId, u64>,
+    libfunc_ids: HashMap<ConcreteLibfuncId, u64>,
 }
 
 /// A replacer that replace the Ids in the program with canonical onces.
@@ -24,20 +24,17 @@ impl CanonicalReplacer {
         let mut type_ids = HashMap::default();
 
         for type_declaration in &program.type_declarations {
-            let new_id = ConcreteTypeId::from_usize(type_ids.len());
-            type_ids.insert(type_declaration.id.clone(), new_id.clone());
+            type_ids.insert(type_declaration.id.clone(), type_ids.len() as u64);
         }
 
         let mut function_ids = HashMap::default();
         for function in &program.funcs {
-            let new_id = FunctionId::from_usize(function_ids.len());
-            function_ids.insert(function.id.clone(), new_id.clone());
+            function_ids.insert(function.id.clone(), function_ids.len() as u64);
         }
 
         let mut libfunc_ids = HashMap::default();
         for libfunc_declaration in &program.libfunc_declarations {
-            let new_id = ConcreteLibfuncId::from_usize(libfunc_ids.len());
-            libfunc_ids.insert(libfunc_declaration.id.clone(), new_id.clone());
+            libfunc_ids.insert(libfunc_declaration.id.clone(), libfunc_ids.len() as u64);
         }
 
         Self { type_ids, function_ids, libfunc_ids }
@@ -49,20 +46,29 @@ impl SierraIdReplacer for CanonicalReplacer {
         &self,
         id: &cairo_lang_sierra::ids::ConcreteLibfuncId,
     ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-        self.libfunc_ids.get(id).expect("Unexpected libfunc id.").clone()
+        cairo_lang_sierra::ids::ConcreteLibfuncId {
+            id: *self.libfunc_ids.get(id).expect("Unexpected libfunc id."),
+            debug_name: id.debug_name.clone(),
+        }
     }
 
     fn replace_type_id(
         &self,
         id: &cairo_lang_sierra::ids::ConcreteTypeId,
     ) -> cairo_lang_sierra::ids::ConcreteTypeId {
-        self.type_ids.get(id).expect("Unexpected type id.").clone()
+        cairo_lang_sierra::ids::ConcreteTypeId {
+            id: *self.type_ids.get(id).expect("Unexpected type id."),
+            debug_name: id.debug_name.clone(),
+        }
     }
 
     fn replace_function_id(
         &self,
         id: &cairo_lang_sierra::ids::FunctionId,
     ) -> cairo_lang_sierra::ids::FunctionId {
-        self.function_ids.get(id).expect("Unexpected type id.").clone()
+        cairo_lang_sierra::ids::FunctionId {
+            id: *self.function_ids.get(id).expect("Unexpected function id."),
+            debug_name: id.debug_name.clone(),
+        }
     }
 }
