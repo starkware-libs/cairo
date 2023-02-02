@@ -156,7 +156,7 @@ mod HelloStarknet {
             let mut arr = array_new();
             // References.
             // Result.
-            serde::Serde::<felt>::serialize(ref arr, res)
+            serde::Serde::<felt>::serialize(ref arr, res);
             arr
         }
         

@@ -11,7 +11,7 @@ fn foo(x: felt) -> felt {
     match felt_is_zero(x) {
         IsZeroResult::Zero(_) => 1,
         IsZeroResult::NonZero(y) => {
-            revoke_ap()
+            revoke_ap();
             // y is not revoked, since it's the same as x, which is local.
             unwrap_nz::<felt>(y)
         },
@@ -20,7 +20,7 @@ fn foo(x: felt) -> felt {
     match felt_is_zero(x2) {
         IsZeroResult::Zero(_) => 1,
         IsZeroResult::NonZero(y) => {
-            revoke_ap()
+            revoke_ap();
             // x2 is revoked, since y is identical to x2.
             unwrap_nz::<felt>(y)
         },
@@ -100,7 +100,7 @@ fn foo(x: felt) -> felt {
     let x2 = x1 + x1;
     let x3 = if x2 == 0 { 1 } else { 2 };
     // The "if" revokes "x1".
-    x1 + x3
+    x1 + x3;
     let x4 = if x1 == 0 { 1 } else { 2 };
     revoke_ap();
     x4
@@ -181,7 +181,7 @@ fn foo(x: felt) -> felt {
     match felt_is_zero(x) {
         IsZeroResult::Zero(_) => 1,
         IsZeroResult::NonZero(y) => {
-            revoke_ap()
+            revoke_ap();
             return 0;
         },
     }
