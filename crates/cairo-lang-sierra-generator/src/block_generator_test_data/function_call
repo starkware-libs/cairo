@@ -10,6 +10,8 @@ fn foo(mut z: MyStruct) -> () {
 }
 
 fn bar(a: felt, b: felt, ref z: MyStruct) -> felt {
+    // TODO(ilya): Currently prevents inlining. remove after adding #[inline(never)].
+    let _ignore = 'extra-statement';
     0
 }
 
