@@ -578,7 +578,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test returning an input variable as is (not in root block).
+//! > Test returning an input variable as is.
 
 //! > test_function_name
 test_function_inlining
@@ -597,7 +597,7 @@ fn bar(a: felt) -> felt {
   if a == 0 {
     return a;
   }
-  1
+  a
 }
 
 //! > semantic_diagnostics
@@ -622,9 +622,8 @@ Statements:
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
   }
-  (v1: core::felt) <- 1u
 End:
-  Fallthrough(1, {})
+  Fallthrough(1, {v0 -> v1})
 
 blk1:
 Inputs:

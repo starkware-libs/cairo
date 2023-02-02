@@ -69,11 +69,6 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::InlineWithoutArgumentNotSupported => {
                 "`inline` without arguments is not supported.".into()
             }
-            LoweringDiagnosticKind::InliningFunctionWithIdentityVarsNotSupported => {
-                "Inlining of functions that directly returns one of its inputs is not supported."
-                    .into()
-            }
-
             LoweringDiagnosticKind::InliningFunctionWithUnreachableEndNotSupported => {
                 "Inlining of functions where the end of the root block is unreachable is not \
                  supported."
@@ -110,7 +105,6 @@ pub enum LoweringDiagnosticKind {
     CannotInlineFunctionThatMightCallItself,
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
-    InliningFunctionWithIdentityVarsNotSupported,
     InliningFunctionWithUnreachableEndNotSupported,
     InlineWithoutArgumentNotSupported,
 }
