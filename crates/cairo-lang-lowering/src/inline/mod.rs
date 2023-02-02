@@ -102,16 +102,33 @@ fn gather_inlining_info(
 
                 info.has_early_return = true;
             }
-            FlatBlockEnd::Return(returns) if returns.iter().any(|r| input_vars.contains(r)) => {
-                if report_diagnostics {
-                    diagnostics.report(
-                        function_id.untyped_stable_ptr(defs_db),
-                        LoweringDiagnosticKind::InliningFunctionWithIdentityVarsNotSupported,
-                    );
+            FlatBlockEnd::Return(returns) => {
+                if returns.iter().any(|r| input_vars.contains(r)) {
+                    if report_diagnostics {
+                        diagnostics.report(
+                            function_id.untyped_stable_ptr(defs_db),
+                            LoweringDiagnosticKind::InliningFunctionWithIdentityVarsNotSupported,
+                        );
+                    }
+                    return Ok(info);
                 }
-                return Ok(info);
             }
-            _ => {}
+            FlatBlockEnd::Unreachable => {
+                if block_id == root_block_id {
+                    if report_diagnostics {
+                        diagnostics.report(
+                            function_id.untyped_stable_ptr(defs_db),
+                            LoweringDiagnosticKind::InliningFunctionWithUnreachableEndNotSupported,
+                        );
+                    }
+                    return Ok(info);
+                }
+            }
+            FlatBlockEnd::Callsite(_) | FlatBlockEnd::Fallthrough(..) | FlatBlockEnd::Goto(..) => {
+                if block_id == root_block_id {
+                    panic!("Unexpected block end.");
+                }
+            }
         };
     }
 
