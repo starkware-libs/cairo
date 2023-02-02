@@ -94,12 +94,7 @@ pub struct ContractEntryPoint {
 ///
 /// Errors if no contracts or more than 1 are found.
 pub fn compile_path(path: &Path, compiler_config: CompilerConfig) -> Result<ContractClass> {
-    let mut db = {
-        let mut b = RootDatabase::builder();
-        b.with_dev_corelib().unwrap();
-        b.with_starknet();
-        b.build()
-    };
+    let mut db = RootDatabase::builder().detect_corelib().with_starknet().build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 

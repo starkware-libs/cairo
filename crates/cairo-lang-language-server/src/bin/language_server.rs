@@ -12,12 +12,11 @@ async fn main() {
     #[cfg(feature = "runtime-agnostic")]
     let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
-    let db = {
-        let mut b = RootDatabase::builder();
-        b.with_dev_corelib().unwrap();
-        b.with_starknet();
-        b.build()
-    };
+    let db = RootDatabase::builder()
+        .detect_corelib()
+        .with_starknet()
+        .build()
+        .expect("Failed to initialize Cairo compiler database.");
 
     let (service, socket) = LspService::build(|client| Backend {
         client,

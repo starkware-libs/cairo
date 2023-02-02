@@ -31,10 +31,7 @@ struct Args {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let mut builder = RootDatabase::builder();
-    builder.with_dev_corelib().unwrap();
-    let mut db_val = builder.build();
-    let db = &mut db_val;
+    let db = &mut RootDatabase::builder().detect_corelib().build()?;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
