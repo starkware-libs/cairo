@@ -17,80 +17,128 @@ mod test;
 #[error("Compilation failed.")]
 pub struct DiagnosticsError;
 
-/// Checks if there are diagnostics and reports them to the provided callback as strings.
-/// Returns `true` if diagnostics were found.
-pub fn check_diagnostics(
-    db: &mut RootDatabase,
-    on_diagnostic: Option<&mut (dyn FnMut(String) + '_)>,
-) -> bool {
-    let mut ignore = |_| ();
-    let on_diagnostic = on_diagnostic.unwrap_or(&mut ignore);
+trait DiagnosticCallback {
+    fn on_diagnostic(&mut self, diagnostic: String);
+}
 
-    let mut found_diagnostics = false;
-    for crate_id in db.crates() {
-        let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
-            found_diagnostics = true;
-            on_diagnostic("Failed to get main module file".to_string());
-            continue;
-        };
-
-        if db.file_content(module_file).is_none() {
-            match db.lookup_intern_file(module_file) {
-                FileLongId::OnDisk(path) => {
-                    on_diagnostic(format!("{} not found\n", path.display()))
-                }
-                FileLongId::Virtual(_) => panic!("Missing virtual file."),
-            }
-            found_diagnostics = true;
-        }
-
-        for module_id in &*db.crate_modules(crate_id) {
-            for file_id in db.module_files(*module_id).unwrap_or_default() {
-                let diag = db.file_syntax_diagnostics(file_id);
-                if !diag.get_all().is_empty() {
-                    found_diagnostics = true;
-                    on_diagnostic(diag.format(db));
-                }
-            }
-
-            if let Ok(diag) = db.module_semantic_diagnostics(*module_id) {
-                if !diag.get_all().is_empty() {
-                    found_diagnostics = true;
-                    on_diagnostic(diag.format(db));
-                }
-            }
-
-            if let Ok(diag) = db.module_lowering_diagnostics(*module_id) {
-                if !diag.get_all().is_empty() {
-                    found_diagnostics = true;
-                    on_diagnostic(diag.format(db));
-                }
-            }
+impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
+    fn on_diagnostic(&mut self, diagnostic: String) {
+        if let Some(callback) = self {
+            callback.on_diagnostic(diagnostic)
         }
     }
-    found_diagnostics
 }
 
-/// Checks if there are diagnostics and reports them to the provided callback as strings.
-/// Returns `Err` if diagnostics were found.
-pub fn ensure_diagnostics(
-    db: &mut RootDatabase,
-    on_diagnostic: Option<&mut (dyn FnMut(String) + '_)>,
-) -> Result<(), DiagnosticsError> {
-    if check_diagnostics(db, on_diagnostic) { Err(DiagnosticsError) } else { Ok(()) }
+pub struct DiagnosticsReporter<'a> {
+    callback: Option<Box<dyn DiagnosticCallback + 'a>>,
 }
 
-pub fn check_and_eprint_diagnostics(db: &mut RootDatabase) -> bool {
-    check_diagnostics(db, Some(&mut eprint_diagnostic))
+impl DiagnosticsReporter<'static> {
+    /// Create a reporter which does not print or collect diagnostics at all.
+    pub fn ignoring() -> Self {
+        Self { callback: None }
+    }
+
+    /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
+    pub fn stderr() -> Self {
+        Self::callback(|diagnostic| {
+            eprint!("{diagnostic}");
+        })
+    }
 }
 
-pub fn eprint_diagnostic(diag: String) {
-    eprint!("{diag}");
+impl<'a> DiagnosticsReporter<'a> {
+    /// Create a reporter which calls `callback` for each diagnostic.
+    pub fn callback(callback: impl FnMut(String) + 'a) -> Self {
+        struct Func<F>(F);
+
+        impl<F> DiagnosticCallback for Func<F>
+        where
+            F: FnMut(String),
+        {
+            fn on_diagnostic(&mut self, diagnostic: String) {
+                (self.0)(diagnostic)
+            }
+        }
+
+        Self::new(Func(callback))
+    }
+
+    /// Create a reporter which appends all diagnostics to provided string.
+    pub fn write_to_string(string: &'a mut String) -> Self {
+        Self::callback(|diagnostic| string.push_str(&diagnostic))
+    }
+
+    fn new(callback: impl DiagnosticCallback + 'a) -> Self {
+        Self { callback: Some(Box::new(callback)) }
+    }
+
+    /// Checks if there are diagnostics and reports them to the provided callback as strings.
+    /// Returns `true` if diagnostics were found.
+    pub fn check(&mut self, db: &mut RootDatabase) -> bool {
+        let mut found_diagnostics = false;
+        for crate_id in db.crates() {
+            let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
+                found_diagnostics = true;
+                self.callback.on_diagnostic("Failed to get main module file".to_string());
+                continue;
+            };
+
+            if db.file_content(module_file).is_none() {
+                match db.lookup_intern_file(module_file) {
+                    FileLongId::OnDisk(path) => {
+                        self.callback.on_diagnostic(format!("{} not found\n", path.display()))
+                    }
+                    FileLongId::Virtual(_) => panic!("Missing virtual file."),
+                }
+                found_diagnostics = true;
+            }
+
+            for module_id in &*db.crate_modules(crate_id) {
+                for file_id in db.module_files(*module_id).unwrap_or_default() {
+                    let diag = db.file_syntax_diagnostics(file_id);
+                    if !diag.get_all().is_empty() {
+                        found_diagnostics = true;
+                        self.callback.on_diagnostic(diag.format(db));
+                    }
+                }
+
+                if let Ok(diag) = db.module_semantic_diagnostics(*module_id) {
+                    if !diag.get_all().is_empty() {
+                        found_diagnostics = true;
+                        self.callback.on_diagnostic(diag.format(db));
+                    }
+                }
+
+                if let Ok(diag) = db.module_lowering_diagnostics(*module_id) {
+                    if !diag.get_all().is_empty() {
+                        found_diagnostics = true;
+                        self.callback.on_diagnostic(diag.format(db));
+                    }
+                }
+            }
+        }
+        found_diagnostics
+    }
+
+    /// Checks if there are diagnostics and reports them to the provided callback as strings.
+    /// Returns `Err` if diagnostics were found.
+    pub fn ensure(&mut self, db: &mut RootDatabase) -> Result<(), DiagnosticsError> {
+        if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
+    }
+}
+
+impl Default for DiagnosticsReporter<'static> {
+    fn default() -> Self {
+        DiagnosticsReporter::stderr()
+    }
 }
 
 /// Returns a string with all the diagnostics in the db.
+///
+/// This is a shortcut for `DiagnosticsReporter::write_to_string(&mut string).check(db)`.
 pub fn get_diagnostics_as_string(db: &mut RootDatabase) -> String {
     let mut diagnostics = String::default();
-    check_diagnostics(db, Some(&mut |s| diagnostics += &s));
+    DiagnosticsReporter::write_to_string(&mut diagnostics).check(db);
     diagnostics
 }

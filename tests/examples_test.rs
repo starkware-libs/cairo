@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use assert_matches::assert_matches;
 use cairo_felt::{self as felt, felt_str, Felt};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner, DUMMY_BUILTIN_GAS_COST};
@@ -24,7 +24,7 @@ fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
 
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
     let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
-    assert!(!check_and_eprint_diagnostics(&mut db));
+    DiagnosticsReporter::stderr().ensure(&mut db).unwrap();
     (db, main_crate_ids)
 }
 

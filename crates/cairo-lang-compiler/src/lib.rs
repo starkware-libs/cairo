@@ -13,7 +13,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
 use crate::db::RootDatabase;
-use crate::diagnostics::{ensure_diagnostics, eprint_diagnostic};
+use crate::diagnostics::DiagnosticsReporter;
 use crate::project::{get_main_crate_ids_from_project, setup_project, ProjectConfig};
 
 pub mod db;
@@ -21,17 +21,17 @@ pub mod diagnostics;
 pub mod project;
 
 /// Configuration for the compiler.
-pub struct CompilerConfig {
-    pub on_diagnostic: Option<Box<dyn FnMut(String)>>,
+pub struct CompilerConfig<'c> {
+    pub diagnostics_reporter: DiagnosticsReporter<'c>,
 
     /// Replaces sierra ids with human-readable ones.
     pub replace_ids: bool,
 }
 
 /// The default compiler configuration.
-impl Default for CompilerConfig {
+impl Default for CompilerConfig<'static> {
     fn default() -> Self {
-        CompilerConfig { on_diagnostic: Some(Box::new(eprint_diagnostic)), replace_ids: false }
+        CompilerConfig { diagnostics_reporter: DiagnosticsReporter::default(), replace_ids: false }
     }
 }
 
@@ -49,7 +49,7 @@ pub type SierraProgram = Arc<Program>;
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_cairo_project_at_path(
     path: &Path,
-    compiler_config: CompilerConfig,
+    compiler_config: CompilerConfig<'_>,
 ) -> Result<SierraProgram> {
     let mut db = RootDatabase::builder().detect_corelib().build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
@@ -67,7 +67,7 @@ pub fn compile_cairo_project_at_path(
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile(
     project_config: ProjectConfig,
-    compiler_config: CompilerConfig,
+    compiler_config: CompilerConfig<'_>,
 ) -> Result<SierraProgram> {
     let mut db = RootDatabase::builder().with_project_config(project_config.clone()).build()?;
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
@@ -89,9 +89,9 @@ pub fn compile(
 pub fn compile_prepared_db(
     db: &mut RootDatabase,
     main_crate_ids: Vec<CrateId>,
-    mut compiler_config: CompilerConfig,
+    mut compiler_config: CompilerConfig<'_>,
 ) -> Result<SierraProgram> {
-    ensure_diagnostics(db, compiler_config.on_diagnostic.as_deref_mut())?;
+    compiler_config.diagnostics_reporter.ensure(db)?;
 
     let mut sierra_program = db
         .get_sierra_program(main_crate_ids)
