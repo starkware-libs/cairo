@@ -262,6 +262,12 @@ impl ModuleId {
             }
         }
     }
+    pub fn owning_crate(&self, db: &dyn DefsGroup) -> CrateId {
+        match self {
+            ModuleId::CrateRoot(crate_id) => *crate_id,
+            ModuleId::Submodule(submodule) => submodule.parent_module(db).owning_crate(db),
+        }
+    }
 }
 impl DebugWithDb<dyn DefsGroup> for ModuleId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
