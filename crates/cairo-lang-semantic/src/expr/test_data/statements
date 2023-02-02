@@ -1,0 +1,176 @@
+//! > Missing semicolon in let statement (parsing error).
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let mut x = 3
+    x = 2;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> lib.cairo:2:18
+    let mut x = 3
+                 ^
+
+//! > ==========================================================================
+
+//! > Missing semicolon in "tail" let statement (parsing error).
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let mut x = 3
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> lib.cairo:2:18
+    let mut x = 3
+                 ^
+
+//! > ==========================================================================
+
+//! > Missing semicolon in return statement (parsing error).
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> felt {
+    if true {
+        return 1
+    }
+    2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> lib.cairo:3:17
+        return 1
+                ^
+
+//! > ==========================================================================
+
+//! > Missing semicolon in "tail" return statement (parsing error).
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> felt {
+    return 1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> lib.cairo:2:13
+    return 1
+            ^
+
+//! > ==========================================================================
+
+//! > Missing semicolon in expression statement.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    bar()
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar() {}
+
+//! > expected_diagnostics
+error: Missing semicolon
+ --> lib.cairo:3:5
+    bar()
+    ^***^
+
+//! > ==========================================================================
+
+//! > "Missing" semicolon in tail expression is OK
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> felt {
+    2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Blocks, `if`s, and `match`s, don't require semicolon, even not in tail expressions.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    // `if` without ';' in the end
+    if true {}
+    let opt = Option::Some(3);
+    // `match` without ';' in the end
+    match opt {
+        Some(_) => {},
+        None(_) => {},
+    }
+    // Block without ';' in the end
+    {}
+    // Another statement to make the previous ones non-tail.
+    let x = 3;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Identifier not found.
+ --> lib.cairo:7:9
+        Some(_) => {},
+        ^**^
+
+error: Identifier not found.
+ --> lib.cairo:8:9
+        None(_) => {},
+        ^**^

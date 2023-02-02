@@ -499,6 +499,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ExternFunctionWithImplGenericsNotSupported => {
                 "Extern functions with impl generics are not supported".into()
             }
+            SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
         }
     }
 
@@ -743,6 +744,7 @@ pub enum SemanticDiagnosticKind {
     },
     OnlyLiteralConstants,
     ExternFunctionWithImplGenericsNotSupported,
+    MissingSemicolon,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

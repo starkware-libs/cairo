@@ -70,7 +70,7 @@ impl U256Serde of Serde::<u256> {
 
 impl ArrayFeltSerde of Serde::<Array::<felt>> {
     fn serialize(ref serialized: Array::<felt>, mut input: Array::<felt>) {
-        Serde::<usize>::serialize(ref serialized, input.len())
+        Serde::<usize>::serialize(ref serialized, input.len());
         serialize_array_felt_helper(ref serialized, ref input);
     }
     fn deserialize(ref serialized: Array::<felt>) -> Option::<Array::<felt>> {
