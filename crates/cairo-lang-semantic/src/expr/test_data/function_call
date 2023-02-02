@@ -61,12 +61,12 @@ test_function_diagnostics
 fn foo(ref a: felt) {
     let b = 1;
     let mut c = 2;
-    bar(a, a)
-    bar(b, b)
-    bar(c, c)
-    bar(ref a, ref a)
-    bar(ref b, ref b)
-    bar(ref c, ref c)
+    bar(a, a);
+    bar(b, b);
+    bar(c, c);
+    bar(ref a, ref a);
+    bar(ref b, ref b);
+    bar(ref c, ref c);
 }
 
 //! > function_name
@@ -79,42 +79,42 @@ fn bar(a: felt, ref b: felt) {
 //! > expected_diagnostics
 error: ref argument must be a passed with a preceding 'ref'.
  --> lib.cairo:6:12
-    bar(a, a)
+    bar(a, a);
            ^
 
 error: ref argument must be a mutable variable.
  --> lib.cairo:7:12
-    bar(b, b)
+    bar(b, b);
            ^
 
 error: ref argument must be a passed with a preceding 'ref'.
  --> lib.cairo:7:12
-    bar(b, b)
+    bar(b, b);
            ^
 
 error: ref argument must be a passed with a preceding 'ref'.
  --> lib.cairo:8:12
-    bar(c, c)
+    bar(c, c);
            ^
 
 error: Argument cannot have modifiers.
  --> lib.cairo:9:13
-    bar(ref a, ref a)
+    bar(ref a, ref a);
             ^
 
 error: Argument cannot have modifiers.
  --> lib.cairo:10:13
-    bar(ref b, ref b)
+    bar(ref b, ref b);
             ^
 
 error: ref argument must be a mutable variable.
  --> lib.cairo:10:20
-    bar(ref b, ref b)
+    bar(ref b, ref b);
                    ^
 
 error: Argument cannot have modifiers.
  --> lib.cairo:11:13
-    bar(ref c, ref c)
+    bar(ref c, ref c);
             ^
 
 //! > ==========================================================================

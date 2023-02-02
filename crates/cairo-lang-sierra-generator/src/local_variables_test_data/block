@@ -12,7 +12,7 @@ fn foo(x: felt) -> felt {
     let x2 = x1 + x1;
     // TODO(lior): Replace with let (y, z) = { ... } and make sure z does not appear in the result.
     let y = {
-        revoke_ap()
+        revoke_ap();
         x1 + x1
     };
     // TODO(lior): Replace with "let w = x1 + x2 + z".

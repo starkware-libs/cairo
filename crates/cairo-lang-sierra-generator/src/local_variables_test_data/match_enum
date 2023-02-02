@@ -13,7 +13,7 @@ fn foo() -> felt {
   let w1 = non_literal();
   let y = match x {
     MyEnum::A(a) => {
-      revoke_ap()
+      revoke_ap();
       a + a
     },
     MyEnum::B(b) => {
@@ -100,7 +100,7 @@ fn foo(x: MyEnum, z: felt) -> felt {
     let w1 = z + z;
     match x {
         MyEnum::A(a) => {
-            revoke_ap()
+            revoke_ap();
             return 0;
         },
         MyEnum::B(b) => {

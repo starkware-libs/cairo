@@ -1,7 +1,7 @@
 #[contract]
 mod HelloStarknet {
     struct Storage {
-        balance: felt, 
+        balance: felt,
     }
 
     // Increases the balance by the given amount.
@@ -14,6 +14,5 @@ mod HelloStarknet {
     #[view]
     fn get_balance() -> felt {
         balance::read()
-        0
     }
 }
