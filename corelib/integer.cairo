@@ -356,6 +356,8 @@ impl U64Sub of Sub::<u64> {
     }
 }
 
+extern fn u64_safe_divmod(a: u64, b: NonZero::<u64>) -> (u64, u64) implicits(RangeCheck) nopanic;
+
 #[derive(Copy, Drop)]
 struct u256 {
     low: u128,
