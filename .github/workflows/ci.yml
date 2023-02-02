@@ -29,7 +29,7 @@ jobs:
           components: rustfmt
           toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
-      - run: cargo +nightly-2022-11-03 fmt --all -- --check
+      - run: scripts/rust_fmt.sh --check
 
   # Checks all .cairo files in the repo are formatted correctly.
   cairofmt:
@@ -41,7 +41,7 @@ jobs:
           profile: minimal
           toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
-      - run: cargo +nightly-2022-11-03 run --bin cairo-format -- --check --recursive
+      - run: scripts/cairo_fmt.sh --check
 
   # Checks all cairo corelib tests run correctly.
   cairotest:
@@ -53,8 +53,8 @@ jobs:
           profile: minimal
           toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
-      - run: cargo +nightly-2022-11-03 run --bin cairo-test -- --path corelib/
-      - run: cargo +nightly-2022-11-03 run --bin cairo-test -- --path crates/cairo-lang-starknet/cairo_level_tests/ --starknet
+      - run: scripts/cairo_test.sh
+      - run: scripts/starknet_test.sh
 
   # Check for unnecessary dependencies.
   udeps:
@@ -84,8 +84,7 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
       - run: >
-          cargo clippy --all-targets --all-features -- -D warnings -D future-incompatible
-          -D nonstandard-style -D rust-2018-idioms -D unused
+          scripts/clippy.sh
 
   docs:
     runs-on: ubuntu-latest
@@ -96,4 +95,4 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
       - run: >
-          RUSTDOCFLAGS="-Dwarnings" cargo doc --document-private-items --no-deps --all-features
+          scripts/docs.sh
