@@ -310,5 +310,9 @@ mod starknet;
 use starknet::System;
 use starknet::ContractAddress;
 
+// Dojo
+mod dojo;
+use dojo::Position;
+
 #[cfg(test)]
 mod test;

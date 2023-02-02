@@ -59,6 +59,21 @@ impl U256Serde of Serde::<u256> {
     }
 }
 
+impl PositionSerde of Serde::<Position> {
+    fn serialize(ref serialized: Array::<felt>, input: Position) {
+        Serde::<felt>::serialize(ref serialized, input.x);
+        Serde::<felt>::serialize(ref serialized, input.y);
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<Position> {
+        Option::Some(
+            Position {
+                x: Serde::<felt>::deserialize(ref serialized)?,
+                y: Serde::<felt>::deserialize(ref serialized)?,
+            }
+        )
+    }
+}
+
 impl ArrayFeltSerde of Serde::<Array::<felt>> {
     fn serialize(ref serialized: Array::<felt>, mut input: Array::<felt>) {
         Serde::<u128>::serialize(ref serialized, input.len())

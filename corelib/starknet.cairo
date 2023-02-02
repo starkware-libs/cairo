@@ -128,6 +128,27 @@ impl StorageAccessU256 of StorageAccess::<u256> {
     }
 }
 
+impl StorageAccessPosition of StorageAccess::<Position> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult::<Position> {
+        Result::Ok(
+            Position {
+                x: StorageAccess::<felt>::read(address_domain, base)?,
+                y: storage_read_syscall(
+                    address_domain, storage_address_from_base_and_offset(base, 1_u8)
+                )?
+            }
+        )
+    }
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: Position
+    ) -> SyscallResult::<()> {
+        StorageAccess::<felt>::write(address_domain, base, value.x)?;
+        storage_write_syscall(
+            address_domain, storage_address_from_base_and_offset(base, 1_u8), value.y
+        )
+    }
+}
+
 /// The result type for a syscall.
 type SyscallResult<T> = Result::<T, Array::<felt>>;
 
