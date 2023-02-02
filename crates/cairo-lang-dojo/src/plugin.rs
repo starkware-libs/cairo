@@ -92,10 +92,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         MaybeModuleBody::None(empty_body) => {
             return PluginResult {
                 code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    message: "Modules without body are not supported.".to_string(),
-                    stable_ptr: empty_body.stable_ptr().untyped(),
-                }],
+                diagnostics: vec![],
                 remove_original_item: false,
             };
         }
@@ -111,10 +108,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
     PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                message: "Unsupported module type. Only modules annotated with `component` or `system` supported.".to_string(),
-                stable_ptr: module_ast.stable_ptr().untyped(),
-            }],
-            remove_original_item: true,
+            diagnostics: vec![],
+            remove_original_item: false,
         }
 }

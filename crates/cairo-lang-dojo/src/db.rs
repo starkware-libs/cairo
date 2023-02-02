@@ -10,6 +10,34 @@ use itertools::Itertools;
 
 use crate::plugin::DojoPlugin;
 
+pub trait DojoRootDatabaseBuilderEx {
+    /// Tunes a compiler database to Dojo (e.g. Dojo plugin).
+    fn with_dojo(&mut self) -> &mut Self;
+
+    /// Tunes a compiler database to Dojo and Starknet
+    fn with_dojo_and_starknet(&mut self) -> &mut Self;
+}
+
+impl DojoRootDatabaseBuilderEx for RootDatabaseBuilder {
+    fn with_dojo(&mut self) -> &mut Self {
+
+        let mut plugins = get_default_plugins();
+        plugins.push(Arc::new(DojoPlugin {}));
+
+        self.with_plugins(plugins)
+    }
+
+    fn with_dojo_and_starknet(&mut self) -> &mut Self {
+
+        let precedence = vec!["Pedersen", "RangeCheck", "Bitwise", "EcOp", "GasBuiltin", "System"];
+
+        let mut plugins = get_default_plugins();
+        plugins.push(Arc::new(DojoPlugin {}));
+        plugins.push(Arc::new(StarkNetPlugin {}));
+
+        self.with_implicit_precedence(precedence).with_plugins(plugins)
+    }
+}
 /// Returns a compiler database tuned to Dojo (e.g. Dojo plugin).
 pub fn get_dojo_database() -> RootDatabase {
     let mut db_val = RootDatabase::default();
@@ -27,23 +55,6 @@ pub fn get_dojo_database() -> RootDatabase {
     plugins.push(Arc::new(DojoPlugin {}));
     db.set_semantic_plugins(plugins);
     db_val
-}
-
-pub trait DojoRootDatabaseBuilderEx {
-    /// Tunes a compiler database to Dojo (e.g. Dojo plugin).
-    fn with_dojo(&mut self) -> &mut Self;
-}
-
-impl DojoRootDatabaseBuilderEx for RootDatabaseBuilder {
-    fn with_dojo(&mut self) -> &mut Self {
-        // Override implicit precedence for compatibility with the Starknet OS.
-        let precedence = vec!["Pedersen", "RangeCheck", "Bitwise", "GasBuiltin", "System"];
-
-        let mut plugins = get_default_plugins();
-        plugins.push(Arc::new(DojoPlugin {}));
-
-        self.with_implicit_precedence(precedence).with_plugins(plugins)
-    }
 }
 
 pub trait StarknetRootDatabaseBuilderEx {

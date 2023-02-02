@@ -6,8 +6,9 @@ use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_dojo::db::get_dojo_database;
+use cairo_lang_dojo::db::{DojoRootDatabaseBuilderEx, get_dojo_database};
 use clap::Parser;
+use cairo_lang_compiler::db::RootDatabase;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -27,7 +28,13 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let path = &PathBuf::from(args.path);
 
-    let mut db_val = get_dojo_database();
+    let mut db_val = {
+        let mut b = RootDatabase::builder();
+        b.with_dev_corelib();
+        b.with_dojo_and_starknet();
+        b.build()
+    };
+
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&path))?;

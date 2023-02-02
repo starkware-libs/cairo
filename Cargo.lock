@@ -381,6 +381,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-lang-dojo"
+version = "1.0.0-alpha.2"
+dependencies = [
+ "anyhow",
+ "cairo-lang-compiler",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-formatter",
+ "cairo-lang-lowering",
+ "cairo-lang-parser",
+ "cairo-lang-plugins",
+ "cairo-lang-semantic",
+ "cairo-lang-sierra-generator",
+ "cairo-lang-starknet",
+ "cairo-lang-syntax",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
+ "clap 4.0.26",
+ "env_logger",
+ "indoc",
+ "itertools",
+ "serde",
+ "serde_json",
+ "smol_str",
+ "test-case",
+ "test-case-macros",
+ "test-log",
+]
+
+[[package]]
 name = "cairo-lang-eq-solver"
 version = "1.0.0-alpha.2"
 dependencies = [
@@ -437,6 +467,7 @@ dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
+ "cairo-lang-dojo",
  "cairo-lang-filesystem",
  "cairo-lang-formatter",
  "cairo-lang-lowering",
