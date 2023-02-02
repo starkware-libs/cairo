@@ -146,7 +146,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 5700})
+test::foo: OrderedHashMap({Const: 11300})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -233,7 +233,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 5700})
+test::foo: OrderedHashMap({Const: 11500})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
