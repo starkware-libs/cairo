@@ -703,10 +703,10 @@ fn module_semantic_diagnostics(
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
     for (module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)? {
-        diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::new(module_file_id, plugin_diag.stable_ptr),
-            kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
-        });
+        diagnostics.add(SemanticDiagnostic::new(
+            StableLocation::new(module_file_id, plugin_diag.stable_ptr),
+            SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+        ));
     }
 
     diagnostics.extend(db.priv_module_items_data(module_id)?.diagnostics.clone());
@@ -749,13 +749,14 @@ fn module_semantic_diagnostics(
                             FileLongId::Virtual(_) => panic!("Expected OnDisk file."),
                         };
 
-                        diagnostics.add(SemanticDiagnostic {
-                            stable_location: StableLocation::new(
-                                submodule_id.module_file_id(db.upcast()),
-                                submodule_id.stable_ptr(db.upcast()).untyped(),
-                            ),
-                            kind: SemanticDiagnosticKind::ModuleFileNotFound { path },
-                        });
+                        let stable_location = StableLocation::new(
+                            submodule_id.module_file_id(db.upcast()),
+                            submodule_id.stable_ptr(db.upcast()).untyped(),
+                        );
+                        diagnostics.add(SemanticDiagnostic::new(
+                            stable_location,
+                            SemanticDiagnosticKind::ModuleFileNotFound { path },
+                        ));
                     }
                 }
             }
@@ -812,16 +813,15 @@ fn map_diagnostics(
                 // We don't have a real location, so we give a dummy location in the correct file.
                 // SemanticDiagnostic struct knowns to give the proper span for
                 // WrappedPluginDiagnostic.
-                diagnostics.add(SemanticDiagnostic {
-                    stable_location: StableLocation::new(
-                        file_info.origin,
-                        db.intern_stable_ptr(SyntaxStablePtr::Root),
-                    ),
-                    kind: SemanticDiagnosticKind::WrappedPluginDiagnostic {
-                        diagnostic: plugin_diag,
-                        original_diag: Box::new(diag.clone()),
-                    },
-                });
+                let stable_location = StableLocation::new(
+                    file_info.origin,
+                    db.intern_stable_ptr(SyntaxStablePtr::Root),
+                );
+                let kind = SemanticDiagnosticKind::WrappedPluginDiagnostic {
+                    diagnostic: plugin_diag,
+                    original_diag: Box::new(diag.clone()),
+                };
+                diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
                 has_change = true;
                 continue;
             }

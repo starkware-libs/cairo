@@ -84,6 +84,10 @@ impl TextSpan {
     pub fn n_chars(&self, content: &str) -> usize {
         self.take(content).chars().count()
     }
+    /// Get the span of width 0, located right after this span.
+    pub fn after(&self) -> Self {
+        Self { start: self.end, end: self.end }
+    }
 }
 
 /// Human readable position inside a file, in lines and characters.
