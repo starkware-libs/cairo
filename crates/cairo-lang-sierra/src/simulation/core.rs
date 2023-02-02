@@ -25,7 +25,7 @@ use crate::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
-use crate::extensions::strct::StructConcreteLibfunc;
+use crate::extensions::structure::StructConcreteLibfunc;
 use crate::extensions::uint::{
     IntOperator, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc,
 };

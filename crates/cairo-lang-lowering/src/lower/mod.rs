@@ -241,10 +241,10 @@ fn lower_single_pattern(
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
-        semantic::Pattern::Struct(strct) => {
-            let members = ctx.db.struct_members(strct.id).map_err(LoweringFlowError::Failed)?;
+        semantic::Pattern::Struct(structure) => {
+            let members = ctx.db.struct_members(structure.id).map_err(LoweringFlowError::Failed)?;
             let mut required_members = UnorderedHashMap::from_iter(
-                strct.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
+                structure.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
             );
             let generator = generators::StructDestructure {
                 input: lowered_expr.var(ctx, scope)?,
@@ -256,7 +256,7 @@ fn lower_single_pattern(
                             required_members
                                 .get(&member.id)
                                 .map(|pattern| pattern.stable_ptr().untyped())
-                                .unwrap_or_else(|| strct.stable_ptr.untyped()),
+                                .unwrap_or_else(|| structure.stable_ptr.untyped()),
                         ),
                     })
                     .collect(),

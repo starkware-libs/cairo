@@ -149,26 +149,27 @@ pub trait SemanticGroup:
     // Struct.
     // =======
     /// Private query to compute data about a struct.
-    #[salsa::invoke(items::strct::priv_struct_semantic_data)]
-    fn priv_struct_semantic_data(&self, struct_id: StructId) -> Maybe<items::strct::StructData>;
+    #[salsa::invoke(items::structure::priv_struct_semantic_data)]
+    fn priv_struct_semantic_data(&self, struct_id: StructId)
+    -> Maybe<items::structure::StructData>;
     /// Returns the semantic diagnostics of a struct.
-    #[salsa::invoke(items::strct::struct_semantic_diagnostics)]
+    #[salsa::invoke(items::structure::struct_semantic_diagnostics)]
     fn struct_semantic_diagnostics(&self, struct_id: StructId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an enum.
-    #[salsa::invoke(items::strct::struct_generic_params)]
+    #[salsa::invoke(items::structure::struct_generic_params)]
     fn struct_generic_params(&self, struct_id: StructId) -> Maybe<Vec<GenericParamId>>;
     /// Returns the members of a struct.
-    #[salsa::invoke(items::strct::struct_members)]
+    #[salsa::invoke(items::structure::struct_members)]
     fn struct_members(
         &self,
         struct_id: StructId,
     ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>>;
     /// Returns the attributes of a struct.
-    #[salsa::invoke(items::strct::struct_attributes)]
+    #[salsa::invoke(items::structure::struct_attributes)]
     fn struct_attributes(&self, struct_id: StructId) -> Maybe<Vec<Attribute>>;
     /// Returns the resolution lookback of a struct.
-    #[salsa::invoke(items::strct::struct_resolved_lookback)]
-    fn struct_resolved_lookback(&self, strct_id: StructId) -> Maybe<Arc<ResolvedLookback>>;
+    #[salsa::invoke(items::structure::struct_resolved_lookback)]
+    fn struct_resolved_lookback(&self, structure_id: StructId) -> Maybe<Arc<ResolvedLookback>>;
 
     // Enum.
     // =======

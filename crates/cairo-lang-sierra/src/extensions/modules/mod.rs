@@ -1,5 +1,5 @@
 use self::enm::EnumType;
-use self::strct::StructType;
+use self::structure::StructType;
 use super::lib_func::SignatureSpecializationContext;
 use super::{NamedType, SpecializationError};
 use crate::ids::{ConcreteTypeId, UserTypeId};
@@ -31,7 +31,7 @@ pub mod pedersen;
 pub mod range_check;
 pub mod squashed_dict_felt_to;
 pub mod starknet;
-pub mod strct;
+pub mod structure;
 pub mod uint;
 pub mod uint128;
 pub mod unconditional_jump;

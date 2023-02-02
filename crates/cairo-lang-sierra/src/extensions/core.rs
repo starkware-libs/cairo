@@ -24,7 +24,7 @@ use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
-use super::strct::{StructLibfunc, StructType};
+use super::structure::{StructLibfunc, StructType};
 use super::uint::{Uint64Libfunc, Uint64Type, Uint8Libfunc, Uint8Type};
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};

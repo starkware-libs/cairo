@@ -10,7 +10,7 @@ pub mod generics;
 pub mod imp;
 pub mod modifiers;
 pub mod module;
-pub mod strct;
+pub mod structure;
 pub mod trt;
 pub mod type_alias;
 pub mod us;
