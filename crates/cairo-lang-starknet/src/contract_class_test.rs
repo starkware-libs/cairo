@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use indoc::indoc;
 use num_bigint::BigUint;
@@ -17,11 +15,7 @@ fn test_serialization() {
 
     let contract = ContractClass {
         sierra_program: vec![],
-        sierra_program_debug_info: cairo_lang_sierra::debug_info::DebugInfo {
-            type_names: HashMap::default(),
-            libfunc_names: HashMap::default(),
-            user_func_names: HashMap::default(),
-        },
+        sierra_program_debug_info: None,
         sierra_version_id: sierra_version::CURRENT_VERSION_ID,
         entry_points_by_type: ContractEntryPoints {
             external,
@@ -39,11 +33,7 @@ fn test_serialization() {
             r#"
         {
           "sierra_program": [],
-          "sierra_program_debug_info": {
-            "type_names": [],
-            "libfunc_names": [],
-            "user_func_names": []
-          },
+          "sierra_program_debug_info": null,
           "sierra_version_id": 1,
           "entry_points_by_type": {
             "EXTERNAL": [
@@ -83,7 +73,7 @@ fn test_compile_path(example_file_name: &str) {
     );
 
     let mut sierra_program = sierra_from_felts(&contract.sierra_program).unwrap();
-    contract.sierra_program_debug_info.populate(&mut sierra_program);
+    contract.sierra_program_debug_info.unwrap().populate(&mut sierra_program);
 
     // There is a separate file for the sierra code as it is hard to review inside the json.
     compare_contents_or_fix_with_path(
