@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod test;
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::hash_map::Entry;
+use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
@@ -10,7 +11,7 @@ use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{chain, izip, Itertools};
+use itertools::{izip, Itertools};
 
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
@@ -90,23 +91,10 @@ fn gather_inlining_info(
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
     let root_block_id = lowered.root?;
-    let root_block = &lowered.blocks[root_block_id];
 
-    let input_vars: HashSet<VariableId> = root_block.inputs.iter().copied().collect();
     for (block_id, block) in lowered.blocks.iter() {
         match &block.end {
-            FlatBlockEnd::Return(returns) => {
-                if block_id == root_block_id && returns.iter().any(|r| input_vars.contains(r)) {
-                    // TODO(ilya): Remove the following limitation.
-                    if report_diagnostics {
-                        diagnostics.report(
-                            function_id.untyped_stable_ptr(defs_db),
-                            LoweringDiagnosticKind::InliningFunctionWithIdentityVarsNotSupported,
-                        );
-                    }
-                    return Ok(info);
-                }
-            }
+            FlatBlockEnd::Return(_) => {}
             FlatBlockEnd::Unreachable => {
                 // TODO(ilya): Remove the following limitation.
                 if block_id == root_block_id {
@@ -443,20 +431,32 @@ impl<'db> FunctionInlinerRewriter<'db> {
         let mut mapper = Mapper {
             ctx: &mut self.ctx,
             lowered: &lowered,
-            renamed_vars: HashMap::<VariableId, VariableId>::from_iter(chain!(
-                izip!(lowered.blocks[root_block_id].inputs.iter().cloned(), inputs.iter().cloned()),
-                izip!(
-                    extract_matches!(&root_block.end, FlatBlockEnd::Return).iter().cloned(),
-                    outputs.iter().cloned()
-                )
+            renamed_vars: HashMap::<VariableId, VariableId>::from_iter(izip!(
+                root_block.inputs.iter().cloned(),
+                inputs.iter().cloned()
             )),
             renamed_blocks: HashMap::new(),
         };
 
-        self.block_end = FlatBlockEnd::Fallthrough(
-            return_block_id,
-            VarRemapping { remapping: OrderedHashMap::default() },
-        );
+        // Try to avoid using output_remapping as it causes more store_temps to be generated.
+        // TODO(ilya): make var_remapping more efficient and remove the following.
+        let mut output_remapping = VarRemapping::default();
+        for (returned_var_id, output_var_id) in
+            izip!(extract_matches!(&root_block.end, FlatBlockEnd::Return).iter(), outputs.iter())
+        {
+            match mapper.renamed_vars.entry(*returned_var_id) {
+                Entry::Vacant(e) => {
+                    // Use var_id renaming as it results in better code.
+                    e.insert(*output_var_id);
+                }
+                Entry::Occupied(_) => {
+                    // `returned_var_id` was already renamed, fallback to output_remapping:
+                    // (mapper.rename_var(returned_var_id) -> output_var_id).
+                    output_remapping.insert(*output_var_id, mapper.rename_var(returned_var_id));
+                }
+            }
+        }
+        self.block_end = FlatBlockEnd::Fallthrough(return_block_id, output_remapping);
 
         for (block_id, block) in lowered.blocks.iter() {
             if block_id == root_block_id {
