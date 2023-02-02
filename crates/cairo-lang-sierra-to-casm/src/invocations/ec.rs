@@ -107,7 +107,7 @@ fn build_ec_zero(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[zero, zero]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -138,7 +138,7 @@ fn build_ec_point_try_new_nz(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(failure_handle))],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -190,7 +190,7 @@ fn build_ec_point_from_x_nz(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(not_on_curve))],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -209,7 +209,7 @@ fn build_ec_point_unwrap(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x], &[y]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -231,7 +231,7 @@ fn build_is_zero(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Target", &[&[x, y]], Some(target_statement_id))],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -254,7 +254,7 @@ fn build_ec_neg(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x, neg_y]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -287,7 +287,7 @@ fn build_ec_state_init(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[random_x, random_y, random_ptr]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -326,7 +326,7 @@ fn build_ec_state_add(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[result_x, result_y, random_ptr]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -374,7 +374,7 @@ fn build_ec_state_finalize(
             ("Fallthrough", &[&[result_x, result_y]], None),
             ("SumIsInfinity", &[], Some(failure_handle)),
         ],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -411,6 +411,6 @@ fn build_ec_state_add_mul(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[ec_builtin], &[result_x, result_y, random_ptr]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }

@@ -33,6 +33,6 @@ fn build_print(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }

@@ -95,10 +95,10 @@ fn build_builtin_get_gas(
             ("Fallthrough", &[&[range_check], &[updated_gas]], None),
             ("Failure", &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: Some([-requested_count as i32, 0]),
-        }),
+        },
     ))
 }
 

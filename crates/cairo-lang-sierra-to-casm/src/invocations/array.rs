@@ -36,7 +36,7 @@ fn build_array_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[arr_start, arr_start]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -59,7 +59,7 @@ fn build_array_append(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[arr_start, arr_end]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -93,7 +93,7 @@ fn build_pop_front(
             ("Fallthrough", &[&[new_start, arr_end], &elem_cells], None),
             ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
         ],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -177,10 +177,10 @@ fn build_array_get(
             ("Fallthrough", &[&[range_check], &[arr_start, arr_end], &elem_cells], None),
             ("FailureHandle", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }
 
@@ -212,6 +212,6 @@ fn build_array_len(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[arr_start, arr_end], &[length]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
