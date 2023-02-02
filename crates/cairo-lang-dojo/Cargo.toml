@@ -1,0 +1,42 @@
+[package]
+name = "cairo-lang-dojo"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Dojo capabilities and utilities on top of Starknet."
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.66"
+clap = { version = "4.0", features = ["derive"] }
+cairo-lang-compiler = { path = "../cairo-lang-compiler" }
+cairo-lang-defs = { path = "../cairo-lang-defs" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter" }
+cairo-lang-parser = { path = "../cairo-lang-parser" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax" }
+cairo-lang-utils = { path = "../cairo-lang-utils" }
+indoc.workspace = true
+itertools.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+smol_str.workspace = true
+
+[dev-dependencies]
+env_logger.workspace = true
+cairo-lang-semantic = { path = "../cairo-lang-semantic",  features = ["testing"] }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
+test-case = "2.2.2"
+test-case-macros = "2.2.2"
+test-log.workspace = true
+
+[[bin]]
+name = "dojo-compile"
+path = "src/cli.rs"

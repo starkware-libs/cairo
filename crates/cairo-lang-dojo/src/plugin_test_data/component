@@ -1,0 +1,77 @@
+//! > Test expansion of the component contract.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[component]
+mod PositionComponent {
+    struct Position {
+        x: felt,
+        y: felt
+    }
+
+    #[view]
+    fn is_zero(self: Position) -> bool {
+        match self.x - self.y {
+            0 => bool::True(()),
+            _ => bool::False(()),
+        }
+    }
+
+    #[view]
+    fn is_equal(self: Position, b: Position) -> bool {
+        self.x == b.x & self.y == b.y
+    }
+}
+
+//! > generated_cairo_code
+#[contract]
+mod PositionComponent {
+    struct Position {
+        x: felt,
+        y: felt
+    }
+
+    struct Storage {
+        world_address: felt,
+        state: Map::<felt, Position>,
+    }
+
+    // Initialize PositionComponent.
+    #[external]
+    fn initialize(world_addr: felt) {
+        let world = world_address::read();
+        assert(world == 0, 'PositionComponent: Already initialized.');
+        world_address::write(world_addr);
+    }
+
+    // Set the state of an entity.
+    #[external]
+    fn set(entity_id: felt, value: Position) {
+        state::write(entity_id, value);
+    }
+
+    // Get the state of an entity.
+    #[view]
+    fn get(entity_id: felt) -> Position {
+        return state::read(entity_id);
+    }
+
+    #[view]
+    fn is_zero(entity_id: felt) -> bool {
+        let self = state::read(entity_id);
+        match self.x - self.y {
+            0 => bool::True(()),
+            _ => bool::False(()),
+        }
+    }
+
+    #[view]
+    fn is_equal(entity_id: felt, b: Position) -> bool {
+        let self = state::read(entity_id);
+        self.x == b.x & self.y == b.y
+    }
+}
+
+//! > expected_diagnostics

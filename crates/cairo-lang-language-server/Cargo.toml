@@ -24,6 +24,7 @@ cairo-lang-project = { path = "../cairo-lang-project", version = "1.0.0-alpha.2"
 cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "1.0.0-alpha.2" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.2" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.2" }
+cairo-lang-dojo = {path = "../cairo-lang-dojo" }
 tokio.workspace = true
 tower-lsp.workspace = true
 lsp.workspace = true

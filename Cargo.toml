@@ -27,6 +27,7 @@ members = [
     "crates/cairo-lang-syntax-codegen",
     "crates/cairo-lang-syntax",
     "crates/cairo-lang-test-runner",
+    "crates/cairo-lang-dojo",
     "tests",
 ]
 

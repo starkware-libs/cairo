@@ -1,0 +1,52 @@
+//! > Test expansion of the component contract.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+extern type Query<T>;
+
+#[system]
+mod MoveSystem {
+    fn execute_inner(query: Query::<(PositionComponent::Position, HealthComponent::Health)>) {
+        return ();
+    }
+
+    fn execute(
+        world: felt, query: Query::<(PositionComponent::Position, HealthComponent::Health)>
+    ) {
+        return ();
+    }
+}
+
+//! > generated_cairo_code
+#[contract]
+mod MoveSystem {
+    struct Storage {
+        world_address: felt, 
+    }
+
+    #[external]
+    fn initialize(world_addr: felt) {
+        let world = world_address::read();
+        assert(world == 0, 'MoveSystem: Already initialized.');
+        world_address::write(world_addr);
+    }
+
+    #[external]
+    fn execute() {
+        let world = world_address::read();
+        assert(world != 0, 'MoveSystem: Not initialized.');
+
+        let position_ids = IWorld.lookup(
+            world, 0x1a42f66f387f576f66678aa85131976ee602be23c3d1bc7597fdeb1e40b9687
+        );
+        let health_ids = IWorld.lookup(
+            world, 0x737c494e6fbf007e7b84f73bc84f202746ae6a51bc789d374fe8290ce2a8ab
+        );
+
+        return ();
+    }
+}
+
+//! > expected_diagnostics
