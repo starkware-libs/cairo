@@ -5,7 +5,7 @@ See troubleshooting section.
 
 From the directory of this file, run:
 ```
-sudo npm install -g vsce
+sudo npm install --global @vscode/vsce
 npm install
 vsce package
 code --install-extension cairo1*.vsix
