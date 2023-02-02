@@ -13,7 +13,7 @@ use crate::extensions::{
     GenericLibfunc, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{id_from_string, GenericLibfuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Operators for integers.
@@ -246,8 +246,8 @@ pub struct UintOperationLibfunc<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
 impl<TUintTraits: UintTraits> UintOperationLibfunc<TUintTraits> {
-    const OVERFLOWING_ADD: u64 = id_from_string(TUintTraits::OVERFLOWING_ADD);
-    const OVERFLOWING_SUB: u64 = id_from_string(TUintTraits::OVERFLOWING_SUB);
+    const OVERFLOWING_ADD: &'static str = TUintTraits::OVERFLOWING_ADD;
+    const OVERFLOWING_SUB: &'static str = TUintTraits::OVERFLOWING_SUB;
     fn new(operator: IntOperator) -> Option<Self> {
         Some(Self { operator, _phantom: PhantomData::default() })
     }
@@ -256,7 +256,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
     type Concrete = UintOperationConcreteLibfunc;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        match id.id {
+        match id.0.as_str() {
             id if id == Self::OVERFLOWING_ADD => Self::new(IntOperator::OverflowingAdd),
             id if id == Self::OVERFLOWING_SUB => Self::new(IntOperator::OverflowingSub),
             _ => None,
