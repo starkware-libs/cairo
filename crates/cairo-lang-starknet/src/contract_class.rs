@@ -44,7 +44,7 @@ pub enum StarknetCompilationError {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractClass {
     pub sierra_program: Vec<BigIntAsHex>,
-    pub sierra_program_debug_info: cairo_lang_sierra::debug_info::DebugInfo,
+    pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,
     /// The sierra version used in compilation.
     pub sierra_version_id: usize,
     pub entry_points_by_type: ContractEntryPoints,
@@ -192,9 +192,9 @@ fn compile_contract_with_prepared_and_checked_db(
     };
     let contract_class = ContractClass {
         sierra_program: sierra_to_felts(&sierra_program)?,
-        sierra_program_debug_info: cairo_lang_sierra::debug_info::DebugInfo::extract(
+        sierra_program_debug_info: Some(cairo_lang_sierra::debug_info::DebugInfo::extract(
             &sierra_program,
-        ),
+        )),
         sierra_version_id: sierra_version::CURRENT_VERSION_ID,
         entry_points_by_type,
         abi: Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?,
