@@ -46,7 +46,7 @@ mod nullable;
 mod pedersen;
 mod starknet;
 
-mod strct;
+mod structure;
 mod uint;
 mod uint128;
 
@@ -470,7 +470,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::ApTracking(_) => misc::build_revoke_ap_tracking(builder),
         CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
-        CoreConcreteLibfunc::Struct(libfunc) => strct::build(libfunc, builder),
+        CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
         CoreConcreteLibfunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
         CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),

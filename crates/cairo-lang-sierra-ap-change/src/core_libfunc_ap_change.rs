@@ -13,7 +13,7 @@ use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
-use cairo_lang_sierra::extensions::strct::StructConcreteLibfunc;
+use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{IntOperator, Uint64Concrete, Uint8Concrete};
 use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;

@@ -18,7 +18,7 @@ use crate::types::{resolve_type, substitute_ty, ConcreteStructId, GenericSubstit
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
-#[path = "strct_test.rs"]
+#[path = "structure_test.rs"]
 mod test;
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
