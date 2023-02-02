@@ -11,7 +11,7 @@ use crate::extensions::{
     GenericLibfunc, NamedLibfunc, NamedType, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{id_from_string, GenericLibfuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
 
@@ -65,11 +65,11 @@ impl GenericLibfunc for FeltBinaryOperationLibfunc {
     type Concrete = FeltBinaryOperationConcreteLibfunc;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        const ADD: u64 = id_from_string("felt_add");
-        const SUB: u64 = id_from_string("felt_sub");
-        const MUL: u64 = id_from_string("felt_mul");
-        const DIV: u64 = id_from_string("felt_div");
-        match id.id {
+        const ADD: &str = "felt_add";
+        const SUB: &str = "felt_sub";
+        const MUL: &str = "felt_mul";
+        const DIV: &str = "felt_div";
+        match id.0.as_str() {
             ADD => Some(Self::new(FeltBinaryOperator::Add)),
             SUB => Some(Self::new(FeltBinaryOperator::Sub)),
             MUL => Some(Self::new(FeltBinaryOperator::Mul)),

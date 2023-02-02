@@ -1,3 +1,5 @@
+use cairo_lang_sierra::extensions::starknet::storage::StorageAddressFromBaseAndOffsetLibfunc;
+use cairo_lang_sierra::extensions::NamedLibfunc;
 use cairo_lang_sierra::ids::{
     ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
     VarId,
@@ -7,11 +9,15 @@ use cairo_lang_sierra::program::{
     FunctionSignature, GenericArg, Invocation, LibfuncDeclaration, Param, Program, Statement,
     StatementIdx, TypeDeclaration,
 };
-use num_bigint::{BigInt, ToBigInt};
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use lazy_static::lazy_static;
+use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::ToPrimitive;
 use thiserror::Error;
 
 use crate::casm_contract_class::BigIntAsHex;
+use crate::contract::starknet_keccak;
 
 #[cfg(test)]
 #[path = "felt_serde_test.rs"]
@@ -23,6 +29,8 @@ pub enum FeltSerdeError {
     BigIntOutOfBounds,
     #[error("Invalid input for deserialization.")]
     InvalidInputForDeserialization,
+    #[error("Invalid generic id for serialization.")]
+    InvalidGenericIdForSerialization,
 }
 
 /// Serializes a Sierra program into a vector of felts.
@@ -122,7 +130,59 @@ impl FeltSerde for StatementIdx {
     }
 }
 
-// Impls for ids.
+// Impls for generic ids.
+const LONG_ID_BOUND: usize = 31;
+lazy_static! {
+    /// A set of all the supported long generic ids.
+    static ref LONG_IDS: OrderedHashSet<&'static str> = {
+        OrderedHashSet::from_iter([StorageAddressFromBaseAndOffsetLibfunc::STR_ID].into_iter())
+    };
+    /// A mapping of all the long names when fixing them from the hashed keccak representation.
+    static ref LONG_NAME_FIX: UnorderedHashMap<BigUint, &'static str> = {
+        UnorderedHashMap::from_iter(LONG_IDS.iter().map(|name|{
+            (starknet_keccak(name.as_bytes()), *name)
+        }))
+    };
+}
+macro_rules! generic_id_serde {
+    ($Obj:ident) => {
+        impl FeltSerde for $Obj {
+            fn serialize(&self, output: &mut Vec<BigIntAsHex>) -> Result<(), FeltSerdeError> {
+                output.push(BigIntAsHex {
+                    value: if self.0.len() <= LONG_ID_BOUND {
+                        BigUint::from_bytes_be(self.0.as_bytes())
+                    } else {
+                        if !LONG_IDS.contains(self.0.as_str()) {
+                            return Err(FeltSerdeError::InvalidGenericIdForSerialization);
+                        }
+                        starknet_keccak(self.0.as_bytes())
+                    },
+                });
+                Ok(())
+            }
+            fn deserialize(
+                input: &[BigIntAsHex],
+            ) -> Result<(Self, &[BigIntAsHex]), FeltSerdeError> {
+                let head = input
+                    .first()
+                    .and_then(|id| {
+                        LONG_NAME_FIX.get(&id.value).map(|s| Self(s.into())).or_else(|| {
+                            std::str::from_utf8(&id.value.to_bytes_be())
+                                .ok()
+                                .map(|s| Self(s.into()))
+                        })
+                    })
+                    .ok_or(FeltSerdeError::InvalidInputForDeserialization)?;
+                Ok((head, &input[1..]))
+            }
+        }
+    };
+}
+
+generic_id_serde!(GenericTypeId);
+generic_id_serde!(GenericLibfuncId);
+
+// Impls for other ids.
 
 macro_rules! id_serde {
     ($Obj:ident) => {
@@ -140,9 +200,7 @@ macro_rules! id_serde {
     };
 }
 
-id_serde!(GenericTypeId);
 id_serde!(ConcreteTypeId);
-id_serde!(GenericLibfuncId);
 id_serde!(ConcreteLibfuncId);
 id_serde!(VarId);
 id_serde!(UserTypeId);

@@ -16,6 +16,8 @@ cairo_lang_test_utils::test_file_test!(
         block: "block",
         early_return: "early_return",
         enum_: "enum",
+        // TODO(ilya): Enable inline test.
+        // inline: "inline",
         locals: "locals",
         simple: "simple",
         struct_: "struct",
@@ -54,7 +56,26 @@ fn check_variable_lifetime(
     let last_use_str = find_variable_lifetime_res
         .last_use
         .iter()
-        .map(|location| format!("{location:?}"))
+        .map(|location| {
+            let block = &lowered_function.blocks[location.statement_location.0];
+            let statements = &block.statements;
+            let var_id = if location.statement_location.1 == statements.len() {
+                match &block.end {
+                    lowering::FlatBlockEnd::Callsite(remapping)
+                    | lowering::FlatBlockEnd::Fallthrough(_, remapping)
+                    | lowering::FlatBlockEnd::Goto(_, remapping) => {
+                        *remapping.values().nth(location.idx).unwrap()
+                    }
+                    lowering::FlatBlockEnd::Return(returns) => returns[location.idx],
+                    lowering::FlatBlockEnd::Unreachable => {
+                        panic!("Unexpected block end")
+                    }
+                }
+            } else {
+                statements[location.statement_location.1].inputs()[location.idx]
+            };
+            format!("v{}: {location:?}", var_id.index())
+        })
         .join("\n");
     let drop_str = find_variable_lifetime_res
         .drops

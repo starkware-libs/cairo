@@ -34,7 +34,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 5700})
+test::foo: OrderedHashMap({Const: 11500})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -137,7 +137,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1210})
+test::foo: OrderedHashMap({Const: 1520})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;

@@ -37,7 +37,7 @@ pub struct ConstCost {
 }
 impl ConstCost {
     pub const fn cost(&self) -> i32 {
-        self.steps * 100 + self.holes * 10 + self.range_checks * 50
+        self.steps * 100 + self.holes * 10 + self.range_checks * 70
     }
 }
 

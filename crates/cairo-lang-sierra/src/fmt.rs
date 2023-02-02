@@ -75,6 +75,19 @@ impl fmt::Display for Param {
     }
 }
 
+macro_rules! display_generic_identity {
+    ($type_name:tt) => {
+        impl fmt::Display for $type_name {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+    };
+}
+
+display_generic_identity!(GenericLibfuncId);
+display_generic_identity!(GenericTypeId);
+
 macro_rules! display_identity {
     ($type_name:tt) => {
         impl fmt::Display for $type_name {
@@ -88,12 +101,10 @@ macro_rules! display_identity {
     };
 }
 
-display_identity!(GenericLibfuncId);
 display_identity!(ConcreteLibfuncId);
 display_identity!(FunctionId);
 display_identity!(UserTypeId);
 display_identity!(VarId);
-display_identity!(GenericTypeId);
 display_identity!(ConcreteTypeId);
 
 impl fmt::Display for GenericArg {

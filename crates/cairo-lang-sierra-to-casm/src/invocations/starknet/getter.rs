@@ -1,9 +1,12 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 
 /// Builds instructions for StarkNet getter system call that return a result of size 1.
 pub fn build_getter(
@@ -50,6 +53,9 @@ pub fn build_getter(
                 Some(failure_handle_statement_id),
             ),
         ],
-        None,
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
+        },
     ))
 }

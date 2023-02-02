@@ -35,10 +35,10 @@ End:
   Return(v5)
 
 //! > last_use
-((BlockId(0), 5), 0)
-((BlockId(0), 3), 1)
-((BlockId(0), 3), 0)
-((BlockId(0), 0), 1)
+v5: ((BlockId(0), 5), 0)
+v3: ((BlockId(0), 3), 1)
+v1: ((BlockId(0), 3), 0)
+v0: ((BlockId(0), 0), 1)
 
 //! > drops
 PostStatement((BlockId(0), 3)): v4

@@ -3,7 +3,7 @@ use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
-use super::generate_block_code;
+use crate::block_generator::generate_block_body_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::find_variable_lifetime;
 use crate::replace_ids::replace_sierra_ids;
@@ -55,7 +55,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         .expect("Failed to retrieve lifetime information.");
     let mut expr_generator_context =
         ExprGeneratorContext::new(db, &lowered, test_function.concrete_function_id, &lifetime);
-    let statements_opt = generate_block_code(&mut expr_generator_context, block_id, block);
+    let statements_opt = generate_block_body_code(&mut expr_generator_context, block_id, block);
     let expected_sierra_code = statements_opt.map_or("None".into(), |statements| {
         statements
             .iter()

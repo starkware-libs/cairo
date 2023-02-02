@@ -33,7 +33,7 @@ fn build_bool_and(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -52,7 +52,7 @@ fn build_bool_not(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -76,7 +76,7 @@ fn build_bool_xor(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -101,6 +101,6 @@ fn build_bool_or(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }

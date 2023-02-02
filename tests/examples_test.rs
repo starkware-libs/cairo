@@ -22,9 +22,7 @@ fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
     path.push("examples");
     path.push(format!("{name}.cairo"));
 
-    let mut builder = RootDatabase::builder();
-    builder.with_dev_corelib().unwrap();
-    let mut db = builder.build();
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
     let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
     assert!(!check_and_eprint_diagnostics(&mut db));
     (db, main_crate_ids)
@@ -192,7 +190,7 @@ fn lowering_test(name: &str) {
     "hash_chain")]
 #[test_case(
     "hash_chain_gas",
-    &[3].map(Felt::from), Some(100000), Some(11100 + 3 * DUMMY_BUILTIN_GAS_COST) =>
+    &[3].map(Felt::from), Some(100000), Some(11180 + 3 * DUMMY_BUILTIN_GAS_COST) =>
     RunResultValue::Success(vec![felt_str!(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]);
     "hash_chain_gas")]

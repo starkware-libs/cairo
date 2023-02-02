@@ -87,7 +87,7 @@ impl NoGenericArgsGenericLibfunc for EcZeroLibfunc {
 #[derive(Default)]
 pub struct EcCreatePointLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
-    const STR_ID: &'static str = "ec_point_try_new";
+    const STR_ID: &'static str = "ec_point_try_new_nz";
 
     fn specialize_signature(
         &self,
@@ -129,7 +129,7 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
 #[derive(Default)]
 pub struct EcPointFromXLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
-    const STR_ID: &'static str = "ec_point_from_x";
+    const STR_ID: &'static str = "ec_point_from_x_nz";
 
     fn specialize_signature(
         &self,

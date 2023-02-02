@@ -64,10 +64,10 @@ fn build_u128_overflowing_add(
             ("Fallthrough", &[&[range_check], &[a_plus_b]], None),
             ("Target", &[&[range_check], &[wrapping_a_plus_b]], Some(failure_handle_statement_id)),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }
 
@@ -104,10 +104,10 @@ fn build_u128_overflowing_sub(
             ("Fallthrough", &[&[range_check], &[a_minus_b]], None),
             ("Target", &[&[range_check], &[wrapping_a_minus_b]], Some(failure_handle_statement_id)),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }
 
@@ -173,10 +173,10 @@ fn build_u128_divmod(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }
 
@@ -280,10 +280,10 @@ fn build_u128_widemul(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[upper_uint128], &[lower_uint128]], None)],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }
 
@@ -356,9 +356,9 @@ fn build_u128_from_felt(
             ("Fallthrough", &[&[range_check], &[value]], None),
             ("FailureHandle", &[&[range_check], &[x], &[y]], Some(failure_handle_statement_id)),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }

@@ -55,7 +55,7 @@ pub fn build_is_zero(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Target", &[&[value]], Some(target_statement_id))],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -74,7 +74,7 @@ pub fn build_jump(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Target", &[], Some(*target_statement_id))],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -149,7 +149,7 @@ pub fn build_cell_eq(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 

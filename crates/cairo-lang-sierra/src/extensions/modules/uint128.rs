@@ -16,7 +16,7 @@ use crate::extensions::{
     GenericLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{id_from_string, GenericLibfuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type for u128.
@@ -72,9 +72,9 @@ impl GenericLibfunc for Uint128OperationLibfunc {
     type Concrete = UintOperationConcreteLibfunc;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        const OVERFLOWING_ADD: u64 = id_from_string("u128_overflowing_add");
-        const OVERFLOWING_SUB: u64 = id_from_string("u128_overflowing_sub");
-        match id.id {
+        const OVERFLOWING_ADD: &str = "u128_overflowing_add";
+        const OVERFLOWING_SUB: &str = "u128_overflowing_sub";
+        match id.0.as_str() {
             OVERFLOWING_ADD => Some(Self::new(IntOperator::OverflowingAdd)),
             OVERFLOWING_SUB => Some(Self::new(IntOperator::OverflowingSub)),
             _ => None,

@@ -2,20 +2,20 @@
 #[path = "casm_contract_class_test.rs"]
 mod test;
 
-use std::collections::HashMap;
-
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
-use cairo_lang_sierra::extensions::modules::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
+use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::NoGenericArgsGenericType;
-use cairo_lang_sierra::ids::ConcreteTypeId;
+use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
 use itertools::chain;
 use num_bigint::BigUint;
@@ -27,6 +27,7 @@ use thiserror::Error;
 
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
+use crate::sierra_version::SierraVersionError;
 
 /// The expected gas cost of an entrypoint that begins with get_gas() immediately.
 pub const ENTRY_POINT_COST: i32 = 10000;
@@ -39,6 +40,8 @@ pub enum StarknetSierraCompilationError {
     FeltSerdeError(#[from] FeltSerdeError),
     #[error(transparent)]
     MetadataError(#[from] MetadataError),
+    #[error(transparent)]
+    SierraVersionError(#[from] SierraVersionError),
     #[error("Invalid entry point.")]
     EntryPointError,
     #[error("{0} is not a supported builtin type.")]
@@ -64,6 +67,7 @@ impl CasmContractClass {
     pub fn from_contract_class(
         contract_class: ContractClass,
     ) -> Result<Self, StarknetSierraCompilationError> {
+        contract_class.verify_compatible_sierra_version()?;
         let prime = BigUint::from_str_radix(
             "800000000000011000000000000000000000000000000000000000000000001",
             16,
@@ -107,31 +111,19 @@ impl CasmContractClass {
             }))
         }
 
-        let name_by_debug_id = HashMap::<u64, String>::from(
-            [RangeCheckType::ID, PedersenType::ID, GasBuiltinType::ID, SystemType::ID].map(
-                |generic_id| {
-                    (
-                        generic_id.id,
-                        generic_id
-                            .debug_name
-                            .expect("Sierra generic types have a full name.")
-                            .as_str()
-                            .to_case(Case::Snake),
-                    )
-                },
-            ),
+        let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter(
+            [RangeCheckType::ID, PedersenType::ID, GasBuiltinType::ID, SystemType::ID].into_iter(),
         );
-
-        let mut name_by_short_id = HashMap::<u64, &str>::default();
-        for decl in program.type_declarations {
-            if !decl.long_id.generic_args.is_empty() {
-                continue;
-            }
-
-            if let Some(name) = name_by_debug_id.get(&decl.long_id.generic_id.id) {
-                name_by_short_id.insert(decl.id.id, name);
-            }
-        }
+        let name_by_short_id = UnorderedHashMap::<u64, String>::from_iter(
+            program
+                .type_declarations
+                .iter()
+                .filter(|decl| {
+                    decl.long_id.generic_args.is_empty()
+                        && builtin_types.contains(&decl.long_id.generic_id)
+                })
+                .map(|decl| (decl.id.id, decl.long_id.generic_id.0.as_str().to_case(Case::Snake))),
+        );
 
         let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
             let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
@@ -148,15 +140,15 @@ impl CasmContractClass {
             // TODO(ilya): Check that the last argument is PanicResult.
             if leftover[..2]
                 .iter()
-                .map(|type_id| name_by_short_id.get(&type_id.id))
-                .ne([Some(&"gas_builtin"), Some(&"system")])
+                .map(|type_id| name_by_short_id.get(&type_id.id).map(String::as_str))
+                .ne([Some("gas_builtin"), Some("system")])
             {
                 return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
             }
 
             for type_id in signature_builtins.iter() {
                 if let Some(name) = name_by_short_id.get(&type_id.id) {
-                    builtins.push(name.to_string());
+                    builtins.push(name.clone());
                 } else {
                     return Err(StarknetSierraCompilationError::InvalidBuiltinType(
                         type_id.clone(),

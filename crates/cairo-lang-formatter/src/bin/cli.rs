@@ -29,6 +29,9 @@ struct FormatterArgs {
     /// Print verbose output.
     #[arg(short, long, default_value_t = false)]
     verbose: bool,
+    /// Print parsing errors.
+    #[arg(short, long, default_value_t = false)]
+    print_parsing_errors: bool,
     /// A list of files and directories to format. Use "-" for stdin.
     files: Vec<String>,
 }

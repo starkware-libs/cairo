@@ -51,11 +51,9 @@ pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    let mut builder = RootDatabase::builder();
-    builder.with_dev_corelib().unwrap();
-    let mut db = builder.build();
+    let mut db = RootDatabase::builder().detect_corelib().build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
-    compile_prepared_db(db, main_crate_ids, compiler_config)
+    compile_prepared_db(&mut db, main_crate_ids, compiler_config)
 }
 
 /// Compiles a Cairo project.
@@ -71,12 +69,10 @@ pub fn compile(
     project_config: ProjectConfig,
     compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    let mut builder = RootDatabase::builder();
-    builder.with_project_config(project_config.clone());
-    let mut db = builder.build();
+    let mut db = RootDatabase::builder().with_project_config(project_config.clone()).build()?;
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
 
-    compile_prepared_db(db, main_crate_ids, compiler_config)
+    compile_prepared_db(&mut db, main_crate_ids, compiler_config)
 }
 
 /// Runs Cairo compiler.
@@ -91,11 +87,11 @@ pub fn compile(
 /// * `Ok(SierraProgram)` - The compiled program.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db(
-    mut db: RootDatabase,
+    db: &mut RootDatabase,
     main_crate_ids: Vec<CrateId>,
-    compiler_config: CompilerConfig,
+    mut compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    if check_diagnostics(&mut db, compiler_config.on_diagnostic) {
+    if check_diagnostics(db, compiler_config.on_diagnostic.as_deref_mut()) {
         bail!("Compilation failed.");
     }
 
@@ -105,7 +101,7 @@ pub fn compile_prepared_db(
         .context("Compilation failed without any diagnostics")?;
 
     if compiler_config.replace_ids {
-        sierra_program = Arc::new(replace_sierra_ids_in_program(&db, &sierra_program));
+        sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
     }
 
     Ok(sierra_program)

@@ -23,11 +23,11 @@ pub fn build(
         EcConcreteLibfunc::IsZero(_) => build_is_zero(builder),
         EcConcreteLibfunc::Neg(_) => build_ec_neg(builder),
         EcConcreteLibfunc::StateAdd(_) => build_ec_state_add(builder),
-        EcConcreteLibfunc::TryNew(_) => build_ec_point_try_new(builder),
+        EcConcreteLibfunc::TryNew(_) => build_ec_point_try_new_nz(builder),
         EcConcreteLibfunc::StateFinalize(_) => build_ec_state_finalize(builder),
         EcConcreteLibfunc::StateInit(_) => build_ec_state_init(builder),
         EcConcreteLibfunc::StateAddMul(_) => build_ec_state_add_mul(builder),
-        EcConcreteLibfunc::PointFromX(_) => build_ec_point_from_x(builder),
+        EcConcreteLibfunc::PointFromX(_) => build_ec_point_from_x_nz(builder),
         EcConcreteLibfunc::UnwrapPoint(_) => build_ec_point_unwrap(builder),
         EcConcreteLibfunc::Zero(_) => build_ec_zero(builder),
     }
@@ -107,12 +107,12 @@ fn build_ec_zero(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[zero, zero]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
 /// Handles instruction for creating an EC point.
-fn build_ec_point_try_new(
+fn build_ec_point_try_new_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y] = builder.try_get_single_cells()?;
@@ -138,12 +138,12 @@ fn build_ec_point_try_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(failure_handle))],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
 /// Handles instruction for creating an EC point.
-fn build_ec_point_from_x(
+fn build_ec_point_from_x_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x] = builder.try_get_single_cells()?;
@@ -190,7 +190,7 @@ fn build_ec_point_from_x(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(not_on_curve))],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -209,7 +209,7 @@ fn build_ec_point_unwrap(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x], &[y]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -231,7 +231,7 @@ fn build_is_zero(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Target", &[&[x, y]], Some(target_statement_id))],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -254,7 +254,7 @@ fn build_ec_neg(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[x, neg_y]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -287,7 +287,7 @@ fn build_ec_state_init(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[random_x, random_y, random_ptr]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -326,7 +326,7 @@ fn build_ec_state_add(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[result_x, result_y, random_ptr]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -374,7 +374,7 @@ fn build_ec_state_finalize(
             ("Fallthrough", &[&[result_x, result_y]], None),
             ("SumIsInfinity", &[], Some(failure_handle)),
         ],
-        Some(Default::default()),
+        Default::default(),
     ))
 }
 
@@ -411,6 +411,6 @@ fn build_ec_state_add_mul(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[ec_builtin], &[result_x, result_y, random_ptr]], None)],
-        Some(Default::default()),
+        Default::default(),
     ))
 }

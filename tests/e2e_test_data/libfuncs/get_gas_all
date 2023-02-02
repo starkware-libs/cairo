@@ -10,13 +10,13 @@ fn foo(costs: BuiltinCosts) -> Option::<()> {
 }
 
 //! > casm
-%{ memory[ap + 0] = 950 <= memory[fp + -4] %}
+%{ memory[ap + 0] = 970 <= memory[fp + -4] %}
 jmp rel 9 if [ap + 0] != 0, ap++;
-[fp + -4] = [ap + 0] + 950, ap++;
+[fp + -4] = [ap + 0] + 970, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
 jmp rel 10;
-[fp + -4] = [ap + 0] + 950, ap++;
+[fp + -4] = [ap + 0] + 970, ap++;
 [ap + -1] = [[fp + -5] + 0];
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = [ap + -2], ap++;
@@ -30,7 +30,7 @@ call rel -24;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 950})
+test::foo: OrderedHashMap({Const: 970})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -104,7 +104,7 @@ fn foo(costs: BuiltinCosts) -> Option::<()> {
 
 //! > casm
 [ap + 0] = [[fp + -3] + 0], ap++;
-[ap + 0] = [ap + -1] + 1850, ap++;
+[ap + 0] = [ap + -1] + 1870, ap++;
 %{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -5] %}
 jmp rel 8 if [ap + 0] != 0, ap++;
 [fp + -5] = [ap + 0] + [ap + -2], ap++;
@@ -133,7 +133,7 @@ call rel -36;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1250})
+test::foo: OrderedHashMap({Const: 1270})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -225,7 +225,7 @@ fn foo(costs: BuiltinCosts) -> Option::<()> {
 
 //! > casm
 [ap + 0] = [[fp + -3] + 1], ap++;
-[ap + 0] = [ap + -1] + 1850, ap++;
+[ap + 0] = [ap + -1] + 1870, ap++;
 %{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -5] %}
 jmp rel 8 if [ap + 0] != 0, ap++;
 [fp + -5] = [ap + 0] + [ap + -2], ap++;
@@ -254,7 +254,7 @@ call rel -36;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1250})
+test::foo: OrderedHashMap({Const: 1270})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -349,7 +349,7 @@ fn foo(costs: BuiltinCosts) -> Option::<()> {
 
 //! > casm
 [ap + 0] = [[fp + -3] + 0], ap++;
-[ap + 0] = [ap + -1] + 2550, ap++;
+[ap + 0] = [ap + -1] + 2570, ap++;
 [ap + 0] = [[fp + -3] + 1], ap++;
 [ap + 0] = [ap + -1] + [ap + -2], ap++;
 %{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -6] %}
@@ -386,7 +386,7 @@ call rel -47;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1550})
+test::foo: OrderedHashMap({Const: 1570})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;

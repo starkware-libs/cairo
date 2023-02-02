@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::span::TextOffset;
+use cairo_lang_filesystem::span::{TextPosition, TextSpan, TextWidth};
 
 use crate::DiagnosticLocation;
 
@@ -16,23 +16,27 @@ pub fn get_location_marks(
 
     let span = &location.span;
 
-    let first_line_idx =
-        span.start.get_line_number(db, location.file_id).expect("Failed to find location in file.");
-    let first_line_start = summary.line_offsets[first_line_idx].0;
+    let TextPosition { line: first_line_idx, col } = span
+        .start
+        .position_in_file(db, location.file_id)
+        .expect("Failed to find location in file.");
+    let first_line_start = summary.line_offsets[first_line_idx];
     let first_line_end = match summary.line_offsets.get(first_line_idx + 1) {
-        Some(TextOffset(offset)) => offset - 1,
-        None => summary.total_length,
+        Some(offset) => offset.sub_width(TextWidth::from_char('\n')),
+        None => summary.last_offset,
     };
 
-    let first_line = &content[first_line_start..first_line_end];
-    let mut res = first_line.to_string();
+    let first_line_span = TextSpan { start: first_line_start, end: first_line_end };
+    let mut res = first_line_span.take(&content).to_string();
     res.push('\n');
-    for _ in first_line_start..span.start.0 {
+    for _ in 0..col {
         res.push(' ');
     }
     res.push('^');
 
-    let marker_length = std::cmp::min(first_line_end, span.end.0) - span.start.0;
+    let subspan_in_first_line =
+        TextSpan { start: span.start, end: std::cmp::min(first_line_end, span.end) };
+    let marker_length = subspan_in_first_line.n_chars(&content);
     if marker_length > 1 {
         for _ in 0..marker_length - 2 {
             res.push('*');
