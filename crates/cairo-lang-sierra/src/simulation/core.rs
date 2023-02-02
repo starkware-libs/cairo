@@ -437,7 +437,7 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::DivMod(_) => match inputs {
+        Uint128Concrete::Divmod(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)] => {
                 if let CoreValue::Uint128(rhs) = **non_zero {
                     Ok((

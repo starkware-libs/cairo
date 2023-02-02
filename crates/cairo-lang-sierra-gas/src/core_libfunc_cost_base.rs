@@ -434,7 +434,7 @@ fn u128_libfunc_cost<Ops: CostOperations>(
                 ]
             }
         },
-        Uint128Concrete::DivMod(_) => {
+        Uint128Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 11, holes: 0, range_checks: 4 })]
         }
         Uint128Concrete::WideMul(_) => {
