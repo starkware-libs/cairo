@@ -71,7 +71,7 @@ fn test_ec_operations() {
     let expected_double_y =
         3572434102142093425782752266058856056057826477682467661647843687948039943621;
     assert(
-        double_x == 75984168971785666410219869038140038216102669781812169677875295511117260233,
+        double_x == 0,
         'bad double x'
     );
     assert(double_y == expected_double_y | double_y == -expected_double_y, 'bad double y');

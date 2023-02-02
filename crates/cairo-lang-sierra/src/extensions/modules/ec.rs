@@ -19,6 +19,10 @@ impl NoGenericArgsGenericType for EcOpType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
+
+
+
+    
     const SIZE: i16 = 1;
 }
 

@@ -32,7 +32,10 @@ extern fn ec_point_try_new_nz(x: felt, y: felt) -> Option::<NonZeroEcPoint> nopa
 #[inline(always)]
 fn ec_point_try_new(x: felt, y: felt) -> Option::<EcPoint> {
     match ec_point_try_new_nz(:x, :y) {
-        Option::Some(pt) => Option::Some(unwrap_nz(pt)),
+        Option::Some(pt     ) => Option::Some(unwrap_nz(pt)),
+
+
+
         Option::None(()) => Option::None(()),
     }
 }
