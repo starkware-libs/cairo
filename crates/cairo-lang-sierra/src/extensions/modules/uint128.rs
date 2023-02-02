@@ -1,9 +1,8 @@
 use super::felt::FeltType;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
-use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
 use super::uint::{
-    IntOperator, UintConstLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
+    IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
     UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
     UintToFeltLibfunc, UintTraits, UintType,
 };
@@ -25,7 +24,7 @@ pub type Uint128Type = UintType<Uint128Traits>;
 define_libfunc_hierarchy! {
     pub enum Uint128Libfunc {
         Operation(UintOperationLibfunc<Uint128Traits>),
-        DivMod(Uint128DivModLibfunc),
+        Divmod(UintDivmodLibfunc<Uint128Traits>),
         WideMul(Uint128WideMulLibfunc),
         LessThan(UintLessThanLibfunc<Uint128Traits>),
         Equal(UintEqualLibfunc<Uint128Traits>),
@@ -52,6 +51,7 @@ impl UintTraits for Uint128Traits {
     const OVERFLOWING_SUB: &'static str = "u128_overflowing_sub";
     const TO_FELT: &'static str = "u128_to_felt";
     const TRY_FROM_FELT: &'static str = "u128_try_from_felt";
+    const DIVMOD: &'static str = "u128_safe_divmod";
 }
 
 impl IsZeroTraits for Uint128Traits {
@@ -147,47 +147,6 @@ impl GenericLibfunc for Uint128OperationLibfunc {
             operator: self.operator,
             signature: self.specialize_signature(context.upcast(), args)?,
         })
-    }
-}
-
-/// Libfunc for u128 divmod.
-#[derive(Default)]
-pub struct Uint128DivModLibfunc {}
-impl NoGenericArgsGenericLibfunc for Uint128DivModLibfunc {
-    const STR_ID: &'static str = "u128_safe_divmod";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
-                ParamSignature::new(ty.clone()),
-                ParamSignature::new(nonzero_ty(context, &ty)?),
-            ],
-            vec![
-                OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
-                OutputVarInfo {
-                    ty: ty.clone(),
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-                },
-                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) } },
-            ],
-            SierraApChange::Known { new_vars_only: false },
-        ))
     }
 }
 

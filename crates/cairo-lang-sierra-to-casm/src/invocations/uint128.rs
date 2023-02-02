@@ -19,7 +19,7 @@ pub fn build(
             IntOperator::OverflowingAdd => build_u128_overflowing_add(builder),
             IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
         },
-        Uint128Concrete::DivMod(_) => build_u128_divmod(builder),
+        Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
         Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),

@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use num_bigint::BigInt;
 
 use super::felt::FeltType;
+use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -44,10 +45,12 @@ pub trait UintTraits: Default {
     const OVERFLOWING_ADD: &'static str;
     /// The generic libfunc id for subtraction.
     const OVERFLOWING_SUB: &'static str;
-    /// The generic libfunc id for convertion to felt.
+    /// The generic libfunc id for conversion to felt.
     const TO_FELT: &'static str;
-    /// The generic libfunc id for convertion from felt.
+    /// The generic libfunc id for conversion from felt.
     const TRY_FROM_FELT: &'static str;
+    /// The generic libfunc id that divides two integers.
+    const DIVMOD: &'static str;
 }
 
 #[derive(Default)]
@@ -413,6 +416,49 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintFromFeltLibfun
     }
 }
 
+/// Libfunc for uint divmod.
+#[derive(Default)]
+pub struct UintDivmodLibfunc<TUintTraits: UintTraits> {
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintDivmodLibfunc<TUintTraits> {
+    const STR_ID: &'static str = TUintTraits::DIVMOD;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(ty.clone()),
+                ParamSignature::new(nonzero_ty(context, &ty)?),
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: ty.clone(),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
+                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) } },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
 #[derive(Default)]
 pub struct Uint8Traits;
 
@@ -428,6 +474,7 @@ impl UintTraits for Uint8Traits {
     const OVERFLOWING_SUB: &'static str = "u8_overflowing_sub";
     const TO_FELT: &'static str = "u8_to_felt";
     const TRY_FROM_FELT: &'static str = "u8_try_from_felt";
+    const DIVMOD: &'static str = "u8_safe_divmod";
 }
 
 /// Type for u8.
@@ -460,6 +507,7 @@ impl UintTraits for Uint64Traits {
     const OVERFLOWING_SUB: &'static str = "u64_overflowing_sub";
     const TO_FELT: &'static str = "u64_to_felt";
     const TRY_FROM_FELT: &'static str = "u64_try_from_felt";
+    const DIVMOD: &'static str = "u64_safe_divmod";
 }
 
 /// Type for u64.
