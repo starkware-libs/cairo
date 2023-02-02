@@ -501,7 +501,7 @@ impl CasmBuilder {
         self.main_state.vars = main_vars;
         self.main_state.allocated = 0;
         self.main_state.ap_change = 0;
-        self.main_state.steps = 0;
+        self.main_state.steps += 2;
         let function_state = State { vars: function_vars, ..Default::default() };
         self.set_or_test_label_state(label, function_state);
     }
@@ -511,6 +511,16 @@ impl CasmBuilder {
         let instruction = self.get_instruction(InstructionBody::Ret(RetInstruction {}), false);
         self.statements.push(Statement::Final(instruction));
         self.reachable = false;
+    }
+
+    /// The state at the last added statement.
+    pub fn steps(&self) -> usize {
+        self.main_state.steps
+    }
+
+    /// The state at the last added statement.
+    pub fn reset_steps(&mut self) {
+        self.main_state.steps = 0;
     }
 
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
@@ -785,6 +795,16 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, rescope { $($new_var:ident = $value_var:ident),* }; $($tok:tt)*) => {
         $builder.rescope([$(($new_var, $value_var)),*]);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    // Steps tracking section.
+    ($builder:ident, validate steps == $count:expr; $($tok:tt)*) => {
+        assert_eq!($builder.steps(), $count);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    // Steps tracking section.
+    ($builder:ident, reset steps; $($tok:tt)*) => {
+        $builder.reset_steps();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
 }
