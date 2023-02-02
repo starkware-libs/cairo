@@ -146,6 +146,12 @@ fn inner_find_variable_lifetime(
             let vars = remapping.values().copied().collect_vec();
             state.use_variables(context, &vars, (block_id, block.statements.len()));
 
+            state.handle_new_variables(
+                context,
+                &remapping.keys().copied().collect_vec(),
+                DropLocation::BeginningOfBlock(*target_block_id),
+            );
+
             if context.block_state.insert(*target_block_id, state.clone()).is_some() {
                 panic!("block {target_block_id:?} lifetime was computed more than once.")
             }
