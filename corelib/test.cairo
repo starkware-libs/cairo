@@ -159,6 +159,8 @@ fn test_u8_operators() {
     assert(1_u8 + 3_u8 == 4_u8, '1 + 3 == 4');
     assert(3_u8 + 6_u8 == 9_u8, '3 + 6 == 9');
     assert(3_u8 - 1_u8 == 2_u8, '3 - 1 == 2');
+    assert(19_u8 / 7_u8 == 2_u8, '19 / 7 == 2');
+    assert(19_u8 % 7_u8 == 5_u8, '19 % 7 == 5');
     assert(231_u8 - 131_u8 == 100_u8, '231-131=100');
     assert(1_u8 < 4_u8, '1 < 4');
     assert(1_u8 <= 4_u8, '1 <= 4');
@@ -206,6 +208,17 @@ fn test_u8_add_overflow_2() {
     200_u8 + 60_u8;
 }
 
+#[test]
+#[should_panic]
+fn test_u8_div_by_0() {
+    2_u8 / 0_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_mod_by_0() {
+    2_u8 % 0_u8;
+}
 
 #[test]
 fn test_u64_operators() {
@@ -215,6 +228,11 @@ fn test_u64_operators() {
     assert(3_u64 + 6_u64 == 9_u64, '3 + 6 == 9');
     assert(3_u64 - 1_u64 == 2_u64, '3 - 1 == 2');
     assert(231_u64 - 131_u64 == 100_u64, '231-131=100');
+    assert(
+        5010670477878974275_u64 / 7_u64 == 715810068268424896_u64,
+        '5010670477878974275 / 7 == 715810068268424896'
+    );
+    assert(5010670477878974275_u64 % 7_u64 == 3_u64, '5010670477878974275 % 7 == 5');
     assert(1_u64 < 4_u64, '1 < 4');
     assert(1_u64 <= 4_u64, '1 <= 4');
     assert(!(4_u64 < 4_u64), '!(4 < 4)');
@@ -259,6 +277,18 @@ fn test_u64_add_overflow_1() {
 #[should_panic]
 fn test_u64_add_overflow_2() {
     0x9000000000000000_u64 + 0x8000000000000001_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_div_by_0() {
+    2_u64 / 0_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_mod_by_0() {
+    0_u64 % 0_u64;
 }
 
 #[test]

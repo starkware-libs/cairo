@@ -93,7 +93,7 @@ impl NonZeroU128Copy of Copy::<NonZero::<u128>>;
 impl NonZeroU128Drop of Drop::<NonZero::<u128>>;
 
 #[panic_with('u128 is 0', u128_as_non_zero)]
-fn u128_checked_as_non_zero(a: u128) -> Option::<NonZero::<u128>> implicits() nopanic {
+fn u128_try_as_non_zero(a: u128) -> Option::<NonZero::<u128>> implicits() nopanic {
     match u128_is_zero(a) {
         IsZeroResult::Zero(()) => Option::<NonZero::<u128>>::None(()),
         IsZeroResult::NonZero(x) => Option::<NonZero::<u128>>::Some(x),
@@ -266,6 +266,28 @@ impl U8Sub of Sub::<u8> {
 extern fn u8_is_zero(a: u8) -> IsZeroResult::<u8> implicits() nopanic;
 extern fn u8_safe_divmod(a: u8, b: NonZero::<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
 
+#[panic_with('u8 is 0', u8_as_non_zero)]
+fn u8_try_as_non_zero(a: u8) -> Option::<NonZero::<u8>> implicits() nopanic {
+    match u8_is_zero(a) {
+        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::NonZero(x) => Option::Some(x),
+    }
+}
+
+impl U8Div of Div::<u8> {
+    fn div(a: u8, b: u8) -> u8 {
+        let (q, r) = u8_safe_divmod(a, u8_as_non_zero(b));
+        q
+    }
+}
+
+impl U8Rem of Rem::<u8> {
+    fn rem(a: u8, b: u8) -> u8 {
+        let (q, r) = u8_safe_divmod(a, u8_as_non_zero(b));
+        r
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type u64;
 extern fn u64_const<value>() -> u64 nopanic;
@@ -353,6 +375,28 @@ impl U64Sub of Sub::<u64> {
 
 extern fn u64_is_zero(a: u64) -> IsZeroResult::<u64> implicits() nopanic;
 extern fn u64_safe_divmod(a: u64, b: NonZero::<u64>) -> (u64, u64) implicits(RangeCheck) nopanic;
+
+#[panic_with('u64 is 0', u64_as_non_zero)]
+fn u64_try_as_non_zero(a: u64) -> Option::<NonZero::<u64>> implicits() nopanic {
+    match u64_is_zero(a) {
+        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::NonZero(x) => Option::Some(x),
+    }
+}
+
+impl U64Div of Div::<u64> {
+    fn div(a: u64, b: u64) -> u64 {
+        let (q, r) = u64_safe_divmod(a, u64_as_non_zero(b));
+        q
+    }
+}
+
+impl U64Rem of Rem::<u64> {
+    fn rem(a: u64, b: u64) -> u64 {
+        let (q, r) = u64_safe_divmod(a, u64_as_non_zero(b));
+        r
+    }
+}
 
 #[derive(Copy, Drop)]
 struct u256 {
