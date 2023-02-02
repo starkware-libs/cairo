@@ -1,4 +1,4 @@
-use cairo_felt::Felt;
+use cairo_felt::{Felt, FIELD_HIGH, FIELD_LOW};
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
@@ -258,6 +258,61 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8>(
     ))
 }
 
+/// Handles a small uint conversion from felt.
+fn build_divmod<const BOUND: u128>(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    // Sanity check: make sure BOUND is not too large.
+    let two128 = BigInt::from(2).pow(128);
+    assert!(
+        BigInt::from(BOUND) * two128.clone()
+            < BigInt::from(FIELD_HIGH) * two128 + BigInt::from(FIELD_LOW),
+    );
+
+    let [range_check, a, b] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref a;
+        deref b;
+    };
+    casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
+        tempvar r_plus_1;
+        tempvar b_minus_r_minus_1;
+        tempvar bq;
+        tempvar q;
+        tempvar r;
+        hint DivMod { lhs: a, rhs: b } into { quotient: q, remainder: r };
+
+        // Verify `0 <= r`.
+        assert r = *(range_check++);
+
+        // Verify `r < b` by constraining `0 <= b - (r + 1)`.
+        const one = 1;
+        assert r_plus_1 = r + one;
+        assert b = b_minus_r_minus_1 + r_plus_1;
+        assert b_minus_r_minus_1 = *(range_check++);
+
+        // Check that `0 <= q < 2**128`.
+        assert q = *(range_check++);
+
+        // Check that `a = q * b + r`. Both hands are in the range [0, BOUND * 2**128).
+        // so the equality is an equality as integers (rather than only as field elements).
+        assert bq = b * q;
+        assert a = bq + r;
+    }
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
 /// Builds instructions for Sierra u8 operations.
 pub fn build_u8(
     libfunc: &Uint8Concrete,
@@ -278,6 +333,7 @@ pub fn build_u8(
         },
         Uint8Concrete::ToFelt(_) => misc::build_identity(builder),
         Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<256, 2>(builder),
+        Uint8Concrete::Divmod(_) => build_divmod::<256>(builder),
     }
 }
 
@@ -303,5 +359,6 @@ pub fn build_u64(
         Uint64Concrete::FromFelt(_) => {
             build_small_uint_from_felt::<0x10000000000000000, 2>(builder)
         }
+        Uint64Concrete::Divmod(_) => build_divmod::<0x10000000000000000>(builder),
     }
 }
