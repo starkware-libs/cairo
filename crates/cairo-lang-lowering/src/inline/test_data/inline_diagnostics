@@ -1,7 +1,7 @@
 //! > Test inlining diagnostics for a recursive function.
 
 //! > test_function_name
-test_function_lowering
+test_function_inlining
 
 //! > function
 #[inline(always)]
@@ -15,26 +15,6 @@ foo
 
 //! > module_code
 
-//! > lowering_format
-
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
-Initial refs: v0: core::felt
-Statements:
-  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
-    Ref changes: r0 <- v3
-End:
-  Return(v3, v1)
-
-//! > lowering_flat
-blk0:
-Inputs: v0: core::felt, v1: core::felt
-Statements:
-  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
-End:
-  Return(v3, v1)
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -43,12 +23,28 @@ error: Cannot inline a function that might call itself.
 #[inline(always)]
 ^***************^
 
+//! > before
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
+End:
+  Return(v3, v1)
+
+//! > after
+blk0:
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
+End:
+  Return(v3, v1)
+
 //! > ==========================================================================
 
 //! > Test inlining diagnostics for a function an identity function.
 
 //! > test_function_name
-test_function_lowering
+test_function_inlining
 
 //! > function
 #[inline(always)]
@@ -61,24 +57,21 @@ foo
 
 //! > module_code
 
-//! > lowering_format
-
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Initial refs:
-Statements:
-End:
-  Return(v0)
-
-//! > lowering_flat
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-End:
-  Return(v0)
-
 //! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Return(v0)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Return(v0)
 
 //! > lowering_diagnostics
 error: Inlining of functions that directly returns one of its inputs is not supported.
@@ -91,7 +84,7 @@ error: Inlining of functions that directly returns one of its inputs is not supp
 //! > Test inlining attribute diagnostics.
 
 //! > test_function_name
-test_function_lowering
+test_function_inlining
 
 //! > function
 #[inline(always)]
@@ -109,24 +102,23 @@ foo
 
 //! > lowering_format
 
-//! > lowering_structured
-blk0 (root):
-Inputs:
-Initial refs:
-Statements:
-  (v0: ()) <- struct_construct()
-End:
-  Return(v0)
-
-//! > lowering_flat
-blk0 (root):
-Inputs:
-Statements:
-  (v0: ()) <- struct_construct()
-End:
-  Return(v0)
-
 //! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
+
+//! > after
+blk0 (root):
+Inputs:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
 
 //! > lowering_diagnostics
 error: Unsupported `inline` arguments.

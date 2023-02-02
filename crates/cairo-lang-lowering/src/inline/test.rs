@@ -15,6 +15,7 @@ cairo_lang_test_utils::test_file_test!(
     {
 
         inline :"inline",
+        inline_diagnostics :"inline_diagnostics",
     },
     test_function_inlining
 );
