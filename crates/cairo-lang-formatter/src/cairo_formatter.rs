@@ -94,7 +94,7 @@ impl FormattableInput for StdinFmt {
         })))
     }
     fn overwrite_content(&self, content: String) -> Result<()> {
-        print!("{}", content);
+        print!("{content}");
         Ok(())
     }
 }
@@ -118,7 +118,7 @@ fn format_input(
     };
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
     if !diagnostics.0.leaves.is_empty() {
-        bail!("Unable to parse input.");
+        bail!(diagnostics.format(&db));
     }
     let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
 

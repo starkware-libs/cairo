@@ -36,6 +36,18 @@ struct FormatterArgs {
     files: Vec<String>,
 }
 
+fn print_error(error: anyhow::Error, path: String, args: &FormatterArgs) {
+    eprintln!(
+        "{}",
+        format!("A parsing error occurred in {}. The content was not formatted.", path).red()
+    );
+    if args.print_parsing_errors {
+        eprintln!("{}", format!("{}", error).red());
+    } else {
+        eprintln!("{}", "Run with '--print-parsing-errors' to see error details.".red());
+    }
+}
+
 fn format_path(start_path: &str, args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
     let mut all_correct = true;
     let base = Path::new(start_path);
@@ -49,40 +61,28 @@ fn format_path(start_path: &str, args: &FormatterArgs, fmt: &CairoFormatter) -> 
             continue;
         }
         let path = entry_path.path();
-        // let canonical = path.canonicalize().unwrap();
+        if args.verbose {
+            eprintln!("Formatting file: {}.", path.display());
+        }
         if args.check {
             match fmt.check(&path) {
                 Ok((FormatResult::Identical, _)) => continue,
                 Ok((FormatResult::DiffFound, diff)) => {
-                    println!("{}", diff.unwrap());
+                    println!("Diff found in file {}:\n {}", path.display(), diff.unwrap());
                     all_correct = false;
                 }
-                Err(_) => {
-                    eprintln!(
-                        "{}",
-                        format!(
-                            "A parsing error occurred in {}. The content was not formatted.",
-                            path.display()
-                        )
-                        .red()
-                    );
+                Err(parsing_error) => {
+                    print_error(parsing_error, path.display().to_string(), args);
                     all_correct = false;
                 }
             }
         } else {
             match fmt.format_in_place(&path) {
                 Ok(FormatResult::DiffFound) => {
-                    all_correct = false;
+                    all_correct = true;
                 }
-                Err(_) => {
-                    eprintln!(
-                        "{}",
-                        format!(
-                            "A parsing error occurred in {}. The content was not formatted.",
-                            path.display()
-                        )
-                        .red()
-                    );
+                Err(parsing_error) => {
+                    print_error(parsing_error, path.display().to_string(), args);
                     all_correct = false;
                 }
                 _ => {}
@@ -94,17 +94,28 @@ fn format_path(start_path: &str, args: &FormatterArgs, fmt: &CairoFormatter) -> 
 
 fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
     if args.check {
-        match fmt.check(&StdinFmt).unwrap() {
-            (FormatResult::Identical, _) => true,
-            (FormatResult::DiffFound, diff) => {
+        match fmt.check(&StdinFmt) {
+            Ok((FormatResult::Identical, _)) => true,
+            Ok((FormatResult::DiffFound, diff)) => {
                 println!("{}", diff.unwrap());
+                false
+            }
+            Err(parsing_error) => {
+                print_error(parsing_error, String::from("standard input"), args);
                 false
             }
         }
     } else {
-        let (_, text) = fmt.format_to_string(&StdinFmt).unwrap();
-        println!("{}", text);
-        true
+        match fmt.format_to_string(&StdinFmt) {
+            Ok((_, text)) => {
+                println!("{}", text);
+                true
+            }
+            Err(parsing_error) => {
+                print_error(parsing_error, String::from("standard input"), args);
+                false
+            }
+        }
     }
 }
 
