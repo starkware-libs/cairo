@@ -1649,8 +1649,8 @@ pub fn compute_statement_semantic(
                 expr_syntax,
                 ast::Expr::Block(_) | ast::Expr::If(_) | ast::Expr::Match(_)
             ) {
-                // TODO(yuval): location should be after the expression, not on all of it.
-                ctx.diagnostics.report(stmt_expr_syntax, MissingSemicolon);
+                // Point to after the expression, where the semicolon is missing.
+                ctx.diagnostics.report_after(&expr_syntax, MissingSemicolon);
             }
             semantic::Statement::Expr(semantic::StatementExpr {
                 expr: ctx.exprs.alloc(expr),
