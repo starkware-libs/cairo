@@ -807,4 +807,9 @@ macro_rules! casm_build_extend {
         $builder.reset_steps();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
+    // Steps tracking section.
+    ($builder:ident, add steps to $counter:ident; $($tok:tt)*) => {
+        $counter += $builder.steps() as i32;
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
 }
