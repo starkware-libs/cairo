@@ -67,6 +67,7 @@ fn call_sierra_to_casm_compiler(input_path: &str, output_path: Option<&str>) -> 
     Ok(Some(casm_program_contents))
 }
 
+// call_cairo_to_casm_compiler = call_cairo_to_sierra_compiler + call_sierra_to_casm_compiler
 #[pyfunction]
 fn call_cairo_to_casm_compiler(input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
     let sierra_program = call_cairo_to_sierra_compiler(input_path, None)?.unwrap();
@@ -109,8 +110,9 @@ fn starknet_cairo_to_casm(input_path: &str) -> Result<String, anyhow::Error> {
     Ok(casm)
 }
 
+// returns tuple[sierra if no output_path, list[test_names]]
 #[pyfunction]
-fn call_test_collector(path: &str, output_path: Option<&str>) -> PyResult<(Option<String>, Vec<String>)> {
+fn call_test_collector(path: &str, output_path: Option<&str>, maybe_cairo_paths: Option<Vec<&str>>) -> PyResult<(Option<String>, Vec<String>)> {
     // code taken from crates/cairo-lang-test-runner/src/cli.rs
     let plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
         Arc::new(DerivePlugin {}),
@@ -122,7 +124,12 @@ fn call_test_collector(path: &str, output_path: Option<&str>) -> PyResult<(Optio
     let mut db_val = builder.build();
     let db = &mut db_val;
 
-    let main_crate_ids = setup_project(db, Path::new(&path)).map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
+    let main_crate_ids = setup_project(db, Path::new(&path)).map_err(|_| PyErr::new::<RuntimeError, _>(format!("Failed to setup project for path: {}", path)))?;
+    if let Some(cairo_paths) = maybe_cairo_paths {
+        for cairo_path in cairo_paths {
+            setup_project(db, Path::new(cairo_path)).map_err(|_| PyErr::new::<RuntimeError, _>(format!("Failed to add cairo path: {}", cairo_path)))?;
+        }
+    }
 
     if check_and_eprint_diagnostics(db) {
         return Err(PyErr::new::<RuntimeError, _>(format!("failed to compile: {}", path)));
@@ -137,7 +144,7 @@ fn call_test_collector(path: &str, output_path: Option<&str>) -> PyResult<(Optio
                 .collect(),
         )
         .to_option()
-        .with_context(|| "Compilation failed without any diagnostics.").map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
+        .with_context(|| "Compilation failed without any diagnostics").map_err(|_| PyErr::new::<RuntimeError, _>("Failed to get sierra program"))?;
 
     let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
     let named_tests = all_tests
@@ -164,7 +171,7 @@ fn call_test_collector(path: &str, output_path: Option<&str>) -> PyResult<(Optio
 
     let mut result_contents = None;
     if let Some(path) = output_path {
-        fs::write(path, &sierra_program.to_string()).map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output."))?;
+        fs::write(path, &sierra_program.to_string()).map_err(|_| PyErr::new::<RuntimeError, _>("Failed to write output"))?;
     } else {
         result_contents = Some(sierra_program.to_string());
     }
