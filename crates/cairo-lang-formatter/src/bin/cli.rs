@@ -1,11 +1,13 @@
 use std::path::Path;
 use std::process::ExitCode;
+use std::sync::Mutex;
 
-use cairo_lang_formatter::cairo_formatter::{FormatResult, StdinFmt};
-use cairo_lang_formatter::{CairoFormatter, FormatterConfig};
+use cairo_lang_formatter::{CairoFormatter, FormatResult, FormatterConfig, StdinFmt};
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 use colored::Colorize;
+use ignore::WalkState::Continue;
+use ignore::{DirEntry, Error, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 
 /// Outputs a string to stderr if the verbose flag is true.
 fn eprintln_if_verbose(s: &str, verbose: bool) {
@@ -48,48 +50,82 @@ fn print_error(error: anyhow::Error, path: String, args: &FormatterArgs) {
     }
 }
 
+struct PathFormatter<'t> {
+    all_correct: &'t Mutex<bool>,
+    own_correct: bool,
+    args: &'t FormatterArgs,
+    fmt: &'t CairoFormatter,
+}
+
+struct PathFormatterBuilder<'t> {
+    all_correct: &'t Mutex<bool>,
+    args: &'t FormatterArgs,
+    fmt: &'t CairoFormatter,
+}
+
+impl<'s, 't> ParallelVisitorBuilder<'s> for PathFormatterBuilder<'t>
+where
+    't: 's,
+{
+    fn build(&mut self) -> Box<dyn ParallelVisitor + 's> {
+        Box::new(PathFormatter {
+            all_correct: self.all_correct,
+            own_correct: true,
+            args: self.args,
+            fmt: self.fmt,
+        })
+    }
+}
+
+impl<'t> ParallelVisitor for PathFormatter<'t> {
+    fn visit(&mut self, dir_entry: Result<DirEntry, Error>) -> WalkState {
+        let entry_path = dir_entry.unwrap();
+        if entry_path.file_type().unwrap().is_dir() {
+            return Continue;
+        }
+        let path = entry_path.path();
+        if self.args.verbose {
+            eprintln!("Formatting file: {}.", path.display());
+        }
+        if self.args.check {
+            match self.fmt.check(&path) {
+                Ok((FormatResult::Identical, _)) => {}
+                Ok((FormatResult::DiffFound, diff)) => {
+                    println!("Diff found in file {}:\n {}", path.display(), diff.unwrap());
+                    self.own_correct = false;
+                }
+                Err(parsing_error) => {
+                    print_error(parsing_error, path.display().to_string(), self.args);
+                    self.own_correct = false;
+                }
+            }
+        } else if let Err(parsing_error) = self.fmt.format_in_place(&path) {
+            print_error(parsing_error, path.display().to_string(), self.args);
+            self.own_correct = false;
+        }
+        Continue
+    }
+}
+
+impl<'t> Drop for PathFormatter<'t> {
+    fn drop(&mut self) {
+        *self.all_correct.lock().unwrap() &= self.own_correct;
+    }
+}
+
 fn format_path(start_path: &str, args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
-    let mut all_correct = true;
     let base = Path::new(start_path);
     let mut walk = fmt.walk(base);
     if !args.recursive {
         walk.max_depth(Some(1));
     }
-    for dir_entry in walk.build() {
-        let entry_path = dir_entry.unwrap();
-        if entry_path.file_type().unwrap().is_dir() {
-            continue;
-        }
-        let path = entry_path.path();
-        if args.verbose {
-            eprintln!("Formatting file: {}.", path.display());
-        }
-        if args.check {
-            match fmt.check(&path) {
-                Ok((FormatResult::Identical, _)) => continue,
-                Ok((FormatResult::DiffFound, diff)) => {
-                    println!("Diff found in file {}:\n {}", path.display(), diff.unwrap());
-                    all_correct = false;
-                }
-                Err(parsing_error) => {
-                    print_error(parsing_error, path.display().to_string(), args);
-                    all_correct = false;
-                }
-            }
-        } else {
-            match fmt.format_in_place(&path) {
-                Ok(FormatResult::DiffFound) => {
-                    all_correct = true;
-                }
-                Err(parsing_error) => {
-                    print_error(parsing_error, path.display().to_string(), args);
-                    all_correct = false;
-                }
-                _ => {}
-            }
-        }
-    }
-    all_correct
+
+    let all_correct = Mutex::new(true);
+    let mut builder = PathFormatterBuilder { args, fmt, all_correct: &all_correct };
+    walk.build_parallel().visit(&mut builder);
+    let result = *builder.all_correct.lock().unwrap();
+
+    result
 }
 
 fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
