@@ -91,25 +91,11 @@ pub fn generate_block_code(
     let mut statements = generate_block_body_code(context, block_id, block)?;
     match &block.end {
         lowering::FlatBlockEnd::Callsite(remapping) => {
-            let mut push_values = Vec::<pre_sierra::PushValue>::new();
-            for (idx, (output, inner_output)) in remapping.iter().enumerate() {
-                let use_location = UseLocation { statement_location, idx };
-                let dup_var = get_dup_var_if_needed(context, &use_location);
-
-                let ty = context.get_variable_sierra_type(*inner_output)?;
-                let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
-                assert_eq!(
-                    ty, var_on_stack_ty,
-                    "Internal compiler error: Inconsistent types in generate_block_code()."
-                );
-                push_values.push(pre_sierra::PushValue {
-                    var: context.get_sierra_variable(*inner_output),
-                    var_on_stack: context.get_sierra_variable(*output),
-                    ty,
-                    dup_var,
-                })
-            }
-            statements.push(pre_sierra::Statement::PushValues(push_values));
+            statements.push(generate_push_values_statement_for_remapping(
+                context,
+                statement_location,
+                remapping,
+            )?);
             Ok((statements, true))
         }
         lowering::FlatBlockEnd::Return(returned_variables) => {
@@ -124,6 +110,33 @@ pub fn generate_block_code(
         | lowering::FlatBlockEnd::Goto(_block_id, _remapping) => todo!(),
         lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),
     }
+}
+
+/// Generates a push_values statement that corresponds to `remapping`.
+fn generate_push_values_statement_for_remapping(
+    context: &mut ExprGeneratorContext<'_>,
+    statement_location: (lowering::BlockId, usize),
+    remapping: &lowering::VarRemapping,
+) -> Maybe<pre_sierra::Statement> {
+    let mut push_values = Vec::<pre_sierra::PushValue>::new();
+    for (idx, (output, inner_output)) in remapping.iter().enumerate() {
+        let use_location = UseLocation { statement_location, idx };
+        let dup_var = get_dup_var_if_needed(context, &use_location);
+
+        let ty = context.get_variable_sierra_type(*inner_output)?;
+        let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
+        assert_eq!(
+            ty, var_on_stack_ty,
+            "Internal compiler error: Inconsistent types in generate_block_code()."
+        );
+        push_values.push(pre_sierra::PushValue {
+            var: context.get_sierra_variable(*inner_output),
+            var_on_stack: context.get_sierra_variable(*output),
+            ty,
+            dup_var,
+        })
+    }
+    Ok(pre_sierra::Statement::PushValues(push_values))
 }
 
 /// Generates Sierra code for a `return` statement.

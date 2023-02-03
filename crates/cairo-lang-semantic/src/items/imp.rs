@@ -28,7 +28,7 @@ use super::enm::SemanticEnumEx;
 use super::function_with_body::{FunctionBody, FunctionBodyData};
 use super::functions::{substitute_signature, FunctionDeclarationData};
 use super::generics::semantic_generic_params;
-use super::strct::SemanticStructEx;
+use super::structure::SemanticStructEx;
 use crate::corelib::{copy_trait, core_module, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -305,10 +305,10 @@ pub fn priv_impl_definition_data(
                 Item::Impl(imp) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
                 }
-                Item::Struct(strct) => report_invalid_impl_item(
+                Item::Struct(structure) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
-                    strct.struct_kw(syntax_db),
+                    structure.struct_kw(syntax_db),
                 ),
                 Item::Enum(enm) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))

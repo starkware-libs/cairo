@@ -380,10 +380,10 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     res.impls.insert(item_id, imp);
                     ModuleItemId::Impl(item_id)
                 }
-                ast::Item::Struct(strct) => {
+                ast::Item::Struct(structure) => {
                     let item_id =
-                        db.intern_struct(StructLongId(module_file_id, strct.stable_ptr()));
-                    res.structs.insert(item_id, strct);
+                        db.intern_struct(StructLongId(module_file_id, structure.stable_ptr()));
+                    res.structs.insert(item_id, structure);
                     ModuleItemId::Struct(item_id)
                 }
                 ast::Item::Enum(enm) => {

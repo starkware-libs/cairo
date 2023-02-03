@@ -19,7 +19,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
-use cairo_lang_sierra::extensions::strct::StructConcreteLibfunc;
+use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{IntOperator, Uint64Concrete, Uint8Concrete};
 use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
@@ -434,7 +434,7 @@ fn u128_libfunc_cost<Ops: CostOperations>(
                 ]
             }
         },
-        Uint128Concrete::DivMod(_) => {
+        Uint128Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 11, holes: 0, range_checks: 4 })]
         }
         Uint128Concrete::WideMul(_) => {

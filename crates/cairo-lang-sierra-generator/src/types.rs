@@ -1,7 +1,7 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::strct::SemanticStructEx;
+use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_sierra::program::ConcreteTypeLongId;
 use itertools::chain;
 
@@ -36,11 +36,11 @@ pub fn get_concrete_type_id(
     match db.lookup_intern_type(type_id) {
         semantic::TypeLongId::Concrete(ty) => {
             match ty {
-                semantic::ConcreteTypeId::Struct(strct) => get_user_type_concrete_type_id(
+                semantic::ConcreteTypeId::Struct(structure) => get_user_type_concrete_type_id(
                     db,
                     ty,
                     "Struct".into(),
-                    db.concrete_struct_members(strct)?.into_iter().map(|(_, member)| member.ty),
+                    db.concrete_struct_members(structure)?.into_iter().map(|(_, member)| member.ty),
                 ),
                 semantic::ConcreteTypeId::Enum(enm) => get_user_type_concrete_type_id(
                     db,

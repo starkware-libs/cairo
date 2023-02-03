@@ -19,7 +19,7 @@ pub use crate::items::functions::{
     ConcreteFunction, ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, Signature,
 };
 pub use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
-pub use crate::items::strct::Member;
+pub use crate::items::structure::Member;
 pub use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
 use crate::literals::LiteralId;
 pub use crate::types::{

@@ -25,7 +25,7 @@ use crate::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
-use crate::extensions::strct::StructConcreteLibfunc;
+use crate::extensions::structure::StructConcreteLibfunc;
 use crate::extensions::uint::{
     IntOperator, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc,
 };
@@ -437,7 +437,7 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::DivMod(_) => match inputs {
+        Uint128Concrete::Divmod(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)] => {
                 if let CoreValue::Uint128(rhs) = **non_zero {
                     Ok((
