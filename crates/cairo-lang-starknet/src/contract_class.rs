@@ -64,11 +64,16 @@ pub struct ContractEntryPoint {
 
 /// Compile the contract given by path.
 /// If `replace_ids` is true, replaces sierra ids with human-readable ones.
-pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractClass> {
+pub fn compile_path(path: &Path, replace_ids: bool, maybe_cairo_paths: Option<Vec<&str>>) -> anyhow::Result<ContractClass> {
     let mut db_val = get_starknet_database();
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&path))?;
+    if let Some(cairo_paths) = maybe_cairo_paths {
+        for cairo_path in cairo_paths {
+            setup_project(db, Path::new(cairo_path))?;
+        }
+    }
 
     if check_and_eprint_diagnostics(db) {
         anyhow::bail!("Failed to compile: {}", path.display());

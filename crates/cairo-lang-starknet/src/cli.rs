@@ -21,7 +21,7 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let contract = compile_path(&PathBuf::from(args.path), args.replace_ids)?;
+    let contract = compile_path(&PathBuf::from(args.path), args.replace_ids, None)?;
     let res = serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?;
     match args.output {
         Some(path) => fs::write(path, res).with_context(|| "Failed to write output.")?,

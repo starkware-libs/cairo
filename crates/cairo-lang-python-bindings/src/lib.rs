@@ -83,8 +83,8 @@ fn call_cairo_to_casm_compiler(input_path: &str, output_path: Option<&str>, mayb
 }
 
 #[pyfunction]
-fn call_starknet_contract_compiler(input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
-    let casm = starknet_cairo_to_casm(input_path)
+fn call_starknet_contract_compiler(input_path: &str, output_path: Option<&str>, maybe_cairo_paths: Option<Vec<&str>>) -> PyResult<Option<String>> {
+    let casm = starknet_cairo_to_casm(input_path, maybe_cairo_paths)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
 
     if let Some(path) = output_path {
@@ -94,8 +94,8 @@ fn call_starknet_contract_compiler(input_path: &str, output_path: Option<&str>) 
     Ok(Some(casm))
 }
 
-fn starknet_cairo_to_casm(input_path: &str) -> Result<String, anyhow::Error> {
-    let contract = compile_starknet(&PathBuf::from(input_path), true)?;
+fn starknet_cairo_to_casm(input_path: &str, maybe_cairo_paths: Option<Vec<&str>>) -> Result<String, anyhow::Error> {
+    let contract = compile_starknet(&PathBuf::from(input_path), true, maybe_cairo_paths)?;
     let sierra = serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?;
 
     let contract_class: ContractClass = serde_json::from_str(&sierra[..])
