@@ -13,6 +13,7 @@ anyhow = "1.0.66"
 clap = { version = "4.0", features = ["derive"] }
 cairo-lang-compiler = { path = "../cairo-lang-compiler" }
 cairo-lang-defs = { path = "../cairo-lang-defs" }
+cairo-lang-filesystem = {path = "../cairo-lang-filesystem" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics" }
 cairo-lang-lowering = { path = "../cairo-lang-lowering" }
 cairo-lang-formatter = { path = "../cairo-lang-formatter" }
