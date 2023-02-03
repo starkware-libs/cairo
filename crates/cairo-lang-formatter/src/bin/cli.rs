@@ -41,10 +41,10 @@ struct FormatterArgs {
 fn print_error(error: anyhow::Error, path: String, args: &FormatterArgs) {
     eprintln!(
         "{}",
-        format!("A parsing error occurred in {}. The content was not formatted.", path).red()
+        format!("A parsing error occurred in {path}. The content was not formatted.").red()
     );
     if args.print_parsing_errors {
-        eprintln!("{}", format!("{}", error).red());
+        eprintln!("{}", format!("{error}").red());
     } else {
         eprintln!("{}", "Run with '--print-parsing-errors' to see error details.".red());
     }
@@ -144,7 +144,7 @@ fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
     } else {
         match fmt.format_to_string(&StdinFmt) {
             Ok((_, text)) => {
-                println!("{}", text);
+                println!("{text}");
                 true
             }
             Err(parsing_error) => {
