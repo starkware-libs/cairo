@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
@@ -76,7 +76,7 @@ fn main() -> anyhow::Result<()> {
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
-    if check_and_eprint_diagnostics(db) {
+    if DiagnosticsReporter::stderr().check(db) {
         bail!("failed to compile: {}", args.path);
     }
     let all_tests = find_all_tests(db, main_crate_ids);
