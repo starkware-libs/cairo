@@ -44,8 +44,8 @@ use cairo_lang_debug::debug::DebugWithDb;
 use itertools::Itertools;
 
 #[pyfunction]
-fn call_cairo_to_sierra_compiler(input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
-    let sierra_program = compile_cairo_to_sierra_at_path(Path::new(input_path), CompilerConfig::default())
+fn call_cairo_to_sierra_compiler(input_path: &str, output_path: Option<&str>, maybe_cairo_paths: Option<Vec<&str>>) -> PyResult<Option<String>> {
+    let sierra_program = compile_cairo_to_sierra_at_path(Path::new(input_path), CompilerConfig::default(), maybe_cairo_paths)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
     let sierra_program_contents = format!("{}", sierra_program);
     if let Some(path) = output_path {
@@ -69,8 +69,8 @@ fn call_sierra_to_casm_compiler(input_path: &str, output_path: Option<&str>) -> 
 
 // call_cairo_to_casm_compiler = call_cairo_to_sierra_compiler + call_sierra_to_casm_compiler
 #[pyfunction]
-fn call_cairo_to_casm_compiler(input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
-    let sierra_program = call_cairo_to_sierra_compiler(input_path, None)?.unwrap();
+fn call_cairo_to_casm_compiler(input_path: &str, output_path: Option<&str>, maybe_cairo_paths: Option<Vec<&str>>) -> PyResult<Option<String>> {
+    let sierra_program = call_cairo_to_sierra_compiler(input_path, None, maybe_cairo_paths)?.unwrap();
     let casm_program = compile_sierra_to_casm_for_contents(&sierra_program.to_string())
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
 
