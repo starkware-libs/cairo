@@ -6,14 +6,14 @@ use std::path::Path;
 use std::sync::Arc;
 
 use ::cairo_lang_diagnostics::ToOption;
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
 use crate::db::RootDatabase;
-use crate::diagnostics::{check_diagnostics, eprint_diagnostic};
+use crate::diagnostics::{ensure_diagnostics, eprint_diagnostic};
 use crate::project::{get_main_crate_ids_from_project, setup_project, ProjectConfig};
 
 pub mod db;
@@ -91,9 +91,7 @@ pub fn compile_prepared_db(
     main_crate_ids: Vec<CrateId>,
     mut compiler_config: CompilerConfig,
 ) -> Result<SierraProgram> {
-    if check_diagnostics(db, compiler_config.on_diagnostic.as_deref_mut()) {
-        bail!("Compilation failed.");
-    }
+    ensure_diagnostics(db, compiler_config.on_diagnostic.as_deref_mut())?;
 
     let mut sierra_program = db
         .get_sierra_program(main_crate_ids)
