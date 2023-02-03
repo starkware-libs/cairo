@@ -93,10 +93,15 @@ pub struct ContractEntryPoint {
 /// Compile the contract given by path.
 ///
 /// Errors if no contracts or more than 1 are found.
-pub fn compile_path(path: &Path, compiler_config: CompilerConfig<'_>) -> Result<ContractClass> {
+pub fn compile_path(path: &Path, compiler_config: CompilerConfig<'_>, maybe_cairo_paths: Option<Vec<&str>>) -> Result<ContractClass> {
     let mut db = RootDatabase::builder().detect_corelib().with_starknet().build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
+    if let Some(cairo_paths) = maybe_cairo_paths {
+        for cairo_path in cairo_paths {
+            setup_project(&mut db, Path::new(cairo_path))?;
+        }
+    }
 
     compile_only_contract_in_prepared_db(&mut db, main_crate_ids, compiler_config)
 }

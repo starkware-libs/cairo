@@ -25,6 +25,7 @@ fn main() -> anyhow::Result<()> {
     let contract = compile_path(
         &args.path,
         CompilerConfig { replace_ids: args.replace_ids, ..CompilerConfig::default() },
+        None,
     )?;
     let res = serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?;
     match args.output {
