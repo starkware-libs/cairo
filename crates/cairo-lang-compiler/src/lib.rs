@@ -50,11 +50,17 @@ pub type SierraProgram = Arc<Program>;
 pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig,
+    maybe_cairo_paths: Option<Vec<&str>>,
 ) -> Result<SierraProgram> {
     let mut builder = RootDatabase::builder();
     builder.with_dev_corelib().unwrap();
     let mut db = builder.build();
     let main_crate_ids = setup_project(&mut db, path)?;
+    if let Some(cairo_paths) = maybe_cairo_paths {
+        for cairo_path in cairo_paths {
+            setup_project(&mut db, Path::new(cairo_path))?;
+        }
+    }
     compile_prepared_db(db, main_crate_ids, compiler_config)
 }
 
