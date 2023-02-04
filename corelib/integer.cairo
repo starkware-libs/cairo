@@ -263,6 +263,7 @@ impl U8Sub of Sub::<u8> {
     }
 }
 
+extern fn u8_is_zero(a: u8) -> IsZeroResult::<u8> implicits() nopanic;
 extern fn u8_safe_divmod(a: u8, b: NonZero::<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
 
 #[derive(Copy, Drop)]
@@ -350,6 +351,7 @@ impl U64Sub of Sub::<u64> {
     }
 }
 
+extern fn u64_is_zero(a: u64) -> IsZeroResult::<u64> implicits() nopanic;
 extern fn u64_safe_divmod(a: u64, b: NonZero::<u64>) -> (u64, u64) implicits(RangeCheck) nopanic;
 
 #[derive(Copy, Drop)]
