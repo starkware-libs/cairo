@@ -205,7 +205,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
         }
         Array(ArrayConcreteLibfunc::PopFront(_)) => vec![ops.steps(2), ops.steps(3)],
-        Array(ArrayConcreteLibfunc::At(libfunc)) => {
+        Array(ArrayConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![
                     ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),

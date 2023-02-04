@@ -40,7 +40,7 @@ define_libfunc_hierarchy! {
         New(ArrayNewLibfunc),
         Append(ArrayAppendLibfunc),
         PopFront(ArrayPopFrontLibfunc),
-        At(ArrayAtLibfunc),
+        Get(ArrayGetLibfunc),
         Len(ArrayLenLibfunc),
     }, ArrayConcreteLibfunc
 }
@@ -178,8 +178,8 @@ pub type ArrayPopFrontLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayPopFront
 
 /// Libfunc for fetching a value from a specific array index.
 #[derive(Default)]
-pub struct ArrayAtLibfuncWrapped {}
-impl SignatureAndTypeGenericLibfunc for ArrayAtLibfuncWrapped {
+pub struct ArrayGetLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
     const STR_ID: &'static str = "array_get";
 
     fn specialize_signature(
@@ -240,4 +240,4 @@ impl SignatureAndTypeGenericLibfunc for ArrayAtLibfuncWrapped {
         Ok(LibfuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
     }
 }
-pub type ArrayAtLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayAtLibfuncWrapped>;
+pub type ArrayGetLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayGetLibfuncWrapped>;
