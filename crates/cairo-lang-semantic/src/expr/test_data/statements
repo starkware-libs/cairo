@@ -113,9 +113,9 @@ fn bar() {}
 
 //! > expected_diagnostics
 error: Missing semicolon
- --> lib.cairo:3:5
+ --> lib.cairo:3:10
     bar()
-    ^***^
+         ^
 
 //! > ==========================================================================
 
