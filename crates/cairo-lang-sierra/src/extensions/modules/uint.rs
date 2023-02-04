@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use num_bigint::BigInt;
 
 use super::felt::FeltType;
+use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
@@ -477,6 +478,11 @@ impl UintTraits for Uint8Traits {
     const DIVMOD: &'static str = "u8_safe_divmod";
 }
 
+impl IsZeroTraits for Uint8Traits {
+    const IS_ZERO: &'static str = "u8_is_zero";
+    const GENERIC_TYPE_ID: GenericTypeId = <Uint8Type as NamedType>::ID;
+}
+
 /// Type for u8.
 pub type Uint8Type = UintType<Uint8Traits>;
 
@@ -489,6 +495,7 @@ define_libfunc_hierarchy! {
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
         ToFelt(UintToFeltLibfunc<Uint8Traits>),
         FromFelt(UintFromFeltLibfunc<Uint8Traits>),
+        IsZero(IsZeroLibfunc<Uint8Traits>),
         Divmod(UintDivmodLibfunc<Uint8Traits>),
     }, Uint8Concrete
 }
@@ -511,6 +518,11 @@ impl UintTraits for Uint64Traits {
     const DIVMOD: &'static str = "u64_safe_divmod";
 }
 
+impl IsZeroTraits for Uint64Traits {
+    const IS_ZERO: &'static str = "u64_is_zero";
+    const GENERIC_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
+}
+
 /// Type for u64.
 pub type Uint64Type = UintType<Uint64Traits>;
 
@@ -523,6 +535,7 @@ define_libfunc_hierarchy! {
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint64Traits>),
         ToFelt(UintToFeltLibfunc<Uint64Traits>),
         FromFelt(UintFromFeltLibfunc<Uint64Traits>),
+        IsZero(IsZeroLibfunc<Uint64Traits>),
         Divmod(UintDivmodLibfunc<Uint64Traits>),
     }, Uint64Concrete
 }

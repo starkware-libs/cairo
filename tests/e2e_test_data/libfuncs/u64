@@ -429,6 +429,58 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<c
 
 //! > ==========================================================================
 
+//! > u64_is_zero libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(a: u64) -> u64 {
+    match integer::u64_is_zero(a) {
+        IsZeroResult::Zero(()) => 1234_u64,
+        IsZeroResult::NonZero(x) => unwrap_nz(x),
+    }
+}
+
+//! > casm
+jmp rel 6 if [fp + -3] != 0;
+[ap + 0] = 1234, ap++;
+jmp rel 3;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type u64 = u64;
+type NonZero<u64> = NonZero<u64>;
+
+libfunc u64_is_zero = u64_is_zero;
+libfunc branch_align = branch_align;
+libfunc u64_const<1234> = u64_const<1234>;
+libfunc store_temp<u64> = store_temp<u64>;
+libfunc jump = jump;
+libfunc unwrap_nz<u64> = unwrap_nz<u64>;
+libfunc rename<u64> = rename<u64>;
+
+u64_is_zero([0]) { fallthrough() 5([1]) };
+branch_align() -> ();
+u64_const<1234>() -> ([2]);
+store_temp<u64>([2]) -> ([3]);
+jump() { 8() };
+branch_align() -> ();
+unwrap_nz<u64>([1]) -> ([4]);
+store_temp<u64>([4]) -> ([3]);
+rename<u64>([3]) -> ([5]);
+return([5]);
+
+test::foo@0([0]: u64) -> (u64);
+
+//! > ==========================================================================
+
 //! > u64_safe_divmod libfunc
 
 //! > test_comments

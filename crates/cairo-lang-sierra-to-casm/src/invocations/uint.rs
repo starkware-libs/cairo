@@ -335,6 +335,7 @@ pub fn build_u8(
         },
         Uint8Concrete::ToFelt(_) => misc::build_identity(builder),
         Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<256, 2>(builder),
+        Uint8Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint8Concrete::Divmod(_) => build_divmod::<256>(builder),
     }
 }
@@ -361,6 +362,7 @@ pub fn build_u64(
         Uint64Concrete::FromFelt(_) => {
             build_small_uint_from_felt::<0x10000000000000000, 2>(builder)
         }
+        Uint64Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint64Concrete::Divmod(_) => build_divmod::<0x10000000000000000>(builder),
     }
 }
