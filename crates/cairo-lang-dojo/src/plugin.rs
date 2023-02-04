@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::vec;
 
-use cairo_lang_defs::plugin::{GeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginResult};
+use cairo_lang_defs::plugin::{GeneratedFileAuxData, MacroPlugin, PluginResult};
 use cairo_lang_diagnostics::DiagnosticEntry;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::patcher::Patches;
@@ -13,7 +13,7 @@ use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal};
 
 use crate::component::Component;
 use crate::system::System;
@@ -75,6 +75,15 @@ impl MacroPlugin for DojoPlugin {
     }
 }
 
+impl DojoPlugin {
+    pub(crate) fn generate_corelib(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) {
+        match item_ast {
+            ast::Item::Module(module_ast) => handle_mod_corelib(db, module_ast),
+            _ => (),
+        }
+    }
+}
+
 impl AsDynMacroPlugin for DojoPlugin {
     fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
     where
@@ -89,7 +98,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
     let name = module_ast.name(db).text(db);
     let body = match module_ast.body(db) {
         MaybeModuleBody::Some(body) => body,
-        MaybeModuleBody::None(empty_body) => {
+        MaybeModuleBody::None(_empty_body) => {
             return PluginResult {
                 code: None,
                 diagnostics: vec![],
@@ -97,7 +106,6 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             };
         }
     };
-
     if module_ast.has_attr(db, COMPONENT_ATTR) {
         return Component::from_module_body(db, name, body).result(db);
     }
@@ -111,4 +119,22 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             diagnostics: vec![],
             remove_original_item: false,
         }
+}
+
+fn handle_mod_corelib(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) {
+    let name = module_ast.name(db).text(db);
+    let body = match module_ast.body(db) {
+        MaybeModuleBody::Some(body) => body,
+        MaybeModuleBody::None(_empty_body) => {
+           return;
+        }
+    };
+    if module_ast.has_attr(db, COMPONENT_ATTR) {
+        return Component::extend_corelib(db,name, body);
+    }
+
+    //TODO(eni) Extend corelib for systems
+    // if module_ast.has_attr(db, SYSTEM_ATTR) {
+    //     return System::from_module_body(db, name, body).result(db);
+    // }
 }

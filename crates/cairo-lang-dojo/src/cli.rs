@@ -6,9 +6,10 @@ use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_dojo::db::{DojoRootDatabaseBuilderEx, get_dojo_database};
+use cairo_lang_dojo::db::{DojoRootDatabaseBuilderEx};
 use clap::Parser;
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_dojo::build::build_corelib;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -27,6 +28,7 @@ struct Args {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let path = &PathBuf::from(args.path);
+    build_corelib(path.clone());
 
     let mut db_val = {
         let mut b = RootDatabase::builder();
@@ -43,13 +45,13 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("Failed to compile: {}", path.display());
     }
 
+
     let sierra_program = db
         .get_sierra_program(main_crate_ids)
         .to_option()
         .context("Compilation failed without any diagnostics")?;
 
 
-    // let contract = compile_path(path, args.replace_ids)?;
     match args.output {
         Some(path) => {
             fs::write(path, format!("{}", sierra_program)).context("Failed to write output.")?
@@ -59,3 +61,4 @@ fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+

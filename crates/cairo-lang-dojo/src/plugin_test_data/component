@@ -28,11 +28,6 @@ mod PositionComponent {
 //! > generated_cairo_code
 #[contract]
 mod PositionComponent {
-    struct Position {
-        x: felt,
-        y: felt
-    }
-
     struct Storage {
         world_address: felt,
         state: Map::<felt, Position>,
