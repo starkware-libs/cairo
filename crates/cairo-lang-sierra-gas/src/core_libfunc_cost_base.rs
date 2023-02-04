@@ -371,6 +371,7 @@ fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> V
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
             ]
         }
+        Uint8Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
         Uint8Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
         }
@@ -419,6 +420,7 @@ fn u64_libfunc_cost<Ops: CostOperations>(
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
             ]
         }
+        Uint64Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
         Uint64Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
         }
