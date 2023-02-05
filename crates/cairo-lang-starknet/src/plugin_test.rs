@@ -53,6 +53,7 @@ cairo_lang_test_utils::test_file_test!(
         storage: "storage",
         hello_starknet: "hello_starknet",
         dispatcher: "dispatcher",
+        user_defined_types: "user_defined_types",
     },
     test_expand_contract
 );
