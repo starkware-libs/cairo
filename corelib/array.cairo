@@ -15,6 +15,7 @@ trait ArrayTrait<T> {
     fn get(ref self: Array::<T>, index: usize) -> Option::<T>;
     fn at(ref self: Array::<T>, index: usize) -> T;
     fn len(ref self: Array::<T>) -> usize;
+    fn is_empty(ref self: Array::<T>) -> bool;
 }
 impl ArrayImpl<T> of ArrayTrait::<T> {
     #[inline(always)]
@@ -39,6 +40,10 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     #[inline(always)]
     fn len(ref self: Array::<T>) -> usize {
         array_len(ref self)
+    }
+    #[inline(always)]
+    fn is_empty(ref self: Array::<T>) -> bool {
+        self.len() == 0_usize
     }
 }
 
