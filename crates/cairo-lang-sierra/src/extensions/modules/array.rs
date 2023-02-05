@@ -24,18 +24,12 @@ impl GenericTypeArgGenericType for ArrayTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        wrapped_info: TypeInfo,
+        TypeInfo { storable, droppable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        if !wrapped_info.storable {
-            Err(SpecializationError::UnsupportedGenericArg)
+        if storable {
+            Ok(TypeInfo { long_id, duplicatable: false, droppable, storable: true, size: 2 })
         } else {
-            Ok(TypeInfo {
-                long_id,
-                duplicatable: false,
-                droppable: wrapped_info.droppable,
-                storable: true,
-                size: 2,
-            })
+            Err(SpecializationError::UnsupportedGenericArg)
         }
     }
 }
