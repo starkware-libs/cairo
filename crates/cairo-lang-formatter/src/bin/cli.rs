@@ -133,7 +133,7 @@ fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
         match fmt.check(&StdinFmt) {
             Ok(FormatOutcome::Identical(_)) => true,
             Ok(FormatOutcome::DiffFound(diff)) => {
-                println!("{}", diff);
+                println!("{diff}");
                 false
             }
             Err(parsing_error) => {
