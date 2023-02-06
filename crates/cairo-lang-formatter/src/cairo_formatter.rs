@@ -4,7 +4,7 @@ use std::io::{stdin, Read};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
@@ -96,12 +96,8 @@ impl FormattableInput for StdinFmt {
 fn format_input(input: &dyn FormattableInput, config: &FormatterConfig) -> Result<FormatOutcome> {
     let db = SimpleParserDatabase::default();
     let file_id = input.to_file_id(&db).context("Unable to create virtual file.")?;
-    let original_text = match db.file_content(file_id) {
-        Some(value) => value,
-        None => {
-            bail!("Unable to read from input.");
-        }
-    };
+    let original_text =
+        db.file_content(file_id).ok_or_else(|| anyhow!("Unable to read from input."))?;
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
     if !diagnostics.0.leaves.is_empty() {
         bail!(diagnostics.format(&db));
