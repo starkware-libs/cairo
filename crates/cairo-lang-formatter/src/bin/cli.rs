@@ -88,10 +88,10 @@ impl<'t> ParallelVisitor for PathFormatter<'t> {
             eprintln!("Formatting file: {}.", path.display());
         }
         if self.args.check {
-            match self.fmt.check(&path) {
-                Ok((FormatOutcome::Identical, _)) => {}
-                Ok((FormatOutcome::DiffFound, diff)) => {
-                    println!("Diff found in file {}:\n {}", path.display(), diff.unwrap());
+            match self.fmt.format_to_string(&path) {
+                Ok(FormatOutcome::Identical(_)) => {}
+                Ok(FormatOutcome::DiffFound(diff)) => {
+                    println!("Diff found in file {}:\n {}", path.display(), diff);
                     self.own_correct = false;
                 }
                 Err(parsing_error) => {
@@ -129,28 +129,22 @@ fn format_path(start_path: &str, args: &FormatterArgs, fmt: &CairoFormatter) -> 
 }
 
 fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
-    if args.check {
-        match fmt.check(&StdinFmt) {
-            Ok((FormatOutcome::Identical, _)) => true,
-            Ok((FormatOutcome::DiffFound, diff)) => {
-                println!("{}", diff.unwrap());
-                false
-            }
-            Err(parsing_error) => {
-                print_error(parsing_error, String::from("standard input"), args);
-                false
-            }
-        }
-    } else {
-        match fmt.format_to_string(&StdinFmt) {
-            Ok((_, text)) => {
-                println!("{text}");
+    match fmt.format_to_string(&StdinFmt) {
+        Ok(outcome) => match outcome {
+            FormatOutcome::Identical(_) => {
+                if !args.check {
+                    println!("{}", FormatOutcome::into_output_text(outcome));
+                }
                 true
             }
-            Err(parsing_error) => {
-                print_error(parsing_error, String::from("standard input"), args);
-                false
+            FormatOutcome::DiffFound(diff) => {
+                println!("{diff}");
+                !args.check
             }
+        },
+        Err(parsing_error) => {
+            print_error(parsing_error, String::from("standard input"), args);
+            false
         }
     }
 }
