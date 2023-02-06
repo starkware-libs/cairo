@@ -2,7 +2,7 @@ use std::path::Path;
 use std::process::ExitCode;
 use std::sync::Mutex;
 
-use cairo_lang_formatter::{CairoFormatter, FormatResult, FormatterConfig, StdinFmt};
+use cairo_lang_formatter::{CairoFormatter, FormatOutcome, FormatterConfig, StdinFmt};
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 use colored::Colorize;
@@ -89,8 +89,8 @@ impl<'t> ParallelVisitor for PathFormatter<'t> {
         }
         if self.args.check {
             match self.fmt.check(&path) {
-                Ok((FormatResult::Identical, _)) => {}
-                Ok((FormatResult::DiffFound, diff)) => {
+                Ok((FormatOutcome::Identical, _)) => {}
+                Ok((FormatOutcome::DiffFound, diff)) => {
                     println!("Diff found in file {}:\n {}", path.display(), diff.unwrap());
                     self.own_correct = false;
                 }
@@ -131,8 +131,8 @@ fn format_path(start_path: &str, args: &FormatterArgs, fmt: &CairoFormatter) -> 
 fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
     if args.check {
         match fmt.check(&StdinFmt) {
-            Ok((FormatResult::Identical, _)) => true,
-            Ok((FormatResult::DiffFound, diff)) => {
+            Ok((FormatOutcome::Identical, _)) => true,
+            Ok((FormatOutcome::DiffFound, diff)) => {
                 println!("{}", diff.unwrap());
                 false
             }
@@ -168,18 +168,15 @@ fn main() -> ExitCode {
         args.verbose,
     );
 
-    let mut all_correct = true;
-    if args.files.len() == 1 && args.files[0] == "-" {
+    let all_correct = if args.files.len() == 1 && args.files[0] == "-" {
         // Input comes from stdin
-        all_correct = format_stdin(&args, &fmt)
+        format_stdin(&args, &fmt)
     } else if args.files.is_empty() {
         // Input comes from current directory walk
-        all_correct = format_path(".", &args, &fmt);
+        format_path(".", &args, &fmt)
     } else {
         // Input comes from walk of listed locations
-        for file in args.files.iter() {
-            all_correct &= format_path(file, &args, &fmt);
-        }
-    }
+        args.files.iter().all(|file| format_path(file, &args, &fmt))
+    };
     if !all_correct && args.check { ExitCode::FAILURE } else { ExitCode::SUCCESS }
 }

@@ -13,11 +13,13 @@ use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
-pub use crate::cairo_formatter::{CairoFormatter, FormatResult, StdinFmt};
+pub use crate::cairo_formatter::{CairoFormatter, FormatOutcome, StdinFmt};
 use crate::formatter::Formatter;
 
 #[cfg(test)]
 mod test;
+
+pub const CAIRO_FMT_IGNORE: &str = ".cairofmtignore";
 
 /// Returns the formatted syntax tree as a string.
 /// # Arguments
@@ -53,7 +55,7 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
     get_formatted_file(db, &syntax_root, FormatterConfig::default())
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FormatterConfig {
     tab_size: usize,
     max_line_length: usize,
