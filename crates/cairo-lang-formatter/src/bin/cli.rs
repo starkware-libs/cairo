@@ -89,9 +89,9 @@ impl<'t> ParallelVisitor for PathFormatter<'t> {
         }
         if self.args.check {
             match self.fmt.check(&path) {
-                Ok((FormatOutcome::Identical, _)) => {}
-                Ok((FormatOutcome::DiffFound, diff)) => {
-                    println!("Diff found in file {}:\n {}", path.display(), diff.unwrap());
+                Ok(FormatOutcome::Identical(_)) => {}
+                Ok(FormatOutcome::DiffFound(diff)) => {
+                    println!("Diff found in file {}:\n {}", path.display(), diff);
                     self.own_correct = false;
                 }
                 Err(parsing_error) => {
@@ -131,9 +131,9 @@ fn format_path(start_path: &str, args: &FormatterArgs, fmt: &CairoFormatter) -> 
 fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
     if args.check {
         match fmt.check(&StdinFmt) {
-            Ok((FormatOutcome::Identical, _)) => true,
-            Ok((FormatOutcome::DiffFound, diff)) => {
-                println!("{}", diff.unwrap());
+            Ok(FormatOutcome::Identical(_)) => true,
+            Ok(FormatOutcome::DiffFound(diff)) => {
+                println!("{}", diff);
                 false
             }
             Err(parsing_error) => {
