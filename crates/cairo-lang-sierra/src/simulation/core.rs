@@ -161,7 +161,7 @@ pub fn simulate<
             [_] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Array(ArrayConcreteLibfunc::At(_)) => match &inputs[..] {
+        Array(ArrayConcreteLibfunc::Get(_)) => match &inputs[..] {
             [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint64(_)] => {
                 let mut iter = inputs.into_iter();
                 iter.next(); // Ignore range check.
@@ -584,6 +584,7 @@ fn simulate_u8_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint8Concrete::Divmod(_) => unimplemented!(),
     }
 }
 
@@ -653,6 +654,7 @@ fn simulate_u64_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint64Concrete::Divmod(_) => unimplemented!(),
     }
 }
 

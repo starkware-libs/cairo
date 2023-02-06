@@ -41,7 +41,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             ArrayConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
             ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
             ArrayConcreteLibfunc::PopFront(_) => vec![ApChange::Known(1), ApChange::Known(1)],
-            ArrayConcreteLibfunc::At(libfunc) => {
+            ArrayConcreteLibfunc::Get(libfunc) => {
                 if info_provider.type_size(&libfunc.ty) == 1 { [5, 3] } else { [6, 5] }
                     .map(ApChange::Known)
                     .to_vec()
@@ -114,6 +114,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint8Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Uint8Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
             Uint8Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
+            Uint8Concrete::Divmod(_) => vec![ApChange::Known(5)],
         },
         CoreConcreteLibfunc::Uint64(libfunc) => match libfunc {
             Uint64Concrete::Const(_) | Uint64Concrete::ToFelt(_) => vec![ApChange::Known(0)],
@@ -129,6 +130,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint64Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Uint64Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
             Uint64Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
+            Uint64Concrete::Divmod(_) => vec![ApChange::Known(5)],
         },
         CoreConcreteLibfunc::Uint128(libfunc) => match libfunc {
             Uint128Concrete::Operation(libfunc) => match libfunc.operator {

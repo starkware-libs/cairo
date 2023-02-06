@@ -100,25 +100,17 @@ fn u128_checked_as_non_zero(a: u128) -> Option::<NonZero::<u128>> implicits() no
     }
 }
 
-fn u128_safe_div(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopanic {
-    let (q, r) = u128_safe_divmod(a, b);
-    q
-}
-
 impl U128Div of Div::<u128> {
     fn div(a: u128, b: u128) -> u128 {
-        u128_safe_div(a, u128_as_non_zero(b))
+        let (q, r) = u128_safe_divmod(a, u128_as_non_zero(b));
+        q
     }
-}
-
-fn u128_safe_mod(a: u128, b: NonZero::<u128>) -> u128 implicits(RangeCheck) nopanic {
-    let (q, r) = u128_safe_divmod(a, b);
-    r
 }
 
 impl U128Rem of Rem::<u128> {
     fn rem(a: u128, b: u128) -> u128 {
-        u128_safe_mod(a, u128_as_non_zero(b))
+        let (q, r) = u128_safe_divmod(a, u128_as_non_zero(b));
+        r
     }
 }
 
@@ -271,6 +263,8 @@ impl U8Sub of Sub::<u8> {
     }
 }
 
+extern fn u8_safe_divmod(a: u8, b: NonZero::<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
+
 #[derive(Copy, Drop)]
 extern type u64;
 extern fn u64_const<value>() -> u64 nopanic;
@@ -355,6 +349,8 @@ impl U64Sub of Sub::<u64> {
         u64_overflowing_sub(a, b).expect('u64_sub Overflow')
     }
 }
+
+extern fn u64_safe_divmod(a: u64, b: NonZero::<u64>) -> (u64, u64) implicits(RangeCheck) nopanic;
 
 #[derive(Copy, Drop)]
 struct u256 {

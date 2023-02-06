@@ -9,7 +9,7 @@ foo
 //! > function_code
 fn foo(x: felt) -> felt {
     let x2 = x + x;
-    revoke_ap()
+    revoke_ap();
     let s = MyStruct{a: x, b: x2};
     let s2 = MyStruct{a: s.a, b: 0};
     let s3 = MyStruct{a: x, b: 1};
