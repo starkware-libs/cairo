@@ -1,11 +1,13 @@
-use cairo_lang_defs::ids::{ExternTypeId, GenericParamId, LanguageElementId};
+use cairo_lang_defs::ids::{ExternTypeId, GenericKind, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
+use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::SemanticDiagnostic;
+use crate::resolve_path::Resolver;
+use crate::{GenericParam, SemanticDiagnostic};
 
 #[cfg(test)]
 #[path = "extern_type_test.rs"]
@@ -16,7 +18,7 @@ mod test;
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ExternTypeDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    generic_params: Vec<GenericParamId>,
+    generic_params: Vec<GenericParam>,
 }
 
 // Selectors.
@@ -33,7 +35,7 @@ pub fn extern_type_declaration_diagnostics(
 pub fn extern_type_declaration_generic_params(
     db: &dyn SemanticGroup,
     extern_type_id: ExternTypeId,
-) -> Maybe<Vec<GenericParamId>> {
+) -> Maybe<Vec<GenericParam>> {
     Ok(db.priv_extern_type_declaration_data(extern_type_id)?.generic_params)
 }
 
@@ -47,11 +49,20 @@ pub fn priv_extern_type_declaration_data(
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_extern_types = db.module_extern_types(module_file_id.0)?;
     let type_syntax = module_extern_types.get(&extern_type_id).to_maybe()?;
+
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &type_syntax.generic_params(db.upcast()),
     );
+    if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
+        diagnostics.report_by_ptr(
+            param.stable_ptr(db.upcast()).untyped(),
+            ExternItemWithImplGenericsNotSupported,
+        );
+    }
     Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params })
 }

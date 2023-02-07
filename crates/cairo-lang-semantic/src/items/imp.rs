@@ -4,8 +4,8 @@ use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionSignatureId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
-    LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId,
+    FunctionSignatureId, ImplFunctionId, ImplFunctionLongId, ImplId, LanguageElementId, ModuleId,
+    TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -20,7 +20,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
-use itertools::{chain, izip, zip_eq, Itertools};
+use itertools::{chain, izip, Itertools};
 use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
@@ -39,7 +39,7 @@ use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLoo
 use crate::types::GenericSubstitution;
 use crate::{
     semantic, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId, GenericArgumentId,
-    Mutability, SemanticDiagnostic, TypeId, TypeLongId,
+    GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -77,7 +77,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteImplLongId {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    generic_params: Vec<GenericParamId>,
+    generic_params: Vec<semantic::GenericParam>,
     /// The concrete trait this impl implements, or Err if cannot be resolved.
     concrete_trait: Maybe<ConcreteTraitId>,
     attributes: Vec<Attribute>,
@@ -103,7 +103,10 @@ pub fn impl_semantic_declaration_diagnostics(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_generic_params].
-pub fn impl_generic_params(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Vec<GenericParamId>> {
+pub fn impl_generic_params(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+) -> Maybe<Vec<semantic::GenericParam>> {
     Ok(db.priv_impl_declaration_data(impl_id)?.generic_params)
 }
 
@@ -155,24 +158,20 @@ pub fn priv_impl_declaration_data_inner(
     let impl_ast = module_impls.get(&impl_id).to_maybe()?;
 
     // Generic params.
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &impl_ast.generic_params(syntax_db),
     );
 
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
-    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let concrete_trait = if resolve_trait {
         resolver
-            .resolve_concrete_path(
-                &mut diagnostics,
-                &mut Inference::disabled(db),
-                &trait_path_syntax,
-                NotFoundItemType::Trait,
-            )
+            .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
             .ok()
             .and_then(|concrete_item| {
                 try_extract_matches!(concrete_item, ResolvedConcreteItem::Trait)
@@ -497,7 +496,7 @@ pub fn find_impls_at_module(
 pub struct ImplLookupContext {
     pub module_id: ModuleId,
     pub extra_modules: Vec<ModuleId>,
-    pub generic_params: Vec<GenericParamId>,
+    pub generic_params: Vec<semantic::GenericParam>,
 }
 
 /// Finds all the implementations of a concrete trait, in a specific lookup context.
@@ -570,7 +569,7 @@ pub fn impl_function_declaration_implicits(
 pub fn impl_function_generic_params(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
-) -> Maybe<Vec<GenericParamId>> {
+) -> Maybe<Vec<semantic::GenericParam>> {
     Ok(db.priv_impl_function_declaration_data(impl_function_id)?.generic_params)
 }
 
@@ -604,15 +603,18 @@ pub fn priv_impl_function_declaration_data(
     let function_syntax = &data.function_asts[impl_function_id];
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let impl_generic_params = db.impl_generic_params(impl_id)?;
+    for generic_param in impl_generic_params {
+        resolver.add_generic_param(generic_param);
+    }
     let function_generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
     );
-    let impl_generic_params = db.impl_generic_params(impl_id)?;
-    let generic_params = chain!(impl_generic_params, function_generic_params.clone()).collect_vec();
-    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let signature_syntax = declaration.signature(syntax_db);
 
@@ -657,7 +659,7 @@ fn validate_impl_function_signature(
     signature_syntax: &ast::FunctionSignature,
     signature: &semantic::Signature,
     function_syntax: &ast::FunctionWithBody,
-    impl_func_generics: &[GenericParamId],
+    impl_func_generics: &[GenericParam],
 ) -> Maybe<()> {
     let syntax_db = db.upcast();
     let impl_id = impl_function_id.impl_id(db.upcast());
@@ -677,9 +679,8 @@ fn validate_impl_function_signature(
 
     // Find concrete trait substitution.
     let trait_generic_params = db.trait_generic_params(trait_id)?;
-    let substitution = GenericSubstitution(
-        zip_eq(trait_generic_params, concrete_trait_long_id.generic_args).collect(),
-    );
+    let substitution =
+        GenericSubstitution::new(&trait_generic_params, &concrete_trait_long_id.generic_args);
     let concrete_trait_signature = substitute_signature(db, substitution, trait_signature);
 
     // Match generics of the function.
@@ -694,14 +695,14 @@ fn validate_impl_function_signature(
         );
         return Ok(());
     }
-    let substitution = GenericSubstitution(
-        zip_eq(
-            trait_func_generics,
-            impl_func_generics.iter().map(|param| {
-                GenericArgumentId::Type(db.intern_type(TypeLongId::GenericParameter(*param)))
-            }),
-        )
-        .collect(),
+    let substitution = GenericSubstitution::new(
+        &trait_func_generics,
+        &impl_func_generics
+            .iter()
+            .map(|param| {
+                GenericArgumentId::Type(db.intern_type(TypeLongId::GenericParameter(param.id())))
+            })
+            .collect_vec(),
     );
     let concrete_trait_signature = substitute_signature(db, substitution, concrete_trait_signature);
 
@@ -745,7 +746,7 @@ fn validate_impl_function_signature(
                 diagnostics.report(
                     &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
                         .modifiers(syntax_db),
-                    ParamaterShouldNotBeReference { impl_id, impl_function_id, trait_id },
+                    ParameterShouldNotBeReference { impl_id, impl_function_id, trait_id },
                 );
             }
         }
@@ -820,8 +821,12 @@ pub fn priv_impl_function_body_data(
     let function_syntax = &data.function_asts[impl_function_id];
     // Compute declaration semantic.
     let declaration = db.priv_impl_function_declaration_data(impl_function_id)?;
-    let resolver = Resolver::new(db, module_file_id, &declaration.generic_params);
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    for generic_param in declaration.generic_params {
+        resolver.add_generic_param(generic_param);
+    }
     let environment = declaration.environment;
+
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(
         db,
