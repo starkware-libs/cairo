@@ -1,15 +1,13 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    FunctionSignatureId, GenericParamId, LanguageElementId, TraitFunctionId, TraitFunctionLongId,
-    TraitId,
+    FunctionSignatureId, LanguageElementId, TraitFunctionId, TraitFunctionLongId, TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
@@ -18,7 +16,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::{semantic, GenericArgumentId, Mutability, SemanticDiagnostic};
+use crate::{semantic, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic};
 
 #[cfg(test)]
 #[path = "trt_test.rs"]
@@ -79,7 +77,7 @@ impl ConcreteTraitGenericFunctionId {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct TraitData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    generic_params: Vec<GenericParamId>,
+    generic_params: Vec<GenericParam>,
     attributes: Vec<Attribute>,
     function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
 }
@@ -104,10 +102,7 @@ pub fn trait_semantic_diagnostics(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params].
-pub fn trait_generic_params(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<Vec<GenericParamId>> {
+pub fn trait_generic_params(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<GenericParam>> {
     Ok(db.priv_trait_semantic_data(trait_id)?.generic_params)
 }
 
@@ -153,9 +148,11 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
     let trait_ast = module_traits.get(&trait_id).to_maybe()?;
 
     // Generic params.
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &trait_ast.generic_params(syntax_db),
     );
@@ -187,7 +184,7 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
 pub struct TraitFunctionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     signature: semantic::Signature,
-    generic_params: Vec<GenericParamId>,
+    generic_params: Vec<GenericParam>,
     attributes: Vec<Attribute>,
     resolved_lookback: Arc<ResolvedLookback>,
 }
@@ -218,7 +215,7 @@ pub fn trait_function_attributes(
 pub fn trait_function_generic_params(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
-) -> Maybe<Vec<GenericParamId>> {
+) -> Maybe<Vec<GenericParam>> {
     Ok(db.priv_trait_function_data(trait_function_id)?.generic_params)
 }
 /// Query implementation of [crate::db::SemanticGroup::trait_function_resolved_lookback].
@@ -241,16 +238,18 @@ pub fn priv_trait_function_data(
     let data = db.priv_trait_semantic_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
     let declaration = function_syntax.declaration(syntax_db);
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let trait_generic_params = db.trait_generic_params(trait_id)?;
+    for generic_param in trait_generic_params {
+        resolver.add_generic_param(generic_param);
+    }
     let function_generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
     );
-    let trait_generic_params = db.trait_generic_params(trait_id)?;
-    let generic_params =
-        chain!(trait_generic_params, function_generic_params.clone()).collect_vec();
-    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let signature_syntax = declaration.signature(syntax_db);
     let mut environment = Environment::default();

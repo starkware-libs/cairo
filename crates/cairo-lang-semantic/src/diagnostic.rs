@@ -242,7 +242,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_name,
                 )
             }
-            SemanticDiagnosticKind::ParamaterShouldNotBeReference {
+            SemanticDiagnosticKind::ParameterShouldNotBeReference {
                 impl_id,
                 impl_function_id,
                 trait_id,
@@ -519,8 +519,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::OnlyLiteralConstants => {
                 "Only literal constants are currently supported.".into()
             }
-            SemanticDiagnosticKind::ExternFunctionWithImplGenericsNotSupported => {
-                "Extern functions with impl generics are not supported".into()
+            SemanticDiagnosticKind::ExternItemWithImplGenericsNotSupported => {
+                "Extern items with impl generics are not supported".into()
             }
             SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
         }
@@ -624,7 +624,7 @@ pub enum SemanticDiagnosticKind {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
-    ParamaterShouldNotBeReference {
+    ParameterShouldNotBeReference {
         impl_id: ImplId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
@@ -769,7 +769,7 @@ pub enum SemanticDiagnosticKind {
         feature_name: UnsupportedOutsideOfFunctionFeatureName,
     },
     OnlyLiteralConstants,
-    ExternFunctionWithImplGenericsNotSupported,
+    ExternItemWithImplGenericsNotSupported,
     MissingSemicolon,
 }
 

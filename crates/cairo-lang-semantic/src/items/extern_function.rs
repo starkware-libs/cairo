@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{
-    ExternFunctionId, FunctionSignatureId, GenericKind, GenericParamId, LanguageElementId,
-};
+use cairo_lang_defs::ids::{ExternFunctionId, FunctionSignatureId, GenericKind, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_utils::extract_matches;
 
@@ -44,7 +42,7 @@ pub fn extern_function_signature(
 pub fn extern_function_declaration_generic_params(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Maybe<Vec<GenericParamId>> {
+) -> Maybe<Vec<semantic::GenericParam>> {
     Ok(db.priv_extern_function_declaration_data(extern_function_id)?.generic_params)
 }
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_implicits].
@@ -91,21 +89,23 @@ pub fn priv_extern_function_declaration_data(
     let module_extern_functions = db.module_extern_functions(module_file_id.0)?;
     let function_syntax = module_extern_functions.get(&extern_function_id).to_maybe()?;
     let declaration = function_syntax.declaration(syntax_db);
+
+    // Generic params.
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
     );
-    if let Some(param) =
-        generic_params.iter().find(|param| param.kind(db.upcast()) == GenericKind::Impl)
-    {
+    if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
         diagnostics.report_by_ptr(
             param.stable_ptr(db.upcast()).untyped(),
-            ExternFunctionWithImplGenericsNotSupported,
+            ExternItemWithImplGenericsNotSupported,
         );
     }
-    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
+
     let mut environment = Environment::default();
     let signature_syntax = declaration.signature(syntax_db);
     let signature = semantic::Signature::from_ast(

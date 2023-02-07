@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use cairo_lang_defs::ids::{GenericKind, GenericParamId, TraitFunctionId};
+use cairo_lang_defs::ids::{GenericKind, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use itertools::{zip_eq, Itertools};
 
@@ -11,7 +11,7 @@ use crate::db::SemanticGroup;
 use crate::types::{substitute_generics_args_inplace, ConcreteEnumLongId, GenericSubstitution};
 use crate::{
     ConcreteEnumId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
-    GenericArgumentId, Pattern, TypeId, TypeLongId,
+    GenericArgumentId, GenericParam, Pattern, TypeId, TypeLongId,
 };
 
 /// A type variable, created when a generic type argument is not passed, and thus is not known
@@ -305,7 +305,7 @@ impl<'db> Inference<'db> {
     /// substituted to `expected_generic_args`.
     pub fn can_infer_generics(
         &self,
-        generic_params: &[GenericParamId],
+        generic_params: &[GenericParam],
         generic_args: &[GenericArgumentId],
         expected_generic_args: &[GenericArgumentId],
         stable_ptr: SyntaxStablePtrId,
@@ -313,7 +313,7 @@ impl<'db> Inference<'db> {
         if generic_args.len() != expected_generic_args.len() {
             return false;
         }
-        if generic_params.iter().any(|param| param.kind(self.db.upcast()) != GenericKind::Type) {
+        if generic_params.iter().any(|param| param.kind() != GenericKind::Type) {
             // Inference for non type generics are not supported yet.
             return false;
         }
@@ -332,7 +332,7 @@ impl<'db> Inference<'db> {
     /// Returns the generic_params assignment.
     pub fn infer_generics(
         &mut self,
-        generic_params: &[GenericParamId],
+        generic_params: &[GenericParam],
         generic_args: &[GenericArgumentId],
         expected_generic_args: &[GenericArgumentId],
         stable_ptr: SyntaxStablePtrId,
@@ -341,14 +341,15 @@ impl<'db> Inference<'db> {
         let substitution = GenericSubstitution(
             generic_params
                 .iter()
-                .map(|param| (*param, GenericArgumentId::Type(self.new_var(stable_ptr))))
+                .map(|param| (param.id(), GenericArgumentId::Type(self.new_var(stable_ptr))))
                 .collect(),
         );
         let mut generic_args = generic_args.iter().copied().collect_vec();
         substitute_generics_args_inplace(self.db, &substitution, &mut generic_args);
         self.conform_generic_args(&generic_args, expected_generic_args)?;
 
-        let generic_args = generic_params.iter().map(|param| substitution[*param]).collect_vec();
+        let generic_args =
+            generic_params.iter().map(|param| substitution[param.id()]).collect_vec();
         Ok(self.reduce_generic_args(&generic_args))
     }
 
