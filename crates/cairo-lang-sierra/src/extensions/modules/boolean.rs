@@ -5,13 +5,13 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError};
-use crate::ids::GenericLibfuncId;
 
 define_libfunc_hierarchy! {
     pub enum BoolLibfunc {
         And(BoolAndLibfunc),
         Not(BoolNotLibfunc),
         Xor(BoolXorLibfunc),
+        Or(BoolOrLibfunc),
         Equal(BoolEqualLibfunc),
     }, BoolConcreteLibfunc
 }
@@ -37,7 +37,7 @@ fn boolean_libfunc_signature(
 #[derive(Default)]
 pub struct BoolAndLibfunc {}
 impl NoGenericArgsGenericLibfunc for BoolAndLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("bool_and_impl");
+    const STR_ID: &'static str = "bool_and_impl";
 
     fn specialize_signature(
         &self,
@@ -51,7 +51,7 @@ impl NoGenericArgsGenericLibfunc for BoolAndLibfunc {
 #[derive(Default)]
 pub struct BoolNotLibfunc {}
 impl NoGenericArgsGenericLibfunc for BoolNotLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("bool_not_impl");
+    const STR_ID: &'static str = "bool_not_impl";
 
     fn specialize_signature(
         &self,
@@ -65,7 +65,21 @@ impl NoGenericArgsGenericLibfunc for BoolNotLibfunc {
 #[derive(Default)]
 pub struct BoolXorLibfunc {}
 impl NoGenericArgsGenericLibfunc for BoolXorLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("bool_xor_impl");
+    const STR_ID: &'static str = "bool_xor_impl";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        boolean_libfunc_signature(context, false, false)
+    }
+}
+
+/// Libfunc for boolean OR.
+#[derive(Default)]
+pub struct BoolOrLibfunc {}
+impl NoGenericArgsGenericLibfunc for BoolOrLibfunc {
+    const STR_ID: &'static str = "bool_or_impl";
 
     fn specialize_signature(
         &self,
@@ -79,7 +93,7 @@ impl NoGenericArgsGenericLibfunc for BoolXorLibfunc {
 #[derive(Default)]
 pub struct BoolEqualLibfunc {}
 impl NoGenericArgsGenericLibfunc for BoolEqualLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("bool_eq");
+    const STR_ID: &'static str = "bool_eq";
 
     fn specialize_signature(
         &self,

@@ -13,7 +13,9 @@ use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, Statement
 use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
     core_libfunc_ap_change, InvocationApChangeInfoProvider,
 };
-use cairo_lang_sierra_gas::core_libfunc_cost::InvocationCostInfoProvider;
+use cairo_lang_sierra_gas::core_libfunc_cost::{
+    core_libfunc_cost, ConstCost, InvocationCostInfoProvider,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
 use thiserror::Error;
@@ -44,7 +46,7 @@ mod nullable;
 mod pedersen;
 mod starknet;
 
-mod strct;
+mod structure;
 mod uint;
 mod uint128;
 
@@ -191,6 +193,31 @@ impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self.program_info.type_sizes[ty] as usize
     }
+
+    fn ap_change_var_value(&self) -> usize {
+        self.program_info
+            .metadata
+            .ap_change_info
+            .variable_values
+            .get(&self.idx)
+            .copied()
+            .unwrap_or_default()
+    }
+
+    fn token_usages(&self, token_type: CostTokenType) -> usize {
+        InvocationApChangeInfoProvider::token_usages(self, token_type)
+    }
+}
+
+/// Information required for validating libfunc cost.
+#[derive(Default)]
+struct CostValidationInfo<const BRANCH_COUNT: usize> {
+    /// Range check variables at start and end of the libfunc.
+    /// Assumes only directly used as buffer.
+    pub range_check_info: Option<(Var, Var)>,
+    /// Possible extra cost per branch.
+    /// Useful for amortized costs, as well as gas fetching libfuncs.
+    pub extra_costs: Option<[i32; BRANCH_COUNT]>,
 }
 
 /// Helper for building compiled invocations.
@@ -212,12 +239,8 @@ impl CompiledInvocationBuilder<'_> {
             Item = impl ExactSizeIterator<Item = ReferenceExpression>,
         >,
     ) -> CompiledInvocation {
-        let gas_changes = cairo_lang_sierra_gas::core_libfunc_cost::core_libfunc_cost(
-            &self.program_info.metadata.gas_info,
-            &self.idx,
-            self.libfunc,
-            &self,
-        );
+        let gas_changes =
+            core_libfunc_cost(&self.program_info.metadata.gas_info, &self.idx, self.libfunc, &self);
 
         let branch_signatures = self.libfunc.branch_signatures();
         assert_eq!(
@@ -297,6 +320,7 @@ impl CompiledInvocationBuilder<'_> {
         self,
         casm_builder: CasmBuilder,
         branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
+        cost_validation: CostValidationInfo<BRANCH_COUNT>,
     ) -> CompiledInvocation {
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
@@ -306,6 +330,40 @@ impl CompiledInvocationBuilder<'_> {
                 .iter()
                 .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change)),
         );
+        let gas_changes =
+            core_libfunc_cost(&self.program_info.metadata.gas_info, &self.idx, self.libfunc, &self)
+                .into_iter()
+                .map(|costs| {
+                    costs
+                        .and_then(|costs| costs.get(&CostTokenType::Const).copied())
+                        .unwrap_or_default()
+                });
+        let mut final_costs: [ConstCost; BRANCH_COUNT] =
+            std::array::from_fn(|_| Default::default());
+        for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
+            cost.steps += state.steps as i32;
+        }
+        if let Some((start, end)) = cost_validation.range_check_info {
+            for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
+                let (start_base, start_offset) =
+                    state.get_adjusted(start).to_deref_with_offset().unwrap();
+                let (end_base, end_offset) =
+                    state.get_adjusted(end).to_deref_with_offset().unwrap();
+                assert_eq!(start_base, end_base);
+                cost.range_checks += (end_offset - start_offset) as i32;
+            }
+        }
+        let extra_costs =
+            cost_validation.extra_costs.unwrap_or(std::array::from_fn(|_| Default::default()));
+        if !itertools::equal(
+            gas_changes,
+            final_costs
+                .iter()
+                .zip(extra_costs)
+                .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64),
+        ) {
+            panic!("Wrong costs for {}. Actual: {final_costs:?}.", self.invocation);
+        }
         let relocations = branches
             .iter()
             .zip_eq(branch_extractions.iter())
@@ -398,6 +456,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
         CoreConcreteLibfunc::Ec(libfunc) => ec::build(libfunc, builder),
         CoreConcreteLibfunc::Uint8(libfunc) => uint::build_u8(libfunc, builder),
+        CoreConcreteLibfunc::Uint64(libfunc) => uint::build_u64(libfunc, builder),
         CoreConcreteLibfunc::Uint128(libfunc) => uint128::build(libfunc, builder),
         CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
         CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
@@ -411,7 +470,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::ApTracking(_) => misc::build_revoke_ap_tracking(builder),
         CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
-        CoreConcreteLibfunc::Struct(libfunc) => strct::build(libfunc, builder),
+        CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
         CoreConcreteLibfunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
         CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),

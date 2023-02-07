@@ -32,7 +32,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             vec![GenericArgumentId::Type(db.core_felt_ty())],
         ))
         .expect("Can't find core::Array<core::felt>.");
-    let name = libfunc_long_id.generic_id.debug_name.unwrap();
+    let name = libfunc_long_id.generic_id.0;
     match name.as_str() {
         "felt_add" => {
             let vars = vec![OutputVarInfo {
@@ -202,7 +202,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             ],
             SierraApChange::Known { new_vars_only: true },
         ),
-        _ => panic!("get_branch_signatures() is not implemented for '{}'.", name),
+        _ => panic!("get_branch_signatures() is not implemented for '{name}'."),
     }
 }
 

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
-use cairo_felt::{self as felt, felt_str, Felt, FeltOps, PRIME_STR};
+use cairo_felt::{self as felt, felt_str, Felt, PRIME_STR};
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
@@ -24,7 +24,7 @@ use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use num_bigint::BigUint;
-use num_traits::{ToPrimitive, Zero};
+use num_traits::{FromPrimitive, ToPrimitive, Zero};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
@@ -114,6 +114,12 @@ struct StarknetExecScope {
     storage: HashMap<Felt, Felt>,
 }
 
+/// Execution scope for constant memory allocation.
+struct MemoryExecScope {
+    /// The first free address in the segment.
+    next_address: Relocatable,
+}
+
 impl HintProcessor for CairoHintProcessor {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
@@ -197,8 +203,6 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(vm, x, Felt::from(x_value))?;
                 insert_value_to_cellref!(vm, y, Felt::from(y_value))?;
             }
-            Hint::EnterScope => {}
-            Hint::ExitScope => {}
             Hint::RandomEcPoint { x, y } => {
                 // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
                 // residue.
@@ -215,6 +219,15 @@ impl HintProcessor for CairoHintProcessor {
                 let y_bigint: BigUint = random_y_squared.sqrt().unwrap().into_bigint().into();
                 insert_value_to_cellref!(vm, x, Felt::from(x_bigint))?;
                 insert_value_to_cellref!(vm, y, Felt::from(y_bigint))?;
+            }
+            Hint::FieldSqrt { val, sqrt } => {
+                let val = Fq::from(get_val(val)?.to_biguint());
+                insert_value_to_cellref!(vm, sqrt, {
+                    let three_fq = Fq::from(BigUint::from_usize(3).unwrap());
+                    let res = (if val.legendre().is_qr() { val } else { val * three_fq }).sqrt();
+                    let res_big_uint: BigUint = res.unwrap().into_bigint().into();
+                    Felt::from(res_big_uint)
+                })?;
             }
             Hint::SystemCall { system } => {
                 let starknet_exec_scope =
@@ -274,9 +287,13 @@ impl HintProcessor for CairoHintProcessor {
                         vm.insert_value(&result_ptr, value)?;
                     } else {
                         vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
-                        vm.insert_value(&revert_reason_ptr, Felt::from(1))?;
+                        let revert_reason_start = vm.add_memory_segment();
+                        // TODO(ilya): Add revert reason.
+                        let revert_reason_end = revert_reason_start;
+                        vm.insert_value(&revert_reason_ptr, revert_reason_start)?;
+                        vm.insert_value(&revert_reason_ptr, revert_reason_end)?;
                     }
-                } else if selector == "call_contract".as_bytes() {
+                } else if selector == "CallContract".as_bytes() {
                     todo!()
                 } else {
                     panic!("Unknown selector for system call!");
@@ -343,7 +360,6 @@ impl HintProcessor for CairoHintProcessor {
                 let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address);
                 insert_value_to_cellref!(vm, dict_index, Felt::from(dict_infos_index))?;
             }
-            Hint::EnterDictSquashScope { .. } => {}
             Hint::SetDictTrackerEnd { .. } => {}
             Hint::InitSquashData { dict_accesses, n_accesses, first_key, big_keys, .. } => {
                 let dict_access_size = 3;
@@ -524,6 +540,22 @@ impl HintProcessor for CairoHintProcessor {
                 }
                 println!();
             }
+            Hint::AllocConstantSize { size, dst } => {
+                let object_size = get_val(size)?.to_usize().expect("Object size too large.");
+                let memory_exec_scope =
+                    match exec_scopes.get_mut_ref::<MemoryExecScope>("memory_exec_scope") {
+                        Ok(memory_exec_scope) => memory_exec_scope,
+                        Err(_) => {
+                            exec_scopes.assign_or_update_variable(
+                                "memory_exec_scope",
+                                Box::new(MemoryExecScope { next_address: vm.add_memory_segment() }),
+                            );
+                            exec_scopes.get_mut_ref::<MemoryExecScope>("memory_exec_scope")?
+                        }
+                    };
+                insert_value_to_cellref!(vm, dst, memory_exec_scope.next_address)?;
+                memory_exec_scope.next_address.offset += object_size;
+            }
         };
         Ok(())
     }
@@ -593,7 +625,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     let mut runner = CairoRunner::new(&program, "all", false)
         .map_err(VirtualMachineError::from)
         .map_err(Box::new)?;
-    let mut vm = VirtualMachine::new(true, vec![]);
+    let mut vm = VirtualMachine::new(true);
 
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 

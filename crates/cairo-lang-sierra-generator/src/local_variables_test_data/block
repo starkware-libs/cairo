@@ -12,7 +12,7 @@ fn foo(x: felt) -> felt {
     let x2 = x1 + x1;
     // TODO(lior): Replace with let (y, z) = { ... } and make sure z does not appear in the result.
     let y = {
-        revoke_ap()
+        revoke_ap();
         x1 + x1
     };
     // TODO(lior): Replace with "let w = x1 + x2 + z".
@@ -28,25 +28,20 @@ fn revoke_ap() -> felt {
 }
 
 //! > lowering_format
-blk0:
-Inputs:
-Statements:
-  (v3: core::felt) <- test::revoke_ap()
-  (v4: core::felt) <- core::felt_add(v1, v1)
-End:
-  Callsite(v4)
-
-blk1 (root):
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
   (v2: core::felt) <- core::felt_add(v1, v1)
-  (v5: core::felt) <- blk0()
-  (v6: core::felt) <- core::felt_add(v1, v2)
-  (v7: core::felt) <- test::revoke_ap()
-  (v8: core::felt) <- core::felt_add(v1, v5)
+  (v3: core::felt) <- test::revoke_ap()
+  (v4: core::felt) <- core::felt_add(v1, v1)
+  (v5: core::felt) <- core::felt_add(v1, v2)
+  (v6: core::felt) <- test::revoke_ap()
+  (v7: core::felt) <- core::felt_add(v1, v4)
 End:
-  Return(v8)
+  Return(v7)
 
 //! > local_variables
-v1, v2, v5
+v1, v2, v4
+
+//! > block_infos

@@ -37,8 +37,6 @@ pub enum Hint {
         x: CellRef,
         y: CellRef,
     },
-    EnterScope,
-    ExitScope,
     /// Allocates a new dict segment, and write its start address into the dict_infos segment.
     AllocDictFeltTo {
         dict_manager_ptr: ResOperand,
@@ -62,10 +60,6 @@ pub enum Hint {
         dict_manager_ptr: ResOperand,
         dict_end_ptr: ResOperand,
         dict_index: CellRef,
-    },
-    /// Creates a new scope with the variables needed for dict_squash.
-    EnterDictSquashScope {
-        dict_end_ptr: ResOperand,
     },
     /// Sets the end of a finalized dict in the vm tracker of the dict.
     SetDictTrackerEnd {
@@ -136,6 +130,15 @@ pub enum Hint {
         x: CellRef,
         y: CellRef,
     },
+    /// Computes the square root of `val`, if `val` is a quadratic residue, and of `3 * val`
+    /// otherwise.
+    ///
+    /// Since 3 is not a quadratic residue, exactly one of `val` and `3 * val` is a quadratic
+    /// residue (unless `val` is 0). This allows proving that `val` is not a quadratic residue.
+    FieldSqrt {
+        val: ResOperand,
+        sqrt: CellRef,
+    },
     /// Represents a hint that triggers a system call.
     SystemCall {
         system: ResOperand,
@@ -145,6 +148,11 @@ pub enum Hint {
     DebugPrint {
         start: ResOperand,
         end: ResOperand,
+    },
+    /// Returns an address with `size` free locations afterwards.
+    AllocConstantSize {
+        size: ResOperand,
+        dst: CellRef,
     },
 }
 
@@ -267,8 +275,6 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::EnterScope => write!(f, "vm_enter_scope()"),
-            Hint::ExitScope => write!(f, "vm_exit_scope()"),
             Hint::RandomEcPoint { x, y } => {
                 writedoc!(
                     f,
@@ -278,6 +284,23 @@ impl Display for Hint {
                         from starkware.python.math_utils import random_ec_point
                         (memory{x}, memory{y}) = random_ec_point(FIELD_PRIME, ALPHA, BETA)
                     "
+                )
+            }
+            Hint::FieldSqrt { val, sqrt } => {
+                writedoc!(
+                    f,
+                    "
+
+                        from starkware.crypto.signature.signature import FIELD_PRIME
+                        from starkware.python.math_utils import is_quad_residue, sqrt
+
+                        val = {}
+                        if is_quad_residue(val, FIELD_PRIME):
+                            memory{sqrt} = sqrt(val, FIELD_PRIME)
+                        else:
+                            memory{sqrt} = sqrt(val * 3, FIELD_PRIME)
+                        ",
+                    ResOperandFormatter(val)
                 )
             }
             Hint::SystemCall { system } => {
@@ -339,22 +362,6 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::EnterDictSquashScope { dict_end_ptr } => writedoc!(
-                f,
-                "
-
-                    # Prepare arguments for dict_new. In particular, the same dictionary values \
-                 should be copied
-                    # to the new (squashed) dictionary.
-                    vm_enter_scope({{
-                        # Make __dict_manager accessible.
-                        '__dict_manager': __dict_manager,
-                        # Create a copy of the dict, in case it changes in the future.
-                        'initial_dict': dict(__dict_manager.get_dict({})),
-                    }})
-                ",
-                ResOperandFormatter(dict_end_ptr),
-            ),
             Hint::SetDictTrackerEnd { squashed_dict_start, squashed_dict_end } => {
                 let (squashed_dict_start, squashed_dict_end) = (
                     ResOperandFormatter(squashed_dict_start),
@@ -468,6 +475,19 @@ impl Display for Hint {
                 ResOperandFormatter(start),
                 ResOperandFormatter(end),
             ),
+            Hint::AllocConstantSize { size, dst } => {
+                writedoc!(
+                    f,
+                    "
+
+                        if '__boxed_segment' not in globals():
+                            __boxed_segment = segments.add()
+                        memory{dst} = __boxed_segment
+                        __boxed_segment += {}
+                    ",
+                    ResOperandFormatter(size)
+                )
+            }
         }
     }
 }

@@ -4,17 +4,17 @@ mod test;
 
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId};
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
-use crate::block_generator::{generate_block_code, generate_return_code};
+use crate::block_generator::generate_block_code;
 use crate::db::SierraGenGroup;
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::lifetime::{find_variable_lifetime, SierraGenVar, StatementLocation};
+use crate::lifetime::{find_variable_lifetime, SierraGenVar};
 use crate::local_variables::find_local_variables;
 use crate::pre_sierra::{self, Statement};
 use crate::store_variables::{add_store_statements, LibfuncInfo, LocalVariables};
@@ -30,7 +30,7 @@ pub struct SierraFreeFunctionData {
 /// Query implementation of [SierraGenGroup::priv_function_with_body_sierra_data].
 pub fn priv_function_with_body_sierra_data(
     db: &dyn SierraGenGroup,
-    function_id: FunctionWithBodyId,
+    function_id: ConcreteFunctionWithBodyId,
 ) -> SierraFreeFunctionData {
     let function = get_function_code(db, function_id);
     SierraFreeFunctionData { function }
@@ -39,17 +39,17 @@ pub fn priv_function_with_body_sierra_data(
 /// Query implementation of [SierraGenGroup::function_with_body_sierra].
 pub fn function_with_body_sierra(
     db: &dyn SierraGenGroup,
-    function_id: FunctionWithBodyId,
+    function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
     db.priv_function_with_body_sierra_data(function_id).function
 }
 
 fn get_function_code(
     db: &dyn SierraGenGroup,
-    function_id: FunctionWithBodyId,
+    function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = db.function_with_body_signature(function_id)?;
-    let lowered_function = &*db.function_with_body_lowered_flat(function_id)?;
+    let signature = db.concrete_function_signature(function_id.function_id(db.upcast()))?;
+    let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
     let block_id = lowered_function.root?;
     let block = &lowered_function.blocks[block_id];
 
@@ -84,23 +84,14 @@ fn get_function_code(
     statements.extend(allocate_local_statements);
 
     let prolog_size = statements.len();
-    // Generate the function's body.
-    let body_statements = generate_block_code(&mut context, block_id, block)?;
-    statements.extend(body_statements);
 
-    // Generate the return statement if necessary.
-    let return_statement_location: StatementLocation = (block_id, block.statements.len());
-    match &block.end {
-        lowering::FlatBlockEnd::Callsite(returned_variables)
-        | lowering::FlatBlockEnd::Return(returned_variables) => {
-            statements.extend(generate_return_code(
-                &mut context,
-                returned_variables,
-                &return_statement_location,
-            )?);
-        }
-        lowering::FlatBlockEnd::Unreachable => {}
-    };
+    if let lowering::FlatBlockEnd::Callsite(_) = block.end {
+        panic!("Root block may not end with callsite.");
+    }
+
+    // Generate the function's body.
+    let (body_statements, _fallthrough) = generate_block_code(&mut context, block_id)?;
+    statements.extend(body_statements);
 
     let statements = add_store_statements(
         context.get_db(),
@@ -115,18 +106,7 @@ fn get_function_code(
     // be regarded as private.
     Ok(pre_sierra::Function {
         id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
-            function: semantic::ConcreteFunction {
-                generic_function: match function_id {
-                    FunctionWithBodyId::Free(free_function_id) => {
-                        GenericFunctionId::Free(free_function_id)
-                    }
-                    FunctionWithBodyId::Impl(impl_function_id) => {
-                        GenericFunctionId::Impl(impl_function_id)
-                    }
-                },
-                // TODO(lior): Add generic arguments.
-                generic_args: vec![],
-            },
+            function: function_id.concrete(db.upcast()),
         })),
         prolog_size,
         body: statements,

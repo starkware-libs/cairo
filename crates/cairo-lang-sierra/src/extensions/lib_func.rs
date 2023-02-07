@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use super::args_as_single_type;
 use super::error::{ExtensionError, SpecializationError};
 use super::type_specialization_context::TypeSpecializationContext;
@@ -118,16 +120,16 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
         libfunc_id: &GenericLibfuncId,
         generic_args: &[GenericArg],
     ) -> Result<LibfuncSignature, ExtensionError> {
-        Self::by_id(libfunc_id)
-            .ok_or_else(move || ExtensionError::LibfuncSpecialization {
-                libfunc_id: libfunc_id.clone(),
-                error: SpecializationError::UnsupportedId,
-            })?
-            .specialize_signature(context, generic_args)
-            .map_err(move |error| ExtensionError::LibfuncSpecialization {
-                libfunc_id: libfunc_id.clone(),
-                error,
-            })
+        if let Some(generic_libfunc) = Self::by_id(libfunc_id) {
+            generic_libfunc.specialize_signature(context, generic_args)
+        } else {
+            Err(SpecializationError::UnsupportedId)
+        }
+        .map_err(move |error| ExtensionError::LibfuncSpecialization {
+            libfunc_id: libfunc_id.clone(),
+            generic_args: generic_args.iter().cloned().collect_vec(),
+            error,
+        })
     }
 
     fn specialize_by_id(
@@ -135,23 +137,23 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
         libfunc_id: &GenericLibfuncId,
         generic_args: &[GenericArg],
     ) -> Result<TGenericLibfunc::Concrete, ExtensionError> {
-        Self::by_id(libfunc_id)
-            .ok_or_else(move || ExtensionError::LibfuncSpecialization {
-                libfunc_id: libfunc_id.clone(),
-                error: SpecializationError::UnsupportedId,
-            })?
-            .specialize(context, generic_args)
-            .map_err(move |error| ExtensionError::LibfuncSpecialization {
-                libfunc_id: libfunc_id.clone(),
-                error,
-            })
+        if let Some(generic_libfunc) = Self::by_id(libfunc_id) {
+            generic_libfunc.specialize(context, generic_args)
+        } else {
+            Err(SpecializationError::UnsupportedId)
+        }
+        .map_err(move |error| ExtensionError::LibfuncSpecialization {
+            libfunc_id: libfunc_id.clone(),
+            generic_args: generic_args.iter().cloned().collect_vec(),
+            error,
+        })
     }
 }
 
 /// Trait for implementing a specialization generator with a simple id.
 pub trait NamedLibfunc: Default {
     type Concrete: ConcreteLibfunc;
-    const ID: GenericLibfuncId;
+    const STR_ID: &'static str;
 
     /// Creates the specialization of the libfunc's signature with the template arguments.
     fn specialize_signature(
@@ -171,7 +173,7 @@ impl<TNamedLibfunc: NamedLibfunc> GenericLibfunc for TNamedLibfunc {
     type Concrete = <Self as NamedLibfunc>::Concrete;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        if &Self::ID == id { Some(Self::default()) } else { None }
+        if Self::STR_ID == id.0 { Some(Self::default()) } else { None }
     }
 
     fn specialize_signature(
@@ -193,7 +195,7 @@ impl<TNamedLibfunc: NamedLibfunc> GenericLibfunc for TNamedLibfunc {
 
 /// Trait for implementing a specialization generator not holding anything more than a signature.
 pub trait SignatureOnlyGenericLibfunc: Default {
-    const ID: GenericLibfuncId;
+    const STR_ID: &'static str;
 
     fn specialize_signature(
         &self,
@@ -204,7 +206,7 @@ pub trait SignatureOnlyGenericLibfunc: Default {
 
 impl<T: SignatureOnlyGenericLibfunc> NamedLibfunc for T {
     type Concrete = SignatureOnlyConcreteLibfunc;
-    const ID: GenericLibfuncId = <Self as SignatureOnlyGenericLibfunc>::ID;
+    const STR_ID: &'static str = <Self as SignatureOnlyGenericLibfunc>::STR_ID;
 
     fn specialize_signature(
         &self,
@@ -228,7 +230,7 @@ impl<T: SignatureOnlyGenericLibfunc> NamedLibfunc for T {
 /// Trait for implementing a specialization generator expecting a single generic param type, and
 /// creating a concrete libfunc containing that type as well.
 pub trait SignatureAndTypeGenericLibfunc: Default {
-    const ID: GenericLibfuncId;
+    const STR_ID: &'static str;
 
     fn specialize_signature(
         &self,
@@ -243,7 +245,7 @@ pub struct WrapSignatureAndTypeGenericLibfunc<T: SignatureAndTypeGenericLibfunc>
 
 impl<T: SignatureAndTypeGenericLibfunc> NamedLibfunc for WrapSignatureAndTypeGenericLibfunc<T> {
     type Concrete = SignatureAndTypeConcreteLibfunc;
-    const ID: GenericLibfuncId = <T as SignatureAndTypeGenericLibfunc>::ID;
+    const STR_ID: &'static str = <T as SignatureAndTypeGenericLibfunc>::STR_ID;
 
     fn specialize_signature(
         &self,
@@ -268,7 +270,7 @@ impl<T: SignatureAndTypeGenericLibfunc> NamedLibfunc for WrapSignatureAndTypeGen
 
 /// Trait for implementing a specialization generator with no generic arguments.
 pub trait NoGenericArgsGenericLibfunc: Default {
-    const ID: GenericLibfuncId;
+    const STR_ID: &'static str;
 
     fn specialize_signature(
         &self,
@@ -276,7 +278,7 @@ pub trait NoGenericArgsGenericLibfunc: Default {
     ) -> Result<LibfuncSignature, SpecializationError>;
 }
 impl<T: NoGenericArgsGenericLibfunc> SignatureOnlyGenericLibfunc for T {
-    const ID: GenericLibfuncId = <Self as NoGenericArgsGenericLibfunc>::ID;
+    const STR_ID: &'static str = <Self as NoGenericArgsGenericLibfunc>::STR_ID;
 
     fn specialize_signature(
         &self,
@@ -382,6 +384,9 @@ pub enum SierraApChange {
         /// [`BranchSignature::vars`]).
         new_vars_only: bool,
     },
+    /// The lib func is `branch_align`.
+    /// The `ap` change is know during compilation.
+    BranchAlign,
     /// Indicates that the value of ApChange was not assigned properly yet. Behaves as `Unknown`.
     /// This will be removed, once all places using it are fixed.
     // TODO(lior): Remove this value once it is no longer used.

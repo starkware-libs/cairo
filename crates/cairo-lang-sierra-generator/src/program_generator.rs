@@ -1,9 +1,9 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
-use cairo_lang_defs as defs;
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe};
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
@@ -12,7 +12,6 @@ use cairo_lang_sierra::program;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use defs::ids::FunctionWithBodyId;
 use itertools::chain;
 
 use crate::db::SierraGenGroup;
@@ -124,12 +123,12 @@ fn collect_used_types(
 
 pub fn get_sierra_program_for_functions(
     db: &dyn SierraGenGroup,
-    requested_function_ids: Vec<FunctionWithBodyId>,
+    requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
 ) -> Maybe<Arc<cairo_lang_sierra::program::Program>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
-    let mut processed_function_ids = UnorderedHashSet::<FunctionWithBodyId>::default();
-    let mut function_id_queue: VecDeque<FunctionWithBodyId> =
+    let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId>::default();
+    let mut function_id_queue: VecDeque<ConcreteFunctionWithBodyId> =
         requested_function_ids.into_iter().collect();
     while let Some(function_id) = function_id_queue.pop_front() {
         if !processed_function_ids.insert(function_id) {
@@ -141,7 +140,10 @@ pub fn get_sierra_program_for_functions(
         if !matches!(db.get_ap_change(function_id), Ok(SierraApChange::Known { .. })) {
             // If AP change is unknown for the function, adding a revoke so that AP balancing would
             // not occur.
-            statements.push(simple_statement(revoke_ap_tracking_libfunc_id(db), &[], &[]));
+            let revoke_statement = simple_statement(revoke_ap_tracking_libfunc_id(db), &[], &[]);
+            if function.body.get(function.prolog_size) != Some(&revoke_statement) {
+                statements.push(revoke_statement);
+            }
         }
         statements.extend_from_slice(&function.body[function.prolog_size..]);
         for statement in &function.body {
@@ -178,11 +180,11 @@ pub fn get_sierra_program_for_functions(
     }))
 }
 
-/// Tries extracting a FunctionWithBodyId from a pre-Sierra statement.
+/// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
 fn try_get_function_with_body_id(
     db: &dyn SierraGenGroup,
     statement: &pre_sierra::Statement,
-) -> Maybe<FunctionWithBodyId> {
+) -> Maybe<ConcreteFunctionWithBodyId> {
     let invc = try_extract_matches!(
         try_extract_matches!(statement, pre_sierra::Statement::Sierra).to_maybe()?,
         program::GenStatement::Invocation
@@ -204,18 +206,7 @@ fn try_get_function_with_body_id(
             ),
         )
         .function;
-    assert!(function.generic_args.is_empty(), "Generic args are not yet supported");
-    match function.generic_function {
-        defs::ids::GenericFunctionId::Free(free_function_id) => {
-            Ok(FunctionWithBodyId::Free(free_function_id))
-        }
-        defs::ids::GenericFunctionId::Impl(impl_function_id) => {
-            Ok(FunctionWithBodyId::Impl(impl_function_id))
-        }
-        defs::ids::GenericFunctionId::Extern(_) | defs::ids::GenericFunctionId::Trait(_) => {
-            Err(skip_diagnostic())
-        }
-    }
+    function.get_body(db.upcast()).ok_or_else(skip_diagnostic)
 }
 
 pub fn get_sierra_program(
@@ -226,7 +217,12 @@ pub fn get_sierra_program(
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {
             for (free_func_id, _) in db.module_free_functions(*module_id)? {
-                requested_function_ids.push(FunctionWithBodyId::Free(free_func_id))
+                // TODO(spapini): Search Impl functions.
+                if let Some(function) =
+                    ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), free_func_id)
+                {
+                    requested_function_ids.push(function)
+                }
             }
         }
     }

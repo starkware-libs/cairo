@@ -9,7 +9,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 
 /// Type for gas actions.
 #[derive(Default)]
@@ -33,7 +33,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct GetGasLibfunc {}
 impl NoGenericArgsGenericLibfunc for GetGasLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("get_gas");
+    const STR_ID: &'static str = "get_gas";
 
     fn specialize_signature(
         &self,
@@ -94,7 +94,7 @@ impl NoGenericArgsGenericLibfunc for GetGasLibfunc {
 #[derive(Default)]
 pub struct RefundGasLibfunc {}
 impl NoGenericArgsGenericLibfunc for RefundGasLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("refund_gas");
+    const STR_ID: &'static str = "refund_gas";
 
     fn specialize_signature(
         &self,

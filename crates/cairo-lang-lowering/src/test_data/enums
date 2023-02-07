@@ -24,39 +24,24 @@ enum MyEnum {
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
-Inputs:
-Initial refs:
-Statements:
-  (v3: core::felt) <- 5u
-End:
-  Callsite(v3)
-
-blk1 (root):
+blk0 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v4: core::felt) <- blk0()
-  (v5: test::MyEnum) <- MyEnum::B(v4)
+  (v3: core::felt) <- 5u
+  (v4: test::MyEnum) <- MyEnum::B(v3)
 End:
-  Return(v5)
+  Return(v4)
 
 //! > lowering_flat
-blk0:
-Inputs:
-Statements:
-  (v3: core::felt) <- 5u
-End:
-  Callsite(v3)
-
-blk1 (root):
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v4: core::felt) <- blk0()
-  (v5: test::MyEnum) <- MyEnum::B(v4)
+  (v3: core::felt) <- 5u
+  (v4: test::MyEnum) <- MyEnum::B(v3)
 End:
-  Return(v5)
+  Return(v4)

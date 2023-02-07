@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(x: ACopy, y:ADrop) {
+fn foo(x: ACopy, y: ADrop) {
   if true {
     use_a_copy(x);
     use_a_drop(y);
@@ -38,7 +38,7 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v5: ()
@@ -46,7 +46,7 @@ Initial refs:
 Statements:
   () <- test::use_a_drop(v1)
 End:
-  Callsite()
+  Callsite({})
 
 blk2 (root):
 Inputs: v0: test::ACopy, v1: test::ADrop
@@ -70,14 +70,14 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v5: ()
 Statements:
   () <- test::use_a_drop(v1)
 End:
-  Callsite()
+  Callsite({})
 
 blk2 (root):
 Inputs: v0: test::ACopy, v1: test::ADrop
@@ -101,7 +101,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(x: ACopy, y:ADrop) {
+fn foo(x: ACopy, y: ADrop) {
   if true {
     use_a_copy(x);
     use_a_drop(y);
@@ -126,9 +126,9 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:14:14
-  use_a_drop(y);
-             ^
+ --> lib.cairo:8:18
+fn foo(x: ACopy, y: ADrop) {
+                 ^
 
 //! > lowering_structured
 blk0:
@@ -138,14 +138,29 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v5: ()
 Initial refs:
 Statements:
 End:
-  Callsite()
+  Callsite({})
+
+blk2 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Initial refs:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk1,
+    bool::True => blk0,
+  }
+  () <- test::use_a_drop(v1)
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
 
 //! > lowering_flat
 blk0:
@@ -154,13 +169,27 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v5: ()
 Statements:
 End:
-  Callsite()
+  Callsite({})
+
+blk2 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk1,
+    bool::True => blk0,
+  }
+  () <- test::use_a_drop(v1)
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
 
 //! > ==========================================================================
 
@@ -178,7 +207,7 @@ fn foo(ref x: ADrop, y: ADrop) {
 
 fn bar(){
   let mut data = array_new::<felt>();
-  array_append::<felt>(data, 1);
+  array_append::<felt>(ref data, 1);
   panic(data);
 }
 
@@ -198,9 +227,9 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:8:1
+ --> lib.cairo:8:12
 fn foo(ref x: ADrop, y: ADrop) {
-^******************************^
+           ^
 
 //! > lowering_structured
 blk0 (root):
@@ -221,7 +250,7 @@ Inputs: v0: test::ADrop, v1: test::ADrop
 Statements:
   () <- test::use_a_drop(v0)
   (v4: core::PanicResult::<()>) <- test::bar()
-  (v2: ()) <- match_enum(v4) {
+  () <- match_enum(v4) {
     PanicResult::Ok => blk1,
     PanicResult::Err => blk2,
   }
@@ -234,7 +263,7 @@ blk1:
 Inputs: v5: ()
 Statements:
 End:
-  Callsite(v5)
+  Callsite({})
 
 blk2:
 Inputs: v6: core::array::Array::<core::felt>
@@ -242,3 +271,54 @@ Statements:
   (v8: core::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
   Return(v0, v8)
+
+//! > ==========================================================================
+
+//! > Borrow checking array
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(ref self: Query::<felt>, value: felt) {
+  let mut data = self.data;
+  array_append(ref data, value)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Query<T> {
+  data: Array::<T>, 
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:4:12
+fn foo(ref self: Query::<felt>, value: felt) {
+           ^**^
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: test::Query::<core::felt>, v1: core::felt
+Initial refs: v0: test::Query::<core::felt>
+Statements:
+  (v2: core::array::Array::<T>) <- struct_destructure(v0)
+    Ref changes: r0 <- v0
+  (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v2, v1)
+  (v4: ()) <- struct_construct()
+End:
+  Return(v0, v4)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: test::Query::<core::felt>, v1: core::felt
+Statements:
+  (v2: core::array::Array::<T>) <- struct_destructure(v0)
+  (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v2, v1)
+  (v4: ()) <- struct_construct()
+End:
+  Return(v0, v4)

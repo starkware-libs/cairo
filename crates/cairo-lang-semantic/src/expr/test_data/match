@@ -61,7 +61,17 @@ enum A {
 }
 
 //! > expected_diagnostics
-error: Binary operator '+' is not supported for types 'core::bool' and 'core::felt'.
- --> lib.cairo:6:13
+error: Unexpected argument type. Expected: "core::bool", found: "core::felt".
+ --> lib.cairo:6:15
     match a + 1 {
-            ^
+              ^
+
+error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
+ --> lib.cairo:7:9
+        A::a(_) => 0,
+        ^**^
+
+error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
+ --> lib.cairo:8:9
+        A::b(_) => 1,
+        ^**^

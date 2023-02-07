@@ -28,7 +28,7 @@ foo
 
 //! > sierra_code
 felt_const<10>() -> ([0])
-felt_jump_nz([0]) { fallthrough() label0([1]) }
+felt_is_zero([0]) { fallthrough() label0([1]) }
 branch_align() -> ()
 felt_const<3>() -> ([2])
 PushValues([2]: felt) -> ([3])
@@ -37,8 +37,7 @@ label0:
 branch_align() -> ()
 drop<NonZero<felt>>([1]) -> ()
 felt_const<4>() -> ([4])
-PushValues([4]: felt) -> ([5])
-PushValues([5]: felt) -> ([3])
+PushValues([4]: felt) -> ([3])
 label1:
 
 //! > ==========================================================================
@@ -71,7 +70,7 @@ foo
 //! > sierra_code
 felt_const<7>() -> ([0])
 dup<felt>([0]) -> ([0], [1])
-felt_jump_nz([1]) { fallthrough() label0([2]) }
+felt_is_zero([1]) { fallthrough() label0([2]) }
 branch_align() -> ()
 PushValues([0]: felt) -> ([3])
 jump() { label1() }

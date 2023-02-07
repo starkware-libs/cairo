@@ -4,8 +4,8 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId,
-    GenericFunctionId, GenericParamId, GenericTypeId, ImplFunctionId, ImplId, LanguageElementId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionSignatureId,
+    FunctionWithBodyId, GenericParamId, GenericTypeId, ImplFunctionId, ImplId, LanguageElementId,
     LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId,
     VariantId,
 };
@@ -22,11 +22,12 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
+use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
-use crate::items::imp::{ConcreteImplId, ImplLookupContext};
+use crate::items::imp::ImplLookupContext;
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::ConcreteTraitId;
-use crate::plugin::{DynDiagnosticMapper, SemanticPlugin};
+use crate::plugin::{DynPluginAuxData, SemanticPlugin};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
     corelib, items, literals, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
@@ -56,6 +57,11 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
     #[salsa::interned]
+    fn intern_concrete_function_with_body(
+        &self,
+        id: items::functions::ConcreteFunctionWithBody,
+    ) -> semantic::ConcreteFunctionWithBodyId;
+    #[salsa::interned]
     fn intern_concrete_struct(&self, id: types::ConcreteStructLongId) -> types::ConcreteStructId;
     #[salsa::interned]
     fn intern_concrete_enum(&self, id: types::ConcreteEnumLongId) -> types::ConcreteEnumId;
@@ -69,6 +75,11 @@ pub trait SemanticGroup:
         &self,
         id: items::trt::ConcreteTraitLongId,
     ) -> items::trt::ConcreteTraitId;
+    #[salsa::interned]
+    fn intern_concrete_trait_function(
+        &self,
+        id: items::trt::ConcreteTraitGenericFunctionLongId,
+    ) -> items::trt::ConcreteTraitGenericFunctionId;
     #[salsa::interned]
     fn intern_concrete_impl(
         &self,
@@ -93,6 +104,9 @@ pub trait SemanticGroup:
         &self,
         const_id: ConstantId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the semantic data of a constant definition.
+    #[salsa::invoke(items::constant::constant_semantic_data)]
+    fn constant_semantic_data(&self, use_id: ConstantId) -> Maybe<Constant>;
     #[salsa::invoke(items::constant::constant_resolved_lookback)]
     fn constant_resolved_lookback(&self, use_id: ConstantId) -> Maybe<Arc<ResolvedLookback>>;
 
@@ -135,26 +149,27 @@ pub trait SemanticGroup:
     // Struct.
     // =======
     /// Private query to compute data about a struct.
-    #[salsa::invoke(items::strct::priv_struct_semantic_data)]
-    fn priv_struct_semantic_data(&self, struct_id: StructId) -> Maybe<items::strct::StructData>;
+    #[salsa::invoke(items::structure::priv_struct_semantic_data)]
+    fn priv_struct_semantic_data(&self, struct_id: StructId)
+    -> Maybe<items::structure::StructData>;
     /// Returns the semantic diagnostics of a struct.
-    #[salsa::invoke(items::strct::struct_semantic_diagnostics)]
+    #[salsa::invoke(items::structure::struct_semantic_diagnostics)]
     fn struct_semantic_diagnostics(&self, struct_id: StructId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an enum.
-    #[salsa::invoke(items::strct::struct_generic_params)]
+    #[salsa::invoke(items::structure::struct_generic_params)]
     fn struct_generic_params(&self, struct_id: StructId) -> Maybe<Vec<GenericParamId>>;
     /// Returns the members of a struct.
-    #[salsa::invoke(items::strct::struct_members)]
+    #[salsa::invoke(items::structure::struct_members)]
     fn struct_members(
         &self,
         struct_id: StructId,
     ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>>;
     /// Returns the attributes of a struct.
-    #[salsa::invoke(items::strct::struct_attributes)]
+    #[salsa::invoke(items::structure::struct_attributes)]
     fn struct_attributes(&self, struct_id: StructId) -> Maybe<Vec<Attribute>>;
     /// Returns the resolution lookback of a struct.
-    #[salsa::invoke(items::strct::struct_resolved_lookback)]
-    fn struct_resolved_lookback(&self, strct_id: StructId) -> Maybe<Arc<ResolvedLookback>>;
+    #[salsa::invoke(items::structure::struct_resolved_lookback)]
+    fn struct_resolved_lookback(&self, structure_id: StructId) -> Maybe<Arc<ResolvedLookback>>;
 
     // Enum.
     // =======
@@ -223,6 +238,13 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::trt::trait_functions)]
     fn trait_functions(&self, trait_id: TraitId)
     -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>>;
+    /// Returns the function with the given name of the given trait, if exists.
+    #[salsa::invoke(items::trt::trait_function_by_name)]
+    fn trait_function_by_name(
+        &self,
+        trait_id: TraitId,
+        name: SmolStr,
+    ) -> Maybe<Option<TraitFunctionId>>;
 
     // Trait function.
     // ================
@@ -294,16 +316,19 @@ pub trait SemanticGroup:
         &self,
         impl_id: ImplId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Find implementation for a concrete trait in a module.
-    #[salsa::invoke(items::imp::find_impls_at_module)]
-    fn find_impls_at_module(
-        &self,
-        module_id: ModuleId,
-        concrete_trait_id: ConcreteTraitId,
-    ) -> Maybe<Vec<ConcreteImplId>>;
     /// Returns the functions in the impl.
     #[salsa::invoke(items::imp::impl_functions)]
-    fn impl_functions(&self, impl_id: ImplId) -> Maybe<Vec<ImplFunctionId>>;
+    fn impl_functions(&self, impl_id: ImplId) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>>;
+    /// Returns the impl function that matches the given trait function, if exists.
+    /// Note that a function that doesn't exist in the impl doesn't necessarily indicate an error,
+    /// as, e.g., a trait function that has a default implementation doesn't have to be
+    /// implemented in the impl.
+    #[salsa::invoke(items::imp::impl_function_by_trait_function)]
+    fn impl_function_by_trait_function(
+        &self,
+        impl_id: ImplId,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<Option<ImplFunctionId>>;
 
     // Impl function.
     // ================
@@ -342,7 +367,7 @@ pub trait SemanticGroup:
     fn priv_impl_function_declaration_data(
         &self,
         impl_function_id: ImplFunctionId,
-    ) -> Maybe<items::function_with_body::FunctionWithBodyDeclarationData>;
+    ) -> Maybe<items::functions::FunctionDeclarationData>;
 
     /// Returns the semantic diagnostics of an impl function definition (declaration + body).
     #[salsa::invoke(items::imp::impl_function_body_diagnostics)]
@@ -404,7 +429,7 @@ pub trait SemanticGroup:
     fn priv_free_function_declaration_data(
         &self,
         function_id: FreeFunctionId,
-    ) -> Maybe<items::function_with_body::FunctionWithBodyDeclarationData>;
+    ) -> Maybe<items::functions::FunctionDeclarationData>;
 
     /// Returns the semantic diagnostics of a free function's body.
     #[salsa::invoke(items::free_function::free_function_body_diagnostics)]
@@ -428,8 +453,8 @@ pub trait SemanticGroup:
     // Function with body.
     // ===================
     /// Returns the semantic diagnostics of a declaration (signature) of a function with a body.
-    #[salsa::invoke(items::function_with_body::function_with_body_declaration_diagnostics)]
-    fn function_with_body_declaration_diagnostics(
+    #[salsa::invoke(items::function_with_body::function_declaration_diagnostics)]
+    fn function_declaration_diagnostics(
         &self,
         function_id: FunctionWithBodyId,
     ) -> Diagnostics<SemanticDiagnostic>;
@@ -488,7 +513,7 @@ pub trait SemanticGroup:
     fn priv_extern_function_declaration_data(
         &self,
         function_id: ExternFunctionId,
-    ) -> Maybe<items::extern_function::ExternFunctionDeclarationData>;
+    ) -> Maybe<items::functions::FunctionDeclarationData>;
     /// Returns the semantic diagnostics of an extern function declaration. An extern function has
     /// no body, and thus only has a declaration.
     #[salsa::invoke(items::extern_function::extern_function_declaration_diagnostics)]
@@ -550,22 +575,22 @@ pub trait SemanticGroup:
         extern_type_id: ExternTypeId,
     ) -> Maybe<Vec<GenericParamId>>;
 
-    // Generic function.
+    // Function Signature.
     // =================
-    /// Returns the signature of a generic function. This include free functions, extern functions,
-    /// etc...
-    #[salsa::invoke(items::functions::generic_function_signature)]
-    fn generic_function_signature(
+    /// Returns the signature of the given FunctionSignatureId. This include free functions, extern
+    /// functions, etc...
+    #[salsa::invoke(items::functions::function_signature_signature)]
+    fn function_signature_signature(
         &self,
-        generic_function: GenericFunctionId,
+        function_signature_id: FunctionSignatureId,
     ) -> Maybe<semantic::Signature>;
 
-    /// Returns the signature of a generic function. This include free functions, extern functions,
-    /// etc...
-    #[salsa::invoke(items::functions::generic_function_generic_params)]
-    fn generic_function_generic_params(
+    /// Returns the generic parameters of the given FunctionSignatureId. This include free
+    /// functions, extern functions, etc...
+    #[salsa::invoke(items::functions::function_signature_generic_params)]
+    fn function_signature_generic_params(
         &self,
-        generic_function: GenericFunctionId,
+        function_signature_id: FunctionSignatureId,
     ) -> Maybe<Vec<GenericParamId>>;
 
     // Concrete function.
@@ -679,10 +704,10 @@ fn module_semantic_diagnostics(
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
     for (module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)? {
-        diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::new(module_file_id, plugin_diag.stable_ptr),
-            kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
-        });
+        diagnostics.add(SemanticDiagnostic::new(
+            StableLocation::new(module_file_id, plugin_diag.stable_ptr),
+            SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+        ));
     }
 
     diagnostics.extend(db.priv_module_items_data(module_id)?.diagnostics.clone());
@@ -725,13 +750,14 @@ fn module_semantic_diagnostics(
                             FileLongId::Virtual(_) => panic!("Expected OnDisk file."),
                         };
 
-                        diagnostics.add(SemanticDiagnostic {
-                            stable_location: StableLocation::new(
-                                submodule_id.module_file(db.upcast()),
-                                submodule_id.stable_ptr(db.upcast()).untyped(),
-                            ),
-                            kind: SemanticDiagnosticKind::ModuleFileNotFound { path },
-                        });
+                        let stable_location = StableLocation::new(
+                            submodule_id.module_file_id(db.upcast()),
+                            submodule_id.stable_ptr(db.upcast()).untyped(),
+                        );
+                        diagnostics.add(SemanticDiagnostic::new(
+                            stable_location,
+                            SemanticDiagnosticKind::ModuleFileNotFound { path },
+                        ));
                     }
                 }
             }
@@ -750,7 +776,7 @@ fn module_semantic_diagnostics(
     Ok(map_diagnostics(
         db.elongate(),
         module_id,
-        &db.module_generated_file_info(module_id)?,
+        &db.module_generated_file_infos(module_id)?,
         diagnostics.build(),
     )
     .1)
@@ -782,22 +808,21 @@ fn map_diagnostics(
                 .aux_data
                 .0
                 .as_any()
-                .downcast_ref::<DynDiagnosticMapper>()
+                .downcast_ref::<DynPluginAuxData>()
                 .and_then(|mapper| mapper.map_diag(db.upcast(), diag));
             if let Some(plugin_diag) = opt_diag {
                 // We don't have a real location, so we give a dummy location in the correct file.
                 // SemanticDiagnostic struct knowns to give the proper span for
                 // WrappedPluginDiagnostic.
-                diagnostics.add(SemanticDiagnostic {
-                    stable_location: StableLocation::new(
-                        file_info.origin,
-                        db.intern_stable_ptr(SyntaxStablePtr::Root),
-                    ),
-                    kind: SemanticDiagnosticKind::WrappedPluginDiagnostic {
-                        diagnostic: plugin_diag,
-                        original_diag: Box::new(diag.clone()),
-                    },
-                });
+                let stable_location = StableLocation::new(
+                    file_info.origin,
+                    db.intern_stable_ptr(SyntaxStablePtr::Root),
+                );
+                let kind = SemanticDiagnosticKind::WrappedPluginDiagnostic {
+                    diagnostic: plugin_diag,
+                    original_diag: Box::new(diag.clone()),
+                };
+                diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
                 has_change = true;
                 continue;
             }

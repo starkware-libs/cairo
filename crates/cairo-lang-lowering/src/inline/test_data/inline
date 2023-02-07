@@ -1,0 +1,395 @@
+//! > Test simple inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(n: felt) -> felt {
+  -n
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- core::felt_neg(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v2: core::felt) <- core::felt_const::<LiteralLongId { value: -1 }>()
+  (v1: core::felt) <- core::felt_mul(v0, v2)
+End:
+  Return(v1)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test generic function inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(val: Option::<felt>) -> felt {
+  bar(val, 2)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+/// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
+#[inline(always)]
+fn bar<T>(val: Option::<T>, val2: T) -> T {
+    match val {
+        Option::Some(x) => x,
+        Option::None(()) => val2,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::option::Option::<core::felt>
+Statements:
+  (v1: core::felt) <- 2u
+  (v2: core::felt) <- test::bar::<core::felt>(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::option::Option::<core::felt>
+Statements:
+  (v1: core::felt) <- 2u
+  () <- match_enum(v0) {
+    Option::Some => blk1,
+    Option::None => blk2,
+  }
+End:
+  Return(v2)
+
+blk1:
+Inputs: v3: core::felt
+Statements:
+End:
+  Callsite({v3 -> v2})
+
+blk2:
+Inputs: v4: ()
+Statements:
+  () <- struct_destructure(v4)
+End:
+  Callsite({v1 -> v2})
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining same arg twice.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(n: felt) -> felt {
+  bar(n, n)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar(a: felt, b: felt) -> felt  {
+  a + b
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0, v0)
+End:
+  Return(v1)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- core::felt_add(v0, v0)
+End:
+  Return(v1)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt, b: felt) -> felt {
+  bar(a + b, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar(a: felt, b: felt) -> felt implicits()  {
+  bar2(a, b) + bar2(b, a)
+}
+
+#[inline(always)]
+fn bar2(a: felt, b: felt) -> felt implicits()  {
+   a * b
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v2: core::felt) <- core::FeltAdd::add(v0, v1)
+  (v3: core::felt) <- test::bar(v2, v1)
+End:
+  Return(v3)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v2: core::felt) <- core::felt_add(v0, v1)
+  (v4: core::felt) <- core::felt_mul(v2, v1)
+  (v5: core::felt) <- core::felt_mul(v1, v2)
+  (v3: core::felt) <- core::felt_add(v4, v5)
+End:
+  Return(v3)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test recursive inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt) -> felt {
+  first(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn first(a: felt) -> felt {
+  second(a)
+}
+
+#[inline(always)]
+fn second(a: felt) -> felt {
+  third(a)
+}
+
+#[inline(always)]
+fn third(a: felt) -> felt {
+   a * a
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::first(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- core::felt_mul(v0, v0)
+End:
+  Return(v1)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test impl inlining.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo() {
+  let mut arr = ArrayTrait::new();
+  arr.append(5)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::ArrayTrait;
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::array::Array::<core::felt>) <- core::array::ArrayImpl::<core::felt>::new()
+  (v1: core::felt) <- 5u
+  (v3: core::array::Array::<core::felt>, v2: ()) <- core::array::ArrayImpl::<core::felt>::append(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v1: core::felt) <- 5u
+  (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v0, v1)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining diagnostics for a function with an early return.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt) -> felt {
+  if a == 2 {
+    bar(a)
+  } else {
+    a
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar(a: felt) -> felt {
+  if a == 0 {
+    return 1;
+  }
+  0
+}
+
+//! > before
+blk0:
+Inputs:
+Statements:
+  (v3: core::felt) <- test::bar(v0)
+End:
+  Callsite({v3 -> v5})
+
+blk1:
+Inputs: v4: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite({v0 -> v5})
+
+blk2 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- 2u
+  (v2: core::felt) <- core::FeltSub::sub(v0, v1)
+  () <- match core::felt_is_zero(v2) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
+  }
+End:
+  Return(v5)
+
+//! > after
+blk0:
+Inputs:
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk4,
+    IsZeroResult::NonZero => blk5,
+  }
+  (v3: core::felt) <- 0u
+End:
+  Fallthrough(3, {})
+
+blk1:
+Inputs: v4: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite({v0 -> v5})
+
+blk2:
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- 2u
+  (v2: core::felt) <- core::felt_sub(v0, v1)
+  () <- match core::felt_is_zero(v2) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
+  }
+End:
+  Return(v5)
+
+blk3:
+Inputs:
+Statements:
+End:
+  Callsite({v3 -> v5})
+
+blk4:
+Inputs:
+Statements:
+  (v6: core::felt) <- 1u
+End:
+  Goto(3, {v6 -> v3})
+
+blk5:
+Inputs: v7: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite({})
+
+//! > lowering_diagnostics
+error: Inlining of functions with an early return is not supported.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+//! > semantic_diagnostics

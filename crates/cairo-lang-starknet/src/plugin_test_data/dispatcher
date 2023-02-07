@@ -29,55 +29,44 @@ trait IContract {
     fn my_event();
 }
 mod IContractDispatcher {
-        fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
-        let calldata = array_new::<felt>();
-        serde::serialize_felt(calldata, arg);
-        serde::serialize_felt(calldata, num);
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+    use option::OptionTrait;
+    use option::OptionTraitImpl;
 
-        let ret_data = match starknet::call_contract_syscall(
+    fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
+        let mut calldata = array_new();
+        serde::Serde::<felt>::serialize(ref calldata, arg);
+        serde::Serde::<felt>::serialize(ref calldata, num);
+
+        let mut ret_data = starknet::call_contract_syscall(
             contract_address,
             calldata,
-        ) {
-            Result::Ok(ret_data) => ret_data,
-            Result::Err((reason, _ret_data)) => {
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, 'call_contract_syscall failed');
-                array_append::<felt>(err_data, reason);
-                // TODO(ilya): Handle ret_data.
-                panic(err_data)
-            },
-        };
-        serde::deserialize_felt(ret_data)
+        ).unwrap_syscall();
+
+        serde::Serde::<felt>::deserialize(ref ret_data).expect(
+            'Returned data too short')
     }
 
     fn empty(contract_address: ContractAddress, ) {
-        let calldata = array_new::<felt>();
+        let mut calldata = array_new();
 
-        let ret_data = match starknet::call_contract_syscall(
+        let mut ret_data = starknet::call_contract_syscall(
             contract_address,
             calldata,
-        ) {
-            Result::Ok(ret_data) => ret_data,
-            Result::Err((reason, _ret_data)) => {
-                let mut err_data = array_new::<felt>();
-                array_append::<felt>(err_data, 'call_contract_syscall failed');
-                array_append::<felt>(err_data, reason);
-                // TODO(ilya): Handle ret_data.
-                panic(err_data)
-            },
-        };
+        ).unwrap_syscall();
 
     }
 
 }
 
 //! > expected_diagnostics
-error: `ref` parameters are not supported in the ABI of a contract.
- --> dummy_file.cairo:7:16
+error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
+ --> lib.cairo:7:16
     fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
                ^*^
 
-error: `ref` parameters are not supported in the ABI of a contract.
- --> dummy_file.cairo:7:32
+error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
+ --> lib.cairo:7:32
     fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
                                ^*^

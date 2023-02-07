@@ -3,26 +3,30 @@ type GasBuiltin = GasBuiltin;
 type RangeCheck = RangeCheck;
 type NonZeroInt = NonZero<felt>;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
-libfunc store_temp_felt = store_temp<felt>;
-libfunc store_temp_nz_felt = store_temp<NonZeroInt>;
-libfunc store_temp_gb = store_temp<GasBuiltin>;
-libfunc store_temp_rc = store_temp<RangeCheck>;
-libfunc rename_felt = rename<felt>;
+libfunc branch_align = branch_align;
+libfunc felt_add = felt_add;
+libfunc felt_const_0 = felt_const<0>;
 libfunc felt_const_1 = felt_const<1>;
 libfunc felt_const_minus_1 = felt_const<-1>;
-libfunc felt_add = felt_add;
-libfunc felt_sub_1 = felt_sub<1>;
-libfunc felt_dup = dup<felt>;
 libfunc felt_drop = drop<felt>;
-libfunc felt_jump_nz = felt_jump_nz;
+libfunc felt_dup = dup<felt>;
+libfunc felt_is_zero = felt_is_zero;
+libfunc felt_sub_1 = felt_sub<1>;
 libfunc felt_unwrap_nz = unwrap_nz<felt>;
 libfunc get_gas = get_gas;
+libfunc jump = jump;
 libfunc refund_gas = refund_gas;
+libfunc rename_felt = rename<felt>;
+libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc store_temp_felt = store_temp<felt>;
+libfunc store_temp_gb = store_temp<GasBuiltin>;
+libfunc store_temp_nz_felt = store_temp<NonZeroInt>;
+libfunc store_temp_rc = store_temp<RangeCheck>;
 
 revoke_ap_tracking() -> ();
 // Statement #  1 - tests if n == 0.
-felt_jump_nz(n) { fallthrough() 8(n) };
+felt_is_zero(n) { fallthrough() 9(n) };
+branch_align() -> ();
 // Statement #  2 - n == 0, so we return updated gb and 1.
 store_temp_rc(rc) -> (rc);
 refund_gas(gb) -> (gb);
@@ -30,59 +34,58 @@ store_temp_gb(gb) -> (gb);
 felt_const_1() -> (one);
 store_temp_felt(one) -> (one);
 return(rc, gb, one);
-// Statement #  8 - Calculates n - 1 and tests if n - 1 == 0.
-felt_unwrap_nz(n) -> (n);
-felt_sub_1(n) -> (n);
-store_temp_felt(n) -> (n);
-felt_jump_nz(n) { fallthrough() 18(n) };
-// Statement # 12  - n == 1, so we return updated gb and 1.
-store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb);
-store_temp_gb(gb) -> (gb);
-felt_const_1() -> (one);
-store_temp_felt(one) -> (one);
-return(rc, gb, one);
-// Statement # 18
-// Setting up the latest memory to be of the form [b=1, _, _, n=n-1, rc, gb, a=1].
-felt_const_1() -> (b);
+
+// Statement # 9
+// Setting up the latest memory to be of the form [b=0, _, _, n, rc, gb, a=1].
+branch_align() -> ();
+felt_const_0() -> (b);
 store_temp_felt(b) -> (b);
 store_temp_nz_felt(n) -> (n); // Adding a value to local memory for alignment with the main loop.
 store_temp_nz_felt(n) -> (n); // Adding a value to local memory for alignment with the main loop.
-store_temp_nz_felt(n) -> (n);
+felt_unwrap_nz(n) -> (n);
+store_temp_felt(n) -> (n);
 store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 felt_const_1() -> (a);
 store_temp_felt(a) -> (a);
-// Statement # 27 - Getting gas for the main loop.
-get_gas(rc, gb) { fallthrough(rc, gb) 44(rc, gb)  };
-// Statement # 28
+
+// Statement #20, check n.
+felt_is_zero(n) { fallthrough() 28(n) };
+
+// Statement # 21 - n == 0, so we can return the latest a.
+branch_align() -> ();
+felt_drop(b) -> ();
+store_temp_rc(rc) -> (rc);
+refund_gas(gb) -> (gb); // Statement #24.
+store_temp_gb(gb) -> (gb);
+store_temp_felt(a) -> (a);
+return(rc, gb, a);
+
+branch_align() -> ();
+felt_unwrap_nz(n) -> (n);
+// Statement # 30 - Getting gas for the main loop.
+get_gas(rc, gb) { fallthrough(rc, gb) 41(rc, gb)  };
+branch_align() -> ();
+// Statement # 31
 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
 // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
 felt_dup(a) -> (a, prev_a);
 felt_add(a, b) -> (a);
 rename_felt(prev_a) -> (b);
-felt_unwrap_nz(n) -> (n);
 felt_sub_1(n) -> (n);
 store_temp_felt(n) -> (n);
 store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 store_temp_felt(a) -> (a);
-felt_jump_nz(n) { fallthrough() 27(n) };
-// Statement # 38 - n == 0, so we can return the latest a.
-felt_drop(b) -> ();
-store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb); // Statement 40.
-store_temp_gb(gb) -> (gb);
-store_temp_felt(a) -> (a);
-return(rc, gb, a);
+jump() { 20() };
 
-// Statement # 44  - Ran out of gas - returning updated gb and -1.
+// Statement # 41  - Ran out of gas - returning updated gb and -1.
+branch_align() -> ();
 felt_drop(a) -> ();
 felt_drop(b) -> ();
-felt_unwrap_nz(n) -> (n);
 felt_drop(n) -> ();
 store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb); // Statement 49.
+refund_gas(gb) -> (gb); // Statement 46.
 store_temp_gb(gb) -> (gb);
 felt_const_minus_1() -> (err);
 store_temp_felt(err) -> (err);

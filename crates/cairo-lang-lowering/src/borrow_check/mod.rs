@@ -1,15 +1,14 @@
 use std::collections::HashMap;
 
 use cairo_lang_defs::ids::ModuleFileId;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use itertools::zip_eq;
+use cairo_lang_diagnostics::skip_diagnostic;
 
 pub use self::demand::Demand;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, Statement, StatementMatchEnum, StatementMatchExtern,
-    VariableId,
+    VarRemapping,
 };
 
 mod demand;
@@ -25,16 +24,16 @@ pub struct RealBlock(BlockId, usize);
 #[derive(Clone)]
 pub struct CallsiteInfo<'a> {
     return_site: RealBlock,
-    call_output_vars: Vec<VariableId>,
     parent: Option<&'a CallsiteInfo<'a>>,
 }
 
 pub struct BorrowChecker<'a> {
     diagnostics: &'a mut LoweringDiagnostics,
     lowered: &'a FlatLowered,
+    /// New block ends to be applied at the end of the borrow checking, for optimization.
+    new_ends: HashMap<BlockId, FlatBlockEnd>,
     cache: HashMap<RealBlock, Demand>,
-    // TODO(spapini): Remove when variables carry their stable pointers.
-    dummy_stable_ptr: SyntaxStablePtrId,
+    success: bool,
 }
 
 impl<'a> BorrowChecker<'a> {
@@ -57,8 +56,11 @@ impl<'a> BorrowChecker<'a> {
             .get_demand_from_next_split(block_id, stmt_offset, callsite_info.clone())
             .unwrap_or_else(|| {
                 // No branching statement was found, and the RealBlock continues until BlockEnd.
-                let demand =
-                    self.get_block_end_demand(&self.lowered.blocks[block_id].end, callsite_info);
+                let demand = self.get_block_end_demand(
+                    block_id,
+                    &self.lowered.blocks[block_id].end,
+                    callsite_info,
+                );
                 (self.lowered.blocks[block_id].statements.len(), demand)
             });
 
@@ -85,19 +87,28 @@ impl<'a> BorrowChecker<'a> {
     /// diagnostics.
     fn get_block_end_demand(
         &mut self,
+        block_id: BlockId,
         block_end: &FlatBlockEnd,
         callsite_info: Option<CallsiteInfo<'_>>,
     ) -> Demand {
         let demand = match block_end {
-            FlatBlockEnd::Callsite(vars) => {
+            FlatBlockEnd::Fallthrough(_target_block_id, _remapping)
+            | FlatBlockEnd::Goto(_target_block_id, _remapping) => todo!(),
+            FlatBlockEnd::Callsite(remapping) => {
                 let callsite_info = callsite_info.unwrap();
                 let mut demand =
                     self.get_demand(callsite_info.parent.cloned(), callsite_info.return_site);
-                for (var, callsite_var) in zip_eq(vars, &callsite_info.call_output_vars) {
-                    if demand.vars.swap_remove(callsite_var) {
-                        demand.vars.insert(*var);
+                let mut new_remapping = VarRemapping::default();
+                for (dst, src) in remapping.iter() {
+                    if demand.vars.swap_remove(dst) {
+                        demand.vars.insert(*src);
+                        new_remapping.insert(*dst, *src);
                     }
                 }
+                assert!(
+                    self.new_ends.insert(block_id, FlatBlockEnd::Callsite(new_remapping)).is_none(),
+                    "Borrow checker cannot visit a block more than once."
+                );
                 demand
             }
             FlatBlockEnd::Return(vars) => Demand { vars: vars.iter().copied().collect() },
@@ -121,27 +132,23 @@ impl<'a> BorrowChecker<'a> {
         {
             // Closure that creates a new CallsiteInfo struct for a branching statement.
             // Will be removed when lowering uses Gotos.
-            let new_callsite = |outputs: &Vec<VariableId>| -> Option<CallsiteInfo<'_>> {
-                Some(CallsiteInfo {
-                    return_site: RealBlock(block_id, stmt_offset + i + 1),
-                    call_output_vars: outputs.clone(),
-                    parent: callsite_info.as_ref(),
-                })
-            };
+            let new_callsite = Some(CallsiteInfo {
+                return_site: RealBlock(block_id, stmt_offset + i + 1),
+                parent: callsite_info.as_ref(),
+            });
 
             let demand = match stmt {
-                Statement::CallBlock(stmt) => {
-                    self.get_demand(new_callsite(&stmt.outputs), RealBlock(stmt.block, 0))
-                }
-                Statement::MatchExtern(StatementMatchExtern { arms, outputs, .. })
-                | Statement::MatchEnum(StatementMatchEnum { arms, outputs, .. }) => {
+                Statement::MatchExtern(StatementMatchExtern { arms, .. })
+                | Statement::MatchEnum(StatementMatchEnum { arms, .. }) => {
                     let arm_demands = arms
                         .iter()
                         .map(|(_, arm_block)| {
-                            self.get_demand(new_callsite(outputs), RealBlock(*arm_block, 0))
+                            self.get_demand(new_callsite.clone(), RealBlock(*arm_block, 0))
                         })
                         .collect();
-                    self.merge_demands(arm_demands)
+                    let mut demand = self.merge_demands(arm_demands);
+                    demand.variables_used(self, &stmt.inputs()[..]);
+                    demand
                 }
                 Statement::Literal(_)
                 | Statement::Call(_)
@@ -168,9 +175,10 @@ impl<'a> BorrowChecker<'a> {
                     // Variable demanded only on some branches. It should be dropped in other.
                     // If it's not drop, that is an issue.
                     // Currently disabled, since Drop is not properly implemented everywhere.
+                    let var = &self.lowered.variables[*var];
                     #[allow(clippy::overly_complex_bool_expr)]
-                    if false && !self.lowered.variables[*var].droppable {
-                        self.diagnostics.report(self.dummy_stable_ptr, VariableNotDropped);
+                    if false && !var.droppable {
+                        self.diagnostics.report_by_location(var.location, VariableNotDropped);
                     }
                     // Report only once per variable.
                     break;
@@ -182,11 +190,7 @@ impl<'a> BorrowChecker<'a> {
 }
 
 /// Report borrow checking diagnostics.
-pub fn borrow_check(
-    module_file_id: ModuleFileId,
-    dummy_stable_ptr: SyntaxStablePtrId,
-    lowered: &mut FlatLowered,
-) {
+pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
     let mut diagnostics = LoweringDiagnostics::new(module_file_id);
     diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
 
@@ -195,10 +199,18 @@ pub fn borrow_check(
             diagnostics: &mut diagnostics,
             lowered,
             cache: Default::default(),
-            dummy_stable_ptr,
+            new_ends: Default::default(),
+            success: true,
         };
         let root_demand = checker.get_demand(None, RealBlock(root, 0));
+        let success = checker.success;
         assert!(root_demand.vars.is_empty(), "Undefined variable should not happen at this stage");
+        for (block_id, new_end) in checker.new_ends {
+            lowered.blocks[block_id].end = new_end;
+        }
+        if !success {
+            lowered.root = Err(skip_diagnostic());
+        }
     }
 
     lowered.diagnostics = diagnostics.build();

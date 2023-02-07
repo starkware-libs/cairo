@@ -11,7 +11,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericLibfuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// A type that holds a possibly-null pointer to an object.
@@ -27,12 +27,12 @@ impl GenericTypeArgGenericType for NullableTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        wrapped_info: TypeInfo,
+        TypeInfo { storable, droppable, duplicatable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        if !wrapped_info.storable {
-            Err(SpecializationError::UnsupportedGenericArg)
+        if storable {
+            Ok(TypeInfo { long_id, size: 1, storable, droppable, duplicatable })
         } else {
-            Ok(TypeInfo { long_id, size: 1, ..wrapped_info })
+            Err(SpecializationError::UnsupportedGenericArg)
         }
     }
 }
@@ -60,7 +60,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct NullLibfunc {}
 impl SignatureOnlyGenericLibfunc for NullLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("null");
+    const STR_ID: &'static str = "null";
 
     fn specialize_signature(
         &self,
@@ -83,7 +83,7 @@ impl SignatureOnlyGenericLibfunc for NullLibfunc {
 #[derive(Default)]
 pub struct IntoNullableLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for IntoNullableLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("into_nullable");
+    const STR_ID: &'static str = "into_nullable";
 
     fn specialize_signature(
         &self,
@@ -111,7 +111,7 @@ pub type IntoNullableLibfunc = WrapSignatureAndTypeGenericLibfunc<IntoNullableLi
 #[derive(Default)]
 pub struct FromNullableLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for FromNullableLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("from_nullable");
+    const STR_ID: &'static str = "from_nullable";
 
     fn specialize_signature(
         &self,

@@ -23,7 +23,7 @@ use crate::extensions::types::TypeInfo;
 use crate::extensions::{
     args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericLibfuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing a struct.
@@ -109,7 +109,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct StructConstructLibfunc {}
 impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("struct_construct");
+    const STR_ID: &'static str = "struct_construct";
 
     fn specialize_signature(
         &self,
@@ -144,7 +144,7 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
 #[derive(Default)]
 pub struct StructDeconstructLibfunc {}
 impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("struct_deconstruct");
+    const STR_ID: &'static str = "struct_deconstruct";
 
     fn specialize_signature(
         &self,

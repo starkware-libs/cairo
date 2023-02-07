@@ -24,7 +24,7 @@ pub fn test_function_generator(
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id);
 
     // Compile the function.
-    let function = db.function_with_body_sierra(test_function.function_id);
+    let function = db.function_with_body_sierra(test_function.concrete_function_id);
     let sierra_code: String = function.map_or("None".into(), |func| {
         func.body
             .iter()

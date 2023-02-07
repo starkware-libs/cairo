@@ -14,7 +14,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_generics};
+use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
 use crate::{semantic, ConcreteEnumId, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -92,7 +92,7 @@ pub fn enum_resolved_lookback(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_semantic_data].
 pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<EnumData> {
-    let module_file_id = enum_id.module_file(db.upcast());
+    let module_file_id = enum_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -152,9 +152,10 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let db = self.upcast();
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
         let generic_args = db.lookup_intern_concrete_enum(concrete_enum_id).generic_args;
-        let substitution = &generic_params.into_iter().zip(generic_args.into_iter()).collect();
+        let substitution =
+            GenericSubstitution(generic_params.into_iter().zip(generic_args.into_iter()).collect());
 
-        let ty = substitute_generics(db, substitution, variant.ty);
+        let ty = substitute_ty(db, &substitution, variant.ty);
         Ok(ConcreteVariant { concrete_enum_id, id: variant.id, ty, idx: variant.idx })
     }
 

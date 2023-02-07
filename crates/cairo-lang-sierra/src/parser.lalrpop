@@ -49,7 +49,6 @@ Params = Comma<Param>;
 
 GenericLibfuncId: GenericLibfuncId = {
     <id:PathLabel> => GenericLibfuncId::from_string(id),
-    "[" <id:UnsignedInt> "]" => GenericLibfuncId::new(id),
 }
 
 ConcreteLibfuncId: ConcreteLibfuncId = {
@@ -75,7 +74,6 @@ VarIds = Comma<VarId>;
 
 GenericTypeId: GenericTypeId = {
     <id:PathLabel> => GenericTypeId::from_string(id),
-    "[" <id:UnsignedInt> "]" => GenericTypeId::new(id),
 }
 
 ConcreteTypeId: ConcreteTypeId = {
@@ -154,11 +152,12 @@ GenericArgsString: String = {
 
 // Label that can also include generic arguments.
 ConcreteLabel: String = {
-    <base:PathLabel> "::" "<" <generic_args:GenericArgsString> ">" => format!("{base}::<{generic_args}>"),
-    <base:PathLabel> "<" <generic_args:GenericArgsString> ">" => format!("{base}<{generic_args}>"),
+    BasicLabel => <>,
     "(" <generic_args:GenericArgsString> ")" => format!("({generic_args})"),
     "(" ")" => format!("()"),
-    PathLabel => <>,
+    <base:ConcreteLabel> "::" <next:BasicLabel> => format!("{base}::{next}"),
+    <base:ConcreteLabel> "::" "<" <generic_args:GenericArgsString> ">" => format!("{base}::<{generic_args}>"),
+    <base:ConcreteLabel> "<" <generic_args:GenericArgsString> ">" => format!("{base}<{generic_args}>"),
 }
 
 BigInt: BigInt = {

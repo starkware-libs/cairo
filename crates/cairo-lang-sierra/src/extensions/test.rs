@@ -173,7 +173,7 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("Struct", vec![type_arg("u128"), type_arg("felt")] => Err(UnsupportedGenericArg);
             "Struct<u128, felt>")]
 #[test_case("System", vec![] => Ok(()); "System")]
-#[test_case("StorageAddress", vec![] => Ok(()); "StorageAddress")]
+#[test_case("StorageBaseAddress", vec![] => Ok(()); "StorageBaseAddress")]
 fn find_type_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -195,8 +195,8 @@ fn find_type_specialization(
 #[test_case("array_new", vec![type_arg("u128")] => Ok(()); "array_new<u128>")]
 #[test_case("array_append", vec![] => Err(WrongNumberOfGenericArgs); "array_append")]
 #[test_case("array_append", vec![type_arg("u128")] => Ok(()); "array_append<u128>")]
-#[test_case("array_at", vec![] => Err(WrongNumberOfGenericArgs); "array_at")]
-#[test_case("array_at", vec![type_arg("u128")] => Ok(()); "array_at<u128>")]
+#[test_case("array_get", vec![] => Err(WrongNumberOfGenericArgs); "array_get")]
+#[test_case("array_get", vec![type_arg("u128")] => Ok(()); "array_get<u128>")]
 #[test_case("array_len", vec![] => Err(WrongNumberOfGenericArgs); "array_len")]
 #[test_case("array_len", vec![type_arg("u128")] => Ok(()); "array_len<u128>")]
 #[test_case("get_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "get_gas<0>")]
@@ -207,18 +207,17 @@ fn find_type_specialization(
 #[test_case("felt_add", vec![value_arg(0)] =>  Ok(()); "felt_add<0>")]
 #[test_case("felt_mul", vec![] => Ok(()); "felt_mul")]
 #[test_case("felt_mul", vec![value_arg(0)] =>  Ok(()); "felt_mul<0>")]
-#[test_case("felt_jump_nz", vec![] => Ok(()); "felt_jump_nz<>")]
-#[test_case("felt_jump_nz", vec![type_arg("felt")]
-            => Err(WrongNumberOfGenericArgs); "felt_jump_nz<int>")]
-#[test_case("u128_overflow_add", vec![] => Ok(()); "u128_overflow_add")]
-#[test_case("u128_overflow_sub", vec![] => Ok(()); "u128_overflow_sub")]
-#[test_case("u128_overflow_mul", vec![] => Ok(()); "u128_overflow_mul")]
+#[test_case("felt_is_zero", vec![] => Ok(()); "felt_is_zero<>")]
+#[test_case("felt_is_zero", vec![type_arg("felt")]
+            => Err(WrongNumberOfGenericArgs); "felt_is_zero<int>")]
+#[test_case("u128_overflowing_add", vec![] => Ok(()); "u128_overflowing_add")]
+#[test_case("u128_overflowing_sub", vec![] => Ok(()); "u128_overflowing_sub")]
 #[test_case("u128_safe_divmod", vec![] => Ok(()); "u128_safe_divmod")]
 #[test_case("u128_const", vec![value_arg(8)] => Ok(()); "u128_const<8>")]
 #[test_case("u128_const", vec![] => Err(UnsupportedGenericArg); "u128_const")]
-#[test_case("storage_address_const", vec![value_arg(8)] => Ok(()); "storage_address_const<8>")]
-#[test_case("storage_address_const", vec![] => Err(UnsupportedGenericArg);
-"storage_address_const")]
+#[test_case("storage_base_address_const", vec![value_arg(8)] => Ok(()); "storage_base_address_const<8>")]
+#[test_case("storage_base_address_const", vec![] => Err(UnsupportedGenericArg);
+"storage_base_address_const")]
 #[test_case("contract_address_const", vec![value_arg(8)] => Ok(()); "contract_address_const<8>")]
 #[test_case("contract_address_const", vec![] => Err(UnsupportedGenericArg);
 "contract_address_const")]
@@ -230,9 +229,9 @@ fn find_type_specialization(
 #[test_case("dup", vec![] => Err(WrongNumberOfGenericArgs); "dup<>")]
 #[test_case("dup", vec![type_arg("GasBuiltin")] => Err(UnsupportedGenericArg);
 "dup<GasBuiltin>")]
-#[test_case("u128_jump_nz", vec![] => Ok(()); "u128_jump_nz<>")]
-#[test_case("u128_jump_nz", vec![type_arg("u128")]
-            => Err(WrongNumberOfGenericArgs); "u128_jump_nz<u128>")]
+#[test_case("u128_is_zero", vec![] => Ok(()); "u128_is_zero<>")]
+#[test_case("u128_is_zero", vec![type_arg("u128")]
+            => Err(WrongNumberOfGenericArgs); "u128_is_zero<u128>")]
 #[test_case("unwrap_nz", vec![type_arg("u128")] => Ok(()); "unwrap_nz<u128>")]
 #[test_case("unwrap_nz", vec![] => Err(WrongNumberOfGenericArgs); "unwrap_nz")]
 #[test_case("store_temp", vec![type_arg("u128")] => Ok(()); "store_temp<u128>")]
@@ -286,6 +285,7 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("storage_read_syscall", vec![] => Ok(()); "storage_read_syscall")]
 #[test_case("storage_write_syscall", vec![] => Ok(()); "storage_write_syscall")]
 #[test_case("call_contract_syscall", vec![] => Ok(()); "call_contract_syscall")]
+#[test_case("emit_event_syscall", vec![] => Ok(()); "emit_event_syscall")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,

@@ -6,7 +6,7 @@ use std::mem;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::{TextOffset, TextSpan};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -29,11 +29,11 @@ pub struct Parser<'a> {
     /// A vector of pending trivia to be added as leading trivia to the next valid terminal.
     pending_trivia: Vec<TriviumGreen>,
     /// The current offset, excluding the current terminal.
-    offset: u32,
+    offset: TextOffset,
     /// The width of the current terminal being handled.
-    current_width: u32,
+    current_width: TextWidth,
     /// The length of the trailing trivia following the last read token.
-    last_trivia_length: u32,
+    last_trivia_length: TextWidth,
     diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
 }
 
@@ -72,9 +72,9 @@ impl<'a> Parser<'a> {
             lexer,
             next_terminal,
             pending_trivia: Vec::new(),
-            offset: 0,
-            current_width: 0,
-            last_trivia_length: 0,
+            offset: Default::default(),
+            current_width: Default::default(),
+            last_trivia_length: Default::default(),
             diagnostics,
         };
         let green = parser.parse_syntax_file();
@@ -86,11 +86,11 @@ impl<'a> Parser<'a> {
         &mut self,
         missing_kind: ParserDiagnosticKind,
     ) -> T::Green {
-        let next_offset = (self.offset + self.current_width - self.last_trivia_length) as usize;
+        let next_offset = self.offset.add_width(self.current_width - self.last_trivia_length);
         self.diagnostics.add(ParserDiagnostic {
             file_id: self.file_id,
             kind: missing_kind,
-            span: TextSpan { start: TextOffset(next_offset), end: TextOffset(next_offset + 1) },
+            span: TextSpan { start: next_offset, end: next_offset },
         });
         T::missing(self.db)
     }
@@ -116,7 +116,7 @@ impl<'a> Parser<'a> {
         // Fix offset in case there are skipped tokens before EOF. This is usually done in
         // self.take_raw() but here we don't call self.take_raw as it tries to read the next
         // token, which doesn't exist.
-        self.offset += self.current_width;
+        self.offset = self.offset.add_width(self.current_width);
 
         let eof = self.add_trivia_to_terminal::<TerminalEndOfFile>(self.next_terminal.clone());
         SyntaxFile::new_green(self.db, items, eof)
@@ -341,6 +341,7 @@ impl<'a> Parser<'a> {
     /// Some(missing-identifier) is returned.
     fn try_parse_identifier(&mut self) -> Option<TerminalIdentifierGreen> {
         if self.peek().kind.is_keyword_terminal() {
+            // TODO(spapini): don't skip every keyword. Instead, pass a recovery set.
             Some(self.skip_token_and_return_missing::<TerminalIdentifier>(
                 ParserDiagnosticKind::ReservedIdentifier { identifier: self.peek().text.clone() },
             ))
@@ -433,10 +434,10 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Function.
     /// Expected pattern: `<FunctionDeclaration><Block>`
-    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> ItemFreeFunctionGreen {
+    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> FunctionWithBodyGreen {
         let declaration = self.expect_function_declaration();
         let function_body = self.parse_block();
-        ItemFreeFunction::new_green(self.db, attributes, declaration, function_body)
+        FunctionWithBody::new_green(self.db, attributes, declaration, function_body)
     }
 
     /// Assumes the current token is Trait.
@@ -719,7 +720,7 @@ impl<'a> Parser<'a> {
         let arg_list = ArgList::new_green(
             self.db,
             self.parse_separated_list::<Arg, TerminalComma, ArgListElementOrSeparatorGreen>(
-                Self::parse_function_argument,
+                Self::try_parse_function_argument,
                 is_of_kind!(rparen, block, rbrace, top_level),
                 "argument",
             ),
@@ -728,13 +729,40 @@ impl<'a> Parser<'a> {
         ArgListParenthesized::new_green(self.db, lparen, arg_list, rparen)
     }
 
+    /// Parses a function call's argument, which contains possibly modifiers, and a argument clause.
+    fn try_parse_function_argument(&mut self) -> Option<ArgGreen> {
+        let modifiers_list = self.parse_modifier_list();
+        let arg_clause = self.try_parse_argument_clause();
+        if !modifiers_list.is_empty() && arg_clause.is_none() {
+            let modifiers = ModifierList::new_green(self.db, modifiers_list);
+            let arg_clause = ArgClauseUnnamed::new_green(self.db, self.parse_expr()).into();
+            return Some(Arg::new_green(self.db, modifiers, arg_clause));
+        }
+        let modifiers = ModifierList::new_green(self.db, modifiers_list);
+        Some(Arg::new_green(self.db, modifiers, arg_clause?))
+    }
+
     /// Parses a function call's argument, which is an expression with or without the name
     /// of the argument.
     ///
     /// Possible patterns:
-    /// * `<Expr>`
-    /// * `<Identifier>: <Expr>`
-    fn parse_function_argument(&mut self) -> Option<ArgGreen> {
+    /// * `<Expr>` (unnamed).
+    /// * `<Identifier>: <Expr>` (named).
+    /// * `:<Identifier>` (Field init shorthand - syntactic sugar for `a: a`).
+    fn try_parse_argument_clause(&mut self) -> Option<ArgClauseGreen> {
+        if self.peek().kind == SyntaxKind::TerminalColon {
+            let colon = self.take::<TerminalColon>();
+            let argname = self.parse_identifier();
+            return Some(
+                ArgClauseFieldInitShorthand::new_green(
+                    self.db,
+                    colon,
+                    ExprFieldInitShorthand::new_green(self.db, argname),
+                )
+                .into(),
+            );
+        }
+
         // Read an expression.
         let expr_or_argname = self.try_parse_expr()?;
 
@@ -743,20 +771,12 @@ impl<'a> Parser<'a> {
         if self.peek().kind == SyntaxKind::TerminalColon {
             if let Some(argname) = self.try_extract_identifier(expr_or_argname) {
                 let colon = self.take::<TerminalColon>();
-                let expr = self.try_parse_expr()?;
-                return Some(Arg::new_green(
-                    self.db,
-                    ArgNameClause::new_green(self.db, argname, colon).into(),
-                    expr,
-                ));
+                let expr = self.parse_expr();
+                return Some(ArgClauseNamed::new_green(self.db, argname, colon, expr).into());
             }
         }
 
-        Some(Arg::new_green(
-            self.db,
-            OptionArgNameClauseEmpty::new_green(self.db).into(),
-            expr_or_argname,
-        ))
+        Some(ArgClauseUnnamed::new_green(self.db, expr_or_argname).into())
     }
 
     /// If the given `expr` is a simple identifier, returns the corresponding green node.
@@ -1007,13 +1027,20 @@ impl<'a> Parser<'a> {
         Some(match self.peek().kind {
             SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
             _ => {
-                let name = self.try_parse_identifier()?;
+                let modifier_list = self.parse_modifier_list();
+                let name = if modifier_list.is_empty() {
+                    self.try_parse_identifier()?
+                } else {
+                    self.parse_identifier()
+                };
+                let modifiers = ModifierList::new_green(self.db, modifier_list);
                 if self.peek().kind == SyntaxKind::TerminalColon {
                     let colon = self.take::<TerminalColon>();
                     let pattern = self.parse_pattern();
-                    PatternStructParamWithExpr::new_green(self.db, name, colon, pattern).into()
+                    PatternStructParamWithExpr::new_green(self.db, modifiers, name, colon, pattern)
+                        .into()
                 } else {
-                    name.into()
+                    PatternIdentifier::new_green(self.db, modifiers, name).into()
                 }
             }
         })
@@ -1319,7 +1346,21 @@ impl<'a> Parser<'a> {
     }
 
     fn try_parse_generic_param(&mut self) -> Option<GenericParamGreen> {
-        self.try_parse_identifier().map(|name| GenericParam::new_green(self.db, name))
+        match self.peek().kind {
+            SyntaxKind::TerminalConst => {
+                let const_kw = self.take::<TerminalConst>();
+                let name = self.parse_identifier();
+                Some(GenericParamConst::new_green(self.db, const_kw, name).into())
+            }
+            SyntaxKind::TerminalImpl => {
+                let impl_kw = self.take::<TerminalImpl>();
+                let name = self.parse_identifier();
+                let colon = self.parse_token::<TerminalColon>();
+                let trait_path = self.parse_path();
+                Some(GenericParamImpl::new_green(self.db, impl_kw, name, colon, trait_path).into())
+            }
+            _ => Some(GenericParamType::new_green(self.db, self.try_parse_identifier()?).into()),
+        }
     }
 
     // ------------------------------- Helpers -------------------------------
@@ -1445,7 +1486,7 @@ impl<'a> Parser<'a> {
 
     /// Takes a terminal from the Lexer and places it in self.next_terminal.
     fn take_raw(&mut self) -> LexerTerminal {
-        self.offset += self.current_width;
+        self.offset = self.offset.add_width(self.current_width);
         self.current_width = self.next_terminal.width(self.db);
         self.last_trivia_length =
             self.next_terminal.trailing_trivia.iter().map(|y| y.0.width(self.db)).sum();
@@ -1459,10 +1500,14 @@ impl<'a> Parser<'a> {
     fn skip_token(&mut self, diagnostic_kind: ParserDiagnosticKind) {
         let terminal = self.take_raw();
 
-        let diag_start =
-            (terminal.leading_trivia.iter().map(|trivium| trivium.0.width(self.db)).sum::<u32>()
-                + self.offset) as usize;
-        let diag_end = diag_start + terminal.text.len();
+        let diag_start = self.offset.add_width(
+            terminal
+                .leading_trivia
+                .iter()
+                .map(|trivium| trivium.0.width(self.db))
+                .sum::<TextWidth>(),
+        );
+        let diag_end = diag_start.add_width(TextWidth::from_str(&terminal.text));
 
         // Add to pending trivia.
         self.pending_trivia.extend(terminal.leading_trivia);
@@ -1471,7 +1516,7 @@ impl<'a> Parser<'a> {
         self.diagnostics.add(ParserDiagnostic {
             file_id: self.file_id,
             kind: diagnostic_kind,
-            span: TextSpan { start: TextOffset(diag_start), end: TextOffset(diag_end) },
+            span: TextSpan { start: diag_start, end: diag_end },
         });
     }
 
@@ -1493,11 +1538,15 @@ impl<'a> Parser<'a> {
         let mut diag_end = None;
         while !should_stop(self.peek().kind) {
             let terminal = self.take_raw();
-            diag_start.get_or_insert(self.offset as usize);
-            diag_end = Some((self.offset as usize) + terminal.text.len());
+            diag_start.get_or_insert(self.offset);
+            diag_end = Some(self.offset.add_width(TextWidth::from_str(&terminal.text)));
+
+            self.pending_trivia.extend(terminal.leading_trivia);
+            self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
+            self.pending_trivia.extend(terminal.trailing_trivia);
         }
         if let (Some(diag_start), Some(diag_end)) = (diag_start, diag_end) {
-            Err(SkippedError(TextSpan { start: TextOffset(diag_start), end: TextOffset(diag_end) }))
+            Err(SkippedError(TextSpan { start: diag_start, end: diag_end }))
         } else {
             Ok(())
         }

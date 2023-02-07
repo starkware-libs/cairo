@@ -1,6 +1,6 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemFreeFunction)
+    │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
@@ -389,7 +389,7 @@
     │           │   └── trailing_trivia (kind: Trivia)
     │           │       └── child #0 (kind: TokenNewline).
     │           ├── items (kind: ItemList)
-    │           │   ├── child #0 (kind: ItemFreeFunction)
+    │           │   ├── child #0 (kind: FunctionWithBody)
     │           │   │   ├── attributes (kind: AttributeList) []
     │           │   │   ├── declaration (kind: FunctionDeclaration)
     │           │   │   │   ├── function_kw (kind: TerminalFunction)
@@ -558,21 +558,23 @@
     │           │   │       │       │               │   └── trailing_trivia (kind: Trivia) []
     │           │   │       │       │               ├── args (kind: ArgList)
     │           │   │       │       │               │   ├── item #0 (kind: Arg)
-    │           │   │       │       │               │   │   ├── name (kind: OptionArgNameClauseEmpty) []
-    │           │   │       │       │               │   │   └── value (kind: TerminalLiteralNumber)
-    │           │   │       │       │               │   │       ├── leading_trivia (kind: Trivia) []
-    │           │   │       │       │               │   │       ├── token (kind: TokenLiteralNumber): '1'
-    │           │   │       │       │               │   │       └── trailing_trivia (kind: Trivia) []
+    │           │   │       │       │               │   │   ├── modifiers (kind: ModifierList) []
+    │           │   │       │       │               │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │           │   │       │       │               │   │       └── value (kind: TerminalLiteralNumber)
+    │           │   │       │       │               │   │           ├── leading_trivia (kind: Trivia) []
+    │           │   │       │       │               │   │           ├── token (kind: TokenLiteralNumber): '1'
+    │           │   │       │       │               │   │           └── trailing_trivia (kind: Trivia) []
     │           │   │       │       │               │   ├── separator #0 (kind: TerminalComma)
     │           │   │       │       │               │   │   ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │               │   │   ├── token (kind: TokenComma): ','
     │           │   │       │       │               │   │   └── trailing_trivia (kind: Trivia) []
     │           │   │       │       │               │   └── item #1 (kind: Arg)
-    │           │   │       │       │               │       ├── name (kind: OptionArgNameClauseEmpty) []
-    │           │   │       │       │               │       └── value (kind: TerminalLiteralNumber)
-    │           │   │       │       │               │           ├── leading_trivia (kind: Trivia) []
-    │           │   │       │       │               │           ├── token (kind: TokenLiteralNumber): '3'
-    │           │   │       │       │               │           └── trailing_trivia (kind: Trivia) []
+    │           │   │       │       │               │       ├── modifiers (kind: ModifierList) []
+    │           │   │       │       │               │       └── arg_clause (kind: ArgClauseUnnamed)
+    │           │   │       │       │               │           └── value (kind: TerminalLiteralNumber)
+    │           │   │       │       │               │               ├── leading_trivia (kind: Trivia) []
+    │           │   │       │       │               │               ├── token (kind: TokenLiteralNumber): '3'
+    │           │   │       │       │               │               └── trailing_trivia (kind: Trivia) []
     │           │   │       │       │               └── rparen (kind: TerminalRParen)
     │           │   │       │       │                   ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │                   ├── token (kind: TokenRParen): ')'

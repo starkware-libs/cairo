@@ -1,0 +1,40 @@
+//! > Test fib_jumps.
+
+//! > test_file_name
+fib_jumps
+
+//! > test_function_name
+test_solve_gas
+
+//! > gas_solution
+#31: pedersen(0)
+#41: pedersen(0)
+#21: pedersen(0)
+#28: pedersen(0)
+#2: pedersen(0)
+#9: pedersen(0)
+#31: bitwise(0)
+#41: bitwise(0)
+#21: bitwise(0)
+#28: bitwise(0)
+#2: bitwise(0)
+#9: bitwise(0)
+#31: ec_op(0)
+#41: ec_op(0)
+#21: ec_op(0)
+#28: ec_op(0)
+#2: ec_op(0)
+#9: ec_op(0)
+#30: const(970)
+#31: const(0)
+#41: const(0)
+#46: const(0)
+#21: const(470)
+#24: const(0)
+#28: const(0)
+#2: const(1270)
+#4: const(0)
+#9: const(0)
+
+Fibonacci:
+const(1670)

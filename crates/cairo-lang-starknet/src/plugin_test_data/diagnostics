@@ -10,10 +10,60 @@ mod TestContract;
 //! > generated_cairo_code
 
 //! > expected_diagnostics
-error: Contracts without body are not supported.
- --> dummy_file.cairo:2:17
+error: Plugin diagnostic: Contracts without body are not supported.
+ --> lib.cairo:2:17
 mod TestContract;
                 ^
+
+error: Module file not found. Expected path: src/TestContract.cairo
+ --> lib.cairo:1:1
+#[contract]
+^*********^
+
+//! > ==========================================================================
+
+//! > Test diagnostics non legacy storage variable.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    struct Storage {
+        mapping: Map::<felt, felt>,
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+
+    
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        
+    }
+
+    mod __constructor {
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
+ --> lib.cairo:4:18
+        mapping: Map::<felt, felt>,
+                 ^***************^
 
 //! > ==========================================================================
 
@@ -31,13 +81,18 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
     #[external]
     fn foo(x: (felt, felt)) {
     }
 
     
+
+    
+
     trait __abi {
         #[external]
         fn foo(x: (felt, felt));
@@ -46,16 +101,63 @@ mod TestContract {
     }
 
     mod __external {
+        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_x =
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::ArrayTrait::is_empty(ref data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::foo(__arg_x);
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
         
+    }
+
+    mod __constructor {
         
     }
 }
 
 //! > expected_diagnostics
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:15
-    fn foo(x: (felt, felt)) {
-              ^**********^
+error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:34:23
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                      ^*************************************************^
 
 //! > ==========================================================================
 
@@ -73,13 +175,18 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
     #[external]
     fn foo() -> (felt, felt) {
     }
 
     
+
+    
+
     trait __abi {
         #[external]
         fn foo() -> (felt, felt);
@@ -88,16 +195,175 @@ mod TestContract {
     }
 
     mod __external {
+        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::ArrayTrait::is_empty(ref data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let res = super::foo();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+            arr
+        }
         
+    }
+
+    mod __constructor {
         
     }
 }
 
 //! > expected_diagnostics
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:17
+error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::felt)", found: "()".
+ --> lib.cairo:4:30
     fn foo() -> (felt, felt) {
-                ^**********^
+                             ^
+
+error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:55:13
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+            ^***************************************************^
+
+//! > ==========================================================================
+
+//! > Test diagnostics of generic entry point.
+
+//! > test_function_name
+test_expand_contract
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo<T>(x: T) {
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    fn foo<T>(x: T) {
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn foo<T>(x: T);
+        
+        
+    }
+
+    mod __external {
+        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_x =
+                match serde::Serde::<T>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::ArrayTrait::is_empty(ref data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::foo(__arg_x);
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        
+    }
+
+    mod __constructor {
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contract entry points cannot have generic arguments
+ --> lib.cairo:4:11
+    fn foo<T>(x: T) {
+          ^*^
+
+error: Variable not dropped.
+ --> contract:6:15
+    fn foo<T>(x: T) {
+              ^
+
+error: Type not found.
+ --> contract:34:38
+                match serde::Serde::<T>::deserialize(ref data) {
+                                     ^
+
+error: Function `deserialize` of trait `core::serde::Serde` has multiple implementations, in: core::serde::FeltSerde, core::serde::BoolSerde, core::serde::U8Serde, core::serde::U64Serde, core::serde::U128Serde, core::serde::U256Serde, core::serde::ArrayFeltSerde
+ --> contract:34:23
+                match serde::Serde::<T>::deserialize(ref data) {
+                      ^**************************************^
+
+error: Plugin diagnostic: Type annotation needed.
+ --> lib.cairo:4:8
+    fn foo<T>(x: T) {
+       ^*^
 
 //! > ==========================================================================
 
@@ -115,13 +381,18 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
     #[external]
     fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
     }
 
     
+
+    
+
     trait __abi {
         #[external]
         fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt);
@@ -130,26 +401,90 @@ mod TestContract {
     }
 
     mod __external {
+        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_x =
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+
+            let __arg_y =
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::ArrayTrait::is_empty(ref data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let res = super::foo(__arg_x, __arg_y);
+            let mut arr = array_new();
+            // References.
+            // Result.
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+            arr
+        }
         
+    }
+
+    mod __constructor {
         
     }
 }
 
 //! > expected_diagnostics
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:15
+error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::felt)", found: "()".
+ --> lib.cairo:4:62
     fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
-              ^**********^
+                                                             ^
 
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:32
-    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
-                               ^**********^
+error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:34:23
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                      ^*************************************************^
 
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:49
-    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
-                                                ^**********^
+error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:44:23
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                      ^*************************************************^
+
+error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:74:13
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+            ^***************************************************^
 
 //! > ==========================================================================
 
@@ -168,10 +503,15 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
+
+    
+
     trait __abi {
         
         
@@ -179,13 +519,16 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }
 
 //! > expected_diagnostics
-error: Event function body must be empty.
- --> dummy_file.cairo:5:9
+error: Plugin diagnostic: Event function body must be empty.
+ --> lib.cairo:5:9
         let x = 1;
         ^********^
 
@@ -205,10 +548,15 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
+
+    
+
     trait __abi {
         
         
@@ -216,13 +564,16 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }
 
 //! > expected_diagnostics
-error: `ref` parameters are not supported in contract events.
- --> dummy_file.cairo:4:23
+error: Plugin diagnostic: `ref` parameters are not supported in contract events.
+ --> lib.cairo:4:23
     fn with_ref_param(ref x: felt, y: u128) {
                       ^*^
 
@@ -242,10 +593,15 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
+
+    
+
     trait __abi {
         
         
@@ -253,13 +609,16 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }
 
 //! > expected_diagnostics
-error: Event functions must not return a value.
- --> dummy_file.cairo:4:27
+error: Plugin diagnostic: Event functions must not return a value.
+ --> lib.cairo:4:27
     fn nonunit_ret_type() -> felt {
                           ^*****^
 
@@ -274,15 +633,20 @@ test_expand_contract
 #[contract]
 mod TestContract {
     #[event]
-    fn bad_event(x: (felt, felt)) {
+    fn generic_event<T>(x: T) {
     }
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
+
+    
+
     trait __abi {
         
         
@@ -290,15 +654,18 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }
 
 //! > expected_diagnostics
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:21
-    fn bad_event(x: (felt, felt)) {
-                    ^**********^
+error: Plugin diagnostic: Event functions cannot have generic arguments
+ --> lib.cairo:4:21
+    fn generic_event<T>(x: T) {
+                    ^*^
 
 //! > ==========================================================================
 
@@ -317,10 +684,15 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
 
     
+
+    
+
     trait __abi {
         
         
@@ -328,32 +700,30 @@ mod TestContract {
 
     mod __external {
         
+    }
+
+    mod __constructor {
         
     }
 }
 
 //! > expected_diagnostics
-error: Event functions must not return a value.
- --> dummy_file.cairo:4:61
+error: Plugin diagnostic: Event functions must not return a value.
+ --> lib.cairo:4:61
     fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
                                                             ^*****^
 
-error: `ref` parameters are not supported in contract events.
- --> dummy_file.cairo:4:18
+error: Plugin diagnostic: `ref` parameters are not supported in contract events.
+ --> lib.cairo:4:18
     fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
                  ^*^
 
-error: `ref` parameters are not supported in contract events.
- --> dummy_file.cairo:4:31
+error: Plugin diagnostic: `ref` parameters are not supported in contract events.
+ --> lib.cairo:4:31
     fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
                               ^*^
 
-error: Could not find serialization for type `(felt, felt)`
- --> dummy_file.cairo:4:47
-    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
-                                              ^**********^
-
-error: Event function body must be empty.
- --> dummy_file.cairo:5:9
+error: Plugin diagnostic: Event function body must be empty.
+ --> lib.cairo:5:9
         3
         ^

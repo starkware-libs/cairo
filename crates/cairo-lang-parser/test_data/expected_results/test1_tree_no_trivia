@@ -15,7 +15,7 @@
     │   │   │   └── item #1 (kind: PathSegmentSimple)
     │   │   │       └── ident (kind: TokenIdentifier): 'something'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   ├── child #2 (kind: ItemFreeFunction)
+    │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
@@ -254,24 +254,27 @@
     │   │       │   │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │   │       ├── args (kind: ArgList)
     │   │       │   │   │   │       │   ├── item #0 (kind: Arg)
-    │   │       │   │   │   │       │   │   ├── name (kind: OptionArgNameClauseEmpty) []
-    │   │       │   │   │   │       │   │   └── value (kind: ExprPath)
-    │   │       │   │   │   │       │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │   │           └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   │   │       │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   │       │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │   │       │   │       └── value (kind: ExprPath)
+    │   │       │   │   │   │       │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │   │               └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │   │       │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   │   │       │   ├── item #1 (kind: Arg)
-    │   │       │   │   │   │       │   │   ├── name (kind: OptionArgNameClauseEmpty) []
-    │   │       │   │   │   │       │   │   └── value (kind: ExprErrorPropagate)
-    │   │       │   │   │   │       │   │       ├── expr (kind: ExprPath)
-    │   │       │   │   │   │       │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │   │       │       └── ident (kind: TokenIdentifier): 'y'
-    │   │       │   │   │   │       │   │       └── op (kind: TokenQuestionMark): '?'
+    │   │       │   │   │   │       │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   │       │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │   │       │   │       └── value (kind: ExprErrorPropagate)
+    │   │       │   │   │   │       │   │           ├── expr (kind: ExprPath)
+    │   │       │   │   │   │       │   │           │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │   │           │       └── ident (kind: TokenIdentifier): 'y'
+    │   │       │   │   │   │       │   │           └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   │   │       │   ├── separator #1 (kind: TokenComma): ','
     │   │       │   │   │   │       │   └── item #2 (kind: Arg)
-    │   │       │   │   │   │       │       ├── name (kind: OptionArgNameClauseEmpty) []
-    │   │       │   │   │   │       │       └── value (kind: ExprPath)
-    │   │       │   │   │   │       │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       │               └── ident (kind: TokenIdentifier): 'z'
+    │   │       │   │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │   │       │           └── value (kind: ExprPath)
+    │   │       │   │   │   │       │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │                   └── ident (kind: TokenIdentifier): 'z'
     │   │       │   │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
@@ -301,10 +304,11 @@
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │       ├── args (kind: ArgList)
     │   │       │   │   │       │   └── item #0 (kind: Arg)
-    │   │       │   │   │       │       ├── name (kind: OptionArgNameClauseEmpty) []
-    │   │       │   │   │       │       └── value (kind: ExprPath)
-    │   │       │   │   │       │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       │               └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       │           └── value (kind: ExprPath)
+    │   │       │   │   │       │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       │                   └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #10 (kind: StatementExpr)
@@ -324,10 +328,11 @@
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │       ├── args (kind: ArgList)
     │   │       │   │   │       │   └── item #0 (kind: Arg)
-    │   │       │   │   │       │       ├── name (kind: OptionArgNameClauseEmpty) []
-    │   │       │   │   │       │       └── value (kind: ExprPath)
-    │   │       │   │   │       │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       │               └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       │           └── value (kind: ExprPath)
+    │   │       │   │   │       │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       │                   └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   └── child #11 (kind: StatementReturn)
@@ -337,7 +342,7 @@
     │   │       │       │       └── ident (kind: TokenIdentifier): 'x'
     │   │       │       └── semicolon (kind: TokenSemicolon): ';'
     │   │       └── rbrace: Missing
-    │   ├── child #3 (kind: ItemFreeFunction)
+    │   ├── child #3 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
@@ -345,10 +350,10 @@
     │   │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   │   ├── langle (kind: TokenLT): '<'
     │   │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   │   ├── item #0 (kind: GenericParamType)
     │   │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
     │   │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   │   └── item #1 (kind: GenericParamType)
     │   │   │   │   │       └── name (kind: TokenIdentifier): 'B'
     │   │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   │   └── signature (kind: FunctionSignature)
@@ -385,10 +390,10 @@
     │   │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   │   ├── langle (kind: TokenLT): '<'
     │   │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   │   ├── item #0 (kind: GenericParamType)
     │   │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
     │   │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   │   └── item #1 (kind: GenericParamType)
     │   │   │   │   │       └── name (kind: TokenIdentifier): 'b'
     │   │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   │   └── signature (kind: FunctionSignature)
@@ -422,10 +427,10 @@
     │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   ├── langle (kind: TokenLT): '<'
     │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   ├── item #0 (kind: GenericParamType)
     │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
     │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │   └── item #1 (kind: GenericParamType)
     │   │   │   │       └── name (kind: TokenIdentifier): 'B'
     │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   ├── lbrace (kind: TokenLBrace): '{'
@@ -482,7 +487,7 @@
     │       ├── generic_params (kind: WrappedGenericParamList)
     │       │   ├── langle (kind: TokenLT): '<'
     │       │   ├── generic_params (kind: GenericParamList)
-    │       │   │   └── item #0 (kind: GenericParam)
+    │       │   │   └── item #0 (kind: GenericParamType)
     │       │   │       └── name (kind: TokenIdentifier): 'T'
     │       │   └── rangle (kind: TokenGT): '>'
     │       ├── eq (kind: TokenEq): '='

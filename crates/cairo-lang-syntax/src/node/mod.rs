@@ -5,9 +5,8 @@ use std::fmt::Display;
 use std::sync::Arc;
 use std::vec;
 
-use cairo_lang_filesystem::span::{TextOffset, TextSpan};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use smol_str::SmolStr;
-use substring::Substring;
 
 use self::ast::TriviaGreen;
 use self::db::SyntaxGroup;
@@ -18,8 +17,6 @@ use self::kind::SyntaxKind;
 use self::stable_ptr::SyntaxStablePtr;
 
 pub mod ast;
-#[cfg(test)]
-mod ast_test;
 pub mod db;
 pub mod element_list;
 pub mod green;
@@ -28,6 +25,10 @@ pub mod ids;
 pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
+pub mod utils;
+
+#[cfg(test)]
+mod ast_test;
 #[cfg(test)]
 mod test_utils;
 
@@ -39,7 +40,7 @@ struct SyntaxNodeInner {
     green: GreenId,
     /// Number of characters from the beginning of the file to the start of the span of this
     /// syntax subtree.
-    offset: u32,
+    offset: TextOffset,
     parent: Option<SyntaxNode>,
     stable_ptr: SyntaxStablePtrId,
 }
@@ -47,16 +48,16 @@ impl SyntaxNode {
     pub fn new_root(db: &dyn SyntaxGroup, green: ast::SyntaxFileGreen) -> Self {
         let inner = SyntaxNodeInner {
             green: green.0,
-            offset: 0,
+            offset: TextOffset::default(),
             parent: None,
             stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root),
         };
         Self(Arc::new(inner))
     }
     pub fn offset(&self) -> TextOffset {
-        TextOffset(self.0.offset as usize)
+        self.0.offset
     }
-    pub fn width(&self, db: &dyn SyntaxGroup) -> u32 {
+    pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
         self.green_node(db).width()
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> SyntaxKind {
@@ -64,7 +65,7 @@ impl SyntaxNode {
     }
     pub fn span(&self, db: &dyn SyntaxGroup) -> TextSpan {
         let start = self.offset();
-        let end = start.add(self.width(db) as usize);
+        let end = start.add_width(self.width(db));
         TextSpan { start, end }
     }
     /// Returns the text of the token if this node is a token.
@@ -137,7 +138,8 @@ impl SyntaxNode {
                     return token_node.offset();
                 }
                 let children = &mut self.children(db);
-                if let Some(child) = children.find(|child| child.width(db) != 0) {
+                if let Some(child) = children.find(|child| child.width(db) != TextWidth::default())
+                {
                     child.span_start_without_trivia(db)
                 } else {
                     self.offset()
@@ -154,7 +156,9 @@ impl SyntaxNode {
                     return token_node.span(db).end;
                 }
                 let children = &mut self.children(db);
-                if let Some(child) = children.filter(|child| child.width(db) != 0).last() {
+                if let Some(child) =
+                    children.filter(|child| child.width(db) != TextWidth::default()).last()
+                {
                     child.span_end_without_trivia(db)
                 } else {
                     self.span(db).end
@@ -167,7 +171,7 @@ impl SyntaxNode {
     /// Lookups a syntax node using an offset.
     pub fn lookup_offset(&self, db: &dyn SyntaxGroup, offset: TextOffset) -> SyntaxNode {
         for child in self.children(db) {
-            if child.offset().0 + (child.width(db) as usize) > offset.0 {
+            if child.offset().add_width(child.width(db)) > offset {
                 return child.lookup_offset(db, offset);
             }
         }
@@ -176,8 +180,8 @@ impl SyntaxNode {
 
     /// Returns all the text under the syntax node.
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text(self, db: &dyn SyntaxGroup) -> String {
-        format!("{}", NodeTextFormatter { node: &self, db })
+    pub fn get_text(&self, db: &dyn SyntaxGroup) -> String {
+        format!("{}", NodeTextFormatter { node: self, db })
     }
 
     /// Returns all the text under the syntax node, without the outmost trivia (the leading trivia
@@ -198,10 +202,14 @@ impl SyntaxNode {
     pub fn get_text_of_span(self, db: &dyn SyntaxGroup, span: TextSpan) -> String {
         let orig_span = self.span(db);
         assert!(orig_span.contains(span));
+        let full_text = self.get_text(db);
+        let zero_offset = TextOffset::default();
 
-        let left_offset = span.start - orig_span.start;
-        let right_offset = span.end - orig_span.start;
-        self.get_text(db).substring(left_offset, right_offset).to_string()
+        let span_in_span = TextSpan {
+            start: zero_offset.add_width(span.start - orig_span.start),
+            end: zero_offset.add_width(span.end - orig_span.start),
+        };
+        span_in_span.take(&full_text).to_string()
     }
 }
 pub struct SyntaxNodeChildIterator<'db> {
@@ -209,7 +217,7 @@ pub struct SyntaxNodeChildIterator<'db> {
     node: SyntaxNode,
     green_iterator: vec::IntoIter<GreenId>,
     /// The current offset in the source file of the start of the child.
-    offset: u32,
+    offset: TextOffset,
     /// Mapping from (kind, key_fields) to the number of times this indexing pair has been seen.
     /// This is used to maintain the correct index for creating each StablePtr.
     /// See [`self::key_fields`].
@@ -244,7 +252,7 @@ impl<'db> Iterator for SyntaxNodeChildIterator<'db> {
             parent: Some(self.node.clone()),
             stable_ptr,
         }));
-        self.offset += width;
+        self.offset = self.offset.add_width(width);
         Some(res)
     }
 }

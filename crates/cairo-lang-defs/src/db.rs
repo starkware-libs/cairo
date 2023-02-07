@@ -10,7 +10,6 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
-use itertools::chain;
 
 use crate::ids::*;
 use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic};
@@ -94,7 +93,7 @@ pub trait DefsGroup:
     fn module_free_functions(
         &self,
         module_id: ModuleId,
-    ) -> Maybe<OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>>;
+    ) -> Maybe<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>>;
     fn module_free_functions_ids(&self, module_id: ModuleId) -> Maybe<Vec<FreeFunctionId>>;
     fn module_items(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ModuleItemId>>>;
     fn module_uses(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<UseId, ast::ItemUse>>;
@@ -125,7 +124,7 @@ pub trait DefsGroup:
         module_id: ModuleId,
     ) -> Maybe<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>;
     fn module_extern_functions_ids(&self, module_id: ModuleId) -> Maybe<Vec<ExternFunctionId>>;
-    fn module_generated_file_info(
+    fn module_generated_file_infos(
         &self,
         module_id: ModuleId,
     ) -> Maybe<Vec<Option<GeneratedFileInfo>>>;
@@ -152,7 +151,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
                     // This is an inline module, we return the file where the inline module was
                     // defined. It can be either the file of the parent module
                     // or a plugin-generated virtual file.
-                    db.module_file(submodule_id.module_file(db))?
+                    db.module_file(submodule_id.module_file_id(db))?
                 }
                 MaybeModuleBody::None(_) => {
                     let name = submodule_id.name(db);
@@ -231,10 +230,11 @@ pub struct GeneratedFileInfo {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
+    items: Arc<Vec<ModuleItemId>>,
     constants: OrderedHashMap<ConstantId, ast::ItemConstant>,
     submodules: OrderedHashMap<SubmoduleId, ast::ItemModule>,
     uses: OrderedHashMap<UseId, ast::ItemUse>,
-    free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
+    free_functions: OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>,
     structs: OrderedHashMap<StructId, ast::ItemStruct>,
     enums: OrderedHashMap<EnumId, ast::ItemEnum>,
     type_aliases: OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>,
@@ -244,7 +244,7 @@ pub struct ModuleData {
     extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
     files: Vec<FileId>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
-    generated_file_info: Vec<Option<GeneratedFileInfo>>,
+    generated_file_infos: Vec<Option<GeneratedFileInfo>>,
     plugin_diagnostics: Vec<(ModuleFileId, PluginDiagnostic)>,
 }
 
@@ -269,7 +269,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
 
                     // If this is an inline module, copy its generation file info from the parent
                     // module, from the file where this submodule was defined.
-                    main_file_info = parent_module_data.generated_file_info
+                    main_file_info = parent_module_data.generated_file_infos
                         [submodule_id.file_index(db).0]
                         .clone();
                     body.items(syntax_db)
@@ -283,7 +283,8 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     module_queue.push_back((module_file, item_asts));
     let mut res = ModuleData::default();
 
-    res.generated_file_info.push(main_file_info);
+    let mut items = vec![];
+    res.generated_file_infos.push(main_file_info);
     while let Some((module_file, item_asts)) = module_queue.pop_front() {
         let file_index = FileIndex(res.files.len());
         let module_file_id = ModuleFileId(module_id, file_index);
@@ -309,7 +310,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         name: generated.name,
                         content: Arc::new(generated.content),
                     }));
-                    res.generated_file_info.push(Some(GeneratedFileInfo {
+                    res.generated_file_infos.push(Some(GeneratedFileInfo {
                         aux_data: generated.aux_data,
                         origin: module_file_id,
                     }));
@@ -327,20 +328,23 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 // Don't add the original item to the module data.
                 continue;
             }
-            match item_ast {
+            let module_item = match item_ast {
                 ast::Item::Constant(constant) => {
                     let item_id =
                         db.intern_constant(ConstantLongId(module_file_id, constant.stable_ptr()));
                     res.constants.insert(item_id, constant);
+                    ModuleItemId::Constant(item_id)
                 }
                 ast::Item::Module(module) => {
                     let item_id =
                         db.intern_submodule(SubmoduleLongId(module_file_id, module.stable_ptr()));
                     res.submodules.insert(item_id, module);
+                    ModuleItemId::Submodule(item_id)
                 }
                 ast::Item::Use(us) => {
                     let item_id = db.intern_use(UseLongId(module_file_id, us.stable_ptr()));
                     res.uses.insert(item_id, us);
+                    ModuleItemId::Use(item_id)
                 }
                 ast::Item::FreeFunction(function) => {
                     let item_id = db.intern_free_function(FreeFunctionLongId(
@@ -348,6 +352,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         function.stable_ptr(),
                     ));
                     res.free_functions.insert(item_id, function);
+                    ModuleItemId::FreeFunction(item_id)
                 }
                 ast::Item::ExternFunction(extern_function) => {
                     let item_id = db.intern_extern_function(ExternFunctionLongId(
@@ -355,6 +360,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         extern_function.stable_ptr(),
                     ));
                     res.extern_functions.insert(item_id, extern_function);
+                    ModuleItemId::ExternFunction(item_id)
                 }
                 ast::Item::ExternType(extern_type) => {
                     let item_id = db.intern_extern_type(ExternTypeLongId(
@@ -362,23 +368,28 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         extern_type.stable_ptr(),
                     ));
                     res.extern_types.insert(item_id, extern_type);
+                    ModuleItemId::ExternType(item_id)
                 }
                 ast::Item::Trait(trt) => {
                     let item_id = db.intern_trait(TraitLongId(module_file_id, trt.stable_ptr()));
                     res.traits.insert(item_id, trt);
+                    ModuleItemId::Trait(item_id)
                 }
                 ast::Item::Impl(imp) => {
                     let item_id = db.intern_impl(ImplLongId(module_file_id, imp.stable_ptr()));
                     res.impls.insert(item_id, imp);
+                    ModuleItemId::Impl(item_id)
                 }
-                ast::Item::Struct(strct) => {
+                ast::Item::Struct(structure) => {
                     let item_id =
-                        db.intern_struct(StructLongId(module_file_id, strct.stable_ptr()));
-                    res.structs.insert(item_id, strct);
+                        db.intern_struct(StructLongId(module_file_id, structure.stable_ptr()));
+                    res.structs.insert(item_id, structure);
+                    ModuleItemId::Struct(item_id)
                 }
                 ast::Item::Enum(enm) => {
                     let item_id = db.intern_enum(EnumLongId(module_file_id, enm.stable_ptr()));
                     res.enums.insert(item_id, enm);
+                    ModuleItemId::Enum(item_id)
                 }
                 ast::Item::TypeAlias(type_alias) => {
                     let item_id = db.intern_type_alias(TypeAliasLongId(
@@ -386,10 +397,13 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         type_alias.stable_ptr(),
                     ));
                     res.type_aliases.insert(item_id, type_alias);
+                    ModuleItemId::TypeAlias(item_id)
                 }
-            }
+            };
+            items.push(module_item);
         }
     }
+    res.items = items.into();
     Ok(res)
 }
 
@@ -420,7 +434,7 @@ fn module_submodules_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<S
 pub fn module_free_functions(
     db: &dyn DefsGroup,
     module_id: ModuleId,
-) -> Maybe<OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>> {
+) -> Maybe<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>> {
     Ok(db.priv_module_data(module_id)?.free_functions)
 }
 pub fn module_free_functions_ids(
@@ -524,12 +538,12 @@ pub fn module_extern_functions_ids(
     Ok(db.module_extern_functions(module_id)?.keys().copied().collect())
 }
 
-/// Returns the generated_file_info of the given module.
-pub fn module_generated_file_info(
+/// Returns the generated_file_infos of the given module.
+pub fn module_generated_file_infos(
     db: &dyn DefsGroup,
     module_id: ModuleId,
 ) -> Maybe<Vec<Option<GeneratedFileInfo>>> {
-    Ok(db.priv_module_data(module_id)?.generated_file_info)
+    Ok(db.priv_module_data(module_id)?.generated_file_infos)
 }
 
 /// Returns all the plugin diagnostics of the given module.
@@ -541,23 +555,5 @@ pub fn module_plugin_diagnostics(
 }
 
 fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<ModuleItemId>>> {
-    // TODO(ilya): Consider returning the items in ast order.
-    Ok(Arc::new(
-        chain!(
-            db.module_constants_ids(module_id)?.into_iter().map(ModuleItemId::Constant),
-            db.module_submodules_ids(module_id)?.into_iter().map(ModuleItemId::Submodule),
-            db.module_uses_ids(module_id)?.into_iter().map(ModuleItemId::Use),
-            db.module_free_functions_ids(module_id)?.into_iter().map(ModuleItemId::FreeFunction),
-            db.module_extern_functions_ids(module_id)?
-                .into_iter()
-                .map(ModuleItemId::ExternFunction),
-            db.module_extern_types_ids(module_id)?.into_iter().map(ModuleItemId::ExternType),
-            db.module_structs_ids(module_id)?.into_iter().map(ModuleItemId::Struct),
-            db.module_enums_ids(module_id)?.into_iter().map(ModuleItemId::Enum),
-            db.module_type_aliases_ids(module_id)?.into_iter().map(ModuleItemId::TypeAlias),
-            db.module_traits_ids(module_id)?.into_iter().map(ModuleItemId::Trait),
-            db.module_impls_ids(module_id)?.into_iter().map(ModuleItemId::Impl),
-        )
-        .collect(),
-    ))
+    Ok(db.priv_module_data(module_id)?.items)
 }

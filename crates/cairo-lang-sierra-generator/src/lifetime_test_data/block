@@ -23,39 +23,23 @@ fn foo(x: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-blk0:
-Inputs:
-Statements:
-End:
-  Callsite(v2)
-
-blk1:
-Inputs:
-Statements:
-  (v2: core::felt) <- core::felt_add(v1, v1)
-  (v3: core::felt) <- 1u
-  (v4: core::felt) <- core::felt_add(v1, v3)
-  (v5: core::felt) <- blk0()
-  (v6: core::felt) <- 20u
-End:
-  Callsite(v6)
-
-blk2 (root):
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
-  (v7: core::felt) <- blk1()
+  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v3: core::felt) <- 1u
+  (v4: core::felt) <- core::felt_add(v1, v3)
+  (v5: core::felt) <- 20u
 End:
-  Return(v7)
+  Return(v5)
 
 //! > last_use
-((BlockId(2), 2), 0)
-((BlockId(1), 5), 0)
-((BlockId(0), 0), 0)
-((BlockId(1), 2), 1)
-((BlockId(1), 2), 0)
-((BlockId(2), 0), 1)
+v5: ((BlockId(0), 5), 0)
+v3: ((BlockId(0), 3), 1)
+v1: ((BlockId(0), 3), 0)
+v0: ((BlockId(0), 0), 1)
 
 //! > drops
-PostStatement((BlockId(1), 3)): v5
-PostStatement((BlockId(1), 2)): v4
+PostStatement((BlockId(0), 3)): v4
+PostStatement((BlockId(0), 1)): v2

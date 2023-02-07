@@ -24,7 +24,7 @@ Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
 Initial refs:
 Statements:
 End:
-  Callsite(v1)
+  Callsite({v1 -> v4})
 
 blk1:
 Inputs: v2: core::felt
@@ -39,7 +39,7 @@ Inputs: v5: core::integer::u128
 Initial refs:
 Statements:
 End:
-  Callsite(v5)
+  Callsite({v5 -> v8})
 
 blk3:
 Inputs: v6: core::felt
@@ -53,11 +53,11 @@ blk4 (root):
 Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
 Initial refs:
 Statements:
-  (v4: core::result::Result::<core::integer::u128, core::felt>) <- match_enum(v0) {
+  () <- match_enum(v0) {
     Result::Ok => blk0,
     Result::Err => blk1,
   }
-  (v8: core::integer::u128) <- match_enum(v4) {
+  () <- match_enum(v4) {
     Result::Ok => blk2,
     Result::Err => blk3,
   }
@@ -71,7 +71,7 @@ blk0:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
 Statements:
 End:
-  Callsite(v1)
+  Callsite({v1 -> v4})
 
 blk1:
 Inputs: v2: core::felt
@@ -84,7 +84,7 @@ blk2:
 Inputs: v5: core::integer::u128
 Statements:
 End:
-  Callsite(v5)
+  Callsite({})
 
 blk3:
 Inputs: v6: core::felt
@@ -96,11 +96,11 @@ End:
 blk4 (root):
 Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
 Statements:
-  (v4: core::result::Result::<core::integer::u128, core::felt>) <- match_enum(v0) {
+  () <- match_enum(v0) {
     Result::Ok => blk0,
     Result::Err => blk1,
   }
-  (v8: core::integer::u128) <- match_enum(v4) {
+  () <- match_enum(v4) {
     Result::Ok => blk2,
     Result::Err => blk3,
   }

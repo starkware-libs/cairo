@@ -2,28 +2,67 @@
 #[path = "span_test.rs"]
 mod test;
 
-use std::ops::Sub;
+use std::iter::Sum;
+use std::ops::{Add, Sub};
 
 use crate::db::FilesGroup;
 use crate::ids::FileId;
 
-// TODO(spapini): Be consistent in the project with u32 or usize offsets.
-
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TextOffset(pub usize);
-impl TextOffset {
-    pub fn inc(&mut self) {
-        self.0 += 1;
+/// Byte length of a utf8 string.
+// Note: The wrapped value is private to make sure no one gets confused with non utf8 sizes.
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TextWidth(u32);
+impl TextWidth {
+    pub fn from_char(c: char) -> Self {
+        Self(c.len_utf8() as u32)
     }
-    pub fn add(&self, width: usize) -> Self {
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(s: &str) -> Self {
+        Self(s.len() as u32)
+    }
+    pub fn new_for_testing(value: u32) -> Self {
+        Self(value)
+    }
+}
+impl Add for TextWidth {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+impl Sub for TextWidth {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0 - rhs.0)
+    }
+}
+impl Sum for TextWidth {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self(iter.map(|x| x.0).sum())
+    }
+}
+
+/// Byte offset inside a utf8 string.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TextOffset(TextWidth);
+impl TextOffset {
+    pub fn add_width(&self, width: TextWidth) -> Self {
         TextOffset(self.0 + width)
+    }
+    pub fn sub_width(&self, width: TextWidth) -> Self {
+        TextOffset(self.0 - width)
+    }
+    pub fn take_from<'a>(&self, content: &'a str) -> &'a str {
+        &content[(self.0.0 as usize)..]
     }
 }
 impl Sub for TextOffset {
-    type Output = usize;
+    type Output = TextWidth;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        self.0 - rhs.0
+        TextWidth(self.0.0 - rhs.0.0)
     }
 }
 
@@ -33,36 +72,47 @@ pub struct TextSpan {
     pub end: TextOffset,
 }
 impl TextSpan {
-    pub fn width(&self) -> u32 {
-        (self.end - self.start) as u32
+    pub fn width(&self) -> TextWidth {
+        self.end - self.start
     }
     pub fn contains(&self, other: Self) -> bool {
         self.start <= other.start && self.end >= other.end
     }
+    pub fn take<'b>(&self, content: &'b str) -> &'b str {
+        &content[(self.start.0.0 as usize)..(self.end.0.0 as usize)]
+    }
+    pub fn n_chars(&self, content: &str) -> usize {
+        self.take(content).chars().count()
+    }
+    /// Get the span of width 0, located right after this span.
+    pub fn after(&self) -> Self {
+        Self { start: self.end, end: self.end }
+    }
 }
 
+/// Human readable position inside a file, in lines and characters.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextPosition {
-    // Both are 0 based.
+    /// Line index, 0 based.
     pub line: usize,
+    /// Character index inside the line, 0 based.
     pub col: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FileSummary {
     pub line_offsets: Vec<TextOffset>,
-    pub total_length: usize,
+    pub last_offset: TextOffset,
 }
 
-#[allow(dead_code)]
 impl TextOffset {
     pub fn get_line_number(&self, db: &dyn FilesGroup, file: FileId) -> Option<usize> {
         let summary = db.file_summary(file)?;
         assert!(
-            self.0 <= summary.total_length,
-            "TextOffset out of range. {} > {}.",
+            *self <= summary.last_offset,
+            "TextOffset out of range. {:?} > {:?}.",
             self.0,
-            summary.total_length
+            summary.last_offset.0
         );
         Some(summary.line_offsets.binary_search(self).unwrap_or_else(|x| x - 1))
     }
@@ -71,7 +121,9 @@ impl TextOffset {
         let summary = db.file_summary(file)?;
         let line_number = self.get_line_number(db, file)?;
         let line_offset = summary.line_offsets[line_number];
-        Some(TextPosition { line: line_number, col: *self - line_offset })
+        let content = db.file_content(file)?;
+        let col = TextSpan { start: line_offset, end: *self }.n_chars(&content);
+        Some(TextPosition { line: line_number, col })
     }
 }
 

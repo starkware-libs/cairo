@@ -140,7 +140,6 @@ type B<P1, P2, P3> = (P1, P3, P2);
 test_function_diagnostics
 
 //! > function
-// TODO(orizi): Add diagnostics for this case.
 fn foo(a: A::<5>) -> felt {
     let (v, _) = a;
     v
@@ -153,6 +152,10 @@ foo
 type A<T> = (felt, T);
 
 //! > expected_diagnostics
+error: Unknown type.
+ --> lib.cairo:2:15
+fn foo(a: A::<5>) -> felt {
+              ^
 
 //! > ==========================================================================
 

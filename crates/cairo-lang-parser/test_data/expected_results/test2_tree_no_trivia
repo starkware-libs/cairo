@@ -1,6 +1,6 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemFreeFunction)
+    │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
@@ -141,7 +141,7 @@
     │       └── body (kind: ModuleBody)
     │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── items (kind: ItemList)
-    │           │   ├── child #0 (kind: ItemFreeFunction)
+    │           │   ├── child #0 (kind: FunctionWithBody)
     │           │   │   ├── attributes (kind: AttributeList) []
     │           │   │   ├── declaration (kind: FunctionDeclaration)
     │           │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
@@ -215,12 +215,14 @@
     │           │   │       │       │               ├── lparen (kind: TokenLParen): '('
     │           │   │       │       │               ├── args (kind: ArgList)
     │           │   │       │       │               │   ├── item #0 (kind: Arg)
-    │           │   │       │       │               │   │   ├── name (kind: OptionArgNameClauseEmpty) []
-    │           │   │       │       │               │   │   └── value (kind: TokenLiteralNumber): '1'
+    │           │   │       │       │               │   │   ├── modifiers (kind: ModifierList) []
+    │           │   │       │       │               │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │           │   │       │       │               │   │       └── value (kind: TokenLiteralNumber): '1'
     │           │   │       │       │               │   ├── separator #0 (kind: TokenComma): ','
     │           │   │       │       │               │   └── item #1 (kind: Arg)
-    │           │   │       │       │               │       ├── name (kind: OptionArgNameClauseEmpty) []
-    │           │   │       │       │               │       └── value (kind: TokenLiteralNumber): '3'
+    │           │   │       │       │               │       ├── modifiers (kind: ModifierList) []
+    │           │   │       │       │               │       └── arg_clause (kind: ArgClauseUnnamed)
+    │           │   │       │       │               │           └── value (kind: TokenLiteralNumber): '3'
     │           │   │       │       │               └── rparen (kind: TokenRParen): ')'
     │           │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │           │   │       └── rbrace (kind: TokenRBrace): '}'

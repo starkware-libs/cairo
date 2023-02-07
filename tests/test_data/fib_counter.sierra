@@ -4,7 +4,7 @@ type Tuple<felt, felt> = Struct<ut@Tuple, felt, felt>;
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc dup<felt> = dup<felt>;
-libfunc felt_jump_nz = felt_jump_nz;
+libfunc felt_is_zero = felt_is_zero;
 libfunc branch_align = branch_align;
 libfunc drop<felt> = drop<felt>;
 libfunc felt_const<0> = felt_const<0>;
@@ -23,7 +23,7 @@ libfunc struct_deconstruct<Tuple<felt, felt>> = struct_deconstruct<Tuple<felt, f
 
 revoke_ap_tracking() -> ();
 dup<felt>([2]) -> ([2], [3]);
-felt_jump_nz([3]) { fallthrough() 11([4]) };
+felt_is_zero([3]) { fallthrough() 11([4]) };
 branch_align() -> ();
 drop<felt>([1]) -> ();
 drop<felt>([2]) -> ();
@@ -31,7 +31,7 @@ felt_const<0>() -> ([5]);
 struct_construct<Tuple<felt, felt>>([0], [5]) -> ([6]);
 store_temp<Tuple<felt, felt>>([6]) -> ([6]);
 rename<Tuple<felt, felt>>([6]) -> ([7]);
-jump() { 30() };
+jump() { 29() };
 branch_align() -> ();
 drop<NonZero<felt>>([4]) -> ();
 dup<felt>([1]) -> ([1], [9]);
@@ -49,9 +49,8 @@ felt_const<1>() -> ([18]);
 felt_add([17], [18]) -> ([19]);
 struct_construct<Tuple<felt, felt>>([16], [19]) -> ([20]);
 store_temp<Tuple<felt, felt>>([20]) -> ([20]);
-rename<Tuple<felt, felt>>([20]) -> ([21]);
-rename<Tuple<felt, felt>>([21]) -> ([7]);
-rename<Tuple<felt, felt>>([7]) -> ([22]);
-return([22]);
+rename<Tuple<felt, felt>>([20]) -> ([7]);
+rename<Tuple<felt, felt>>([7]) -> ([21]);
+return([21]);
 
 fib_counter::fib_counter::fib@0([0]: felt, [1]: felt, [2]: felt) -> (Tuple<felt, felt>);

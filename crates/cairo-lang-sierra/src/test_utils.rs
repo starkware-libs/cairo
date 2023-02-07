@@ -7,6 +7,7 @@ use crate::program::{ConcreteTypeLongId, GenericArg};
 pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     let mut elements = BiMap::new();
     elements.insert("T".into(), as_type_long_id("T", &[]));
+    elements.insert("u64".into(), as_type_long_id("u64", &[]));
     elements.insert("u128".into(), as_type_long_id("u128", &[]));
     elements.insert("felt".into(), as_type_long_id("felt", &[]));
     elements.insert("Tuple<>".into(), as_named_type_long_id("Struct", "Tuple", &[]));
@@ -24,6 +25,7 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("GasBuiltin".into(), as_type_long_id("GasBuiltin", &[]));
     elements.insert("RangeCheck".into(), as_type_long_id("RangeCheck", &[]));
     elements.insert("System".into(), as_type_long_id("System", &[]));
+    elements.insert("StorageBaseAddress".into(), as_type_long_id("StorageBaseAddress", &[]));
     elements.insert("StorageAddress".into(), as_type_long_id("StorageAddress", &[]));
     elements.insert("ContractAddress".into(), as_type_long_id("ContractAddress", &[]));
     elements

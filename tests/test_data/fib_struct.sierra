@@ -5,7 +5,7 @@ type fib_struct::fib_struct::FibResult = Struct<ut@fib_struct::fib_struct::FibRe
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc dup<felt> = dup<felt>;
-libfunc felt_jump_nz = felt_jump_nz;
+libfunc felt_is_zero = felt_is_zero;
 libfunc branch_align = branch_align;
 libfunc drop<felt> = drop<felt>;
 libfunc felt_const<0> = felt_const<0>;
@@ -27,7 +27,7 @@ libfunc drop<Unit> = drop<Unit>;
 
 revoke_ap_tracking() -> ();
 dup<felt>([2]) -> ([2], [3]);
-felt_jump_nz([3]) { fallthrough() 12([4]) };
+felt_is_zero([3]) { fallthrough() 12([4]) };
 branch_align() -> ();
 drop<felt>([1]) -> ();
 drop<felt>([2]) -> ();
@@ -36,7 +36,7 @@ struct_construct<Unit>() -> ([6]);
 struct_construct<fib_struct::fib_struct::FibResult>([0], [5], [6]) -> ([7]);
 store_temp<fib_struct::fib_struct::FibResult>([7]) -> ([7]);
 rename<fib_struct::fib_struct::FibResult>([7]) -> ([8]);
-jump() { 38() };
+jump() { 37() };
 branch_align() -> ();
 drop<NonZero<felt>>([4]) -> ();
 dup<felt>([1]) -> ([1], [10]);
@@ -61,9 +61,8 @@ felt_add([22], [24]) -> ([25]);
 struct_construct<Unit>() -> ([26]);
 struct_construct<fib_struct::fib_struct::FibResult>([18], [25], [26]) -> ([27]);
 store_temp<fib_struct::fib_struct::FibResult>([27]) -> ([27]);
-rename<fib_struct::fib_struct::FibResult>([27]) -> ([28]);
-rename<fib_struct::fib_struct::FibResult>([28]) -> ([8]);
-rename<fib_struct::fib_struct::FibResult>([8]) -> ([29]);
-return([29]);
+rename<fib_struct::fib_struct::FibResult>([27]) -> ([8]);
+rename<fib_struct::fib_struct::FibResult>([8]) -> ([28]);
+return([28]);
 
 fib_struct::fib_struct::fib@0([0]: felt, [1]: felt, [2]: felt) -> (fib_struct::fib_struct::FibResult);

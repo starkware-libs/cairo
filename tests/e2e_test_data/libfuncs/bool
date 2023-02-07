@@ -7,9 +7,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(mut a: bool, b: bool) -> bool {
-    // TODO(orizi): When inlining is supported move to calling `bool_xor` directly.
-    let (r,) = bool_xor_impl(a, b);
-    r
+    a ^ b
 }
 
 //! > casm
@@ -18,7 +16,7 @@ fn foo(mut a: bool, b: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -37,6 +35,44 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
 //! > ==========================================================================
 
+//! > bool_or libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(a: bool, b: bool) -> bool {
+    a | b
+}
+
+//! > casm
+[ap + 0] = [fp + -4] + [fp + -3], ap++;
+[ap + 0] = [fp + -4] * [fp + -3], ap++;
+[ap + -2] = [ap + 0] + [ap + -1], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple>;
+type core::bool = Enum<ut@core::bool, Unit, Unit>;
+
+libfunc bool_or_impl = bool_or_impl;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc rename<core::bool> = rename<core::bool>;
+
+bool_or_impl([0], [1]) -> ([2]);
+store_temp<core::bool>([2]) -> ([2]);
+rename<core::bool>([2]) -> ([3]);
+return([3]);
+
+test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
+
+//! > ==========================================================================
+
 //! > bool_and libfunc
 
 //! > test_comments
@@ -46,9 +82,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(a: bool, b: bool) -> bool {
-    // TODO(orizi): When inlining is supported move to calling `bool_and` directly.
-    let (r,) = bool_and_impl(a, b);
-    r
+    a & b
 }
 
 //! > casm
@@ -56,7 +90,7 @@ fn foo(a: bool, b: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 1})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -85,8 +119,7 @@ run_small_e2e_test
 //! > cairo
 fn foo(a: bool) -> bool {
     // TODO(orizi): When inlining is supported move to calling `bool_not` directly.
-    let (r,) = bool_not_impl(a);
-    r
+    !a
 }
 
 //! > casm
@@ -95,7 +128,7 @@ fn foo(a: bool) -> bool {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 2})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -123,7 +156,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(a: bool, b: bool) -> bool {
-    bool_eq(a, b)
+    a == b
 }
 
 //! > casm
@@ -136,7 +169,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 6})
+test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;

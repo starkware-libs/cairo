@@ -7,13 +7,13 @@ use crate::extensions::lib_func::{
 use crate::extensions::{
     NamedLibfunc, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
 
 /// Trait for implementing a library function that returns a const of a given type.
 pub trait ConstGenLibfunc: Default {
     /// The library function id.
-    const ID: GenericLibfuncId;
+    const STR_ID: &'static str;
     /// The id of the generic type to implement the library functions for.
     const GENERIC_TYPE_ID: GenericTypeId;
 }
@@ -23,7 +23,7 @@ pub trait ConstGenLibfunc: Default {
 pub struct WrapConstGenLibfunc<T: ConstGenLibfunc>(T);
 
 impl<T: ConstGenLibfunc> NamedLibfunc for WrapConstGenLibfunc<T> {
-    const ID: GenericLibfuncId = <T as ConstGenLibfunc>::ID;
+    const STR_ID: &'static str = <T as ConstGenLibfunc>::STR_ID;
     type Concrete = SignatureAndConstConcreteLibfunc;
 
     fn specialize_signature(

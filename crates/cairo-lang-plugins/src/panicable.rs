@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
+use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
 use cairo_lang_syntax::node::ast::AttributeList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -50,21 +50,6 @@ fn generate_panicable_code(
             continue;
         }
         let signature = declaration.signature(db);
-        if !matches!(
-            signature.optional_no_panic(db),
-            ast::OptionTerminalNoPanic::TerminalNoPanic(_)
-        ) {
-            // Only nopanic functions can be wrapped.
-            return PluginResult {
-                code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: attr.stable_ptr().untyped(),
-                    message: "Only nopanic functions can be wrapped".into(),
-                }],
-                remove_original_item,
-            };
-        }
-
         let Some((inner_ty_text, success_variant, failure_variant)) =
             extract_success_ty_and_variants(db, &signature) else {
             return PluginResult {
@@ -82,7 +67,6 @@ fn generate_panicable_code(
         let Some((err_value, panicable_name)) = try_extract_matches!(attr.args(db), ast::OptionAttributeArgs::AttributeArgs).and_then(
             |args| {
             if let [ast::Expr::ShortString(err_value), ast::Expr::Path(name)] = &args.arg_list(db).elements(db)[..] {
-                // TODO(orizi): Once generic user functions are supported, support generic params, e.g. for `array_at<T>`.
                 if let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] {
                     Some((err_value.text(db), segment.ident(db).text(db)))
                 } else {
@@ -101,6 +85,7 @@ fn generate_panicable_code(
                 remove_original_item,
             };
         };
+        let generics_params = declaration.generic_params(db).as_syntax_node().get_text(db);
 
         let function_name = declaration.name(db).text(db);
         let params = signature.parameters(db).as_syntax_node().get_text(db);
@@ -108,28 +93,38 @@ fn generate_panicable_code(
             .parameters(db)
             .elements(db)
             .into_iter()
-            .map(|param| param.name(db).as_syntax_node().get_text(db))
+            .map(|param| {
+                format!(
+                    "{}{}",
+                    if matches!(&param.modifiers(db).elements(db)[..], [ast::Modifier::Ref(_)]) {
+                        "ref "
+                    } else {
+                        ""
+                    },
+                    param.name(db).as_syntax_node().get_text(db)
+                )
+            })
             .join(", ");
         return PluginResult {
             code: Some(PluginGeneratedFile {
                 name: "panicable".into(),
                 content: indoc::formatdoc!(
                     r#"
-                    fn {panicable_name}({params}) -> {inner_ty_text} {{
+                    fn {panicable_name}{generics_params}({params}) -> {inner_ty_text} {{
                         match {function_name}({args}) {{
                             {success_variant} (v) => {{
                                 v
                             }},
                             {failure_variant} (v) => {{
                                 let mut data = array_new::<felt>();
-                                array_append::<felt>(data, {err_value});
+                                array_append::<felt>(ref data, {err_value});
                                 panic(data)
                             }},
                         }}
                     }}
                 "#
                 ),
-                aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
+                aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
             }),
             diagnostics: vec![],
             remove_original_item,

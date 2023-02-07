@@ -1,18 +1,20 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FreeFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
+use cairo_lang_defs::ids::{
+    FreeFunctionId, FunctionSignatureId, GenericParamId, LanguageElementId,
+};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use super::attribute::ast_attributes_to_semantic;
-use super::function_with_body::{FunctionBody, FunctionBodyData, FunctionWithBodyDeclarationData};
+use super::function_with_body::{FunctionBody, FunctionBodyData};
+use super::functions::FunctionDeclarationData;
 use super::generics::semantic_generic_params;
-use crate::corelib::never_ty;
 use crate::db::SemanticGroup;
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
-use crate::expr::compute::{compute_expr_block_semantic, ComputationContext, Environment};
+use crate::diagnostic::SemanticDiagnostics;
+use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::{semantic, Expr, FunctionId, SemanticDiagnostic, TypeId};
 
@@ -72,9 +74,9 @@ pub fn free_function_declaration_resolved_lookback(
 pub fn priv_free_function_declaration_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Maybe<FunctionWithBodyDeclarationData> {
+) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
-    let module_file_id = free_function_id.module_file(db.upcast());
+    let module_file_id = free_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_free_functions = db.module_free_functions(module_file_id.0)?;
     let function_syntax = module_free_functions.get(&free_function_id).to_maybe()?;
@@ -94,19 +96,17 @@ pub fn priv_free_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        GenericFunctionId::Free(free_function_id),
+        FunctionSignatureId::Free(free_function_id),
         &mut environment,
     );
 
-    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
-    let resolved_lookback = Arc::new(resolver.lookback);
-    Ok(FunctionWithBodyDeclarationData {
+    Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
-        generic_params,
         environment,
-        attributes,
-        resolved_lookback,
+        generic_params,
+        attributes: ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db)),
+        resolved_lookback: Arc::new(resolver.lookback),
     })
 }
 
@@ -139,7 +139,7 @@ pub fn priv_free_function_body_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<FunctionBodyData> {
-    let module_file_id = free_function_id.module_file(db.upcast());
+    let module_file_id = free_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_free_functions = db.module_free_functions(module_file_id.0)?;
     let function_syntax = module_free_functions.get(&free_function_id).to_maybe()?.clone();
@@ -152,27 +152,12 @@ pub fn priv_free_function_body_data(
         db,
         &mut diagnostics,
         resolver,
-        &declaration.signature,
+        Some(&declaration.signature),
         environment,
     );
     let function_body = function_syntax.body(db.upcast());
-    let expr = compute_expr_block_semantic(&mut ctx, &function_body)?;
-    let expr_ty = expr.ty();
     let return_type = declaration.signature.return_type;
-    if expr_ty != return_type
-        && !expr_ty.is_missing(db)
-        && !return_type.is_missing(db)
-        && expr_ty != never_ty(db)
-    {
-        ctx.diagnostics.report(
-            &function_body,
-            SemanticDiagnosticKind::WrongReturnType {
-                expected_ty: return_type,
-                actual_ty: expr_ty,
-            },
-        );
-    }
-    let body_expr = ctx.exprs.alloc(expr);
+    let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
     let direct_callees: HashSet<FunctionId> = exprs

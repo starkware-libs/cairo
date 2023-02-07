@@ -43,8 +43,8 @@ fn test_resolve_path() {
     assert_eq!(
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
-         FunctionCall(ExprFunctionCall { function: test::bar<Type((core::felt, Q)),>, ref_args: \
-         [], args: [Var(ExprVar { var: ParamId(test::value), ty: test::S::<core::felt> })], ty: \
+         FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt, Q)>, ref_args: [], \
+         args: [Var(ExprVar { var: ParamId(test::value), ty: test::S::<core::felt> })], ty: \
          test::S::<()> }) }), Let(StatementLet { pattern: Variable(c), expr: Var(ExprVar { var: \
          ParamId(test::b), ty: Q }) })], tail: None, ty: () }))"
     );
@@ -102,5 +102,46 @@ fn test_resolve_path_super() {
     assert_eq!(
         format!("{:?}", members["b"].debug(db)),
         "Member { id: MemberId(test::inner2::b), ty: test::OuterStruct }"
+    );
+}
+
+#[test]
+fn test_resolve_path_trait_impl() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let db = &mut db_val;
+    let test_module = setup_test_module(
+        db,
+        indoc! {"
+            trait MyTrait {
+                fn foo() -> felt;
+            }
+
+            impl MyImpl of MyTrait {
+                fn foo() -> felt {
+                    7
+                }
+            }
+
+            fn main() -> felt {
+                MyTrait::foo() + 1
+            }
+        "},
+    )
+    .unwrap();
+    let module_id = test_module.module_id;
+
+    let function_id = FunctionWithBodyId::Free(extract_matches!(
+        db.module_item_by_name(module_id, "main".into()).unwrap().unwrap(),
+        ModuleItemId::FreeFunction
+    ));
+    let expr_formatter = ExprFormatter { db, function_id };
+    let body = db.function_body_expr(function_id);
+    assert_eq!(
+        format!("{:?}", body.to_option().debug(&expr_formatter)),
+        "Some(Block(ExprBlock { statements: [], tail: Some(FunctionCall(ExprFunctionCall { \
+         function: core::FeltAdd::add, ref_args: [], args: [FunctionCall(ExprFunctionCall { \
+         function: test::MyImpl::foo, ref_args: [], args: [], ty: core::felt }), \
+         Literal(ExprLiteral { value: 1, ty: core::felt })], ty: core::felt })), ty: core::felt \
+         }))"
     );
 }

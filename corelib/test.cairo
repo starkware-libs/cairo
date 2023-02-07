@@ -1,3 +1,8 @@
+use array::ArrayTrait;
+use dict::DictFeltToTrait;
+use option::OptionTrait;
+use option::OptionTraitImpl;
+
 #[test]
 #[should_panic]
 fn test_assert_false() {
@@ -31,50 +36,102 @@ fn test_bool_operators() {
     assert(!(true ^ true), '!(t ^ t)');
 }
 
+impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
+impl NonZeroEcPointDrop of Drop::<NonZeroEcPoint>;
+use core::traits::ToBool;
+
 #[test]
 fn test_ec_operations() {
-    let state = ec_init_state();
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
     let beta_p2_root = 2487829544412206244690656897973144572467842667075005257202960243805141046681;
-    let p = ec_point_from_felts(1, beta_p2_root);
-    let (x, y) = ec_point_unwrap(p);
-    assert(x == 1, 'x == 1');
-    assert(y == beta_p2_root, 'y is correct');
-    let state2 = ec_add_to_state(state, p);
-    let q = ec_finalize_state(state2);
+    let p = ec_point_from_x(1).unwrap();
+    let p_nz = ec_point_non_zero(p);
+    let (x, y) = ec_point_unwrap(p_nz);
+    assert(x == 1, 'x != 1');
+    assert(y == beta_p2_root | y == -beta_p2_root, 'y is wrong');
+
+    let mut state = ec_state_init();
+    ec_state_add(ref state, p_nz);
+    let q = ec_state_try_finalize_nz(state).expect('zero point');
     let (qx, qy) = ec_point_unwrap(q);
     assert(qx == x, 'bad finalize x');
     assert(qy == y, 'bad finalize y');
+
     // Try doing the same thing with the EC op builtin.
-    let state3 = ec_op_builtin(state, 1, p);
-    let q3 = ec_finalize_state(state3);
-    let (qx, qy) = ec_point_unwrap(q);
+    let mut state = ec_state_init();
+    ec_state_add_mul(ref state, 1, p_nz);
+    let q3 = ec_state_try_finalize_nz(state).expect('zero point');
+    let (qx, qy) = ec_point_unwrap(q3);
     assert(qx == x, 'bad EC op x');
     assert(qy == y, 'bad EC op y');
-    // Try computing `p + p` using the ec_op function.
-    let double_p = ec_op(p, 1, p);
-    let (double_x, double_y) = ec_point_unwrap(double_p);
+
+    // Try computing `p + p` using the ec_mul function.
+    let double_p = ec_mul(p, 2);
+    let (double_x, double_y) = ec_point_unwrap(ec_point_non_zero(double_p));
+    let expected_double_y =
+        3572434102142093425782752266058856056057826477682467661647843687948039943621;
     assert(
         double_x == 75984168971785666410219869038140038216102669781812169677875295511117260233,
         'bad double x'
     );
-    assert(
-        double_y == 3572434102142093425782752266058856056057826477682467661647843687948039943621,
-        'bad double y'
-    );
+    assert(double_y == expected_double_y | double_y == -expected_double_y, 'bad double y');
+
+    // Compute `2p - p`.
+    let (sub_x, sub_y) = ec_point_unwrap(ec_point_non_zero(double_p - p));
+    assert(sub_x == x, 'bad x for 2p - p');
+    assert(sub_y == y, 'bad y for 2p - p');
+
+    // Compute `p - p`.
+    assert(ec_point_is_zero(p - p).to_bool(), 'p - p did not return 0.');
+
+    // Compute `(-p) - p`.
+    let (sub2_x, sub2_y) = ec_point_unwrap(ec_point_non_zero(ec_neg(p) - p));
+    assert(sub2_x == double_x, 'bad x for (-p) - p');
+    assert(sub2_y == -double_y, 'bad y for (-p) - p');
 }
 
 #[test]
 #[should_panic]
 fn test_bad_ec_point_creation() {
-    ec_point_from_felts(0, 0);
+    ec_point_new(0, 0);
 }
 
 #[test]
-#[should_panic]
-fn test_bad_ec_point_finalization() {
-    let state = ec_init_state();
-    let point_at_infinity = ec_finalize_state(state);
+fn test_ec_point_finalization_zero() {
+    let state = ec_state_init();
+    let point_at_infinity = ec_state_try_finalize_nz(state);
+    assert(point_at_infinity.is_none(), 'Wrong point');
+}
+
+#[test]
+fn test_ecdsa() {
+    let message_hash = 0x503f4bea29baee10b22a7f10bdc82dda071c977c1f25b8f3973d34e6b03b2c;
+    let public_key = 0x7b7454acbe7845da996377f85eb0892044d75ae95d04d3325a391951f35d2ec;
+    let signature_r = 0xbe96d72eb4f94078192c2e84d5230cde2a70f4b45c8797e2c907acff5060bb;
+    let signature_s = 0x677ae6bba6daf00d2631fab14c8acf24be6579f9d9e98f67aa7f2770e57a1f5;
+    assert(
+        ecdsa::check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s),
+        'ecdsa returned false'
+    );
+}
+
+#[test]
+fn test_ec_mul() {
+    let p = ec_point_new(
+        x: 336742005567258698661916498343089167447076063081786685068305785816009957563,
+        y: 1706004133033694959518200210163451614294041810778629639790706933324248611779,
+    );
+    let m = 2713877091499598330239944961141122840311015265600950719674787125185463975936;
+    let (x, y) = ec_point_unwrap(ec_point_non_zero(ec_mul(p, m)));
+
+    assert(
+        x == 2881632108168892236043523177391659237686965655035240771134509747985978822780,
+        'ec_mul failed (x).'
+    );
+    assert(
+        y == 591135563672138037839394207500885413019058613584891498394077262936524140839,
+        'ec_mul failed (y).'
+    );
 }
 
 #[test]
@@ -93,6 +150,115 @@ fn test_felt_operators() {
     assert(5 >= 2, '5 >= 2');
     assert(!(3 > 3), '!(3 > 3)');
     assert(3 >= 3, '3 >= 3');
+}
+
+#[test]
+fn test_u8_operators() {
+    assert(1_u8 == 1_u8, '1 == 1');
+    assert(1_u8 != 2_u8, '1 != 2');
+    assert(1_u8 + 3_u8 == 4_u8, '1 + 3 == 4');
+    assert(3_u8 + 6_u8 == 9_u8, '3 + 6 == 9');
+    assert(3_u8 - 1_u8 == 2_u8, '3 - 1 == 2');
+    assert(231_u8 - 131_u8 == 100_u8, '231-131=100');
+    assert(1_u8 < 4_u8, '1 < 4');
+    assert(1_u8 <= 4_u8, '1 <= 4');
+    assert(!(4_u8 < 4_u8), '!(4 < 4)');
+    assert(4_u8 <= 4_u8, '4 <= 4');
+    assert(5_u8 > 2_u8, '5 > 2');
+    assert(5_u8 >= 2_u8, '5 >= 2');
+    assert(!(3_u8 > 3_u8), '!(3 > 3)');
+    assert(3_u8 >= 3_u8, '3 >= 3');
+}
+
+#[test]
+#[should_panic]
+fn test_u8_sub_overflow_1() {
+    0_u8 - 1_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_sub_overflow_2() {
+    0_u8 - 3_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_sub_overflow_3() {
+    1_u8 - 3_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_sub_overflow_4() {
+    100_u8 - 250_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_add_overflow_1() {
+    128_u8 + 128_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_add_overflow_2() {
+    200_u8 + 60_u8;
+}
+
+
+#[test]
+fn test_u64_operators() {
+    assert(1_u64 == 1_u64, '1 == 1');
+    assert(1_u64 != 2_u64, '1 != 2');
+    assert(1_u64 + 3_u64 == 4_u64, '1 + 3 == 4');
+    assert(3_u64 + 6_u64 == 9_u64, '3 + 6 == 9');
+    assert(3_u64 - 1_u64 == 2_u64, '3 - 1 == 2');
+    assert(231_u64 - 131_u64 == 100_u64, '231-131=100');
+    assert(1_u64 < 4_u64, '1 < 4');
+    assert(1_u64 <= 4_u64, '1 <= 4');
+    assert(!(4_u64 < 4_u64), '!(4 < 4)');
+    assert(4_u64 <= 4_u64, '4 <= 4');
+    assert(5_u64 > 2_u64, '5 > 2');
+    assert(5_u64 >= 2_u64, '5 >= 2');
+    assert(!(3_u64 > 3_u64), '!(3 > 3)');
+    assert(3_u64 >= 3_u64, '3 >= 3');
+}
+
+#[test]
+#[should_panic]
+fn test_u64_sub_overflow_1() {
+    0_u64 - 1_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_sub_overflow_2() {
+    0_u64 - 3_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_sub_overflow_3() {
+    1_u64 - 3_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_sub_overflow_4() {
+    100_u64 - 250_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_add_overflow_1() {
+    0x8000000000000000_u64 + 0x8000000000000000_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_add_overflow_2() {
+    0x9000000000000000_u64 + 0x8000000000000001_u64;
 }
 
 #[test]
@@ -240,9 +406,7 @@ fn test_u256_operators() {
     );
     assert(
         as_u256(0_u128, max_u128)
-            * as_u256(
-                0_u128, max_u128
-            ) == as_u256(0xfffffffffffffffffffffffffffffffe_u128, 1_u128),
+            * as_u256(0_u128, max_u128) == as_u256(0xfffffffffffffffffffffffffffffffe_u128, 1_u128),
         'max_u128 * max_u128'
     );
     assert(
@@ -348,64 +512,79 @@ fn test_u256_mul_overflow_2() {
 }
 
 // TODO(orizi): Switch to operators and literals when added.
-fn test_array_helper(idx: u128) -> felt {
-    let mut arr = array_new::<felt>();
-    array_append::<felt>(arr, 10);
-    array_append::<felt>(arr, 11);
-    array_append::<felt>(arr, 12);
-    match array_at::<felt>(arr, idx) {
-        Option::Some(x) => x,
-        Option::None(()) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(data, 'array index OOB');
-            panic(data)
-        },
-    }
+fn test_array_helper(idx: usize) -> felt {
+    let mut arr = ArrayTrait::new();
+    arr.append(10);
+    arr.append(11);
+    arr.append(12);
+    array_at(ref arr, idx)
 }
 
 #[test]
 fn test_array() {
-    assert(test_array_helper(0_u128) == 10, 'array[0] == 10');
-    assert(test_array_helper(1_u128) == 11, 'array[1] == 11');
-    assert(test_array_helper(2_u128) == 12, 'array[2] == 12');
+    assert(test_array_helper(0_usize) == 10, 'array[0] == 10');
+    assert(test_array_helper(1_usize) == 11, 'array[1] == 11');
+    assert(test_array_helper(2_usize) == 12, 'array[2] == 12');
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_1() {
-    test_array_helper(3_u128);
+    test_array_helper(3_usize);
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_2() {
-    test_array_helper(11_u128);
+    test_array_helper(11_usize);
 }
 
 #[test]
 fn test_dict_new() -> DictFeltTo::<felt> {
-    dict_felt_to_new::<felt>()
+    DictFeltToTrait::new()
 }
 
 #[test]
 fn test_dict_default_val() {
-    let mut dict = dict_felt_to_new::<felt>();
-    let default_val = dict_felt_to_read::<felt>(dict, 0);
-    let squashed_dict = dict_felt_to_squash::<felt>(dict);
+    let mut dict = DictFeltToTrait::new();
+    let default_val = dict.get(0);
+    let squashed_dict = dict.squash();
     assert(default_val == 0, 'default_val == 0');
 }
 
 // TODO(Gil): Assert before the squash when drop will autosquash the dict.
 #[test]
 fn test_dict_write_read() {
-    let mut dict = dict_felt_to_new::<felt>();
-    dict_felt_to_write::<felt>(dict, 10, 110);
-    dict_felt_to_write::<felt>(dict, 11, 111);
-    let val10 = dict_felt_to_read::<felt>(dict, 10);
-    let val11 = dict_felt_to_read::<felt>(dict, 11);
-    let val12 = dict_felt_to_read::<felt>(dict, 12);
-    let squashed_dict = dict_felt_to_squash::<felt>(dict);
+    let mut dict = DictFeltToTrait::new();
+    dict.insert(10, 110);
+    dict.insert(11, 111);
+    let val10 = dict.get(10);
+    let val11 = dict.get(11);
+    let val12 = dict.get(12);
+    let squashed_dict = dict.squash();
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');
+}
+
+#[test]
+fn test_box_unbox_felts() {
+    let x = 10;
+    let boxed_x = into_box::<felt>(x);
+    let y = 11;
+    let boxed_y = into_box::<felt>(y);
+    assert(unbox::<felt>(boxed_x) == 10, 'x == 10');
+    assert(unbox::<felt>(boxed_y) == 11, 'y == 11');
+}
+
+
+// Test objects of size>1.
+#[test]
+fn test_box_unbox_u256() {
+    let x = as_u256(1_u128, 0_u128);
+    let boxed_x = into_box::<u256>(x);
+    let y = as_u256(1_u128, 1_u128);
+    let boxed_y = into_box::<u256>(y);
+    assert(unbox::<u256>(boxed_x) == as_u256(1_u128, 0_u128), 'unbox u256 x');
+    assert(unbox::<u256>(boxed_y) == as_u256(1_u128, 1_u128), 'unbox u256 y');
 }

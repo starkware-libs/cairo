@@ -2,7 +2,6 @@ use crate::extensions::lib_func::{
     LibfuncSignature, SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibfunc, SpecializationError};
-use crate::ids::GenericLibfuncId;
 
 /// Revoke the ap tracking.
 /// This Libfunc is changes to ap_tracking state to unknown,
@@ -10,7 +9,7 @@ use crate::ids::GenericLibfuncId;
 #[derive(Default)]
 pub struct RevokeApTrackingLibfunc {}
 impl NoGenericArgsGenericLibfunc for RevokeApTrackingLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("revoke_ap_tracking");
+    const STR_ID: &'static str = "revoke_ap_tracking";
 
     fn specialize_signature(
         &self,

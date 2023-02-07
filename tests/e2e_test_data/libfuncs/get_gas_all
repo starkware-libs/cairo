@@ -10,13 +10,13 @@ fn foo(costs: BuiltinCosts) -> Option::<()> {
 }
 
 //! > casm
-%{ memory[ap + 0] = 1200 <= memory[fp + -4] %}
+%{ memory[ap + 0] = 970 <= memory[fp + -4] %}
 jmp rel 9 if [ap + 0] != 0, ap++;
-[fp + -4] = [ap + 0] + 1200, ap++;
+[fp + -4] = [ap + 0] + 970, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
 jmp rel 10;
-[fp + -4] = [ap + 0] + 1200, ap++;
+[fp + -4] = [ap + 0] + 970, ap++;
 [ap + -1] = [[fp + -5] + 0];
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = [ap + -2], ap++;
@@ -25,14 +25,12 @@ jmp rel 8;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = 1, ap++;
 ret;
-[ap + 0] = [ap + -2], ap++;
-[ap + 0] = [ap + -2], ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel -26;
+call rel -24;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 19})
+test::foo: OrderedHashMap({Const: 970})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -46,51 +44,47 @@ libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
 libfunc get_gas_all = get_gas_all;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc drop<Unit> = drop<Unit>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc store_temp<Unit> = store_temp<Unit>;
-libfunc rename<Unit> = rename<Unit>;
 libfunc jump = jump;
 libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
 libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option::<()>>;
 libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
-libfunc drop<Unit> = drop<Unit>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc function_call<user@test::foo> = function_call<user@test::foo>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 
 revoke_ap_tracking() -> ();
 dup<BuiltinCosts>([2]) -> ([2], [3]);
-get_gas_all([0], [1], [3]) { fallthrough([4], [5]) 11([6], [7]) };
+get_gas_all([0], [1], [3]) { fallthrough([4], [5]) 10([6], [7]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([8]);
+drop<Unit>([8]) -> ();
 store_temp<RangeCheck>([4]) -> ([4]);
 rename<RangeCheck>([4]) -> ([9]);
 store_temp<GasBuiltin>([5]) -> ([10]);
-store_temp<Unit>([8]) -> ([8]);
-rename<Unit>([8]) -> ([11]);
-jump() { 21() };
+jump() { 20() };
 branch_align() -> ();
 drop<BuiltinCosts>([2]) -> ();
-struct_construct<Unit>() -> ([12]);
-enum_init<core::option::Option::<()>, 1>([12]) -> ([13]);
+struct_construct<Unit>() -> ([11]);
+enum_init<core::option::Option::<()>, 1>([11]) -> ([12]);
 store_temp<RangeCheck>([6]) -> ([6]);
-rename<RangeCheck>([6]) -> ([14]);
-store_temp<GasBuiltin>([7]) -> ([15]);
-store_temp<core::option::Option::<()>>([13]) -> ([13]);
-rename<core::option::Option::<()>>([13]) -> ([16]);
-return([14], [15], [16]);
-drop<Unit>([11]) -> ();
-store_temp<RangeCheck>([9]) -> ([20]);
-store_temp<GasBuiltin>([10]) -> ([21]);
-store_temp<BuiltinCosts>([2]) -> ([22]);
-function_call<user@test::foo>([20], [21], [22]) -> ([17], [18], [19]);
-rename<RangeCheck>([17]) -> ([23]);
-rename<GasBuiltin>([18]) -> ([24]);
-rename<core::option::Option::<()>>([19]) -> ([25]);
-return([23], [24], [25]);
+rename<RangeCheck>([6]) -> ([13]);
+store_temp<GasBuiltin>([7]) -> ([14]);
+store_temp<core::option::Option::<()>>([12]) -> ([12]);
+rename<core::option::Option::<()>>([12]) -> ([15]);
+return([13], [14], [15]);
+rename<RangeCheck>([9]) -> ([19]);
+rename<GasBuiltin>([10]) -> ([20]);
+store_temp<BuiltinCosts>([2]) -> ([21]);
+function_call<user@test::foo>([19], [20], [21]) -> ([16], [17], [18]);
+rename<RangeCheck>([16]) -> ([22]);
+rename<GasBuiltin>([17]) -> ([23]);
+rename<core::option::Option::<()>>([18]) -> ([24]);
+return([22], [23], [24]);
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: BuiltinCosts) -> (RangeCheck, GasBuiltin, core::option::Option::<()>);
 
@@ -110,7 +104,7 @@ fn foo(costs: BuiltinCosts) -> Option::<()> {
 
 //! > casm
 [ap + 0] = [[fp + -3] + 0], ap++;
-[ap + 0] = [ap + -1] + 1900, ap++;
+[ap + 0] = [ap + -1] + 1870, ap++;
 %{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -5] %}
 jmp rel 8 if [ap + 0] != 0, ap++;
 [fp + -5] = [ap + 0] + [ap + -2], ap++;
@@ -139,7 +133,7 @@ call rel -36;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 20})
+test::foo: OrderedHashMap({Const: 1270})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -155,18 +149,16 @@ libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
 libfunc get_gas_all = get_gas_all;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc drop<Unit> = drop<Unit>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc store_temp<Unit> = store_temp<Unit>;
-libfunc rename<Unit> = rename<Unit>;
 libfunc jump = jump;
 libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
 libfunc store_temp<Pedersen> = store_temp<Pedersen>;
 libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option::<()>>;
 libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
-libfunc drop<Unit> = drop<Unit>;
 libfunc felt_const<1> = felt_const<1>;
 libfunc store_temp<felt> = store_temp<felt>;
 libfunc pedersen = pedersen;
@@ -178,44 +170,42 @@ libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 
 revoke_ap_tracking() -> ();
 dup<BuiltinCosts>([3]) -> ([3], [4]);
-get_gas_all([0], [1], [4]) { fallthrough([5], [6]) 11([7], [8]) };
+get_gas_all([0], [1], [4]) { fallthrough([5], [6]) 10([7], [8]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
+drop<Unit>([9]) -> ();
 store_temp<RangeCheck>([5]) -> ([5]);
 rename<RangeCheck>([5]) -> ([10]);
 store_temp<GasBuiltin>([6]) -> ([11]);
-store_temp<Unit>([9]) -> ([9]);
-rename<Unit>([9]) -> ([12]);
-jump() { 22() };
+jump() { 21() };
 branch_align() -> ();
 drop<BuiltinCosts>([3]) -> ();
-struct_construct<Unit>() -> ([13]);
-enum_init<core::option::Option::<()>, 1>([13]) -> ([14]);
+struct_construct<Unit>() -> ([12]);
+enum_init<core::option::Option::<()>, 1>([12]) -> ([13]);
 store_temp<RangeCheck>([7]) -> ([7]);
-rename<RangeCheck>([7]) -> ([15]);
-store_temp<GasBuiltin>([8]) -> ([16]);
-store_temp<Pedersen>([2]) -> ([17]);
-store_temp<core::option::Option::<()>>([14]) -> ([14]);
-rename<core::option::Option::<()>>([14]) -> ([18]);
-return([15], [16], [17], [18]);
-drop<Unit>([12]) -> ();
+rename<RangeCheck>([7]) -> ([14]);
+store_temp<GasBuiltin>([8]) -> ([15]);
+store_temp<Pedersen>([2]) -> ([16]);
+store_temp<core::option::Option::<()>>([13]) -> ([13]);
+rename<core::option::Option::<()>>([13]) -> ([17]);
+return([14], [15], [16], [17]);
+felt_const<1>() -> ([18]);
 felt_const<1>() -> ([19]);
-felt_const<1>() -> ([20]);
+store_temp<felt>([18]) -> ([18]);
 store_temp<felt>([19]) -> ([19]);
-store_temp<felt>([20]) -> ([20]);
-pedersen([2], [19], [20]) -> ([21], [22]);
-drop<felt>([22]) -> ();
-store_temp<RangeCheck>([10]) -> ([27]);
-store_temp<GasBuiltin>([11]) -> ([28]);
-store_temp<Pedersen>([21]) -> ([21]);
-rename<Pedersen>([21]) -> ([29]);
-store_temp<BuiltinCosts>([3]) -> ([30]);
-function_call<user@test::foo>([27], [28], [29], [30]) -> ([23], [24], [25], [26]);
-rename<RangeCheck>([23]) -> ([31]);
-rename<GasBuiltin>([24]) -> ([32]);
-rename<Pedersen>([25]) -> ([33]);
-rename<core::option::Option::<()>>([26]) -> ([34]);
-return([31], [32], [33], [34]);
+pedersen([2], [18], [19]) -> ([20], [21]);
+drop<felt>([21]) -> ();
+store_temp<RangeCheck>([10]) -> ([26]);
+store_temp<GasBuiltin>([11]) -> ([27]);
+store_temp<Pedersen>([20]) -> ([20]);
+rename<Pedersen>([20]) -> ([28]);
+store_temp<BuiltinCosts>([3]) -> ([29]);
+function_call<user@test::foo>([26], [27], [28], [29]) -> ([22], [23], [24], [25]);
+rename<RangeCheck>([22]) -> ([30]);
+rename<GasBuiltin>([23]) -> ([31]);
+rename<Pedersen>([24]) -> ([32]);
+rename<core::option::Option::<()>>([25]) -> ([33]);
+return([30], [31], [32], [33]);
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: BuiltinCosts) -> (RangeCheck, GasBuiltin, Pedersen, core::option::Option::<()>);
 
@@ -235,7 +225,7 @@ fn foo(costs: BuiltinCosts) -> Option::<()> {
 
 //! > casm
 [ap + 0] = [[fp + -3] + 1], ap++;
-[ap + 0] = [ap + -1] + 1900, ap++;
+[ap + 0] = [ap + -1] + 1870, ap++;
 %{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -5] %}
 jmp rel 8 if [ap + 0] != 0, ap++;
 [fp + -5] = [ap + 0] + [ap + -2], ap++;
@@ -264,7 +254,7 @@ call rel -36;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 20})
+test::foo: OrderedHashMap({Const: 1270})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -280,18 +270,16 @@ libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
 libfunc get_gas_all = get_gas_all;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc drop<Unit> = drop<Unit>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc store_temp<Unit> = store_temp<Unit>;
-libfunc rename<Unit> = rename<Unit>;
 libfunc jump = jump;
 libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
 libfunc store_temp<Bitwise> = store_temp<Bitwise>;
 libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option::<()>>;
 libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
-libfunc drop<Unit> = drop<Unit>;
 libfunc u128_const<1> = u128_const<1>;
 libfunc store_temp<u128> = store_temp<u128>;
 libfunc bitwise = bitwise;
@@ -303,46 +291,44 @@ libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 
 revoke_ap_tracking() -> ();
 dup<BuiltinCosts>([3]) -> ([3], [4]);
-get_gas_all([0], [1], [4]) { fallthrough([5], [6]) 11([7], [8]) };
+get_gas_all([0], [1], [4]) { fallthrough([5], [6]) 10([7], [8]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
+drop<Unit>([9]) -> ();
 store_temp<RangeCheck>([5]) -> ([5]);
 rename<RangeCheck>([5]) -> ([10]);
 store_temp<GasBuiltin>([6]) -> ([11]);
-store_temp<Unit>([9]) -> ([9]);
-rename<Unit>([9]) -> ([12]);
-jump() { 22() };
+jump() { 21() };
 branch_align() -> ();
 drop<BuiltinCosts>([3]) -> ();
-struct_construct<Unit>() -> ([13]);
-enum_init<core::option::Option::<()>, 1>([13]) -> ([14]);
+struct_construct<Unit>() -> ([12]);
+enum_init<core::option::Option::<()>, 1>([12]) -> ([13]);
 store_temp<RangeCheck>([7]) -> ([7]);
-rename<RangeCheck>([7]) -> ([15]);
-store_temp<GasBuiltin>([8]) -> ([16]);
-store_temp<Bitwise>([2]) -> ([17]);
-store_temp<core::option::Option::<()>>([14]) -> ([14]);
-rename<core::option::Option::<()>>([14]) -> ([18]);
-return([15], [16], [17], [18]);
-drop<Unit>([12]) -> ();
+rename<RangeCheck>([7]) -> ([14]);
+store_temp<GasBuiltin>([8]) -> ([15]);
+store_temp<Bitwise>([2]) -> ([16]);
+store_temp<core::option::Option::<()>>([13]) -> ([13]);
+rename<core::option::Option::<()>>([13]) -> ([17]);
+return([14], [15], [16], [17]);
+u128_const<1>() -> ([18]);
 u128_const<1>() -> ([19]);
-u128_const<1>() -> ([20]);
+store_temp<u128>([18]) -> ([18]);
 store_temp<u128>([19]) -> ([19]);
-store_temp<u128>([20]) -> ([20]);
-bitwise([2], [19], [20]) -> ([21], [22], [23], [24]);
+bitwise([2], [18], [19]) -> ([20], [21], [22], [23]);
+drop<u128>([21]) -> ();
 drop<u128>([22]) -> ();
 drop<u128>([23]) -> ();
-drop<u128>([24]) -> ();
-store_temp<RangeCheck>([10]) -> ([29]);
-store_temp<GasBuiltin>([11]) -> ([30]);
-store_temp<Bitwise>([21]) -> ([21]);
-rename<Bitwise>([21]) -> ([31]);
-store_temp<BuiltinCosts>([3]) -> ([32]);
-function_call<user@test::foo>([29], [30], [31], [32]) -> ([25], [26], [27], [28]);
-rename<RangeCheck>([25]) -> ([33]);
-rename<GasBuiltin>([26]) -> ([34]);
-rename<Bitwise>([27]) -> ([35]);
-rename<core::option::Option::<()>>([28]) -> ([36]);
-return([33], [34], [35], [36]);
+store_temp<RangeCheck>([10]) -> ([28]);
+store_temp<GasBuiltin>([11]) -> ([29]);
+store_temp<Bitwise>([20]) -> ([20]);
+rename<Bitwise>([20]) -> ([30]);
+store_temp<BuiltinCosts>([3]) -> ([31]);
+function_call<user@test::foo>([28], [29], [30], [31]) -> ([24], [25], [26], [27]);
+rename<RangeCheck>([24]) -> ([32]);
+rename<GasBuiltin>([25]) -> ([33]);
+rename<Bitwise>([26]) -> ([34]);
+rename<core::option::Option::<()>>([27]) -> ([35]);
+return([32], [33], [34], [35]);
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: BuiltinCosts) -> (RangeCheck, GasBuiltin, Bitwise, core::option::Option::<()>);
 
@@ -363,7 +349,7 @@ fn foo(costs: BuiltinCosts) -> Option::<()> {
 
 //! > casm
 [ap + 0] = [[fp + -3] + 0], ap++;
-[ap + 0] = [ap + -1] + 2600, ap++;
+[ap + 0] = [ap + -1] + 2570, ap++;
 [ap + 0] = [[fp + -3] + 1], ap++;
 [ap + 0] = [ap + -1] + [ap + -2], ap++;
 %{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -6] %}
@@ -400,7 +386,7 @@ call rel -47;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 21})
+test::foo: OrderedHashMap({Const: 1570})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -418,11 +404,10 @@ libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
 libfunc get_gas_all = get_gas_all;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc drop<Unit> = drop<Unit>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc store_temp<Unit> = store_temp<Unit>;
-libfunc rename<Unit> = rename<Unit>;
 libfunc jump = jump;
 libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
@@ -430,7 +415,6 @@ libfunc store_temp<Pedersen> = store_temp<Pedersen>;
 libfunc store_temp<Bitwise> = store_temp<Bitwise>;
 libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option::<()>>;
 libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
-libfunc drop<Unit> = drop<Unit>;
 libfunc felt_const<1> = felt_const<1>;
 libfunc store_temp<felt> = store_temp<felt>;
 libfunc pedersen = pedersen;
@@ -447,55 +431,53 @@ libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 
 revoke_ap_tracking() -> ();
 dup<BuiltinCosts>([4]) -> ([4], [5]);
-get_gas_all([0], [1], [5]) { fallthrough([6], [7]) 11([8], [9]) };
+get_gas_all([0], [1], [5]) { fallthrough([6], [7]) 10([8], [9]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([10]);
+drop<Unit>([10]) -> ();
 store_temp<RangeCheck>([6]) -> ([6]);
 rename<RangeCheck>([6]) -> ([11]);
 store_temp<GasBuiltin>([7]) -> ([12]);
-store_temp<Unit>([10]) -> ([10]);
-rename<Unit>([10]) -> ([13]);
-jump() { 23() };
+jump() { 22() };
 branch_align() -> ();
 drop<BuiltinCosts>([4]) -> ();
-struct_construct<Unit>() -> ([14]);
-enum_init<core::option::Option::<()>, 1>([14]) -> ([15]);
+struct_construct<Unit>() -> ([13]);
+enum_init<core::option::Option::<()>, 1>([13]) -> ([14]);
 store_temp<RangeCheck>([8]) -> ([8]);
-rename<RangeCheck>([8]) -> ([16]);
-store_temp<GasBuiltin>([9]) -> ([17]);
-store_temp<Pedersen>([2]) -> ([18]);
-store_temp<Bitwise>([3]) -> ([19]);
-store_temp<core::option::Option::<()>>([15]) -> ([15]);
-rename<core::option::Option::<()>>([15]) -> ([20]);
-return([16], [17], [18], [19], [20]);
-drop<Unit>([13]) -> ();
+rename<RangeCheck>([8]) -> ([15]);
+store_temp<GasBuiltin>([9]) -> ([16]);
+store_temp<Pedersen>([2]) -> ([17]);
+store_temp<Bitwise>([3]) -> ([18]);
+store_temp<core::option::Option::<()>>([14]) -> ([14]);
+rename<core::option::Option::<()>>([14]) -> ([19]);
+return([15], [16], [17], [18], [19]);
+felt_const<1>() -> ([20]);
 felt_const<1>() -> ([21]);
-felt_const<1>() -> ([22]);
+store_temp<felt>([20]) -> ([20]);
 store_temp<felt>([21]) -> ([21]);
-store_temp<felt>([22]) -> ([22]);
-pedersen([2], [21], [22]) -> ([23], [24]);
-drop<felt>([24]) -> ();
+pedersen([2], [20], [21]) -> ([22], [23]);
+drop<felt>([23]) -> ();
+u128_const<1>() -> ([24]);
 u128_const<1>() -> ([25]);
-u128_const<1>() -> ([26]);
+store_temp<u128>([24]) -> ([24]);
 store_temp<u128>([25]) -> ([25]);
-store_temp<u128>([26]) -> ([26]);
-bitwise([3], [25], [26]) -> ([27], [28], [29], [30]);
+bitwise([3], [24], [25]) -> ([26], [27], [28], [29]);
+drop<u128>([27]) -> ();
 drop<u128>([28]) -> ();
 drop<u128>([29]) -> ();
-drop<u128>([30]) -> ();
-store_temp<RangeCheck>([11]) -> ([36]);
-store_temp<GasBuiltin>([12]) -> ([37]);
-store_temp<Pedersen>([23]) -> ([23]);
-rename<Pedersen>([23]) -> ([38]);
-store_temp<Bitwise>([27]) -> ([27]);
-rename<Bitwise>([27]) -> ([39]);
-store_temp<BuiltinCosts>([4]) -> ([40]);
-function_call<user@test::foo>([36], [37], [38], [39], [40]) -> ([31], [32], [33], [34], [35]);
-rename<RangeCheck>([31]) -> ([41]);
-rename<GasBuiltin>([32]) -> ([42]);
-rename<Pedersen>([33]) -> ([43]);
-rename<Bitwise>([34]) -> ([44]);
-rename<core::option::Option::<()>>([35]) -> ([45]);
-return([41], [42], [43], [44], [45]);
+store_temp<RangeCheck>([11]) -> ([35]);
+store_temp<GasBuiltin>([12]) -> ([36]);
+store_temp<Pedersen>([22]) -> ([22]);
+rename<Pedersen>([22]) -> ([37]);
+store_temp<Bitwise>([26]) -> ([26]);
+rename<Bitwise>([26]) -> ([38]);
+store_temp<BuiltinCosts>([4]) -> ([39]);
+function_call<user@test::foo>([35], [36], [37], [38], [39]) -> ([30], [31], [32], [33], [34]);
+rename<RangeCheck>([30]) -> ([40]);
+rename<GasBuiltin>([31]) -> ([41]);
+rename<Pedersen>([32]) -> ([42]);
+rename<Bitwise>([33]) -> ([43]);
+rename<core::option::Option::<()>>([34]) -> ([44]);
+return([40], [41], [42], [43], [44]);
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: Bitwise, [4]: BuiltinCosts) -> (RangeCheck, GasBuiltin, Pedersen, Bitwise, core::option::Option::<()>);

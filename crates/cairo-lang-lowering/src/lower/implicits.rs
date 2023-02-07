@@ -1,12 +1,13 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId, UnstableSalsaId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, UnstableSalsaId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::strongly_connected_components::{compute_scc, GraphNode};
 use itertools::Itertools;
+use semantic::items::functions::GenericFunctionId;
 
 use crate::db::{LoweringGroup, SCCRepresentative};
 
@@ -65,9 +66,8 @@ pub fn function_all_implicits(
         GenericFunctionId::Extern(extern_function) => {
             db.extern_function_declaration_implicits(extern_function)
         }
-        GenericFunctionId::Impl(impl_function) => {
-            db.function_with_body_all_implicits_vec(FunctionWithBodyId::Impl(impl_function))
-        }
+        GenericFunctionId::Impl(impl_function) => db
+            .function_with_body_all_implicits_vec(FunctionWithBodyId::Impl(impl_function.function)),
         GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
@@ -101,8 +101,9 @@ pub fn function_with_body_all_implicits(
                 GenericFunctionId::Impl(impl_function) => {
                     // For an impl function, call this method recursively. To avoid cycles, first
                     // check that the callee is not in this function's SCC.
-                    let direct_callee_representative =
-                        db.function_scc_representative(FunctionWithBodyId::Impl(impl_function));
+                    let direct_callee_representative = db.function_scc_representative(
+                        FunctionWithBodyId::Impl(impl_function.function),
+                    );
                     if direct_callee_representative == scc_representative {
                         // We already have the implicits of this SCC - do nothing.
                         continue;
@@ -185,7 +186,7 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
             db.function_with_body_may_panic(FunctionWithBodyId::Free(free_function))
         }
         GenericFunctionId::Impl(impl_function) => {
-            db.function_with_body_may_panic(FunctionWithBodyId::Impl(impl_function))
+            db.function_with_body_may_panic(FunctionWithBodyId::Impl(impl_function.function))
         }
         GenericFunctionId::Extern(extern_function) => {
             Ok(db.extern_function_signature(extern_function)?.panicable)
@@ -211,9 +212,10 @@ pub fn function_with_body_may_panic(
                 GenericFunctionId::Free(free_function) => {
                     function_scc_representative(db, FunctionWithBodyId::Free(free_function))
                 }
-                GenericFunctionId::Impl(impl_function) => {
-                    function_scc_representative(db, FunctionWithBodyId::Impl(impl_function))
-                }
+                GenericFunctionId::Impl(impl_function) => function_scc_representative(
+                    db,
+                    FunctionWithBodyId::Impl(impl_function.function),
+                ),
                 GenericFunctionId::Extern(extern_function) => {
                     if db.extern_function_signature(extern_function)?.panicable {
                         return Ok(true);

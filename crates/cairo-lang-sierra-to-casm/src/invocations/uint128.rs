@@ -5,7 +5,9 @@ use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use num_bigint::BigInt;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 
 /// Builds instructions for Sierra u128 operations.
 pub fn build(
@@ -16,13 +18,10 @@ pub fn build(
         Uint128Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => build_u128_overflowing_add(builder),
             IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
-            IntOperator::DivMod => build_u128_divmod(builder),
-            IntOperator::WideMul => build_u128_widemul(builder),
-            IntOperator::OverflowingMul => {
-                Err(InvocationError::NotImplemented(builder.invocation.clone()))
-            }
         },
-        Uint128Concrete::JumpNotZero(_) => misc::build_jump_nz(builder),
+        Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
+        Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
+        Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),
         Uint128Concrete::FromFelt(_) => build_u128_from_felt(builder),
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
@@ -45,6 +44,7 @@ fn build_u128_overflowing_add(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar no_overflow;
             tempvar a_plus_b = a + b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
@@ -64,6 +64,10 @@ fn build_u128_overflowing_add(
             ("Fallthrough", &[&[range_check], &[a_plus_b]], None),
             ("Target", &[&[range_check], &[wrapping_a_plus_b]], Some(failure_handle_statement_id)),
         ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
@@ -80,6 +84,7 @@ fn build_u128_overflowing_sub(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar no_overflow;
             tempvar a_minus_b = a - b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
@@ -99,6 +104,10 @@ fn build_u128_overflowing_sub(
             ("Fallthrough", &[&[range_check], &[a_minus_b]], None),
             ("Target", &[&[range_check], &[wrapping_a_minus_b]], Some(failure_handle_statement_id)),
         ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
@@ -114,6 +123,7 @@ fn build_u128_divmod(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar r_plus_1;
             tempvar b_minus_r_minus_1;
             tempvar q_is_small;
@@ -163,6 +173,10 @@ fn build_u128_divmod(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
@@ -178,6 +192,7 @@ fn build_u128_widemul(
         deref b;
     };
     casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
         tempvar a0;
         tempvar a1;
         const u64_limit = u64::MAX as u128 + 1;
@@ -265,6 +280,10 @@ fn build_u128_widemul(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[upper_uint128], &[lower_uint128]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
@@ -287,6 +306,7 @@ fn build_u128_from_felt(
         deref value;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar is_u128;
             const u128_limit = u128_bound.clone();
             hint TestLessThan { lhs: value, rhs: u128_limit } into { dst: is_u128 };
@@ -336,5 +356,9 @@ fn build_u128_from_felt(
             ("Fallthrough", &[&[range_check], &[value]], None),
             ("FailureHandle", &[&[range_check], &[x], &[y]], Some(failure_handle_statement_id)),
         ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }

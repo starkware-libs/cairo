@@ -24,8 +24,9 @@ pub fn print_partial_tree(
     syntax_root: &SyntaxNode,
     top_level_kind: &str,
     ignored_kinds: Vec<&str>,
+    print_trivia: bool,
 ) -> String {
-    let mut printer = Printer::new_partial(db, top_level_kind, ignored_kinds);
+    let mut printer = Printer::new_partial(db, top_level_kind, ignored_kinds, print_trivia);
     printer.print_tree("root", syntax_root, "", true, false);
     printer.result
 }
@@ -60,12 +61,13 @@ impl<'a> Printer<'a> {
         db: &'a dyn SyntaxGroup,
         top_level_kind: &str,
         ignored_kinds: Vec<&str>,
+        print_trivia: bool,
     ) -> Self {
         Self {
             db,
             spec: get_spec(),
             print_colors: false,
-            print_trivia: false,
+            print_trivia,
             top_level_kind: Some(top_level_kind.to_string()),
             ignored_kinds: ignored_kinds.into_iter().map(|x| x.to_string()).collect(),
             result: String::new(),

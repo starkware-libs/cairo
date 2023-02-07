@@ -1,0 +1,221 @@
+//! > Test inlining diagnostics for a recursive function.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+#[inline(always)]
+fn foo(ref a: felt, b: felt) -> felt {
+  foo(ref a, b);
+  b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Cannot inline a function that might call itself.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
+End:
+  Return(v3, v1)
+
+//! > after
+blk0:
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
+End:
+  Return(v3, v1)
+
+//! > ==========================================================================
+
+//! > Test inlining diagnostics for a function an identity function.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+#[inline(always)]
+fn foo(n: felt) -> felt {
+  n
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Return(v0)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Return(v0)
+
+//! > lowering_diagnostics
+error: Inlining of functions that directly returns one of its inputs is not supported.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+//! > ==========================================================================
+
+//! > Test inlining attribute diagnostics.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+#[inline(always)]
+#[inline(never)]
+#[inline(always, never)]
+#[inline(1+1)]
+#[inline]
+fn foo() {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > lowering_format
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
+
+//! > after
+blk0 (root):
+Inputs:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
+
+//! > lowering_diagnostics
+error: Unsupported `inline` arguments.
+ --> lib.cairo:2:9
+#[inline(never)]
+        ^*****^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:2:3
+#[inline(never)]
+  ^****^
+
+error: Unsupported `inline` arguments.
+ --> lib.cairo:3:9
+#[inline(always, never)]
+        ^*************^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:3:3
+#[inline(always, never)]
+  ^****^
+
+error: Unsupported `inline` arguments.
+ --> lib.cairo:4:9
+#[inline(1+1)]
+        ^***^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:4:3
+#[inline(1+1)]
+  ^****^
+
+error: `inline` without arguments is not supported.
+ --> lib.cairo:5:3
+#[inline]
+  ^****^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:5:3
+#[inline]
+  ^****^
+
+//! > ==========================================================================
+
+//! > Test inlining a function where the root block does not return.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+fn foo(n: felt) -> felt {
+  bar(n)
+}
+
+//! > module_code
+#[inline(always)]
+fn bar(n: felt) -> felt {
+  if n == 0 {
+    return 1;
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0:
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > lowering_diagnostics
+error: Inlining of functions with an early return is not supported.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+error: Inlining of functions with an early return is not supported.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+error: Inlining of functions where the end of the root block is unreachable is not supported.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^

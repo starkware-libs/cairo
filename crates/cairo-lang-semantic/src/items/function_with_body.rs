@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericFunctionId, GenericParamId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, GenericParamId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast;
@@ -10,31 +10,17 @@ use cairo_lang_utils::Upcast;
 use id_arena::Arena;
 
 use super::attribute::Attribute;
+use super::functions::GenericFunctionId;
 use crate::db::SemanticGroup;
-use crate::expr::compute::Environment;
 use crate::resolve_path::ResolvedLookback;
 use crate::{semantic, ExprId, FunctionId, SemanticDiagnostic};
 
 // === Declaration ===
 
-// TODO(yuval): consider merging with ExternFunctionDeclarationData: either by having option<> for
-// environment and resolved_lookback, or by having FunctionWithBodyDeclarationData containing
-// FunctionDeclarationData which is used for extern.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct FunctionWithBodyDeclarationData {
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
-    pub signature: semantic::Signature,
-    pub generic_params: Vec<GenericParamId>,
-    pub environment: Environment,
-    pub attributes: Vec<Attribute>,
-    pub resolved_lookback: Arc<ResolvedLookback>,
-}
-
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_diagnostics].
-pub fn function_with_body_declaration_diagnostics(
+/// Query implementation of [crate::db::SemanticGroup::function_declaration_diagnostics].
+pub fn function_declaration_diagnostics(
     db: &dyn SemanticGroup,
     function_id: FunctionWithBodyId,
 ) -> Diagnostics<SemanticDiagnostic> {
@@ -186,7 +172,7 @@ pub fn function_with_body_direct_function_with_body_callees(
                     Some(FunctionWithBodyId::Free(free_function))
                 }
                 GenericFunctionId::Impl(impl_function) => {
-                    Some(FunctionWithBodyId::Impl(impl_function))
+                    Some(FunctionWithBodyId::Impl(impl_function.function))
                 }
                 _ => None,
             }

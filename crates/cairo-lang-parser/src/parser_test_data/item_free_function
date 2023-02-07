@@ -1,4 +1,4 @@
-//! > Test an ItemFreeFunction syntax tree
+//! > Test an FunctionWithBody syntax tree
 
 //! > test_function_name
 test_partial_parser_tree
@@ -12,7 +12,7 @@ fn foo(a: int) -> felt {
 }
 
 //! > top_level_kind
-ItemFreeFunction
+FunctionWithBody
 
 //! > ignored_kinds
 ExprBlock
@@ -21,7 +21,7 @@ FunctionSignature
 //! > expected_diagnostics
 
 //! > expected_tree
-└── Top level kind: ItemFreeFunction
+└── Top level kind: FunctionWithBody
     ├── attributes (kind: AttributeList)
     │   ├── child #0 (kind: Attribute)
     │   │   ├── hash (kind: TokenHash): '#'
@@ -70,7 +70,7 @@ fn foo() -> Aaaaa  Bbb + Cc  {
 }
 
 //! > top_level_kind
-ItemFreeFunction
+FunctionWithBody
 
 //! > ignored_kinds
 
@@ -81,7 +81,7 @@ fn foo() -> Aaaaa  Bbb + Cc  {
                    ^******^
 
 //! > expected_tree
-└── Top level kind: ItemFreeFunction
+└── Top level kind: FunctionWithBody
     ├── attributes (kind: AttributeList) []
     ├── declaration (kind: FunctionDeclaration)
     │   ├── function_kw (kind: TokenFunction): 'fn'
@@ -114,7 +114,7 @@ test_partial_parser_tree
 fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
 
 //! > top_level_kind
-ItemFreeFunction
+FunctionWithBody
 
 //! > ignored_kinds
 FunctionDeclaration
@@ -126,7 +126,7 @@ fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
                    ^*******^
 
 //! > expected_tree
-└── Top level kind: ItemFreeFunction
+└── Top level kind: FunctionWithBody
     ├── attributes (kind: AttributeList) []
     ├── declaration (kind: FunctionDeclaration) <ignored>
     └── body (kind: ExprBlock)

@@ -33,9 +33,9 @@ fn main() -> anyhow::Result<()> {
 
     match args.output {
         Some(path) => {
-            fs::write(path, format!("{}", sierra_program)).context("Failed to write output.")?
+            fs::write(path, format!("{sierra_program}")).context("Failed to write output.")?
         }
-        None => println!("{}", sierra_program),
+        None => println!("{sierra_program}"),
     }
 
     Ok(())

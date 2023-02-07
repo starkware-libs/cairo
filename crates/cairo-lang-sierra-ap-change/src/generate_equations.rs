@@ -82,7 +82,7 @@ pub fn generate_equations<
             cairo_lang_sierra::program::Statement::Invocation(invocation) => {
                 let libfunc_effects = get_effects(idx, &invocation.libfunc_id)?;
                 if invocation.branches.len() != libfunc_effects.len() {
-                    return Err(ApChangeError::IllegalInvocation(idx));
+                    return Err(ApChangeError::WrongNumApChangeBranches(idx));
                 }
                 for (branch, branch_effects) in zip_eq(&invocation.branches, libfunc_effects) {
                     let branch_ap_change = match branch_effects.ap_change {

@@ -1,5 +1,4 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -16,8 +15,10 @@ cairo_lang_test_utils::test_file_test!(
         assignment :"assignment",
         borrow_check :"borrow_check",
         call :"call",
+        constant :"constant",
         enums :"enums",
         error_propagate :"error_propagate",
+        generics :"generics",
         extern_ :"extern",
         arm_pattern_destructure :"arm_pattern_destructure",
         if_ :"if",
@@ -44,14 +45,13 @@ fn test_function_lowering(
     )
     .split();
     let structured_lowered =
-        db.function_with_body_lowered_structured(test_function.function_id).unwrap();
-    let flat_lowered = db.function_with_body_lowered_flat(test_function.function_id).unwrap();
-    let mut diagnostics = DiagnosticsBuilder::default();
-    diagnostics.extend(structured_lowered.diagnostics.clone());
-    diagnostics.extend(flat_lowered.diagnostics.clone());
-    let diagnostics = diagnostics.build();
+        db.priv_function_with_body_lowered_structured(test_function.function_id).unwrap();
+    let lowered =
+        db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
+    let diagnostics =
+        db.function_with_body_lowering_diagnostics(test_function.function_id).unwrap();
 
-    let lowered_formatter = LoweredFormatter { db, variables: &flat_lowered.variables };
+    let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), diagnostics.format(db)),
@@ -59,6 +59,6 @@ fn test_function_lowering(
             "lowering_structured".into(),
             format!("{:?}", structured_lowered.debug(&lowered_formatter)),
         ),
-        ("lowering_flat".into(), format!("{:?}", flat_lowered.debug(&lowered_formatter))),
+        ("lowering_flat".into(), format!("{:?}", lowered.debug(&lowered_formatter))),
     ])
 }

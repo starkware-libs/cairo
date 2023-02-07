@@ -15,7 +15,7 @@ impl FooImpl<S> of Foo::<S> {
 SyntaxFile
 
 //! > ignored_kinds
-ItemFreeFunction
+FunctionWithBody
 
 //! > expected_diagnostics
 
@@ -29,7 +29,7 @@ ItemFreeFunction
     │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   ├── langle (kind: TokenLT): '<'
     │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   └── item #0 (kind: GenericParam)
+    │   │   │   │   └── item #0 (kind: GenericParamType)
     │   │   │   │       └── name (kind: TokenIdentifier): 'T'
     │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   └── body (kind: TokenSemicolon): ';'
@@ -40,7 +40,7 @@ ItemFreeFunction
     │       ├── generic_params (kind: WrappedGenericParamList)
     │       │   ├── langle (kind: TokenLT): '<'
     │       │   ├── generic_params (kind: GenericParamList)
-    │       │   │   └── item #0 (kind: GenericParam)
+    │       │   │   └── item #0 (kind: GenericParamType)
     │       │   │       └── name (kind: TokenIdentifier): 'S'
     │       │   └── rangle (kind: TokenGT): '>'
     │       ├── of_kw (kind: TokenOf): 'of'
@@ -58,7 +58,7 @@ ItemFreeFunction
     │       └── body (kind: ImplBody)
     │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── items (kind: ItemList)
-    │           │   └── child #0 (kind: ItemFreeFunction) <ignored>
+    │           │   └── child #0 (kind: FunctionWithBody) <ignored>
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
 
@@ -92,7 +92,7 @@ SyntaxFile
     │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   ├── langle (kind: TokenLT): '<'
     │   │   │   ├── generic_params (kind: GenericParamList)
-    │   │   │   │   └── item #0 (kind: GenericParam)
+    │   │   │   │   └── item #0 (kind: GenericParamType)
     │   │   │   │       └── name (kind: TokenIdentifier): 'T'
     │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   └── body (kind: TraitBody)
@@ -106,7 +106,7 @@ SyntaxFile
     │   │       │       │   ├── generic_params (kind: WrappedGenericParamList)
     │   │       │       │   │   ├── langle (kind: TokenLT): '<'
     │   │       │       │   │   ├── generic_params (kind: GenericParamList)
-    │   │       │       │   │   │   └── item #0 (kind: GenericParam)
+    │   │       │       │   │   │   └── item #0 (kind: GenericParamType)
     │   │       │       │   │   │       └── name (kind: TokenIdentifier): 'S'
     │   │       │       │   │   └── rangle (kind: TokenGT): '>'
     │   │       │       │   └── signature (kind: FunctionSignature)
@@ -142,7 +142,7 @@ SyntaxFile
     │       ├── generic_params (kind: WrappedGenericParamList)
     │       │   ├── langle (kind: TokenLT): '<'
     │       │   ├── generic_params (kind: GenericParamList)
-    │       │   │   └── item #0 (kind: GenericParam)
+    │       │   │   └── item #0 (kind: GenericParamType)
     │       │   │       └── name (kind: TokenIdentifier): 'S'
     │       │   └── rangle (kind: TokenGT): '>'
     │       ├── of_kw (kind: TokenOf): 'of'

@@ -2,8 +2,8 @@
 #[path = "block_generator_test.rs"]
 mod test;
 
-use cairo_lang_defs::ids::GenericFunctionId;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
 use sierra::program;
@@ -19,9 +19,9 @@ use crate::utils::{
     struct_deconstruct_libfunc_id,
 };
 
-/// Generates Sierra code that computes a given [lowering::FlatBlock].
+/// Generates Sierra code for the body of  given [lowering::FlatBlock].
 /// Returns a list of Sierra statements.
-pub fn generate_block_code(
+pub fn generate_block_body_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
     block: &lowering::FlatBlock,
@@ -77,43 +77,25 @@ fn add_drop_statements(
     Ok(())
 }
 
-/// Generates Sierra code that computes a given [lowering::FlatBlock].
-/// Pushes the values "returned" by the block on the top of the stack, and binds them to
-/// the given `binds` variables.
+/// Generates Sierra for a given [lowering::FlatBlock].
 ///
-/// Returns a list of Sierra statements and a boolean indicating whether the block may continue to
-/// the next instruction (true) or not (false).
-pub fn generate_block_code_and_push_values(
+/// Returns a list of Sierra statements and a boolean indicating whether the block may fallthrough
+/// to the next instruction (true) or not (false).
+pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
-    binds: &[lowering::VariableId],
 ) -> Maybe<(Vec<pre_sierra::Statement>, bool)> {
     let block = context.get_lowered_block(block_id);
     let statement_location: StatementLocation = (block_id, block.statements.len());
 
-    let mut statements = generate_block_code(context, block_id, block)?;
+    let mut statements = generate_block_body_code(context, block_id, block)?;
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(inner_outputs) => {
-            let mut push_values = Vec::<pre_sierra::PushValue>::new();
-            for (idx, (output, inner_output)) in zip_eq(binds, inner_outputs).enumerate() {
-                let use_location = UseLocation { statement_location, idx };
-                let dup_var = get_dup_var_if_needed(context, &use_location);
-
-                let ty = context.get_variable_sierra_type(*inner_output)?;
-                let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
-                assert_eq!(
-                    ty, var_on_stack_ty,
-                    "Internal compiler error: Inconsistent types in \
-                     generate_block_code_and_push_values()."
-                );
-                push_values.push(pre_sierra::PushValue {
-                    var: context.get_sierra_variable(*inner_output),
-                    var_on_stack: context.get_sierra_variable(*output),
-                    ty,
-                    dup_var,
-                })
-            }
-            statements.push(pre_sierra::Statement::PushValues(push_values));
+        lowering::FlatBlockEnd::Callsite(remapping) => {
+            statements.push(generate_push_values_statement_for_remapping(
+                context,
+                statement_location,
+                remapping,
+            )?);
             Ok((statements, true))
         }
         lowering::FlatBlockEnd::Return(returned_variables) => {
@@ -124,8 +106,37 @@ pub fn generate_block_code_and_push_values(
             )?);
             Ok((statements, false))
         }
+        lowering::FlatBlockEnd::Fallthrough(_block_id, _remapping)
+        | lowering::FlatBlockEnd::Goto(_block_id, _remapping) => todo!(),
         lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),
     }
+}
+
+/// Generates a push_values statement that corresponds to `remapping`.
+fn generate_push_values_statement_for_remapping(
+    context: &mut ExprGeneratorContext<'_>,
+    statement_location: (lowering::BlockId, usize),
+    remapping: &lowering::VarRemapping,
+) -> Maybe<pre_sierra::Statement> {
+    let mut push_values = Vec::<pre_sierra::PushValue>::new();
+    for (idx, (output, inner_output)) in remapping.iter().enumerate() {
+        let use_location = UseLocation { statement_location, idx };
+        let dup_var = get_dup_var_if_needed(context, &use_location);
+
+        let ty = context.get_variable_sierra_type(*inner_output)?;
+        let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
+        assert_eq!(
+            ty, var_on_stack_ty,
+            "Internal compiler error: Inconsistent types in generate_block_code()."
+        );
+        push_values.push(pre_sierra::PushValue {
+            var: context.get_sierra_variable(*inner_output),
+            var_on_stack: context.get_sierra_variable(*output),
+            ty,
+            dup_var,
+        })
+    }
+    Ok(pre_sierra::Statement::PushValues(push_values))
 }
 
 /// Generates Sierra code for a `return` statement.
@@ -182,9 +193,6 @@ pub fn generate_statement_code(
                 statement_location,
             )
         }
-        lowering::Statement::CallBlock(statement_call_block) => {
-            generate_statement_call_block_code(context, statement_call_block)
-        }
         lowering::Statement::EnumConstruct(statement_enum_construct) => {
             generate_statement_enum_construct(context, statement_enum_construct, statement_location)
         }
@@ -232,7 +240,7 @@ fn generate_statement_call_code(
         get_concrete_libfunc_id(context.get_db(), statement.function);
 
     match function_long_id.generic_function {
-        GenericFunctionId::Free(_) => {
+        GenericFunctionId::Free(_) | GenericFunctionId::Impl(_) => {
             // Create [pre_sierra::PushValue] instances for the arguments.
             let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
             let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
@@ -272,10 +280,7 @@ fn generate_statement_call_code(
             statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
             Ok(statements)
         }
-        GenericFunctionId::Trait(_) => {
-            panic!("Trait function should be replaced with concrete functions.")
-        }
-        GenericFunctionId::Impl(_) => todo!(),
+        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -383,11 +388,10 @@ fn generate_statement_match_extern_code(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let (code, is_reachable) =
-            generate_block_code_and_push_values(context, *block_id, &statement.outputs)?;
+        let (code, fallthrough) = generate_block_code(context, *block_id)?;
         statements.extend(code);
 
-        if is_reachable {
+        if fallthrough {
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
                 statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
@@ -399,15 +403,6 @@ fn generate_statement_match_extern_code(
     statements.push(end_label);
 
     Ok(statements)
-}
-
-/// Generates Sierra code for [lowering::StatementCallBlock].
-fn generate_statement_call_block_code(
-    context: &mut ExprGeneratorContext<'_>,
-    statement: &lowering::StatementCallBlock,
-) -> Maybe<Vec<pre_sierra::Statement>> {
-    // TODO(lior): Rename instead of using PushValues.
-    Ok(generate_block_code_and_push_values(context, statement.block, &statement.outputs)?.0)
 }
 
 /// Generates Sierra code for [lowering::StatementEnumConstruct].
@@ -520,11 +515,10 @@ fn generate_statement_match_enum(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let (code, is_reachable) =
-            generate_block_code_and_push_values(context, *arm, &statement.outputs)?;
+        let (code, fallthrough) = generate_block_code(context, *arm)?;
         statements.extend(code);
 
-        if is_reachable {
+        if fallthrough {
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
                 statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));

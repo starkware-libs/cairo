@@ -8,7 +8,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type wrapping a value as non zero.
@@ -20,22 +20,30 @@ impl GenericTypeArgGenericType for NonZeroTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        wrapped_info: TypeInfo,
+        TypeInfo { size, storable, droppable, duplicatable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        if !wrapped_info.storable {
-            Err(SpecializationError::UnsupportedGenericArg)
+        if storable {
+            Ok(TypeInfo { long_id, size, storable, droppable, duplicatable })
         } else {
-            Ok(TypeInfo { long_id, ..wrapped_info })
+            Err(SpecializationError::UnsupportedGenericArg)
         }
     }
 }
 pub type NonZeroType = GenericTypeArgGenericTypeWrapper<NonZeroTypeWrapped>;
 
+/// Returns the type `NonZero<T>` for a given type `T`.
+pub fn nonzero_ty(
+    context: &dyn SignatureSpecializationContext,
+    ty: &ConcreteTypeId,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())
+}
+
 /// Libfunc for unwrapping a `NonZero<T>` back into a T.
 #[derive(Default)]
 pub struct UnwrapNonZeroLibfunc {}
 impl SignatureOnlyGenericLibfunc for UnwrapNonZeroLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("unwrap_nz");
+    const STR_ID: &'static str = "unwrap_nz";
 
     fn specialize_signature(
         &self,
@@ -44,7 +52,7 @@ impl SignatureOnlyGenericLibfunc for UnwrapNonZeroLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
         Ok(LibfuncSignature::new_non_branch(
-            vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?],
+            vec![nonzero_ty(context, &ty)?],
             vec![OutputVarInfo {
                 ty,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },

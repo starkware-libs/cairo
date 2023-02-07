@@ -9,7 +9,11 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::Itertools;
 use lowering::FlatLowered;
+
+use crate::utils::statement_outputs;
 
 pub type StatementLocation = (BlockId, usize);
 
@@ -100,6 +104,7 @@ pub fn find_variable_lifetime(
         lowered_function,
         local_vars,
         res: VariableLifetimeResult::default(),
+        block_state: UnorderedHashMap::default(),
     };
     let mut state = VariableLifetimeState::default();
     let root_block_id = lowered_function.root?;
@@ -113,6 +118,9 @@ struct VariableLifetimeContext<'a> {
     lowered_function: &'a FlatLowered,
     local_vars: &'a OrderedHashSet<VariableId>,
     res: VariableLifetimeResult,
+
+    // A mapping BlockId to the life time state at the begging of that block.
+    block_state: UnorderedHashMap<BlockId, VariableLifetimeState>,
 }
 
 /// Helper function for [find_variable_lifetime].
@@ -125,12 +133,28 @@ fn inner_find_variable_lifetime(
 
     // Go over the block in reverse order, starting from handling the block end.
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(vars) => {
-            state.use_variables(context, vars, (block_id, block.statements.len()));
+        lowering::FlatBlockEnd::Callsite(remapping) => {
+            let vars = remapping.values().copied().collect_vec();
+            state.use_variables(context, &vars, (block_id, block.statements.len()));
         }
         lowering::FlatBlockEnd::Return(vars) => {
             state.clear();
             state.use_variables(context, vars, (block_id, block.statements.len()));
+        }
+        lowering::FlatBlockEnd::Fallthrough(target_block_id, remapping) => {
+            inner_find_variable_lifetime(context, *target_block_id, state);
+            let vars = remapping.values().copied().collect_vec();
+            state.use_variables(context, &vars, (block_id, block.statements.len()));
+
+            if context.block_state.insert(*target_block_id, state.clone()).is_some() {
+                panic!("block {target_block_id:?} lifetime was computed more than once.")
+            }
+        }
+        lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
+            *state = context.block_state[*target_block_id].clone();
+            let vars = remapping.values().copied().collect_vec();
+
+            state.use_variables(context, &vars, (block_id, block.statements.len()));
         }
         lowering::FlatBlockEnd::Unreachable => {}
     }
@@ -139,9 +163,10 @@ fn inner_find_variable_lifetime(
         let statement_location = (block_id, idx);
 
         // Add the new variables from the statement's output.
+        let outputs = statement_outputs(statement, context.lowered_function);
         state.handle_new_variables(
             context,
-            &statement.outputs(),
+            &outputs,
             DropLocation::PostStatement(statement_location),
         );
 
@@ -151,9 +176,6 @@ fn inner_find_variable_lifetime(
             | lowering::Statement::StructConstruct(_)
             | lowering::Statement::StructDestructure(_)
             | lowering::Statement::EnumConstruct(_) => {}
-            lowering::Statement::CallBlock(statement_call_block) => {
-                inner_find_variable_lifetime(context, statement_call_block.block, state);
-            }
             lowering::Statement::MatchExtern(statement_match_extern) => {
                 let arm_blocks: Vec<_> =
                     statement_match_extern.arms.iter().map(|(_, block_id)| *block_id).collect();

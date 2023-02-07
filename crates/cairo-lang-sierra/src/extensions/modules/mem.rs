@@ -9,7 +9,7 @@ use crate::extensions::{
     args_as_single_type, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericLibfuncId};
+use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
 
 define_libfunc_hierarchy! {
@@ -27,7 +27,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct StoreTempLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("store_temp");
+    const STR_ID: &'static str = "store_temp";
 
     fn specialize_signature(
         &self,
@@ -56,7 +56,7 @@ pub type StoreTempLibfunc = WrapSignatureAndTypeGenericLibfunc<StoreTempLibfuncW
 #[derive(Default)]
 pub struct AlignTempsLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for AlignTempsLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("align_temps");
+    const STR_ID: &'static str = "align_temps";
 
     fn specialize_signature(
         &self,
@@ -72,7 +72,7 @@ pub type AlignTempsLibfunc = WrapSignatureAndTypeGenericLibfunc<AlignTempsLibfun
 #[derive(Default)]
 pub struct StoreLocalLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for StoreLocalLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("store_local");
+    const STR_ID: &'static str = "store_local";
 
     fn specialize_signature(
         &self,
@@ -102,7 +102,7 @@ pub type StoreLocalLibfunc = WrapSignatureAndTypeGenericLibfunc<StoreLocalLibfun
 #[derive(Default)]
 pub struct FinalizeLocalsLibfunc {}
 impl NoGenericArgsGenericLibfunc for FinalizeLocalsLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("finalize_locals");
+    const STR_ID: &'static str = "finalize_locals";
 
     fn specialize_signature(
         &self,
@@ -120,7 +120,7 @@ impl NoGenericArgsGenericLibfunc for FinalizeLocalsLibfunc {
 #[derive(Default)]
 pub struct AllocLocalLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for AllocLocalLibfuncWrapped {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("alloc_local");
+    const STR_ID: &'static str = "alloc_local";
 
     fn specialize_signature(
         &self,
@@ -143,7 +143,7 @@ pub type AllocLocalLibfunc = WrapSignatureAndTypeGenericLibfunc<AllocLocalLibfun
 #[derive(Default)]
 pub struct RenameLibfunc {}
 impl SignatureOnlyGenericLibfunc for RenameLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("rename");
+    const STR_ID: &'static str = "rename";
 
     fn specialize_signature(
         &self,

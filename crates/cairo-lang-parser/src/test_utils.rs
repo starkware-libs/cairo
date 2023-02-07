@@ -10,7 +10,7 @@ use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 
 pub fn read_file(filename: &str) -> String {
     fs::read_to_string(filename)
-        .unwrap_or_else(|_| panic!("Something went wrong reading file {}", filename))
+        .unwrap_or_else(|_| panic!("Something went wrong reading file {filename}"))
 }
 
 pub fn get_diagnostics(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {

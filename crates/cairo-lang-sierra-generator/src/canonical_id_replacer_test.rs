@@ -7,7 +7,8 @@ use crate::replace_ids::SierraIdReplacer;
 
 #[test]
 fn test_replacer() {
-    let input = indoc! {"
+    let input = ProgramParser::new()
+        .parse(indoc! {"
             type felt = felt;
             type NonZeroFelt = NonZero<felt>;
             type BoxFelt = Box<felt>;
@@ -17,7 +18,7 @@ fn test_replacer() {
             libfunc felt_mul_2 = felt_mul<2>;
             libfunc felt_sub = felt_sub;
             libfunc felt_dup = dup<felt>;
-            libfunc felt_jump_nz = felt_jump_nz;
+            libfunc felt_is_zero = felt_is_zero;
             libfunc store_temp_felt = store_temp<felt>;
             libfunc call_foo = function_call<user@foo>;
 
@@ -36,9 +37,11 @@ fn test_replacer() {
             foo@10([1]: felt, [2]: felt) -> (felt, felt);
             box_and_back@26([1]: felt) -> (felt);
             box_and_back_wrapper@31([1]: felt) -> (felt);
-        "};
+        "})
+        .unwrap();
 
-    let expecetd_output = indoc! {"
+    let expected_output = ProgramParser::new()
+        .parse(indoc! {"
             type [0] = felt;
             type [1] = NonZero<[0]>;
             type [2] = Box<[0]>;
@@ -48,7 +51,7 @@ fn test_replacer() {
             libfunc [2] = felt_mul<2>;
             libfunc [3] = felt_sub;
             libfunc [4] = dup<[0]>;
-            libfunc [5] = felt_jump_nz;
+            libfunc [5] = felt_is_zero;
             libfunc [6] = store_temp<[0]>;
             libfunc [7] = function_call<user@[1]>;
 
@@ -67,11 +70,10 @@ fn test_replacer() {
             [1]@10([1]: [0], [2]: [0]) -> ([0], [0]);
             [2]@26([1]: [0]) -> ([0]);
             [3]@31([1]: [0]) -> ([0]);
-        "};
+        "})
+        .unwrap();
 
-    let program = ProgramParser::new().parse(input).unwrap();
+    let replacer = CanonicalReplacer::from_program(&input);
 
-    let replacer = CanonicalReplacer::from_program(&program);
-
-    assert_eq!(format!("{}", replacer.apply(&program)), expecetd_output)
+    assert_eq!(replacer.apply(&input), expected_output);
 }

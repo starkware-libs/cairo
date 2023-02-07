@@ -5,11 +5,10 @@ mod test;
 use smol_str::SmolStr;
 
 use super::ast::{
-    self, FunctionDeclaration, FunctionDeclarationGreen, Item, ItemConstant, ItemEnum,
-    ItemExternFunction, ItemExternFunctionPtr, ItemExternType, ItemFreeFunction,
-    ItemFreeFunctionPtr, ItemImpl, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse,
-    Modifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction,
-    TraitItemFunctionPtr,
+    self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
+    Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
+    ItemImpl, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction, TraitItemFunctionPtr,
 };
 use super::db::SyntaxGroup;
 use super::Terminal;
@@ -55,6 +54,7 @@ impl GetIdentifier for ast::ExprPath {
 /// Helper trait for ast::PathSegment.
 pub trait PathSegmentEx {
     fn identifier_ast(&self, db: &dyn SyntaxGroup) -> ast::TerminalIdentifier;
+    fn generic_args(&self, db: &dyn SyntaxGroup) -> Option<Vec<ast::Expr>>;
 }
 impl PathSegmentEx for ast::PathSegment {
     /// Retrieves the identifier ast of a path segment.
@@ -62,6 +62,14 @@ impl PathSegmentEx for ast::PathSegment {
         match self {
             ast::PathSegment::Simple(segment) => segment.ident(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.ident(db),
+        }
+    }
+    fn generic_args(&self, db: &dyn SyntaxGroup) -> Option<Vec<ast::Expr>> {
+        match self {
+            ast::PathSegment::Simple(_) => None,
+            ast::PathSegment::WithGenericArgs(segment) => {
+                Some(segment.generic_args(db).generic_args(db).elements(db))
+            }
         }
     }
 }
@@ -94,7 +102,7 @@ impl NameGreen for FunctionDeclarationGreen {
     }
 }
 
-impl NameGreen for ItemFreeFunctionPtr {
+impl NameGreen for FunctionWithBodyPtr {
     fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         self.declaration_green(db).name_green(db)
     }
@@ -139,7 +147,7 @@ impl QueryAttrs for ItemModule {
         }
     }
 }
-impl QueryAttrs for ItemFreeFunction {
+impl QueryAttrs for FunctionWithBody {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }

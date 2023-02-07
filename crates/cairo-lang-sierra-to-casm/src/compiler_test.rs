@@ -11,12 +11,13 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 type NonZeroFelt = NonZero<felt>;
                 type BoxFelt = Box<felt>;
 
+                libfunc branch_align = branch_align;
                 libfunc finalize_locals = finalize_locals;
                 libfunc felt_add = felt_add;
                 libfunc felt_mul_2 = felt_mul<2>;
                 libfunc felt_sub = felt_sub;
                 libfunc felt_dup = dup<felt>;
-                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc felt_is_zero = felt_is_zero;
                 libfunc felt_into_box = into_box<felt>;
                 libfunc felt_unbox = unbox<felt>;
                 libfunc jump = jump;
@@ -40,37 +41,39 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 return([7], [8], [4]);                          // #9
 
                 finalize_locals() -> ();                        // #10
-                felt_jump_nz([1]) { fallthrough() 16([1]) };    // #11
-                felt_dup([2]) -> ([1], [2]);                    // #12
-                store_temp_felt([1]) -> ([1]);                  // #13
-                store_temp_felt([2]) -> ([2]);                  // #14
-                return ([1], [2]);                              // #15
+                felt_is_zero([1]) { fallthrough() 17([1]) };    // #11
+                branch_align() -> ();                           // #12
+                felt_dup([2]) -> ([1], [2]);                    // #13
+                store_temp_felt([1]) -> ([1]);                  // #14
+                store_temp_felt([2]) -> ([2]);                  // #15
+                return ([1], [2]);                              // #16
 
-                jump() { 17() };                                // #16
-                felt_unwrap_nz([1]) -> ([1]);                   // #17
-                felt_dup([2]) -> ([2], [3]);                    // #18
-                felt_sub([1], [3]) -> ([1]);                    // #19
-                store_temp_felt([1]) -> ([1]);                  // #20
-                felt_mul_2([1]) -> ([1]);                       // #21
+                branch_align() -> ();                           // #17
+                jump() { 19() };                                // #18
+                felt_unwrap_nz([1]) -> ([1]);                   // #19
+                felt_dup([2]) -> ([2], [3]);                    // #20
+                felt_sub([1], [3]) -> ([1]);                    // #21
                 store_temp_felt([1]) -> ([1]);                  // #22
-                store_temp_felt([2]) -> ([2]);                  // #23
-                call_foo([1], [2]) -> ([1], [2]);               // #24
-                return ([1], [2]);                              // #25
+                felt_mul_2([1]) -> ([1]);                       // #23
+                store_temp_felt([1]) -> ([1]);                  // #24
+                store_temp_felt([2]) -> ([2]);                  // #25
+                call_foo([1], [2]) -> ([1], [2]);               // #26
+                return ([1], [2]);                              // #27
 
-                felt_into_box([1]) -> ([2]);                    // #26
-                store_temp_box_felt([2]) -> ([2]);              // #27
-                felt_unbox([2]) -> ([3]);                       // #28
-                store_temp_felt([3]) -> ([3]);                  // #29
-                return ([3]);                                   // #30
+                felt_into_box([1]) -> ([2]);                    // #28
+                store_temp_box_felt([2]) -> ([2]);              // #29
+                felt_unbox([2]) -> ([3]);                       // #30
+                store_temp_felt([3]) -> ([3]);                  // #31
+                return ([3]);                                   // #32
 
-                store_temp_felt([1]) -> ([1]);                  // #31
-                call_box_and_back([1]) -> ([1]);                // #32
-                return ([1]);                                   // #33
+                store_temp_felt([1]) -> ([1]);                  // #33
+                call_box_and_back([1]) -> ([1]);                // #34
+                return ([1]);                                   // #35
 
                 test_program@0([1]: felt, [2]: felt) -> (felt, felt, felt);
                 foo@10([1]: felt, [2]: felt) -> (felt, felt);
-                box_and_back@26([1]: felt) -> (felt);
-                box_and_back_wrapper@31([1]: felt) -> (felt);
+                box_and_back@28([1]: felt) -> (felt);
+                box_and_back_wrapper@33([1]: felt) -> (felt);
             "},
             false,
             indoc! {"
@@ -97,7 +100,12 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
 
                 // box_and_back:
-                %{ memory[ap + 0] = segments.add() %}
+                %{
+                if '__boxed_segment' not in globals():
+                    __boxed_segment = segments.add()
+                memory[ap + 0] = __boxed_segment
+                __boxed_segment += 1
+                %}
                 [fp + -3] = [[ap + 0] + 0], ap++;
                 [ap + 0] = [ap + -1], ap++;
                 [ap + 0] = [[ap + -1] + 0], ap++;
@@ -157,15 +165,16 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 type felt = felt;
                 type NonZeroFelt = NonZero<felt>;
 
+                libfunc branch_align = branch_align;
+                libfunc jump = jump;
                 libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
                 libfunc nz_felt_drop = drop<NonZeroFelt>;
-                libfunc felt_jump_nz = felt_jump_nz;
-                libfunc branch_align = branch_align;
+                libfunc felt_is_zero = felt_is_zero;
 
-
-                felt_jump_nz([1]) { fallthrough() 3([1]) };
+                felt_is_zero([1]) { fallthrough() 3([1]) };
                 branch_align() -> ();
                 return ();
+                branch_align() -> ();
                 store_temp_nz_felt([1]) -> ([1]);
                 nz_felt_drop([1]) -> ();
                 return ();
@@ -186,26 +195,33 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 type u128 = u128;
 
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
+                libfunc branch_align = branch_align;
+                libfunc jump = jump;
                 libfunc u128_lt = u128_lt;
                 libfunc store_u128 = store_temp<u128>;
                 libfunc store_rc = store_temp<RangeCheck>;
 
                 revoke_ap_tracking() -> ();
-                u128_lt([1], [2], [3]) {fallthrough([1]) 2([1]) };
+                u128_lt([1], [2], [3]) {fallthrough([1]) 4([1]) };
+                branch_align() -> ();
+                jump() { 5() };
+                branch_align() -> ();
+
                 store_rc([1]) -> ([1]);
                 return ([1]);
 
                 test_program@0([1]: RangeCheck, [2]: u128, [3]: u128) -> (RangeCheck);
-            "}, false, indoc!{"
+            "}, true, indoc!{"
                 [fp + -4] = [ap + 1] + [fp + -3], ap++;
                 %{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
                 jmp rel 7 if [ap + -1] != 0, ap++;
                 // a < b.
                 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
                 [ap + -1] = [[fp + -5] + 0];
-                jmp rel 3;
+                jmp rel 5;
                 // a < b.
                 [ap + -1] = [[fp + -5] + 0];
+                jmp rel 2;
                 // Store range_check and return.
                 [ap + 0] = [fp + -5] + 1, ap++;
                 ret;
@@ -214,16 +230,19 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 type u128 = u128;
                 type RangeCheck = RangeCheck;
 
+                libfunc branch_align = branch_align;
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
-                libfunc u128_overflow_add = u128_overflow_add;
+                libfunc u128_overflowing_add = u128_overflowing_add;
                 libfunc drop<u128> = drop<u128>;
                 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 
                 revoke_ap_tracking() -> ();
-                u128_overflow_add([1], [2], [3]) {fallthrough([1], [2]) 5([1], [2]) };
+                u128_overflowing_add([1], [2], [3]) {fallthrough([1], [2]) 6([1], [2]) };
+                branch_align() -> ();
                 drop<u128>([2]) -> ();
                 store_temp<RangeCheck>([1]) -> ([1]);
                 return ([1]);
+                branch_align() -> ();
                 drop<u128>([2]) -> ();
                 store_temp<RangeCheck>([1]) -> ([1]);
                 return ([1]);
@@ -261,110 +280,54 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 #[test_case(read_sierra_example_file("fib_jumps").as_str(),
             true,
             indoc! {"
-                jmp rel 8 if [fp + -3] != 0;
+                jmp rel 7 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4] + 13, ap++;
+                [ap + 0] = [fp + -4], ap++;
                 [ap + 0] = 1, ap++;
                 ret;
 
-                // Statement #  8 - Calculates n - 1 and tests if n - 1 == 0.
-                [fp + -3] = [ap + 0] + 1, ap++;
-                jmp rel 8 if [ap + -1] != 0;
-                [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4] + 11, ap++;
-                [ap + 0] = 1, ap++;
-                ret;
-
-                // Statement # 18
-                // Setting up the latest memory to be of the form [b=1, _, _, n=n-1, rc, gb, a=1].
-                [ap + 0] = 1, ap++;
-                [ap + 0] = [ap + -2], ap++;
+                // Statement # 9
+                // Setting up the latest memory to be of the form [b=0, _, _, n, rc, gb, a=1].
+                [ap + 0] = 0, ap++;
+                [ap + 0] = [fp + -3], ap++;
                 [ap + 0] = [ap + -1], ap++;
                 [ap + 0] = [ap + -1], ap++;
                 [ap + 0] = [fp + -5], ap++;
                 [ap + 0] = [fp + -4], ap++;
                 [ap + 0] = 1, ap++;
-                // Statement # 27 - Getting gas for the main loop.
-                %{ memory[ap + 0] = 800 <= memory[ap + -2] %}
-                jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap + -3] + 340282366920938463463374607431768210656, ap++;
-                [ap + -1] = [[ap + -5] + 0];
-                jmp rel 18;
 
-                // Statement # 28
+                // Statement #21, check n.
+                jmp rel 6 if [ap + -4] != 0;
+                // Statement # 22 - n == 0, so we can return the latest a.
+                [ap + 0] = [ap + -3], ap++;
+                [ap + 0] = [ap + -3], ap++;
+                [ap + 0] = [ap + -3], ap++;
+                ret;
+                %{ memory[ap + 0] = 970 <= memory[ap + -2] %}
+
+                jmp rel 7 if [ap + 0] != 0, ap++;
+                [ap + 0] = [ap + -3] + 340282366920938463463374607431768210486, ap++;
+                [ap + -1] = [[ap + -5] + 0];
+                jmp rel 13;
+
+                // Statement # 31
                 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
                 // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
-                [ap + -3] = [ap + 0] + 800, ap++;
+                [ap + -3] = [ap + 0] + 970, ap++;
                 [ap + -1] = [[ap + -5] + 0];
                 [ap + -6] = [ap + 0] + 1, ap++;
                 [ap + 0] = [ap + -6] + 1, ap++;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -6] + [ap + -12], ap++;
-                jmp rel -16 if [ap + -4] != 0;
-                // Statement # 48 - n == 0, so we can return the latest a.
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3] + 4, ap++;
-                [ap + 0] = [ap + -3], ap++;
-                ret;
+                jmp rel -22;
+
+                // Statement # 41  - Ran out of gas - returning updated gb and -1.
                 [ap + 0] = [ap + -5] + 1, ap++;
                 [ap + 0] = [ap + -5], ap++;
                 [ap + 0] = -1, ap++;
                 ret;
             "};
             "fib_jumps")]
-#[test_case(read_sierra_example_file("fib_recursive").as_str(),
-            true,
-            indoc! {"
-                ap += 2;
-                // Statement #  4 - tests if n == 0 and initiates 1 for the early return values.
-                [ap + 0] = 1, ap++;
-                jmp rel 7 if [fp + -3] != 0;
-                [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4] + 6, ap++;
-                [ap + 0] = [ap + -3], ap++;
-                ret;
-
-                // Statement # 14 - calculating n - 1, and testing if n - 1 == 0.
-                [fp + -3] = [ap + 0] + 1, ap++;
-                jmp rel 7 if [ap + -1] != 0;
-                [ap + 0] = [fp + -5], ap++;
-                // Statement # 18 - n == 1, so we return updated gb and 1.
-                [ap + 0] = [fp + -4] + 4, ap++;
-                [ap + 0] = [ap + -4], ap++;
-                ret;
-
-                // Statement # 25 - Get gas for the recursive calls.
-                %{ memory[ap + 0] = 3900 <= memory[fp + -4] %}
-                jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [fp + -4] + 340282366920938463463374607431768207556, ap++;
-                [ap + -1] = [[fp + -5] + 0];
-                jmp rel 23;
-                [fp + -4] = [ap + 0] + 3900, ap++;
-                [ap + -1] = [[fp + -5] + 0];
-
-                // Statement # 28 - Performing both recursive calculations and returning their sum.
-                [ap + 0] = [fp + -5] + 1, ap++;
-                [ap + 0] = [ap + -2], ap++;
-                [ap + -5] = [fp + 0] + 1;
-                [ap + 0] = [ap + -5], ap++;
-                call rel -36;
-                [fp + 1] = [ap + -1];
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [fp + 0], ap++;
-                call rel -42;
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [fp + 1] + [ap + -3], ap++;
-                ret;
-
-                // Statement # 46 - Ran out of gas - returning update gb and error value.
-                [ap + 0] = [fp + -5] + 1, ap++;
-                [ap + 0] = [fp + -4], ap++;
-                [ap + 0] = -1, ap++;
-                ret;
-            "};
-            "fib_recursive")]
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
@@ -441,7 +404,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 
                 test_program@0([1]: u128, [2]: u128) -> (felt);
             "},
-            "One of the arguments does not match the expected type of the libfunc or return \
+            "#0: One of the arguments does not match the expected type of the libfunc or return \
  statement.";
             "Types mismatch")]
 #[test_case(indoc! {"
@@ -504,6 +467,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 #[test_case(indoc! {"
                 type felt = felt;
 
+
                 return();
 
                 foo@0([1]: felt) -> ();
@@ -524,21 +488,24 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 type felt = felt;
                 type NonZeroFelt = NonZero<felt>;
 
+                libfunc branch_align = branch_align;
                 libfunc felt_dup = dup<felt>;
                 libfunc felt_drop = drop<felt>;
-                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc felt_is_zero = felt_is_zero;
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
 
-                felt_jump_nz([1]) { fallthrough() 3([1]) };
+                felt_is_zero([1]) { fallthrough() 4([1]) };
+                branch_align() -> ();
                 store_temp_felt([2]) -> ([2]);
                 return ([2]);
+                branch_align() -> ();
                 felt_drop([2]) -> ();
                 store_temp_nz_felt([1]) -> ([1]);
                 return ([1]);
 
                 test_program@0([1]: felt, [2]: felt) -> (felt);
-            "}, "#5: One of the arguments does not match the expected type \
+            "}, "#7: One of the arguments does not match the expected type \
 of the libfunc or return statement.";
             "Invalid return type")]
 #[test_case(indoc! {"
@@ -564,21 +531,23 @@ of the libfunc or return statement.";
                 type NonZeroFelt = NonZero<felt>;
 
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
-
+                libfunc branch_align = branch_align;
                 libfunc felt_drop = drop<felt>;
-                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc felt_is_zero = felt_is_zero;
                 libfunc felt_unwrap_nz = unwrap_nz<felt>;
                 libfunc jump = jump;
 
-                felt_jump_nz([1]) { fallthrough() 3([1]) };
+                felt_is_zero([1]) { fallthrough() 4([1]) };
+                branch_align() -> ();
                 revoke_ap_tracking() -> ();
-                jump() { 5() };
+                jump() { 7() };
+                branch_align() -> ();
                 felt_unwrap_nz([1]) -> ([1]);
                 felt_drop([1]) -> ();
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, "#5: Inconsistent ap tracking.";
+            "}, "#7: Inconsistent ap tracking.";
             "Inconsistent ap tracking.")]
 #[test_case(indoc! {"
                 libfunc finalize_locals = finalize_locals;
@@ -650,6 +619,13 @@ of the libfunc or return statement.";
                 foo@0() -> ();
             "}, "#1: The functionality is supported only for sized types.";
             "store_temp<Uninitialized<felt>()")]
+#[test_case(indoc! {"
+                return ();
+
+                foo@0() -> ();
+                bar@0() -> ();
+            "}, "#0: Belongs to two different functions.";
+            "Statement in two functions")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(

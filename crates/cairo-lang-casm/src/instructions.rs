@@ -34,12 +34,12 @@ impl InstructionBody {
 impl Display for InstructionBody {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            InstructionBody::AddAp(insn) => write!(f, "{}", insn),
-            InstructionBody::AssertEq(insn) => write!(f, "{}", insn),
-            InstructionBody::Call(insn) => write!(f, "{}", insn),
-            InstructionBody::Jnz(insn) => write!(f, "{}", insn),
-            InstructionBody::Jump(insn) => write!(f, "{}", insn),
-            InstructionBody::Ret(insn) => write!(f, "{}", insn),
+            InstructionBody::AddAp(insn) => write!(f, "{insn}",),
+            InstructionBody::AssertEq(insn) => write!(f, "{insn}",),
+            InstructionBody::Call(insn) => write!(f, "{insn}",),
+            InstructionBody::Jnz(insn) => write!(f, "{insn}",),
+            InstructionBody::Jump(insn) => write!(f, "{insn}",),
+            InstructionBody::Ret(insn) => write!(f, "{insn}",),
         }
     }
 }

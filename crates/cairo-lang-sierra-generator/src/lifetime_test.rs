@@ -16,6 +16,8 @@ cairo_lang_test_utils::test_file_test!(
         block: "block",
         early_return: "early_return",
         enum_: "enum",
+        // TODO(ilya): Enable inline test.
+        // inline: "inline",
         locals: "locals",
         simple: "simple",
         struct_: "struct",
@@ -41,7 +43,8 @@ fn check_variable_lifetime(
         .unwrap()
         .expect_with_db(db, "Unexpected diagnostics.");
 
-    let lowered_function = &*db.function_with_body_lowered_flat(test_function.function_id).unwrap();
+    let lowered_function =
+        &*db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
 
     let lowered_formatter =
         lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
@@ -53,16 +56,32 @@ fn check_variable_lifetime(
     let last_use_str = find_variable_lifetime_res
         .last_use
         .iter()
-        .map(|location| format!("{location:?}"))
+        .map(|location| {
+            let block = &lowered_function.blocks[location.statement_location.0];
+            let statements = &block.statements;
+            let var_id = if location.statement_location.1 == statements.len() {
+                match &block.end {
+                    lowering::FlatBlockEnd::Callsite(remapping)
+                    | lowering::FlatBlockEnd::Fallthrough(_, remapping)
+                    | lowering::FlatBlockEnd::Goto(_, remapping) => {
+                        *remapping.values().nth(location.idx).unwrap()
+                    }
+                    lowering::FlatBlockEnd::Return(returns) => returns[location.idx],
+                    lowering::FlatBlockEnd::Unreachable => {
+                        panic!("Unexpected block end")
+                    }
+                }
+            } else {
+                statements[location.statement_location.1].inputs()[location.idx]
+            };
+            format!("v{}: {location:?}", var_id.index())
+        })
         .join("\n");
     let drop_str = find_variable_lifetime_res
         .drops
         .iter()
         .map(|(location, vars)| {
-            format!(
-                "{location:?}: {}",
-                vars.iter().map(|var_id| format!("{:?}", var_id)).join(", ")
-            )
+            format!("{location:?}: {}", vars.iter().map(|var_id| format!("{var_id:?}")).join(", "))
         })
         .join("\n");
 

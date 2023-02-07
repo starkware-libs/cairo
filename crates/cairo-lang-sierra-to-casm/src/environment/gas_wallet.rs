@@ -55,7 +55,7 @@ impl GasWallet {
 impl Display for GasWallet {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Value(value) => write!(f, "GasWallet::Value({:?})", value),
+            Self::Value(value) => write!(f, "GasWallet::Value({value:?})"),
             Self::Disabled => write!(f, "GasWallet::Disabled"),
         }
     }

@@ -7,6 +7,10 @@ pub enum SyntaxKind {
     ArgNameClause,
     OptionArgNameClauseEmpty,
     Arg,
+    ArgClauseNamed,
+    ArgClauseUnnamed,
+    ArgClauseFieldInitShorthand,
+    ExprFieldInitShorthand,
     ArgList,
     ExprMissing,
     PathSegmentSimple,
@@ -70,7 +74,7 @@ pub enum SyntaxKind {
     AttributeArgList,
     FunctionDeclaration,
     ItemConstant,
-    ItemFreeFunction,
+    FunctionWithBody,
     ItemExternFunction,
     ItemExternType,
     ItemTrait,
@@ -88,7 +92,9 @@ pub enum SyntaxKind {
     OptionWrappedGenericParamListEmpty,
     WrappedGenericParamList,
     GenericParamList,
-    GenericParam,
+    GenericParamType,
+    GenericParamConst,
+    GenericParamImpl,
     TokenIdentifier,
     TerminalIdentifier,
     TokenLiteralNumber,
@@ -417,6 +423,6 @@ impl SyntaxKind {
 }
 impl fmt::Display for SyntaxKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }

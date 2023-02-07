@@ -6,10 +6,10 @@ use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
-use crate::abi;
 use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
 use crate::felt_serde::sierra_from_felts;
 use crate::test_utils::{get_example_file_path, get_test_contract};
+use crate::{abi, sierra_version};
 
 #[test]
 fn test_serialization() {
@@ -22,6 +22,7 @@ fn test_serialization() {
             libfunc_names: HashMap::default(),
             user_func_names: HashMap::default(),
         },
+        sierra_version_id: sierra_version::CURRENT_VERSION_ID,
         entry_points_by_type: ContractEntryPoints {
             external,
             l1_handler: vec![],
@@ -43,6 +44,7 @@ fn test_serialization() {
             "libfunc_names": [],
             "user_func_names": []
           },
+          "sierra_version_id": 1,
           "entry_points_by_type": {
             "EXTERNAL": [
               {
@@ -62,19 +64,21 @@ fn test_serialization() {
 
 #[test_case("test_contract")]
 #[test_case("hello_starknet")]
+#[test_case("erc20")]
 fn test_full_contract_deseralization(example_file_name: &str) {
-    let contract = get_test_contract(format!("{}.cairo", example_file_name).as_str());
+    let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
 }
 
 #[test_case("test_contract")]
 #[test_case("hello_starknet")]
+#[test_case("erc20")]
 fn test_compile_path(example_file_name: &str) {
-    let contract = get_test_contract(format!("{}.cairo", example_file_name).as_str());
+    let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
 
     compare_contents_or_fix_with_path(
-        &get_example_file_path(format!("{}.json", example_file_name).as_str()),
+        &get_example_file_path(format!("{example_file_name}.json").as_str()),
         serde_json::to_string_pretty(&contract).unwrap() + "\n",
     );
 
@@ -83,7 +87,7 @@ fn test_compile_path(example_file_name: &str) {
 
     // There is a separate file for the sierra code as it is hard to review inside the json.
     compare_contents_or_fix_with_path(
-        &get_example_file_path(format!("{}.sierra", example_file_name).as_str()),
+        &get_example_file_path(format!("{example_file_name}.sierra").as_str()),
         sierra_program.to_string(),
     );
 }

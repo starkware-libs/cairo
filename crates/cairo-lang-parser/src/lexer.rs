@@ -3,7 +3,7 @@
 mod test;
 
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextOffset;
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
     TokenNewline, TokenSingleLineComment, TokenWhitespace, TriviumGreen,
 };
@@ -38,16 +38,16 @@ impl<'a> Lexer<'a> {
 
     // Helpers.
     fn peek(&self) -> Option<char> {
-        self.text[self.current_position.0..].chars().next()
+        self.current_position.take_from(self.text).chars().next()
     }
 
     fn peek_nth(&self, n: usize) -> Option<char> {
-        self.text[self.current_position.0..].chars().nth(n)
+        self.current_position.take_from(self.text).chars().nth(n)
     }
 
     fn take(&mut self) -> Option<char> {
         let res = self.peek()?;
-        self.current_position.inc();
+        self.current_position = self.current_position.add_width(TextWidth::from_char(res));
         Some(res)
     }
 
@@ -62,7 +62,8 @@ impl<'a> Lexer<'a> {
     }
 
     fn peek_span_text(&self) -> &'a str {
-        &self.text[self.previous_position.0..self.current_position.0]
+        let span = TextSpan { start: self.previous_position, end: self.current_position };
+        span.take(self.text)
     }
 
     fn consume_span(&mut self) -> &str {
@@ -276,10 +277,10 @@ pub struct LexerTerminal {
     pub trailing_trivia: Vec<TriviumGreen>,
 }
 impl LexerTerminal {
-    pub fn width(&self, db: &dyn SyntaxGroup) -> u32 {
-        self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<u32>()
-            + self.text.len() as u32
-            + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<u32>()
+    pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
+        self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
+            + TextWidth::from_str(&self.text)
+            + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
     }
 }
 

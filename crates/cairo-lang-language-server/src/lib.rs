@@ -9,20 +9,20 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionId,
-    FreeFunctionLongId, FunctionWithBodyId, ImplLongId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, StructLongId, TraitLongId, UseLongId,
+    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
+    FreeFunctionLongId, FunctionWithBodyId, ImplFunctionLongId, ImplLongId, LanguageElementId,
+    LookupItemId, ModuleFileId, ModuleId, ModuleItemId, StructLongId, TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_filesystem::span::TextPosition;
+use cairo_lang_filesystem::span::{TextPosition, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -37,6 +37,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
+use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
@@ -377,24 +378,32 @@ impl LanguageServer for Backend {
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let db = self.db().await;
         let file_uri = params.text_document_position_params.text_document.uri;
-        eprintln!("Hover {}", file_uri);
+        eprintln!("Hover {file_uri}");
         let file = self.file(&db, file_uri);
         let position = params.text_document_position_params.position;
         let Some((node, lookup_items)) =
             get_node_and_lookup_items(&*db, file, position) else { return Ok(None); };
-        // TODO(yuval): add support for impl functions.
-        let Some(
-            LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id))
-        ) = lookup_items.into_iter().next() else  {return Ok(None)};
+        let Some(lookup_item_id) = lookup_items.into_iter().next() else {
+                return Ok(None);
+            };
+        let function_id = match lookup_item_id {
+            LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
+                FunctionWithBodyId::Free(free_function_id)
+            }
+            LookupItemId::ImplFunction(impl_function_id) => {
+                FunctionWithBodyId::Impl(impl_function_id)
+            }
+            _ => {
+                return Ok(None);
+            }
+        };
 
         // Build texts.
         let mut hints = Vec::new();
-        if let Some(hint) =
-            get_expr_hint(&*db, FunctionWithBodyId::Free(free_function_id), node.clone())
-        {
+        if let Some(hint) = get_expr_hint(&*db, function_id, node.clone()) {
             hints.push(MarkedString::String(hint));
         };
-        if let Some(hint) = get_identifier_hint(&*db, free_function_id, node) {
+        if let Some(hint) = get_identifier_hint(&*db, lookup_item_id, node) {
             hints.push(MarkedString::String(hint));
         };
 
@@ -422,14 +431,22 @@ impl LanguageServer for Backend {
 
             let defs_db = (*db).upcast();
             let (module_id, file_index, stable_ptr) = match item {
-                ResolvedGenericItem::Module(item) => {
-                    (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
-                }
-                ResolvedGenericItem::GenericFunction(item) => (
+                ResolvedGenericItem::Constant(item) => (
                     item.parent_module(defs_db),
                     item.file_index(defs_db),
                     item.untyped_stable_ptr(defs_db),
                 ),
+                ResolvedGenericItem::Module(item) => {
+                    (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
+                }
+                ResolvedGenericItem::GenericFunction(item) => {
+                    let sig = item.signature((*db).upcast());
+                    (
+                        sig.parent_module(defs_db),
+                        sig.file_index(defs_db),
+                        sig.untyped_stable_ptr(defs_db),
+                    )
+                }
                 ResolvedGenericItem::GenericType(generic_type) => (
                     generic_type.parent_module(defs_db),
                     generic_type.file_index(defs_db),
@@ -454,6 +471,11 @@ impl LanguageServer for Backend {
                     imp.parent_module(defs_db),
                     imp.file_index(defs_db),
                     imp.stable_ptr(defs_db).untyped(),
+                ),
+                ResolvedGenericItem::TraitFunction(trait_function) => (
+                    trait_function.parent_module(defs_db),
+                    trait_function.file_index(defs_db),
+                    trait_function.stable_ptr(defs_db).untyped(),
                 ),
             };
 
@@ -501,12 +523,21 @@ fn lookup_item_from_ast(
                 ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
         ))),
-        SyntaxKind::ItemFreeFunction => Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
-            db.intern_free_function(FreeFunctionLongId(
-                module_file_id,
-                ast::ItemFreeFunction::from_syntax_node(syntax_db, node).stable_ptr(),
-            )),
-        ))),
+        SyntaxKind::FunctionWithBody => {
+            if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
+                Some(LookupItemId::ImplFunction(db.intern_impl_function(ImplFunctionLongId(
+                    module_file_id,
+                    ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
+                ))))
+            } else {
+                Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
+                    FreeFunctionLongId(
+                        module_file_id,
+                        ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
+                    ),
+                ))))
+            }
+        }
         SyntaxKind::ItemExternFunction => Some(LookupItemId::ModuleItem(
             ModuleItemId::ExternFunction(db.intern_extern_function(ExternFunctionLongId(
                 module_file_id,
@@ -566,19 +597,26 @@ fn get_node_and_lookup_items(
         eprintln!("Formatting failed. File '{filename}' does not exist.");
     })?;
 
-    // Get file summary.
+    // Get file summary and content.
     let file_summary = db.file_summary(file).on_none(|| {
+        eprintln!("Hover failed. File '{filename}' does not exist.");
+    })?;
+    let content = db.file_content(file).on_none(|| {
         eprintln!("Hover failed. File '{filename}' does not exist.");
     })?;
 
     // Find offset for position.
-    let line_offset = file_summary.line_offsets.get(position.line as usize).on_none(|| {
+    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
         eprintln!("Hover failed. Position out of bounds.");
     })?;
-    // TODO(spapini): Check that character is not larger than line_length.
-    let node = syntax
-        .as_syntax_node()
-        .lookup_offset(syntax_db, line_offset.add(position.character as usize));
+    let mut chars_it = offset.take_from(&content).chars();
+    for _ in 0..position.character {
+        let c = chars_it.next().on_none(|| {
+            eprintln!("Position does not exist.");
+        })?;
+        offset = offset.add_width(TextWidth::from_char(c));
+    }
+    let node = syntax.as_syntax_node().lookup_offset(syntax_db, offset);
 
     // Find module.
     let module_id = find_node_module(db, file, node.clone()).on_none(|| {
@@ -636,7 +674,7 @@ fn find_node_module(
 /// If the node is an identifier, retrieves a hover hint for it.
 fn get_identifier_hint(
     db: &(dyn SemanticGroup + 'static),
-    free_function_id: FreeFunctionId,
+    lookup_item_id: LookupItemId,
     node: SyntaxNode,
 ) -> Option<String> {
     let syntax_db = db.upcast();
@@ -644,10 +682,7 @@ fn get_identifier_hint(
         return None;
     }
     let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-    let item = db.lookup_resolved_generic_item_by_ptr(
-        LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)),
-        identifier.stable_ptr(),
-    )?;
+    let item = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())?;
 
     // TODO(spapini): Also include concrete item hints.
     // TODO(spapini): Format this better.
@@ -695,17 +730,17 @@ fn is_expr(kind: SyntaxKind) -> bool {
 }
 
 /// Tries to detect the crate root the config that contains a cairo file, and add it to the system.
-fn detect_crate_for(db: &mut tokio::sync::MutexGuard<'_, RootDatabase>, file_path: &str) {
+fn detect_crate_for(db: &mut RootDatabase, file_path: &str) {
     let mut path = PathBuf::from(file_path);
     for _ in 0..MAX_CRATE_DETECTION_DEPTH {
         path.pop();
         if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
-            db.with_project_config(config);
+            update_crate_roots_from_project_config(db, config);
             return;
         };
     }
     // Fallback to a single file.
-    if let Err(err) = setup_project(&mut **db, PathBuf::from(file_path).as_path()) {
-        eprintln!("Error loading file {} as a single crate: {}", file_path, err);
+    if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
+        eprintln!("Error loading file {file_path} as a single crate: {err}");
     }
 }

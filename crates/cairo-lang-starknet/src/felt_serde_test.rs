@@ -11,10 +11,8 @@ use crate::test_utils::get_example_file_path;
 fn test_felt_serde(example_file_name: &str) {
     let sierra = ProgramParser::new()
         .parse(
-            &read_to_string(get_example_file_path(
-                format!("{}.sierra", example_file_name).as_str(),
-            ))
-            .unwrap(),
+            &read_to_string(get_example_file_path(format!("{example_file_name}.sierra").as_str()))
+                .unwrap(),
         )
         .unwrap();
     pretty_assertions::assert_eq!(

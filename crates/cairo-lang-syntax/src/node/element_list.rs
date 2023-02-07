@@ -16,12 +16,7 @@ impl<T: TypedSyntaxNode, const STEP: usize> ElementList<T, STEP> {
         Self { node, phantom: PhantomData {} }
     }
     pub fn elements(&self, db: &dyn SyntaxGroup) -> Vec<T> {
-        self.node
-            .children(db)
-            .into_iter()
-            .step_by(STEP)
-            .map(|x| T::from_syntax_node(db, x))
-            .collect()
+        self.node.children(db).step_by(STEP).map(|x| T::from_syntax_node(db, x)).collect()
     }
     pub fn has_tail(&self, db: &dyn SyntaxGroup) -> bool {
         self.node.children(db).len() % STEP != 0

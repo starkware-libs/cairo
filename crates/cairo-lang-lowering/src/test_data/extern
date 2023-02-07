@@ -5,10 +5,10 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt, b: felt) {
-    f(a,b);
-    g(a,b);
-    h(a,b);
-    i(a,b);
+    f(ref a,b);
+    g(ref a,b);
+    h(ref a,b);
+    i(ref a,b);
 }
 
 //! > function_name
@@ -62,7 +62,7 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt, b: felt) {
-  let x = f(a, b);
+  let x = f(ref a, b);
   match x {
     MyEnum::A(y) => (),
     MyEnum::B(y) => (),
@@ -91,53 +91,56 @@ Inputs: v2: core::felt, v3: core::felt
 Initial refs: v2: core::felt
 Statements:
   (v4: test::MyEnum) <- MyEnum::A(v3)
+    Ref changes: r0 <- v2
 End:
-  Callsite(v2, v4)
+  Callsite({v2 -> v15, v4 -> v14})
 
 blk1:
 Inputs: v5: core::felt, v6: core::felt
 Initial refs: v5: core::felt
 Statements:
   (v7: (core::felt,)) <- struct_construct(v6)
+    Ref changes: r0 <- v5
   (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Callsite(v5, v8)
+  Callsite({v5 -> v15, v8 -> v14})
 
 blk2:
 Inputs: v9: core::felt, v10: core::felt, v11: core::felt
 Initial refs: v9: core::felt
 Statements:
   (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
+    Ref changes: r0 <- v9
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
-  Callsite(v9, v13)
+  Callsite({v9 -> v15, v13 -> v14})
 
 blk3:
 Inputs: v16: core::felt
 Initial refs: v15: core::felt
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk4:
 Inputs: v17: (core::felt,)
 Initial refs: v15: core::felt
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk5:
 Inputs: v18: (core::felt, core::felt)
 Initial refs: v15: core::felt
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk6 (root):
 Inputs: v0: core::felt, v1: core::felt
 Initial refs: v0: core::felt
 Statements:
-  (v15: core::felt, v14: test::MyEnum) <- match test::f(v0, v1) {
+  () <- match test::f(v0, v1) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
@@ -158,7 +161,7 @@ Inputs: v2: core::felt, v3: core::felt
 Statements:
   (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
-  Callsite(v2, v4)
+  Callsite({v2 -> v15, v4 -> v14})
 
 blk1:
 Inputs: v5: core::felt, v6: core::felt
@@ -166,7 +169,7 @@ Statements:
   (v7: (core::felt,)) <- struct_construct(v6)
   (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Callsite(v5, v8)
+  Callsite({v5 -> v15, v8 -> v14})
 
 blk2:
 Inputs: v9: core::felt, v10: core::felt, v11: core::felt
@@ -174,30 +177,30 @@ Statements:
   (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
-  Callsite(v9, v13)
+  Callsite({v9 -> v15, v13 -> v14})
 
 blk3:
 Inputs: v16: core::felt
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk4:
 Inputs: v17: (core::felt,)
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk5:
 Inputs: v18: (core::felt, core::felt)
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk6 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v15: core::felt, v14: test::MyEnum) <- match test::f(v0, v1) {
+  () <- match test::f(v0, v1) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
@@ -248,27 +251,27 @@ Inputs: v2: core::felt
 Initial refs:
 Statements:
 End:
-  Callsite(v2)
+  Callsite({v2 -> v6})
 
 blk1:
 Inputs: v3: core::felt
 Initial refs:
 Statements:
 End:
-  Callsite(v3)
+  Callsite({v3 -> v6})
 
 blk2:
 Inputs: v4: core::felt, v5: core::felt
 Initial refs:
 Statements:
 End:
-  Callsite(v4)
+  Callsite({v4 -> v6})
 
 blk3 (root):
 Inputs: v0: core::felt, v1: core::felt
 Initial refs:
 Statements:
-  (v6: core::felt) <- match test::f(v0, v1) {
+  () <- match test::f(v0, v1) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
@@ -281,24 +284,24 @@ blk0:
 Inputs: v2: core::felt
 Statements:
 End:
-  Callsite(v2)
+  Callsite({v2 -> v6})
 
 blk1:
 Inputs: v3: core::felt
 Statements:
 End:
-  Callsite(v3)
+  Callsite({v3 -> v6})
 
 blk2:
 Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
-  Callsite(v4)
+  Callsite({v4 -> v6})
 
 blk3 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v6: core::felt) <- match test::f(v0, v1) {
+  () <- match test::f(v0, v1) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
@@ -308,14 +311,14 @@ End:
 
 //! > ==========================================================================
 
-//! > Test extern function enum calling without optimization (no optimization with ref params).
+//! > Test extern function enum calling with optimization with ref.
 
 //! > test_function_name
 test_function_lowering
 
 //! > function
 fn foo(ref a: felt, b: felt) -> felt {
-  match f(a, b) {
+  match f(ref a, b) {
     MyEnum::A(y) => y,
     MyEnum::B((y,)) => y,
     MyEnum::C((y,_)) => y,
@@ -342,128 +345,65 @@ blk0:
 Inputs: v2: core::felt, v3: core::felt
 Initial refs: v2: core::felt
 Statements:
-  (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
-  Callsite(v2, v4)
+  Callsite({v2 -> v10, v3 -> v9})
 
 blk1:
-Inputs: v5: core::felt, v6: core::felt
-Initial refs: v5: core::felt
+Inputs: v4: core::felt, v5: core::felt
+Initial refs: v4: core::felt
 Statements:
-  (v7: (core::felt,)) <- struct_construct(v6)
-  (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Callsite(v5, v8)
+  Callsite({v4 -> v10, v5 -> v9})
 
 blk2:
-Inputs: v9: core::felt, v10: core::felt, v11: core::felt
-Initial refs: v9: core::felt
-Statements:
-  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
-  (v13: test::MyEnum) <- MyEnum::C(v12)
-End:
-  Callsite(v9, v13)
-
-blk3:
-Inputs: v16: core::felt
-Initial refs: v15: core::felt
+Inputs: v6: core::felt, v7: core::felt, v8: core::felt
+Initial refs: v6: core::felt
 Statements:
 End:
-  Callsite(v16)
+  Callsite({v6 -> v10, v7 -> v9})
 
-blk4:
-Inputs: v17: (core::felt,)
-Initial refs: v15: core::felt
-Statements:
-  (v18: core::felt) <- struct_destructure(v17)
-End:
-  Callsite(v18)
-
-blk5:
-Inputs: v19: (core::felt, core::felt)
-Initial refs: v15: core::felt
-Statements:
-  (v20: core::felt, v21: core::felt) <- struct_destructure(v19)
-End:
-  Callsite(v20)
-
-blk6 (root):
+blk3 (root):
 Inputs: v0: core::felt, v1: core::felt
 Initial refs: v0: core::felt
 Statements:
-  (v15: core::felt, v14: test::MyEnum) <- match test::f(v0, v1) {
+  () <- match test::f(v0, v1) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
   }
-    Ref changes: r0 <- v15
-  (v22: core::felt) <- match_enum(v14) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
-  }
+    Ref changes: r0 <- v10
 End:
-  Return(v15, v22)
+  Return(v10, v9)
 
 //! > lowering_flat
 blk0:
 Inputs: v2: core::felt, v3: core::felt
 Statements:
-  (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
-  Callsite(v2, v4)
+  Callsite({v2 -> v10, v3 -> v9})
 
 blk1:
-Inputs: v5: core::felt, v6: core::felt
+Inputs: v4: core::felt, v5: core::felt
 Statements:
-  (v7: (core::felt,)) <- struct_construct(v6)
-  (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Callsite(v5, v8)
+  Callsite({v4 -> v10, v5 -> v9})
 
 blk2:
-Inputs: v9: core::felt, v10: core::felt, v11: core::felt
-Statements:
-  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
-  (v13: test::MyEnum) <- MyEnum::C(v12)
-End:
-  Callsite(v9, v13)
-
-blk3:
-Inputs: v16: core::felt
+Inputs: v6: core::felt, v7: core::felt, v8: core::felt
 Statements:
 End:
-  Callsite(v16)
+  Callsite({v6 -> v10, v7 -> v9})
 
-blk4:
-Inputs: v17: (core::felt,)
-Statements:
-  (v18: core::felt) <- struct_destructure(v17)
-End:
-  Callsite(v18)
-
-blk5:
-Inputs: v19: (core::felt, core::felt)
-Statements:
-  (v20: core::felt, v21: core::felt) <- struct_destructure(v19)
-End:
-  Callsite(v20)
-
-blk6 (root):
+blk3 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v15: core::felt, v14: test::MyEnum) <- match test::f(v0, v1) {
+  () <- match test::f(v0, v1) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
   }
-  (v22: core::felt) <- match_enum(v14) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
-  }
 End:
-  Return(v15, v22)
+  Return(v10, v9)
 
 //! > ==========================================================================
 
@@ -474,7 +414,7 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt, b: felt) {
-  let x = f(a, b);
+  let x = f(ref a, b);
   match x {
     MyEnum::A(y) => (),
     MyEnum::B(y) => (),
@@ -503,67 +443,69 @@ Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Initial refs: v3: core::RangeCheck, v4: core::felt
 Statements:
   (v6: test::MyEnum) <- MyEnum::A(v5)
+    Ref changes: r0 <- v3, r1 <- v4
 End:
-  Callsite(v3, v4, v6)
+  Callsite({v3 -> v20, v4 -> v19, v6 -> v18})
 
 blk1:
 Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
 Initial refs: v7: core::RangeCheck, v8: core::felt
 Statements:
   (v10: (core::felt,)) <- struct_construct(v9)
+    Ref changes: r0 <- v7, r1 <- v8
   (v11: test::MyEnum) <- MyEnum::B(v10)
 End:
-  Callsite(v7, v8, v11)
+  Callsite({v7 -> v20, v8 -> v19, v11 -> v18})
 
 blk2:
 Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
 Initial refs: v12: core::RangeCheck, v13: core::felt
 Statements:
   (v16: (core::felt, core::felt)) <- struct_construct(v14, v15)
+    Ref changes: r0 <- v12, r1 <- v13
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Callsite(v12, v13, v17)
+  Callsite({v12 -> v20, v13 -> v19, v17 -> v18})
 
 blk3:
 Inputs: v21: core::felt
-Initial refs: v19: core::RangeCheck, v20: core::felt
+Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk4:
 Inputs: v22: (core::felt,)
-Initial refs: v19: core::RangeCheck, v20: core::felt
+Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk5:
 Inputs: v23: (core::felt, core::felt)
-Initial refs: v19: core::RangeCheck, v20: core::felt
+Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk6 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Initial refs: v0: core::RangeCheck, v1: core::felt
 Statements:
-  (v19: core::RangeCheck, v20: core::felt, v18: test::MyEnum) <- match test::f(v0, v1, v2) {
+  () <- match test::f(v0, v1, v2) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
   }
-    Ref changes: r0 <- v19, r1 <- v20
+    Ref changes: r0 <- v20, r1 <- v19
   () <- match_enum(v18) {
     MyEnum::A => blk3,
     MyEnum::B => blk4,
     MyEnum::C => blk5,
   }
-    Ref changes: r0 <- v19
   (v24: ()) <- struct_construct()
 End:
-  Return(v19, v20, v24)
+  Return(v20, v19, v24)
 
 //! > lowering_flat
 blk0:
@@ -571,7 +513,7 @@ Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Statements:
   (v6: test::MyEnum) <- MyEnum::A(v5)
 End:
-  Callsite(v3, v4, v6)
+  Callsite({v3 -> v20, v4 -> v19, v6 -> v18})
 
 blk1:
 Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
@@ -579,7 +521,7 @@ Statements:
   (v10: (core::felt,)) <- struct_construct(v9)
   (v11: test::MyEnum) <- MyEnum::B(v10)
 End:
-  Callsite(v7, v8, v11)
+  Callsite({v7 -> v20, v8 -> v19, v11 -> v18})
 
 blk2:
 Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
@@ -587,30 +529,30 @@ Statements:
   (v16: (core::felt, core::felt)) <- struct_construct(v14, v15)
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Callsite(v12, v13, v17)
+  Callsite({v12 -> v20, v13 -> v19, v17 -> v18})
 
 blk3:
 Inputs: v21: core::felt
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk4:
 Inputs: v22: (core::felt,)
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk5:
 Inputs: v23: (core::felt, core::felt)
 Statements:
 End:
-  Callsite()
+  Callsite({})
 
 blk6 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Statements:
-  (v19: core::RangeCheck, v20: core::felt, v18: test::MyEnum) <- match test::f(v0, v1, v2) {
+  () <- match test::f(v0, v1, v2) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
@@ -622,7 +564,7 @@ Statements:
   }
   (v24: ()) <- struct_construct()
 End:
-  Return(v19, v20, v24)
+  Return(v20, v19, v24)
 
 //! > ==========================================================================
 
@@ -633,7 +575,7 @@ test_function_lowering
 
 //! > function
 fn foo(ref a: felt, b: felt) -> felt {
-  match f(a, b) {
+  match f(ref a, b) {
     MyEnum::A(y) => y,
     MyEnum::B((y,)) => y,
     MyEnum::C((y,_)) => y,
@@ -660,131 +602,65 @@ blk0:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Initial refs: v3: core::RangeCheck, v4: core::felt
 Statements:
-  (v6: test::MyEnum) <- MyEnum::A(v5)
 End:
-  Callsite(v3, v4, v6)
+  Callsite({v3 -> v15, v4 -> v14, v5 -> v13})
 
 blk1:
-Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
-Initial refs: v7: core::RangeCheck, v8: core::felt
+Inputs: v6: core::RangeCheck, v7: core::felt, v8: core::felt
+Initial refs: v6: core::RangeCheck, v7: core::felt
 Statements:
-  (v10: (core::felt,)) <- struct_construct(v9)
-  (v11: test::MyEnum) <- MyEnum::B(v10)
 End:
-  Callsite(v7, v8, v11)
+  Callsite({v6 -> v15, v7 -> v14, v8 -> v13})
 
 blk2:
-Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
-Initial refs: v12: core::RangeCheck, v13: core::felt
-Statements:
-  (v16: (core::felt, core::felt)) <- struct_construct(v14, v15)
-  (v17: test::MyEnum) <- MyEnum::C(v16)
-End:
-  Callsite(v12, v13, v17)
-
-blk3:
-Inputs: v21: core::felt
-Initial refs: v19: core::RangeCheck, v20: core::felt
+Inputs: v9: core::RangeCheck, v10: core::felt, v11: core::felt, v12: core::felt
+Initial refs: v9: core::RangeCheck, v10: core::felt
 Statements:
 End:
-  Callsite(v21)
+  Callsite({v9 -> v15, v10 -> v14, v11 -> v13})
 
-blk4:
-Inputs: v22: (core::felt,)
-Initial refs: v19: core::RangeCheck, v20: core::felt
-Statements:
-  (v23: core::felt) <- struct_destructure(v22)
-    Ref changes: r0 <- v19
-End:
-  Callsite(v23)
-
-blk5:
-Inputs: v24: (core::felt, core::felt)
-Initial refs: v19: core::RangeCheck, v20: core::felt
-Statements:
-  (v25: core::felt, v26: core::felt) <- struct_destructure(v24)
-    Ref changes: r0 <- v19
-End:
-  Callsite(v25)
-
-blk6 (root):
+blk3 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Initial refs: v0: core::RangeCheck, v1: core::felt
 Statements:
-  (v19: core::RangeCheck, v20: core::felt, v18: test::MyEnum) <- match test::f(v0, v1, v2) {
+  () <- match test::f(v0, v1, v2) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
   }
-    Ref changes: r0 <- v19, r1 <- v20
-  (v27: core::felt) <- match_enum(v18) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
-  }
-    Ref changes: r0 <- v19
+    Ref changes: r0 <- v15, r1 <- v14
 End:
-  Return(v19, v20, v27)
+  Return(v15, v14, v13)
 
 //! > lowering_flat
 blk0:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Statements:
-  (v6: test::MyEnum) <- MyEnum::A(v5)
 End:
-  Callsite(v3, v4, v6)
+  Callsite({v3 -> v15, v4 -> v14, v5 -> v13})
 
 blk1:
-Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
+Inputs: v6: core::RangeCheck, v7: core::felt, v8: core::felt
 Statements:
-  (v10: (core::felt,)) <- struct_construct(v9)
-  (v11: test::MyEnum) <- MyEnum::B(v10)
 End:
-  Callsite(v7, v8, v11)
+  Callsite({v6 -> v15, v7 -> v14, v8 -> v13})
 
 blk2:
-Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
-Statements:
-  (v16: (core::felt, core::felt)) <- struct_construct(v14, v15)
-  (v17: test::MyEnum) <- MyEnum::C(v16)
-End:
-  Callsite(v12, v13, v17)
-
-blk3:
-Inputs: v21: core::felt
+Inputs: v9: core::RangeCheck, v10: core::felt, v11: core::felt, v12: core::felt
 Statements:
 End:
-  Callsite(v21)
+  Callsite({v9 -> v15, v10 -> v14, v11 -> v13})
 
-blk4:
-Inputs: v22: (core::felt,)
-Statements:
-  (v23: core::felt) <- struct_destructure(v22)
-End:
-  Callsite(v23)
-
-blk5:
-Inputs: v24: (core::felt, core::felt)
-Statements:
-  (v25: core::felt, v26: core::felt) <- struct_destructure(v24)
-End:
-  Callsite(v25)
-
-blk6 (root):
+blk3 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Statements:
-  (v19: core::RangeCheck, v20: core::felt, v18: test::MyEnum) <- match test::f(v0, v1, v2) {
+  () <- match test::f(v0, v1, v2) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
   }
-  (v27: core::felt) <- match_enum(v18) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
-  }
 End:
-  Return(v19, v20, v27)
+  Return(v15, v14, v13)
 
 //! > ==========================================================================
 
@@ -795,7 +671,7 @@ test_function_lowering
 
 //! > function
 fn foo(mut arr: Array::<felt>, mut b: (felt,)) -> Array::<felt> {
-    let y = match f(arr, b) {
+    let y = match f(ref arr, ref b) {
         MyEnum::A(x) => arr
     };
     y
@@ -819,55 +695,34 @@ blk0:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Initial refs:
 Statements:
-  (v5: test::MyEnum) <- MyEnum::A(v4)
 End:
-  Callsite(v2, v3, v5)
+  Callsite({v2 -> v6, v3 -> v7, v2 -> v5})
 
-blk1:
-Inputs: v9: core::felt
-Initial refs:
-Statements:
-End:
-  Callsite(v7)
-
-blk2 (root):
+blk1 (root):
 Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
 Initial refs:
 Statements:
-  (v7: core::array::Array::<core::felt>, v8: (core::felt,), v6: test::MyEnum) <- match test::f(v0, v1) {
+  () <- match test::f(v0, v1) {
     MyEnum::A => blk0,
   }
-  (v10: core::array::Array::<core::felt>) <- match_enum(v6) {
-    MyEnum::A => blk1,
-  }
 End:
-  Return(v10)
+  Return(v5)
 
 //! > lowering_flat
 blk0:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Statements:
-  (v5: test::MyEnum) <- MyEnum::A(v4)
 End:
-  Callsite(v2, v3, v5)
+  Callsite({v2 -> v5})
 
-blk1:
-Inputs: v9: core::felt
-Statements:
-End:
-  Callsite(v7)
-
-blk2 (root):
+blk1 (root):
 Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
 Statements:
-  (v7: core::array::Array::<core::felt>, v8: (core::felt,), v6: test::MyEnum) <- match test::f(v0, v1) {
+  () <- match test::f(v0, v1) {
     MyEnum::A => blk0,
   }
-  (v10: core::array::Array::<core::felt>) <- match_enum(v6) {
-    MyEnum::A => blk1,
-  }
 End:
-  Return(v10)
+  Return(v5)
 
 //! > ==========================================================================
 
@@ -896,24 +751,26 @@ Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Initial refs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Statements:
   (v4: ()) <- struct_construct()
+    Ref changes: r0 <- v2, r1 <- v3
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite(v2, v3, v5)
+  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk1:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Initial refs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
   (v8: ()) <- struct_construct()
+    Ref changes: r0 <- v6, r1 <- v7
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite(v6, v7, v9)
+  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk2 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v10: core::option::Option::<()>) <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::get_gas(v0, v1) {
     Option::Some => blk0,
     Option::None => blk1,
   }
@@ -929,7 +786,7 @@ Statements:
   (v4: ()) <- struct_construct()
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite(v2, v3, v5)
+  Callsite({v2 -> v11, v3 -> v12})
 
 blk1:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
@@ -937,12 +794,12 @@ Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite(v6, v7, v9)
+  Callsite({v6 -> v11, v7 -> v12})
 
 blk2 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v10: core::option::Option::<()>) <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::get_gas(v0, v1) {
     Option::Some => blk0,
     Option::None => blk1,
   }
@@ -977,24 +834,26 @@ Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Initial refs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Statements:
   (v4: ()) <- struct_construct()
+    Ref changes: r0 <- v2, r1 <- v3
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite(v2, v3, v5)
+  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk1:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Initial refs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
   (v8: ()) <- struct_construct()
+    Ref changes: r0 <- v6, r1 <- v7
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite(v6, v7, v9)
+  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk2 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v10: core::option::Option::<()>) <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::get_gas(v0, v1) {
     Option::Some => blk0,
     Option::None => blk1,
   }
@@ -1009,7 +868,7 @@ Statements:
   (v4: ()) <- struct_construct()
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite(v2, v3, v5)
+  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk1:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
@@ -1017,12 +876,12 @@ Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite(v6, v7, v9)
+  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk2 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v10: core::option::Option::<()>) <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::get_gas(v0, v1) {
     Option::Some => blk0,
     Option::None => blk1,
   }
@@ -1056,24 +915,26 @@ Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Initial refs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Statements:
   (v4: ()) <- struct_construct()
+    Ref changes: r0 <- v2, r1 <- v3
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite(v2, v3, v5)
+  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk1:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Initial refs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
   (v8: ()) <- struct_construct()
+    Ref changes: r0 <- v6, r1 <- v7
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite(v6, v7, v9)
+  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk2 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v10: core::option::Option::<()>) <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::get_gas(v0, v1) {
     Option::Some => blk0,
     Option::None => blk1,
   }
@@ -1088,7 +949,7 @@ Statements:
   (v4: ()) <- struct_construct()
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite(v2, v3, v5)
+  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk1:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
@@ -1096,12 +957,12 @@ Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite(v6, v7, v9)
+  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk2 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v10: core::option::Option::<()>) <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::get_gas(v0, v1) {
     Option::Some => blk0,
     Option::None => blk1,
   }

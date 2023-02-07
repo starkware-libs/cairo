@@ -5,8 +5,8 @@ block_generator_test
 
 //! > function
 fn foo(mut z: MyStruct) -> () {
-    let x = bar(1, 2, z);
-    bar(x, x + x, z);
+    let x = bar(1, 2, ref z);
+    bar(x, x + x, ref z);
 }
 
 fn bar(a: felt, b: felt, ref z: MyStruct) -> felt {
@@ -22,6 +22,10 @@ extern type MyStruct;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Variable not dropped.
+ --> lib.cairo:4:5
+    bar(x, x + x, ref z);
+    ^******************^
 
 //! > sierra_gen_diagnostics
 

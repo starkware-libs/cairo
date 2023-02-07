@@ -47,7 +47,7 @@ mod my_mod {
 ItemModule
 
 //! > ignored_kinds
-ItemFreeFunction
+FunctionWithBody
 ItemTrait
 ItemImpl
 ItemStruct
@@ -64,6 +64,6 @@ ItemStruct
         ├── items (kind: ItemList)
         │   ├── child #0 (kind: ItemTrait) <ignored>
         │   ├── child #1 (kind: ItemImpl) <ignored>
-        │   ├── child #2 (kind: ItemFreeFunction) <ignored>
+        │   ├── child #2 (kind: FunctionWithBody) <ignored>
         │   └── child #3 (kind: ItemStruct) <ignored>
         └── rbrace (kind: TokenRBrace): '}'

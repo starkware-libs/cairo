@@ -31,7 +31,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "1.0.0-alpha.2"
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
@@ -43,8 +43,8 @@ ark-ff = "0.4.0-alpha.7"
 ark-std = "0.3.0"
 assert_matches = "1.5"
 bimap = "0.6.2"
-cairo-felt = "0.1.0"
-cairo-vm = "0.1.1"
+cairo-felt = "0.1.1"
+cairo-vm = "0.1.2"
 chrono = "0.4.23"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"
@@ -60,6 +60,7 @@ indexmap = "1.9.1"
 indoc = "1.0.7"
 itertools = "0.10.3"
 lalrpop-util = { version = "0.19.8", features = ["lexer"] }
+lazy_static = "1.4.0"
 log = "0.4"
 lsp = { version = "0.93", package = "lsp-types" }
 num-bigint = "0.4"
@@ -75,7 +76,6 @@ serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0"
 sha3 = "0.10.6"
 smol_str = "0.1.23"
-substring = "1.4.5"
 syn = { version = "1.0.99", features = ["full", "extra-traits"] }
 test-case = "2.2.2"
 test-case-macros = "2.2.2"

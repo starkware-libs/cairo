@@ -2,6 +2,37 @@ use derivative::Derivative;
 use salsa;
 use smol_str::SmolStr;
 
+macro_rules! define_generic_identity {
+    ($doc:literal, $type_name:ident) => {
+        #[doc=$doc]
+        #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+        pub struct $type_name(pub SmolStr);
+        impl $type_name {
+            pub const fn new_inline(name: &'static str) -> Self {
+                Self(SmolStr::new_inline(name))
+            }
+
+            pub fn from_string(name: impl Into<SmolStr>) -> Self {
+                Self(name.into())
+            }
+        }
+        impl From<&str> for $type_name {
+            fn from(name: &str) -> Self {
+                Self::from_string(name.to_string())
+            }
+        }
+        impl From<String> for $type_name {
+            fn from(name: String) -> Self {
+                Self::from_string(name)
+            }
+        }
+    };
+}
+
+define_generic_identity!("The identity of a generic library function", GenericLibfuncId);
+
+define_generic_identity!("The identity of a generic type.", GenericTypeId);
+
 const fn id_from_string(s: &str) -> u64 {
     // TODO(ilya, 10/10/2022): Fix https://github.com/starkware-libs/cairo/issues/45.
     const_fnv1a_hash::fnv1a_hash_str_64(s)
@@ -66,8 +97,6 @@ macro_rules! define_identity {
     };
 }
 
-define_identity!("The identity of a generic library function", GenericLibfuncId);
-
 define_identity!("The identity of a concrete library function.", ConcreteLibfuncId);
 
 define_identity!("The identity of a user function.", FunctionId);
@@ -75,7 +104,5 @@ define_identity!("The identity of a user function.", FunctionId);
 define_identity!("The identity of a user type.", UserTypeId);
 
 define_identity!("The identity of a variable.", VarId);
-
-define_identity!("The identity of a generic type.", GenericTypeId);
 
 define_identity!("The identity of a concrete type.", ConcreteTypeId);

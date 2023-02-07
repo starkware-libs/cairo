@@ -11,12 +11,10 @@ use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt, FunctionCall,
-    Gas, Mem, Struct, Uint128, Uint8, UnconditionalJump, UnwrapNonZero,
+    Gas, Mem, Struct, Uint128, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
-use crate::extensions::ec::EcConcreteLibfunc::{
-    AddToState, CreatePoint, FinalizeState, InitState, Op, UnwrapPoint,
-};
+use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt::{
     FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
@@ -27,9 +25,11 @@ use crate::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
-use crate::extensions::strct::StructConcreteLibfunc;
-use crate::extensions::uint::{IntOperator, Uint8Concrete, UintConstConcreteLibfunc};
-use crate::extensions::uint128::{Uint128Concrete, Uint128OperationConcreteLibfunc};
+use crate::extensions::structure::StructConcreteLibfunc;
+use crate::extensions::uint::{
+    IntOperator, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc,
+};
+use crate::extensions::uint128::Uint128Concrete;
 use crate::ids::FunctionId;
 
 // TODO(orizi): This def is duplicated.
@@ -75,28 +75,27 @@ pub fn simulate<
             [value] => Ok((vec![value.clone(), value.clone()], 0)),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Ec(AddToState(_)) => todo!(),
-        Ec(CreatePoint(_)) => match &inputs[..] {
-            [CoreValue::Felt(x), CoreValue::Felt(y)] => {
-                // If the point is on the curve use the fallthrough branch and return the point.
-                if y * y == x * x * x + x + get_beta() {
-                    Ok((vec![CoreValue::EcPoint(x.clone(), y.clone())], 0))
-                } else {
-                    Ok((vec![], 1))
+        Ec(libfunc) => match libfunc {
+            EcConcreteLibfunc::TryNew(_) => match &inputs[..] {
+                [CoreValue::Felt(x), CoreValue::Felt(y)] => {
+                    // If the point is on the curve use the fallthrough branch and return the point.
+                    if y * y == x * x * x + x + get_beta() {
+                        Ok((vec![CoreValue::EcPoint(x.clone(), y.clone())], 0))
+                    } else {
+                        Ok((vec![], 1))
+                    }
                 }
-            }
-            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
-        Ec(FinalizeState(_)) => unimplemented!(),
-        Ec(InitState(_)) => unimplemented!(),
-        Ec(Op(_)) => unimplemented!(),
-        Ec(UnwrapPoint(_)) => match &inputs[..] {
-            [CoreValue::EcPoint(x, y)] => {
-                Ok((vec![CoreValue::Felt(x.clone()), CoreValue::Felt(y.clone())], 0))
-            }
-            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+                [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+            },
+            EcConcreteLibfunc::UnwrapPoint(_) => match &inputs[..] {
+                [CoreValue::EcPoint(x, y)] => {
+                    Ok((vec![CoreValue::Felt(x.clone()), CoreValue::Felt(y.clone())], 0))
+                }
+                [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+            },
+            _ => unimplemented!(),
         },
         FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
@@ -162,12 +161,12 @@ pub fn simulate<
             [_] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Array(ArrayConcreteLibfunc::At(_)) => match &inputs[..] {
-            [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint128(_)] => {
+        Array(ArrayConcreteLibfunc::Get(_)) => match &inputs[..] {
+            [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint64(_)] => {
                 let mut iter = inputs.into_iter();
                 iter.next(); // Ignore range check.
                 let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
-                let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint128) as usize;
+                let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint64) as usize;
                 match arr.get(idx).cloned() {
                     Some(element) => {
                         Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr), element], 0))
@@ -182,12 +181,13 @@ pub fn simulate<
             [CoreValue::Array(_)] => {
                 let arr = extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Array);
                 let len = arr.len();
-                Ok((vec![CoreValue::Array(arr), CoreValue::Uint128(len as u128)], 0))
+                Ok((vec![CoreValue::Array(arr), CoreValue::Uint64(len as u64)], 0))
             }
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint8(libfunc) => simulate_u8_libfunc(libfunc, &inputs),
+        Uint64(libfunc) => simulate_u64_libfunc(libfunc, &inputs),
         Uint128(libfunc) => simulate_u128_libfunc(libfunc, &inputs),
         Bool(libfunc) => simulate_bool_libfunc(libfunc, &inputs),
         Felt(libfunc) => simulate_felt_libfunc(libfunc, &inputs),
@@ -312,7 +312,7 @@ pub fn simulate<
                     bytes.extend(limb_bytes);
                 }
                 if let Ok(s) = String::from_utf8(bytes) {
-                    print!("{}", s);
+                    print!("{s}");
                 } else {
                     println!("Not utf8");
                 }
@@ -372,6 +372,21 @@ fn simulate_bool_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        BoolConcreteLibfunc::Or(_) => match inputs {
+            [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
+                let (a, b) = (*a_index, *b_index);
+                // The variant index defines the true/false "value". Index zero is false.
+                Ok((
+                    vec![CoreValue::Enum {
+                        value: Box::new(CoreValue::Struct(vec![])),
+                        index: usize::from(a + b > 0),
+                    }],
+                    0,
+                ))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         BoolConcreteLibfunc::Equal(_) => match inputs {
             [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
                 // The variant index defines the true/false "value". Index zero is false.
@@ -411,64 +426,54 @@ fn simulate_u128_libfunc(
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::Operation(Uint128OperationConcreteLibfunc { operator, .. }) => {
-            match (inputs, operator) {
-                (
-                    [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)],
-                    IntOperator::DivMod,
-                ) => {
-                    if let CoreValue::Uint128(rhs) = **non_zero {
-                        Ok((
-                            vec![
-                                CoreValue::RangeCheck,
-                                CoreValue::Uint128(lhs / rhs),
-                                CoreValue::Uint128(lhs % rhs),
-                            ],
-                            0,
-                        ))
-                    } else {
-                        Err(LibfuncSimulationError::MemoryLayoutMismatch)
-                    }
-                }
-                (
-                    [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
-                    IntOperator::WideMul,
-                ) => {
-                    let result = BigInt::from(*lhs) * BigInt::from(*rhs);
-                    let u128_limit = BigInt::from(u128::MAX) + BigInt::from(1);
+        Uint128Concrete::Operation(libfunc) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)] => {
+                let (value, overflow) = match libfunc.operator {
+                    IntOperator::OverflowingAdd => lhs.overflowing_add(*rhs),
+                    IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
+                };
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(value)], usize::from(overflow)))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint128Concrete::Divmod(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)] => {
+                if let CoreValue::Uint128(rhs) = **non_zero {
                     Ok((
                         vec![
                             CoreValue::RangeCheck,
-                            CoreValue::Uint128(
-                                (result.clone() / u128_limit.clone()).to_u128().unwrap(),
-                            ),
-                            CoreValue::Uint128((result % u128_limit).to_u128().unwrap()),
+                            CoreValue::Uint128(lhs / rhs),
+                            CoreValue::Uint128(lhs % rhs),
                         ],
                         0,
                     ))
+                } else {
+                    Err(LibfuncSimulationError::MemoryLayoutMismatch)
                 }
-                (
-                    [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
-                    IntOperator::OverflowingAdd
-                    | IntOperator::OverflowingSub
-                    | IntOperator::OverflowingMul,
-                ) => {
-                    let (value, overflow) = match operator {
-                        IntOperator::OverflowingAdd => lhs.overflowing_add(*rhs),
-                        IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
-                        IntOperator::OverflowingMul => lhs.overflowing_mul(*rhs),
-                        _ => unreachable!("Arm only handles these cases."),
-                    };
-                    Ok((
-                        vec![CoreValue::RangeCheck, CoreValue::Uint128(value)],
-                        usize::from(overflow),
-                    ))
-                }
-                ([_, _, _], _) => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
-        }
-        Uint128Concrete::JumpNotZero(_) => {
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint128Concrete::WideMul(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)] => {
+                let result = BigInt::from(*lhs) * BigInt::from(*rhs);
+                let u128_limit = BigInt::from(u128::MAX) + BigInt::from(1);
+                Ok((
+                    vec![
+                        CoreValue::RangeCheck,
+                        CoreValue::Uint128(
+                            (result.clone() / u128_limit.clone()).to_u128().unwrap(),
+                        ),
+                        CoreValue::Uint128((result % u128_limit).to_u128().unwrap()),
+                    ],
+                    0,
+                ))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint128Concrete::IsZero(_) => {
             match inputs {
                 [CoreValue::Uint128(value)] if *value == 0 => {
                     // Zero - jumping to the failure branch.
@@ -526,6 +531,17 @@ fn simulate_u8_libfunc(
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
+        Uint8Concrete::Operation(libfunc) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint8(lhs), CoreValue::Uint8(rhs)] => {
+                let (value, overflow) = match libfunc.operator {
+                    IntOperator::OverflowingAdd => lhs.overflowing_add(*rhs),
+                    IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
+                };
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint8(value)], usize::from(overflow)))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint8Concrete::LessThan(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
                 // "False" branch (branch 0) is the case a >= b.
@@ -553,6 +569,92 @@ fn simulate_u8_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint8Concrete::ToFelt(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint8(value)] => {
+                Ok((vec![CoreValue::Felt(value.to_bigint().unwrap())], 0))
+            }
+            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint8Concrete::FromFelt(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Felt(value)] => Ok(match u8::try_from(value) {
+                Ok(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint8(value)], 0),
+                Err(_) => (vec![CoreValue::RangeCheck], 1),
+            }),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint8Concrete::Divmod(_) => unimplemented!(),
+    }
+}
+
+/// Simulate u64 library functions.
+fn simulate_u64_libfunc(
+    libfunc: &Uint64Concrete,
+    inputs: &[CoreValue],
+) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
+    match libfunc {
+        Uint64Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+            if inputs.is_empty() {
+                Ok((vec![CoreValue::Uint64(*c)], 0))
+            } else {
+                Err(LibfuncSimulationError::WrongNumberOfArgs)
+            }
+        }
+        Uint64Concrete::Operation(libfunc) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint64(lhs), CoreValue::Uint64(rhs)] => {
+                let (value, overflow) = match libfunc.operator {
+                    IntOperator::OverflowingAdd => lhs.overflowing_add(*rhs),
+                    IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
+                };
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint64(value)], usize::from(overflow)))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::LessThan(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint64(a), CoreValue::Uint64(b)] => {
+                // "False" branch (branch 0) is the case a >= b.
+                // "True" branch (branch 1) is the case a < b.
+                Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::Equal(_) => match inputs {
+            [CoreValue::Uint64(a), CoreValue::Uint64(b)] => {
+                // "False" branch (branch 0) is the case a != b.
+                // "True" branch (branch 1) is the case a == b.
+                Ok((vec![], usize::from(a == b)))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::LessThanOrEqual(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint64(a), CoreValue::Uint64(b)] => {
+                // "False" branch (branch 0) is the case a > b.
+                // "True" branch (branch 1) is the case a <= b.
+                Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::ToFelt(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint64(value)] => {
+                Ok((vec![CoreValue::Felt(value.to_bigint().unwrap())], 0))
+            }
+            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::FromFelt(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Felt(value)] => Ok(match u64::try_from(value) {
+                Ok(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint64(value)], 0),
+                Err(_) => (vec![CoreValue::RangeCheck], 1),
+            }),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::Divmod(_) => unimplemented!(),
     }
 }
 
@@ -609,7 +711,7 @@ fn simulate_felt_libfunc(
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        FeltConcrete::JumpNotZero(_) => {
+        FeltConcrete::IsZero(_) => {
             match inputs {
                 [CoreValue::Felt(value)] if value.is_zero() => {
                     // Zero - jumping to the failure branch.

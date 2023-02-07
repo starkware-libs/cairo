@@ -1,5 +1,5 @@
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
@@ -21,6 +21,7 @@ cairo_lang_test_utils::test_file_test!(
         nullable: "nullable",
         u128: "u128",
         u8: "u8",
+        u64: "u64",
         bool: "bool",
     },
     run_small_e2e_test
@@ -31,19 +32,22 @@ cairo_lang_test_utils::test_file_test!(
     "e2e_test_data/libfuncs/starknet",
     {
         storage: "storage",
+        interoperability: "interoperability",
+        emit_event: "emit_event",
+        getters: "getters",
     },
     run_small_e2e_test
 );
 
 fn run_small_e2e_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
-    let db = &mut RootDatabase::default();
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
     // Parse code and create semantic model.
-    let test_module = setup_test_module(db, inputs["cairo"].as_str()).unwrap();
-    assert!(!check_and_eprint_diagnostics(db));
+    let test_module = setup_test_module(&mut db, inputs["cairo"].as_str()).unwrap();
+    DiagnosticsReporter::stderr().ensure(&mut db).unwrap();
 
     // Compile to Sierra.
     let sierra_program = db.get_sierra_program(vec![test_module.crate_id]).unwrap();
-    let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
+    let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     let sierra_program_str = sierra_program.to_string();
 
     // Compute the metadata.

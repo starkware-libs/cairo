@@ -1,15 +1,19 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_utils::extract_matches;
 use num_traits::Zero;
+use semantic::TypeId;
 
-use super::context::{LoweredExpr, LoweringContext, LoweringFlowError};
-use super::scope::{generators, BlockFlowMerger, BlockScope, BlockScopeEnd};
-use super::{
-    lower_block, lower_expr, lowered_expr_from_block_result, lowered_expr_to_block_scope_end,
-};
+use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
+use super::scope::{BlockBuilder, SealedBlockBuilder};
+use super::{lower_expr, lowered_expr_to_block_scope_end};
+use crate::lower::context::VarRequest;
+use crate::lower::scope::merge_sealed;
+use crate::lower::{generators, lower_block};
+use crate::{Statement, StatementMatchEnum, StatementMatchExtern};
 
 #[allow(dead_code)]
 enum IfCondition {
@@ -21,7 +25,7 @@ enum IfCondition {
 /// optimizations.
 // TODO(lior): Make it an actual tree (handling && and ||).
 fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> IfCondition {
-    let expr = &ctx.function_def.exprs[expr_id];
+    let expr = &ctx.function_body.exprs[expr_id];
     if let semantic::Expr::FunctionCall(function_call) = expr {
         if function_call.function == corelib::felt_eq(ctx.db.upcast())
             && function_call.args.len() == 2
@@ -34,86 +38,79 @@ fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> If
 }
 
 fn is_zero(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> bool {
-    let expr = &ctx.function_def.exprs[expr_id];
+    let expr = &ctx.function_body.exprs[expr_id];
     matches!(expr, semantic::Expr::Literal(literal) if literal.value.is_zero())
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
 pub fn lower_expr_if(
     ctx: &mut LoweringContext<'_>,
-    scope: &mut BlockScope,
+    scope: &mut BlockBuilder,
     expr: &semantic::ExprIf,
-) -> Result<LoweredExpr, LoweringFlowError> {
+) -> LoweringResult<LoweredExpr> {
     match analyze_condition(ctx, expr.condition) {
         IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, scope, expr),
         IfCondition::Eq(expr_a, expr_b) => lower_expr_if_eq(ctx, scope, expr, expr_a, expr_b),
     }
 }
 
-/// Lowers an expression of type [semantic::ExprIf], for the case of
-/// [IfCondition::BoolExpr].
+/// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::BoolExpr].
 pub fn lower_expr_if_bool(
     ctx: &mut LoweringContext<'_>,
-    scope: &mut BlockScope,
+    scope: &mut BlockBuilder,
     expr: &semantic::ExprIf,
-) -> Result<LoweredExpr, LoweringFlowError> {
+) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a boolean if expression: {:?}", expr.debug(&ctx.expr_formatter));
     // The condition cannot be unit.
     let condition_var = lower_expr(ctx, scope, expr.condition)?.var(ctx, scope)?;
-
     let semantic_db = ctx.db.upcast();
-
-    // Lower both blocks.
     let unit_ty = corelib::unit_ty(semantic_db);
-    let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
-        let main_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
-            subscope.bind_refs();
-            lower_block(
-                ctx,
-                subscope,
-                extract_matches!(&ctx.function_def.exprs[expr.if_block], semantic::Expr::Block),
-                false,
-            )
-        });
-        let else_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
-            subscope.bind_refs();
-            lower_optional_else_block(ctx, subscope, expr.else_block)
-        });
-        Ok((main_block_scope, else_block_scope))
-    });
+    let if_location = ctx.get_location(expr.stable_ptr.untyped());
 
-    let (main_block_sealed, else_block_sealed) = res.map_err(LoweringFlowError::Failed)?;
-    let main_finalized =
-        finalized_merger.finalize_block(ctx, main_block_sealed.map_err(LoweringFlowError::Failed)?);
-    let else_finalized =
-        finalized_merger.finalize_block(ctx, else_block_sealed.map_err(LoweringFlowError::Failed)?);
+    // Main block.
+    let mut subscope_main = scope.subscope_with_bound_refs();
+    let main_block =
+        extract_matches!(&ctx.function_body.exprs[expr.if_block], semantic::Expr::Block);
+    subscope_main.add_input(
+        ctx,
+        VarRequest { ty: unit_ty, location: ctx.get_location(main_block.stable_ptr.untyped()) },
+    );
+    let block_main =
+        lower_block(ctx, subscope_main, main_block).map_err(LoweringFlowError::Failed)?;
+
+    // Else block.
+    let subscope_else = scope.subscope_with_bound_refs();
+    let block_else =
+        lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location, unit_ty)
+            .map_err(LoweringFlowError::Failed)?;
+
+    let merged = merge_sealed(ctx, scope, vec![block_main, block_else], if_location);
 
     // Emit the statement.
-    let block_result = (generators::MatchEnum {
-        input: condition_var,
+    scope.push_finalized_statement(Statement::MatchEnum(StatementMatchEnum {
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
+        input: condition_var,
         arms: vec![
-            (corelib::false_variant(semantic_db), else_finalized.block),
-            (corelib::true_variant(semantic_db), main_finalized.block),
+            (corelib::false_variant(semantic_db), merged.blocks[1]),
+            (corelib::true_variant(semantic_db), merged.blocks[0]),
         ],
-        end_info: finalized_merger.end_info.clone(),
-    })
-    .add(ctx, scope);
-    lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
+    }));
+    merged.expr
 }
 
 /// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::Eq].
 pub fn lower_expr_if_eq(
     ctx: &mut LoweringContext<'_>,
-    scope: &mut BlockScope,
+    scope: &mut BlockBuilder,
     expr: &semantic::ExprIf,
     expr_a: semantic::ExprId,
     expr_b: semantic::ExprId,
-) -> Result<LoweredExpr, LoweringFlowError> {
+) -> LoweringResult<LoweredExpr> {
     log::trace!(
         "Started lowering of an if-eq-zero expression: {:?}",
         expr.debug(&ctx.expr_formatter)
     );
+    let if_location = ctx.get_location(expr.stable_ptr.untyped());
     let condition_var = if is_zero(ctx, expr_b) {
         lower_expr(ctx, scope, expr_a)?.var(ctx, scope)?
     } else if is_zero(ctx, expr_a) {
@@ -127,6 +124,8 @@ pub fn lower_expr_if_eq(
             inputs: vec![lowered_a, lowered_b],
             ref_tys: vec![],
             ret_tys: vec![ret_ty],
+            location: ctx
+                .get_location(ctx.function_body.exprs[expr.condition].stable_ptr().untyped()),
         }
         .add(ctx, scope);
         scope.finalize_statement();
@@ -135,64 +134,72 @@ pub fn lower_expr_if_eq(
 
     let semantic_db = ctx.db.upcast();
 
-    // Lower both blocks.
-    let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
-        let main_block_scope = merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
-            subscope.bind_refs();
-            lower_block(
-                ctx,
-                subscope,
-                extract_matches!(&ctx.function_def.exprs[expr.if_block], semantic::Expr::Block),
-                false,
-            )
-        });
-        let non_zero_type =
-            corelib::core_nonzero_ty(semantic_db, corelib::core_felt_ty(semantic_db));
-        let else_block_scope =
-            merger.run_in_subscope(ctx, vec![non_zero_type], |ctx, subscope, _| {
-                subscope.bind_refs();
-                lower_optional_else_block(ctx, subscope, expr.else_block)
-            });
-        Ok((main_block_scope, else_block_scope))
-    });
+    // Main block.
+    let subscope_main = scope.subscope_with_bound_refs();
+    let block_main = lower_block(
+        ctx,
+        subscope_main,
+        extract_matches!(&ctx.function_body.exprs[expr.if_block], semantic::Expr::Block),
+    )
+    .map_err(LoweringFlowError::Failed)?;
 
-    let (main_block_sealed, else_block_sealed) = res.map_err(LoweringFlowError::Failed)?;
-    let main_finalized =
-        finalized_merger.finalize_block(ctx, main_block_sealed.map_err(LoweringFlowError::Failed)?);
-    let else_finalized =
-        finalized_merger.finalize_block(ctx, else_block_sealed.map_err(LoweringFlowError::Failed)?);
+    // Else block.
+    let non_zero_type = corelib::core_nonzero_ty(semantic_db, corelib::core_felt_ty(semantic_db));
+    let subscope_else = scope.subscope_with_bound_refs();
+    let block_else =
+        lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location, non_zero_type)
+            .map_err(LoweringFlowError::Failed)?;
+
+    let merged = merge_sealed(ctx, scope, vec![block_main, block_else], if_location);
 
     // Emit the statement.
-    let block_result = (generators::MatchExtern {
-        function: corelib::core_jump_nz_func(semantic_db),
+    scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
+        function: corelib::core_felt_is_zero(semantic_db),
         inputs: vec![condition_var],
         arms: vec![
-            (corelib::jump_nz_zero_variant(ctx.db.upcast()), main_finalized.block),
-            (corelib::jump_nz_nonzero_variant(ctx.db.upcast()), else_finalized.block),
+            (corelib::jump_nz_zero_variant(ctx.db.upcast()), merged.blocks[0]),
+            (corelib::jump_nz_nonzero_variant(ctx.db.upcast()), merged.blocks[1]),
         ],
-        end_info: finalized_merger.end_info.clone(),
-    })
-    .add(ctx, scope);
-    lowered_expr_from_block_result(ctx, scope, block_result, finalized_merger)
+    }));
+    merged.expr
 }
 
 /// Lowers an optional else block. If the else block is missing it is replaced with a block
 /// returning a unit.
 fn lower_optional_else_block(
     ctx: &mut LoweringContext<'_>,
-    scope: &mut BlockScope,
+    mut scope: BlockBuilder,
     else_expr_opt: Option<semantic::ExprId>,
-) -> Maybe<BlockScopeEnd> {
+    if_location: StableLocation,
+    else_block_input_ty: TypeId,
+) -> Maybe<SealedBlockBuilder> {
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {
-        Some(else_expr) => match &ctx.function_def.exprs[else_expr] {
-            semantic::Expr::Block(block) => lower_block(ctx, scope, block, false),
-            semantic::Expr::If(if_expr) => {
-                let lowered_if = lower_expr_if(ctx, scope, if_expr);
-                lowered_expr_to_block_scope_end(ctx, scope, lowered_if, false)
+        Some(else_expr) => {
+            let expr = &ctx.function_body.exprs[else_expr];
+            scope.add_input(
+                ctx,
+                VarRequest {
+                    ty: else_block_input_ty,
+                    location: ctx.get_location(expr.stable_ptr().untyped()),
+                },
+            );
+            match expr {
+                semantic::Expr::Block(block) => lower_block(ctx, scope, block),
+                semantic::Expr::If(if_expr) => {
+                    let lowered_if = lower_expr_if(ctx, &mut scope, if_expr);
+                    lowered_expr_to_block_scope_end(ctx, scope, lowered_if)
+                }
+                _ => unreachable!(),
             }
-            _ => unreachable!(),
-        },
-        None => lowered_expr_to_block_scope_end(ctx, scope, Ok(LoweredExpr::Tuple(vec![])), false),
+        }
+        None => {
+            scope.add_input(ctx, VarRequest { ty: else_block_input_ty, location: if_location });
+            lowered_expr_to_block_scope_end(
+                ctx,
+                scope,
+                Ok(LoweredExpr::Tuple { exprs: vec![], location: if_location }),
+            )
+        }
     }
 }

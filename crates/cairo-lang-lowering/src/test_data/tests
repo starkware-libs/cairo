@@ -27,8 +27,8 @@ blk0 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
-  (v1: core::felt) <- core::felt_mul(v0, v0)
-  (v2: core::felt) <- core::felt_add(v0, v1)
+  (v1: core::felt) <- core::FeltMul::mul(v0, v0)
+  (v2: core::felt) <- core::FeltAdd::add(v0, v1)
 End:
   Return(v2)
 
@@ -111,124 +111,79 @@ blk0:
 Inputs:
 Initial refs:
 Statements:
-  (v1: core::felt) <- 7u
-End:
-  Callsite()
-
-blk1:
-Inputs:
-Initial refs:
-Statements:
-End:
-  Callsite()
-
-blk2:
-Inputs:
-Initial refs:
-Statements:
   (v6: core::felt) <- 6u
 End:
-  Callsite(v6)
+  Callsite({v6 -> v9})
 
-blk3:
+blk1:
 Inputs: v7: core::NonZero::<core::felt>
 Initial refs:
 Statements:
   (v8: core::felt) <- 7u
 End:
-  Callsite(v8)
+  Callsite({v8 -> v9})
 
-blk4:
-Inputs:
-Initial refs:
-Statements:
-  (v13: core::felt) <- 3u
-  (v14: core::felt) <- 0u
-  (v15: core::felt) <- core::felt_add(v0, v14)
-End:
-  Callsite(v15)
-
-blk5 (root):
+blk2 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
-  () <- blk0()
+  (v1: core::felt) <- 7u
   (v2: ()) <- struct_construct()
-  () <- blk1()
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
-  (v5: core::felt) <- core::felt_sub(v3, v4)
-  (v9: core::felt) <- match core::felt_jump_nz(v5) {
-    JumpNzResult::Zero => blk2,
-    JumpNzResult::NonZero => blk3,
+  (v5: core::felt) <- core::FeltSub::sub(v3, v4)
+  () <- match core::felt_is_zero(v5) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
   (v10: core::felt) <- 3u
   (v11: core::felt) <- test::foo(v10)
   (v12: core::felt) <- 5u
-  (v16: core::felt) <- blk4()
-  (v17: core::felt) <- core::felt_mul(v12, v16)
-  (v18: core::felt) <- core::felt_add(v11, v17)
+  (v13: core::felt) <- 3u
+  (v14: core::felt) <- 0u
+  (v15: core::felt) <- core::FeltAdd::add(v0, v14)
+  (v16: core::felt) <- core::FeltMul::mul(v12, v15)
+  (v17: core::felt) <- core::FeltAdd::add(v11, v16)
 End:
-  Return(v18)
+  Return(v17)
 
 //! > lowering_flat
 blk0:
 Inputs:
 Statements:
-  (v1: core::felt) <- 7u
-End:
-  Callsite()
-
-blk1:
-Inputs:
-Statements:
-End:
-  Callsite()
-
-blk2:
-Inputs:
-Statements:
   (v6: core::felt) <- 6u
 End:
-  Callsite(v6)
+  Callsite({})
 
-blk3:
+blk1:
 Inputs: v7: core::NonZero::<core::felt>
 Statements:
   (v8: core::felt) <- 7u
 End:
-  Callsite(v8)
+  Callsite({})
 
-blk4:
-Inputs:
-Statements:
-  (v13: core::felt) <- 3u
-  (v14: core::felt) <- 0u
-  (v15: core::felt) <- core::felt_add(v0, v14)
-End:
-  Callsite(v15)
-
-blk5 (root):
+blk2 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- blk0()
+  (v1: core::felt) <- 7u
   (v2: ()) <- struct_construct()
-  () <- blk1()
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
   (v5: core::felt) <- core::felt_sub(v3, v4)
-  (v9: core::felt) <- match core::felt_jump_nz(v5) {
-    JumpNzResult::Zero => blk2,
-    JumpNzResult::NonZero => blk3,
+  () <- match core::felt_is_zero(v5) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
   }
   (v10: core::felt) <- 3u
   (v11: core::felt) <- test::foo(v10)
   (v12: core::felt) <- 5u
-  (v16: core::felt) <- blk4()
-  (v17: core::felt) <- core::felt_mul(v12, v16)
-  (v18: core::felt) <- core::felt_add(v11, v17)
+  (v13: core::felt) <- 3u
+  (v14: core::felt) <- 0u
+  (v15: core::felt) <- core::felt_add(v0, v14)
+  (v16: core::felt) <- core::felt_mul(v12, v15)
+  (v17: core::felt) <- core::felt_add(v11, v16)
 End:
-  Return(v18)
+  Return(v17)
 
 //! > ==========================================================================
 
@@ -242,7 +197,11 @@ fn foo(x: MyEnum) -> felt {
   match x {
     MyEnum::A(inner) => {return 5;},
     MyEnum::B(inner) => {inner},
-    MyEnum::C(inner) => {7}
+    MyEnum::C(inner) => {
+      // A workaround to drop inner.
+      let (a, b) = unbox(inner);
+      7
+    }
   }
 }
 
@@ -262,7 +221,7 @@ enum MyEnum {
 
 //! > lowering_structured
 blk0:
-Inputs:
+Inputs: v1: ()
 Initial refs:
 Statements:
   (v2: core::felt) <- 5u
@@ -270,105 +229,62 @@ End:
   Return(v2)
 
 blk1:
-Inputs:
-Initial refs:
-Statements:
-End:
-  Callsite(v3)
-
-blk2:
-Inputs:
-Initial refs:
-Statements:
-  (v6: core::felt) <- 7u
-End:
-  Callsite(v6)
-
-blk3:
-Inputs: v1: ()
-Initial refs:
-Statements:
-  () <- blk0()
-End:
-  Unreachable
-
-blk4:
 Inputs: v3: core::felt
 Initial refs:
 Statements:
-  (v4: core::felt) <- blk1()
 End:
-  Callsite(v4)
+  Callsite({v3 -> v8})
 
-blk5:
-Inputs: v5: core::box::Box::<((), core::felt)>
+blk2:
+Inputs: v4: core::box::Box::<((), core::felt)>
 Initial refs:
 Statements:
-  (v7: core::felt) <- blk2()
+  (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
+  (v7: core::felt) <- 7u
 End:
-  Callsite(v7)
+  Callsite({v7 -> v8})
 
-blk6 (root):
+blk3 (root):
 Inputs: v0: test::MyEnum
 Initial refs:
 Statements:
-  (v8: core::felt) <- match_enum(v0) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
+  () <- match_enum(v0) {
+    MyEnum::A => blk0,
+    MyEnum::B => blk1,
+    MyEnum::C => blk2,
   }
 End:
   Return(v8)
 
 //! > lowering_flat
 blk0:
-Inputs:
+Inputs: v1: ()
 Statements:
   (v2: core::felt) <- 5u
 End:
   Return(v2)
 
 blk1:
-Inputs:
-Statements:
-End:
-  Callsite(v3)
-
-blk2:
-Inputs:
-Statements:
-  (v6: core::felt) <- 7u
-End:
-  Callsite(v6)
-
-blk3:
-Inputs: v1: ()
-Statements:
-  () <- blk0()
-End:
-  Unreachable
-
-blk4:
 Inputs: v3: core::felt
 Statements:
-  (v4: core::felt) <- blk1()
 End:
-  Callsite(v4)
+  Callsite({v3 -> v8})
 
-blk5:
-Inputs: v5: core::box::Box::<((), core::felt)>
+blk2:
+Inputs: v4: core::box::Box::<((), core::felt)>
 Statements:
-  (v7: core::felt) <- blk2()
+  (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
+  (v7: core::felt) <- 7u
 End:
-  Callsite(v7)
+  Callsite({v7 -> v8})
 
-blk6 (root):
+blk3 (root):
 Inputs: v0: test::MyEnum
 Statements:
-  (v8: core::felt) <- match_enum(v0) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
+  () <- match_enum(v0) {
+    MyEnum::A => blk0,
+    MyEnum::B => blk1,
+    MyEnum::C => blk2,
   }
 End:
   Return(v8)
@@ -389,18 +305,22 @@ fn foo(a : Array::<felt, 5>) -> felt {
 foo
 
 //! > module_code
-extern type Array<T, N>;
+extern type Array<T, const N>;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Variable not dropped.
+ --> lib.cairo:2:8
+fn foo(a : Array::<felt, 5>) -> felt {
+       ^
 
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::Array::<core::felt, 5>
 Initial refs:
 Statements:
-  (v1: core::felt) <- core::felt_const<Literal(LiteralLongId { value: 17 }),>()
+  (v1: core::felt) <- core::felt_const::<LiteralLongId { value: 17 }>()
 End:
   Return(v1)
 
@@ -408,6 +328,81 @@ End:
 blk0 (root):
 Inputs: v0: test::Array::<core::felt, 5>
 Statements:
-  (v1: core::felt) <- core::felt_const<Literal(LiteralLongId { value: 17 }),>()
+  (v1: core::felt) <- core::felt_const::<LiteralLongId { value: 17 }>()
 End:
   Return(v1)
+
+//! > ==========================================================================
+
+//! > Test passing same argument as two ref params.
+
+//! > Comments
+TODO(spapini): Make this a semantic diagnostic.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(mut a : felt) -> felt {
+  bar(ref a, ref a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(ref a: felt, ref b: felt) -> felt  {
+  a = 0;
+  b = 1;
+  a + b
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v2: core::felt, v3: core::felt, v1: core::felt) <- test::bar(v0, v0)
+End:
+  Return(v1)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v2: core::felt, v3: core::felt, v1: core::felt) <- test::bar(v0, v0)
+End:
+  Return(v1)
+
+//! > ==========================================================================
+
+//! > Test concretization with bad types.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(mut data: Array::<felt>) -> u128 {
+   serde::Serde::<u128>::deserialize(ref data)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+error: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
+ --> lib.cairo:1:41
+fn foo(mut data: Array::<felt>) -> u128 {
+                                        ^
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+
+//! > lowering_flat

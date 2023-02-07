@@ -26,7 +26,7 @@ pub fn try_solve_equations<Var: Clone + Debug + PartialEq + Eq + Hash>(
             match orig_to_solver_var.entry(var.clone()) {
                 Entry::Occupied(_) => {}
                 Entry::Vacant(e) => {
-                    e.insert(vars.add(variable().min(0).name(format!("{:?}", var))));
+                    e.insert(vars.add(variable().min(0).name(format!("{var:?}"))));
                 }
             }
         }

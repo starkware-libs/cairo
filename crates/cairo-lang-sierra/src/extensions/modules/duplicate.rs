@@ -3,14 +3,13 @@ use crate::extensions::lib_func::{
     SignatureSpecializationContext,
 };
 use crate::extensions::{args_as_single_type, OutputVarReferenceInfo, SpecializationError};
-use crate::ids::GenericLibfuncId;
 use crate::program::GenericArg;
 
 /// Libfunc for duplicating an object.
 #[derive(Default)]
 pub struct DupLibfunc {}
 impl SignatureOnlyGenericLibfunc for DupLibfunc {
-    const ID: GenericLibfuncId = GenericLibfuncId::new_inline("dup");
+    const STR_ID: &'static str = "dup";
 
     fn specialize_signature(
         &self,

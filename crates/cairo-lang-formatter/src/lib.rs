@@ -30,8 +30,7 @@ pub fn get_formatted_file(
     config: FormatterConfig,
 ) -> String {
     let mut formatter = Formatter::new(db, config);
-    formatter.format_node(syntax_root, false);
-    formatter.get_result()
+    formatter.get_formatted_string(syntax_root)
 }
 
 /// Formats Cairo code given as a string.

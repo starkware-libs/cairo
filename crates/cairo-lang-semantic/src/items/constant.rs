@@ -5,15 +5,21 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::types::resolve_type;
-use crate::SemanticDiagnostic;
+use crate::{Expr, SemanticDiagnostic};
 
 #[cfg(test)]
 #[path = "constant_test.rs"]
 mod test;
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct Constant {
+    pub value: Expr,
+}
 
 /// Information about a constant definition.
 ///
@@ -22,6 +28,7 @@ mod test;
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ConstantData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
+    constant: Constant,
     resolved_lookback: Arc<ResolvedLookback>,
 }
 
@@ -30,7 +37,7 @@ pub fn priv_constant_semantic_data(
     db: &dyn SemanticGroup,
     const_id: ConstantId,
 ) -> Maybe<ConstantData> {
-    let module_file_id = const_id.module_file(db.upcast());
+    let module_file_id = const_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -41,18 +48,40 @@ pub fn priv_constant_semantic_data(
 
     let mut resolver = Resolver::new(db, module_file_id, &[]);
 
-    let _const_type = resolve_type(
+    let const_type = resolve_type(
         db,
         &mut diagnostics,
         &mut resolver,
         &const_ast.type_clause(syntax_db).ty(syntax_db),
     );
 
-    // TODO(lior): Implement constants.
-    diagnostics.report(&const_ast.const_kw(syntax_db), ConstantsAreNotSupported);
+    let mut ctx =
+        ComputationContext::new(db, &mut diagnostics, resolver, None, Environment::default());
+    let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
+    let value_type = value.ty();
 
-    let resolved_lookback = Arc::new(resolver.lookback);
-    Ok(ConstantData { diagnostics: diagnostics.build(), resolved_lookback })
+    // Check that the type matches.
+    if !const_type.is_missing(db) && !value_type.is_missing(db) && value_type != const_type {
+        ctx.diagnostics.report(
+            &const_ast.value(syntax_db),
+            crate::diagnostic::SemanticDiagnosticKind::WrongType {
+                expected_ty: const_type,
+                actual_ty: value_type,
+            },
+        );
+    }
+
+    // Check that the expression is a literal.
+    if !matches!(value, Expr::Literal(_)) {
+        ctx.diagnostics.report(
+            &const_ast.value(syntax_db),
+            crate::diagnostic::SemanticDiagnosticKind::OnlyLiteralConstants,
+        );
+    };
+
+    let constant = Constant { value };
+    let resolved_lookback = Arc::new(ctx.resolver.lookback);
+    Ok(ConstantData { diagnostics: diagnostics.build(), constant, resolved_lookback })
 }
 
 /// Query implementation of [SemanticGroup::constant_semantic_diagnostics].
@@ -61,6 +90,11 @@ pub fn constant_semantic_diagnostics(
     const_id: ConstantId,
 ) -> Diagnostics<SemanticDiagnostic> {
     db.priv_constant_semantic_data(const_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [SemanticGroup::constant_semantic_data].
+pub fn constant_semantic_data(db: &dyn SemanticGroup, const_id: ConstantId) -> Maybe<Constant> {
+    Ok(db.priv_constant_semantic_data(const_id)?.constant)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::constant_resolved_lookback].

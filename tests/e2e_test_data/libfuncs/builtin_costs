@@ -20,7 +20,7 @@ call rel 6;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 7})
+test::foo: OrderedHashMap({Const: 700})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;

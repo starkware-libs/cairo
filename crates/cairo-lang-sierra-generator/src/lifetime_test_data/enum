@@ -30,90 +30,67 @@ enum MyEnum {
     C: (felt, felt),
 }
 
+impl MyEnumDrop of Drop::<MyEnum>;
+
 //! > lowering_format
 blk0:
-Inputs:
+Inputs: v4: core::felt
 Statements:
   (v5: core::felt) <- 1u
   (v6: test::MyEnum) <- MyEnum::A(v5)
   (v7: core::felt) <- 2u
   (v8: test::MyEnum) <- MyEnum::A(v7)
 End:
-  Callsite(v8)
+  Callsite({})
 
 blk1:
-Inputs:
+Inputs: v9: core::felt
 Statements:
-  (v11: core::felt) <- core::felt_add(v10, v1)
-  (v12: core::felt) <- core::felt_add(v11, v2)
-  (v13: test::MyEnum) <- MyEnum::A(v12)
+  (v10: core::felt) <- core::felt_add(v9, v1)
+  (v11: core::felt) <- core::felt_add(v10, v2)
+  (v12: test::MyEnum) <- MyEnum::A(v11)
 End:
-  Callsite(v13)
+  Callsite({})
 
 blk2:
-Inputs:
+Inputs: v13: (core::felt, core::felt)
 Statements:
-  (v18: (core::felt, core::felt)) <- struct_construct(v2, v3)
-  (v19: test::MyEnum) <- MyEnum::C(v18)
+  (v14: core::felt, v15: core::felt) <- struct_destructure(v13)
+  (v16: (core::felt, core::felt)) <- struct_construct(v2, v3)
+  (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Callsite(v19)
+  Callsite({})
 
-blk3:
-Inputs: v4: core::felt
-Statements:
-  (v9: test::MyEnum) <- blk0()
-End:
-  Callsite(v9)
-
-blk4:
-Inputs: v10: core::felt
-Statements:
-  (v14: test::MyEnum) <- blk1()
-End:
-  Callsite(v14)
-
-blk5:
-Inputs: v15: (core::felt, core::felt)
-Statements:
-  (v16: core::felt, v17: core::felt) <- struct_destructure(v15)
-  (v20: test::MyEnum) <- blk2()
-End:
-  Callsite(v20)
-
-blk6 (root):
+blk3 (root):
 Inputs: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
-  (v21: test::MyEnum) <- match_enum(v0) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
+  () <- match_enum(v0) {
+    MyEnum::A => blk0,
+    MyEnum::B => blk1,
+    MyEnum::C => blk2,
   }
 End:
   Return(v3)
 
 //! > last_use
-((BlockId(6), 1), 0)
-((BlockId(3), 1), 0)
-((BlockId(0), 4), 0)
-((BlockId(0), 3), 0)
-((BlockId(0), 1), 0)
-((BlockId(4), 1), 0)
-((BlockId(1), 3), 0)
-((BlockId(1), 2), 0)
-((BlockId(1), 1), 1)
-((BlockId(1), 1), 0)
-((BlockId(1), 0), 1)
-((BlockId(1), 0), 0)
-((BlockId(5), 2), 0)
-((BlockId(2), 2), 0)
-((BlockId(2), 1), 0)
-((BlockId(2), 0), 0)
-((BlockId(5), 0), 0)
-((BlockId(6), 0), 0)
+v3: ((BlockId(3), 1), 0)
+v7: ((BlockId(0), 3), 0)
+v5: ((BlockId(0), 1), 0)
+v11: ((BlockId(1), 2), 0)
+v2: ((BlockId(1), 1), 1)
+v10: ((BlockId(1), 1), 0)
+v1: ((BlockId(1), 0), 1)
+v9: ((BlockId(1), 0), 0)
+v16: ((BlockId(2), 2), 0)
+v2: ((BlockId(2), 1), 0)
+v13: ((BlockId(2), 0), 0)
+v0: ((BlockId(3), 0), 0)
 
 //! > drops
-PostStatement((BlockId(6), 0)): v21
+PostStatement((BlockId(0), 3)): v8
 PostStatement((BlockId(0), 1)): v6
-BeginningOfBlock(BlockId(3)): v4, v2, v1
-PostStatement((BlockId(5), 0)): v16, v17
-BeginningOfBlock(BlockId(5)): v1
+BeginningOfBlock(BlockId(0)): v4, v2, v1
+PostStatement((BlockId(1), 2)): v12
+PostStatement((BlockId(2), 2)): v17
+PostStatement((BlockId(2), 0)): v14, v15
+BeginningOfBlock(BlockId(2)): v1
