@@ -24,11 +24,9 @@ type Nullable<felt> = Nullable<felt>;
 
 libfunc null<felt> = null<felt>;
 libfunc store_temp<Nullable<felt>> = store_temp<Nullable<felt>>;
-libfunc rename<Nullable<felt>> = rename<Nullable<felt>>;
 
 null<felt>() -> ([0]);
-store_temp<Nullable<felt>>([0]) -> ([0]);
-rename<Nullable<felt>>([0]) -> ([1]);
+store_temp<Nullable<felt>>([0]) -> ([1]);
 return([1]);
 
 test::foo@0() -> (Nullable<felt>);
@@ -160,24 +158,22 @@ libfunc into_nullable<felt> = into_nullable<felt>;
 libfunc from_nullable<felt> = from_nullable<felt>;
 libfunc branch_align = branch_align;
 libfunc felt_const<555> = felt_const<555>;
-libfunc rename<felt> = rename<felt>;
 libfunc jump = jump;
 libfunc unbox<felt> = unbox<felt>;
+libfunc rename<felt> = rename<felt>;
 
 felt_const<1234>() -> ([0]);
 store_temp<felt>([0]) -> ([0]);
 into_box<felt>([0]) -> ([1]);
 into_nullable<felt>([1]) -> ([2]);
-from_nullable<felt>([2]) { fallthrough() 10([3]) };
+from_nullable<felt>([2]) { fallthrough() 9([3]) };
 branch_align() -> ();
 felt_const<555>() -> ([4]);
-store_temp<felt>([4]) -> ([4]);
-rename<felt>([4]) -> ([5]);
-jump() { 14() };
+store_temp<felt>([4]) -> ([5]);
+jump() { 12() };
 branch_align() -> ();
 unbox<felt>([3]) -> ([6]);
-store_temp<felt>([6]) -> ([6]);
-rename<felt>([6]) -> ([5]);
+store_temp<felt>([6]) -> ([5]);
 rename<felt>([5]) -> ([7]);
 return([7]);
 
