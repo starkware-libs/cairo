@@ -151,7 +151,7 @@ fn generate_push_values_statement_for_remapping(
     let mut push_values = Vec::<pre_sierra::PushValue>::new();
     for (idx, (output, inner_output)) in remapping.iter().enumerate() {
         let use_location = UseLocation { statement_location, idx };
-        let dup_var = get_dup_var_if_needed(context, &use_location);
+        let should_dup = should_dup(context, &use_location);
 
         let ty = context.get_variable_sierra_type(*inner_output)?;
         let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
@@ -163,7 +163,7 @@ fn generate_push_values_statement_for_remapping(
             var: context.get_sierra_variable(*inner_output),
             var_on_stack: context.get_sierra_variable(*output),
             ty,
-            dup_var,
+            dup: should_dup,
         })
     }
     Ok(pre_sierra::Statement::PushValues(push_values))
@@ -185,7 +185,7 @@ pub fn generate_return_code(
 
     for (idx, returned_variable) in returned_variables.iter().enumerate() {
         let use_location = UseLocation { statement_location: *statement_location, idx };
-        let dup_var = get_dup_var_if_needed(context, &use_location);
+        let should_dup = should_dup(context, &use_location);
 
         let return_variable_on_stack = context.allocate_sierra_variable();
         return_variables_on_stack.push(return_variable_on_stack.clone());
@@ -193,7 +193,7 @@ pub fn generate_return_code(
             var: context.get_sierra_variable(*returned_variable),
             var_on_stack: return_variable_on_stack,
             ty: context.get_variable_sierra_type(*returned_variable)?,
-            dup_var,
+            dup: should_dup,
         });
     }
 
@@ -277,7 +277,7 @@ fn generate_statement_call_code(
 
             for (idx, (var_id, var)) in zip_eq(&statement.inputs, inputs).enumerate() {
                 let use_location = UseLocation { statement_location: *statement_location, idx };
-                let dup_var = get_dup_var_if_needed(context, &use_location);
+                let should_dup = should_dup(context, &use_location);
                 // Allocate a temporary Sierra variable that represents the argument placed on the
                 // stack.
                 let arg_on_stack = context.allocate_sierra_variable();
@@ -285,7 +285,7 @@ fn generate_statement_call_code(
                     var,
                     var_on_stack: arg_on_stack.clone(),
                     ty: context.get_variable_sierra_type(*var_id)?,
-                    dup_var,
+                    dup: should_dup,
                 });
                 args_on_stack.push(arg_on_stack);
             }
@@ -314,14 +314,9 @@ fn generate_statement_call_code(
     }
 }
 
-/// Returns `None` if the variable at the given location should not be duplicated.
-/// Otherwise, allocates a variable for the duplicated copy and returns it.
-fn get_dup_var_if_needed(
-    context: &mut ExprGeneratorContext<'_>,
-    use_location: &UseLocation,
-) -> Option<sierra::ids::VarId> {
-    let should_dup = !context.is_last_use(use_location);
-    if should_dup { Some(context.allocate_sierra_variable()) } else { None }
+/// Returns if the variable at the given location should not be duplicated.
+fn should_dup(context: &mut ExprGeneratorContext<'_>, use_location: &UseLocation) -> bool {
+    !context.is_last_use(use_location)
 }
 
 /// Adds calls to the `dup` libfunc for the given [StatementLocation] and the given statement's
