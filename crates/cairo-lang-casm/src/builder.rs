@@ -513,12 +513,12 @@ impl CasmBuilder {
         self.reachable = false;
     }
 
-    /// The state at the last added statement.
+    /// The number of steps at the last added statement.
     pub fn steps(&self) -> usize {
         self.main_state.steps
     }
 
-    /// The state at the last added statement.
+    /// Resets the steps counter.
     pub fn reset_steps(&mut self) {
         self.main_state.steps = 0;
     }
@@ -797,13 +797,16 @@ macro_rules! casm_build_extend {
         $builder.rescope([$(($new_var, $value_var)),*]);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    // Steps tracking section.
-    ($builder:ident, validate steps == $count:expr; $($tok:tt)*) => {
+    ($builder:ident, #{ validate steps == $count:expr; } $($tok:tt)*) => {
         assert_eq!($builder.steps(), $count);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    // Steps tracking section.
-    ($builder:ident, reset steps; $($tok:tt)*) => {
+    ($builder:ident, #{ steps = 0; } $($tok:tt)*) => {
+        $builder.reset_steps();
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, #{ $counter:ident += steps; steps = 0; } $($tok:tt)*) => {
+        $counter += $builder.steps() as i32;
         $builder.reset_steps();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
