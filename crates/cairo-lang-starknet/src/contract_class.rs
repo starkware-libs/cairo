@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use anyhow::{ensure, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
@@ -162,19 +163,18 @@ fn compile_contract_with_prepared_and_checked_db(
         .into_iter()
         .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db, f))
         .collect();
-    let sierra_program = db
+    let mut sierra_program = db
         .get_sierra_program_for_functions(
             chain!(&external_functions, &constructor_functions).cloned().collect(),
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
 
+    if compiler_config.replace_ids {
+        sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
+    }
     let replacer = CanonicalReplacer::from_program(&sierra_program);
-    let sierra_program = if compiler_config.replace_ids {
-        replace_sierra_ids_in_program(db, &sierra_program)
-    } else {
-        replacer.apply(&sierra_program)
-    };
+    let sierra_program = replacer.apply(&sierra_program);
 
     let entry_points_by_type = ContractEntryPoints {
         external: get_entry_points(db, &external_functions, &replacer)?,
