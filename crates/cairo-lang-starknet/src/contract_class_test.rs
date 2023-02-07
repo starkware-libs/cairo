@@ -6,6 +6,7 @@ use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
+use crate::allowed_libfuncs::DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST;
 use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
 use crate::felt_serde::sierra_from_felts;
 use crate::test_utils::{get_example_file_path, get_test_contract};
@@ -22,7 +23,8 @@ fn test_serialization() {
             libfunc_names: HashMap::default(),
             user_func_names: HashMap::default(),
         },
-        sierra_version_id: sierra_version::CURRENT_VERSION_ID,
+        sierra_version: sierra_version::CURRENT_VERSION_ID,
+        allowed_libfuncs_list_name: DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST.to_string(),
         entry_points_by_type: ContractEntryPoints {
             external,
             l1_handler: vec![],
@@ -44,7 +46,12 @@ fn test_serialization() {
             "libfunc_names": [],
             "user_func_names": []
           },
-          "sierra_version_id": 1,
+          "sierra_version_id": {
+            "major": 0,
+            "minor": 1,
+            "patch": 0
+          },
+          "allowed_libfuncs_list_name": "experimental_v0.1.0",
           "entry_points_by_type": {
             "EXTERNAL": [
               {
