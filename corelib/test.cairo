@@ -113,6 +113,30 @@ fn test_ecdsa() {
         ecdsa::check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s),
         'ecdsa returned false'
     );
+    assert(
+        !ecdsa::check_ecdsa_signature(
+            message_hash: message_hash + 1, :public_key, :signature_r, :signature_s
+        ),
+        'ecdsa - wrong message'
+    );
+    assert(
+        !ecdsa::check_ecdsa_signature(
+            :message_hash, public_key: public_key + 1, :signature_r, :signature_s
+        ),
+        'ecdsa - wrong public_key'
+    );
+    assert(
+        !ecdsa::check_ecdsa_signature(
+            :message_hash, :public_key, signature_r: signature_r + 1, :signature_s
+        ),
+        'ecdsa - wrong r'
+    );
+    assert(
+        !ecdsa::check_ecdsa_signature(
+            :message_hash, :public_key, :signature_r, signature_s: signature_s + 1
+        ),
+        'ecdsa - wrong s'
+    );
 }
 
 #[test]
