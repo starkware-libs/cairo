@@ -368,39 +368,46 @@ fn build_u128_from_felt(
 fn build_u128_sqrt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check, x] = builder.try_get_single_cells()?;
+    let [range_check, value] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
+
+    // (2**128-1) - (2**125-1)
+    let u125_upper_fixer: BigInt = BigInt::from(u128::MAX - ((2 ^ 125) - 1));
+
     add_input_variables! {casm_builder,
         buffer(3) range_check;
-        deref x;
+        deref value;
     };
 
-        casm_build_extend! {casm_builder,
+    casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
         tempvar root;
-        hint SquareRoot { value: x} into { dest: root };
+        hint SquareRoot { value: value} into { dst: root };
 
-        // Assert root < 2^64 by asserting: root + (2**128-1) - (2**64-1) < 2**128.
-        const u64_upper_fixer = u128::MAX - u64::MAX as u128;
-        tempvar fixed_root = root + u64_upper_fixer;
+        // Assert root < 2^125 by asserting: root + (2**128-1) - (2**125-1) < 2**128.
+        const u125_upper_fixer = u125_upper_fixer;
+        tempvar fixed_root = root + u125_upper_fixer;
         assert root = *(range_check++);
         assert fixed_root = *(range_check++);
 
-        // Assert x >= root^2
+        // Assert root^2 <= value.
         tempvar root_squared = root * root;
-        tempvar x_minus_root_squared = x - root_squared;
-        assert x_minus_root_squared = *(range_check++);
+        tempvar value_minus_root_squared = value - root_squared;
+        assert value_minus_root_squared = *(range_check++);
 
-        // Assert (root + 1)^2 > x
+        // Assert (root + 1)^2 > value.
         tempvar root_times_two = root + root;
-        // if ((root + 1)^2) - (x+1) in [0, 2^128) then (root + 1)^2 > x.
-        // ((root + 1)^2) - (x+1) = root^2 + 2*root + 1 - x - 1 = root^2 + 2*root -x
-        tempvar root_times_two_plus_root_squared = root_squared + root_times_two;
-        tempvar diff = root_times_two_plus_root_squared - x;
+        // let us notice that (root + 1)^2 - 1 - value = 2*root - (value - root^2).
+        tempvar diff = root_times_two + value_minus_root_squared;
         assert diff = *(range_check++);
     };
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check], &[root],], None)],
+        [("Fallthrough", &[&[range_check], &[root]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }

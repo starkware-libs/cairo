@@ -38,7 +38,7 @@ fn u128_wrapping_add(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
 }
 
 extern fn u128_wide_mul(a: u128, b: u128) -> (u128, u128) implicits(RangeCheck) nopanic;
-extern fn u128_sqrt(x: u128) -> u128 implicits(RangeCheck) nopanic;
+extern fn u128_sqrt(value: u128) -> u128 implicits(RangeCheck) nopanic;
 
 fn u128_overflowing_mul(a: u128, b: u128) -> (u128, bool) implicits(RangeCheck) nopanic {
     let (top_word, bottom_word) = u128_wide_mul(a, b);

@@ -278,12 +278,7 @@ impl NoGenericArgsGenericLibfunc for Uint128SquareRootLibfunc {
                     allow_add_const: true,
                     allow_const: false,
                 },
-                ParamSignature {
-                    ty: ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: false,
-                    allow_const: true,
-                },
+                ParamSignature::new(ty.clone()),
             ],
             vec![
                 OutputVarInfo {
@@ -292,10 +287,7 @@ impl NoGenericArgsGenericLibfunc for Uint128SquareRootLibfunc {
                         param_idx: 0,
                     }),
                 },
-                OutputVarInfo {
-                    ty: ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-                },
+                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) } },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))

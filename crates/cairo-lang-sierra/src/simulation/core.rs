@@ -498,9 +498,9 @@ fn simulate_u128_libfunc(
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint128Concrete::SquareRoot(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint128(x)] => {
-                let root = BigInt::from(*x).sqrt();
-                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(root.to_u128().unwrap())],0))
+            [CoreValue::RangeCheck, CoreValue::Uint128(value)] => {
+                let root = BigInt::from(*value).sqrt();
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(root.to_u128().unwrap())], 0))
             }
             [_, _] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
