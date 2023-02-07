@@ -5,6 +5,7 @@
 //!
 //! Learn more at [starkware.io](http://starknet.io/).
 pub mod abi;
+mod allowed_libfuncs;
 pub mod casm_contract_class;
 pub mod contract;
 pub mod contract_class;
