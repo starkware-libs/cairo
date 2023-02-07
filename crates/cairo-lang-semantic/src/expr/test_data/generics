@@ -73,6 +73,11 @@ fn bar<A, const B, impl C: MyTrait::<felt>>(){}
 foo
 
 //! > expected_diagnostics
+error: Trait not found.
+ --> lib.cairo:1:28
+fn bar<A, const B, impl C: MyTrait::<felt>>(){}
+                           ^*****^
+
 error: Wrong number of generic arguments. Expected 3, found: 4
  --> lib.cairo:3:5
     bar::<1,1,1,1>();
@@ -120,7 +125,7 @@ extern fn hoo<impl C: MyTrait::<felt>>() nopanic;
 foo
 
 //! > expected_diagnostics
-error: Extern functions with impl generics are not supported
+error: Extern items with impl generics are not supported
  --> lib.cairo:4:15
 extern fn hoo<impl C: MyTrait::<felt>>() nopanic;
               ^*********************^

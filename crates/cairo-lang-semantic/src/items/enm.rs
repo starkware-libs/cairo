@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{EnumId, GenericParamId, LanguageElementId, VariantId, VariantLongId};
+use cairo_lang_defs::ids::{EnumId, LanguageElementId, VariantId, VariantLongId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -25,7 +25,7 @@ mod test;
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct EnumData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    generic_params: Vec<GenericParamId>,
+    generic_params: Vec<semantic::GenericParam>,
     variants: OrderedHashMap<SmolStr, VariantId>,
     variant_semantic: OrderedHashMap<VariantId, Variant>,
     resolved_lookback: Arc<ResolvedLookback>,
@@ -60,7 +60,10 @@ pub fn enum_semantic_diagnostics(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_generic_params].
-pub fn enum_generic_params(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<Vec<GenericParamId>> {
+pub fn enum_generic_params(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+) -> Maybe<Vec<semantic::GenericParam>> {
     Ok(db.priv_enum_semantic_data(enum_id)?.generic_params)
 }
 
@@ -102,13 +105,14 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe
     let syntax_db = db.upcast();
 
     // Generic params.
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &enum_ast.generic_params(db.upcast()),
     );
-    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     // Variants.
     let mut variants = OrderedHashMap::default();
@@ -152,8 +156,7 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let db = self.upcast();
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
         let generic_args = db.lookup_intern_concrete_enum(concrete_enum_id).generic_args;
-        let substitution =
-            GenericSubstitution(generic_params.into_iter().zip(generic_args.into_iter()).collect());
+        let substitution = GenericSubstitution::new(&generic_params, &generic_args);
 
         let ty = substitute_ty(db, &substitution, variant.ty);
         Ok(ConcreteVariant { concrete_enum_id, id: variant.id, ty, idx: variant.idx })

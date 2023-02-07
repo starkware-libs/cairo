@@ -24,6 +24,7 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
+use crate::items::generics::GenericParam;
 use crate::items::imp::ImplLookupContext;
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::ConcreteTraitId;
@@ -157,7 +158,7 @@ pub trait SemanticGroup:
     fn struct_semantic_diagnostics(&self, struct_id: StructId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an enum.
     #[salsa::invoke(items::structure::struct_generic_params)]
-    fn struct_generic_params(&self, struct_id: StructId) -> Maybe<Vec<GenericParamId>>;
+    fn struct_generic_params(&self, struct_id: StructId) -> Maybe<Vec<GenericParam>>;
     /// Returns the members of a struct.
     #[salsa::invoke(items::structure::struct_members)]
     fn struct_members(
@@ -181,7 +182,7 @@ pub trait SemanticGroup:
     fn enum_semantic_diagnostics(&self, enum_id: EnumId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an enum.
     #[salsa::invoke(items::enm::enum_generic_params)]
-    fn enum_generic_params(&self, enum_id: EnumId) -> Maybe<Vec<GenericParamId>>;
+    fn enum_generic_params(&self, enum_id: EnumId) -> Maybe<Vec<GenericParam>>;
     /// Returns the members of an enum.
     #[salsa::invoke(items::enm::enum_variants)]
     fn enum_variants(&self, enum_id: EnumId) -> Maybe<OrderedHashMap<SmolStr, VariantId>>;
@@ -212,7 +213,7 @@ pub trait SemanticGroup:
     fn type_alias_resolved_type(&self, type_alias_id: TypeAliasId) -> Maybe<TypeId>;
     /// Returns the generic parameters of a type alias.
     #[salsa::invoke(items::type_alias::type_alias_generic_params)]
-    fn type_alias_generic_params(&self, enum_id: TypeAliasId) -> Maybe<Vec<GenericParamId>>;
+    fn type_alias_generic_params(&self, enum_id: TypeAliasId) -> Maybe<Vec<GenericParam>>;
     /// Returns the resolution lookback of a type alias.
     #[salsa::invoke(items::type_alias::type_alias_resolved_lookback)]
     fn type_alias_resolved_lookback(
@@ -230,7 +231,7 @@ pub trait SemanticGroup:
     fn trait_semantic_diagnostics(&self, trait_id: TraitId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of a trait.
     #[salsa::invoke(items::trt::trait_generic_params)]
-    fn trait_generic_params(&self, trait_id: TraitId) -> Maybe<Vec<GenericParamId>>;
+    fn trait_generic_params(&self, trait_id: TraitId) -> Maybe<Vec<GenericParam>>;
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
     fn trait_attributes(&self, trait_id: TraitId) -> Maybe<Vec<Attribute>>;
@@ -277,7 +278,7 @@ pub trait SemanticGroup:
     fn trait_function_generic_params(
         &self,
         trait_function_id: TraitFunctionId,
-    ) -> Maybe<Vec<GenericParamId>>;
+    ) -> Maybe<Vec<GenericParam>>;
     /// Returns the resolution lookback of a trait function.
     #[salsa::invoke(items::trt::trait_function_resolved_lookback)]
     fn trait_function_resolved_lookback(
@@ -300,7 +301,7 @@ pub trait SemanticGroup:
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an impl.
     #[salsa::invoke(items::imp::impl_generic_params)]
-    fn impl_generic_params(&self, impl_id: ImplId) -> Maybe<Vec<GenericParamId>>;
+    fn impl_generic_params(&self, impl_id: ImplId) -> Maybe<Vec<GenericParam>>;
     /// Returns the resolution lookback of an impl.
     #[salsa::invoke(items::imp::impl_resolved_lookback)]
     fn impl_resolved_lookback(&self, impl_id: ImplId) -> Maybe<Arc<ResolvedLookback>>;
@@ -349,7 +350,7 @@ pub trait SemanticGroup:
     fn impl_function_generic_params(
         &self,
         impl_function_id: ImplFunctionId,
-    ) -> Maybe<Vec<GenericParamId>>;
+    ) -> Maybe<Vec<GenericParam>>;
     /// Returns the semantic diagnostics of an impl function's declaration (signature).
     #[salsa::invoke(items::imp::impl_function_declaration_diagnostics)]
     fn impl_function_declaration_diagnostics(
@@ -416,7 +417,7 @@ pub trait SemanticGroup:
     fn free_function_generic_params(
         &self,
         free_function_id: FreeFunctionId,
-    ) -> Maybe<Vec<GenericParamId>>;
+    ) -> Maybe<Vec<GenericParam>>;
     /// Returns the resolution lookback of a free function's declaration.
     #[salsa::invoke(items::free_function::free_function_declaration_resolved_lookback)]
     fn free_function_declaration_resolved_lookback(
@@ -469,7 +470,7 @@ pub trait SemanticGroup:
     fn function_with_body_generic_params(
         &self,
         function_id: FunctionWithBodyId,
-    ) -> Maybe<Vec<GenericParamId>>;
+    ) -> Maybe<Vec<GenericParam>>;
     /// Returns the attributes of a function with a body.
     #[salsa::invoke(items::function_with_body::function_with_body_attributes)]
     fn function_with_body_attributes(
@@ -532,7 +533,7 @@ pub trait SemanticGroup:
     fn extern_function_declaration_generic_params(
         &self,
         extern_function_id: ExternFunctionId,
-    ) -> Maybe<Vec<GenericParamId>>;
+    ) -> Maybe<Vec<GenericParam>>;
     /// Returns the explicit implicits of an extern function declaration.
     #[salsa::invoke(items::extern_function::extern_function_declaration_implicits)]
     fn extern_function_declaration_implicits(
@@ -573,7 +574,7 @@ pub trait SemanticGroup:
     fn extern_type_declaration_generic_params(
         &self,
         extern_type_id: ExternTypeId,
-    ) -> Maybe<Vec<GenericParamId>>;
+    ) -> Maybe<Vec<GenericParam>>;
 
     // Function Signature.
     // =================
@@ -591,7 +592,7 @@ pub trait SemanticGroup:
     fn function_signature_generic_params(
         &self,
         function_signature_id: FunctionSignatureId,
-    ) -> Maybe<Vec<GenericParamId>>;
+    ) -> Maybe<Vec<GenericParam>>;
 
     // Concrete function.
     // =================
@@ -601,14 +602,15 @@ pub trait SemanticGroup:
     fn concrete_function_signature(&self, function_id: FunctionId) -> Maybe<semantic::Signature>;
 
     // Generic type.
-    // =================
-    /// Returns the generic_type of a generic function. This include free types, extern
-    /// types, etc...
+    // =============
+    /// Returns the generic params of a generic type.
     #[salsa::invoke(types::generic_type_generic_params)]
-    fn generic_type_generic_params(
-        &self,
-        generic_type: GenericTypeId,
-    ) -> Maybe<Vec<GenericParamId>>;
+    fn generic_type_generic_params(&self, generic_type: GenericTypeId) -> Maybe<Vec<GenericParam>>;
+
+    // Generic param.
+    // ==============
+    #[salsa::invoke(items::generics::generic_param_semantic)]
+    fn generic_param_semantic(&self, generic_param: GenericParamId) -> Maybe<GenericParam>;
 
     // Concrete type.
     // ==============
