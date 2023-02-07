@@ -24,6 +24,12 @@ pub struct DiagnosticLocation {
     pub file_id: FileId,
     pub span: TextSpan,
 }
+impl DiagnosticLocation {
+    /// Get the location of right after this diagnostic's location (with width 0).
+    pub fn after(&self) -> Self {
+        Self { file_id: self.file_id, span: self.span.after() }
+    }
+}
 
 /// This struct is used to ensure that when an error occurs, a diagnostic is properly reported.
 ///
@@ -144,7 +150,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 
     /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
     pub fn expect(&self, error_message: &str) {
-        assert!(self.0.leaves.is_empty(), "{}\n{:?}", error_message, self);
+        assert!(self.0.leaves.is_empty(), "{error_message}\n{self:?}");
         for subtree in &self.0.subtrees {
             subtree.expect(error_message);
         }

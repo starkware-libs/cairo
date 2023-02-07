@@ -5,6 +5,7 @@
 #![allow(unused_variables)]
 use std::ops::Deref;
 
+use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_utils::extract_matches;
 use smol_str::SmolStr;
 
@@ -51,7 +52,7 @@ impl TypedSyntaxNode for Trivia {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         TriviaGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::Trivia,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -492,7 +493,7 @@ impl TypedSyntaxNode for ExprList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         ExprListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ExprList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -555,7 +556,7 @@ impl TypedSyntaxNode for ArgNameClause {
             kind: SyntaxKind::ArgNameClause,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalIdentifier::missing(db).0, TerminalColon::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -682,7 +683,7 @@ impl TypedSyntaxNode for OptionArgNameClauseEmpty {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         OptionArgNameClauseEmptyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::OptionArgNameClauseEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -754,7 +755,7 @@ impl TypedSyntaxNode for Arg {
             kind: SyntaxKind::Arg,
             details: GreenNodeDetails::Node {
                 children: vec![ModifierList::missing(db).0, ArgClause::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -917,7 +918,7 @@ impl TypedSyntaxNode for ArgClauseNamed {
                     TerminalColon::missing(db).0,
                     Expr::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -980,7 +981,10 @@ impl TypedSyntaxNode for ArgClauseUnnamed {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         ArgClauseUnnamedGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ArgClauseUnnamed,
-            details: GreenNodeDetails::Node { children: vec![Expr::missing(db).0], width: 0 },
+            details: GreenNodeDetails::Node {
+                children: vec![Expr::missing(db).0],
+                width: TextWidth::default(),
+            },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -1052,7 +1056,7 @@ impl TypedSyntaxNode for ArgClauseFieldInitShorthand {
             kind: SyntaxKind::ArgClauseFieldInitShorthand,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalColon::missing(db).0, ExprFieldInitShorthand::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -1120,7 +1124,7 @@ impl TypedSyntaxNode for ExprFieldInitShorthand {
             kind: SyntaxKind::ExprFieldInitShorthand,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalIdentifier::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -1208,7 +1212,7 @@ impl TypedSyntaxNode for ArgList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         ArgListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ArgList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -1256,7 +1260,7 @@ impl TypedSyntaxNode for ExprMissing {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         ExprMissingGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ExprMissing,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -1389,7 +1393,7 @@ impl TypedSyntaxNode for PathSegmentSimple {
             kind: SyntaxKind::PathSegmentSimple,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalIdentifier::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -1471,7 +1475,7 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
                     TerminalColonColon::missing(db).0,
                     GenericArgs::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -1559,7 +1563,7 @@ impl TypedSyntaxNode for ExprPath {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         ExprPathGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ExprPath,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -1631,7 +1635,7 @@ impl TypedSyntaxNode for ExprParenthesized {
                     Expr::missing(db).0,
                     TerminalRParen::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -1704,7 +1708,7 @@ impl TypedSyntaxNode for ExprUnary {
             kind: SyntaxKind::ExprUnary,
             details: GreenNodeDetails::Node {
                 children: vec![UnaryOperator::missing(db).0, Expr::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -1850,7 +1854,7 @@ impl TypedSyntaxNode for ExprBinary {
                     BinaryOperator::missing(db).0,
                     Expr::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -2197,7 +2201,7 @@ impl TypedSyntaxNode for ExprTuple {
                     ExprList::missing(db).0,
                     TerminalRParen::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -2270,7 +2274,7 @@ impl TypedSyntaxNode for ExprFunctionCall {
             kind: SyntaxKind::ExprFunctionCall,
             details: GreenNodeDetails::Node {
                 children: vec![ExprPath::missing(db).0, ArgListParenthesized::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -2352,7 +2356,7 @@ impl TypedSyntaxNode for ArgListParenthesized {
                     ArgList::missing(db).0,
                     TerminalRParen::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -2425,7 +2429,7 @@ impl TypedSyntaxNode for ExprStructCtorCall {
             kind: SyntaxKind::ExprStructCtorCall,
             details: GreenNodeDetails::Node {
                 children: vec![ExprPath::missing(db).0, ArgListBraced::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -2507,7 +2511,7 @@ impl TypedSyntaxNode for ExprBlock {
                     StatementList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -2601,7 +2605,7 @@ impl TypedSyntaxNode for ExprMatch {
                     MatchArms::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -2689,7 +2693,7 @@ impl TypedSyntaxNode for MatchArms {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         MatchArmsGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::MatchArms,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -2761,7 +2765,7 @@ impl TypedSyntaxNode for MatchArm {
                     TerminalMatchArrow::missing(db).0,
                     Expr::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -2849,7 +2853,7 @@ impl TypedSyntaxNode for ExprIf {
                     ExprBlock::missing(db).0,
                     OptionElseClause::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -2984,7 +2988,7 @@ impl TypedSyntaxNode for ElseClause {
             kind: SyntaxKind::ElseClause,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalElse::missing(db).0, BlockOrIf::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -3111,7 +3115,7 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         OptionElseClauseEmptyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::OptionElseClauseEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -3183,7 +3187,7 @@ impl TypedSyntaxNode for ExprErrorPropagate {
             kind: SyntaxKind::ExprErrorPropagate,
             details: GreenNodeDetails::Node {
                 children: vec![Expr::missing(db).0, TerminalQuestionMark::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -3256,7 +3260,7 @@ impl TypedSyntaxNode for StructArgExpr {
             kind: SyntaxKind::StructArgExpr,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalColon::missing(db).0, Expr::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -3383,7 +3387,7 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         OptionStructArgExprEmptyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::OptionStructArgExprEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -3466,7 +3470,7 @@ impl TypedSyntaxNode for StructArgSingle {
                     TerminalIdentifier::missing(db).0,
                     OptionStructArgExpr::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -3539,7 +3543,7 @@ impl TypedSyntaxNode for StructArgTail {
             kind: SyntaxKind::StructArgTail,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalDotDot::missing(db).0, Expr::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -3693,7 +3697,7 @@ impl TypedSyntaxNode for StructArgList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         StructArgListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StructArgList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -3765,7 +3769,7 @@ impl TypedSyntaxNode for ArgListBraced {
                     StructArgList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -3994,7 +3998,7 @@ impl TypedSyntaxNode for PatternIdentifier {
             kind: SyntaxKind::PatternIdentifier,
             details: GreenNodeDetails::Node {
                 children: vec![ModifierList::missing(db).0, TerminalIdentifier::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -4082,7 +4086,7 @@ impl TypedSyntaxNode for PatternStruct {
                     PatternStructParamList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -4170,7 +4174,7 @@ impl TypedSyntaxNode for PatternStructParamList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         PatternStructParamListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::PatternStructParamList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -4242,7 +4246,7 @@ impl TypedSyntaxNode for PatternTuple {
                     PatternList::missing(db).0,
                     TerminalRParen::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -4330,7 +4334,7 @@ impl TypedSyntaxNode for PatternList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         PatternListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::PatternList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -4492,7 +4496,7 @@ impl TypedSyntaxNode for PatternStructParamWithExpr {
                     TerminalColon::missing(db).0,
                     Pattern::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -4580,7 +4584,7 @@ impl TypedSyntaxNode for PatternEnum {
                     Pattern::missing(db).0,
                     TerminalRParen::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -4653,7 +4657,7 @@ impl TypedSyntaxNode for TypeClause {
             kind: SyntaxKind::TypeClause,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalColon::missing(db).0, Expr::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -4780,7 +4784,7 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         OptionTypeClauseEmptyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::OptionTypeClauseEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -4852,7 +4856,7 @@ impl TypedSyntaxNode for ReturnTypeClause {
             kind: SyntaxKind::ReturnTypeClause,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalArrow::missing(db).0, Expr::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -4979,7 +4983,7 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         OptionReturnTypeClauseEmptyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::OptionReturnTypeClauseEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -5132,7 +5136,7 @@ impl TypedSyntaxNode for StatementList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         StatementListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -5180,7 +5184,7 @@ impl TypedSyntaxNode for StatementMissing {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         StatementMissingGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementMissing,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -5288,7 +5292,7 @@ impl TypedSyntaxNode for StatementLet {
                     Expr::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -5415,7 +5419,7 @@ impl TypedSyntaxNode for OptionTerminalSemicolonEmpty {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         OptionTerminalSemicolonEmptyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::OptionTerminalSemicolonEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -5487,7 +5491,7 @@ impl TypedSyntaxNode for StatementExpr {
             kind: SyntaxKind::StatementExpr,
             details: GreenNodeDetails::Node {
                 children: vec![Expr::missing(db).0, OptionTerminalSemicolon::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -5569,7 +5573,7 @@ impl TypedSyntaxNode for StatementReturn {
                     Expr::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -5659,7 +5663,7 @@ impl TypedSyntaxNode for Param {
                     TerminalIdentifier::missing(db).0,
                     TypeClause::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -5721,7 +5725,7 @@ impl TypedSyntaxNode for ModifierList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         ModifierListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ModifierList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -5861,7 +5865,7 @@ impl TypedSyntaxNode for ParamList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         ParamListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ParamList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -5939,7 +5943,7 @@ impl TypedSyntaxNode for ImplicitsClause {
                     ImplicitsList::missing(db).0,
                     TerminalRParen::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -6027,7 +6031,7 @@ impl TypedSyntaxNode for ImplicitsList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         ImplicitsListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ImplicitsList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -6144,7 +6148,7 @@ impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         OptionImplicitsClauseEmptyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::OptionImplicitsClauseEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -6270,7 +6274,7 @@ impl TypedSyntaxNode for OptionTerminalNoPanicEmpty {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         OptionTerminalNoPanicEmptyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::OptionTerminalNoPanicEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -6376,7 +6380,7 @@ impl TypedSyntaxNode for FunctionSignature {
                     OptionImplicitsClause::missing(db).0,
                     OptionTerminalNoPanic::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -6457,7 +6461,7 @@ impl TypedSyntaxNode for Member {
             kind: SyntaxKind::Member,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalIdentifier::missing(db).0, TypeClause::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -6545,7 +6549,7 @@ impl TypedSyntaxNode for MemberList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         MemberListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::MemberList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -6782,7 +6786,7 @@ impl TypedSyntaxNode for ItemList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         ItemListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -6866,7 +6870,7 @@ impl TypedSyntaxNode for Attribute {
                     OptionAttributeArgs::missing(db).0,
                     TerminalRBrack::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -6928,7 +6932,7 @@ impl TypedSyntaxNode for AttributeList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         AttributeListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::AttributeList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -7014,7 +7018,7 @@ impl TypedSyntaxNode for ItemModule {
                     TerminalIdentifier::missing(db).0,
                     MaybeModuleBody::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -7162,7 +7166,7 @@ impl TypedSyntaxNode for ModuleBody {
                     ItemList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -7289,7 +7293,7 @@ impl TypedSyntaxNode for OptionAttributeArgsEmpty {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         OptionAttributeArgsEmptyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::OptionAttributeArgsEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -7370,7 +7374,7 @@ impl TypedSyntaxNode for AttributeArgs {
                     AttributeArgList::missing(db).0,
                     TerminalRParen::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -7458,7 +7462,7 @@ impl TypedSyntaxNode for AttributeArgList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         AttributeArgListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::AttributeArgList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -7544,7 +7548,7 @@ impl TypedSyntaxNode for FunctionDeclaration {
                     OptionWrappedGenericParamList::missing(db).0,
                     FunctionSignature::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -7659,7 +7663,7 @@ impl TypedSyntaxNode for ItemConstant {
                     Expr::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -7749,7 +7753,7 @@ impl TypedSyntaxNode for FunctionWithBody {
                     FunctionDeclaration::missing(db).0,
                     ExprBlock::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -7845,7 +7849,7 @@ impl TypedSyntaxNode for ItemExternFunction {
                     FunctionDeclaration::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -7954,7 +7958,7 @@ impl TypedSyntaxNode for ItemExternType {
                     OptionWrappedGenericParamList::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -8057,7 +8061,7 @@ impl TypedSyntaxNode for ItemTrait {
                     OptionWrappedGenericParamList::missing(db).0,
                     MaybeTraitBody::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -8205,7 +8209,7 @@ impl TypedSyntaxNode for TraitBody {
                     TraitItemList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -8267,7 +8271,7 @@ impl TypedSyntaxNode for TraitItemList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         TraitItemListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::TraitItemList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -8398,7 +8402,7 @@ impl TypedSyntaxNode for TraitItemFunction {
                     FunctionDeclaration::missing(db).0,
                     MaybeTraitFunctionBody::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -8582,7 +8586,7 @@ impl TypedSyntaxNode for ItemImpl {
                     ExprPath::missing(db).0,
                     MaybeImplBody::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -8728,7 +8732,7 @@ impl TypedSyntaxNode for ImplBody {
                     ItemList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -8850,7 +8854,7 @@ impl TypedSyntaxNode for ItemStruct {
                     MemberList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -8965,7 +8969,7 @@ impl TypedSyntaxNode for ItemEnum {
                     MemberList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -9080,7 +9084,7 @@ impl TypedSyntaxNode for ItemTypeAlias {
                     Expr::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -9176,7 +9180,7 @@ impl TypedSyntaxNode for ItemUse {
                     ExprPath::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -9258,7 +9262,7 @@ impl TypedSyntaxNode for GenericArgs {
                     GenericArgList::missing(db).0,
                     TerminalGT::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -9346,7 +9350,7 @@ impl TypedSyntaxNode for GenericArgList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         GenericArgListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::GenericArgList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -9465,7 +9469,7 @@ impl TypedSyntaxNode for OptionWrappedGenericParamListEmpty {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         OptionWrappedGenericParamListEmptyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::OptionWrappedGenericParamListEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -9546,7 +9550,7 @@ impl TypedSyntaxNode for WrappedGenericParamList {
                     GenericParamList::missing(db).0,
                     TerminalGT::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -9634,7 +9638,7 @@ impl TypedSyntaxNode for GenericParamList {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         GenericParamListGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::GenericParamList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -9651,29 +9655,110 @@ impl TypedSyntaxNode for GenericParamList {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct GenericParam {
+pub enum GenericParam {
+    Type(GenericParamType),
+    Const(GenericParamConst),
+    Impl(GenericParamImpl),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamPtr(pub SyntaxStablePtrId);
+impl GenericParamPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<GenericParamTypePtr> for GenericParamPtr {
+    fn from(value: GenericParamTypePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<GenericParamConstPtr> for GenericParamPtr {
+    fn from(value: GenericParamConstPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<GenericParamImplPtr> for GenericParamPtr {
+    fn from(value: GenericParamImplPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<GenericParamTypeGreen> for GenericParamGreen {
+    fn from(value: GenericParamTypeGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<GenericParamConstGreen> for GenericParamGreen {
+    fn from(value: GenericParamConstGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<GenericParamImplGreen> for GenericParamGreen {
+    fn from(value: GenericParamImplGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamGreen(pub GreenId);
+impl TypedSyntaxNode for GenericParam {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = GenericParamPtr;
+    type Green = GenericParamGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::GenericParamType => {
+                GenericParam::Type(GenericParamType::from_syntax_node(db, node))
+            }
+            SyntaxKind::GenericParamConst => {
+                GenericParam::Const(GenericParamConst::from_syntax_node(db, node))
+            }
+            SyntaxKind::GenericParamImpl => {
+                GenericParam::Impl(GenericParamImpl::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "GenericParam"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            GenericParam::Type(x) => x.as_syntax_node(),
+            GenericParam::Const(x) => x.as_syntax_node(),
+            GenericParam::Impl(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        GenericParamPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct GenericParamType {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl GenericParam {
+impl GenericParamType {
     pub const INDEX_NAME: usize = 0;
-    pub fn new_green(db: &dyn SyntaxGroup, name: TerminalIdentifierGreen) -> GenericParamGreen {
+    pub fn new_green(db: &dyn SyntaxGroup, name: TerminalIdentifierGreen) -> GenericParamTypeGreen {
         let children: Vec<GreenId> = vec![name.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        GenericParamGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::GenericParam,
+        GenericParamTypeGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericParamType,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl GenericParam {
+impl GenericParamType {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct GenericParamPtr(pub SyntaxStablePtrId);
-impl GenericParamPtr {
+pub struct GenericParamTypePtr(pub SyntaxStablePtrId);
+impl GenericParamTypePtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
@@ -9687,17 +9772,17 @@ impl GenericParamPtr {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct GenericParamGreen(pub GreenId);
-impl TypedSyntaxNode for GenericParam {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParam);
-    type StablePtr = GenericParamPtr;
-    type Green = GenericParamGreen;
+pub struct GenericParamTypeGreen(pub GreenId);
+impl TypedSyntaxNode for GenericParamType {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamType);
+    type StablePtr = GenericParamTypePtr;
+    type Green = GenericParamTypeGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        GenericParamGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::GenericParam,
+        GenericParamTypeGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericParamType,
             details: GreenNodeDetails::Node {
                 children: vec![TerminalIdentifier::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -9705,10 +9790,10 @@ impl TypedSyntaxNode for GenericParam {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::GenericParam,
+            SyntaxKind::GenericParamType,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::GenericParam
+            SyntaxKind::GenericParamType
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -9720,7 +9805,184 @@ impl TypedSyntaxNode for GenericParam {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        GenericParamPtr(self.node.0.stable_ptr)
+        GenericParamTypePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct GenericParamConst {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl GenericParamConst {
+    pub const INDEX_CONST_KW: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        const_kw: TerminalConstGreen,
+        name: TerminalIdentifierGreen,
+    ) -> GenericParamConstGreen {
+        let children: Vec<GreenId> = vec![const_kw.0, name.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        GenericParamConstGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericParamConst,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl GenericParamConst {
+    pub fn const_kw(&self, db: &dyn SyntaxGroup) -> TerminalConst {
+        TerminalConst::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamConstPtr(pub SyntaxStablePtrId);
+impl GenericParamConstPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamConstGreen(pub GreenId);
+impl TypedSyntaxNode for GenericParamConst {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamConst);
+    type StablePtr = GenericParamConstPtr;
+    type Green = GenericParamConstGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        GenericParamConstGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericParamConst,
+            details: GreenNodeDetails::Node {
+                children: vec![TerminalConst::missing(db).0, TerminalIdentifier::missing(db).0],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::GenericParamConst,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::GenericParamConst
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        GenericParamConstPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct GenericParamImpl {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl GenericParamImpl {
+    pub const INDEX_IMPL_KW: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_COLON: usize = 2;
+    pub const INDEX_TRAIT_PATH: usize = 3;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        impl_kw: TerminalImplGreen,
+        name: TerminalIdentifierGreen,
+        colon: TerminalColonGreen,
+        trait_path: ExprPathGreen,
+    ) -> GenericParamImplGreen {
+        let children: Vec<GreenId> = vec![impl_kw.0, name.0, colon.0, trait_path.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        GenericParamImplGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericParamImpl,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl GenericParamImpl {
+    pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
+        TerminalImpl::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
+        TerminalColon::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[3].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamImplPtr(pub SyntaxStablePtrId);
+impl GenericParamImplPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamImplGreen(pub GreenId);
+impl TypedSyntaxNode for GenericParamImpl {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamImpl);
+    type StablePtr = GenericParamImplPtr;
+    type Green = GenericParamImplGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        GenericParamImplGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericParamImpl,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalImpl::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TerminalColon::missing(db).0,
+                    ExprPath::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::GenericParamImpl,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::GenericParamImpl
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        GenericParamImplPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9838,7 +10100,7 @@ impl TypedSyntaxNode for TerminalIdentifier {
                     TokenIdentifier::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -9980,7 +10242,7 @@ impl TypedSyntaxNode for TerminalLiteralNumber {
                     TokenLiteralNumber::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -10121,7 +10383,7 @@ impl TypedSyntaxNode for TerminalShortString {
                     TokenShortString::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -10262,7 +10524,7 @@ impl TypedSyntaxNode for TerminalConst {
                     TokenConst::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -10403,7 +10665,7 @@ impl TypedSyntaxNode for TerminalElse {
                     TokenElse::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -10544,7 +10806,7 @@ impl TypedSyntaxNode for TerminalEnum {
                     TokenEnum::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -10685,7 +10947,7 @@ impl TypedSyntaxNode for TerminalExtern {
                     TokenExtern::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -10826,7 +11088,7 @@ impl TypedSyntaxNode for TerminalFalse {
                     TokenFalse::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -10967,7 +11229,7 @@ impl TypedSyntaxNode for TerminalFunction {
                     TokenFunction::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -11108,7 +11370,7 @@ impl TypedSyntaxNode for TerminalIf {
                     TokenIf::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -11249,7 +11511,7 @@ impl TypedSyntaxNode for TerminalImpl {
                     TokenImpl::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -11390,7 +11652,7 @@ impl TypedSyntaxNode for TerminalImplicits {
                     TokenImplicits::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -11531,7 +11793,7 @@ impl TypedSyntaxNode for TerminalLet {
                     TokenLet::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -11672,7 +11934,7 @@ impl TypedSyntaxNode for TerminalMatch {
                     TokenMatch::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -11813,7 +12075,7 @@ impl TypedSyntaxNode for TerminalModule {
                     TokenModule::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -11954,7 +12216,7 @@ impl TypedSyntaxNode for TerminalMut {
                     TokenMut::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -12095,7 +12357,7 @@ impl TypedSyntaxNode for TerminalNoPanic {
                     TokenNoPanic::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -12236,7 +12498,7 @@ impl TypedSyntaxNode for TerminalOf {
                     TokenOf::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -12377,7 +12639,7 @@ impl TypedSyntaxNode for TerminalRef {
                     TokenRef::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -12518,7 +12780,7 @@ impl TypedSyntaxNode for TerminalReturn {
                     TokenReturn::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -12659,7 +12921,7 @@ impl TypedSyntaxNode for TerminalStruct {
                     TokenStruct::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -12800,7 +13062,7 @@ impl TypedSyntaxNode for TerminalTrait {
                     TokenTrait::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -12941,7 +13203,7 @@ impl TypedSyntaxNode for TerminalTrue {
                     TokenTrue::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -13082,7 +13344,7 @@ impl TypedSyntaxNode for TerminalType {
                     TokenType::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -13223,7 +13485,7 @@ impl TypedSyntaxNode for TerminalUse {
                     TokenUse::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -13364,7 +13626,7 @@ impl TypedSyntaxNode for TerminalAnd {
                     TokenAnd::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -13505,7 +13767,7 @@ impl TypedSyntaxNode for TerminalAndAnd {
                     TokenAndAnd::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -13646,7 +13908,7 @@ impl TypedSyntaxNode for TerminalArrow {
                     TokenArrow::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -13788,7 +14050,7 @@ impl TypedSyntaxNode for TerminalBadCharacters {
                     TokenBadCharacters::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -13929,7 +14191,7 @@ impl TypedSyntaxNode for TerminalColon {
                     TokenColon::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -14070,7 +14332,7 @@ impl TypedSyntaxNode for TerminalColonColon {
                     TokenColonColon::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -14211,7 +14473,7 @@ impl TypedSyntaxNode for TerminalComma {
                     TokenComma::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -14352,7 +14614,7 @@ impl TypedSyntaxNode for TerminalDiv {
                     TokenDiv::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -14493,7 +14755,7 @@ impl TypedSyntaxNode for TerminalDot {
                     TokenDot::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -14634,7 +14896,7 @@ impl TypedSyntaxNode for TerminalDotDot {
                     TokenDotDot::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -14775,7 +15037,7 @@ impl TypedSyntaxNode for TerminalEndOfFile {
                     TokenEndOfFile::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -14916,7 +15178,7 @@ impl TypedSyntaxNode for TerminalEq {
                     TokenEq::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -15057,7 +15319,7 @@ impl TypedSyntaxNode for TerminalEqEq {
                     TokenEqEq::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -15198,7 +15460,7 @@ impl TypedSyntaxNode for TerminalGE {
                     TokenGE::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -15339,7 +15601,7 @@ impl TypedSyntaxNode for TerminalGT {
                     TokenGT::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -15480,7 +15742,7 @@ impl TypedSyntaxNode for TerminalHash {
                     TokenHash::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -15621,7 +15883,7 @@ impl TypedSyntaxNode for TerminalLBrace {
                     TokenLBrace::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -15762,7 +16024,7 @@ impl TypedSyntaxNode for TerminalLBrack {
                     TokenLBrack::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -15903,7 +16165,7 @@ impl TypedSyntaxNode for TerminalLE {
                     TokenLE::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -16044,7 +16306,7 @@ impl TypedSyntaxNode for TerminalLParen {
                     TokenLParen::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -16185,7 +16447,7 @@ impl TypedSyntaxNode for TerminalLT {
                     TokenLT::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -16326,7 +16588,7 @@ impl TypedSyntaxNode for TerminalMatchArrow {
                     TokenMatchArrow::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -16467,7 +16729,7 @@ impl TypedSyntaxNode for TerminalMinus {
                     TokenMinus::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -16608,7 +16870,7 @@ impl TypedSyntaxNode for TerminalMod {
                     TokenMod::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -16749,7 +17011,7 @@ impl TypedSyntaxNode for TerminalMul {
                     TokenMul::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -16890,7 +17152,7 @@ impl TypedSyntaxNode for TerminalNeq {
                     TokenNeq::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -17031,7 +17293,7 @@ impl TypedSyntaxNode for TerminalNot {
                     TokenNot::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -17172,7 +17434,7 @@ impl TypedSyntaxNode for TerminalOr {
                     TokenOr::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -17313,7 +17575,7 @@ impl TypedSyntaxNode for TerminalOrOr {
                     TokenOrOr::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -17454,7 +17716,7 @@ impl TypedSyntaxNode for TerminalPlus {
                     TokenPlus::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -17595,7 +17857,7 @@ impl TypedSyntaxNode for TerminalQuestionMark {
                     TokenQuestionMark::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -17736,7 +17998,7 @@ impl TypedSyntaxNode for TerminalRBrace {
                     TokenRBrace::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -17877,7 +18139,7 @@ impl TypedSyntaxNode for TerminalRBrack {
                     TokenRBrack::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -18018,7 +18280,7 @@ impl TypedSyntaxNode for TerminalRParen {
                     TokenRParen::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -18159,7 +18421,7 @@ impl TypedSyntaxNode for TerminalSemicolon {
                     TokenSemicolon::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -18300,7 +18562,7 @@ impl TypedSyntaxNode for TerminalUnderscore {
                     TokenUnderscore::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -18441,7 +18703,7 @@ impl TypedSyntaxNode for TerminalXor {
                     TokenXor::missing(db).0,
                     Trivia::missing(db).0,
                 ],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }
@@ -18514,7 +18776,7 @@ impl TypedSyntaxNode for SyntaxFile {
             kind: SyntaxKind::SyntaxFile,
             details: GreenNodeDetails::Node {
                 children: vec![ItemList::missing(db).0, TerminalEndOfFile::missing(db).0],
-                width: 0,
+                width: TextWidth::default(),
             },
         }))
     }

@@ -2,13 +2,13 @@
 
 use std::collections::HashMap;
 
-use cairo_lang_defs::ids::{GenericParamId, TraitFunctionId};
+use cairo_lang_defs::ids::{GenericKind, GenericParamId, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use itertools::{zip_eq, Itertools};
 
 use crate::corelib::never_ty;
 use crate::db::SemanticGroup;
-use crate::types::{substitute_generics_args, ConcreteEnumLongId, GenericSubstitution};
+use crate::types::{substitute_generics_args_inplace, ConcreteEnumLongId, GenericSubstitution};
 use crate::{
     ConcreteEnumId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
     GenericArgumentId, Pattern, TypeId, TypeLongId,
@@ -131,7 +131,7 @@ impl<'db> Inference<'db> {
     fn reduce_generic_arg(&mut self, garg: GenericArgumentId) -> GenericArgumentId {
         match garg {
             GenericArgumentId::Type(ty) => GenericArgumentId::Type(self.reduce_ty(ty)),
-            GenericArgumentId::Literal(_) => garg,
+            GenericArgumentId::Literal(_) | GenericArgumentId::Impl(_) => garg,
         }
     }
 
@@ -205,7 +205,6 @@ impl<'db> Inference<'db> {
                     return Err(InferenceError::KindMismatch { ty0, ty1 });
                 }
                 let tys = zip_eq(tys0, tys1)
-                    .into_iter()
                     .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
                     .collect::<Result<Vec<_>, _>>()?;
                 Ok(self.db.intern_type(TypeLongId::Tuple(tys)))
@@ -223,7 +222,6 @@ impl<'db> Inference<'db> {
         gargs1: &[GenericArgumentId],
     ) -> Result<Vec<GenericArgumentId>, InferenceError> {
         zip_eq(gargs0, gargs1)
-            .into_iter()
             .map(|(garg0, garg1)| self.conform_generic_arg(*garg0, *garg1))
             .collect::<Result<Vec<_>, _>>()
     }
@@ -244,7 +242,7 @@ impl<'db> Inference<'db> {
                 };
                 Ok(GenericArgumentId::Type(self.conform_ty(gty0, gty1)?))
             }
-            GenericArgumentId::Literal(_) => {
+            GenericArgumentId::Literal(_) | GenericArgumentId::Impl(_) => {
                 Err(InferenceError::GenericArgMismatch { garg0, garg1 })
             }
         }
@@ -257,35 +255,50 @@ impl<'db> Inference<'db> {
             return Err(InferenceError::Disabled);
         }
         assert!(!self.assignment.contains_key(&var), "Cannot reassign variable.");
-        if self.contains_var(ty, var) {
+        if self.ty_contains_var(ty, var) {
             return Err(InferenceError::Cycle { type_var: var });
         }
         self.assignment.insert(var, ty);
         Ok(ty)
     }
 
-    /// Checks if the a type tree contains a certain [TypeVar] somewhere. Used to avoid inference
+    /// Checks if a type tree contains a certain [TypeVar] somewhere. Used to avoid inference
     /// cycles.
-    pub fn contains_var(&mut self, ty: TypeId, var: TypeVar) -> bool {
+    pub fn ty_contains_var(&mut self, ty: TypeId, var: TypeVar) -> bool {
         match self.db.lookup_intern_type(self.reduce_ty(ty)) {
             TypeLongId::Concrete(concrete) => {
-                concrete.generic_args(self.db).into_iter().any(|garg| match garg {
-                    GenericArgumentId::Type(ty) => self.contains_var(ty, var),
-                    GenericArgumentId::Literal(_) => false,
-                })
+                let generic_args = concrete.generic_args(self.db);
+                self.generic_args_contain_var(&generic_args, var)
             }
-            TypeLongId::Tuple(tys) => tys.into_iter().any(|ty| self.contains_var(ty, var)),
+            TypeLongId::Tuple(tys) => tys.into_iter().any(|ty| self.ty_contains_var(ty, var)),
             TypeLongId::Var(new_var) => {
                 if new_var == var {
                     return true;
                 }
                 if let Some(ty) = self.assignment.get(&new_var) {
-                    return self.contains_var(*ty, var);
+                    return self.ty_contains_var(*ty, var);
                 }
                 false
             }
             TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => false,
         }
+    }
+
+    /// Checks if a slice of generics arguments contain a certain [TypeVar] somewhere. Used to avoid
+    /// inference cycles.
+    fn generic_args_contain_var(
+        &mut self,
+        generic_args: &[GenericArgumentId],
+        var: TypeVar,
+    ) -> bool {
+        generic_args.iter().any(|garg| match garg {
+            GenericArgumentId::Type(ty) => self.ty_contains_var(*ty, var),
+            GenericArgumentId::Literal(_) => false,
+            GenericArgumentId::Impl(concrete_impl) => self.generic_args_contain_var(
+                &self.db.lookup_intern_concrete_impl(*concrete_impl).generic_args,
+                var,
+            ),
+        })
     }
 
     /// Determines if an assignment to `generic_params` can be chosen s.t. `generic_args` will be
@@ -295,12 +308,22 @@ impl<'db> Inference<'db> {
         generic_params: &[GenericParamId],
         generic_args: &[GenericArgumentId],
         expected_generic_args: &[GenericArgumentId],
+        stable_ptr: SyntaxStablePtrId,
     ) -> bool {
         if generic_args.len() != expected_generic_args.len() {
             return false;
         }
+        if generic_params.iter().any(|param| param.kind(self.db.upcast()) != GenericKind::Type) {
+            // Inference for non type generics are not supported yet.
+            return false;
+        }
         let mut inference = self.clone();
-        let res = inference.infer_generics(generic_params, generic_args, expected_generic_args);
+        let res = inference.infer_generics(
+            generic_params,
+            generic_args,
+            expected_generic_args,
+            stable_ptr,
+        );
         res.is_ok()
     }
 
@@ -312,23 +335,17 @@ impl<'db> Inference<'db> {
         generic_params: &[GenericParamId],
         generic_args: &[GenericArgumentId],
         expected_generic_args: &[GenericArgumentId],
+        stable_ptr: SyntaxStablePtrId,
     ) -> Result<Vec<GenericArgumentId>, InferenceError> {
         // TODO(spapini): Handle non-type generic args.
         let substitution = GenericSubstitution(
             generic_params
                 .iter()
-                .map(|param| {
-                    (
-                        *param,
-                        GenericArgumentId::Type(
-                            self.new_var(param.stable_ptr(self.db.upcast()).untyped()),
-                        ),
-                    )
-                })
+                .map(|param| (*param, GenericArgumentId::Type(self.new_var(stable_ptr))))
                 .collect(),
         );
         let mut generic_args = generic_args.iter().copied().collect_vec();
-        substitute_generics_args(self.db, &substitution, &mut generic_args);
+        substitute_generics_args_inplace(self.db, &substitution, &mut generic_args);
         self.conform_generic_args(&generic_args, expected_generic_args)?;
 
         let generic_args = generic_params.iter().map(|param| substitution[*param]).collect_vec();
@@ -340,6 +357,7 @@ impl<'db> Inference<'db> {
         &mut self,
         trait_function: TraitFunctionId,
         self_ty: TypeId,
+        stable_ptr: SyntaxStablePtrId,
     ) -> Option<ConcreteTraitId> {
         let trait_id = trait_function.trait_id(self.db.upcast());
         let signature = self.db.trait_function_signature(trait_function).ok()?;
@@ -354,6 +372,7 @@ impl<'db> Inference<'db> {
                 &generic_params,
                 &[GenericArgumentId::Type(first_param.ty)],
                 &[GenericArgumentId::Type(self_ty)],
+                stable_ptr,
             )
             .ok()?;
         Some(self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }))

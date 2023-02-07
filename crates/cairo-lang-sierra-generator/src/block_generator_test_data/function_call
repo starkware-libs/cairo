@@ -22,6 +22,10 @@ extern type MyStruct;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Variable not dropped.
+ --> lib.cairo:4:5
+    bar(x, x + x, ref z);
+    ^******************^
 
 //! > sierra_gen_diagnostics
 
@@ -33,12 +37,11 @@ function_call<user@test::bar>([5], [6], [7]) -> ([3], [4])
 dup<felt>([4]) -> ([4], [9])
 dup<felt>([4]) -> ([4], [10])
 felt_add([9], [10]) -> ([8])
-PushValues([8]: felt) -> ([11])
-PushValues([3]: MyStruct, [4]: felt, [11]: felt) -> ([14], [15], [16])
-function_call<user@test::bar>([14], [15], [16]) -> ([12], [13])
-drop<MyStruct>([12]) -> ()
-drop<felt>([13]) -> ()
-struct_construct<Unit>() -> ([17])
+PushValues([3]: MyStruct, [4]: felt, [8]: felt) -> ([13], [14], [15])
+function_call<user@test::bar>([13], [14], [15]) -> ([11], [12])
+drop<MyStruct>([11]) -> ()
+drop<felt>([12]) -> ()
+struct_construct<Unit>() -> ([16])
 
 //! > ==========================================================================
 

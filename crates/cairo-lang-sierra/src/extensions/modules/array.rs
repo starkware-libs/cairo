@@ -1,5 +1,5 @@
 use super::range_check::RangeCheckType;
-use super::uint128::Uint128Type;
+use super::uint::Uint64Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -24,18 +24,12 @@ impl GenericTypeArgGenericType for ArrayTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        wrapped_info: TypeInfo,
+        TypeInfo { storable, droppable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        if !wrapped_info.storable {
-            Err(SpecializationError::UnsupportedGenericArg)
+        if storable {
+            Ok(TypeInfo { long_id, duplicatable: false, droppable, storable: true, size: 2 })
         } else {
-            Ok(TypeInfo {
-                long_id,
-                duplicatable: false,
-                droppable: wrapped_info.droppable,
-                storable: true,
-                size: 2,
-            })
+            Err(SpecializationError::UnsupportedGenericArg)
         }
     }
 }
@@ -46,7 +40,7 @@ define_libfunc_hierarchy! {
         New(ArrayNewLibfunc),
         Append(ArrayAppendLibfunc),
         PopFront(ArrayPopFrontLibfunc),
-        At(ArrayAtLibfunc),
+        Get(ArrayGetLibfunc),
         Len(ArrayLenLibfunc),
     }, ArrayConcreteLibfunc
 }
@@ -94,7 +88,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
                 OutputVarInfo {
-                    ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                    ty: context.get_concrete_type(Uint64Type::id(), &[])?,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
@@ -184,8 +178,8 @@ pub type ArrayPopFrontLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayPopFront
 
 /// Libfunc for fetching a value from a specific array index.
 #[derive(Default)]
-pub struct ArrayAtLibfuncWrapped {}
-impl SignatureAndTypeGenericLibfunc for ArrayAtLibfuncWrapped {
+pub struct ArrayGetLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
     const STR_ID: &'static str = "array_get";
 
     fn specialize_signature(
@@ -199,7 +193,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayAtLibfuncWrapped {
         }
         let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let uint128_type = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let uint128_type = context.get_concrete_type(Uint64Type::id(), &[])?;
         let param_signatures = vec![
             ParamSignature::new(range_check_type.clone()),
             ParamSignature::new(arr_type.clone()),
@@ -246,4 +240,4 @@ impl SignatureAndTypeGenericLibfunc for ArrayAtLibfuncWrapped {
         Ok(LibfuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
     }
 }
-pub type ArrayAtLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayAtLibfuncWrapped>;
+pub type ArrayGetLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayGetLibfuncWrapped>;

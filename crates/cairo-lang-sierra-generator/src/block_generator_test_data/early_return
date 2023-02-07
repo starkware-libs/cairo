@@ -23,7 +23,7 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-felt_jump_nz([0]) { fallthrough() label0([1]) }
+felt_is_zero([0]) { fallthrough() label0([1]) }
 branch_align() -> ()
 felt_const<1>() -> ([2])
 PushValues([2]: felt) -> ([3])

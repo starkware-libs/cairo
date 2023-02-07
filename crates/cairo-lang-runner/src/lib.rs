@@ -4,9 +4,17 @@ use std::collections::HashMap;
 use cairo_felt::Felt;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
+use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
-use cairo_lang_sierra::extensions::ConcreteType;
+use cairo_lang_sierra::extensions::dict_manager::DictManagerType;
+use cairo_lang_sierra::extensions::ec::EcOpType;
+use cairo_lang_sierra::extensions::enm::EnumType;
+use cairo_lang_sierra::extensions::gas::GasBuiltinType;
+use cairo_lang_sierra::extensions::pedersen::PedersenType;
+use cairo_lang_sierra::extensions::range_check::RangeCheckType;
+use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
+use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
 use cairo_lang_sierra::program::{Function, GenericArg};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
@@ -37,7 +45,7 @@ pub enum RunnerError {
     #[error(transparent)]
     ProgramRegistryError(#[from] Box<ProgramRegistryError>),
     #[error(transparent)]
-    SierraCompilationError(#[from] CompilationError),
+    SierraCompilationError(#[from] Box<CompilationError>),
     #[error(transparent)]
     ApChangeError(#[from] ApChangeError),
     #[error(transparent)]
@@ -106,10 +114,7 @@ impl SierraCasmRunner {
                 let vm = context.vm;
                 // Create the builtin cost segment, with dummy values.
                 let builtin_cost_segment = vm.add_memory_segment();
-                for token_type in CostTokenType::iter() {
-                    if *token_type == CostTokenType::Step {
-                        continue;
-                    }
+                for token_type in CostTokenType::iter_precost() {
                     vm.insert_value(
                         &(builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)),
                         Felt::from(DUMMY_BUILTIN_GAS_COST),
@@ -125,17 +130,19 @@ impl SierraCasmRunner {
         // Handling implicits.
         let mut gas_counter = None;
         results_data.retain_mut(|(ty, values)| {
-            if *ty == "GasBuiltin".into() {
+            let info = self.get_info(ty);
+            let generic_ty = &info.long_id.generic_id;
+            if *generic_ty == GasBuiltinType::ID {
                 gas_counter = Some(values.remove(0));
                 assert!(values.is_empty());
                 false
             } else {
-                *ty != "RangeCheck".into()
-                    && *ty != "Bitwise".into()
-                    && *ty != "EcOp".into()
-                    && *ty != "Pedersen".into()
-                    && *ty != "System".into()
-                    && *ty != "DictManager".into()
+                *generic_ty != RangeCheckType::ID
+                    && *generic_ty != BitwiseType::ID
+                    && *generic_ty != EcOpType::ID
+                    && *generic_ty != PedersenType::ID
+                    && *generic_ty != SystemType::ID
+                    && *generic_ty != DictManagerType::ID
             }
         });
         assert!(results_data.len() <= 1);
@@ -156,10 +163,10 @@ impl SierraCasmRunner {
         values: Vec<Felt>,
         cells: &[Option<Felt>],
     ) -> Result<RunResultValue, RunnerError> {
-        let info = self.sierra_program_registry.get_type(&ty)?.info();
+        let info = self.get_info(&ty);
         let long_id = &info.long_id;
         Ok(
-            if long_id.generic_id == "Enum".into()
+            if long_id.generic_id == EnumType::ID
                 && matches!(&long_id.generic_args[0], GenericArg::UserType(ut) if ut.debug_name.as_ref().unwrap().starts_with("core::PanicResult::"))
             {
                 // The function includes a panic wrapper.
@@ -219,6 +226,13 @@ impl SierraCasmRunner {
             .ok_or_else(|| RunnerError::MissingFunction { suffix: name_suffix.to_owned() })
     }
 
+    fn get_info(
+        &self,
+        ty: &cairo_lang_sierra::ids::ConcreteTypeId,
+    ) -> &cairo_lang_sierra::extensions::types::TypeInfo {
+        self.sierra_program_registry.get_type(ty).unwrap().info()
+    }
+
     /// Returns the instructions to add to the beginning of the code to successfully call the main
     /// function, as well as the builtins required to execute the program.
     fn create_entry_code(
@@ -236,13 +250,18 @@ impl SierraCasmRunner {
             .into_iter()
             .collect();
         // The offset [fp - i] for each of this builtins in this configuration.
-        let builtin_offset: HashMap<cairo_lang_sierra::ids::ConcreteTypeId, i16> = HashMap::from([
-            (cairo_lang_sierra::ids::ConcreteTypeId::new_inline("Pedersen"), 6),
-            (cairo_lang_sierra::ids::ConcreteTypeId::new_inline("RangeCheck"), 5),
-            (cairo_lang_sierra::ids::ConcreteTypeId::new_inline("Bitwise"), 4),
-            (cairo_lang_sierra::ids::ConcreteTypeId::new_inline("EcOp"), 3),
+        let builtin_offset: HashMap<cairo_lang_sierra::ids::GenericTypeId, i16> = HashMap::from([
+            (PedersenType::ID, 6),
+            (RangeCheckType::ID, 5),
+            (BitwiseType::ID, 4),
+            (EcOpType::ID, 3),
         ]);
-        if func.signature.param_types.contains(&"DictManager".into()) {
+        if func
+            .signature
+            .param_types
+            .iter()
+            .any(|ty| self.get_info(ty).long_id.generic_id == DictManagerType::ID)
+        {
             casm_extend! {ctx,
                 // DictManager segment.
                 %{ memory[ap + 0] = segments.add() %}
@@ -257,26 +276,28 @@ impl SierraCasmRunner {
             }
         }
         for (i, ty) in func.signature.param_types.iter().enumerate() {
-            if let Some(offset) = builtin_offset.get(ty) {
+            let info = self.get_info(ty);
+            let generic_ty = &info.long_id.generic_id;
+            if let Some(offset) = builtin_offset.get(generic_ty) {
                 casm_extend! {ctx,
                     [ap + 0] = [fp - offset], ap++;
                 }
-            } else if ty == &"System".into() {
+            } else if generic_ty == &SystemType::ID {
                 casm_extend! {ctx,
                     %{ memory[ap + 0] = segments.add() %}
                     ap += 1;
                 }
-            } else if ty == &"GasBuiltin".into() {
+            } else if generic_ty == &GasBuiltinType::ID {
                 casm_extend! {ctx,
                     [ap + 0] = initial_gas, ap++;
                 }
-            } else if ty == &"DictManager".into() {
+            } else if generic_ty == &DictManagerType::ID {
                 let offset = -(i as i16) - 3;
                 casm_extend! {ctx,
                     [ap + 0] = [ap + offset], ap++;
                 }
             } else {
-                let arg_size = self.sierra_program_registry.get_type(ty)?.info().size;
+                let arg_size = info.size;
                 expected_arguments_size += arg_size as usize;
                 for _ in 0..arg_size {
                     if let Some(value) = arg_iter.next() {
@@ -320,7 +341,7 @@ impl SierraCasmRunner {
         let Some(available_gas) = available_gas else { return Ok(0); };
         // TODO(lior): Handle the other token types.
         let required_gas =
-            self.metadata.gas_info.function_costs[func.id.clone()][CostTokenType::Step] as usize;
+            self.metadata.gas_info.function_costs[func.id.clone()][CostTokenType::Const] as usize;
         available_gas.checked_sub(required_gas).ok_or(RunnerError::NotEnoughGasToCall)
     }
 

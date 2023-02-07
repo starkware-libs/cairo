@@ -37,7 +37,7 @@ memory[memory[memory[fp + -3] + 0] + n_dicts * 3] = (
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 101})
+test::foo: OrderedHashMap({Const: 1100})
 
 //! > sierra_code
 type DictManager = DictManager;
@@ -87,7 +87,7 @@ dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 87})
+test::foo: OrderedHashMap({Const: 8800})
 
 //! > sierra_code
 type felt = felt;
@@ -139,7 +139,7 @@ dict_tracker.current_ptr += 3
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 88})
+test::foo: OrderedHashMap({Const: 8900})
 
 //! > sierra_code
 type felt = felt;
@@ -175,25 +175,19 @@ fn foo(dict: DictFeltTo::<felt>) -> SquashedDictFeltTo::<felt> {
 }
 
 //! > casm
-[ap + 0] = [fp + -6], ap++;
-[ap + 0] = [fp + -4], ap++;
-[ap + 0] = [fp + -5], ap++;
-[ap + 0] = [fp + -3], ap++;
-call rel 4;
-jmp rel 257;
-[fp + 2] = [fp + -5], ap++;
+[fp + 2] = [fp + -4], ap++;
 %{
 expected_segment_index = memory[fp + -3].segment_index
-for i in range(memory[memory[fp + -4]]):
-    if memory[memory[fp + -4] + 1].segment_index == expected_segment_index:
+for i in range(memory[memory[fp + -5]]):
+    if memory[memory[fp + -5] + 1].segment_index == expected_segment_index:
         memory[fp + 0] = i
         break
 else:
     raise Exception(f"Dict with end pointer was not found.")
 %}
-[fp + 3] = [[fp + -4] + 0], ap++;
-[fp + 4] = [[fp + -4] + 1], ap++;
-[fp + 5] = [[fp + -4] + 2], ap++;
+[fp + 3] = [[fp + -5] + 0], ap++;
+[fp + 4] = [[fp + -5] + 1], ap++;
+[fp + 5] = [[fp + -5] + 2], ap++;
 [fp + 0] = [[fp + -6] + 0], ap++;
 [fp + 4] = [ap + 1] + 1, ap++;
 [ap + 0] = [ap + 1] + [fp + 0], ap++;
@@ -202,44 +196,35 @@ else:
 [ap + 0] = [fp + 3] + [ap + -1], ap++;
 [fp + 5] = [[ap + -1] + 2];
 [fp + -3] = [[ap + -1] + 1];
-[fp + 3] = [[fp + -4] + 3];
-[fp + 4] = [[fp + -4] + 4];
+[fp + 3] = [[fp + -5] + 3];
+[fp + 4] = [[fp + -5] + 4];
 [ap + 0] = [fp + 5] + 1, ap++;
-[ap + -1] = [[fp + -4] + 5];
+[ap + -1] = [[fp + -5] + 5];
 [ap + 0] = [[ap + -2] + 0], ap++;
 [fp + -3] = [fp + 1] + [ap + -1];
-[ap + 0] = [fp + -6] + 2, ap++;
-[ap + 0] = [[ap + -4] + 0], ap++;
-[ap + 0] = [fp + -3], ap++;
-[ap + 0] = 0, ap++;
-call rel 15;
-[ap + -1] = [ap + 0] + [ap + -2], ap++;
-[fp + 1] = [ap + 0] + [ap + -1], ap++;
-[ap + -1] = [ap + 0] * 3, ap++;
-[ap + 0] = [ap + -1] * 70, ap++;
-[ap + 0] = [ap + -7], ap++;
-[ap + 0] = [fp + 2] + [ap + -2], ap++;
-[ap + 0] = [fp + -4] + 3, ap++;
-[ap + 0] = [ap + -9], ap++;
-[ap + 0] = [ap + -9], ap++;
-ret;
 ap += 3;
-[ap + 0] = [fp + -6], ap++;
-[ap + 0] = [fp + -5], ap++;
-[ap + 0] = [fp + -4], ap++;
-call rel 28;
-[fp + 0] = [ap + -3];
-[fp + 1] = [ap + -2];
-[fp + 2] = [ap + -1];
+[ap + 0] = [fp + -6] + 2, ap++;
+[ap + 0] = [[ap + -7] + 0], ap++;
+[ap + 0] = [fp + -3], ap++;
+call rel 39;
+[fp + 12] = [ap + -3];
+[fp + 13] = [ap + -2];
+[fp + 14] = [ap + -1];
 [ap + -1] = [ap + 0] + [ap + -2], ap++;
 [ap + 0] = [ap + -3], ap++;
 [ap + -2] = [ap + 0] * 3, ap++;
-[ap + 0] = [fp + -3], ap++;
-call rel 6;
-[ap + 0] = [fp + 0], ap++;
-[ap + 0] = [fp + 1], ap++;
-[ap + 0] = [fp + 2], ap++;
-ret;
+[ap + 0] = 0, ap++;
+call rel 16;
+[fp + 14] = [ap + 0] + [fp + 13], ap++;
+[fp + 1] = [ap + 0] + [ap + -1], ap++;
+[ap + -1] = [ap + 0] * 3, ap++;
+[ap + 0] = [ap + -1] * 72, ap++;
+[ap + 0] = [fp + 12], ap++;
+[ap + 0] = [fp + 2] + [ap + -2], ap++;
+[ap + 0] = [fp + -5] + 3, ap++;
+[ap + 0] = [fp + 13], ap++;
+[ap + 0] = [fp + 14], ap++;
+jmp rel 173;
 jmp rel 3 if [fp + -4] != 0;
 ret;
 [fp + -3] = [[fp + -5] + 1];
@@ -249,24 +234,12 @@ ret;
 call rel -9;
 ret;
 ap += 1;
-%{
-   # Prepare arguments for dict_new. In particular, the same dictionary values should be copied
-   # to the new (squashed) dictionary.
-   vm_enter_scope({
-       # Make __dict_manager accessible.
-       '__dict_manager': __dict_manager,
-       # Create a copy of the dict, in case it changes in the future.
-       'initial_dict': dict(__dict_manager.get_dict(memory[fp + -3])),
-   })
-%}
-call rel 13;
-[fp + 0] = [ap + -1];
-%{ vm_exit_scope() %}
+%{ memory[fp + 0] = segments.add() %}
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [fp + 0], ap++;
-call rel 9;
+call rel 6;
 %{ # Update the DictTracker's current_ptr to point to the end of the squashed dict.
 __dict_manager.get_tracker(memory[fp + 0]).current_ptr = memory[ap + -1].address_
  %}
@@ -274,12 +247,8 @@ __dict_manager.get_tracker(memory[fp + 0]).current_ptr = memory[ap + -1].address
 [ap + 0] = [fp + 0], ap++;
 [ap + 0] = [ap + -3], ap++;
 ret;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-ret;
 [fp + -4] = [fp + 0] + [fp + -5], ap++;
 jmp rel 5 if [fp + 0] != 0, ap++;
-%{ vm_exit_scope() %}
 [ap + 1] = [fp + -6], ap++;
 [ap + 1] = [fp + -3], ap++;
 ret;
@@ -303,8 +272,8 @@ memory[fp + 2] = 1 if keys[0] >= range_check_builtin.bound else 0
 memory[fp + 1] = key = keys.pop()
 %}
 jmp rel 7 if [fp + 2] != 0, ap++;
-[fp + 1] = [[fp + -6] + 0];
-[ap + 0] = [fp + -6] + 1, ap++;
+[fp + 1] = [[fp + -6] + 0], ap++;
+[ap + -1] = [fp + -6] + 1;
 jmp rel 3;
 [ap + 0] = [fp + -6], ap++;
 [ap + 0] = [fp + -5], ap++;
@@ -316,8 +285,8 @@ jmp rel 3;
 call rel 5;
 [ap + 0] = [ap + -2], ap++;
 [ap + 0] = [ap + -2], ap++;
-%{ vm_exit_scope() %}
 ret;
+ap += 5;
 %{
 current_access_indices = sorted(access_indices[key])[::-1]
 current_access_index = current_access_indices.pop()
@@ -358,68 +327,44 @@ jmp rel -14 if [ap + -7] != 0;
 [ap + -2] = [ap + 0] + [fp + -9], ap++;
 %{  assert memory[ap + -1] == len(access_indices[key])  %}
 [ap + -4] = [[fp + -4] + 2];
-[fp + -5] = [fp + 1] + [ap + -1];
-jmp rel 7 if [fp + 1] != 0;
+[fp + -5] = [fp + 6] + [ap + -1];
+jmp rel 7 if [fp + 6] != 0;
 %{  assert len(keys) == 0  %}
 [ap + 0] = [ap + -3] + 1, ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 ret;
 %{ assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
-memory[fp + 0] = key = keys.pop()
+memory[fp + 5] = key = keys.pop()
  %}
 jmp rel 14 if [fp + -3] != 0;
 [ap + 0] = [fp + -6] + 1, ap++;
-[fp + 0] = [ap + 0] + [ap + -1], ap++;
+[fp + 5] = [ap + 0] + [ap + -1], ap++;
 [ap + -1] = [[ap + -5] + 1];
-[ap + 0] = [ap + -5] + 2, ap++;
-[ap + 0] = [fp + -8], ap++;
-[ap + 0] = [fp + -7], ap++;
-[ap + 0] = [fp + 0], ap++;
-[ap + 0] = [fp + 1], ap++;
-jmp rel 14;
-ap += 2;
-[ap + -2] = [fp + -9];
-[ap + -1] = [fp + -6];
-[ap + 0] = [fp + 0], ap++;
-call rel 18;
-[ap + 0] = [ap + -1], ap++;
-[ap + 0] = [fp + -8], ap++;
-[ap + 0] = [fp + -7], ap++;
-[ap + 0] = [fp + 0], ap++;
-[ap + 0] = [fp + 1], ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [fp + -4] + 3, ap++;
-[ap + 0] = [fp + -3], ap++;
-call rel -75;
-ret;
+[fp + 0] = [ap + -5] + 2;
+[fp + 1] = [fp + -8];
+[fp + 2] = [fp + -7];
+[fp + 3] = [fp + 5];
+[fp + 4] = [fp + 6];
+jmp rel 53;
 %{
 from starkware.cairo.common.math_utils import assert_integer
-assert_integer(memory[fp + -4])
-assert_integer(memory[fp + -3])
-assert (memory[fp + -4] % PRIME) < (memory[fp + -3] % PRIME), f'a = {memory[fp + -4] % PRIME} is not less than b = {memory[fp + -3] % PRIME}.'
+assert_integer(memory[fp + -6])
+assert_integer(memory[fp + 5])
+assert (memory[fp + -6] % PRIME) < (memory[fp + 5] % PRIME), f'a = {memory[fp + -6] % PRIME} is not less than b = {memory[fp + 5] % PRIME}.'
 %}
-[fp + -4] = [ap + 0] + [fp + -3], ap++;
-[ap + 0] = [fp + -5], ap++;
-jmp rel 6 if [ap + -2] != 0, ap++;
-[ap + -1] = [fp + -4] + 1;
+[fp + -6] = [ap + 0] + [fp + 5], ap++;
+jmp rel 6 if [ap + -1] != 0, ap++;
+[ap + -1] = [fp + -6] + 1;
 jmp rel 3;
-[ap + -1] = [fp + -4];
-[ap + 0] = [fp + -3], ap++;
-call rel 4;
-[ap + 0] = [ap + -1], ap++;
-ret;
+[ap + -1] = [fp + -6];
 %{
 import itertools
 
 from starkware.cairo.common.math_utils import assert_integer
-assert_integer(memory[fp + -4])
-assert_integer(memory[fp + -3])
-a = memory[fp + -4] % PRIME
-b = memory[fp + -3] % PRIME
+assert_integer(memory[ap + -1])
+assert_integer(memory[fp + 5])
+a = memory[ap + -1] % PRIME
+b = memory[fp + 5] % PRIME
 assert a <= b, f'a = {a} is not less than or equal to b = {b}.'
 
 # Find an arc less than PRIME / 3, and another less than PRIME / 2.
@@ -428,43 +373,53 @@ lengths_and_indices.sort()
 assert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2
 excluded = lengths_and_indices[2][1]
 
-memory[memory[fp + -5] + 1], memory[memory[fp + -5] + 0] = (
+memory[memory[fp + -9] + 1], memory[memory[fp + -9] + 0] = (
     divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))
-memory[memory[fp + -5] + 3], memory[memory[fp + -5] + 2] = (
+memory[memory[fp + -9] + 3], memory[memory[fp + -9] + 2] = (
     divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))
 %}
-[ap + 0] = [[fp + -5] + 0], ap++;
-[ap + 0] = [[fp + -5] + 1], ap++;
+[ap + 0] = [[fp + -9] + 0], ap++;
+[ap + 0] = [[fp + -9] + 1], ap++;
 [ap + 0] = [ap + -1] * 5316911983139663648412552867652567041, ap++;
 [ap + 0] = [ap + -3] + [ap + -1], ap++;
-[ap + 0] = [[fp + -5] + 2], ap++;
-[ap + 0] = [[fp + -5] + 3], ap++;
+[ap + 0] = [[fp + -9] + 2], ap++;
+[ap + 0] = [[fp + -9] + 3], ap++;
 [ap + 0] = [ap + -1] * 3544607988759775765608368578435044694, ap++;
 [ap + 0] = [ap + -3] + [ap + -1], ap++;
 [ap + 0] = [ap + -5] + [ap + -1], ap++;
 [ap + 0] = [ap + -6] * [ap + -2], ap++;
 %{ memory[ap + 0] = 1 if excluded != 0 else 0 %}
-jmp rel 13 if [ap + 0] != 0, ap++;
-[ap + 0] = [fp + -4] * -1, ap++;
+jmp rel 12 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -12] * -1, ap++;
 [ap + -4] = [ap + -1] + -1;
-[fp + -4] = [ap + 0] + [fp + -3], ap++;
-[ap + 0] = [fp + -3] + 1, ap++;
+[ap + -13] = [ap + 0] + [fp + 5], ap++;
+[ap + 0] = [fp + 5] + 1, ap++;
 [ap + -5] = [ap + -2] * [ap + -1];
-[ap + 0] = [fp + -5] + 4, ap++;
-ret;
+jmp rel 15;
 %{ memory[ap + 0] = 1 if excluded != 1 else 0 %}
-jmp rel 11 if [ap + 0] != 0, ap++;
-[ap + 0] = [fp + -3] * -1, ap++;
-[ap + 0] = [fp + -3] + -1, ap++;
-[ap + -6] = [fp + -4] + [ap + -1];
-[ap + -5] = [fp + -4] * [ap + -1];
-[ap + 0] = [fp + -5] + 4, ap++;
-ret;
+jmp rel 10 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + 5] * -1, ap++;
+[ap + 0] = [fp + 5] + -1, ap++;
+[ap + -6] = [ap + -15] + [ap + -1];
+[ap + -5] = [ap + -15] * [ap + -1];
+jmp rel 5;
 %{ assert excluded == 2 %}
-[ap + -4] = [fp + -3];
-[fp + -3] = [ap + 0] + [fp + -4], ap++;
-[ap + -4] = [fp + -4] * [ap + -1];
-[ap + 0] = [fp + -5] + 4, ap++;
+[ap + -4] = [fp + 5], ap++;
+[fp + 5] = [ap + 0] + [ap + -14], ap++;
+[ap + -5] = [ap + -15] * [ap + -1];
+[fp + 0] = [fp + -9] + 4;
+[fp + 1] = [fp + -8];
+[fp + 2] = [fp + -7];
+[fp + 3] = [fp + 5];
+[fp + 4] = [fp + 6];
+[ap + 0] = [fp + 0], ap++;
+[ap + 0] = [fp + 1], ap++;
+[ap + 0] = [fp + 2], ap++;
+[ap + 0] = [fp + 3], ap++;
+[ap + 0] = [fp + 4], ap++;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = [fp + -3], ap++;
+call rel -116;
 ret;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -4], ap++;
@@ -474,7 +429,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 5})
+test::foo: OrderedHashMap({Const: 9700})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;

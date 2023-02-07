@@ -18,7 +18,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 3})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt = felt;
@@ -54,7 +54,7 @@ fn foo(ref arr: Array::<felt>, value: felt) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 3})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt = felt;
@@ -101,7 +101,7 @@ fn foo(ref arr: Array::<felt>, value1: felt, value2: felt) {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 4})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type felt = felt;
@@ -156,7 +156,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 9})
+test::foo: OrderedHashMap({Const: 800})
 
 //! > sierra_code
 type felt = felt;
@@ -205,7 +205,7 @@ test::foo@0([0]: Array<felt>) -> (Array<felt>, core::option::Option::<core::felt
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<felt>, idx: u128) -> Option::<felt> {
+fn foo(ref arr: Array::<felt>, idx: usize) -> Option::<felt> {
     array_get::<felt>(ref arr, idx)
 }
 
@@ -235,13 +235,13 @@ ap += 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 12})
+test::foo: OrderedHashMap({Const: 1370})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
 type felt = felt;
 type Array<felt> = Array<felt>;
-type u128 = u128;
+type u64 = u64;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::felt> = Enum<ut@core::option::Option::<core::felt>, felt, Unit>;
 
@@ -280,7 +280,7 @@ rename<Array<felt>>([10]) -> ([15]);
 rename<core::option::Option::<core::felt>>([11]) -> ([16]);
 return([14], [15], [16]);
 
-test::foo@0([0]: RangeCheck, [1]: Array<felt>, [2]: u128) -> (RangeCheck, Array<felt>, core::option::Option::<core::felt>);
+test::foo@0([0]: RangeCheck, [1]: Array<felt>, [2]: u64) -> (RangeCheck, Array<felt>, core::option::Option::<core::felt>);
 
 //! > ==========================================================================
 
@@ -292,7 +292,7 @@ test::foo@0([0]: RangeCheck, [1]: Array<felt>, [2]: u128) -> (RangeCheck, Array<
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<u256>, idx: u128) -> Option::<u256> {
+fn foo(ref arr: Array::<u256>, idx: usize) -> Option::<u256> {
     array_get::<u256>(ref arr, idx)
 }
 
@@ -326,13 +326,14 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 13})
+test::foo: OrderedHashMap({Const: 1580})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
 type u128 = u128;
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
 type Array<core::integer::u256> = Array<core::integer::u256>;
+type u64 = u64;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::integer::u256> = Enum<ut@core::option::Option::<core::integer::u256>, core::integer::u256, Unit>;
 
@@ -371,7 +372,7 @@ rename<Array<core::integer::u256>>([10]) -> ([15]);
 rename<core::option::Option::<core::integer::u256>>([11]) -> ([16]);
 return([14], [15], [16]);
 
-test::foo@0([0]: RangeCheck, [1]: Array<core::integer::u256>, [2]: u128) -> (RangeCheck, Array<core::integer::u256>, core::option::Option::<core::integer::u256>);
+test::foo@0([0]: RangeCheck, [1]: Array<core::integer::u256>, [2]: u64) -> (RangeCheck, Array<core::integer::u256>, core::option::Option::<core::integer::u256>);
 
 //! > ==========================================================================
 
@@ -383,7 +384,7 @@ test::foo@0([0]: RangeCheck, [1]: Array<core::integer::u256>, [2]: u128) -> (Ran
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<felt>) -> u128 {
+fn foo(ref arr: Array::<felt>) -> usize {
     array_len::<felt>(ref arr)
 }
 
@@ -394,25 +395,25 @@ fn foo(ref arr: Array::<felt>) -> u128 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 3})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt = felt;
 type Array<felt> = Array<felt>;
-type u128 = u128;
+type u64 = u64;
 
 libfunc array_len<felt> = array_len<felt>;
 libfunc store_temp<Array<felt>> = store_temp<Array<felt>>;
-libfunc store_temp<u128> = store_temp<u128>;
-libfunc rename<u128> = rename<u128>;
+libfunc store_temp<u64> = store_temp<u64>;
+libfunc rename<u64> = rename<u64>;
 
 array_len<felt>([0]) -> ([1], [2]);
 store_temp<Array<felt>>([1]) -> ([3]);
-store_temp<u128>([2]) -> ([2]);
-rename<u128>([2]) -> ([4]);
+store_temp<u64>([2]) -> ([2]);
+rename<u64>([2]) -> ([4]);
 return([3], [4]);
 
-test::foo@0([0]: Array<felt>) -> (Array<felt>, u128);
+test::foo@0([0]: Array<felt>) -> (Array<felt>, u64);
 
 //! > ==========================================================================
 
@@ -424,7 +425,7 @@ test::foo@0([0]: Array<felt>) -> (Array<felt>, u128);
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<u256>) -> u128 {
+fn foo(ref arr: Array::<u256>) -> usize {
     array_len::<u256>(ref arr)
 }
 
@@ -436,22 +437,23 @@ fn foo(ref arr: Array::<u256>) -> u128 {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 3})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type u128 = u128;
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
 type Array<core::integer::u256> = Array<core::integer::u256>;
+type u64 = u64;
 
 libfunc array_len<core::integer::u256> = array_len<core::integer::u256>;
 libfunc store_temp<Array<core::integer::u256>> = store_temp<Array<core::integer::u256>>;
-libfunc store_temp<u128> = store_temp<u128>;
-libfunc rename<u128> = rename<u128>;
+libfunc store_temp<u64> = store_temp<u64>;
+libfunc rename<u64> = rename<u64>;
 
 array_len<core::integer::u256>([0]) -> ([1], [2]);
 store_temp<Array<core::integer::u256>>([1]) -> ([3]);
-store_temp<u128>([2]) -> ([2]);
-rename<u128>([2]) -> ([4]);
+store_temp<u64>([2]) -> ([2]);
+rename<u64>([2]) -> ([4]);
 return([3], [4]);
 
-test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u128);
+test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u64);

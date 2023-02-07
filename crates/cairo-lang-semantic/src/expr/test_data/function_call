@@ -61,12 +61,12 @@ test_function_diagnostics
 fn foo(ref a: felt) {
     let b = 1;
     let mut c = 2;
-    bar(a, a)
-    bar(b, b)
-    bar(c, c)
-    bar(ref a, ref a)
-    bar(ref b, ref b)
-    bar(ref c, ref c)
+    bar(a, a);
+    bar(b, b);
+    bar(c, c);
+    bar(ref a, ref a);
+    bar(ref b, ref b);
+    bar(ref c, ref c);
 }
 
 //! > function_name
@@ -79,40 +79,88 @@ fn bar(a: felt, ref b: felt) {
 //! > expected_diagnostics
 error: ref argument must be a passed with a preceding 'ref'.
  --> lib.cairo:6:12
-    bar(a, a)
+    bar(a, a);
            ^
 
 error: ref argument must be a mutable variable.
  --> lib.cairo:7:12
-    bar(b, b)
+    bar(b, b);
            ^
 
 error: ref argument must be a passed with a preceding 'ref'.
  --> lib.cairo:7:12
-    bar(b, b)
+    bar(b, b);
            ^
 
 error: ref argument must be a passed with a preceding 'ref'.
  --> lib.cairo:8:12
-    bar(c, c)
+    bar(c, c);
            ^
 
 error: Argument cannot have modifiers.
  --> lib.cairo:9:13
-    bar(ref a, ref a)
+    bar(ref a, ref a);
             ^
 
 error: Argument cannot have modifiers.
  --> lib.cairo:10:13
-    bar(ref b, ref b)
+    bar(ref b, ref b);
             ^
 
 error: ref argument must be a mutable variable.
  --> lib.cairo:10:20
-    bar(ref b, ref b)
+    bar(ref b, ref b);
                    ^
 
 error: Argument cannot have modifiers.
  --> lib.cairo:11:13
-    bar(ref c, ref c)
+    bar(ref c, ref c);
             ^
+
+//! > ==========================================================================
+
+//! > Unknown function
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(d: MyStruct) {
+    bar(0);
+    d + 0;
+    - d;
+    d.bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+}
+
+//! > expected_diagnostics
+error: Function not found.
+ --> lib.cairo:4:5
+    bar(0);
+    ^*^
+
+error: Unexpected argument type. Expected: "test::MyStruct", found: "core::felt".
+ --> lib.cairo:5:9
+    d + 0;
+        ^
+
+error: Unary operator '-' is not supported for type 'test::MyStruct'.
+ --> lib.cairo:6:5
+    - d;
+    ^
+
+error: Unknown function.
+ --> lib.cairo:7:7
+    d.bar();
+      ^*^
+
+error: Function `add` of trait `core::traits::Add::<?0>` has no implementation in the context.
+ --> lib.cairo:5:5
+    d + 0;
+    ^***^

@@ -150,7 +150,7 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
 }
 
 fn token_separators() -> Vec<&'static str> {
-    vec![" ", "\t", "\n", " // Comment\n"]
+    vec![" ", "\t", "\n", " // Comment with unicode é\n"]
 }
 
 fn need_separator(
@@ -231,14 +231,13 @@ fn test_lex_single_token() {
         let mut lexer = Lexer::from_text(db, test_source(), text);
         let terminal = lexer.next().unwrap();
         // TODO(spapini): Remove calling new_root on non root elements.
-        assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{}\".", text);
+        assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
         assert_eq!(terminal.text, text, "Wrong token text.");
 
         assert_eq!(
             lexer.next().unwrap().kind,
             SyntaxKind::TerminalEndOfFile,
-            "Wrong eof token, with text: \"{}\".",
-            text
+            "Wrong eof token, with text: \"{text}\"."
         );
         assert!(lexer.next().is_none(), "Expected end of lexer stream.");
     }
@@ -255,40 +254,29 @@ fn test_lex_double_token() {
                 separators.push("");
             }
             for separator in separators {
-                let text = format!("{}{}{}", text0, separator, text1);
+                let text = format!("{text0}{separator}{text1}");
                 let mut lexer = Lexer::from_text(db, test_source(), text.as_str());
 
                 let terminal = lexer.next().unwrap();
                 let token_text = terminal.text;
-                assert_eq!(
-                    terminal.kind, kind0,
-                    "Wrong token kind0, with text: \"{}\".",
-                    token_text
-                );
+                assert_eq!(terminal.kind, kind0, "Wrong token kind0, with text: \"{token_text}\".",);
                 assert_eq!(
                     token_text, text0,
-                    "Wrong token text0, with total text: \"{}\".",
-                    token_text
+                    "Wrong token text0, with total text: \"{token_text}\".",
                 );
 
                 let terminal = lexer.next().unwrap();
                 let token_text = terminal.text;
-                assert_eq!(
-                    terminal.kind, kind1,
-                    "Wrong token kind1, with text: \"{}\".",
-                    token_text
-                );
+                assert_eq!(terminal.kind, kind1, "Wrong token kind1, with text: \"{token_text}\".",);
                 assert_eq!(
                     token_text, text1,
-                    "Wrong token text1, with total text: \"{}\".",
-                    token_text
+                    "Wrong token text1, with total text: \"{token_text}\".",
                 );
 
                 assert_eq!(
                     lexer.next().unwrap().kind,
                     SyntaxKind::TerminalEndOfFile,
-                    "Wrong eof token, with text: \"{}\".",
-                    text
+                    "Wrong eof token, with text: \"{text}\".",
                 );
                 assert!(lexer.next().is_none(), "Expected end of lexer stream.");
             }
@@ -303,19 +291,18 @@ fn test_lex_token_with_trivia() {
     for (kind, expected_token_text) in terminal_kind_and_text() {
         for leading_trivia in trivia_texts() {
             for trailing_trivia in trivia_texts() {
-                let text = format!("{}{} {}", leading_trivia, expected_token_text, trailing_trivia);
+                let text = format!("{leading_trivia}{expected_token_text} {trailing_trivia}");
                 let mut lexer = Lexer::from_text(db, test_source(), text.as_str());
                 let terminal = lexer.next().unwrap();
                 let token_text = terminal.text;
-                assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{}\".", text);
+                assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
                 assert_eq!(token_text, expected_token_text, "Wrong token text.");
                 // TODO: verify trivia kinds and texts
 
                 assert_eq!(
                     lexer.next().unwrap().kind,
                     SyntaxKind::TerminalEndOfFile,
-                    "Wrong eof token, with text: \"{}\".",
-                    text
+                    "Wrong eof token, with text: \"{text}\"."
                 );
                 assert!(lexer.next().is_none(), "Expected end of lexer stream.");
             }
@@ -411,16 +398,14 @@ fn test_bad_character() {
     assert_eq!(
         terminal.kind,
         SyntaxKind::TerminalBadCharacters,
-        "Wrong token kind, with text: \"{}\".",
-        text
+        "Wrong token kind, with text: \"{text}\".",
     );
     assert_eq!(token_text, text, "Wrong token text.");
 
     assert_eq!(
         lexer.next().unwrap().kind,
         SyntaxKind::TerminalEndOfFile,
-        "Wrong eof token, with text: \"{}\".",
-        text
+        "Wrong eof token, with text: \"{text}\"."
     );
     assert!(lexer.next().is_none(), "Expected end of lexer stream.");
 }

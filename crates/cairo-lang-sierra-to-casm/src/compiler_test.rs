@@ -17,7 +17,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 libfunc felt_mul_2 = felt_mul<2>;
                 libfunc felt_sub = felt_sub;
                 libfunc felt_dup = dup<felt>;
-                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc felt_is_zero = felt_is_zero;
                 libfunc felt_into_box = into_box<felt>;
                 libfunc felt_unbox = unbox<felt>;
                 libfunc jump = jump;
@@ -41,7 +41,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 return([7], [8], [4]);                          // #9
 
                 finalize_locals() -> ();                        // #10
-                felt_jump_nz([1]) { fallthrough() 17([1]) };    // #11
+                felt_is_zero([1]) { fallthrough() 17([1]) };    // #11
                 branch_align() -> ();                           // #12
                 felt_dup([2]) -> ([1], [2]);                    // #13
                 store_temp_felt([1]) -> ([1]);                  // #14
@@ -169,9 +169,9 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 libfunc jump = jump;
                 libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
                 libfunc nz_felt_drop = drop<NonZeroFelt>;
-                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc felt_is_zero = felt_is_zero;
 
-                felt_jump_nz([1]) { fallthrough() 3([1]) };
+                felt_is_zero([1]) { fallthrough() 3([1]) };
                 branch_align() -> ();
                 return ();
                 branch_align() -> ();
@@ -303,17 +303,17 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3], ap++;
                 ret;
-                %{ memory[ap + 0] = 1100 <= memory[ap + -2] %}
+                %{ memory[ap + 0] = 970 <= memory[ap + -2] %}
 
                 jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap + -3] + 340282366920938463463374607431768210356, ap++;
+                [ap + 0] = [ap + -3] + 340282366920938463463374607431768210486, ap++;
                 [ap + -1] = [[ap + -5] + 0];
                 jmp rel 13;
 
                 // Statement # 31
                 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
                 // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
-                [ap + -3] = [ap + 0] + 1100, ap++;
+                [ap + -3] = [ap + 0] + 970, ap++;
                 [ap + -1] = [[ap + -5] + 0];
                 [ap + -6] = [ap + 0] + 1, ap++;
                 [ap + 0] = [ap + -6] + 1, ap++;
@@ -464,10 +464,10 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 test_program@0([1]: felt) -> ();
             "}, "[2] is dangling at #1.";
             "Dangling references")]
-#[test_case(indoc! {" 
+#[test_case(indoc! {"
                 type felt = felt;
 
-                
+
                 return();
 
                 foo@0([1]: felt) -> ();
@@ -491,11 +491,11 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 libfunc branch_align = branch_align;
                 libfunc felt_dup = dup<felt>;
                 libfunc felt_drop = drop<felt>;
-                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc felt_is_zero = felt_is_zero;
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
 
-                felt_jump_nz([1]) { fallthrough() 4([1]) };
+                felt_is_zero([1]) { fallthrough() 4([1]) };
                 branch_align() -> ();
                 store_temp_felt([2]) -> ([2]);
                 return ([2]);
@@ -533,11 +533,11 @@ of the libfunc or return statement.";
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
                 libfunc branch_align = branch_align;
                 libfunc felt_drop = drop<felt>;
-                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc felt_is_zero = felt_is_zero;
                 libfunc felt_unwrap_nz = unwrap_nz<felt>;
                 libfunc jump = jump;
 
-                felt_jump_nz([1]) { fallthrough() 4([1]) };
+                felt_is_zero([1]) { fallthrough() 4([1]) };
                 branch_align() -> ();
                 revoke_ap_tracking() -> ();
                 jump() { 7() };

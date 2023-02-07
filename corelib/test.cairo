@@ -1,3 +1,5 @@
+use array::ArrayTrait;
+use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
 
@@ -34,35 +36,38 @@ fn test_bool_operators() {
     assert(!(true ^ true), '!(t ^ t)');
 }
 
-impl OptionEcPointCopy of Copy::<Option::<EcPoint>>;
+impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
+impl NonZeroEcPointDrop of Drop::<NonZeroEcPoint>;
+use core::traits::ToBool;
 
 #[test]
 fn test_ec_operations() {
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
     let beta_p2_root = 2487829544412206244690656897973144572467842667075005257202960243805141046681;
     let p = ec_point_from_x(1).unwrap();
-    let (x, y) = ec_point_unwrap(p);
+    let p_nz = ec_point_non_zero(p);
+    let (x, y) = ec_point_unwrap(p_nz);
     assert(x == 1, 'x != 1');
     assert(y == beta_p2_root | y == -beta_p2_root, 'y is wrong');
 
     let mut state = ec_state_init();
-    ec_state_add(ref state, p);
-    let q = ec_state_finalize(state).expect('zero point');
+    ec_state_add(ref state, p_nz);
+    let q = ec_state_try_finalize_nz(state).expect('zero point');
     let (qx, qy) = ec_point_unwrap(q);
     assert(qx == x, 'bad finalize x');
     assert(qy == y, 'bad finalize y');
 
     // Try doing the same thing with the EC op builtin.
     let mut state = ec_state_init();
-    ec_state_add_mul(ref state, 1, p);
-    let q3 = ec_state_finalize(state).expect('zero point');
+    ec_state_add_mul(ref state, 1, p_nz);
+    let q3 = ec_state_try_finalize_nz(state).expect('zero point');
     let (qx, qy) = ec_point_unwrap(q3);
     assert(qx == x, 'bad EC op x');
     assert(qy == y, 'bad EC op y');
 
     // Try computing `p + p` using the ec_mul function.
     let double_p = ec_mul(p, 2);
-    let (double_x, double_y) = ec_point_unwrap(double_p.unwrap());
+    let (double_x, double_y) = ec_point_unwrap(ec_point_non_zero(double_p));
     let expected_double_y =
         3572434102142093425782752266058856056057826477682467661647843687948039943621;
     assert(
@@ -72,15 +77,15 @@ fn test_ec_operations() {
     assert(double_y == expected_double_y | double_y == -expected_double_y, 'bad double y');
 
     // Compute `2p - p`.
-    let (sub_x, sub_y) = ec_point_unwrap((double_p - Option::Some(p)).unwrap());
+    let (sub_x, sub_y) = ec_point_unwrap(ec_point_non_zero(double_p - p));
     assert(sub_x == x, 'bad x for 2p - p');
     assert(sub_y == y, 'bad y for 2p - p');
 
     // Compute `p - p`.
-    assert((Option::Some(p) - Option::Some(p)).is_none(), 'p - p did not return 0.');
+    assert(ec_point_is_zero(p - p).to_bool(), 'p - p did not return 0.');
 
     // Compute `(-p) - p`.
-    let (sub2_x, sub2_y) = ec_point_unwrap((Option::Some(ec_neg(p)) - Option::Some(p)).unwrap());
+    let (sub2_x, sub2_y) = ec_point_unwrap(ec_point_non_zero(ec_neg(p) - p));
     assert(sub2_x == double_x, 'bad x for (-p) - p');
     assert(sub2_y == -double_y, 'bad y for (-p) - p');
 }
@@ -94,8 +99,39 @@ fn test_bad_ec_point_creation() {
 #[test]
 fn test_ec_point_finalization_zero() {
     let state = ec_state_init();
-    let point_at_infinity = ec_state_finalize(state);
+    let point_at_infinity = ec_state_try_finalize_nz(state);
     assert(point_at_infinity.is_none(), 'Wrong point');
+}
+
+#[test]
+fn test_ecdsa() {
+    let message_hash = 0x503f4bea29baee10b22a7f10bdc82dda071c977c1f25b8f3973d34e6b03b2c;
+    let public_key = 0x7b7454acbe7845da996377f85eb0892044d75ae95d04d3325a391951f35d2ec;
+    let signature_r = 0xbe96d72eb4f94078192c2e84d5230cde2a70f4b45c8797e2c907acff5060bb;
+    let signature_s = 0x677ae6bba6daf00d2631fab14c8acf24be6579f9d9e98f67aa7f2770e57a1f5;
+    assert(
+        ecdsa::check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s),
+        'ecdsa returned false'
+    );
+}
+
+#[test]
+fn test_ec_mul() {
+    let p = ec_point_new(
+        x: 336742005567258698661916498343089167447076063081786685068305785816009957563,
+        y: 1706004133033694959518200210163451614294041810778629639790706933324248611779,
+    );
+    let m = 2713877091499598330239944961141122840311015265600950719674787125185463975936;
+    let (x, y) = ec_point_unwrap(ec_point_non_zero(ec_mul(p, m)));
+
+    assert(
+        x == 2881632108168892236043523177391659237686965655035240771134509747985978822780,
+        'ec_mul failed (x).'
+    );
+    assert(
+        y == 591135563672138037839394207500885413019058613584891498394077262936524140839,
+        'ec_mul failed (y).'
+    );
 }
 
 #[test]
@@ -476,56 +512,56 @@ fn test_u256_mul_overflow_2() {
 }
 
 // TODO(orizi): Switch to operators and literals when added.
-fn test_array_helper(idx: u128) -> felt {
-    let mut arr = array_new::<felt>();
-    array_append::<felt>(ref arr, 10);
-    array_append::<felt>(ref arr, 11);
-    array_append::<felt>(ref arr, 12);
+fn test_array_helper(idx: usize) -> felt {
+    let mut arr = ArrayTrait::new();
+    arr.append(10);
+    arr.append(11);
+    arr.append(12);
     array_at(ref arr, idx)
 }
 
 #[test]
 fn test_array() {
-    assert(test_array_helper(0_u128) == 10, 'array[0] == 10');
-    assert(test_array_helper(1_u128) == 11, 'array[1] == 11');
-    assert(test_array_helper(2_u128) == 12, 'array[2] == 12');
+    assert(test_array_helper(0_usize) == 10, 'array[0] == 10');
+    assert(test_array_helper(1_usize) == 11, 'array[1] == 11');
+    assert(test_array_helper(2_usize) == 12, 'array[2] == 12');
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_1() {
-    test_array_helper(3_u128);
+    test_array_helper(3_usize);
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_2() {
-    test_array_helper(11_u128);
+    test_array_helper(11_usize);
 }
 
 #[test]
 fn test_dict_new() -> DictFeltTo::<felt> {
-    dict_felt_to_new::<felt>()
+    DictFeltToTrait::new()
 }
 
 #[test]
 fn test_dict_default_val() {
-    let mut dict = dict_felt_to_new::<felt>();
-    let default_val = dict_felt_to_read::<felt>(ref dict, 0);
-    let squashed_dict = dict_felt_to_squash::<felt>(dict);
+    let mut dict = DictFeltToTrait::new();
+    let default_val = dict.get(0);
+    let squashed_dict = dict.squash();
     assert(default_val == 0, 'default_val == 0');
 }
 
 // TODO(Gil): Assert before the squash when drop will autosquash the dict.
 #[test]
 fn test_dict_write_read() {
-    let mut dict = dict_felt_to_new::<felt>();
-    dict_felt_to_write::<felt>(ref dict, 10, 110);
-    dict_felt_to_write::<felt>(ref dict, 11, 111);
-    let val10 = dict_felt_to_read::<felt>(ref dict, 10);
-    let val11 = dict_felt_to_read::<felt>(ref dict, 11);
-    let val12 = dict_felt_to_read::<felt>(ref dict, 12);
-    let squashed_dict = dict_felt_to_squash::<felt>(dict);
+    let mut dict = DictFeltToTrait::new();
+    dict.insert(10, 110);
+    dict.insert(11, 111);
+    let val10 = dict.get(10);
+    let val11 = dict.get(11);
+    let val12 = dict.get(12);
+    let squashed_dict = dict.squash();
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');

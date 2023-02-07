@@ -10,7 +10,7 @@ use cairo_lang_diagnostics::DiagnosticEntry;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::patcher::{ModifiedNode, PatchBuilder, Patches, RewriteNode};
 use cairo_lang_semantic::plugin::{
-    AsDynGeneratedFileAuxData, AsDynMacroPlugin, DiagnosticMapper, DynDiagnosticMapper,
+    AsDynGeneratedFileAuxData, AsDynMacroPlugin, DynPluginAuxData, PluginAuxData,
     PluginMappedDiagnostic, SemanticPlugin,
 };
 use cairo_lang_semantic::SemanticDiagnostic;
@@ -32,17 +32,22 @@ const EXTERNAL_ATTR: &str = "external";
 const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const VIEW_ATTR: &str = "view";
 pub const EVENT_ATTR: &str = "event";
-pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
 pub const CONSTRUCTOR_MODULE: &str = "__constructor";
 
-/// The diagnostics remapper of the plugin.
+// TODO(ilya): Move AuxData logic to a separate file.
+
+/// Contract related auxiliary data of the Starknet plugin.
 #[derive(Debug, PartialEq, Eq)]
-pub struct DiagnosticRemapper {
+pub struct StarkNetContractAuxData {
+    /// Patches of code that need translation in case they have diagnostics.
     patches: Patches,
+
+    /// A list of contracts that were processed by the plugin.
+    pub contracts: Vec<smol_str::SmolStr>,
 }
-impl GeneratedFileAuxData for DiagnosticRemapper {
+impl GeneratedFileAuxData for StarkNetContractAuxData {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -50,12 +55,45 @@ impl GeneratedFileAuxData for DiagnosticRemapper {
         if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
     }
 }
-impl AsDynGeneratedFileAuxData for DiagnosticRemapper {
+impl AsDynGeneratedFileAuxData for StarkNetContractAuxData {
     fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
         self
     }
 }
-impl DiagnosticMapper for DiagnosticRemapper {
+impl PluginAuxData for StarkNetContractAuxData {
+    fn map_diag(
+        &self,
+        db: &(dyn SemanticGroup + 'static),
+        diag: &dyn std::any::Any,
+    ) -> Option<PluginMappedDiagnostic> {
+        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
+        let span = self
+            .patches
+            .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
+        Some(PluginMappedDiagnostic { span, message: diag.format(db) })
+    }
+}
+
+/// Contract related auxiliary data of the Starknet plugin.
+#[derive(Debug, PartialEq, Eq)]
+pub struct StarkNetABIAuxData {
+    /// Patches of code that need translation in case they have diagnostics.
+    patches: Patches,
+}
+impl GeneratedFileAuxData for StarkNetABIAuxData {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool {
+        if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
+    }
+}
+impl AsDynGeneratedFileAuxData for StarkNetABIAuxData {
+    fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
+        self
+    }
+}
+impl PluginAuxData for StarkNetABIAuxData {
     fn map_diag(
         &self,
         db: &(dyn SemanticGroup + 'static),
@@ -167,7 +205,11 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                     OptionReturnTypeClause::ReturnTypeClause(ty) => {
                         let ret_type_ast = ty.ty(db);
                         let type_name = ret_type_ast.as_syntax_node().get_text(db);
-                        format!("        serde::Serde::<{type_name}>::deserialize(ref ret_data)")
+                        format!(
+                            "
+        serde::Serde::<{type_name}>::deserialize(ref ret_data).expect(
+            'Returned data too short')"
+                        )
                     }
                 };
 
@@ -189,7 +231,7 @@ fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult
                     "$func_decl$ {
         let mut calldata = array_new();
 $serialization_code$
-        let ret_data = starknet::call_contract_syscall(
+        let mut ret_data = starknet::call_contract_syscall(
             contract_address,
             calldata,
         ).unwrap_syscall();
@@ -216,8 +258,10 @@ $deserialization_code$
             "mod {dispatcher_name} {{
                 use starknet::SyscallResultTrait;
                 use starknet::SyscallResultTraitImpl;
+                use option::OptionTrait;
+                use option::OptionTraitImpl;
 
-                $body$
+            $body$
             }}",
         ),
         HashMap::from([(
@@ -229,7 +273,7 @@ $deserialization_code$
         code: Some(PluginGeneratedFile {
             name: dispatcher_name.into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(DiagnosticRemapper {
+            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetABIAuxData {
                 patches: builder.patches,
             })),
         }),
@@ -341,10 +385,10 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         }
     }
 
+    let module_name_ast = module_ast.name(db);
     let generated_contract_mod = RewriteNode::interpolate_patched(
         formatdoc!(
             "
-            #[{GENERATED_CONTRACT_ATTR}]
             mod $contract_name$ {{
                 use starknet::SyscallResultTrait;
                 use starknet::SyscallResultTraitImpl;
@@ -371,10 +415,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         )
         .as_str(),
         HashMap::from([
-            (
-                "contract_name".to_string(),
-                RewriteNode::Trimmed(module_ast.name(db).as_syntax_node()),
-            ),
+            ("contract_name".to_string(), RewriteNode::Trimmed(module_name_ast.as_syntax_node())),
             (
                 "original_items".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: original_items }),
@@ -405,14 +446,16 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
 
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(generated_contract_mod);
-
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(DiagnosticRemapper {
-                patches: builder.patches,
-            })),
+            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(
+                StarkNetContractAuxData {
+                    patches: builder.patches,
+                    contracts: vec![module_name_ast.text(db)],
+                },
+            )),
         }),
         diagnostics,
         remove_original_item: true,
@@ -541,16 +584,16 @@ fn handle_storage_struct(
     struct_ast: ast::ItemStruct,
 ) -> (RewriteNode, Vec<PluginDiagnostic>) {
     let mut members_code = Vec::new();
-    let diagnostics = vec![];
+    let mut diagnostics = vec![];
 
     for member in struct_ast.members(db).elements(db) {
         let name = member.name(db).text(db);
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
         let type_ast = member.type_clause(db).ty(db);
-        members_code.push(
-            if let Some((key_type_ast, value_type_ast)) = try_extract_mapping_types(db, &type_ast) {
-                RewriteNode::interpolate_patched(
-                    handle_mapping_storage_var(&address).as_str(),
+        match try_extract_mapping_types(db, &type_ast) {
+            Some((key_type_ast, value_type_ast, MappingType::Legacy)) => {
+                members_code.push(RewriteNode::interpolate_patched(
+                    handle_legacy_mapping_storage_var(&address).as_str(),
                     HashMap::from([
                         (
                             "storage_var_name".to_string(),
@@ -565,9 +608,16 @@ fn handle_storage_struct(
                             RewriteNode::Trimmed(value_type_ast.as_syntax_node()),
                         ),
                     ]),
-                )
-            } else {
-                RewriteNode::interpolate_patched(
+                ));
+            }
+            Some((_, _, MappingType::NonLegacy)) => {
+                diagnostics.push(PluginDiagnostic {
+                    message: "Non `LegacyMap` mapping is not yet supported.".to_string(),
+                    stable_ptr: type_ast.stable_ptr().untyped(),
+                });
+            }
+            None => {
+                members_code.push(RewriteNode::interpolate_patched(
                     handle_simple_storage_var(&address).as_str(),
                     HashMap::from([
                         (
@@ -576,28 +626,41 @@ fn handle_storage_struct(
                         ),
                         ("type_name".to_string(), RewriteNode::Trimmed(type_ast.as_syntax_node())),
                     ]),
-                )
-            },
-        );
+                ));
+            }
+        }
     }
     (RewriteNode::Modified(ModifiedNode { children: members_code }), diagnostics)
 }
 
-/// Given a type, if it is of form `Map::<K, V>`, returns `K` and `V`. Otherwise, returns None.
+/// The type of the mapping storage variable.
+enum MappingType {
+    /// Pedersen based.
+    Legacy,
+    /// Poseidon based.
+    NonLegacy,
+}
+
+/// Given a type, if it is of form `Map{Legacy,}::<K, V>`, returns `K` and `V` and the mapping type.
+/// Otherwise, returns None.
 fn try_extract_mapping_types(
     db: &dyn SyntaxGroup,
     type_ast: &ast::Expr,
-) -> Option<(ast::Expr, ast::Expr)> {
+) -> Option<(ast::Expr, ast::Expr, MappingType)> {
     let as_path = try_extract_matches!(type_ast, ast::Expr::Path)?;
     let [ast::PathSegment::WithGenericArgs(segment)] = &as_path.elements(db)[..] else {
         return None;
     };
     let ty = segment.ident(db).text(db);
-    if ty == "Map" {
+    if ty == "LegacyMap" || ty == "Map" {
         let [key_ty, value_ty] =
             <[ast::Expr; 2]>::try_from(segment.generic_args(db).generic_args(db).elements(db))
                 .ok()?;
-        Some((key_ty, value_ty))
+        Some((
+            key_ty,
+            value_ty,
+            if ty == "LegacyMap" { MappingType::Legacy } else { MappingType::NonLegacy },
+        ))
     } else {
         None
     }
@@ -636,7 +699,7 @@ fn handle_simple_storage_var(address: &str) -> String {
 }
 
 /// Generate getters and setters skeleton for a non-mapping member in the storage struct.
-fn handle_mapping_storage_var(address: &str) -> String {
+fn handle_legacy_mapping_storage_var(address: &str) -> String {
     format!(
         "
     mod $storage_var_name$ {{
@@ -725,7 +788,7 @@ fn generate_entry_point_wrapper(
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
                 "\n            let res = ",
-                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res)"),
+                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res);"),
             )
         }
     };
@@ -741,6 +804,7 @@ fn generate_entry_point_wrapper(
     Ok(RewriteNode::interpolate_patched(
         format!(
             "fn $function_name$(mut data: Array::<felt>) -> Array::<felt> {{
+            internal::revoke_ap_tracking();
             match get_gas() {{
                 Option::Some(_) => {{
                 }},
@@ -751,7 +815,7 @@ fn generate_entry_point_wrapper(
                 }},
             }}
             {arg_definitions}
-            if array_len(ref data) != 0_u128 {{
+            if !array::ArrayTrait::is_empty(ref data) {{
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

@@ -94,7 +94,10 @@ impl SierraIdReplacer for DebugReplacer<'_> {
     ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
         let mut long_id = self.db.lookup_intern_concrete_lib_func(id.clone());
         self.replace_generic_args(&mut long_id.generic_args);
-        long_id.to_string().into()
+        cairo_lang_sierra::ids::ConcreteLibfuncId {
+            id: id.id,
+            debug_name: Some(long_id.to_string().into()),
+        }
     }
 
     fn replace_type_id(
@@ -117,7 +120,10 @@ impl SierraIdReplacer for DebugReplacer<'_> {
                 long_id.generic_args.clear();
             }
         }
-        long_id.to_string().into()
+        cairo_lang_sierra::ids::ConcreteTypeId {
+            id: id.id,
+            debug_name: Some(long_id.to_string().into()),
+        }
     }
 
     /// Helper for [replace_sierra_ids] and [replace_sierra_ids_in_program] replacing function ids.
@@ -126,7 +132,16 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         sierra_id: &cairo_lang_sierra::ids::FunctionId,
     ) -> cairo_lang_sierra::ids::FunctionId {
         let semantic_id = self.db.lookup_intern_sierra_function(sierra_id.clone());
-        format!("{:?}", self.db.lookup_intern_function(semantic_id).debug(self.db.upcast())).into()
+        cairo_lang_sierra::ids::FunctionId {
+            id: sierra_id.id,
+            debug_name: Some(
+                format!(
+                    "{:?}",
+                    self.db.lookup_intern_function(semantic_id).debug(self.db.upcast())
+                )
+                .into(),
+            ),
+        }
     }
 }
 

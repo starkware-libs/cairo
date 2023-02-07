@@ -4,10 +4,11 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{define_short_id, OptionFrom};
+use cairo_lang_utils::{define_short_id, extract_matches, OptionFrom};
 use itertools::Itertools;
 
 use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
@@ -17,7 +18,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{Inference, TypeVar};
 use crate::items::imp::{find_impls_at_context, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
-use crate::{semantic, ConcreteVariant, FunctionId, GenericArgumentId};
+use crate::{semantic, ConcreteImplId, ConcreteVariant, FunctionId, GenericArgumentId};
 
 /// A substitution of generic arguments in generic parameters. Used for concretization.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -162,13 +163,7 @@ impl ConcreteTypeId {
             format!(
                 "{}::<{}>",
                 generic_type_format,
-                generic_args
-                    .iter()
-                    .map(|arg| match arg {
-                        crate::GenericArgumentId::Type(ty) => ty.format(db),
-                        crate::GenericArgumentId::Literal(literal_id) => literal_id.format(db),
-                    })
-                    .join(", ")
+                generic_args.iter().map(|arg| arg.format(db)).join(", ")
             )
         }
     }
@@ -314,7 +309,7 @@ pub fn generic_type_generic_params(
     }
 }
 
-pub fn substitute_generics(
+pub fn substitute_ty(
     db: &dyn SemanticGroup,
     substitution: &GenericSubstitution,
     ty: TypeId,
@@ -324,30 +319,15 @@ pub fn substitute_generics(
             db.intern_type(TypeLongId::Concrete(ConcreteTypeId::new(
                 db,
                 concrete.generic_type(db),
-                concrete
-                    .generic_args(db)
-                    .iter()
-                    .map(|generic_arg| match generic_arg {
-                        GenericArgumentId::Type(ty) => {
-                            GenericArgumentId::Type(substitute_generics(db, substitution, *ty))
-                        }
-                        GenericArgumentId::Literal(_) => *generic_arg,
-                    })
-                    .collect(),
+                substitute_generics_args(db, substitution, concrete.generic_args(db)),
             )))
         }
         TypeLongId::Tuple(tys) => db.intern_type(TypeLongId::Tuple(
-            tys.into_iter().map(|ty| substitute_generics(db, substitution, ty)).collect(),
+            tys.into_iter().map(|ty| substitute_ty(db, substitution, ty)).collect(),
         )),
         TypeLongId::GenericParameter(generic_param) => substitution
             .get(&generic_param)
-            .map(|generic_arg| match generic_arg {
-                GenericArgumentId::Type(ty) => *ty,
-                GenericArgumentId::Literal(_) => {
-                    // TODO(ilya): Add diagnostics: "Expected type. Got literal"
-                    TypeId::missing(db, skip_diagnostic())
-                }
-            })
+            .map(|generic_arg| *extract_matches!(generic_arg, GenericArgumentId::Type))
             .unwrap_or(ty),
         TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
         TypeLongId::Missing(_) => ty,
@@ -361,9 +341,9 @@ pub fn substitute_function(
     function: &mut FunctionId,
 ) {
     let mut long_function = db.lookup_intern_function(*function);
-    substitute_generics_args(db, substitution, &mut long_function.function.generic_args);
+    substitute_generics_args_inplace(db, substitution, &mut long_function.function.generic_args);
     long_function.function.generic_function.generic_args_apply(db, |generic_args| {
-        substitute_generics_args(db, substitution, generic_args)
+        substitute_generics_args_inplace(db, substitution, generic_args)
     });
     *function = db.intern_function(long_function);
 }
@@ -374,26 +354,50 @@ pub fn substitute_variant(
     substitution: &GenericSubstitution,
     variant: &mut ConcreteVariant,
 ) {
-    variant.ty = substitute_generics(db.upcast(), substitution, variant.ty);
+    variant.ty = substitute_ty(db.upcast(), substitution, variant.ty);
     let mut long_concrete_enum = db.lookup_intern_concrete_enum(variant.concrete_enum_id);
-    substitute_generics_args(db, substitution, &mut long_concrete_enum.generic_args);
+    substitute_generics_args_inplace(db, substitution, &mut long_concrete_enum.generic_args);
     variant.concrete_enum_id = db.intern_concrete_enum(long_concrete_enum);
 }
 
-/// Substituted generics in a slice of [GenericArgumentId].
-pub fn substitute_generics_args(
+/// Substitutes generics in a slice of [GenericArgumentId].
+pub fn substitute_generics_args_inplace(
     db: &dyn SemanticGroup,
     substitution: &GenericSubstitution,
     generic_args: &mut [GenericArgumentId],
 ) {
     for arg in generic_args.iter_mut() {
         match arg {
-            GenericArgumentId::Type(ty) => {
-                *ty = substitute_generics(db.upcast(), substitution, *ty)
-            }
+            GenericArgumentId::Type(ty) => *ty = substitute_ty(db.upcast(), substitution, *ty),
             GenericArgumentId::Literal(_) => {}
+            GenericArgumentId::Impl(concrete_impl) => {
+                *concrete_impl = substitute_impl(db.upcast(), substitution, *concrete_impl)
+            }
         }
     }
+}
+
+/// Substituted generics in a vector of [GenericArgumentId]s and returns the new vector.
+pub fn substitute_generics_args(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    mut generic_args: Vec<GenericArgumentId>,
+) -> Vec<GenericArgumentId> {
+    substitute_generics_args_inplace(db, substitution, &mut generic_args);
+    generic_args
+}
+
+/// Substituted generics in a [ConcreteImplId].
+fn substitute_impl(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    concrete_impl: ConcreteImplId,
+) -> ConcreteImplId {
+    let mut long_concrete_impl = db.lookup_intern_concrete_impl(concrete_impl);
+    substitute_generics_args_inplace(db, substitution, &mut long_concrete_impl.generic_args);
+    // TODO(spapini): One of the options for ConcreteImpl should be a Generic Impl Param.
+    // When this happens, handle it here.
+    db.intern_concrete_impl(long_concrete_impl)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -412,6 +416,8 @@ pub fn type_info(
 ) -> Maybe<TypeInfo> {
     // TODO(spapini): Validate Copy and Drop for structs and enums.
     let inference = Inference::disabled(db);
+    // Dummy stable pointer for type inference variables, since inference is disabled.
+    let stable_ptr = db.intern_stable_ptr(SyntaxStablePtr::Root);
     Ok(match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete_type_id) => {
             let module = concrete_type_id.generic_type(db).parent_module(db.upcast());
@@ -424,6 +430,7 @@ pub fn type_info(
                 &inference,
                 &lookup_context,
                 concrete_drop_trait(db, ty),
+                stable_ptr,
             )?
             .is_empty();
             let duplicatable = !find_impls_at_context(
@@ -431,6 +438,7 @@ pub fn type_info(
                 &inference,
                 &lookup_context,
                 concrete_copy_trait(db, ty),
+                stable_ptr,
             )?
             .is_empty();
             TypeInfo { droppable, duplicatable }
@@ -441,6 +449,7 @@ pub fn type_info(
                 &inference,
                 &lookup_context,
                 concrete_drop_trait(db, ty),
+                stable_ptr,
             )?
             .is_empty();
             let duplicatable = !find_impls_at_context(
@@ -448,6 +457,7 @@ pub fn type_info(
                 &inference,
                 &lookup_context,
                 concrete_copy_trait(db, ty),
+                stable_ptr,
             )?
             .is_empty();
             TypeInfo { droppable, duplicatable }

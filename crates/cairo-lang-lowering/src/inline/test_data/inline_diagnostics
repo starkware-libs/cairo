@@ -1,7 +1,7 @@
 //! > Test inlining diagnostics for a recursive function.
 
 //! > test_function_name
-test_function_lowering
+test_function_inlining
 
 //! > function
 #[inline(always)]
@@ -15,26 +15,6 @@ foo
 
 //! > module_code
 
-//! > lowering_format
-
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
-Initial refs: v0: core::felt
-Statements:
-  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
-    Ref changes: r0 <- v3
-End:
-  Return(v3, v1)
-
-//! > lowering_flat
-blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
-Statements:
-  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
-End:
-  Return(v3, v1)
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -43,20 +23,33 @@ error: Cannot inline a function that might call itself.
 #[inline(always)]
 ^***************^
 
+//! > before
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
+End:
+  Return(v3, v1)
+
+//! > after
+blk0:
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
+End:
+  Return(v3, v1)
+
 //! > ==========================================================================
 
-//! > Test inlining diagnostics for a function with an early return.
+//! > Test inlining diagnostics for a function an identity function.
 
 //! > test_function_name
-test_function_lowering
+test_function_inlining
 
 //! > function
 #[inline(always)]
-fn foo(a: felt) -> felt {
-  if a == 0 {
-    return 1;
-  }
-  0
+fn foo(n: felt) -> felt {
+  n
 }
 
 //! > function_name
@@ -64,65 +57,24 @@ foo
 
 //! > module_code
 
-//! > lowering_format
-
-//! > lowering_structured
-blk0:
-Inputs:
-Initial refs:
-Statements:
-  (v1: core::felt) <- 1u
-End:
-  Return(v1)
-
-blk1:
-Inputs: v2: core::NonZero::<core::felt>
-Initial refs:
-Statements:
-End:
-  Callsite()
-
-blk2 (root):
-Inputs: v0: core::felt
-Initial refs:
-Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
-  }
-  (v3: core::felt) <- 0u
-End:
-  Return(v3)
-
-//! > lowering_flat
-blk0:
-Inputs:
-Statements:
-  (v1: core::felt) <- 1u
-End:
-  Return(v1)
-
-blk1:
-Inputs: v2: core::NonZero::<core::felt>
-Statements:
-End:
-  Callsite()
-
-blk2 (root):
-Inputs: v0: core::felt
-Statements:
-  () <- match core::felt_jump_nz(v0) {
-    JumpNzResult::Zero => blk0,
-    JumpNzResult::NonZero => blk1,
-  }
-  (v3: core::felt) <- 0u
-End:
-  Return(v3)
-
 //! > semantic_diagnostics
 
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Return(v0)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Return(v0)
+
 //! > lowering_diagnostics
-error: Inlining of functions with an early return is not supported.
+error: Inlining of functions that directly returns one of its inputs is not supported.
  --> lib.cairo:1:1
 #[inline(always)]
 ^***************^
@@ -132,7 +84,7 @@ error: Inlining of functions with an early return is not supported.
 //! > Test inlining attribute diagnostics.
 
 //! > test_function_name
-test_function_lowering
+test_function_inlining
 
 //! > function
 #[inline(always)]
@@ -150,24 +102,23 @@ foo
 
 //! > lowering_format
 
-//! > lowering_structured
-blk0 (root):
-Inputs:
-Initial refs:
-Statements:
-  (v0: ()) <- struct_construct()
-End:
-  Return(v0)
-
-//! > lowering_flat
-blk0 (root):
-Inputs:
-Statements:
-  (v0: ()) <- struct_construct()
-End:
-  Return(v0)
-
 //! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
+
+//! > after
+blk0 (root):
+Inputs:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
 
 //! > lowering_diagnostics
 error: Unsupported `inline` arguments.
@@ -209,3 +160,62 @@ error: Redundant `inline` attribute.
  --> lib.cairo:5:3
 #[inline]
   ^****^
+
+//! > ==========================================================================
+
+//! > Test inlining a function where the root block does not return.
+
+//! > test_function_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+fn foo(n: felt) -> felt {
+  bar(n)
+}
+
+//! > module_code
+#[inline(always)]
+fn bar(n: felt) -> felt {
+  if n == 0 {
+    return 1;
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0:
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > lowering_diagnostics
+error: Inlining of functions with an early return is not supported.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+error: Inlining of functions with an early return is not supported.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+error: Inlining of functions where the end of the root block is unreachable is not supported.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^

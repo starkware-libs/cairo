@@ -1,0 +1,61 @@
+//! > Test extern function calling.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo() {
+    5.foo(true);
+    MyTrait::foo(6, false);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn foo<S>(self: T, y: S) -> (T, S);
+}
+impl MyImpl of MyTrait::<felt> {
+    #[inline(always)]
+    fn foo<S>(self: felt, y: S) -> (felt, S) {
+        (self, y)
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0 (root):
+Inputs:
+Initial refs:
+Statements:
+  (v0: core::felt) <- 5u
+  (v1: ()) <- struct_construct()
+  (v2: core::bool) <- bool::True(v1)
+  (v3: (core::felt, core::bool)) <- test::MyImpl::foo::<core::bool>(v0, v2)
+  (v4: core::felt) <- 6u
+  (v5: ()) <- struct_construct()
+  (v6: core::bool) <- bool::False(v5)
+  (v7: (core::felt, core::bool)) <- test::MyImpl::foo::<core::bool>(v4, v6)
+  (v8: ()) <- struct_construct()
+End:
+  Return(v8)
+
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 5u
+  (v1: ()) <- struct_construct()
+  (v2: core::bool) <- bool::True(v1)
+  (v3: (core::felt, core::bool)) <- struct_construct(v0, v2)
+  (v4: core::felt) <- 6u
+  (v5: ()) <- struct_construct()
+  (v6: core::bool) <- bool::False(v5)
+  (v7: (core::felt, core::bool)) <- struct_construct(v4, v6)
+  (v8: ()) <- struct_construct()
+End:
+  Return(v8)

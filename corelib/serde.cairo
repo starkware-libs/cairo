@@ -1,3 +1,4 @@
+use array::ArrayTrait;
 trait Serde<T> {
     fn serialize(ref serialized: Array::<felt>, input: T);
     fn deserialize(ref serialized: Array::<felt>) -> Option::<T>;
@@ -5,10 +6,10 @@ trait Serde<T> {
 
 impl FeltSerde of Serde::<felt> {
     fn serialize(ref serialized: Array::<felt>, input: felt) {
-        array_append(ref serialized, input);
+        serialized.append(input);
     }
     fn deserialize(ref serialized: Array::<felt>) -> Option::<felt> {
-        array_pop_front(ref serialized)
+        serialized.pop_front()
     }
 }
 
@@ -31,6 +32,15 @@ impl U8Serde of Serde::<u8> {
     }
     fn deserialize(ref serialized: Array::<felt>) -> Option::<u8> {
         Option::Some(u8_try_from_felt(Serde::<felt>::deserialize(ref serialized)?)?)
+    }
+}
+
+impl U64Serde of Serde::<u64> {
+    fn serialize(ref serialized: Array::<felt>, input: u64) {
+        Serde::<felt>::serialize(ref serialized, u64_to_felt(input));
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<u64> {
+        Option::Some(u64_try_from_felt(Serde::<felt>::deserialize(ref serialized)?)?)
     }
 }
 
@@ -60,12 +70,12 @@ impl U256Serde of Serde::<u256> {
 
 impl ArrayFeltSerde of Serde::<Array::<felt>> {
     fn serialize(ref serialized: Array::<felt>, mut input: Array::<felt>) {
-        Serde::<u128>::serialize(ref serialized, array_len(ref input))
+        Serde::<usize>::serialize(ref serialized, input.len());
         serialize_array_felt_helper(ref serialized, ref input);
     }
     fn deserialize(ref serialized: Array::<felt>) -> Option::<Array::<felt>> {
         let length = Serde::<felt>::deserialize(ref serialized)?;
-        let mut arr = array_new::<felt>();
+        let mut arr = ArrayTrait::new();
         deserialize_array_felt_helper(ref serialized, arr, length)
     }
 }
@@ -75,12 +85,12 @@ fn serialize_array_felt_helper(ref serialized: Array::<felt>, ref input: Array::
     match get_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
-            let mut data = array_new();
-            array_append(ref data, 'Out of gas');
+            let mut data = ArrayTrait::new();
+            data.append('Out of gas');
             panic(data);
         },
     }
-    match array_pop_front(ref input) {
+    match input.pop_front() {
         Option::Some(value) => {
             Serde::<felt>::serialize(ref serialized, value);
             serialize_array_felt_helper(ref serialized, ref input);
@@ -96,14 +106,14 @@ fn deserialize_array_felt_helper(
     match get_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
-            let mut data = array_new();
-            array_append(ref data, 'Out of gas');
+            let mut data = ArrayTrait::new();
+            data.append('Out of gas');
             panic(data);
         },
     }
     if remaining == 0 {
         return Option::<Array::<felt>>::Some(curr_output);
     }
-    array_append(ref curr_output, Serde::<felt>::deserialize(ref serialized)?);
+    curr_output.append(Serde::<felt>::deserialize(ref serialized)?);
     deserialize_array_felt_helper(ref serialized, curr_output, remaining - 1)
 }

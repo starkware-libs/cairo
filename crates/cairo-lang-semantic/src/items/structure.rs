@@ -14,11 +14,11 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_generics, ConcreteStructId, GenericSubstitution};
+use crate::types::{resolve_type, substitute_ty, ConcreteStructId, GenericSubstitution};
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
-#[path = "strct_test.rs"]
+#[path = "structure_test.rs"]
 mod test;
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -141,7 +141,7 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         Ok(generic_members
             .into_iter()
             .map(|(name, member)| {
-                let ty = substitute_generics(db, &substitution, member.ty);
+                let ty = substitute_ty(db, &substitution, member.ty);
                 let member = semantic::Member { ty, ..member };
                 (name, member)
             })

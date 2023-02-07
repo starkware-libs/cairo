@@ -25,7 +25,7 @@ use crate::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
-use crate::extensions::strct::StructConcreteLibfunc;
+use crate::extensions::structure::StructConcreteLibfunc;
 use crate::extensions::uint::{
     IntOperator, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc,
 };
@@ -161,12 +161,12 @@ pub fn simulate<
             [_] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Array(ArrayConcreteLibfunc::At(_)) => match &inputs[..] {
-            [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint128(_)] => {
+        Array(ArrayConcreteLibfunc::Get(_)) => match &inputs[..] {
+            [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint64(_)] => {
                 let mut iter = inputs.into_iter();
                 iter.next(); // Ignore range check.
                 let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
-                let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint128) as usize;
+                let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint64) as usize;
                 match arr.get(idx).cloned() {
                     Some(element) => {
                         Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr), element], 0))
@@ -181,7 +181,7 @@ pub fn simulate<
             [CoreValue::Array(_)] => {
                 let arr = extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Array);
                 let len = arr.len();
-                Ok((vec![CoreValue::Array(arr), CoreValue::Uint128(len as u128)], 0))
+                Ok((vec![CoreValue::Array(arr), CoreValue::Uint64(len as u64)], 0))
             }
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
@@ -312,7 +312,7 @@ pub fn simulate<
                     bytes.extend(limb_bytes);
                 }
                 if let Ok(s) = String::from_utf8(bytes) {
-                    print!("{}", s);
+                    print!("{s}");
                 } else {
                     println!("Not utf8");
                 }
@@ -437,7 +437,7 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::DivMod(_) => match inputs {
+        Uint128Concrete::Divmod(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)] => {
                 if let CoreValue::Uint128(rhs) = **non_zero {
                     Ok((
@@ -473,7 +473,7 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::JumpNotZero(_) => {
+        Uint128Concrete::IsZero(_) => {
             match inputs {
                 [CoreValue::Uint128(value)] if *value == 0 => {
                     // Zero - jumping to the failure branch.
@@ -584,6 +584,7 @@ fn simulate_u8_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint8Concrete::Divmod(_) => unimplemented!(),
     }
 }
 
@@ -653,6 +654,7 @@ fn simulate_u64_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint64Concrete::Divmod(_) => unimplemented!(),
     }
 }
 
@@ -709,7 +711,7 @@ fn simulate_felt_libfunc(
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        FeltConcrete::JumpNotZero(_) => {
+        FeltConcrete::IsZero(_) => {
             match inputs {
                 [CoreValue::Felt(value)] if value.is_zero() => {
                     // Zero - jumping to the failure branch.

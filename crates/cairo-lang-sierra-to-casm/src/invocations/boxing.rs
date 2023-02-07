@@ -45,7 +45,11 @@ fn build_into_box(
         }
         addr
     };
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[addr]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[addr]], None)],
+        Default::default(),
+    ))
 }
 
 /// Handles instruction for unboxing a box.
@@ -59,10 +63,7 @@ fn build_unbox(
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression {
-            cells: (0..size)
-                .into_iter()
-                .map(|idx| CellExpression::DoubleDeref(operand, idx))
-                .collect(),
+            cells: (0..size).map(|idx| CellExpression::DoubleDeref(operand, idx)).collect(),
         }]
         .into_iter(),
     ))

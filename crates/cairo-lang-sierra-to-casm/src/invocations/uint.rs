@@ -1,14 +1,17 @@
+use cairo_felt::{Felt, FIELD_HIGH, FIELD_LOW};
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc, UintTraits,
 };
-use num_bigint::BigInt;
+use num_bigint::{BigInt, ToBigInt};
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::misc::validate_in_range;
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::misc::validate_under_limit;
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 use crate::references::ReferenceExpression;
 
 /// Builds invocations for uint const values.
@@ -35,6 +38,7 @@ pub fn build_less_than(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar a_ge_b;
             tempvar a_minus_b = a - b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
@@ -52,6 +56,10 @@ pub fn build_less_than(
             ("Fallthrough", &[&[range_check]], None),
             ("True", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
@@ -69,6 +77,7 @@ pub fn build_less_than_or_equal(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar a_gt_b;
             tempvar b_minus_a = b - a;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
@@ -86,6 +95,10 @@ pub fn build_less_than_or_equal(
             ("Fallthrough", &[&[range_check]], None),
             ("True", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
@@ -104,6 +117,7 @@ fn build_small_uint_overflowing_add(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar no_overflow;
             tempvar fixed_a_plus_b;
             tempvar a_plus_b = a + b;
@@ -129,6 +143,10 @@ fn build_small_uint_overflowing_add(
             ("Fallthrough", &[&[range_check], &[a_plus_b]], None),
             ("Target", &[&[range_check], &[fixed_a_plus_b]], Some(failure_handle_statement_id)),
         ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
@@ -147,6 +165,7 @@ fn build_small_uint_overflowing_sub(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
             tempvar no_overflow;
             tempvar a_minus_b = a - b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
@@ -168,11 +187,15 @@ fn build_small_uint_overflowing_sub(
             ("Fallthrough", &[&[range_check], &[a_minus_b]], None),
             ("Target", &[&[range_check], &[wrapping_a_minus_b]], Some(failure_handle_statement_id)),
         ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
 /// Handles a small uint conversion from felt.
-fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, const B: u128>(
+fn build_small_uint_from_felt<const LIMIT: u128, const K: u8>(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, value] = builder.try_get_single_cells()?;
@@ -183,37 +206,33 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, con
         deref value;
     };
     casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
         const limit = LIMIT;
         tempvar is_small;
         hint TestLessThan {lhs: value, rhs: limit} into {dst: is_small};
         jump IsSmall if is_small != 0;
         tempvar shifted_value = value - limit;
-        tempvar x;
-        tempvar y;
-        tempvar x_part;
-        tempvar y_fixed;
     }
     match K {
         1 => {
-            validate_in_range::<K>(
+            let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
+            validate_under_limit::<K>(
                 &mut casm_builder,
-                A,
-                B,
+                &(-Felt::from(LIMIT)).to_biguint().to_bigint().unwrap(),
                 shifted_value,
                 range_check,
-                &[x, y, x_part, y_fixed],
+                &auxiliary_vars,
             );
             casm_build_extend! {casm_builder, jump Done;};
         }
         2 => {
-            casm_build_extend! {casm_builder, tempvar diff;};
-            validate_in_range::<K>(
+            let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
+            validate_under_limit::<K>(
                 &mut casm_builder,
-                A,
-                B,
+                &(-Felt::from(LIMIT)).to_biguint().to_bigint().unwrap(),
                 shifted_value,
                 range_check,
-                &[x, y, x_part, y_fixed, diff],
+                &auxiliary_vars,
             );
         }
         _ => unreachable!("Only K value of 1 or 2 are supported."),
@@ -232,6 +251,67 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8, const A: u128, con
             ("Fallthrough", &[&[range_check], &[value]], None),
             ("Done", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
+/// Handles a small uint conversion from felt.
+fn build_divmod<const BOUND: u128>(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    // Sanity check: make sure BOUND is not too large.
+    let two128 = BigInt::from(2).pow(128);
+    assert!(
+        BigInt::from(BOUND) * two128.clone()
+            < BigInt::from(FIELD_HIGH) * two128 + BigInt::from(FIELD_LOW),
+    );
+
+    let [range_check, a, b] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref a;
+        deref b;
+    };
+    casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
+        tempvar r_plus_1;
+        tempvar b_minus_r_minus_1;
+        tempvar bq;
+        tempvar q;
+        tempvar r;
+        hint DivMod { lhs: a, rhs: b } into { quotient: q, remainder: r };
+
+        // Verify `0 <= r`.
+        assert r = *(range_check++);
+
+        // Verify `r < b` by constraining `0 <= b - (r + 1)`.
+        const one = 1;
+        assert r_plus_1 = r + one;
+        assert b = b_minus_r_minus_1 + r_plus_1;
+        assert b_minus_r_minus_1 = *(range_check++);
+
+        // Check that `0 <= q < 2**128`.
+        assert q = *(range_check++);
+
+        // Check that `a = q * b + r`. Both hands are in the range [0, 2**128 * BOUND),
+        // since q < 2**128 and b < BOUND.
+        // Therefore, both hands are in the range [0, PRIME), and thus the equality
+        // is an equality as integers (rather than only as field elements).
+        assert bq = b * q;
+        assert a = bq + r;
+    }
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
@@ -254,12 +334,8 @@ pub fn build_u8(
             }
         },
         Uint8Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<
-            256,
-            2,
-            0x8000000000000110000000000000000_u128,
-            0x1000000000000021ffffffffffffff01_u128,
-        >(builder),
+        Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<256, 2>(builder),
+        Uint8Concrete::Divmod(_) => build_divmod::<256>(builder),
     }
 }
 
@@ -282,11 +358,9 @@ pub fn build_u64(
             }
         },
         Uint64Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint64Concrete::FromFelt(_) => build_small_uint_from_felt::<
-            0x10000000000000000,
-            2,
-            0x8000000000000110000000000000000_u128,
-            0x10000000000000210000000000000001_u128,
-        >(builder),
+        Uint64Concrete::FromFelt(_) => {
+            build_small_uint_from_felt::<0x10000000000000000, 2>(builder)
+        }
+        Uint64Concrete::Divmod(_) => build_divmod::<0x10000000000000000>(builder),
     }
 }

@@ -40,12 +40,12 @@ impl ConcreteTraitId {
 /// The ID of a generic function in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct ConcreteTraitFunctionLongId {
+pub struct ConcreteTraitGenericFunctionLongId {
     // Note the members are private to prevent direct call to the constructor.
     concrete_trait_id: ConcreteTraitId,
     function_id: TraitFunctionId,
 }
-impl ConcreteTraitFunctionLongId {
+impl ConcreteTraitGenericFunctionLongId {
     pub fn new(
         db: &dyn SemanticGroup,
         concrete_trait_id: ConcreteTraitId,
@@ -60,12 +60,12 @@ impl ConcreteTraitFunctionLongId {
     }
 }
 define_short_id!(
-    ConcreteTraitFunctionId,
-    ConcreteTraitFunctionLongId,
+    ConcreteTraitGenericFunctionId,
+    ConcreteTraitGenericFunctionLongId,
     SemanticGroup,
     lookup_intern_concrete_trait_function
 );
-impl ConcreteTraitFunctionId {
+impl ConcreteTraitGenericFunctionId {
     pub fn function_id(&self, db: &dyn SemanticGroup) -> TraitFunctionId {
         db.lookup_intern_concrete_trait_function(*self).function_id
     }

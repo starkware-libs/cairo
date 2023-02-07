@@ -10,7 +10,7 @@ libfunc felt_const_1 = felt_const<1>;
 libfunc felt_const_minus_1 = felt_const<-1>;
 libfunc felt_drop = drop<felt>;
 libfunc felt_dup = dup<felt>;
-libfunc felt_jump_nz = felt_jump_nz;
+libfunc felt_is_zero = felt_is_zero;
 libfunc felt_sub_1 = felt_sub<1>;
 libfunc felt_unwrap_nz = unwrap_nz<felt>;
 libfunc get_gas = get_gas;
@@ -25,7 +25,7 @@ libfunc store_temp_rc = store_temp<RangeCheck>;
 
 revoke_ap_tracking() -> ();
 // Statement #  1 - tests if n == 0.
-felt_jump_nz(n) { fallthrough() 9(n) };
+felt_is_zero(n) { fallthrough() 9(n) };
 branch_align() -> ();
 // Statement #  2 - n == 0, so we return updated gb and 1.
 store_temp_rc(rc) -> (rc);
@@ -50,7 +50,7 @@ felt_const_1() -> (a);
 store_temp_felt(a) -> (a);
 
 // Statement #20, check n.
-felt_jump_nz(n) { fallthrough() 28(n) };
+felt_is_zero(n) { fallthrough() 28(n) };
 
 // Statement # 21 - n == 0, so we can return the latest a.
 branch_align() -> ();
@@ -65,7 +65,7 @@ branch_align() -> ();
 felt_unwrap_nz(n) -> (n);
 // Statement # 30 - Getting gas for the main loop.
 get_gas(rc, gb) { fallthrough(rc, gb) 41(rc, gb)  };
-branch_align() -> (); 
+branch_align() -> ();
 // Statement # 31
 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
 // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]

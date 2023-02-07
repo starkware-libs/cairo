@@ -22,7 +22,7 @@ use cairo_lang_filesystem::db::{
     AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_filesystem::span::TextPosition;
+use cairo_lang_filesystem::span::{TextPosition, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -378,7 +378,7 @@ impl LanguageServer for Backend {
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let db = self.db().await;
         let file_uri = params.text_document_position_params.text_document.uri;
-        eprintln!("Hover {}", file_uri);
+        eprintln!("Hover {file_uri}");
         let file = self.file(&db, file_uri);
         let position = params.text_document_position_params.position;
         let Some((node, lookup_items)) =
@@ -597,19 +597,26 @@ fn get_node_and_lookup_items(
         eprintln!("Formatting failed. File '{filename}' does not exist.");
     })?;
 
-    // Get file summary.
+    // Get file summary and content.
     let file_summary = db.file_summary(file).on_none(|| {
+        eprintln!("Hover failed. File '{filename}' does not exist.");
+    })?;
+    let content = db.file_content(file).on_none(|| {
         eprintln!("Hover failed. File '{filename}' does not exist.");
     })?;
 
     // Find offset for position.
-    let line_offset = file_summary.line_offsets.get(position.line as usize).on_none(|| {
+    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
         eprintln!("Hover failed. Position out of bounds.");
     })?;
-    // TODO(spapini): Check that character is not larger than line_length.
-    let node = syntax
-        .as_syntax_node()
-        .lookup_offset(syntax_db, line_offset.add(position.character as usize));
+    let mut chars_it = offset.take_from(&content).chars();
+    for _ in 0..position.character {
+        let c = chars_it.next().on_none(|| {
+            eprintln!("Position does not exist.");
+        })?;
+        offset = offset.add_width(TextWidth::from_char(c));
+    }
+    let node = syntax.as_syntax_node().lookup_offset(syntax_db, offset);
 
     // Find module.
     let module_id = find_node_module(db, file, node.clone()).on_none(|| {
@@ -734,6 +741,6 @@ fn detect_crate_for(db: &mut RootDatabase, file_path: &str) {
     }
     // Fallback to a single file.
     if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
-        eprintln!("Error loading file {} as a single crate: {}", file_path, err);
+        eprintln!("Error loading file {file_path} as a single crate: {err}");
     }
 }

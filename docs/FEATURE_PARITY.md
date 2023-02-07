@@ -1,26 +1,26 @@
 # Cairo 0 Features Parity
  
- In this page we track the missing features to reach feature parity with the old compiler version. We dived them by Cairo, StarkNet and specific system calls in StarkNet OS.
+ In this page we track the missing features to reach feature parity with the old compiler version. We divided them by Cairo, StarkNet and specific system calls in StarkNet OS.
  
  If we missed a feature, please let us know.
 
 ## Cairo features
 | name                   | status |
 |------------------------|--------|
-| `if (x == y)`            | ✅      |
+| `if (x == y)`          | ✅     |
 | `if (x == y & z == w)` | ✅     |
-| Short strings          | ✅      |
-| Structs                | ✅      |
-| Builtin Range check    | ✅      |
-| Builtin Pedersen       | ✅      |
-| Builtin Bitwise        | ✅      |
-| Dict                   | ⏳      |
-| Uint256                | ⏳      |
-| Builtin ec-op          | ⏳      |
+| Short strings          | ✅     |
+| Structs                | ✅     |
+| Builtin Range check    | ✅     |
+| Builtin Pedersen       | ✅     |
+| Builtin Bitwise        | ✅     |
+| Uint256                | ✅     |
+| Builtin ec-op          | ✅     |
+| Append-only arrays     | ✅     |
+| Named arguments        | ✅     |
+| Serde (serialization)  | ✅     |
+| Dict                   | ⏳     |
 | `if (cond1 && cond2)`  |        |
-| Append-only arrays     |        |
-| Named arguments        |        |
-| Serde (serialization)  |        |
 | Find element           |        |
 
 
@@ -30,12 +30,12 @@
 
 | name                                      | status |
 |-------------------------------------------|--------|
-| Contract interface                        | ✅      |
-| External functions and view functions     | ✅      |
-| Storage variables - felts                 | ✅      |
-| Storage variables - mapping               | ⏳      |
-| Storage variables - other types as values | ⏳      |
-| Events                                    |        |
+| Contract interface                        | ✅     |
+| External functions and view functions     | ✅     |
+| Storage variables - felts                 | ✅     |
+| Storage variables - mapping               | ✅     |
+| Storage variables - other types as values | ✅     |
+| Events                                    | ✅     |
 
 
 ---
@@ -44,14 +44,14 @@
 
 | name                  | status |
 |-----------------------|--------|
-| storage_read          | ✅      |
-| storage_write         | ✅      |
-| call_contract         | ⏳      |
+| storage_read          | ✅     |
+| storage_write         | ✅     |
+| get_caller_address    | ✅     |
+| call_contract         | ⏳     |
 | library_call          |        |
 | deploy                |        |
 | get_block_number      |        |
 | get_block_timestamp   |        |
-| get_caller_address    |        |
 | get_contract_address  |        |
 | get_sequencer_address |        |
 | get_transaction_info  |        |

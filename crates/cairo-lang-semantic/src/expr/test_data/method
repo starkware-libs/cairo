@@ -91,9 +91,9 @@ impl AnotherTraitImpl of AnotherTrait {
 
 //! > expected_diagnostics
 error: Unknown function.
- --> lib.cairo:33:5
+ --> lib.cairo:33:7
     x.is_foo();
-    ^********^
+      ^****^
 
 error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: OptionTrait::is_bar and AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:36:5

@@ -18,6 +18,9 @@ fn non_extern(_a: some_type) -> Option::<(felt, other)> nopanic {
 #[panic_with('4', generic_panic)]
 extern fn generic<T>(t: T, v: felt) -> Result::<T, Err> nopanic;
 
+#[panic_with('5', wrapped_possibly_panic)]
+fn possibly_panic() -> Result::<felt, Err> { Result::<felt, Err>::Ok(1) }
+
 //! > generated_cairo_code
 #[panic_with('1', foo_improved)]
 extern fn foo(a: felt, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
@@ -74,6 +77,7 @@ fn non_extern_stuff(_a: some_type) -> (felt, other) {
 
 #[panic_with('4', generic_panic)]
 extern fn generic<T>(t: T, v: felt) -> Result::<T, Err> nopanic;
+
 fn generic_panic<T>(t: T, v: felt) -> T {
     match generic(t, v) {
         Result::Ok (v) => {
@@ -82,6 +86,22 @@ fn generic_panic<T>(t: T, v: felt) -> T {
         Result::Err (v) => {
             let mut data = array_new::<felt>();
             array_append::<felt>(ref data, '4');
+            panic(data)
+        },
+    }
+}
+
+
+#[panic_with('5', wrapped_possibly_panic)]
+fn possibly_panic() -> Result::<felt, Err> { Result::<felt, Err>::Ok(1) }
+fn wrapped_possibly_panic() -> felt {
+    match possibly_panic() {
+        Result::Ok (v) => {
+            v
+        },
+        Result::Err (v) => {
+            let mut data = array_new::<felt>();
+            array_append::<felt>(ref data, '5');
             panic(data)
         },
     }
@@ -100,9 +120,6 @@ test_expand_plugin
 #[panic_with(123, foo_bad_err_code)]
 extern fn foo(a: felt, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
-#[panic_with('2', bar_not_nopanic)]
-fn bar() -> Result::<felt, Err> { Result::<felt, Err>::Ok(1) }
-
 #[panic_with(missing_args)]
 extern fn non_extern(_a: some_type) -> Option::<(felt, other)> nopanic;
 
@@ -117,17 +134,12 @@ error: Failed to extract panic data attribute
 #[panic_with(123, foo_bad_err_code)]
 ^**********************************^
 
-error: Only nopanic functions can be wrapped
- --> dummy_file.cairo:4:1
-#[panic_with('2', bar_not_nopanic)]
-^*********************************^
-
 error: Failed to extract panic data attribute
- --> dummy_file.cairo:7:1
+ --> dummy_file.cairo:4:1
 #[panic_with(missing_args)]
 ^*************************^
 
 error: Currently only wrapping functions returning an Option<T> or Result<T, E>
- --> dummy_file.cairo:11:39
+ --> dummy_file.cairo:8:39
 extern fn bad_ret_type(_a: some_type) -> felt nopanic;
                                       ^*****^

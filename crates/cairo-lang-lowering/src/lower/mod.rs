@@ -9,7 +9,7 @@ use itertools::{chain, zip_eq};
 use num_traits::Zero;
 use scope::BlockBuilder;
 use semantic::corelib::{
-    core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
+    core_felt_is_zero, core_felt_ty, core_nonzero_ty, get_core_function_id,
     jump_nz_nonzero_variant, jump_nz_zero_variant, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
@@ -241,10 +241,10 @@ fn lower_single_pattern(
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
-        semantic::Pattern::Struct(strct) => {
-            let members = ctx.db.struct_members(strct.id).map_err(LoweringFlowError::Failed)?;
+        semantic::Pattern::Struct(structure) => {
+            let members = ctx.db.struct_members(structure.id).map_err(LoweringFlowError::Failed)?;
             let mut required_members = UnorderedHashMap::from_iter(
-                strct.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
+                structure.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
             );
             let generator = generators::StructDestructure {
                 input: lowered_expr.var(ctx, scope)?,
@@ -256,7 +256,7 @@ fn lower_single_pattern(
                             required_members
                                 .get(&member.id)
                                 .map(|pattern| pattern.stable_ptr().untyped())
-                                .unwrap_or_else(|| strct.stable_ptr.untyped()),
+                                .unwrap_or_else(|| structure.stable_ptr.untyped()),
                         ),
                     })
                     .collect(),
@@ -681,7 +681,7 @@ fn lower_expr_match_felt(
 
     // Emit the statement.
     scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
-        function: core_jump_nz_func(semantic_db),
+        function: core_felt_is_zero(semantic_db),
         inputs: vec![expr_var],
         arms,
     }));

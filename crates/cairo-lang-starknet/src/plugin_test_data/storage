@@ -11,14 +11,13 @@ mod TestContract {
         var_felt: felt,
         var_u128: u128,
         var_bool: bool,
-        felt_to_u128: Map::<felt, u128>,
-        u128_to_bool: Map::<u128, bool>,
-        bool_to_felt: Map::<bool, felt>,
+        felt_to_u128: LegacyMap::<felt, u128>,
+        u128_to_bool: LegacyMap::<u128, bool>,
+        bool_to_felt: LegacyMap::<bool, felt>,
     }
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;

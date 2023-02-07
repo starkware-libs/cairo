@@ -1,3 +1,4 @@
+use array::ArrayTrait;
 enum Result<T, E> {
     Ok: T,
     Err: E,
@@ -21,8 +22,8 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
         match self {
             Result::Ok(x) => x,
             Result::Err(_) => {
-                let mut data = array_new::<felt>();
-                array_append::<felt>(ref data, err)
+                let mut data = ArrayTrait::new();
+                data.append(err);
                 panic(data)
             },
         }
@@ -33,8 +34,8 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
     fn expect_err(self: Result::<T, E>, err: felt) -> E {
         match self {
             Result::Ok(_) => {
-                let mut data = array_new::<felt>();
-                array_append::<felt>(ref data, err)
+                let mut data = ArrayTrait::new();
+                data.append(err);
                 panic(data)
             },
             Result::Err(x) => x,

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialMapper};
+use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
 use cairo_lang_syntax::node::ast::AttributeList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -50,21 +50,6 @@ fn generate_panicable_code(
             continue;
         }
         let signature = declaration.signature(db);
-        if !matches!(
-            signature.optional_no_panic(db),
-            ast::OptionTerminalNoPanic::TerminalNoPanic(_)
-        ) {
-            // Only nopanic functions can be wrapped.
-            return PluginResult {
-                code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    stable_ptr: attr.stable_ptr().untyped(),
-                    message: "Only nopanic functions can be wrapped".into(),
-                }],
-                remove_original_item,
-            };
-        }
-
         let Some((inner_ty_text, success_variant, failure_variant)) =
             extract_success_ty_and_variants(db, &signature) else {
             return PluginResult {
@@ -139,7 +124,7 @@ fn generate_panicable_code(
                     }}
                 "#
                 ),
-                aux_data: DynGeneratedFileAuxData(Arc::new(TrivialMapper {})),
+                aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
             }),
             diagnostics: vec![],
             remove_original_item,

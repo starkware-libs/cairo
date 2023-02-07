@@ -1,7 +1,9 @@
+use itertools::Itertools;
+
 use super::args_as_single_type;
 use super::error::{ExtensionError, SpecializationError};
 use super::type_specialization_context::TypeSpecializationContext;
-use crate::ids::{id_from_string, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
 /// Trait for the specialization of libfunc signatures.
@@ -118,16 +120,16 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
         libfunc_id: &GenericLibfuncId,
         generic_args: &[GenericArg],
     ) -> Result<LibfuncSignature, ExtensionError> {
-        Self::by_id(libfunc_id)
-            .ok_or_else(move || ExtensionError::LibfuncSpecialization {
-                libfunc_id: libfunc_id.clone(),
-                error: SpecializationError::UnsupportedId,
-            })?
-            .specialize_signature(context, generic_args)
-            .map_err(move |error| ExtensionError::LibfuncSpecialization {
-                libfunc_id: libfunc_id.clone(),
-                error,
-            })
+        if let Some(generic_libfunc) = Self::by_id(libfunc_id) {
+            generic_libfunc.specialize_signature(context, generic_args)
+        } else {
+            Err(SpecializationError::UnsupportedId)
+        }
+        .map_err(move |error| ExtensionError::LibfuncSpecialization {
+            libfunc_id: libfunc_id.clone(),
+            generic_args: generic_args.iter().cloned().collect_vec(),
+            error,
+        })
     }
 
     fn specialize_by_id(
@@ -135,16 +137,16 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
         libfunc_id: &GenericLibfuncId,
         generic_args: &[GenericArg],
     ) -> Result<TGenericLibfunc::Concrete, ExtensionError> {
-        Self::by_id(libfunc_id)
-            .ok_or_else(move || ExtensionError::LibfuncSpecialization {
-                libfunc_id: libfunc_id.clone(),
-                error: SpecializationError::UnsupportedId,
-            })?
-            .specialize(context, generic_args)
-            .map_err(move |error| ExtensionError::LibfuncSpecialization {
-                libfunc_id: libfunc_id.clone(),
-                error,
-            })
+        if let Some(generic_libfunc) = Self::by_id(libfunc_id) {
+            generic_libfunc.specialize(context, generic_args)
+        } else {
+            Err(SpecializationError::UnsupportedId)
+        }
+        .map_err(move |error| ExtensionError::LibfuncSpecialization {
+            libfunc_id: libfunc_id.clone(),
+            generic_args: generic_args.iter().cloned().collect_vec(),
+            error,
+        })
     }
 }
 
@@ -171,7 +173,7 @@ impl<TNamedLibfunc: NamedLibfunc> GenericLibfunc for TNamedLibfunc {
     type Concrete = <Self as NamedLibfunc>::Concrete;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        if id_from_string(Self::STR_ID) == id.id { Some(Self::default()) } else { None }
+        if Self::STR_ID == id.0 { Some(Self::default()) } else { None }
     }
 
     fn specialize_signature(

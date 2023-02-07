@@ -6,7 +6,7 @@ use cairo_lang_sierra::extensions::felt::{
 };
 use num_bigint::BigInt;
 
-use super::misc::build_jump_nz;
+use super::misc::build_is_zero;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::add_input_variables;
 use crate::references::ReferenceExpression;
@@ -27,7 +27,7 @@ pub fn build(
         FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibfunc::Const(
             FeltOperationWithConstConcreteLibfunc { operator, c, .. },
         )) => build_felt_op_with_const(builder, *operator, c.clone()),
-        FeltConcrete::JumpNotZero(_) => build_jump_nz(builder),
+        FeltConcrete::IsZero(_) => build_is_zero(builder),
         FeltConcrete::Const(libfunc) => Ok(builder.build_only_reference_changes(
             [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))]
                 .into_iter(),
@@ -47,7 +47,11 @@ fn build_felt_op(
         deref_or_immediate b;
     };
     let res = casm_builder.bin_op(felt_to_cell_operator(op), a, b);
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res]], None)],
+        Default::default(),
+    ))
 }
 
 /// Handles a felt operation with a const.
@@ -61,7 +65,11 @@ fn build_felt_op_with_const(
     add_input_variables! {casm_builder, deref a; };
     let c = casm_builder.add_var(CellExpression::Immediate(c));
     let res = casm_builder.bin_op(felt_to_cell_operator(op), a, c);
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res]], None)],
+        Default::default(),
+    ))
 }
 
 /// Converts a felt operator to the corresponding cell operator.

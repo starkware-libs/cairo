@@ -163,9 +163,8 @@ fn compare_printed_and_expected_maybe_fix(
     if printed != expected {
         if fix {
             println!(
-                "Test failed, fixing expected output file: {}. Please make sure that the result \
-                 is correct.",
-                expected_output_filename
+                "Test failed, fixing expected output file: {expected_output_filename}. Please \
+                 make sure that the result is correct."
             );
             std::fs::write(expected_output_filename, printed)
                 .expect("Failed writing to the expected output file");
@@ -247,10 +246,21 @@ pub fn fix_parser_tests() {
 /// - ignored_kinds: Syntax kinds to ignore when printing. In this context, "ignore" means printing
 ///   the nodes themselves, but not their children.
 /// Outputs:
-/// - expected_tree - the printed syntax tree of the given cairo_code, ignoring the irrelevant
-///   kinds.
+/// - expected_tree - the printed syntax tree of the given cairo_code, with/without trivia, ignoring
+///   the irrelevant kinds.
 pub fn test_partial_parser_tree(
     inputs: &OrderedHashMap<String, String>,
+) -> OrderedHashMap<String, String> {
+    test_partial_parser_tree_inner(inputs, false)
+}
+pub fn test_partial_parser_tree_with_trivia(
+    inputs: &OrderedHashMap<String, String>,
+) -> OrderedHashMap<String, String> {
+    test_partial_parser_tree_inner(inputs, true)
+}
+fn test_partial_parser_tree_inner(
+    inputs: &OrderedHashMap<String, String>,
+    print_trivia: bool,
 ) -> OrderedHashMap<String, String> {
     // TODO(yuval): allow pointing to a code in another file.
     let db = &SimpleParserDatabase::default();
@@ -262,7 +272,13 @@ pub fn test_partial_parser_tree(
     OrderedHashMap::from([
         (
             "expected_tree".into(),
-            print_partial_tree(db, &syntax_root, &inputs["top_level_kind"], ignored_kinds),
+            print_partial_tree(
+                db,
+                &syntax_root,
+                &inputs["top_level_kind"],
+                ignored_kinds,
+                print_trivia,
+            ),
         ),
         ("expected_diagnostics".into(), diagnostics.format(db)),
     ])
@@ -303,4 +319,13 @@ cairo_lang_test_utils::test_file_test!(
         module: "module",
     },
     test_partial_parser_tree
+);
+
+cairo_lang_test_utils::test_file_test!(
+    partial_parser_tree_with_trivia,
+    "src/parser_test_data",
+    {
+        path: "path_with_trivia",
+    },
+    test_partial_parser_tree_with_trivia
 );

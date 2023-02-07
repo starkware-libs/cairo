@@ -22,7 +22,6 @@ mod HelloStarknet {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod HelloStarknet {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -80,6 +79,7 @@ mod HelloStarknet {
 
     mod __external {
         fn increase_balance(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -99,7 +99,7 @@ mod HelloStarknet {
                         panic(err_data)
                     },
                 };
-            if array_len(ref data) != 0_u128 {
+            if !array::ArrayTrait::is_empty(ref data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -123,6 +123,7 @@ mod HelloStarknet {
             arr
         }
         fn get_balance(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -133,7 +134,7 @@ mod HelloStarknet {
                 },
             }
             
-            if array_len(ref data) != 0_u128 {
+            if !array::ArrayTrait::is_empty(ref data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -155,7 +156,7 @@ mod HelloStarknet {
             let mut arr = array_new();
             // References.
             // Result.
-            serde::Serde::<felt>::serialize(ref arr, res)
+            serde::Serde::<felt>::serialize(ref arr, res);
             arr
         }
         

@@ -42,10 +42,8 @@ pub fn calc_metadata(
         .map(|(func, costs)| {
             (
                 func.clone(),
-                costs
-                    .iter()
-                    .filter(|(token, _cost)| !matches!(token, CostTokenType::Step))
-                    .map(|(k, v)| (*k, *v))
+                CostTokenType::iter_precost()
+                    .filter_map(|token| costs.get(token).map(|v| (*token, *v)))
                     .collect(),
             )
         })
@@ -62,15 +60,17 @@ pub fn calc_metadata(
         .map(|(func, costs)| {
             (
                 func.clone(),
-                costs
+                [CostTokenType::Const]
                     .iter()
-                    .filter(|(token, _cost)| matches!(token, CostTokenType::Step))
-                    .map(|(k, v)| (*k, *v))
+                    .filter_map(|token| costs.get(token).map(|v| (*token, *v)))
                     .collect(),
             )
         })
         .collect();
-    let post_gas_info = calc_gas_postcost_info(program, post_function_set_costs, &pre_gas_info)?;
+    let post_gas_info =
+        calc_gas_postcost_info(program, post_function_set_costs, &pre_gas_info, |idx| {
+            ap_change_info.variable_values.get(&idx).copied().unwrap_or_default()
+        })?;
 
     Ok(Metadata { ap_change_info, gas_info: pre_gas_info.combine(post_gas_info) })
 }

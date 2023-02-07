@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use num_bigint::BigInt;
 
 use super::felt::FeltType;
+use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -13,7 +14,7 @@ use crate::extensions::{
     GenericLibfunc, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{id_from_string, GenericLibfuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Operators for integers.
@@ -44,10 +45,12 @@ pub trait UintTraits: Default {
     const OVERFLOWING_ADD: &'static str;
     /// The generic libfunc id for subtraction.
     const OVERFLOWING_SUB: &'static str;
-    /// The generic libfunc id for convertion to felt.
+    /// The generic libfunc id for conversion to felt.
     const TO_FELT: &'static str;
-    /// The generic libfunc id for convertion from felt.
+    /// The generic libfunc id for conversion from felt.
     const TRY_FROM_FELT: &'static str;
+    /// The generic libfunc id that divides two integers.
+    const DIVMOD: &'static str;
 }
 
 #[derive(Default)]
@@ -246,8 +249,8 @@ pub struct UintOperationLibfunc<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
 impl<TUintTraits: UintTraits> UintOperationLibfunc<TUintTraits> {
-    const OVERFLOWING_ADD: u64 = id_from_string(TUintTraits::OVERFLOWING_ADD);
-    const OVERFLOWING_SUB: u64 = id_from_string(TUintTraits::OVERFLOWING_SUB);
+    const OVERFLOWING_ADD: &'static str = TUintTraits::OVERFLOWING_ADD;
+    const OVERFLOWING_SUB: &'static str = TUintTraits::OVERFLOWING_SUB;
     fn new(operator: IntOperator) -> Option<Self> {
         Some(Self { operator, _phantom: PhantomData::default() })
     }
@@ -256,7 +259,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
     type Concrete = UintOperationConcreteLibfunc;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        match id.id {
+        match id.0.as_str() {
             id if id == Self::OVERFLOWING_ADD => Self::new(IntOperator::OverflowingAdd),
             id if id == Self::OVERFLOWING_SUB => Self::new(IntOperator::OverflowingSub),
             _ => None,
@@ -413,6 +416,49 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintFromFeltLibfun
     }
 }
 
+/// Libfunc for uint divmod.
+#[derive(Default)]
+pub struct UintDivmodLibfunc<TUintTraits: UintTraits> {
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintDivmodLibfunc<TUintTraits> {
+    const STR_ID: &'static str = TUintTraits::DIVMOD;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(ty.clone()),
+                ParamSignature::new(nonzero_ty(context, &ty)?),
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: ty.clone(),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
+                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) } },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
 #[derive(Default)]
 pub struct Uint8Traits;
 
@@ -428,6 +474,7 @@ impl UintTraits for Uint8Traits {
     const OVERFLOWING_SUB: &'static str = "u8_overflowing_sub";
     const TO_FELT: &'static str = "u8_to_felt";
     const TRY_FROM_FELT: &'static str = "u8_try_from_felt";
+    const DIVMOD: &'static str = "u8_safe_divmod";
 }
 
 /// Type for u8.
@@ -442,6 +489,7 @@ define_libfunc_hierarchy! {
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
         ToFelt(UintToFeltLibfunc<Uint8Traits>),
         FromFelt(UintFromFeltLibfunc<Uint8Traits>),
+        Divmod(UintDivmodLibfunc<Uint8Traits>),
     }, Uint8Concrete
 }
 
@@ -460,6 +508,7 @@ impl UintTraits for Uint64Traits {
     const OVERFLOWING_SUB: &'static str = "u64_overflowing_sub";
     const TO_FELT: &'static str = "u64_to_felt";
     const TRY_FROM_FELT: &'static str = "u64_try_from_felt";
+    const DIVMOD: &'static str = "u64_safe_divmod";
 }
 
 /// Type for u64.
@@ -474,5 +523,6 @@ define_libfunc_hierarchy! {
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint64Traits>),
         ToFelt(UintToFeltLibfunc<Uint64Traits>),
         FromFelt(UintFromFeltLibfunc<Uint64Traits>),
+        Divmod(UintDivmodLibfunc<Uint64Traits>),
     }, Uint64Concrete
 }

@@ -1,4 +1,4 @@
-use cairo_lang_sierra::extensions::strct::StructConcreteLibfunc;
+use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};

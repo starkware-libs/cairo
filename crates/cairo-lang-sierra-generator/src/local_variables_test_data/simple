@@ -28,61 +28,21 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- blk1()
-  () <- blk2()
-  () <- blk3()
+  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v3: core::felt) <- core::felt_add(v2, v2)
   (v4: core::felt) <- test::revoke_ap()
-  () <- blk4()
+  (v5: core::felt) <- core::felt_add(v0, v2)
   (v6: core::felt) <- test::revoke_ap()
-  () <- blk5()
-  () <- blk6()
+  (v7: core::felt) <- core::felt_add(v0, v2)
+  (v8: core::felt) <- core::felt_add(v7, v5)
 End:
   Return(v0)
 
-blk1:
-Inputs:
-Statements:
-  (v9: core::felt) <- core::felt_add(v0, v0)
-End:
-  Callsite(v9 -> v1)
-
-blk2:
-Inputs:
-Statements:
-  (v10: core::felt) <- core::felt_add(v1, v1)
-End:
-  Callsite(v10 -> v2)
-
-blk3:
-Inputs:
-Statements:
-  (v11: core::felt) <- core::felt_add(v2, v2)
-End:
-  Callsite(v11 -> v3)
-
-blk4:
-Inputs:
-Statements:
-  (v12: core::felt) <- core::felt_add(v0, v2)
-End:
-  Callsite(v12 -> v5)
-
-blk5:
-Inputs:
-Statements:
-  (v13: core::felt) <- core::felt_add(v0, v2)
-End:
-  Callsite(v13 -> v7)
-
-blk6:
-Inputs:
-Statements:
-  (v14: core::felt) <- core::felt_add(v7, v5)
-End:
-  Callsite(v14 -> v8)
-
 //! > local_variables
 v2, v5
+
+//! > block_infos
 
 //! > ==========================================================================
 
@@ -111,20 +71,15 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- blk1()
+  (v1: core::felt) <- core::felt_add(v0, v0)
   (v2: core::felt) <- test::revoke_ap()
 End:
   Return(v1)
 
-blk1:
-Inputs:
-Statements:
-  (v3: core::felt) <- core::felt_add(v0, v0)
-End:
-  Callsite(v3 -> v1)
-
 //! > local_variables
 v1
+
+//! > block_infos
 
 //! > ==========================================================================
 
@@ -157,36 +112,17 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- blk1()
-  () <- blk2()
+  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v2: core::felt) <- core::felt_add(v1, v1)
   (v3: core::felt, v4: core::felt) <- core::dup::<core::felt>(v2)
   (v5: core::felt, v6: core::felt) <- core::dup::<core::felt>(v4)
   (v7: core::felt, v8: core::felt) <- core::dup::<core::felt>(v5)
   (v9: core::felt) <- test::revoke_ap()
-  () <- blk3()
+  (v10: core::felt) <- core::felt_add(v7, v8)
 End:
   Return(v10)
 
-blk1:
-Inputs:
-Statements:
-  (v11: core::felt) <- core::felt_add(v0, v0)
-End:
-  Callsite(v11 -> v1)
-
-blk2:
-Inputs:
-Statements:
-  (v12: core::felt) <- core::felt_add(v1, v1)
-End:
-  Callsite(v12 -> v2)
-
-blk3:
-Inputs:
-Statements:
-  (v13: core::felt) <- core::felt_add(v7, v8)
-End:
-  Callsite(v13 -> v10)
-
 //! > local_variables
 v2
+
+//! > block_infos

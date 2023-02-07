@@ -72,6 +72,16 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::InliningFunctionWithEarlyReturnNotSupported => {
                 "Inlining of functions with an early return is not supported.".into()
             }
+            LoweringDiagnosticKind::InliningFunctionWithIdentityVarsNotSupported => {
+                "Inlining of functions that directly returns one of its inputs is not supported."
+                    .into()
+            }
+
+            LoweringDiagnosticKind::InliningFunctionWithUnreachableEndNotSupported => {
+                "Inlining of functions where the end of the root block is unreachable is not \
+                 supported."
+                    .into()
+            }
         }
     }
 
@@ -104,5 +114,7 @@ pub enum LoweringDiagnosticKind {
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
     InliningFunctionWithEarlyReturnNotSupported,
+    InliningFunctionWithIdentityVarsNotSupported,
+    InliningFunctionWithUnreachableEndNotSupported,
     InlineWithoutArgumentNotSupported,
 }

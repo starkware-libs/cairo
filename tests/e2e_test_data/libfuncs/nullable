@@ -16,7 +16,7 @@ fn foo() -> Nullable::<felt> {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 1})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type felt = felt;
@@ -50,7 +50,7 @@ fn foo(x: Box::<felt>) -> Nullable::<felt> {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 1})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type felt = felt;
@@ -89,7 +89,7 @@ jmp rel 3;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 4})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt = felt;
@@ -146,7 +146,7 @@ jmp rel 3;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 6})
+test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
 type felt = felt;

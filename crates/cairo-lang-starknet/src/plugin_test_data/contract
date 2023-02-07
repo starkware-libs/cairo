@@ -19,20 +19,16 @@ mod TestContract {
     fn set_something(ref arg: felt, num: felt) {
     }
 
-    #[external]
-    fn generic_entry_point<T>(num: T) {
-    }
-
     #[event]
     fn awesome_event(x: felt, y: u128) {
     }
+
     #[event]
     fn best_event_ever() {
     }
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -48,10 +44,6 @@ mod TestContract {
 
     #[external]
     fn set_something(ref arg: felt, num: felt) {
-    }
-
-    #[external]
-    fn generic_entry_point<T>(num: T) {
     }
 
     
@@ -83,8 +75,6 @@ mod TestContract {
         fn get_something(ref arg: felt, num: felt) -> felt;
         #[external]
         fn set_something(ref arg: felt, num: felt);
-        #[external]
-        fn generic_entry_point<T>(num: T);
         
         #[event]
         fn awesome_event(x: felt, y: u128);
@@ -95,6 +85,7 @@ mod TestContract {
 
     mod __external {
         fn get_something(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -124,7 +115,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if array_len(ref data) != 0_u128 {
+            if !array::ArrayTrait::is_empty(ref data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -147,10 +138,11 @@ mod TestContract {
             // References.
             serde::Serde::<felt>::serialize(ref arr, __arg_arg);
             // Result.
-            serde::Serde::<felt>::serialize(ref arr, res)
+            serde::Serde::<felt>::serialize(ref arr, res);
             arr
         }
         fn set_something(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
@@ -180,7 +172,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if array_len(ref data) != 0_u128 {
+            if !array::ArrayTrait::is_empty(ref data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -204,49 +196,6 @@ mod TestContract {
             // Result.
             arr
         }
-        fn generic_entry_point(mut data: Array::<felt>) -> Array::<felt> {
-            match get_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
-            
-            let __arg_num =
-                match serde::Serde::<T>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array_new();
-                        array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
-            if array_len(ref data) != 0_u128 {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array_new();
-                array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            match get_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
-            super::generic_entry_point(__arg_num);
-            let mut arr = array_new();
-            // References.
-            // Result.
-            arr
-        }
         
     }
 
@@ -256,7 +205,3 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Contract entry points cannot have generic arguments
- --> dummy_file.cairo:17:27
-    fn generic_entry_point<T>(num: T) {
-                          ^*^

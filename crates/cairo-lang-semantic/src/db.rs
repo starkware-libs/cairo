@@ -27,7 +27,7 @@ use crate::items::function_with_body::FunctionBody;
 use crate::items::imp::ImplLookupContext;
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::ConcreteTraitId;
-use crate::plugin::{DynDiagnosticMapper, SemanticPlugin};
+use crate::plugin::{DynPluginAuxData, SemanticPlugin};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
     corelib, items, literals, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
@@ -78,8 +78,8 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_concrete_trait_function(
         &self,
-        id: items::trt::ConcreteTraitFunctionLongId,
-    ) -> items::trt::ConcreteTraitFunctionId;
+        id: items::trt::ConcreteTraitGenericFunctionLongId,
+    ) -> items::trt::ConcreteTraitGenericFunctionId;
     #[salsa::interned]
     fn intern_concrete_impl(
         &self,
@@ -149,26 +149,27 @@ pub trait SemanticGroup:
     // Struct.
     // =======
     /// Private query to compute data about a struct.
-    #[salsa::invoke(items::strct::priv_struct_semantic_data)]
-    fn priv_struct_semantic_data(&self, struct_id: StructId) -> Maybe<items::strct::StructData>;
+    #[salsa::invoke(items::structure::priv_struct_semantic_data)]
+    fn priv_struct_semantic_data(&self, struct_id: StructId)
+    -> Maybe<items::structure::StructData>;
     /// Returns the semantic diagnostics of a struct.
-    #[salsa::invoke(items::strct::struct_semantic_diagnostics)]
+    #[salsa::invoke(items::structure::struct_semantic_diagnostics)]
     fn struct_semantic_diagnostics(&self, struct_id: StructId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an enum.
-    #[salsa::invoke(items::strct::struct_generic_params)]
+    #[salsa::invoke(items::structure::struct_generic_params)]
     fn struct_generic_params(&self, struct_id: StructId) -> Maybe<Vec<GenericParamId>>;
     /// Returns the members of a struct.
-    #[salsa::invoke(items::strct::struct_members)]
+    #[salsa::invoke(items::structure::struct_members)]
     fn struct_members(
         &self,
         struct_id: StructId,
     ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>>;
     /// Returns the attributes of a struct.
-    #[salsa::invoke(items::strct::struct_attributes)]
+    #[salsa::invoke(items::structure::struct_attributes)]
     fn struct_attributes(&self, struct_id: StructId) -> Maybe<Vec<Attribute>>;
     /// Returns the resolution lookback of a struct.
-    #[salsa::invoke(items::strct::struct_resolved_lookback)]
-    fn struct_resolved_lookback(&self, strct_id: StructId) -> Maybe<Arc<ResolvedLookback>>;
+    #[salsa::invoke(items::structure::struct_resolved_lookback)]
+    fn struct_resolved_lookback(&self, structure_id: StructId) -> Maybe<Arc<ResolvedLookback>>;
 
     // Enum.
     // =======
@@ -703,10 +704,10 @@ fn module_semantic_diagnostics(
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
     for (module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)? {
-        diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::new(module_file_id, plugin_diag.stable_ptr),
-            kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
-        });
+        diagnostics.add(SemanticDiagnostic::new(
+            StableLocation::new(module_file_id, plugin_diag.stable_ptr),
+            SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+        ));
     }
 
     diagnostics.extend(db.priv_module_items_data(module_id)?.diagnostics.clone());
@@ -749,13 +750,14 @@ fn module_semantic_diagnostics(
                             FileLongId::Virtual(_) => panic!("Expected OnDisk file."),
                         };
 
-                        diagnostics.add(SemanticDiagnostic {
-                            stable_location: StableLocation::new(
-                                submodule_id.module_file_id(db.upcast()),
-                                submodule_id.stable_ptr(db.upcast()).untyped(),
-                            ),
-                            kind: SemanticDiagnosticKind::ModuleFileNotFound { path },
-                        });
+                        let stable_location = StableLocation::new(
+                            submodule_id.module_file_id(db.upcast()),
+                            submodule_id.stable_ptr(db.upcast()).untyped(),
+                        );
+                        diagnostics.add(SemanticDiagnostic::new(
+                            stable_location,
+                            SemanticDiagnosticKind::ModuleFileNotFound { path },
+                        ));
                     }
                 }
             }
@@ -774,7 +776,7 @@ fn module_semantic_diagnostics(
     Ok(map_diagnostics(
         db.elongate(),
         module_id,
-        &db.module_generated_file_info(module_id)?,
+        &db.module_generated_file_infos(module_id)?,
         diagnostics.build(),
     )
     .1)
@@ -806,22 +808,21 @@ fn map_diagnostics(
                 .aux_data
                 .0
                 .as_any()
-                .downcast_ref::<DynDiagnosticMapper>()
+                .downcast_ref::<DynPluginAuxData>()
                 .and_then(|mapper| mapper.map_diag(db.upcast(), diag));
             if let Some(plugin_diag) = opt_diag {
                 // We don't have a real location, so we give a dummy location in the correct file.
                 // SemanticDiagnostic struct knowns to give the proper span for
                 // WrappedPluginDiagnostic.
-                diagnostics.add(SemanticDiagnostic {
-                    stable_location: StableLocation::new(
-                        file_info.origin,
-                        db.intern_stable_ptr(SyntaxStablePtr::Root),
-                    ),
-                    kind: SemanticDiagnosticKind::WrappedPluginDiagnostic {
-                        diagnostic: plugin_diag,
-                        original_diag: Box::new(diag.clone()),
-                    },
-                });
+                let stable_location = StableLocation::new(
+                    file_info.origin,
+                    db.intern_stable_ptr(SyntaxStablePtr::Root),
+                );
+                let kind = SemanticDiagnosticKind::WrappedPluginDiagnostic {
+                    diagnostic: plugin_diag,
+                    original_diag: Box::new(diag.clone()),
+                };
+                diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
                 has_change = true;
                 continue;
             }

@@ -20,7 +20,7 @@ pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
     let name = input.ident;
     // TODO(yuval/shahar): extract the lifetime here and use it instead of `'a` below.
     let body = match input.data {
-        syn::Data::Struct(strct) => emit_struct_debug(name, db, strct),
+        syn::Data::Struct(structure) => emit_struct_debug(name, db, structure),
         syn::Data::Enum(enm) => emit_enum_debug(name, db, enm),
         syn::Data::Union(_) => panic!("Unions are not supported"),
     };
@@ -32,8 +32,12 @@ pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
 }
 
 /// Emits a DebugWithDb implementation for a struct.
-fn emit_struct_debug(name: syn::Ident, db: TokenStream2, strct: syn::DataStruct) -> TokenStream2 {
-    let (pattern, field_prints) = emit_fields_debug(db.clone(), name.to_string(), strct.fields);
+fn emit_struct_debug(
+    name: syn::Ident,
+    db: TokenStream2,
+    structure: syn::DataStruct,
+) -> TokenStream2 {
+    let (pattern, field_prints) = emit_fields_debug(db.clone(), name.to_string(), structure.fields);
     let crt = debug_crate();
     quote! {
         impl<'a, T: ?Sized + cairo_lang_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {

@@ -18,6 +18,7 @@ cairo_lang_test_utils::test_file_test!(
         constant :"constant",
         enums :"enums",
         error_propagate :"error_propagate",
+        generics :"generics",
         extern_ :"extern",
         arm_pattern_destructure :"arm_pattern_destructure",
         if_ :"if",
@@ -27,7 +28,6 @@ cairo_lang_test_utils::test_file_test!(
         struct_ :"struct",
         tests :"tests",
         tuple :"tuple",
-        inline_diagnostics :"inline_diagnostics",
     },
     test_function_lowering
 );

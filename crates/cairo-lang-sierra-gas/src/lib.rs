@@ -39,9 +39,34 @@ pub enum CostError {
     SolvingGasEquationFailed,
 }
 
-impl InvocationCostInfoProvider for ProgramRegistry<CoreType, CoreLibfunc> {
+/// Helper to implement the `InvocationCostInfoProvider` for the equation generation.
+struct InvocationCostInfoProviderForEqGen<
+    'a,
+    TokenUsages: Fn(CostTokenType) -> usize,
+    ApChangeVarValue: Fn() -> usize,
+> {
+    /// Registry for providing the sizes of the types.
+    registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
+    /// Closure providing the token usages for the invocation.
+    token_usages: TokenUsages,
+    /// Closure providing the ap changes for the invocation.
+    ap_change_var_value: ApChangeVarValue,
+}
+
+impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usize>
+    InvocationCostInfoProvider
+    for InvocationCostInfoProviderForEqGen<'a, TokenUsages, ApChangeVarValue>
+{
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.get_type(ty).unwrap().info().size as usize
+        self.registry.get_type(ty).unwrap().info().size as usize
+    }
+
+    fn token_usages(&self, token_type: CostTokenType) -> usize {
+        (self.token_usages)(token_type)
+    }
+
+    fn ap_change_var_value(&self) -> usize {
+        (self.ap_change_var_value)()
     }
 }
 
@@ -53,16 +78,11 @@ pub fn calc_gas_precost_info(
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     calc_gas_info_inner(
         program,
-        |statement_future_cost, idx, libfunc_id| {
+        |statement_future_cost, idx, libfunc_id| -> Vec<OrderedHashMap<CostTokenType, Expr<Var>>> {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registery creation would have already failed.");
-            core_libfunc_cost_expr::core_libfunc_precost_expr(
-                statement_future_cost,
-                idx,
-                libfunc,
-                &registry,
-            )
+            core_libfunc_cost_expr::core_libfunc_precost_expr(statement_future_cost, idx, libfunc)
         },
         function_set_costs,
         &registry,
@@ -70,10 +90,11 @@ pub fn calc_gas_precost_info(
 }
 
 /// Calculates gas postcost information for a given program - the gas costs of step token.
-pub fn calc_gas_postcost_info(
+pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
     program: &Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     precost_gas_info: &GasInfo,
+    ap_change_var_value: ApChangeVarValue,
 ) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     calc_gas_info_inner(
@@ -86,8 +107,13 @@ pub fn calc_gas_postcost_info(
                 statement_future_cost,
                 idx,
                 libfunc,
-                &registry,
-                precost_gas_info,
+                &InvocationCostInfoProviderForEqGen {
+                    registry: &registry,
+                    token_usages: |token_type| {
+                        precost_gas_info.variable_values[(*idx, token_type)] as usize
+                    },
+                    ap_change_var_value: || ap_change_var_value(*idx),
+                },
             )
         },
         function_set_costs,

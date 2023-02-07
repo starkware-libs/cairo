@@ -28,7 +28,7 @@ use super::enm::SemanticEnumEx;
 use super::function_with_body::{FunctionBody, FunctionBodyData};
 use super::functions::{substitute_signature, FunctionDeclarationData};
 use super::generics::semantic_generic_params;
-use super::strct::SemanticStructEx;
+use super::structure::SemanticStructEx;
 use crate::corelib::{copy_trait, core_module, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -305,10 +305,10 @@ pub fn priv_impl_definition_data(
                 Item::Impl(imp) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
                 }
-                Item::Struct(strct) => report_invalid_impl_item(
+                Item::Struct(structure) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
-                    strct.struct_kw(syntax_db),
+                    structure.struct_kw(syntax_db),
                 ),
                 Item::Enum(enm) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
@@ -458,6 +458,7 @@ pub fn find_impls_at_module(
     inference: &Inference<'_>,
     module_id: ModuleId,
     concrete_trait_id: ConcreteTraitId,
+    stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Vec<ImplId>> {
     let mut res = Vec::new();
 
@@ -482,6 +483,7 @@ pub fn find_impls_at_module(
             &imp_data.generic_params,
             &long_imp_concrete_trait.generic_args,
             &long_concrete_trait.generic_args,
+            stable_ptr,
         ) {
             continue;
         }
@@ -504,13 +506,22 @@ pub fn find_impls_at_context(
     inference: &Inference<'_>,
     lookup_context: &ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
+    stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<OrderedHashSet<ImplId>> {
     let mut res = OrderedHashSet::default();
     // TODO(spapini): Lookup in generic_params once impl generic params are supported.
-    res.extend(find_impls_at_module(db, inference, lookup_context.module_id, concrete_trait_id)?);
+    res.extend(find_impls_at_module(
+        db,
+        inference,
+        lookup_context.module_id,
+        concrete_trait_id,
+        stable_ptr,
+    )?);
     let core_module = core_module(db);
     for module_id in chain!(&lookup_context.extra_modules, [&core_module]) {
-        if let Ok(imps) = find_impls_at_module(db, inference, *module_id, concrete_trait_id) {
+        if let Ok(imps) =
+            find_impls_at_module(db, inference, *module_id, concrete_trait_id, stable_ptr)
+        {
             res.extend(imps);
         }
     }
@@ -520,11 +531,18 @@ pub fn find_impls_at_context(
             inference,
             ModuleId::Submodule(submodule),
             concrete_trait_id,
+            stable_ptr,
         )?);
     }
     for use_id in db.module_uses_ids(lookup_context.module_id)? {
         if let Ok(ResolvedGenericItem::Module(submodule)) = db.use_resolved_item(use_id) {
-            res.extend(find_impls_at_module(db, inference, submodule, concrete_trait_id)?);
+            res.extend(find_impls_at_module(
+                db,
+                inference,
+                submodule,
+                concrete_trait_id,
+                stable_ptr,
+            )?);
         }
     }
     Ok(res)
@@ -611,11 +629,11 @@ pub fn priv_impl_function_declaration_data(
     validate_impl_function_signature(
         db,
         &mut diagnostics,
-        impl_id,
         impl_function_id,
         &signature_syntax,
         &signature,
         function_syntax,
+        &function_generic_params,
     )
     .ok();
 
@@ -635,13 +653,14 @@ pub fn priv_impl_function_declaration_data(
 fn validate_impl_function_signature(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    impl_id: ImplId,
     impl_function_id: ImplFunctionId,
     signature_syntax: &ast::FunctionSignature,
     signature: &semantic::Signature,
     function_syntax: &ast::FunctionWithBody,
+    impl_func_generics: &[GenericParamId],
 ) -> Maybe<()> {
     let syntax_db = db.upcast();
+    let impl_id = impl_function_id.impl_id(db.upcast());
     let declaraton_data = db.priv_impl_declaration_data(impl_id)?;
     let concrete_trait = declaraton_data.concrete_trait?;
     let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait);
@@ -662,6 +681,29 @@ fn validate_impl_function_signature(
         zip_eq(trait_generic_params, concrete_trait_long_id.generic_args).collect(),
     );
     let concrete_trait_signature = substitute_signature(db, substitution, trait_signature);
+
+    // Match generics of the function.
+    let trait_func_generics = db.trait_function_generic_params(*trait_function_id)?;
+    if impl_func_generics.len() != trait_func_generics.len() {
+        diagnostics.report(
+            &function_syntax.declaration(syntax_db).name(syntax_db),
+            WrongNumberOfGenericArguments {
+                expected: trait_func_generics.len(),
+                actual: impl_func_generics.len(),
+            },
+        );
+        return Ok(());
+    }
+    let substitution = GenericSubstitution(
+        zip_eq(
+            trait_func_generics,
+            impl_func_generics.iter().map(|param| {
+                GenericArgumentId::Type(db.intern_type(TypeLongId::GenericParameter(*param)))
+            }),
+        )
+        .collect(),
+    );
+    let concrete_trait_signature = substitute_signature(db, substitution, concrete_trait_signature);
 
     if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(

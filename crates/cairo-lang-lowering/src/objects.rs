@@ -131,6 +131,16 @@ pub enum FlatBlockEnd {
     /// The last statement ended the flow (e.g., match will all arms ending in return),
     /// and the end of this block is unreachable.
     Unreachable,
+
+    /// Fallthrough and Goto are currently only used when inlining functions.
+    /// Fallthrough(BlockId, _) indicates that `BlockId` is the logical continuation of the
+    /// current block.
+    /// Goto may only branch to a block that also has a Fallthrough branch.
+
+    /// This block ends with a fallthrough to a different block
+    Fallthrough(BlockId, VarRemapping),
+    /// This block ends with a jump to a different block.
+    Goto(BlockId, VarRemapping),
 }
 
 impl TryFrom<StructuredBlock> for FlatBlock {
@@ -196,7 +206,6 @@ pub enum Statement {
 
     // Flow control.
     Call(StatementCall),
-    CallBlock(StatementCallBlock),
     MatchExtern(StatementMatchExtern),
 
     // Structs (including tuples).
@@ -212,7 +221,6 @@ impl Statement {
         match &self {
             Statement::Literal(_stmt) => vec![],
             Statement::Call(stmt) => stmt.inputs.clone(),
-            Statement::CallBlock(_) => vec![],
             Statement::MatchExtern(stmt) => stmt.inputs.clone(),
             Statement::StructConstruct(stmt) => stmt.inputs.clone(),
             Statement::StructDestructure(stmt) => vec![stmt.input],
@@ -224,7 +232,6 @@ impl Statement {
         match &self {
             Statement::Literal(stmt) => vec![stmt.output],
             Statement::Call(stmt) => stmt.outputs.clone(),
-            Statement::CallBlock(_) => vec![],
             Statement::MatchExtern(_) => vec![],
             Statement::StructConstruct(stmt) => vec![stmt.output],
             Statement::StructDestructure(stmt) => stmt.outputs.clone(),
@@ -252,14 +259,6 @@ pub struct StatementCall {
     pub inputs: Vec<VariableId>,
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
-}
-
-/// A statement that jumps to another block. If that block ends with a BlockEnd::CallSite, the flow
-/// returns to the statement following this one.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementCallBlock {
-    /// A block to "call".
-    pub block: BlockId,
 }
 
 /// A statement that calls an extern function with branches, and "calls" a possibly different block

@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt;
 
+use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
@@ -125,6 +126,9 @@ enum LineComponent {
     Indent(usize),
     /// An optional break line point, that will be used if the line is too long.
     BreakLinePoint(BreakLinePointProperties),
+    /// A component representing a comment in the code. Leading (not trailing) comments are
+    /// disregarded when computing line width as it belongs to another line.
+    Comment { content: String, is_trailing: bool },
 }
 impl LineComponent {
     pub fn width(&self) -> usize {
@@ -134,6 +138,14 @@ impl LineComponent {
             Self::Space => 1,
             Self::Indent(n) => *n,
             Self::BreakLinePoint(properties) => usize::from(properties.space_if_not_broken),
+            Self::Comment { content, is_trailing } => {
+                if *is_trailing {
+                    content.len()
+                } else {
+                    // Comments before a line are not accounted for the line width.
+                    0
+                }
+            }
         }
     }
 }
@@ -147,6 +159,7 @@ impl fmt::Display for LineComponent {
             Self::BreakLinePoint(properties) => {
                 write!(f, "{}", if properties.space_if_not_broken { " " } else { "" })
             }
+            Self::Comment { content, .. } => write!(f, "{content}"),
         }
     }
 }
@@ -238,6 +251,10 @@ impl LineBuilder {
     /// Appends an optional break line point.
     pub fn push_break_line_point(&mut self, properties: BreakLinePointProperties) {
         self.push_child(LineComponent::BreakLinePoint(properties));
+    }
+    /// Appends a comment to the line.
+    pub fn push_comment(&mut self, content: &str, is_trailing: bool) {
+        self.push_child(LineComponent::Comment { content: content.to_string(), is_trailing });
     }
     /// Appends all the pending break line points to the builder. Should be called whenever a
     /// component of another type (i.e. not a break line point) is appended.
@@ -578,7 +595,7 @@ impl<'a> Formatter<'a> {
         let children = syntax_node.children(self.db);
         let n_children = children.len();
         for (i, child) in children.enumerate() {
-            if child.width(self.db) == 0 {
+            if child.width(self.db) == TextWidth::default() {
                 continue;
             }
             self.format_node(&child, no_space_after && i == n_children - 1);
@@ -607,7 +624,11 @@ impl<'a> Formatter<'a> {
                     if !is_leading {
                         self.line_state.line_buffer.push_space();
                     }
-                    self.format_token(&trivium.as_syntax_node(), true);
+                    self.line_state.line_buffer.push_comment(
+                        &trivium.as_syntax_node().text(self.db).unwrap(),
+                        !is_leading,
+                    );
+                    self.is_current_line_whitespaces = false;
                     self.empty_lines_allowance = 1;
 
                     self.line_state.line_buffer.push_break_line_point(

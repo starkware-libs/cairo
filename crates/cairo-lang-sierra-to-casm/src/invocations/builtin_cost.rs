@@ -6,8 +6,9 @@ use cairo_lang_sierra::extensions::builtin_cost::{BuiltinCostConcreteLibfunc, Co
 use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::gas::STEP_COST;
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 use crate::references::ReferenceExpression;
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -42,14 +43,10 @@ fn build_builtin_get_gas(
         deref gas_counter;
         deref builtin_cost;
     };
-
-    let requested_steps = variable_values[(builder.idx, CostTokenType::Step)];
+    let requested_count: i64 = variable_values[(builder.idx, CostTokenType::Const)];
     let mut total_requested_count =
-        casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_steps * STEP_COST)));
-    for token_type in CostTokenType::iter() {
-        if *token_type == CostTokenType::Step {
-            continue;
-        }
+        casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
+    for token_type in CostTokenType::iter_precost() {
         let requested_count = variable_values[(builder.idx, *token_type)];
         if requested_count == 0 {
             continue;
@@ -78,6 +75,7 @@ fn build_builtin_get_gas(
     }
 
     casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
         tempvar has_enough_gas;
         hint TestLessThanOrEqual {lhs: total_requested_count, rhs: gas_counter} into {dst: has_enough_gas};
         jump HasEnoughGas if has_enough_gas != 0;
@@ -97,6 +95,10 @@ fn build_builtin_get_gas(
             ("Fallthrough", &[&[range_check], &[updated_gas]], None),
             ("Failure", &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
         ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: Some([-requested_count as i32, 0]),
+        },
     ))
 }
 

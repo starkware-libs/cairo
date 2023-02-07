@@ -45,7 +45,7 @@ fn test_resolve_labels() {
     assert_eq!(
         resolve_labels(statements, &label_replacer)
             .iter()
-            .map(|x| format!("{}", x))
+            .map(|x| format!("{x}"))
             .collect::<Vec<String>>(),
         vec![
             // labels 7 and 5 (instruction index 0).

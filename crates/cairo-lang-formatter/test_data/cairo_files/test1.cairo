@@ -21,6 +21,9 @@ let z = 5; 5 + Struct{a: 5, b: Struct2{_gg: ()}}; let df =6;{let k = 1; let z = 
    5; // Comment.
 
    } // Comment.
+
+   // A long comment that shouldn't affect the breaking of the next line. Make it a little longer.
+    let var = 1 + 2 + 3;
 }
 
 fn bar < T > (x:T)->T{

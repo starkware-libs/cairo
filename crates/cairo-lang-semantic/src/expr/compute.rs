@@ -41,8 +41,8 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
 use crate::items::imp::find_impls_at_context;
 use crate::items::modifiers::compute_mutability;
-use crate::items::strct::SemanticStructEx;
-use crate::items::trt::{ConcreteTraitFunctionId, ConcreteTraitFunctionLongId};
+use crate::items::structure::SemanticStructEx;
+use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::literals::LiteralLongId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
@@ -181,7 +181,7 @@ fn wrap_maybe_with_missing(
     })
 }
 
-/// Computes the semantic model of an expression, or returns a SemanticDiagnosticKind on error,
+/// Computes the semantic model of an expression, or returns a SemanticDiagnosticKind on error.
 pub fn maybe_compute_expr_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::Expr,
@@ -239,6 +239,7 @@ fn compute_expr_unary_semantic(
         function,
         vec![(expr, None, Mutability::Immutable)],
         syntax.stable_ptr().into(),
+        unary_op.stable_ptr().untyped(),
     )
 }
 
@@ -284,15 +285,12 @@ fn compute_expr_binary_semantic(
             _ => Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
         };
     }
-    // TODO(spapini): Use a trait here.
-    let lty = ctx.reduce_ty(lexpr.ty());
-    let rty = ctx.reduce_ty(rexpr.ty());
+    ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
+    ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
     let function = match core_binary_operator(
         db,
         &mut ctx.inference,
         &binary_op,
-        lty,
-        rty,
         syntax.stable_ptr().untyped(),
     )? {
         Err(err_kind) => {
@@ -305,6 +303,7 @@ fn compute_expr_binary_semantic(
         function,
         vec![(lexpr, None, Mutability::Immutable), (rexpr, None, Mutability::Immutable)],
         stable_ptr,
+        binary_op.stable_ptr().untyped(),
     )
 }
 
@@ -380,9 +379,13 @@ fn compute_expr_function_call_semantic(
                 stable_ptr: syntax.stable_ptr().into(),
             }))
         }
-        ResolvedConcreteItem::Function(function) => {
-            expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
-        }
+        ResolvedConcreteItem::Function(function) => expr_function_call(
+            ctx,
+            function,
+            named_args,
+            syntax.stable_ptr().into(),
+            path.stable_ptr().untyped(),
+        ),
         ResolvedConcreteItem::TraitFunction(trait_function) => {
             let function = db.intern_function(FunctionLongId {
                 function: ConcreteFunction {
@@ -390,7 +393,13 @@ fn compute_expr_function_call_semantic(
                     generic_args: vec![],
                 },
             });
-            expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
+            expr_function_call(
+                ctx,
+                function,
+                named_args,
+                syntax.stable_ptr().into(),
+                path.stable_ptr().untyped(),
+            )
         }
         _ => Err(ctx.diagnostics.report(
             &path,
@@ -442,7 +451,7 @@ pub fn resolve_trait_function(
     diagnostics: &mut SemanticDiagnostics,
     inference: &mut Inference<'_>,
     resolver: &mut Resolver<'_>,
-    concrete_trait_function: ConcreteTraitFunctionId,
+    concrete_trait_function: ConcreteTraitGenericFunctionId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<ConcreteImplGenericFunctionId> {
     // Resolve impl.
@@ -451,7 +460,7 @@ pub fn resolve_trait_function(
     let impl_id = db.lookup_intern_concrete_impl(concrete_impl).impl_id;
     let impl_function = db
         .impl_function_by_trait_function(impl_id, concrete_trait_function.function_id(db))?
-        .unwrap();
+        .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
     Ok(ConcreteImplGenericFunctionId { concrete_impl, function: impl_function })
 }
 
@@ -466,7 +475,6 @@ pub fn compute_root_expr(
     if ctx.inference.conform_ty(res_ty, return_type).is_err() {
         ctx.diagnostics
             .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
-        return Ok(res);
     }
 
     // Apply inference.
@@ -1177,7 +1185,7 @@ fn short_string_to_semantic(
             db.core_felt_ty()
         };
         let unescaped_literal = unescape(literal).map_err(|err| {
-            ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{}", err)))
+            ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{err}")))
         })?;
         if unescaped_literal.is_ascii() {
             Ok(ExprLiteral {
@@ -1247,7 +1255,9 @@ fn method_call_expr(
     // TODO(spapini): Look also in uses.
     let syntax_db = ctx.db.upcast();
     let path = expr.path(syntax_db);
-    let func_name = expr_as_identifier(ctx, &path, syntax_db)?;
+    let segment = path.elements(syntax_db).last().unwrap().clone();
+    let func_name = segment.identifier(syntax_db);
+    let generic_args_syntax = segment.generic_args(syntax_db);
     let mut candidates = vec![];
     for trait_id in all_module_trait_ids(ctx)? {
         for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
@@ -1258,13 +1268,18 @@ fn method_call_expr(
             // Check if trait function signature's first param can fit our expr type.
             let mut inference = ctx.inference.clone();
             let Some(concrete_trait_id) = inference.infer_concrete_trait_by_self(
-                trait_function, lexpr.ty()
-            ) else {continue};
+                trait_function, lexpr.ty(), stable_ptr.untyped()
+            ) else {
+                continue;
+            };
 
             // Find impls for it.
             let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
             let Ok(impls) = find_impls_at_context(
-                ctx.db, &inference, &lookup_context, concrete_trait_id) else { continue; };
+                ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()
+            ) else {
+                continue;
+            };
 
             if impls.is_empty() {
                 continue;
@@ -1276,7 +1291,9 @@ fn method_call_expr(
 
     let trait_function = match candidates[..] {
         [] => {
-            return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnknownFunction));
+            return Err(ctx
+                .diagnostics
+                .report_by_ptr(path.stable_ptr().untyped(), UnknownFunction));
         }
         [trait_function] => trait_function,
         [trait_function_id0, trait_function_id1, ..] => {
@@ -1287,18 +1304,30 @@ fn method_call_expr(
         }
     };
 
-    let concrete_trait_id =
-        ctx.inference.infer_concrete_trait_by_self(trait_function, lexpr.ty()).unwrap();
+    let concrete_trait_id = ctx
+        .inference
+        .infer_concrete_trait_by_self(trait_function, lexpr.ty(), stable_ptr.untyped())
+        .unwrap();
     let signature = ctx.db.trait_function_signature(trait_function).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();
     let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
-        ConcreteTraitFunctionLongId::new(ctx.db, concrete_trait_id, trait_function),
+        ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function),
     );
-
+    let trait_func_generic_params = ctx.db.trait_function_generic_params(trait_function)?;
+    let generic_args = ctx
+        .resolver
+        .resolve_generic_args(
+            ctx.diagnostics,
+            &mut ctx.inference,
+            &trait_func_generic_params,
+            generic_args_syntax.unwrap_or_default(),
+            stable_ptr.untyped(),
+        )
+        .expect("Conformity has already been checked in previous calls.");
     let function_id = ctx.db.intern_function(FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Trait(concrete_trait_function_id),
-            generic_args: vec![],
+            generic_args,
         },
     });
 
@@ -1312,7 +1341,7 @@ fn method_call_expr(
     )
     .collect();
 
-    expr_function_call(ctx, function_id, named_args, stable_ptr)
+    expr_function_call(ctx, function_id, named_args, stable_ptr, path.stable_ptr().untyped())
 }
 
 /// Computes the semantic model of a member access expression (e.g. "expr.member").
@@ -1438,13 +1467,14 @@ fn expr_function_call(
     function_id: FunctionId,
     named_args: Vec<(Expr, Option<ast::TerminalIdentifier>, Mutability)>,
     stable_ptr: ast::ExprPtr,
+    function_name_stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Expr> {
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
     let signature = ctx
         .db
         .concrete_function_signature(function_id)
-        .map_err(|_| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnknownFunction))?;
+        .map_err(|_| ctx.diagnostics.report_by_ptr(function_name_stable_ptr, UnknownFunction))?;
 
     if named_args.len() != signature.params.len() {
         return Err(ctx.diagnostics.report_by_ptr(
@@ -1553,7 +1583,7 @@ fn check_named_arguments(
     res
 }
 
-/// Computes the semantic model of a statement.
+/// Computes the semantic model of a statement (excluding tail-expression).
 pub fn compute_statement_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
@@ -1609,8 +1639,19 @@ pub fn compute_statement_semantic(
                 stable_ptr: syntax.stable_ptr(),
             })
         }
-        ast::Statement::Expr(expr_syntax) => {
-            let expr = compute_expr_semantic(ctx, &expr_syntax.expr(syntax_db));
+        ast::Statement::Expr(stmt_expr_syntax) => {
+            let expr_syntax = stmt_expr_syntax.expr(syntax_db);
+            let expr = compute_expr_semantic(ctx, &expr_syntax);
+            if matches!(
+                stmt_expr_syntax.semicolon(syntax_db),
+                ast::OptionTerminalSemicolon::Empty(_)
+            ) && !matches!(
+                expr_syntax,
+                ast::Expr::Block(_) | ast::Expr::If(_) | ast::Expr::Match(_)
+            ) {
+                // Point to after the expression, where the semicolon is missing.
+                ctx.diagnostics.report_after(&expr_syntax, MissingSemicolon);
+            }
             semantic::Statement::Expr(semantic::StatementExpr {
                 expr: ctx.exprs.alloc(expr),
                 stable_ptr: syntax.stable_ptr(),

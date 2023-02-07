@@ -27,8 +27,7 @@ pub fn find_local_variables(
 ) -> Maybe<OrderedHashSet<VariableId>> {
     let mut res = OrderedHashSet::<VariableId>::default();
     inner_find_local_variables(
-        db,
-        lowered_function,
+        &mut FindLocalsContext { db, lowered_function, block_infos: OrderedHashMap::default() },
         lowered_function.root?,
         LocalVariablesState::default(),
         &mut res,
@@ -36,17 +35,34 @@ pub fn find_local_variables(
     Ok(res)
 }
 
+/// Information about a block that we reach through Goto or Fallthrough.
+#[derive(Clone, Debug)]
+struct BlockInfo {
+    /// Indicates there there is a branch that reaches the block_id with unknown ap change.
+    known_ap_change: bool,
+}
+
+/// Context for the find_local_variables logic.
+struct FindLocalsContext<'a> {
+    db: &'a dyn SierraGenGroup,
+    lowered_function: &'a FlatLowered,
+
+    /// A summery of FlatBlockEnd::Goto that arrive to BlockId.
+    /// Note that there must also be a FlatBlockEnd::Fallthrough into this branch
+    /// and it does not update this mapping.
+    block_infos: OrderedHashMap<BlockId, BlockInfo>,
+}
+
 /// Helper function for [find_local_variables].
 ///
 /// Returns true if the code has a known ap change.
 fn inner_find_local_variables(
-    db: &dyn SierraGenGroup,
-    lowered_function: &FlatLowered,
+    ctx: &mut FindLocalsContext<'_>,
     block_id: BlockId,
     mut state: LocalVariablesState,
     res: &mut OrderedHashSet<VariableId>,
 ) -> Maybe<bool> {
-    let block = &lowered_function.blocks[block_id];
+    let block = &ctx.lowered_function.blocks[block_id];
     let mut known_ap_change = true;
 
     for statement in &block.statements {
@@ -60,10 +76,10 @@ fn inner_find_local_variables(
             }
             lowering::Statement::Call(statement_call) => {
                 let (_, concrete_function_id) =
-                    get_concrete_libfunc_id(db, statement_call.function);
+                    get_concrete_libfunc_id(ctx.db, statement_call.function);
 
                 handle_function_call(
-                    db,
+                    ctx.db,
                     &mut state,
                     &mut known_ap_change,
                     concrete_function_id,
@@ -71,28 +87,13 @@ fn inner_find_local_variables(
                     &statement_call.outputs,
                 );
             }
-            lowering::Statement::CallBlock(statement_call_block) => {
-                let block_known_ap_change = inner_find_local_variables(
-                    db,
-                    lowered_function,
-                    statement_call_block.block,
-                    state.clone(),
-                    res,
-                )?;
-                if !block_known_ap_change {
-                    state.revoke_temporary_variables();
-                    known_ap_change = false;
-                }
-                state.mark_outputs_as_temporary(lowered_function, statement);
-            }
             lowering::Statement::MatchExtern(statement_match_extern) => {
                 let (_, concrete_function_id) =
-                    get_concrete_libfunc_id(db, statement_match_extern.function);
+                    get_concrete_libfunc_id(ctx.db, statement_match_extern.function);
                 let arm_blocks: Vec<_> =
                     statement_match_extern.arms.iter().map(|(_, block_id)| *block_id).collect();
                 known_ap_change &= handle_match(
-                    db,
-                    lowered_function,
+                    ctx,
                     concrete_function_id,
                     &arm_blocks,
                     statement,
@@ -101,14 +102,13 @@ fn inner_find_local_variables(
                 )?;
             }
             lowering::Statement::MatchEnum(statement_match_enum) => {
-                let concrete_enum_type = db.get_concrete_type_id(
-                    lowered_function.variables[statement_match_enum.input].ty,
+                let concrete_enum_type = ctx.db.get_concrete_type_id(
+                    ctx.lowered_function.variables[statement_match_enum.input].ty,
                 )?;
-                let concrete_function_id = match_enum_libfunc_id(db, concrete_enum_type);
+                let concrete_function_id = match_enum_libfunc_id(ctx.db, concrete_enum_type);
 
                 known_ap_change &= handle_match(
-                    db,
-                    lowered_function,
+                    ctx,
                     concrete_function_id,
                     &statement_match_enum
                         .arms
@@ -121,40 +121,40 @@ fn inner_find_local_variables(
                 )?;
             }
             lowering::Statement::StructConstruct(statement_struct_construct) => {
-                let ty = db.get_concrete_type_id(
-                    lowered_function.variables[statement_struct_construct.output].ty,
+                let ty = ctx.db.get_concrete_type_id(
+                    ctx.lowered_function.variables[statement_struct_construct.output].ty,
                 )?;
                 handle_function_call(
-                    db,
+                    ctx.db,
                     &mut state,
                     &mut known_ap_change,
-                    struct_construct_libfunc_id(db, ty),
+                    struct_construct_libfunc_id(ctx.db, ty),
                     &statement_struct_construct.inputs,
                     &[statement_struct_construct.output],
                 );
             }
             lowering::Statement::StructDestructure(statement_struct_destructure) => {
-                let ty = db.get_concrete_type_id(
-                    lowered_function.variables[statement_struct_destructure.input].ty,
+                let ty = ctx.db.get_concrete_type_id(
+                    ctx.lowered_function.variables[statement_struct_destructure.input].ty,
                 )?;
                 handle_function_call(
-                    db,
+                    ctx.db,
                     &mut state,
                     &mut known_ap_change,
-                    struct_deconstruct_libfunc_id(db, ty),
+                    struct_deconstruct_libfunc_id(ctx.db, ty),
                     &[statement_struct_destructure.input],
                     &statement_struct_destructure.outputs,
                 );
             }
             lowering::Statement::EnumConstruct(statement_enum_construct) => {
-                let ty = db.get_concrete_type_id(
-                    lowered_function.variables[statement_enum_construct.output].ty,
+                let ty = ctx.db.get_concrete_type_id(
+                    ctx.lowered_function.variables[statement_enum_construct.output].ty,
                 )?;
                 handle_function_call(
-                    db,
+                    ctx.db,
                     &mut state,
                     &mut known_ap_change,
-                    enum_init_libfunc_id(db, ty, statement_enum_construct.variant.idx),
+                    enum_init_libfunc_id(ctx.db, ty, statement_enum_construct.variant.idx),
                     &[statement_enum_construct.input],
                     &[statement_enum_construct.output],
                 );
@@ -172,6 +172,37 @@ fn inner_find_local_variables(
         lowering::FlatBlockEnd::Return(vars) => {
             state.use_variables(vars, res);
         }
+        lowering::FlatBlockEnd::Fallthrough(target_block_id, remapping) => {
+            let vars = remapping.values().copied().collect_vec();
+            state.use_variables(&vars, res);
+
+            for var_id in remapping.keys().cloned() {
+                state.set_variable_status(var_id, VariableStatus::TemporaryVariable);
+            }
+
+            if let Some(BlockInfo { known_ap_change: false }) = ctx.block_infos.get(target_block_id)
+            {
+                known_ap_change = false;
+            }
+
+            if !inner_find_local_variables(ctx, *target_block_id, state, res)? {
+                known_ap_change = false;
+            }
+        }
+
+        lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
+            let vars = remapping.values().copied().collect_vec();
+            state.use_variables(&vars, res);
+
+            match ctx.block_infos.entry(*target_block_id) {
+                indexmap::map::Entry::Occupied(mut e) => {
+                    e.get_mut().known_ap_change &= known_ap_change;
+                }
+                indexmap::map::Entry::Vacant(e) => {
+                    e.insert(BlockInfo { known_ap_change });
+                }
+            };
+        }
         lowering::FlatBlockEnd::Unreachable => {}
     }
     Ok(known_ap_change)
@@ -182,8 +213,7 @@ fn inner_find_local_variables(
 ///
 /// Returns true if executing the entire match results in a known ap change.
 fn handle_match(
-    db: &dyn SierraGenGroup,
-    lowered_function: &FlatLowered,
+    ctx: &mut FindLocalsContext<'_>,
     concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
     arm_blocks: &[BlockId],
     statement: &lowering::Statement,
@@ -195,21 +225,20 @@ fn handle_match(
     // Is the ap change known after all of the branches.
     let mut reachable_branches_known_ap_change: bool = true;
 
-    let libfunc_signature = get_libfunc_signature(db, concrete_function_id);
+    let libfunc_signature = get_libfunc_signature(ctx.db, concrete_function_id);
     for (block_id, branch_signature) in zip_eq(arm_blocks, libfunc_signature.branch_signatures) {
         let mut state_clone = state.clone();
 
         state_clone.register_outputs(
             &statement.inputs(),
-            &lowered_function.blocks[*block_id].inputs,
+            &ctx.lowered_function.blocks[*block_id].inputs,
             &branch_signature.vars,
         );
 
-        let inner_known_ap_change =
-            inner_find_local_variables(db, lowered_function, *block_id, state_clone, res)?;
+        let inner_known_ap_change = inner_find_local_variables(ctx, *block_id, state_clone, res)?;
 
         // Update reachable_branches and reachable_branches_known_ap_change.
-        if let lowering::FlatBlockEnd::Callsite(_) = lowered_function.blocks[*block_id].end {
+        if let lowering::FlatBlockEnd::Callsite(_) = ctx.lowered_function.blocks[*block_id].end {
             reachable_branches += 1;
             if !inner_known_ap_change {
                 reachable_branches_known_ap_change = false;
@@ -225,7 +254,7 @@ fn handle_match(
     } else {
         true
     };
-    state.mark_outputs_as_temporary(lowered_function, statement);
+    state.mark_outputs_as_temporary(ctx.lowered_function, statement);
 
     Ok(known_ap_change)
 }

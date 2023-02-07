@@ -5,10 +5,12 @@ use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 
-pub use crate::core_libfunc_cost_base::InvocationCostInfoProvider;
 use crate::core_libfunc_cost_base::{core_libfunc_postcost, core_libfunc_precost, CostOperations};
-use crate::core_libfunc_cost_expr::GasApInfoProvider;
+pub use crate::core_libfunc_cost_base::{
+    ConstCost, InvocationCostInfoProvider, DICT_SQUASH_ACCESS_COST,
+};
 use crate::gas_info::GasInfo;
+pub use crate::starknet_libfunc_cost_base::SYSTEM_CALL_COST;
 
 /// Cost operations for getting `Option<i64>` costs values.
 struct Ops<'a> {
@@ -18,11 +20,7 @@ struct Ops<'a> {
 impl CostOperations for Ops<'_> {
     type CostType = Option<OrderedHashMap<CostTokenType, i64>>;
 
-    fn const_cost(&self, value: i32) -> Self::CostType {
-        self.const_cost_token(value, CostTokenType::Step)
-    }
-
-    fn const_cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
+    fn cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
         Some(OrderedHashMap::from_iter([(token_type, value as i64)]))
     }
 
@@ -62,13 +60,8 @@ pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<Option<OrderedHashMap<CostTokenType, i64>>> {
-    let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
-    let postcost = core_libfunc_postcost(
-        &mut Ops { gas_info, idx: *idx },
-        libfunc,
-        info_provider,
-        &GasApInfoProvider { info_provider, gas_info, idx: *idx },
-    );
+    let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc);
+    let postcost = core_libfunc_postcost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
     zip_eq(precost, postcost)
         .map(|(precost, postcost)| {
             let precost = precost?;

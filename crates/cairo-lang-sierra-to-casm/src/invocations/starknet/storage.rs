@@ -1,13 +1,17 @@
+use cairo_felt::Felt;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
-use num_bigint::BigInt;
+use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
+use num_bigint::{BigInt, ToBigInt};
 use num_traits::Signed;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::misc::validate_in_range;
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::misc::validate_under_limit;
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 use crate::references::ReferenceExpression;
 
 /// Handles the storage_base_address_const libfunc.
@@ -36,7 +40,11 @@ pub fn build_storage_address_from_base_and_offset(
         deref_or_immediate offset;
     };
     casm_build_extend!(casm_builder, let res = base + offset;);
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res]], None)],
+        Default::default(),
+    ))
 }
 
 /// Handles the storage_base_address_const libfunc.
@@ -50,47 +58,42 @@ pub fn build_storage_base_address_from_felt(
         buffer(2) range_check;
         deref addr;
     };
+    let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     casm_build_extend! {casm_builder,
-        const addr_bound = addr_bound;
+        const limit = addr_bound.clone();
+        let orig_range_check = range_check;
         // Allocating all vars in the beginning for easier AP-Alignment between the two branches,
         // as well as making sure we use `res` as the last cell, making it the last on stack.
         tempvar is_small;
-        tempvar x;
-        tempvar y;
-        tempvar x_part;
-        tempvar y_fixed;
-        tempvar diff;
         tempvar res;
-        hint TestLessThan {lhs: addr, rhs: addr_bound} into {dst: is_small};
+        hint TestLessThan {lhs: addr, rhs: limit} into {dst: is_small};
         jump IsSmall if is_small != 0;
-        assert res = addr - addr_bound;
+        assert res = addr - limit;
     }
-    validate_in_range::<1>(
+    validate_under_limit::<1>(
         &mut casm_builder,
-        0x110000000000000000_u128,
-        0x110000000000000101u128,
+        &(-Felt::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
         res,
         range_check,
-        &[x, y, x_part, y_fixed],
+        &auxiliary_vars[..4],
     );
     casm_build_extend! {casm_builder,
         jump Done;
         IsSmall:
         assert res = addr;
     }
-    validate_in_range::<2>(
-        &mut casm_builder,
-        0x8000000000000000000000000000000_u128,
-        0xfffffffffffffffffffffffffffff00_u128,
-        res,
-        range_check,
-        &[x, y, x_part, y_fixed, diff],
-    );
+    validate_under_limit::<2>(&mut casm_builder, &addr_bound, res, range_check, &auxiliary_vars);
     casm_build_extend! {casm_builder,
         Done:
     };
-    Ok(builder
-        .build_from_casm_builder(casm_builder, [("Fallthrough", &[&[range_check], &[res]], None)]))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[res]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
 }
 
 /// Builds instructions for StarkNet read system call.
@@ -143,6 +146,10 @@ pub fn build_storage_read(
                 Some(failure_handle_statement_id),
             ),
         ],
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
+        },
     ))
 }
 
@@ -192,5 +199,9 @@ pub fn build_storage_write(
                 Some(failure_handle_statement_id),
             ),
         ],
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
+        },
     ))
 }

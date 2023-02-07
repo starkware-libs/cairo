@@ -5,22 +5,22 @@ use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionSignatureId, FunctionWithBodyId, GenericParamId,
     ImplFunctionId, ModuleItemId, ParamLongId, TopLevelLanguageElementId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
-use itertools::chain;
+use itertools::{chain, zip_eq};
 
 use super::attribute::Attribute;
 use super::modifiers;
-use super::trt::{ConcreteTraitFunctionId, ConcreteTraitFunctionLongId};
+use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_generics, GenericSubstitution};
+use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
 use crate::{semantic, ConcreteImplId, GenericArgumentId, Parameter, SemanticDiagnostic};
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -39,7 +39,7 @@ pub enum GenericFunctionId {
     /// A generic function of a concrete impl.
     Impl(ConcreteImplGenericFunctionId),
     // TODO(spapini): Remove when we separate semantic representations.
-    Trait(ConcreteTraitFunctionId),
+    Trait(ConcreteTraitGenericFunctionId),
 }
 impl GenericFunctionId {
     pub fn generic_args_apply<F: FnOnce(&mut Vec<GenericArgumentId>)>(
@@ -56,7 +56,7 @@ impl GenericFunctionId {
             GenericFunctionId::Trait(f) => {
                 let mut long_trait = db.lookup_intern_concrete_trait(f.concrete_trait_id(db));
                 functor(&mut long_trait.generic_args);
-                *f = db.intern_concrete_trait_function(ConcreteTraitFunctionLongId::new(
+                *f = db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
                     db,
                     db.intern_concrete_trait(long_trait),
                     f.function_id(db),
@@ -459,15 +459,10 @@ pub fn concrete_function_signature(
     let ConcreteFunction { generic_function, generic_args, .. } =
         db.lookup_intern_function(function_id).function;
     let generic_params = db.function_signature_generic_params(generic_function.signature(db))?;
-    if generic_params.len() != generic_args.len() {
-        eprintln!("{generic_params:?}  {generic_args:?}");
-        // TODO(spapini): Uphold the invariant that constructed ConcreteFunction instances
-        //   always have the correct number of generic arguments.
-        return Err(skip_diagnostic());
-    }
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
-    let function_subs = generic_params.into_iter().zip(generic_args.into_iter());
+    // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
+    let function_subs = zip_eq(generic_params, generic_args);
     let substitution = match generic_function {
         GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => {
             GenericSubstitution(function_subs.collect())
@@ -504,13 +499,13 @@ pub fn substitute_signature(
     let concretize_param = |param: semantic::Parameter| Parameter {
         id: param.id,
         name: param.name,
-        ty: substitute_generics(db, &substitution, param.ty),
+        ty: substitute_ty(db, &substitution, param.ty),
         mutability: param.mutability,
         stable_ptr: param.stable_ptr,
     };
     Signature {
         params: generic_signature.params.into_iter().map(concretize_param).collect(),
-        return_type: substitute_generics(db, &substitution, generic_signature.return_type),
+        return_type: substitute_ty(db, &substitution, generic_signature.return_type),
         implicits: generic_signature.implicits,
         panicable: generic_signature.panicable,
         stable_ptr: generic_signature.stable_ptr,

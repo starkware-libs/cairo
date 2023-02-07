@@ -1,13 +1,13 @@
 #[abi]
 trait IAnotherContract {
-    fn foo(a: u128);
+    fn foo(a: u128) -> u128;
 }
 
 
 #[contract]
 mod TestContract {
     struct Storage {
-        my_storage_var: felt, 
+        my_storage_var: felt
     }
 
     fn internal_func() -> felt {
@@ -25,9 +25,9 @@ mod TestContract {
     fn empty() {}
 
     #[external]
-    fn call_foo(a: u128) {
+    fn call_foo(a: u128) -> u128 {
         // TODO(ilya): pass the address of foo as an argument.
         let foo_address = starknet::contract_address_const::<17>();
-        super::IAnotherContractDispatcher::foo(foo_address, a);
+        super::IAnotherContractDispatcher::foo(foo_address, a)
     }
 }

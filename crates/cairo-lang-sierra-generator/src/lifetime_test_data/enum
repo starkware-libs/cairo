@@ -30,6 +30,8 @@ enum MyEnum {
     C: (felt, felt),
 }
 
+impl MyEnumDrop of Drop::<MyEnum>;
+
 //! > lowering_format
 blk0:
 Inputs: v4: core::felt
@@ -39,16 +41,16 @@ Statements:
   (v7: core::felt) <- 2u
   (v8: test::MyEnum) <- MyEnum::A(v7)
 End:
-  Callsite()
+  Callsite({})
 
 blk1:
 Inputs: v9: core::felt
 Statements:
-  () <- blk4()
-  () <- blk5()
+  (v10: core::felt) <- core::felt_add(v9, v1)
+  (v11: core::felt) <- core::felt_add(v10, v2)
   (v12: test::MyEnum) <- MyEnum::A(v11)
 End:
-  Callsite()
+  Callsite({})
 
 blk2:
 Inputs: v13: (core::felt, core::felt)
@@ -57,7 +59,7 @@ Statements:
   (v16: (core::felt, core::felt)) <- struct_construct(v2, v3)
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Callsite()
+  Callsite({})
 
 blk3 (root):
 Inputs: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt
@@ -70,35 +72,19 @@ Statements:
 End:
   Return(v3)
 
-blk4:
-Inputs:
-Statements:
-  (v19: core::felt) <- core::felt_add(v9, v1)
-End:
-  Callsite(v19 -> v10)
-
-blk5:
-Inputs:
-Statements:
-  (v20: core::felt) <- core::felt_add(v10, v2)
-End:
-  Callsite(v20 -> v11)
-
 //! > last_use
-((BlockId(3), 1), 0)
-((BlockId(0), 3), 0)
-((BlockId(0), 1), 0)
-((BlockId(1), 2), 0)
-((BlockId(5), 1), 0)
-((BlockId(5), 0), 1)
-((BlockId(5), 0), 0)
-((BlockId(4), 1), 0)
-((BlockId(4), 0), 1)
-((BlockId(4), 0), 0)
-((BlockId(2), 2), 0)
-((BlockId(2), 1), 0)
-((BlockId(2), 0), 0)
-((BlockId(3), 0), 0)
+v3: ((BlockId(3), 1), 0)
+v7: ((BlockId(0), 3), 0)
+v5: ((BlockId(0), 1), 0)
+v11: ((BlockId(1), 2), 0)
+v2: ((BlockId(1), 1), 1)
+v10: ((BlockId(1), 1), 0)
+v1: ((BlockId(1), 0), 1)
+v9: ((BlockId(1), 0), 0)
+v16: ((BlockId(2), 2), 0)
+v2: ((BlockId(2), 1), 0)
+v13: ((BlockId(2), 0), 0)
+v0: ((BlockId(3), 0), 0)
 
 //! > drops
 PostStatement((BlockId(0), 3)): v8
