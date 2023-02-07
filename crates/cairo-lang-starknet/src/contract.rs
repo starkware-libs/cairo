@@ -69,7 +69,7 @@ pub fn get_external_functions(
     match db
         .module_item_by_name(generated_module_id, EXTERNAL_MODULE.into())
         .to_option()
-        .with_context(|| "Failed to initiate a lookup in the generated module.")?
+        .with_context(|| "Failed to initiate a lookup in the {module_name} module.")?
     {
         Some(ModuleItemId::Submodule(external_module_id)) => Ok(db
             .module_free_functions_ids(ModuleId::Submodule(external_module_id))
