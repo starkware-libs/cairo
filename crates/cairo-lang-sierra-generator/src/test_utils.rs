@@ -189,24 +189,24 @@ pub fn dummy_push_values(
 ) -> pre_sierra::Statement {
     dummy_push_values_ex(
         db,
-        &values.iter().map(|(src, dst)| (*src, *dst, None)).collect::<Vec<_>>(),
+        &values.iter().map(|(src, dst)| (*src, *dst, false)).collect::<Vec<_>>(),
     )
 }
 
-/// Same as [dummy_push_values] except that it also accepts value for `dup_var`.
+/// Same as [dummy_push_values] except that it also accepts a value for `dup`.
 pub fn dummy_push_values_ex(
     db: &dyn SierraGenGroup,
-    values: &[(&str, &str, Option<&str>)],
+    values: &[(&str, &str, bool)],
 ) -> pre_sierra::Statement {
     let felt_ty = db.get_concrete_type_id(db.core_felt_ty()).expect("Can't find core::felt.");
     pre_sierra::Statement::PushValues(
         values
             .iter()
-            .map(|(src, dst, dup_var)| pre_sierra::PushValue {
+            .map(|(src, dst, dup)| pre_sierra::PushValue {
                 var: (*src).into(),
                 var_on_stack: (*dst).into(),
                 ty: felt_ty.clone(),
-                dup_var: dup_var.map(|x| (*x).into()),
+                dup: *dup,
             })
             .collect(),
     )
