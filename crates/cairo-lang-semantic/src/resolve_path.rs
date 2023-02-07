@@ -5,7 +5,7 @@ mod test;
 use std::iter::Peekable;
 
 use cairo_lang_defs::ids::{
-    ConstantId, GenericKind, GenericTypeId, ImplId, LanguageElementId, ModuleFileId, ModuleId,
+    ConstantId, GenericKind, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId,
     ModuleItemId, TraitFunctionId, TraitId, TypeAliasId,
 };
 use cairo_lang_diagnostics::Maybe;
@@ -29,7 +29,7 @@ use crate::expr::inference::Inference;
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
 use crate::items::functions::GenericFunctionId;
 use crate::items::imp::{
-    find_impls_at_context, ConcreteImplId, ConcreteImplLongId, ImplLookupContext,
+    find_impls_at_context, ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext,
 };
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
@@ -55,7 +55,7 @@ pub enum ResolvedConcreteItem {
     Type(TypeId),
     Variant(ConcreteVariant),
     Trait(ConcreteTraitId),
-    Impl(ConcreteImplId),
+    Impl(ImplId),
 }
 #[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -68,7 +68,7 @@ pub enum ResolvedGenericItem {
     GenericTypeAlias(TypeAliasId),
     Variant(Variant),
     Trait(TraitId),
-    Impl(ImplId),
+    Impl(ImplDefId),
 }
 impl ResolvedConcreteItem {
     pub fn generic(&self, db: &dyn SemanticGroup) -> Option<ResolvedGenericItem> {
@@ -99,9 +99,11 @@ impl ResolvedConcreteItem {
             ResolvedConcreteItem::Trait(concrete_trait) => ResolvedGenericItem::Trait(
                 db.lookup_intern_concrete_trait(*concrete_trait).trait_id,
             ),
-            ResolvedConcreteItem::Impl(concrete_impl) => {
-                ResolvedGenericItem::Impl(db.lookup_intern_concrete_impl(*concrete_impl).impl_id)
-            }
+            ResolvedConcreteItem::Impl(impl_id) => match impl_id {
+                ImplId::Concrete(concrete_impl_id) => ResolvedGenericItem::Impl(
+                    db.lookup_intern_concrete_impl(*concrete_impl_id).impl_def_id,
+                ),
+            },
         })
     }
 }
@@ -453,7 +455,7 @@ impl<'db> Resolver<'db> {
         let lookup_context = self.impl_lookup_context(trait_id);
 
         // TODO(yuval): Support trait function default implementations.
-        let impl_id = match &find_impls_at_context(
+        let impl_def_id = match &find_impls_at_context(
             self.db,
             &self.inference,
             &lookup_context,
@@ -472,7 +474,7 @@ impl<'db> Resolver<'db> {
                     },
                 ));
             }
-            &[impl_id] => impl_id,
+            &[impl_def_id] => impl_def_id,
             impls => {
                 return Err(diagnostics.report_by_ptr(
                     stable_ptr,
@@ -487,19 +489,19 @@ impl<'db> Resolver<'db> {
 
         // Infer the impl.
         let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
-        let impl_generic_params = self.db.impl_generic_params(impl_id)?;
-        let impl_concrete_trait = self.db.impl_concrete_trait(impl_id)?;
-        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(impl_concrete_trait);
+        let impl_def_generic_params = self.db.impl_def_generic_params(impl_def_id)?;
+        let impl_def_concrete_trait = self.db.impl_def_concrete_trait(impl_def_id)?;
+        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(impl_def_concrete_trait);
         let generic_args = self
             .inference
             .infer_generics(
-                &impl_generic_params,
+                &impl_def_generic_params,
                 &long_imp_concrete_trait.generic_args,
                 &long_concrete_trait.generic_args,
                 stable_ptr,
             )
             .expect("Impl returned from find_impls_at_context() must be conformable.");
-        Ok(self.db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args }))
+        Ok(self.db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args }))
     }
 
     /// Retrieve an impl lookup context for finding impls for a trait in the current context.
@@ -569,13 +571,13 @@ impl<'db> Resolver<'db> {
                     generic_args_syntax.unwrap_or_default(),
                 )?)
             }
-            ResolvedGenericItem::Impl(impl_id) => {
-                ResolvedConcreteItem::Impl(self.specialize_impl(
+            ResolvedGenericItem::Impl(impl_def_id) => {
+                ResolvedConcreteItem::Impl(ImplId::Concrete(self.specialize_impl(
                     diagnostics,
                     identifier.stable_ptr().untyped(),
-                    impl_id,
+                    impl_def_id,
                     generic_args_syntax.unwrap_or_default(),
-                )?)
+                )?))
             }
             ResolvedGenericItem::Variant(_) => panic!("Variant is not a module item."),
             ResolvedGenericItem::TraitFunction(_) => panic!("TraitFunction is not a module item."),
@@ -718,23 +720,23 @@ impl<'db> Resolver<'db> {
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
-        impl_id: ImplId,
+        impl_def_id: ImplDefId,
         generic_args: Vec<ast::Expr>,
     ) -> Maybe<ConcreteImplId> {
         // Check for cycles in this type alias definition.
         // TODO(orizi): Handle this without using `priv_impl_declaration_data`.
-        self.db.priv_impl_declaration_data(impl_id)?.check_no_cycle()?;
+        self.db.priv_impl_declaration_data(impl_def_id)?.check_no_cycle()?;
 
-        // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
+        // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params = self
             .db
-            .impl_generic_params(impl_id)
+            .impl_def_generic_params(impl_def_id)
             .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownImpl))?;
 
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
 
-        Ok(self.db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args }))
+        Ok(self.db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args }))
     }
 
     /// Specializes a generic function.
@@ -745,7 +747,7 @@ impl<'db> Resolver<'db> {
         generic_function: GenericFunctionId,
         generic_args: Vec<ast::Expr>,
     ) -> Maybe<FunctionId> {
-        // TODO(lior): Should we report diagnostic if `impl_generic_params` failed?
+        // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params: Vec<_> = self
             .db
             .function_signature_generic_params(generic_function.signature(self.db))
@@ -833,12 +835,11 @@ impl<'db> Resolver<'db> {
                             ResolvedConcreteItem::Impl
                         )
                         .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
-                        let impl_concrete_trait =
-                            self.db.concrete_impl_concrete_trait(resolved_impl)?;
+                        let impl_def_concrete_trait = self.db.impl_concrete_trait(resolved_impl)?;
                         let expected_concrete_trait = param.concrete_trait?;
                         if self
                             .inference
-                            .conform_traits(impl_concrete_trait, expected_concrete_trait)
+                            .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
                             .is_err()
                         {
                             diagnostics.report(generic_arg_syntax, TraitMismatch);

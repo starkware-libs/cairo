@@ -5,9 +5,9 @@ use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionSignatureId,
-    FunctionWithBodyId, GenericParamId, GenericTypeId, ImplFunctionId, ImplId, LanguageElementId,
-    LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId,
-    VariantId,
+    FunctionWithBodyId, GenericParamId, GenericTypeId, ImplDefId, ImplFunctionId,
+    LanguageElementId, LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId,
+    TypeAliasId, UseId, VariantId,
 };
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
@@ -25,14 +25,13 @@ use crate::items::attribute::Attribute;
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
 use crate::items::generics::GenericParam;
-use crate::items::imp::ImplLookupContext;
+use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::ConcreteTraitId;
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
-    corelib, items, literals, semantic, types, ConcreteImplId, FunctionId, Parameter,
-    SemanticDiagnostic, TypeId,
+    corelib, items, literals, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
 };
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
@@ -292,41 +291,46 @@ pub trait SemanticGroup:
     /// Private query to compute declaration data about an impl.
     #[salsa::invoke(items::imp::priv_impl_declaration_data)]
     #[salsa::cycle(items::imp::priv_impl_declaration_data_cycle)]
-    fn priv_impl_declaration_data(&self, impl_id: ImplId)
-    -> Maybe<items::imp::ImplDeclarationData>;
+    fn priv_impl_declaration_data(
+        &self,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<items::imp::ImplDeclarationData>;
     /// Returns the semantic declaration diagnostics of an impl.
     #[salsa::invoke(items::imp::impl_semantic_declaration_diagnostics)]
     fn impl_semantic_declaration_diagnostics(
         &self,
-        impl_id: ImplId,
+        impl_def_id: ImplDefId,
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an impl.
-    #[salsa::invoke(items::imp::impl_generic_params)]
-    fn impl_generic_params(&self, impl_id: ImplId) -> Maybe<Vec<GenericParam>>;
+    #[salsa::invoke(items::imp::impl_def_generic_params)]
+    fn impl_def_generic_params(&self, impl_def_id: ImplDefId) -> Maybe<Vec<GenericParam>>;
     /// Returns the resolution lookback of an impl.
-    #[salsa::invoke(items::imp::impl_resolved_lookback)]
-    fn impl_resolved_lookback(&self, impl_id: ImplId) -> Maybe<Arc<ResolvedLookback>>;
+    #[salsa::invoke(items::imp::impl_def_resolved_lookback)]
+    fn impl_def_resolved_lookback(&self, impl_def_id: ImplDefId) -> Maybe<Arc<ResolvedLookback>>;
     /// Returns the concrete trait that is implemented by the impl.
+    #[salsa::invoke(items::imp::impl_def_concrete_trait)]
+    fn impl_def_concrete_trait(&self, impl_def_id: ImplDefId) -> Maybe<ConcreteTraitId>;
+    /// Returns the concrete trait that is implemented by the concrete impl.
     #[salsa::invoke(items::imp::impl_concrete_trait)]
     fn impl_concrete_trait(&self, impl_id: ImplId) -> Maybe<ConcreteTraitId>;
-    /// Returns the concrete trait that is implemented by the concrete impl.
-    #[salsa::invoke(items::imp::concrete_impl_concrete_trait)]
-    fn concrete_impl_concrete_trait(
-        &self,
-        concrete_impl_id: ConcreteImplId,
-    ) -> Maybe<ConcreteTraitId>;
     /// Private query to compute data about an impl.
     #[salsa::invoke(items::imp::priv_impl_definition_data)]
-    fn priv_impl_definition_data(&self, impl_id: ImplId) -> Maybe<items::imp::ImplDefinitionData>;
+    fn priv_impl_definition_data(
+        &self,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<items::imp::ImplDefinitionData>;
     /// Returns the semantic definition diagnostics of an impl.
     #[salsa::invoke(items::imp::impl_semantic_definition_diagnostics)]
     fn impl_semantic_definition_diagnostics(
         &self,
-        impl_id: ImplId,
+        impl_def_id: ImplDefId,
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the functions in the impl.
     #[salsa::invoke(items::imp::impl_functions)]
-    fn impl_functions(&self, impl_id: ImplId) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>>;
+    fn impl_functions(
+        &self,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>>;
     /// Returns the impl function that matches the given trait function, if exists.
     /// Note that a function that doesn't exist in the impl doesn't necessarily indicate an error,
     /// as, e.g., a trait function that has a default implementation doesn't have to be
@@ -334,7 +338,7 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::impl_function_by_trait_function)]
     fn impl_function_by_trait_function(
         &self,
-        impl_id: ImplId,
+        impl_def_id: ImplDefId,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Option<ImplFunctionId>>;
 
@@ -743,9 +747,9 @@ fn module_semantic_diagnostics(
             ModuleItemId::Trait(trait_id) => {
                 diagnostics.extend(db.trait_semantic_diagnostics(*trait_id));
             }
-            ModuleItemId::Impl(impl_id) => {
-                diagnostics.extend(db.impl_semantic_declaration_diagnostics(*impl_id));
-                diagnostics.extend(db.impl_semantic_definition_diagnostics(*impl_id));
+            ModuleItemId::Impl(impl_def_id) => {
+                diagnostics.extend(db.impl_semantic_declaration_diagnostics(*impl_def_id));
+                diagnostics.extend(db.impl_semantic_definition_diagnostics(*impl_def_id));
             }
             ModuleItemId::Submodule(submodule_id) => {
                 // Note that the parent module does not report the diagnostics of its submodules.
@@ -893,7 +897,7 @@ fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<R
             ModuleItemId::Enum(id) => vec![db.enum_resolved_lookback(id)],
             ModuleItemId::TypeAlias(id) => vec![db.type_alias_resolved_lookback(id)],
             ModuleItemId::Trait(_) => vec![],
-            ModuleItemId::Impl(id) => vec![db.impl_resolved_lookback(id)],
+            ModuleItemId::Impl(id) => vec![db.impl_def_resolved_lookback(id)],
             ModuleItemId::ExternType(_) => vec![],
             ModuleItemId::ExternFunction(id) => {
                 vec![db.extern_function_declaration_resolved_lookback(id)]

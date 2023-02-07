@@ -449,9 +449,9 @@ pub fn resolve_trait_function(
 ) -> Maybe<ConcreteImplGenericFunctionId> {
     // Resolve impl.
     let concrete_impl = resolver.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
-    let impl_id = db.lookup_intern_concrete_impl(concrete_impl).impl_id;
+    let impl_def_id = db.lookup_intern_concrete_impl(concrete_impl).impl_def_id;
     let impl_function = db
-        .impl_function_by_trait_function(impl_id, concrete_trait_function.function_id(db))?
+        .impl_function_by_trait_function(impl_def_id, concrete_trait_function.function_id(db))?
         .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
     Ok(ConcreteImplGenericFunctionId { concrete_impl, function: impl_function })
 }

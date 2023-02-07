@@ -16,7 +16,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{Inference, TypeVar};
-use crate::items::imp::{find_impls_at_context, ImplLookupContext};
+use crate::items::imp::{find_impls_at_context, ImplId, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{
     semantic, ConcreteImplId, ConcreteVariant, FunctionId, GenericArgumentId, GenericParam,
@@ -358,8 +358,8 @@ pub fn substitute_generics_args_inplace(
         match arg {
             GenericArgumentId::Type(ty) => *ty = substitute_ty(db.upcast(), substitution, *ty),
             GenericArgumentId::Literal(_) => {}
-            GenericArgumentId::Impl(concrete_impl) => {
-                *concrete_impl = substitute_impl(db.upcast(), substitution, *concrete_impl)
+            GenericArgumentId::Impl(ImplId::Concrete(concrete_impl_id)) => {
+                *concrete_impl_id = substitute_impl(db.upcast(), substitution, *concrete_impl_id)
             }
         }
     }

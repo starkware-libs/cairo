@@ -50,7 +50,7 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_trait_function(&self, id: TraitFunctionLongId) -> TraitFunctionId;
     #[salsa::interned]
-    fn intern_impl(&self, id: ImplLongId) -> ImplId;
+    fn intern_impl(&self, id: ImplDefLongId) -> ImplDefId;
     #[salsa::interned]
     fn intern_extern_type(&self, id: ExternTypeLongId) -> ExternTypeId;
     #[salsa::interned]
@@ -112,8 +112,8 @@ pub trait DefsGroup:
     fn module_type_aliases_ids(&self, module_id: ModuleId) -> Maybe<Vec<TypeAliasId>>;
     fn module_traits(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<TraitId, ast::ItemTrait>>;
     fn module_traits_ids(&self, module_id: ModuleId) -> Maybe<Vec<TraitId>>;
-    fn module_impls(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<ImplId, ast::ItemImpl>>;
-    fn module_impls_ids(&self, module_id: ModuleId) -> Maybe<Vec<ImplId>>;
+    fn module_impls(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<ImplDefId, ast::ItemImpl>>;
+    fn module_impls_ids(&self, module_id: ModuleId) -> Maybe<Vec<ImplDefId>>;
     fn module_extern_types(
         &self,
         module_id: ModuleId,
@@ -239,7 +239,7 @@ pub struct ModuleData {
     enums: OrderedHashMap<EnumId, ast::ItemEnum>,
     type_aliases: OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>,
     traits: OrderedHashMap<TraitId, ast::ItemTrait>,
-    impls: OrderedHashMap<ImplId, ast::ItemImpl>,
+    impls: OrderedHashMap<ImplDefId, ast::ItemImpl>,
     extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
     extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
     files: Vec<FileId>,
@@ -376,7 +376,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     ModuleItemId::Trait(item_id)
                 }
                 ast::Item::Impl(imp) => {
-                    let item_id = db.intern_impl(ImplLongId(module_file_id, imp.stable_ptr()));
+                    let item_id = db.intern_impl(ImplDefLongId(module_file_id, imp.stable_ptr()));
                     res.impls.insert(item_id, imp);
                     ModuleItemId::Impl(item_id)
                 }
@@ -503,10 +503,10 @@ pub fn module_traits_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<T
 pub fn module_impls(
     db: &dyn DefsGroup,
     module_id: ModuleId,
-) -> Maybe<OrderedHashMap<ImplId, ast::ItemImpl>> {
+) -> Maybe<OrderedHashMap<ImplDefId, ast::ItemImpl>> {
     Ok(db.priv_module_data(module_id)?.impls)
 }
-pub fn module_impls_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<ImplId>> {
+pub fn module_impls_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<ImplDefId>> {
     Ok(db.module_impls(module_id)?.keys().copied().collect())
 }
 

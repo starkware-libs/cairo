@@ -8,6 +8,7 @@ use itertools::{zip_eq, Itertools};
 
 use crate::corelib::never_ty;
 use crate::db::SemanticGroup;
+use crate::items::imp::ImplId;
 use crate::types::{substitute_generics_args_inplace, ConcreteEnumLongId, GenericSubstitution};
 use crate::{
     ConcreteEnumId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
@@ -312,10 +313,11 @@ impl<'db> Inference<'db> {
         generic_args.iter().any(|garg| match garg {
             GenericArgumentId::Type(ty) => self.ty_contains_var(*ty, var),
             GenericArgumentId::Literal(_) => false,
-            GenericArgumentId::Impl(concrete_impl) => self.generic_args_contain_var(
-                &self.db.lookup_intern_concrete_impl(*concrete_impl).generic_args,
-                var,
-            ),
+            GenericArgumentId::Impl(ImplId::Concrete(concrete_impl_id)) => self
+                .generic_args_contain_var(
+                    &self.db.lookup_intern_concrete_impl(*concrete_impl_id).generic_args,
+                    var,
+                ),
         })
     }
 
