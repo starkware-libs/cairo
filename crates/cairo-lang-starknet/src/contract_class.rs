@@ -1,8 +1,7 @@
 use std::path::Path;
 
-use anyhow::{bail, ensure, Context, Result};
+use anyhow::{ensure, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::diagnostics::check_diagnostics;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
@@ -93,7 +92,7 @@ pub struct ContractEntryPoint {
 /// Compile the contract given by path.
 ///
 /// Errors if no contracts or more than 1 are found.
-pub fn compile_path(path: &Path, compiler_config: CompilerConfig) -> Result<ContractClass> {
+pub fn compile_path(path: &Path, compiler_config: CompilerConfig<'_>) -> Result<ContractClass> {
     let mut db = RootDatabase::builder().detect_corelib().with_starknet().build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
@@ -107,7 +106,7 @@ pub fn compile_path(path: &Path, compiler_config: CompilerConfig) -> Result<Cont
 fn compile_only_contract_in_prepared_db(
     db: &mut RootDatabase,
     main_crate_ids: Vec<CrateId>,
-    compiler_config: CompilerConfig,
+    compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
     let contracts = find_contracts(db, &main_crate_ids);
     ensure!(!contracts.is_empty(), "Contract not found.");
@@ -133,11 +132,9 @@ fn compile_only_contract_in_prepared_db(
 pub fn compile_prepared_db(
     db: &mut RootDatabase,
     contracts: &[&ContractDeclaration],
-    mut compiler_config: CompilerConfig,
+    mut compiler_config: CompilerConfig<'_>,
 ) -> Result<Vec<ContractClass>> {
-    if check_diagnostics(db, compiler_config.on_diagnostic.as_deref_mut()) {
-        bail!("Compilation failed.");
-    }
+    compiler_config.diagnostics_reporter.ensure(db)?;
 
     contracts
         .iter()
@@ -150,12 +147,12 @@ pub fn compile_prepared_db(
 /// Compile declared StarkNet contract.
 ///
 /// The `contract` value **must** come from `db`, for example as a result of calling
-/// [`find_contracts`]. Does not check diagnostics, it is expected that [`check_diagnostics`] is
-/// called by caller of this function.
+/// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked by caller
+/// of this function.
 fn compile_contract_with_prepared_and_checked_db(
     db: &mut RootDatabase,
     contract: &ContractDeclaration,
-    compiler_config: &CompilerConfig,
+    compiler_config: &CompilerConfig<'_>,
 ) -> Result<ContractClass> {
     let external_functions: Vec<_> = get_module_functions(db, contract, EXTERNAL_MODULE)?
         .into_iter()

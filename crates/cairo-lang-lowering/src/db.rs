@@ -9,6 +9,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
+use semantic::corelib::core_crate;
 use semantic::items::functions::ConcreteFunctionWithBodyId;
 
 use crate::borrow_check::borrow_check;
@@ -224,7 +225,10 @@ fn module_lowering_diagnostics(
                 // `Variable not dropped.` error on variables with generic types.
 
                 // Skip diagnostics for impls with generic params.
-                if !db.impl_generic_params(*impl_id)?.is_empty() {
+                if !db.impl_generic_params(*impl_id)?.is_empty()
+                    && impl_id.parent_module(db.upcast()).owning_crate(db.upcast())
+                        == core_crate(db.upcast())
+                {
                     continue;
                 }
 

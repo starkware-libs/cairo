@@ -205,7 +205,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
         }
         Array(ArrayConcreteLibfunc::PopFront(_)) => vec![ops.steps(2), ops.steps(3)],
-        Array(ArrayConcreteLibfunc::At(libfunc)) => {
+        Array(ArrayConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![
                     ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
@@ -371,6 +371,9 @@ fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> V
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
             ]
         }
+        Uint8Concrete::Divmod(_) => {
+            vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
+        }
     }
 }
 
@@ -415,6 +418,9 @@ fn u64_libfunc_cost<Ops: CostOperations>(
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 2 }),
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
             ]
+        }
+        Uint64Concrete::Divmod(_) => {
+            vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
         }
     }
 }

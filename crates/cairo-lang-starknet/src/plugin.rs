@@ -788,7 +788,7 @@ fn generate_entry_point_wrapper(
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
                 "\n            let res = ",
-                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res)"),
+                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res);"),
             )
         }
     };
@@ -815,7 +815,7 @@ fn generate_entry_point_wrapper(
                 }},
             }}
             {arg_definitions}
-            if array_len(ref data) != 0_usize {{
+            if !array::ArrayTrait::is_empty(ref data) {{
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

@@ -181,7 +181,7 @@ fn wrap_maybe_with_missing(
     })
 }
 
-/// Computes the semantic model of an expression, or returns a SemanticDiagnosticKind on error,
+/// Computes the semantic model of an expression, or returns a SemanticDiagnosticKind on error.
 pub fn maybe_compute_expr_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::Expr,
@@ -1583,7 +1583,7 @@ fn check_named_arguments(
     res
 }
 
-/// Computes the semantic model of a statement.
+/// Computes the semantic model of a statement (excluding tail-expression).
 pub fn compute_statement_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
@@ -1639,8 +1639,19 @@ pub fn compute_statement_semantic(
                 stable_ptr: syntax.stable_ptr(),
             })
         }
-        ast::Statement::Expr(expr_syntax) => {
-            let expr = compute_expr_semantic(ctx, &expr_syntax.expr(syntax_db));
+        ast::Statement::Expr(stmt_expr_syntax) => {
+            let expr_syntax = stmt_expr_syntax.expr(syntax_db);
+            let expr = compute_expr_semantic(ctx, &expr_syntax);
+            if matches!(
+                stmt_expr_syntax.semicolon(syntax_db),
+                ast::OptionTerminalSemicolon::Empty(_)
+            ) && !matches!(
+                expr_syntax,
+                ast::Expr::Block(_) | ast::Expr::If(_) | ast::Expr::Match(_)
+            ) {
+                // Point to after the expression, where the semicolon is missing.
+                ctx.diagnostics.report_after(&expr_syntax, MissingSemicolon);
+            }
             semantic::Statement::Expr(semantic::StatementExpr {
                 expr: ctx.exprs.alloc(expr),
                 stable_ptr: syntax.stable_ptr(),

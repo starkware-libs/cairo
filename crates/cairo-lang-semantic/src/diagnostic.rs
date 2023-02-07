@@ -34,25 +34,35 @@ impl SemanticDiagnostics {
     pub fn build(self) -> Diagnostics<SemanticDiagnostic> {
         self.diagnostics.build()
     }
+    /// Report a diagnostic in the location of the given node.
     pub fn report<TNode: TypedSyntaxNode>(
         &mut self,
         node: &TNode,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::from_ast(self.module_file_id, node),
+        self.diagnostics
+            .add(SemanticDiagnostic::new(StableLocation::from_ast(self.module_file_id, node), kind))
+    }
+    /// Report a diagnostic in the location after the given node (with width 0).
+    pub fn report_after<TNode: TypedSyntaxNode>(
+        &mut self,
+        node: &TNode,
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded {
+        self.diagnostics.add(SemanticDiagnostic::new_after(
+            StableLocation::from_ast(self.module_file_id, node),
             kind,
-        })
+        ))
     }
     pub fn report_by_ptr(
         &mut self,
         stable_ptr: SyntaxStablePtrId,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::new(self.module_file_id, stable_ptr),
+        self.diagnostics.add(SemanticDiagnostic::new(
+            StableLocation::new(self.module_file_id, stable_ptr),
             kind,
-        })
+        ))
     }
 }
 
@@ -60,6 +70,19 @@ impl SemanticDiagnostics {
 pub struct SemanticDiagnostic {
     pub stable_location: StableLocation,
     pub kind: SemanticDiagnosticKind,
+    /// true if the diagnostic should be reported *after* the given location. Normally false, in
+    /// which case the diagnostic points to the given location (as-is).
+    pub after: bool,
+}
+impl SemanticDiagnostic {
+    /// Create a diagnostic in the given location.
+    pub fn new(stable_location: StableLocation, kind: SemanticDiagnosticKind) -> Self {
+        SemanticDiagnostic { stable_location, kind, after: false }
+    }
+    /// Create a diagnostic in the location after the given location (with width 0).
+    pub fn new_after(stable_location: StableLocation, kind: SemanticDiagnosticKind) -> Self {
+        SemanticDiagnostic { stable_location, kind, after: true }
+    }
 }
 impl DiagnosticEntry for SemanticDiagnostic {
     type DbType = dyn SemanticGroup;
@@ -499,11 +522,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ExternFunctionWithImplGenericsNotSupported => {
                 "Extern functions with impl generics are not supported".into()
             }
+            SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
         }
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        let location = self.stable_location.diagnostic_location(db.upcast());
+        let mut location = self.stable_location.diagnostic_location(db.upcast());
+        if self.after {
+            location = location.after();
+        }
         match &self.kind {
             SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, .. } => {
                 DiagnosticLocation { span: diagnostic.span, ..location }
@@ -743,6 +770,7 @@ pub enum SemanticDiagnosticKind {
     },
     OnlyLiteralConstants,
     ExternFunctionWithImplGenericsNotSupported,
+    MissingSemicolon,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

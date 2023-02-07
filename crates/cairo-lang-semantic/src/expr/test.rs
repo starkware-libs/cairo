@@ -35,6 +35,7 @@ cairo_lang_test_utils::test_file_test!(
         operators: "operators",
         pattern: "pattern",
         return_: "return",
+        statements: "statements",
     },
     test_function_diagnostics
 );
@@ -201,7 +202,7 @@ fn test_member_access_failures() {
                 c: felt,
             }
             fn foo(a: A){
-                a.f
+                a.f;
                 a.a::b;
                 a.4.4;
                 5.a;
@@ -214,7 +215,7 @@ fn test_member_access_failures() {
         indoc! {r#"
             error: Struct "test::A" has no member "f"
              --> lib.cairo:7:7
-                a.f
+                a.f;
                   ^
 
             error: Invalid member expression.

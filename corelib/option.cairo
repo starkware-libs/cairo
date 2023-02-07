@@ -20,7 +20,7 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
             Option::Some(x) => x,
             Option::None(()) => {
                 let mut data = ArrayTrait::new();
-                data.append(err)
+                data.append(err);
                 panic(data)
             },
         }

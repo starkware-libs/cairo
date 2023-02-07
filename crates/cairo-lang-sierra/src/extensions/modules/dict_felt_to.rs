@@ -29,7 +29,7 @@ impl GenericTypeArgGenericType for DictFeltToTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        wrapped_info: TypeInfo,
+        TypeInfo { long_id: wrapped_long_id, storable, droppable, duplicatable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // List of specific types allowed as dictionary values.
         // TODO(Gil): Check in the higher level compiler and raise proper diagnostic (when we'll
@@ -37,14 +37,14 @@ impl GenericTypeArgGenericType for DictFeltToTypeWrapped {
         // TODO(Gil): Allow any type of size 1 which implement the 'Default' trait.
         let allowed_types =
             [FeltType::id(), Uint128Type::id(), Uint8Type::id(), NullableType::id()];
-        if !allowed_types.contains(&wrapped_info.long_id.generic_id)
-            || !wrapped_info.storable
-            || !wrapped_info.droppable
-            || !wrapped_info.duplicatable
+        if allowed_types.contains(&wrapped_long_id.generic_id)
+            && storable
+            && droppable
+            && duplicatable
         {
-            Err(SpecializationError::UnsupportedGenericArg)
-        } else {
             Ok(TypeInfo { long_id, duplicatable: false, droppable: false, storable: true, size: 1 })
+        } else {
+            Err(SpecializationError::UnsupportedGenericArg)
         }
     }
 }
