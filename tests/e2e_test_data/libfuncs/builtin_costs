@@ -28,13 +28,11 @@ type BuiltinCosts = BuiltinCosts;
 libfunc get_builtin_costs = get_builtin_costs;
 libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
-libfunc rename<BuiltinCosts> = rename<BuiltinCosts>;
 
 get_builtin_costs() -> ([0]);
 get_builtin_costs() -> ([1]);
 drop<BuiltinCosts>([1]) -> ();
-store_temp<BuiltinCosts>([0]) -> ([0]);
-rename<BuiltinCosts>([0]) -> ([2]);
+store_temp<BuiltinCosts>([0]) -> ([2]);
 return([2]);
 
 test::foo@0() -> (BuiltinCosts);

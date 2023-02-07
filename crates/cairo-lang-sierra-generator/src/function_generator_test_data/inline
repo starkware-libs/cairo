@@ -41,8 +41,7 @@ branch_align() -> ()
 felt_is_zero([0]) { fallthrough() label3([5]) }
 branch_align() -> ()
 felt_const<1>() -> ([6])
-store_temp<felt>([6]) -> ([6])
-rename<felt>([6]) -> ([7])
+store_temp<felt>([6]) -> ([7])
 jump() { label5() }
 label3:
 branch_align() -> ()

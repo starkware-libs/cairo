@@ -8,8 +8,6 @@ libfunc pedersen = pedersen;
 libfunc felt_const<3> = felt_const<3>;
 libfunc felt_const<4> = felt_const<4>;
 libfunc store_temp<Pedersen> = store_temp<Pedersen>;
-libfunc rename<Pedersen> = rename<Pedersen>;
-libfunc rename<felt> = rename<felt>;
 
 felt_const<1>() -> ([1]);
 felt_const<2>() -> ([2]);
@@ -24,10 +22,8 @@ felt_const<4>() -> ([8]);
 store_temp<felt>([7]) -> ([7]);
 store_temp<felt>([8]) -> ([8]);
 pedersen([6], [7], [8]) -> ([9], [10]);
-store_temp<Pedersen>([9]) -> ([9]);
-rename<Pedersen>([9]) -> ([11]);
-store_temp<felt>([10]) -> ([10]);
-rename<felt>([10]) -> ([12]);
+store_temp<Pedersen>([9]) -> ([11]);
+store_temp<felt>([10]) -> ([12]);
 return([11], [12]);
 
 pedersen_test::pedersen_test::test_pedersen@0([0]: Pedersen) -> (Pedersen, felt);
