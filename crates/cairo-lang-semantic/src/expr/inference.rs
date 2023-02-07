@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use cairo_lang_defs::ids::{GenericKind, TraitFunctionId};
+use cairo_lang_defs::ids::{GenericKind, TraitFunctionId, TraitId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use itertools::{zip_eq, Itertools};
 
@@ -28,6 +28,7 @@ pub enum InferenceError {
     Cycle { type_var: TypeVar },
     KindMismatch { ty0: TypeId, ty1: TypeId },
     GenericArgMismatch { garg0: GenericArgumentId, garg1: GenericArgumentId },
+    TraitMismatch { trt0: TraitId, trt1: TraitId },
 }
 
 /// State of inference.
@@ -246,6 +247,23 @@ impl<'db> Inference<'db> {
                 Err(InferenceError::GenericArgMismatch { garg0, garg1 })
             }
         }
+    }
+
+    /// Conforms generics traits. See `conform_ty()`.
+    pub fn conform_traits(
+        &mut self,
+        trt0: ConcreteTraitId,
+        trt1: ConcreteTraitId,
+    ) -> Result<ConcreteTraitId, InferenceError> {
+        let trt0 = self.db.lookup_intern_concrete_trait(trt0);
+        let trt1 = self.db.lookup_intern_concrete_trait(trt1);
+        if trt0.trait_id != trt1.trait_id {
+            return Err(InferenceError::TraitMismatch { trt0: trt0.trait_id, trt1: trt1.trait_id });
+        }
+        let generic_args = self.conform_generic_args(&trt0.generic_args, &trt1.generic_args)?;
+        Ok(self
+            .db
+            .intern_concrete_trait(ConcreteTraitLongId { trait_id: trt0.trait_id, generic_args }))
     }
 
     /// Assigns a value to a [TypeVar]. Return the assigned type, or an error.

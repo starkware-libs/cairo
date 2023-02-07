@@ -488,7 +488,7 @@ impl<'db> Resolver<'db> {
         // Infer the impl.
         let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
         let impl_generic_params = self.db.impl_generic_params(impl_id)?;
-        let impl_concrete_trait = self.db.impl_trait(impl_id)?;
+        let impl_concrete_trait = self.db.impl_concrete_trait(impl_id)?;
         let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(impl_concrete_trait);
         let generic_args = self
             .inference
@@ -804,12 +804,12 @@ impl<'db> Resolver<'db> {
 
         for (i, generic_param) in generic_params.iter().enumerate() {
             let resolved_arg = match generic_args_syntax.get(i) {
-                Some(generic_arg_syntax) => match generic_param.kind() {
-                    GenericKind::Type => {
+                Some(generic_arg_syntax) => match generic_param {
+                    GenericParam::Type(_) => {
                         let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
                         GenericArgumentId::Type(ty)
                     }
-                    GenericKind::Const => {
+                    GenericParam::Const(_) => {
                         let text = generic_arg_syntax
                             .as_syntax_node()
                             .get_text_without_trivia(self.db.upcast());
@@ -817,7 +817,7 @@ impl<'db> Resolver<'db> {
                             .map_err(|_| diagnostics.report(generic_arg_syntax, UnknownLiteral))?;
                         GenericArgumentId::Literal(self.db.intern_literal(literal))
                     }
-                    GenericKind::Impl => {
+                    GenericParam::Impl(param) => {
                         let expr_path = try_extract_matches!(generic_arg_syntax, ast::Expr::Path)
                             .ok_or_else(|| {
                             diagnostics.report(generic_arg_syntax, UnknownImpl)
@@ -833,8 +833,17 @@ impl<'db> Resolver<'db> {
                             ResolvedConcreteItem::Impl
                         )
                         .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
+                        let impl_concrete_trait =
+                            self.db.concrete_impl_concrete_trait(resolved_impl)?;
+                        let expected_concrete_trait = param.concrete_trait?;
+                        if self
+                            .inference
+                            .conform_traits(impl_concrete_trait, expected_concrete_trait)
+                            .is_err()
+                        {
+                            diagnostics.report(generic_arg_syntax, TraitMismatch);
+                        }
 
-                        // TODO(spapini): Check that the impl matches the requested trait.
                         GenericArgumentId::Impl(resolved_impl)
                     }
                 },

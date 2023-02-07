@@ -31,7 +31,8 @@ use crate::items::trt::ConcreteTraitId;
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
-    corelib, items, literals, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
+    corelib, items, literals, semantic, types, ConcreteImplId, FunctionId, Parameter,
+    SemanticDiagnostic, TypeId,
 };
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
@@ -306,8 +307,14 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::impl_resolved_lookback)]
     fn impl_resolved_lookback(&self, impl_id: ImplId) -> Maybe<Arc<ResolvedLookback>>;
     /// Returns the concrete trait that is implemented by the impl.
-    #[salsa::invoke(items::imp::impl_trait)]
-    fn impl_trait(&self, impl_id: ImplId) -> Maybe<ConcreteTraitId>;
+    #[salsa::invoke(items::imp::impl_concrete_trait)]
+    fn impl_concrete_trait(&self, impl_id: ImplId) -> Maybe<ConcreteTraitId>;
+    /// Returns the concrete trait that is implemented by the concrete impl.
+    #[salsa::invoke(items::imp::concrete_impl_concrete_trait)]
+    fn concrete_impl_concrete_trait(
+        &self,
+        concrete_impl_id: ConcreteImplId,
+    ) -> Maybe<ConcreteTraitId>;
     /// Private query to compute data about an impl.
     #[salsa::invoke(items::imp::priv_impl_definition_data)]
     fn priv_impl_definition_data(&self, impl_id: ImplId) -> Maybe<items::imp::ImplDefinitionData>;
