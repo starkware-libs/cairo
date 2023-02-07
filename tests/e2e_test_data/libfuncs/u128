@@ -552,3 +552,53 @@ rename<core::bool>([4]) -> ([7]);
 return([7]);
 
 test::foo@0([0]: u128, [1]: u128) -> (core::bool);
+
+//! > ==========================================================================
+
+//! > u128_sqrt libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(x: u128) -> u128 {
+    integer::u128_sqrt(x)
+}
+
+//! > casm
+%{ (memory[ap + 0]) = sqrt(memory[fp + -3]) %}
+[ap + 1] = [ap + 0] + 340282366920938463444927863358058659840, ap++;
+[ap + -1] = [[fp + -4] + 0], ap++;
+[ap + -1] = [[fp + -4] + 1];
+[ap + 0] = [ap + -2] * [ap + -2], ap++;
+[fp + -3] = [ap + 0] + [ap + -1], ap++;
+[ap + -1] = [[fp + -4] + 2];
+[ap + 0] = [ap + -4] + [ap + -4], ap++;
+[ap + 0] = [ap + -3] + [ap + -1], ap++;
+[ap + -1] = [ap + 0] + [fp + -3], ap++;
+[ap + -1] = [[fp + -4] + 3];
+[ap + 0] = [fp + -4] + 4, ap++;
+[ap + 0] = [ap + -8], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Step: 9})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type u128 = u128;
+
+libfunc u128_sqrt = u128_sqrt;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc store_temp<u128> = store_temp<u128>;
+
+u128_sqrt([0], [1]) -> ([2], [3]);
+store_temp<RangeCheck>([2]) -> ([2]);
+rename<RangeCheck>([2]) -> ([4]);
+store_temp<u128>([3]) -> ([5]);
+return([4], [5]);
+
+test::foo@0([0]: RangeCheck, [1]: u128) -> (RangeCheck, u128);
