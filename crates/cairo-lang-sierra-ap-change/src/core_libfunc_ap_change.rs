@@ -142,7 +142,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint128Concrete::WideMul(_) => vec![ApChange::Known(17)],
             Uint128Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
             Uint128Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
-            Uint128Concrete::SquareRoot(_) => vec![ApChange::Known(7)],
+            Uint128Concrete::SquareRoot(_) => vec![ApChange::Known(6)],
             Uint128Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
             Uint128Concrete::FromFelt(_) => vec![ApChange::Known(1), ApChange::Known(6)],
             Uint128Concrete::Const(_) | Uint128Concrete::ToFelt(_) => vec![ApChange::Known(0)],

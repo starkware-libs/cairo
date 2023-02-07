@@ -563,28 +563,27 @@ test::foo@0([0]: u128, [1]: u128) -> (core::bool);
 run_small_e2e_test
 
 //! > cairo
-fn foo(x: u128) -> u128 {
-    integer::u128_sqrt(x)
+fn foo(value: u128) -> u128 {
+    integer::u128_sqrt(value)
 }
 
 //! > casm
 %{ (memory[ap + 0]) = sqrt(memory[fp + -3]) %}
-[ap + 1] = [ap + 0] + 340282366920938463444927863358058659840, ap++;
+[ap + 1] = [ap + 0] + 340282366920938463463374607431768211329, ap++;
 [ap + -1] = [[fp + -4] + 0], ap++;
 [ap + -1] = [[fp + -4] + 1];
 [ap + 0] = [ap + -2] * [ap + -2], ap++;
 [fp + -3] = [ap + 0] + [ap + -1], ap++;
 [ap + -1] = [[fp + -4] + 2];
 [ap + 0] = [ap + -4] + [ap + -4], ap++;
-[ap + 0] = [ap + -3] + [ap + -1], ap++;
-[ap + -1] = [ap + 0] + [fp + -3], ap++;
+[ap + 0] = [ap + -1] + [ap + -2], ap++;
 [ap + -1] = [[fp + -4] + 3];
 [ap + 0] = [fp + -4] + 4, ap++;
-[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [ap + -7], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Step: 9})
+test::foo: OrderedHashMap({Const: 1380})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;

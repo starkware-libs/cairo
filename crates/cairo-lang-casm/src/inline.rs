@@ -195,20 +195,6 @@ macro_rules! casm_extend {
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
-    ($ctx:ident, %{ ( memory $dest:tt) = sqrt ( memory $value:tt ) %} $($tok:tt)*) => {
-       $ctx.current_hints.push($crate::hints::Hint::SquareRoot{
-           value: $crate::res!($value),
-           dest: $crate::deref!($dest),
-       });
-       $crate::casm_extend!($ctx, $($tok)*)
-   };
-   ($ctx:ident, %{ ( memory $dest:tt) = sqrt ( $value:tt ) %} $($tok:tt)*) => {
-    $ctx.current_hints.push($crate::hints::Hint::SquareRoot{
-        value: $crate::res!($value),
-        dest: $crate::deref!($dest),
-    });
-    $crate::casm_extend!($ctx, $($tok)*)
-};
     ($ctx:ident, %{ syscall_handler.syscall(syscall_ptr=memory $addr:tt + $offset:tt) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::SystemCall {
             system: $crate::operand::ResOperand::BinOp($crate::operand::BinOpOperand {

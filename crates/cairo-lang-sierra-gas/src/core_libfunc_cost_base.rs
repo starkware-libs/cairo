@@ -480,7 +480,7 @@ fn u128_libfunc_cost<Ops: CostOperations>(
             vec![ops.steps(2), ops.steps(3)]
         }
         Uint128Concrete::SquareRoot(_) => {
-            vec![ops.const_cost(7)]
+            vec![ops.const_cost(ConstCost { steps: 9, holes: 0, range_checks: 4 })]
         }
         Uint128Concrete::LessThanOrEqual(_) => {
             vec![
