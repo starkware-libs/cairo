@@ -104,8 +104,8 @@ pub struct GenericParamConst {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamImpl {
-    id: GenericParamId,
-    concrete_trait: Maybe<ConcreteTraitId>,
+    pub id: GenericParamId,
+    pub concrete_trait: Maybe<ConcreteTraitId>,
 }
 
 pub fn generic_param_semantic(

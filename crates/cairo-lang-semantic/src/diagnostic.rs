@@ -523,6 +523,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Extern items with impl generics are not supported".into()
             }
             SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
+            SemanticDiagnosticKind::TraitMismatch => {
+                "Supplied impl does not match the required trait".into()
+            }
         }
     }
 
@@ -771,6 +774,7 @@ pub enum SemanticDiagnosticKind {
     OnlyLiteralConstants,
     ExternItemWithImplGenericsNotSupported,
     MissingSemicolon,
+    TraitMismatch,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

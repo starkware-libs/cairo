@@ -36,7 +36,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::Inference;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
-use crate::types::GenericSubstitution;
+use crate::types::{substitute_generics_args_inplace, GenericSubstitution};
 use crate::{
     semantic, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId, GenericArgumentId,
     GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId,
@@ -118,9 +118,26 @@ pub fn impl_resolved_lookback(
     Ok(db.priv_impl_declaration_data(impl_id)?.resolved_lookback)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_trait].
-pub fn impl_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<ConcreteTraitId> {
+/// Query implementation of [crate::db::SemanticGroup::impl_concrete_trait].
+pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<ConcreteTraitId> {
     db.priv_impl_declaration_data(impl_id)?.concrete_trait
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_concrete_trait].
+pub fn concrete_impl_concrete_trait(
+    db: &dyn SemanticGroup,
+    concrete_impl_id: ConcreteImplId,
+) -> Maybe<ConcreteTraitId> {
+    let long_impl = db.lookup_intern_concrete_impl(concrete_impl_id);
+    let substitution = GenericSubstitution::new(
+        &db.impl_generic_params(long_impl.impl_id)?,
+        &long_impl.generic_args,
+    );
+
+    let impl_concrete_trait_id = db.impl_concrete_trait(long_impl.impl_id)?;
+    let mut long_concrete_trait = db.lookup_intern_concrete_trait(impl_concrete_trait_id);
+    substitute_generics_args_inplace(db, &substitution, &mut long_concrete_trait.generic_args);
+    Ok(db.intern_concrete_trait(long_concrete_trait))
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_declaration_data].

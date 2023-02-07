@@ -48,5 +48,5 @@ fn test_impl() {
          mutability: Immutable }], return_type: (), implicits: [], panicable: true }"
     );
 
-    assert_eq!(format!("{:?}", db.impl_trait(impl_id).unwrap()), "ConcreteTraitId(0)");
+    assert_eq!(format!("{:?}", db.impl_concrete_trait(impl_id).unwrap()), "ConcreteTraitId(0)");
 }
