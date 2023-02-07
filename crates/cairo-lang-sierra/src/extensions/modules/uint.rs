@@ -38,6 +38,8 @@ pub trait UintTraits: Default {
     const CONST: &'static str;
     /// The generic libfunc id for comparing equality.
     const EQUAL: &'static str;
+    /// The generic libfunc id for calculating the integer square root.
+    const SQUARE_ROOT: &'static str;
     /// The generic libfunc id for testing if less than.
     const LESS_THAN: &'static str;
     /// The generic libfunc id for testing if less than or equal.
@@ -469,6 +471,7 @@ impl UintTraits for Uint8Traits {
     const IS_SMALL: bool = true;
     const CONST: &'static str = "u8_const";
     const EQUAL: &'static str = "u8_eq";
+    const SQUARE_ROOT: &'static str = "u8_sqrt";
     const LESS_THAN: &'static str = "u8_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u8_le";
     const OVERFLOWING_ADD: &'static str = "u8_overflowing_add";
@@ -509,6 +512,7 @@ impl UintTraits for Uint64Traits {
     const IS_SMALL: bool = true;
     const CONST: &'static str = "u64_const";
     const EQUAL: &'static str = "u64_eq";
+    const SQUARE_ROOT: &'static str = "u64_sqrt";
     const LESS_THAN: &'static str = "u64_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u64_le";
     const OVERFLOWING_ADD: &'static str = "u64_overflowing_add";
