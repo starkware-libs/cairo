@@ -23,9 +23,11 @@ type EcPoint = EcPoint;
 
 libfunc ec_point_zero = ec_point_zero;
 libfunc store_temp<EcPoint> = store_temp<EcPoint>;
+libfunc rename<EcPoint> = rename<EcPoint>;
 
 ec_point_zero() -> ([0]);
-store_temp<EcPoint>([0]) -> ([1]);
+store_temp<EcPoint>([0]) -> ([0]);
+rename<EcPoint>([0]) -> ([1]);
 return([1]);
 
 test::foo@0() -> (EcPoint);
@@ -257,16 +259,17 @@ libfunc ec_point_is_zero = ec_point_is_zero;
 libfunc branch_align = branch_align;
 libfunc felt_const<1> = felt_const<1>;
 libfunc store_temp<felt> = store_temp<felt>;
+libfunc rename<felt> = rename<felt>;
 libfunc jump = jump;
 libfunc ec_point_unwrap = ec_point_unwrap;
 libfunc drop<felt> = drop<felt>;
-libfunc rename<felt> = rename<felt>;
 
-ec_point_is_zero([0]) { fallthrough() 5([1]) };
+ec_point_is_zero([0]) { fallthrough() 6([1]) };
 branch_align() -> ();
 felt_const<1>() -> ([2]);
-store_temp<felt>([2]) -> ([3]);
-jump() { 9() };
+store_temp<felt>([2]) -> ([2]);
+rename<felt>([2]) -> ([3]);
+jump() { 10() };
 branch_align() -> ();
 ec_point_unwrap([1]) -> ([4], [5]);
 drop<felt>([5]) -> ();
@@ -479,10 +482,11 @@ branch_align() -> ();
 store_temp<NonZero<EcPoint>>([1]) -> ([1]);
 unwrap_nz<EcPoint>([1]) -> ([2]);
 rename<EcPoint>([2]) -> ([3]);
-jump() { 9() };
+jump() { 10() };
 branch_align() -> ();
 ec_point_zero() -> ([4]);
-store_temp<EcPoint>([4]) -> ([3]);
+store_temp<EcPoint>([4]) -> ([4]);
+rename<EcPoint>([4]) -> ([3]);
 rename<EcPoint>([3]) -> ([5]);
 return([5]);
 

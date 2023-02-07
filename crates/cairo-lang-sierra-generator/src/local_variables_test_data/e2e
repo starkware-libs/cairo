@@ -104,7 +104,8 @@ label2:
 branch_align() -> ()
 drop<Unit>([7]) -> ()
 felt_const<1>() -> ([9])
-store_temp<felt>([9]) -> ([2])
+store_temp<felt>([9]) -> ([9])
+rename<felt>([9]) -> ([2])
 label3:
 store_local<felt>([3], [2]) -> ([2])
 function_call<user@test::revoke_ap>() -> ([10])
