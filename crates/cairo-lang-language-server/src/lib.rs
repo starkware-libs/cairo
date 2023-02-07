@@ -14,7 +14,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, FunctionWithBodyId, ImplFunctionLongId, ImplLongId, LanguageElementId,
+    FreeFunctionLongId, FunctionWithBodyId, ImplDefLongId, ImplFunctionLongId, LanguageElementId,
     LookupItemId, ModuleFileId, ModuleId, ModuleItemId, StructLongId, TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
@@ -557,7 +557,7 @@ fn lookup_item_from_ast(
             )))))
         }
         SyntaxKind::ItemImpl => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplLongId(
+            Some(LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplDefLongId(
                 module_file_id,
                 ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr(),
             )))))

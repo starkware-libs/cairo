@@ -210,7 +210,7 @@ impl ConcreteFunctionWithBody {
                 GenericSubstitution::new(
                     &chain!(
                         db.impl_function_generic_params(f.function)?,
-                        db.impl_generic_params(concrete_impl.impl_id)?
+                        db.impl_def_generic_params(concrete_impl.impl_def_id)?
                     )
                     .collect_vec(),
                     &chain!(
@@ -465,7 +465,7 @@ pub fn concrete_function_signature(
         GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => function_substitution,
         GenericFunctionId::Impl(id) => {
             let long_concrete_impl = db.lookup_intern_concrete_impl(id.concrete_impl);
-            let generic_params = db.impl_generic_params(long_concrete_impl.impl_id)?;
+            let generic_params = db.impl_def_generic_params(long_concrete_impl.impl_def_id)?;
             let generic_args = long_concrete_impl.generic_args;
             function_substitution.concat(GenericSubstitution::new(&generic_params, &generic_args))
         }

@@ -220,19 +220,19 @@ fn module_lowering_diagnostics(
             ModuleItemId::Enum(_) => {}
             ModuleItemId::TypeAlias(_) => {}
             ModuleItemId::Trait(_) => {}
-            ModuleItemId::Impl(impl_id) => {
+            ModuleItemId::Impl(impl_def_id) => {
                 // TODO(ilya): Enable diagnostics for generic impls once we resolve
                 // `Variable not dropped.` error on variables with generic types.
 
                 // Skip diagnostics for impls with generic params.
-                if !db.impl_generic_params(*impl_id)?.is_empty()
-                    && impl_id.parent_module(db.upcast()).owning_crate(db.upcast())
+                if !db.impl_def_generic_params(*impl_def_id)?.is_empty()
+                    && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast())
                         == core_crate(db.upcast())
                 {
                     continue;
                 }
 
-                for impl_func in db.impl_functions(*impl_id)?.values() {
+                for impl_func in db.impl_functions(*impl_def_id)?.values() {
                     let function_id = FunctionWithBodyId::Impl(*impl_func);
                     diagnostics.extend(
                         db.function_with_body_lowering_diagnostics(function_id)?.deref().clone(),

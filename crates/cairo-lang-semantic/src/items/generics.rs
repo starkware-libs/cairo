@@ -9,11 +9,12 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
+use super::imp::ImplId;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::literals::LiteralId;
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
-use crate::{ConcreteImplId, ConcreteTraitId, TypeId};
+use crate::{ConcreteTraitId, TypeId};
 
 /// Generic argument.
 /// A value assigned to a generic parameter.
@@ -22,7 +23,7 @@ use crate::{ConcreteImplId, ConcreteTraitId, TypeId};
 pub enum GenericArgumentId {
     Type(TypeId),
     Literal(LiteralId),
-    Impl(ConcreteImplId), // TODO(spapini): impls and constants as generic values.
+    Impl(ImplId), // TODO(spapini): impls and constants as generic values.
 }
 impl GenericArgumentId {
     pub fn kind(&self) -> GenericKind {
@@ -127,7 +128,7 @@ fn generic_item_generic_params(
         GenericItemId::TraitFunc(id) => db.trait_function_generic_params(id),
         GenericItemId::ImplFunc(id) => db.impl_function_generic_params(id),
         GenericItemId::Trait(id) => db.trait_generic_params(id),
-        GenericItemId::Impl(id) => db.impl_generic_params(id),
+        GenericItemId::Impl(id) => db.impl_def_generic_params(id),
         GenericItemId::Struct(id) => db.struct_generic_params(id),
         GenericItemId::Enum(id) => db.enum_generic_params(id),
         GenericItemId::ExternType(id) => db.extern_type_declaration_generic_params(id),
