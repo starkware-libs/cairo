@@ -19,7 +19,7 @@ use crate::utils::{
     struct_deconstruct_libfunc_id,
 };
 
-/// Generates Sierra code for the body of  given [lowering::FlatBlock].
+/// Generates Sierra code for the body of the given [lowering::FlatBlock].
 /// Returns a list of Sierra statements.
 pub fn generate_block_body_code(
     context: &mut ExprGeneratorContext<'_>,
