@@ -4,10 +4,10 @@ use std::fmt;
 pub mod casts;
 pub mod collection_arithmetics;
 pub mod extract_matches;
+pub mod graph_algos;
 pub mod logging;
 pub mod ordered_hash_map;
 pub mod ordered_hash_set;
-pub mod strongly_connected_components;
 pub mod unordered_hash_map;
 pub mod unordered_hash_set;
 
