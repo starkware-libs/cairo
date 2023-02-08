@@ -41,7 +41,10 @@ pub struct PrivInlineData {
 /// Per function information for the inlining phase.
 #[derive(Debug, PartialEq, Eq)]
 pub struct InlineInfo {
+    // Indicates that the function can be inlined.
     pub is_inlineable: bool,
+    // Indicates that the function should be inlined.
+    pub should_inline: bool,
 }
 
 pub fn priv_inline_data(
@@ -67,7 +70,7 @@ fn gather_inlining_info(
     report_diagnostics: bool,
     function_id: FunctionWithBodyId,
 ) -> Maybe<InlineInfo> {
-    let mut info = InlineInfo { is_inlineable: false };
+    let mut info = InlineInfo { is_inlineable: false, should_inline: false };
     let defs_db = db.upcast();
     if db
             .function_with_body_direct_function_with_body_callees(function_id)?
@@ -87,8 +90,9 @@ fn gather_inlining_info(
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
     let root_block_id = lowered.root?;
-    let input_vars: HashSet<VariableId> =
-        lowered.blocks[root_block_id].inputs.iter().copied().collect();
+    let root_block = &lowered.blocks[root_block_id];
+
+    let input_vars: HashSet<VariableId> = root_block.inputs.iter().copied().collect();
     for (block_id, block) in lowered.blocks.iter() {
         match &block.end {
             FlatBlockEnd::Return(returns) => {
@@ -121,6 +125,16 @@ fn gather_inlining_info(
                 }
             }
         };
+    }
+
+    // If all the candidate function does is make a call to another function then it
+    // should be inlined.
+    if let [Statement::Call(stmt)] = root_block.statements.as_slice() {
+        let concrete_function = db.lookup_intern_function(stmt.function).function;
+        let semantic_db = db.upcast();
+        if let Some(function_id) = concrete_function.get_body(semantic_db) {
+            info.should_inline = true;
+        }
     }
 
     info.is_inlineable = true;
@@ -378,8 +392,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     self.inlining_failed = true;
                 }
 
-                if inline_data.config == InlineConfiguration::Always
-                    && inline_data.info.is_inlineable
+                if inline_data.info.is_inlineable
+                    && (inline_data.info.should_inline
+                        || inline_data.config == InlineConfiguration::Always)
                 {
                     return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
                 }
