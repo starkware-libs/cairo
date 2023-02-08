@@ -315,6 +315,67 @@ fn build_divmod<const BOUND: u128>(
     ))
 }
 
+/// Handles a uint square root operation.
+pub fn build_sqrt(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, value] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+
+    // (2**128-1) - (2**125-1)
+    let u125_upper_fixer: BigInt = BigInt::from(u128::MAX - (u128::pow(2, 125) - 1));
+
+    add_input_variables! {casm_builder,
+        buffer(3) range_check;
+        deref value;
+    };
+
+    casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
+        tempvar fixed_root;
+        tempvar root_squared;
+        tempvar value_minus_root_squared;
+        tempvar root_times_two;
+        tempvar diff;
+        tempvar root;
+
+        // Calculate the square root.
+        hint SquareRoot { value: value} into { dst: root };
+
+        // Assert root is in [0, 2**125) by asserting:
+        // (root + (2**128-1) - (2**125-1)) is in [0, 2**128) and root is in [0, 2**128).
+        // The second assertion is needed because if root is very large (e.g., P - 1) the first
+        // assertion may be true.
+        const u125_upper_fixer = u125_upper_fixer;
+        assert fixed_root = root + u125_upper_fixer;
+        assert root = *(range_check++);
+        assert fixed_root = *(range_check++);
+
+        // Assert root**2 is in [0, value] by asserting (value - root**2) is in [0, 2**128).
+        // Since we know root**2 is in [0, 2**250) (because we asserted root is in [0, 2**125))
+        // and that value is in [0, 2**250) this is enough.
+        assert root_squared = root * root;
+        assert value_minus_root_squared = value - root_squared;
+        assert value_minus_root_squared = *(range_check++);
+
+        // Assert value is in [0, (root + 1)^2 ) by asserting (2*root - (value - root^2)) is in
+        // [0, 2**128). this is equivalent because
+        // (root + 1)^2 - 1 - value = 2*root - (value - root^2) .
+        assert root_times_two = root + root;
+        assert diff = root_times_two - value_minus_root_squared;
+        assert diff = *(range_check++);
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[root]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
 /// Builds instructions for Sierra u8 operations.
 pub fn build_u8(
     libfunc: &Uint8Concrete,

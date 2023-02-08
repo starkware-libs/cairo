@@ -156,6 +156,44 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintEqualLibfunc<T
     }
 }
 
+/// Libfunc for calculating uint's square root.
+#[derive(Default)]
+pub struct UintSquareRootLibfunc<TUintTraits: UintTraits> {
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibfunc<TUintTraits> {
+    const STR_ID: &'static str = TUintTraits::SQUARE_ROOT;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(ty.clone()),
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) } },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
 /// Libfunc for comparing uints.
 #[derive(Default)]
 pub struct UintLessThanLibfunc<TUintTraits: UintTraits> {

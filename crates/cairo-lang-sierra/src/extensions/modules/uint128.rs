@@ -4,7 +4,7 @@ use super::range_check::RangeCheckType;
 use super::uint::{
     IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
     UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
-    UintToFeltLibfunc, UintTraits, UintType,
+    UintSquareRootLibfunc, UintToFeltLibfunc, UintTraits, UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -28,7 +28,7 @@ define_libfunc_hierarchy! {
         WideMul(Uint128WideMulLibfunc),
         LessThan(UintLessThanLibfunc<Uint128Traits>),
         Equal(UintEqualLibfunc<Uint128Traits>),
-        SquareRoot(Uint128SquareRootLibfunc),
+        SquareRoot(UintSquareRootLibfunc<Uint128Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint128Traits>),
         Const(UintConstLibfunc<Uint128Traits>),
         FromFelt(Uint128sFromFeltLibfunc),
@@ -255,41 +255,5 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFeltLibfunc {
             ],
             fallthrough: Some(0),
         })
-    }
-}
-
-/// Libfunc for u128 square root.
-#[derive(Default)]
-pub struct Uint128SquareRootLibfunc {}
-impl NoGenericArgsGenericLibfunc for Uint128SquareRootLibfunc {
-    const STR_ID: &'static str = "u128_sqrt";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
-                ParamSignature::new(ty.clone()),
-            ],
-            vec![
-                OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
-                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) } },
-            ],
-            SierraApChange::Known { new_vars_only: false },
-        ))
     }
 }

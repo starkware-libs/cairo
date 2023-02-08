@@ -538,18 +538,18 @@ fn foo(value: u128) -> u128 {
 }
 
 //! > casm
-%{ (memory[ap + 0]) = sqrt(memory[fp + -3]) %}
-[ap + 1] = [ap + 0] + 340282366920938463463374607431768211329, ap++;
-[ap + -1] = [[fp + -4] + 0], ap++;
-[ap + -1] = [[fp + -4] + 1];
-[ap + 0] = [ap + -2] * [ap + -2], ap++;
-[fp + -3] = [ap + 0] + [ap + -1], ap++;
-[ap + -1] = [[fp + -4] + 2];
-[ap + 0] = [ap + -4] + [ap + -4], ap++;
-[ap + 0] = [ap + -1] + [ap + -2], ap++;
-[ap + -1] = [[fp + -4] + 3];
+%{ (memory[ap + 5]) = sqrt(memory[fp + -3]) %}
+[ap + 0] = [ap + 5] + 297747071055821155530452781502797185024, ap++;
+[ap + 4] = [[fp + -4] + 0], ap++;
+[ap + -2] = [[fp + -4] + 1], ap++;
+[ap + -2] = [ap + 2] * [ap + 2], ap++;
+[fp + -3] = [ap + -2] + [ap + -3], ap++;
+[ap + -3] = [[fp + -4] + 2], ap++;
+[ap + -3] = [ap + -1] + [ap + -1];
+[ap + -3] = [ap + -2] + [ap + -4];
+[ap + -2] = [[fp + -4] + 3];
 [ap + 0] = [fp + -4] + 4, ap++;
-[ap + 0] = [ap + -7], ap++;
+[ap + 0] = [ap + -2], ap++;
 ret;
 
 //! > function_costs
@@ -561,12 +561,10 @@ type u128 = u128;
 
 libfunc u128_sqrt = u128_sqrt;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<u128> = store_temp<u128>;
 
 u128_sqrt([0], [1]) -> ([2], [3]);
-store_temp<RangeCheck>([2]) -> ([2]);
-rename<RangeCheck>([2]) -> ([4]);
+store_temp<RangeCheck>([2]) -> ([4]);
 store_temp<u128>([3]) -> ([5]);
 return([4], [5]);
 
