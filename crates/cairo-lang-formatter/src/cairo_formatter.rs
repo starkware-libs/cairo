@@ -46,6 +46,15 @@ pub enum FormatOutcome {
     DiffFound(FileDiff),
 }
 
+impl FormatOutcome {
+    pub fn into_output_text(self) -> String {
+        match self {
+            FormatOutcome::Identical(original) => original,
+            FormatOutcome::DiffFound(diff) => diff.formatted,
+        }
+    }
+}
+
 pub struct StdinFmt;
 
 pub trait FormattableInput {
@@ -137,11 +146,6 @@ impl CairoFormatter {
         builder
     }
 
-    /// Verifies that the path is formatted correctly.
-    pub fn check(&self, input: &dyn FormattableInput) -> Result<FormatOutcome> {
-        format_input(input, &self.formatter_config)
-    }
-
     /// Formats the path in place, writing changes to the files.
     pub fn format_in_place(&self, input: &dyn FormattableInput) -> Result<FormatOutcome> {
         match format_input(input, &self.formatter_config)? {
@@ -155,17 +159,7 @@ impl CairoFormatter {
     }
 
     /// Formats the path and returns the formatted string.
-    pub fn format_to_string(
-        &self,
-        input: &dyn FormattableInput,
-    ) -> Result<(FormatOutcome, String)> {
-        match format_input(input, &self.formatter_config)? {
-            FormatOutcome::DiffFound(diff) => {
-                Ok((FormatOutcome::DiffFound(diff.clone()), diff.formatted))
-            }
-            FormatOutcome::Identical(original) => {
-                Ok((FormatOutcome::Identical(original.clone()), original))
-            }
-        }
+    pub fn format_to_string(&self, input: &dyn FormattableInput) -> Result<FormatOutcome> {
+        format_input(input, &self.formatter_config)
     }
 }
