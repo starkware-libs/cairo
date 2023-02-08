@@ -1,6 +1,8 @@
 use std::fs::read_to_string;
 
 use cairo_lang_sierra::ProgramParser;
+use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
+use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use test_case::test_case;
 
 use super::{sierra_from_felts, sierra_to_felts};
@@ -15,6 +17,8 @@ fn test_felt_serde(example_file_name: &str) {
                 .unwrap(),
         )
         .unwrap();
+    let replacer = CanonicalReplacer::from_program(&sierra);
+    let sierra = replacer.apply(&sierra);
     pretty_assertions::assert_eq!(
         sierra_from_felts(&sierra_to_felts(&sierra).expect("Serialization failed."))
             .expect("Deserialization failed."),

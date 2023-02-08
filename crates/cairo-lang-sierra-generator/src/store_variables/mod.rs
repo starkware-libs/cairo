@@ -280,10 +280,10 @@ impl<'a> AddStoreVariableStatements<'a> {
         {
             let should_rename = if self.state().deferred_variables.contains_key(var) {
                 // Convert the deferred variable into a temporary variable, by calling
-                // `prepare_libfunc_argument`.
+                // [Self::store_deferred].
                 // `should_rename` should be set to `true` if the variable was copied onto the
                 // stack.
-                self.prepare_libfunc_argument(var, false, false, true).0
+                self.store_deferred(var)
             } else {
                 // Check if this is part of the prefix. If it is, rename instead of adding
                 // `store_temp`.
@@ -299,9 +299,6 @@ impl<'a> AddStoreVariableStatements<'a> {
             };
 
             if should_rename {
-                // Note: the original variable may still be used after the following `rename`
-                // statement. In such a case, it will be dupped before the `rename`
-                // by `add_dups_and_drops()`.
                 self.rename_var(var, var_on_stack, ty);
             } else {
                 self.store_temp(var, var_on_stack, ty);

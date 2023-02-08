@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FunctionWithBodyId, GenericParamId};
+use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast;
@@ -51,7 +51,7 @@ pub fn function_with_body_signature(
 pub fn function_with_body_generic_params(
     db: &dyn SemanticGroup,
     function_id: FunctionWithBodyId,
-) -> Maybe<Vec<GenericParamId>> {
+) -> Maybe<Vec<semantic::GenericParam>> {
     match function_id {
         FunctionWithBodyId::Free(free_function_id) => {
             db.free_function_generic_params(free_function_id)

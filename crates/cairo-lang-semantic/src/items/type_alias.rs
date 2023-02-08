@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{GenericParamId, LanguageElementId, TypeAliasId};
+use cairo_lang_defs::ids::{LanguageElementId, TypeAliasId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 
@@ -9,14 +9,14 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::types::resolve_type;
-use crate::{SemanticDiagnostic, TypeId};
+use crate::{GenericParam, SemanticDiagnostic, TypeId};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct TypeAliasData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     resolved_type: Maybe<TypeId>,
-    generic_params: Vec<GenericParamId>,
+    generic_params: Vec<GenericParam>,
     resolved_lookback: Arc<ResolvedLookback>,
 }
 impl TypeAliasData {
@@ -43,13 +43,14 @@ pub fn priv_type_alias_semantic_data(
     let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
     let type_alias_ast = module_type_aliases.get(&type_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &type_alias_ast.generic_params(syntax_db),
     );
-    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
     let ty = resolve_type(db, &mut diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
     Ok(TypeAliasData {
@@ -74,9 +75,11 @@ pub fn priv_type_alias_semantic_data_cycle(
     let err =
         Err(diagnostics
             .report(&type_alias_ast.name(syntax_db), SemanticDiagnosticKind::TypeAliasCycle));
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &type_alias_ast.generic_params(syntax_db),
     );
@@ -108,7 +111,7 @@ pub fn type_alias_resolved_type(
 pub fn type_alias_generic_params(
     db: &dyn SemanticGroup,
     type_alias_id: TypeAliasId,
-) -> Maybe<Vec<GenericParamId>> {
+) -> Maybe<Vec<GenericParam>> {
     Ok(db.priv_type_alias_semantic_data(type_alias_id)?.generic_params)
 }
 

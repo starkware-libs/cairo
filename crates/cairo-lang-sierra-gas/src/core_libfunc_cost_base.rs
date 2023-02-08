@@ -41,8 +41,19 @@ impl ConstCost {
     }
 }
 
-/// The cost of a dictionary access in the squash stage.
-pub const DICT_SQUASH_ACCESS_COST: i32 = ConstCost { steps: 84, holes: 0, range_checks: 0 }.cost();
+// The costs of the dict_squash libfunc, divided into different parts.
+/// The cost per each unique key in the dictionary.
+pub const DICT_SQUASH_UNIQUE_KEY_COST: i32 =
+    ConstCost { steps: 64, holes: 0, range_checks: 6 }.cost();
+/// The cost per each access to a key after the first access.
+pub const DICT_SQUASH_REPEATED_ACCESS_COST: i32 =
+    ConstCost { steps: 12, holes: 0, range_checks: 1 }.cost();
+/// The cost not dependent on the number of keys and access.
+pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 81, holes: 0, range_checks: 3 }.cost();
+/// The cost to charge per each read/write access. `DICT_SQUASH_UNIQUE_KEY_COST` is refunded for
+/// each repeated access in dict_squash.
+pub const DICT_SQUASH_ACCESS_COST: i32 =
+    DICT_SQUASH_UNIQUE_KEY_COST + DICT_SQUASH_REPEATED_ACCESS_COST;
 
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
@@ -275,14 +286,15 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             ]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Squash(_)) => {
-            // Dict squash have a fixed cost of 92 + `DICT_SQUASH_ACCESS_COST` for each dict access.
-            // Only the fixed cost is charged here, so that we would alway be able to
-            // call squash even if rnning out of gas. The cost of the proccesing of the
-            // first key is `DICT_SQUASH_ACCESS_COST`, and each access for an existing
-            // key costs only 12. In each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
-            // `DICT_SQUASH_ACCESS_COST - 12` gas are refunded per each succesive access
-            // in dict squash.
-            vec![ops.steps(92)]
+            // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
+            // for each dict access. Only the fixed cost is charged here, so that we
+            // would alway be able to call squash even if running out of gas. The cost
+            // of the proccesing of the first key is `DICT_SQUASH_ACCESS_COST`, and each
+            // access for an existing key costs only 'DICT_SQUASH_REPEATED_ACCESS_COST'.
+            // In each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
+            // `DICT_SQUASH_ACCESS_COST - DICT_SQUASH_REPEATED_ACCESS_COST` gas are refunded per
+            // each succesive access in dict squash.
+            vec![ops.cost_token(DICT_SQUASH_FIXED_COST, CostTokenType::Const)]
         }
         Pedersen(_) => {
             vec![ops.steps(2)]
@@ -371,6 +383,7 @@ fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> V
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
             ]
         }
+        Uint8Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
         Uint8Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
         }
@@ -419,6 +432,7 @@ fn u64_libfunc_cost<Ops: CostOperations>(
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
             ]
         }
+        Uint64Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
         Uint64Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
         }

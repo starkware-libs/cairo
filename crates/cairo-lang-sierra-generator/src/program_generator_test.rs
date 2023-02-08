@@ -35,14 +35,15 @@ fn test_program_generator() {
             libfunc drop<felt> = drop<felt>;
             libfunc felt_const<5> = felt_const<5>;
             libfunc store_temp<felt> = store_temp<felt>;
-            libfunc function_call<user@test::bar> = function_call<user@test::bar>;
             libfunc rename<felt> = rename<felt>;
+            libfunc function_call<user@test::bar> = function_call<user@test::bar>;
             libfunc dup<felt> = dup<felt>;
             libfunc felt_add = felt_add;
 
             drop<felt>([0]) -> ();
             felt_const<5>() -> ([1]);
-            store_temp<felt>([1]) -> ([3]);
+            store_temp<felt>([1]) -> ([1]);
+            rename<felt>([1]) -> ([3]);
             function_call<user@test::bar>([3]) -> ([2]);
             rename<felt>([2]) -> ([4]);
             return([4]);
@@ -53,7 +54,7 @@ fn test_program_generator() {
             return([3]);
 
             test::foo@0([0]: felt) -> (felt);
-            test::bar@6([0]: felt) -> (felt);
+            test::bar@7([0]: felt) -> (felt);
         "},
     );
 }
