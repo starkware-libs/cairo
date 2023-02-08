@@ -290,6 +290,116 @@ impl U8Rem of Rem::<u8> {
 }
 
 #[derive(Copy, Drop)]
+extern type u32;
+extern fn u32_const<value>() -> u32 nopanic;
+extern fn u32_to_felt(a: u32) -> felt nopanic;
+
+#[panic_with('u32_from OF', u32_from_felt)]
+extern fn u32_try_from_felt(a: felt) -> Option::<u32> implicits(RangeCheck) nopanic;
+
+extern fn u32_lt(a: u32, b: u32) -> bool implicits(RangeCheck) nopanic;
+extern fn u32_eq(a: u32, b: u32) -> bool implicits() nopanic;
+extern fn u32_le(a: u32, b: u32) -> bool implicits(RangeCheck) nopanic;
+
+impl U32PartialEq of PartialEq::<u32> {
+    #[inline(always)]
+    fn eq(a: u32, b: u32) -> bool {
+        u32_eq(a, b)
+    }
+    #[inline(always)]
+    fn ne(a: u32, b: u32) -> bool {
+        !(a == b)
+    }
+}
+
+impl U32PartialOrd of PartialOrd::<u32> {
+    #[inline(always)]
+    fn le(a: u32, b: u32) -> bool {
+        u32_le(a, b)
+    }
+    #[inline(always)]
+    fn ge(a: u32, b: u32) -> bool {
+        u32_le(b, a)
+    }
+    #[inline(always)]
+    fn lt(a: u32, b: u32) -> bool {
+        u32_lt(a, b)
+    }
+    #[inline(always)]
+    fn gt(a: u32, b: u32) -> bool {
+        u32_lt(b, a)
+    }
+}
+
+extern fn u32_overflowing_add(a: u32, b: u32) -> Result::<u32, u32> implicits(RangeCheck) nopanic;
+extern fn u32_overflowing_sub(a: u32, b: u32) -> Result::<u32, u32> implicits(RangeCheck) nopanic;
+
+fn u32_wrapping_add(a: u32, b: u32) -> u32 implicits(RangeCheck) nopanic {
+    match u32_overflowing_add(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u32_wrapping_sub(a: u32, b: u32) -> u32 implicits(RangeCheck) nopanic {
+    match u32_overflowing_sub(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u32_checked_add(a: u32, b: u32) -> Option::<u32> implicits(RangeCheck) nopanic {
+    match u32_overflowing_add(a, b) {
+        Result::Ok(r) => Option::<u32>::Some(r),
+        Result::Err(r) => Option::<u32>::None(()),
+    }
+}
+
+impl U32Add of Add::<u32> {
+    fn add(a: u32, b: u32) -> u32 {
+        u32_overflowing_add(a, b).expect('u32_add Overflow')
+    }
+}
+
+fn u32_checked_sub(a: u32, b: u32) -> Option::<u32> implicits(RangeCheck) nopanic {
+    match u32_overflowing_sub(a, b) {
+        Result::Ok(r) => Option::<u32>::Some(r),
+        Result::Err(r) => Option::<u32>::None(()),
+    }
+}
+
+impl U32Sub of Sub::<u32> {
+    fn sub(a: u32, b: u32) -> u32 {
+        u32_overflowing_sub(a, b).expect('u32_sub Overflow')
+    }
+}
+
+extern fn u32_is_zero(a: u32) -> IsZeroResult::<u32> implicits() nopanic;
+extern fn u32_safe_divmod(a: u32, b: NonZero::<u32>) -> (u32, u32) implicits(RangeCheck) nopanic;
+
+#[panic_with('u32 is 0', u32_as_non_zero)]
+fn u32_try_as_non_zero(a: u32) -> Option::<NonZero::<u32>> implicits() nopanic {
+    match u32_is_zero(a) {
+        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::NonZero(x) => Option::Some(x),
+    }
+}
+
+impl U32Div of Div::<u32> {
+    fn div(a: u32, b: u32) -> u32 {
+        let (q, r) = u32_safe_divmod(a, u32_as_non_zero(b));
+        q
+    }
+}
+
+impl U32Rem of Rem::<u32> {
+    fn rem(a: u32, b: u32) -> u32 {
+        let (q, r) = u32_safe_divmod(a, u32_as_non_zero(b));
+        r
+    }
+}
+
+#[derive(Copy, Drop)]
 extern type u64;
 extern fn u64_const<value>() -> u64 nopanic;
 extern fn u64_to_felt(a: u64) -> felt nopanic;
