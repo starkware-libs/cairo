@@ -147,10 +147,7 @@ pub fn function_with_body_scc(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Vec<FunctionWithBodyId> {
-    compute_scc::<FunctionWithBodyNode<'_>>(FunctionWithBodyNode {
-        function_with_body_id: function_id,
-        db: db.upcast(),
-    })
+    compute_scc(&FunctionWithBodyNode { function_with_body_id: function_id, db: db.upcast() })
 }
 
 /// A node to use in the SCC computation.
