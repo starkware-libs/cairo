@@ -3,7 +3,8 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::uint::{
-    IntOperator, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc, UintTraits,
+    IntOperator, Uint32Concrete, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc,
+    UintTraits,
 };
 use num_bigint::{BigInt, ToBigInt};
 
@@ -394,6 +395,31 @@ pub fn build_u8(
         Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<256, 2>(builder),
         Uint8Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint8Concrete::Divmod(_) => build_divmod::<256>(builder),
+    }
+}
+
+/// Builds instructions for Sierra u32 operations.
+pub fn build_u32(
+    libfunc: &Uint32Concrete,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    match libfunc {
+        Uint32Concrete::Const(libfunc) => build_const(libfunc, builder),
+        Uint32Concrete::LessThan(_) => build_less_than(builder),
+        Uint32Concrete::Equal(_) => misc::build_cell_eq(builder),
+        Uint32Concrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
+        Uint32Concrete::Operation(libfunc) => match libfunc.operator {
+            IntOperator::OverflowingAdd => {
+                build_small_uint_overflowing_add(builder, u32::MAX as u128 + 1)
+            }
+            IntOperator::OverflowingSub => {
+                build_small_uint_overflowing_sub(builder, BigInt::from(u32::MAX) + 1)
+            }
+        },
+        Uint32Concrete::ToFelt(_) => misc::build_identity(builder),
+        Uint32Concrete::FromFelt(_) => build_small_uint_from_felt::<0x100000000, 2>(builder),
+        Uint32Concrete::IsZero(_) => misc::build_is_zero(builder),
+        Uint32Concrete::Divmod(_) => build_divmod::<0x100000000>(builder),
     }
 }
 

@@ -245,6 +245,74 @@ fn test_u8_mod_by_0() {
 }
 
 #[test]
+fn test_u32_operators() {
+    assert(1_u32 == 1_u32, '1 == 1');
+    assert(1_u32 != 2_u32, '1 != 2');
+    assert(1_u32 + 3_u32 == 4_u32, '1 + 3 == 4');
+    assert(3_u32 + 6_u32 == 9_u32, '3 + 6 == 9');
+    assert(3_u32 - 1_u32 == 2_u32, '3 - 1 == 2');
+    assert(231_u32 - 131_u32 == 100_u32, '231-131=100');
+    assert(510670725_u32 / 7_u32 == 72952960_u32, '510670725 / 7 == 72952960');
+    assert(510670725_u32 % 7_u32 == 5_u32, '510670725 % 7 == 5');
+    assert(1_u32 < 4_u32, '1 < 4');
+    assert(1_u32 <= 4_u32, '1 <= 4');
+    assert(!(4_u32 < 4_u32), '!(4 < 4)');
+    assert(4_u32 <= 4_u32, '4 <= 4');
+    assert(5_u32 > 2_u32, '5 > 2');
+    assert(5_u32 >= 2_u32, '5 >= 2');
+    assert(!(3_u32 > 3_u32), '!(3 > 3)');
+    assert(3_u32 >= 3_u32, '3 >= 3');
+}
+
+#[test]
+#[should_panic]
+fn test_u32_sub_overflow_1() {
+    0_u32 - 1_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_sub_overflow_2() {
+    0_u32 - 3_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_sub_overflow_3() {
+    1_u32 - 3_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_sub_overflow_4() {
+    100_u32 - 250_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_add_overflow_1() {
+    0x80000000_u32 + 0x80000000_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_add_overflow_2() {
+    0x90000000_u32 + 0x80000001_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_div_by_0() {
+    2_u32 / 0_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_mod_by_0() {
+    0_u32 % 0_u32;
+}
+
+#[test]
 fn test_u64_operators() {
     assert(1_u64 == 1_u64, '1 == 1');
     assert(1_u64 != 2_u64, '1 != 2');
