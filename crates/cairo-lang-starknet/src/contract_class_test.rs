@@ -22,7 +22,7 @@ fn test_serialization() {
             l1_handler: vec![],
             constructor: vec![],
         },
-        abi: abi::Contract::default(),
+        abi: None,
     };
 
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
@@ -45,7 +45,7 @@ fn test_serialization() {
             "L1_HANDLER": [],
             "CONSTRUCTOR": []
           },
-          "abi": []
+          "abi": null
         }"#}
     );
 
