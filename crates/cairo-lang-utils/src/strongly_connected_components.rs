@@ -13,7 +13,10 @@ pub trait GraphNode: Sized + Clone {
     /// The type used to identify the nodes in the graph.
     type NodeId: PartialEq + Eq + Hash + Clone;
 
-    /// Returns a list of the node's neighbors
+    /// Returns a list of the node's neighbors.
+    /// Must be stable for the SCC result to be stable. i.e. if the output for a node here doesn't
+    /// change between different runs, the computed SCC of the node is guaranteed to also not
+    /// change.
     fn get_neighbors(&self) -> Vec<Self>;
 
     /// Gets the node's ID.
