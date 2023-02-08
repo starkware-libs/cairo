@@ -6,8 +6,8 @@ use test_case::test_case;
 
 use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
 use crate::felt_serde::sierra_from_felts;
+use crate::sierra_version;
 use crate::test_utils::{get_example_file_path, get_test_contract};
-use crate::{abi, sierra_version};
 
 #[test]
 fn test_serialization() {
@@ -22,7 +22,7 @@ fn test_serialization() {
             l1_handler: vec![],
             constructor: vec![],
         },
-        abi: abi::Contract::default(),
+        abi: None,
     };
 
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
@@ -45,7 +45,7 @@ fn test_serialization() {
             "L1_HANDLER": [],
             "CONSTRUCTOR": []
           },
-          "abi": []
+          "abi": null
         }"#}
     );
 

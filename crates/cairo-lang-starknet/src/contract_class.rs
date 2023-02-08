@@ -48,7 +48,7 @@ pub struct ContractClass {
     /// The sierra version used in compilation.
     pub sierra_version_id: usize,
     pub entry_points_by_type: ContractEntryPoints,
-    pub abi: Contract,
+    pub abi: Option<Contract>,
 }
 
 impl ContractClass {
@@ -189,7 +189,7 @@ fn compile_contract_with_prepared_and_checked_db(
         )),
         sierra_version_id: sierra_version::CURRENT_VERSION_ID,
         entry_points_by_type,
-        abi: Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?,
+        abi: Some(Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?),
     };
     contract_class.verify_compatible_sierra_version()?;
     Ok(contract_class)
