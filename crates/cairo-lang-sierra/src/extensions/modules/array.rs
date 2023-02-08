@@ -1,5 +1,4 @@
 use super::range_check::RangeCheckType;
-use super::uint::Uint64Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -14,6 +13,8 @@ use crate::extensions::{
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
+
+type ArrayAccessType = super::uint::Uint32Type;
 
 /// Type representing an array.
 #[derive(Default)]
@@ -88,7 +89,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
                 OutputVarInfo {
-                    ty: context.get_concrete_type(Uint64Type::id(), &[])?,
+                    ty: context.get_concrete_type(ArrayAccessType::id(), &[])?,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
@@ -193,7 +194,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
         }
         let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let uint128_type = context.get_concrete_type(Uint64Type::id(), &[])?;
+        let uint128_type = context.get_concrete_type(ArrayAccessType::id(), &[])?;
         let param_signatures = vec![
             ParamSignature::new(range_check_type.clone()),
             ParamSignature::new(arr_type.clone()),
