@@ -30,16 +30,12 @@ type Tuple<u128, u128, u128> = Struct<ut@Tuple, u128, u128, u128>;
 libfunc bitwise = bitwise;
 libfunc struct_construct<Tuple<u128, u128, u128>> = struct_construct<Tuple<u128, u128, u128>>;
 libfunc store_temp<Bitwise> = store_temp<Bitwise>;
-libfunc rename<Bitwise> = rename<Bitwise>;
 libfunc store_temp<Tuple<u128, u128, u128>> = store_temp<Tuple<u128, u128, u128>>;
-libfunc rename<Tuple<u128, u128, u128>> = rename<Tuple<u128, u128, u128>>;
 
 bitwise([0], [1], [2]) -> ([3], [4], [5], [6]);
 struct_construct<Tuple<u128, u128, u128>>([4], [5], [6]) -> ([7]);
-store_temp<Bitwise>([3]) -> ([3]);
-rename<Bitwise>([3]) -> ([8]);
-store_temp<Tuple<u128, u128, u128>>([7]) -> ([7]);
-rename<Tuple<u128, u128, u128>>([7]) -> ([9]);
+store_temp<Bitwise>([3]) -> ([8]);
+store_temp<Tuple<u128, u128, u128>>([7]) -> ([9]);
 return([8], [9]);
 
 test::foo@0([0]: Bitwise, [1]: u128, [2]: u128) -> (Bitwise, Tuple<u128, u128, u128>);
