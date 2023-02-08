@@ -1,5 +1,8 @@
 use derivative::Derivative;
+use num_bigint::BigUint;
+use num_traits::ToPrimitive;
 use salsa;
+use sha3::{Digest, Keccak256};
 use smol_str::SmolStr;
 
 macro_rules! define_generic_identity {
@@ -33,11 +36,6 @@ define_generic_identity!("The identity of a generic library function", GenericLi
 
 define_generic_identity!("The identity of a generic type.", GenericTypeId);
 
-const fn id_from_string(s: &str) -> u64 {
-    // TODO(ilya, 10/10/2022): Fix https://github.com/starkware-libs/cairo/issues/45.
-    const_fnv1a_hash::fnv1a_hash_str_64(s)
-}
-
 macro_rules! define_identity {
     ($doc:literal, $type_name:ident) => {
         #[doc=$doc]
@@ -62,7 +60,7 @@ macro_rules! define_identity {
 
             pub fn from_string(name: impl Into<SmolStr>) -> Self {
                 let s: SmolStr = name.into();
-                Self { id: id_from_string(&s), debug_name: Some(s) }
+                Self { id: const_fnv1a_hash::fnv1a_hash_str_64(&s), debug_name: Some(s) }
             }
         }
         impl From<&str> for $type_name {
@@ -97,8 +95,48 @@ define_identity!("The identity of a concrete library function.", ConcreteLibfunc
 
 define_identity!("The identity of a user function.", FunctionId);
 
-define_identity!("The identity of a user type.", UserTypeId);
-
 define_identity!("The identity of a variable.", VarId);
 
 define_identity!("The identity of a concrete type.", ConcreteTypeId);
+
+/// The identity of a user type.
+#[derive(Clone, Debug, Derivative)]
+#[derivative(Eq, Hash, PartialEq)]
+pub struct UserTypeId {
+    pub id: BigUint,
+    /// Optional name for testing and debugging.
+    #[derivative(Hash = "ignore")]
+    #[derivative(PartialEq = "ignore")]
+    pub debug_name: Option<SmolStr>,
+}
+impl UserTypeId {
+    pub fn from_string(name: impl Into<SmolStr>) -> Self {
+        let s: SmolStr = name.into();
+        let mut hasher = Keccak256::new();
+        hasher.update(s.as_bytes());
+        let mut result = hasher.finalize();
+        // Truncate result to 250 bits.
+        *result.first_mut().unwrap() &= 3;
+        let id = BigUint::from_bytes_be(&result);
+        Self { id, debug_name: Some(s) }
+    }
+}
+impl From<&str> for UserTypeId {
+    fn from(name: &str) -> Self {
+        Self::from_string(name.to_string())
+    }
+}
+impl From<String> for UserTypeId {
+    fn from(name: String) -> Self {
+        Self::from_string(name)
+    }
+}
+impl salsa::InternKey for UserTypeId {
+    fn from_intern_id(salsa_id: salsa::InternId) -> Self {
+        Self { id: salsa_id.as_usize().into(), debug_name: None }
+    }
+
+    fn as_intern_id(&self) -> salsa::InternId {
+        self.id.to_usize().unwrap().into()
+    }
+}

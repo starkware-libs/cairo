@@ -190,6 +190,17 @@ macro_rules! generic_id_serde {
 generic_id_serde!(GenericTypeId);
 generic_id_serde!(GenericLibfuncId);
 
+impl FeltSerde for UserTypeId {
+    fn serialize(&self, output: &mut Vec<BigIntAsHex>) -> Result<(), FeltSerdeError> {
+        output.push(BigIntAsHex { value: self.id.clone() });
+        Ok(())
+    }
+    fn deserialize(input: &[BigIntAsHex]) -> Result<(Self, &[BigIntAsHex]), FeltSerdeError> {
+        let first = input.first().ok_or(FeltSerdeError::InvalidInputForDeserialization)?;
+        Ok((Self { id: first.value.clone(), debug_name: None }, &input[1..]))
+    }
+}
+
 // Impls for other ids.
 
 macro_rules! id_serde {
@@ -211,7 +222,6 @@ macro_rules! id_serde {
 id_serde!(ConcreteTypeId);
 id_serde!(ConcreteLibfuncId);
 id_serde!(VarId);
-id_serde!(UserTypeId);
 id_serde!(FunctionId);
 
 // Impls for structs.
