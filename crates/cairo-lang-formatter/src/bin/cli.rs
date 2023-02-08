@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::path::Path;
 use std::process::ExitCode;
 use std::sync::Mutex;
@@ -91,7 +92,7 @@ impl<'t> ParallelVisitor for PathFormatter<'t> {
             match self.fmt.format_to_string(&path) {
                 Ok(FormatOutcome::Identical(_)) => {}
                 Ok(FormatOutcome::DiffFound(diff)) => {
-                    println!("Diff found in file {}:\n {}", path.display(), diff);
+                    println!("Diff found in file {}:\n {}", path.display(), diff.display_colored());
                     self.own_correct = false;
                 }
                 Err(parsing_error) => {
