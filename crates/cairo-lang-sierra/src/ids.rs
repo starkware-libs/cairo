@@ -60,10 +60,6 @@ macro_rules! define_identity {
                 Self::new(id.try_into().unwrap())
             }
 
-            pub const fn new_inline(name: &'static str) -> Self {
-                Self { id: id_from_string(name), debug_name: Some(SmolStr::new_inline(name)) }
-            }
-
             pub fn from_string(name: impl Into<SmolStr>) -> Self {
                 let s: SmolStr = name.into();
                 Self { id: id_from_string(&s), debug_name: Some(s) }
