@@ -355,7 +355,7 @@ Statements:
 End:
   Callsite({v0 -> v5})
 
-blk2:
+blk2 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
@@ -387,9 +387,5 @@ End:
   Callsite({})
 
 //! > lowering_diagnostics
-error: Inlining of functions with an early return is not supported.
- --> lib.cairo:1:1
-#[inline(always)]
-^***************^
 
 //! > semantic_diagnostics

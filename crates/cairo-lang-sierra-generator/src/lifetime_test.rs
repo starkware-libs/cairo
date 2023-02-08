@@ -16,8 +16,7 @@ cairo_lang_test_utils::test_file_test!(
         block: "block",
         early_return: "early_return",
         enum_: "enum",
-        // TODO(ilya): Enable inline test.
-        // inline: "inline",
+        inline: "inline",
         locals: "locals",
         simple: "simple",
         struct_: "struct",
