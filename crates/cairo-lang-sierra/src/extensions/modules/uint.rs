@@ -542,6 +542,47 @@ define_libfunc_hierarchy! {
 }
 
 #[derive(Default)]
+pub struct Uint32Traits;
+
+impl UintTraits for Uint32Traits {
+    type UintType = u32;
+    const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u32");
+    const IS_SMALL: bool = true;
+    const CONST: &'static str = "u32_const";
+    const EQUAL: &'static str = "u32_eq";
+    const SQUARE_ROOT: &'static str = "u64_sqrt";
+    const LESS_THAN: &'static str = "u32_lt";
+    const LESS_THAN_OR_EQUAL: &'static str = "u32_le";
+    const OVERFLOWING_ADD: &'static str = "u32_overflowing_add";
+    const OVERFLOWING_SUB: &'static str = "u32_overflowing_sub";
+    const TO_FELT: &'static str = "u32_to_felt";
+    const TRY_FROM_FELT: &'static str = "u32_try_from_felt";
+    const DIVMOD: &'static str = "u32_safe_divmod";
+}
+
+impl IsZeroTraits for Uint32Traits {
+    const IS_ZERO: &'static str = "u32_is_zero";
+    const GENERIC_TYPE_ID: GenericTypeId = <Uint32Type as NamedType>::ID;
+}
+
+/// Type for u32.
+pub type Uint32Type = UintType<Uint32Traits>;
+
+define_libfunc_hierarchy! {
+    pub enum Uint32Libfunc {
+        Const(UintConstLibfunc<Uint32Traits>),
+        Operation(UintOperationLibfunc<Uint32Traits>),
+        LessThan(UintLessThanLibfunc<Uint32Traits>),
+        Equal(UintEqualLibfunc<Uint32Traits>),
+        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint32Traits>),
+        ToFelt(UintToFeltLibfunc<Uint32Traits>),
+        FromFelt(UintFromFeltLibfunc<Uint32Traits>),
+        IsZero(IsZeroLibfunc<Uint32Traits>),
+        Divmod(UintDivmodLibfunc<Uint32Traits>),
+    }, Uint32Concrete
+}
+
+#[derive(Default)]
 pub struct Uint64Traits;
 
 impl UintTraits for Uint64Traits {

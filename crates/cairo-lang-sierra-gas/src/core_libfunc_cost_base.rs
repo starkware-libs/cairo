@@ -6,7 +6,7 @@ use cairo_lang_sierra::extensions::builtin_cost::{
 };
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup,
-    Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint64, Uint8,
+    Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint32, Uint64, Uint8,
     UnconditionalJump, UnwrapNonZero,
 };
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
@@ -20,7 +20,9 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
-use cairo_lang_sierra::extensions::uint::{IntOperator, Uint64Concrete, Uint8Concrete};
+use cairo_lang_sierra::extensions::uint::{
+    IntOperator, Uint32Concrete, Uint64Concrete, Uint8Concrete,
+};
 use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -234,6 +236,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         }
         Uint128(libfunc) => u128_libfunc_cost(ops, libfunc),
         Uint8(libfunc) => u8_libfunc_cost(ops, libfunc),
+        Uint32(libfunc) => u32_libfunc_cost(ops, libfunc),
         Uint64(libfunc) => u64_libfunc_cost(ops, libfunc),
         Felt(libfunc) => felt_libfunc_cost(ops, libfunc),
         Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) => {
@@ -385,6 +388,55 @@ fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> V
         }
         Uint8Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
         Uint8Concrete::Divmod(_) => {
+            vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
+        }
+    }
+}
+
+/// Returns costs for u32 libfuncs.
+fn u32_libfunc_cost<Ops: CostOperations>(
+    ops: &Ops,
+    libfunc: &Uint32Concrete,
+) -> Vec<Ops::CostType> {
+    match libfunc {
+        Uint32Concrete::Const(_) | Uint32Concrete::ToFelt(_) => vec![ops.steps(0)],
+        Uint32Concrete::Operation(libfunc) => match libfunc.operator {
+            IntOperator::OverflowingAdd => {
+                vec![
+                    ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+                ]
+            }
+            IntOperator::OverflowingSub => {
+                vec![
+                    ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                ]
+            }
+        },
+        Uint32Concrete::LessThan(_) => {
+            vec![
+                ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+            ]
+        }
+        Uint32Concrete::Equal(_) => {
+            vec![ops.steps(2), ops.steps(3)]
+        }
+        Uint32Concrete::LessThanOrEqual(_) => {
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+            ]
+        }
+        Uint32Concrete::FromFelt(_) => {
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 2 }),
+                ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
+            ]
+        }
+        Uint32Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
+        Uint32Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
         }
     }
