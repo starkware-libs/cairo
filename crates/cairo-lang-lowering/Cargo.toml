@@ -7,6 +7,7 @@ license-file.workspace = true
 description = "Cairo lowering phase."
 
 [dependencies]
+assert_matches.workspace = true
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.2" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.2" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.2" }
