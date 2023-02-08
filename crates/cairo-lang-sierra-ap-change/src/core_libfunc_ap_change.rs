@@ -4,6 +4,7 @@ use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
 };
+use cairo_lang_sierra::extensions::cheatcodes::CheatcodesConcreteLibFunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
@@ -209,7 +210,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0), ApChange::Known(0)]
             }
         },
-        CoreConcreteLibfunc::Cheatcodes(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+        CoreConcreteLibfunc::Cheatcodes(libfunc) => match libfunc {
+            CheatcodesConcreteLibFunc::Declare(_) => vec![ApChange::Known(2), ApChange::Known(2)],
+            CheatcodesConcreteLibFunc::Roll(_) => vec![ApChange::Known(1), ApChange::Known(1)]
+        },
         CoreConcreteLibfunc::Debug(_) => vec![ApChange::Known(0)],
     }
 }

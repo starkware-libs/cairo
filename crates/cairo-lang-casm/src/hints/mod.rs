@@ -154,6 +154,11 @@ pub enum Hint {
         caller_address: ResOperand,
         dst: CellRef,
     },
+    Declare {
+        contract: ResOperand,
+        result: CellRef,
+        error_code: CellRef,
+    },
     /// Prints the values from start to end.
     /// Both must be pointers.
     DebugPrint {
@@ -324,8 +329,18 @@ impl Display for Hint {
                     f,
                     "
 
-                        memory{dst} = 0; 
-                        roll(address={address}, caller_address={caller_address})
+                        memory{dst} = roll(address={address}, caller_address={caller_address}); 
+                        
+                    "
+                )
+            }
+            Hint::Declare { contract , result, error_code} => {
+                writedoc!(
+                    f,
+                    "
+                        r = declare(contract={contract});
+                        memory{error_code} = r.err_code
+                        memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
                     "
                 )
             }

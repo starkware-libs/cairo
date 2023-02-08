@@ -1,16 +1,63 @@
-use crate::define_libfunc_hierarchy;
+use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 use crate::extensions::lib_func::{
     LibfuncSignature, SignatureSpecializationContext, SierraApChange, OutputVarInfo, ParamSignature, BranchSignature,
 };
-use crate::extensions::{SpecializationError, NoGenericArgsGenericLibfunc, NamedType, OutputVarReferenceInfo};
+use crate::extensions::{SpecializationError, NoGenericArgsGenericLibfunc, NamedType, OutputVarReferenceInfo, NoGenericArgsGenericType};
+use crate::ids::GenericTypeId;
 
 use super::felt::FeltType;
 
 define_libfunc_hierarchy! {
     pub enum CheatcodesLibFunc {
         Roll(RollLibFunc),
+        Declare(DeclareLibFunc),
     }, CheatcodesConcreteLibFunc
 }
+
+
+#[derive(Default)]
+pub struct DeclareLibFunc {}
+impl NoGenericArgsGenericLibfunc for DeclareLibFunc {
+    const STR_ID: &'static str = "declare";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // Contract 
+                ParamSignature::new(felt_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success branch
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            // ty: context.get_concrete_type(ClassHashType::id(), &[])?,
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
+                        // Error reason
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
 
 /// LibFunc for creating a new array.
 #[derive(Default)]
@@ -49,14 +96,5 @@ impl NoGenericArgsGenericLibfunc for RollLibFunc {
             ],
             fallthrough: Some(0),
         })
-        // Ok(LibFuncSignature::new_non_branch(vec![
-        //     felt_ty_a,
-        //     felt_ty_b
-        // ], vec![
-        //     OutputVarInfo {
-        //         ty: felt_ty_o,
-        //         ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-        //     },
-        // ], SierraApChange::Known { new_vars_only: true} ))
     }
 }
