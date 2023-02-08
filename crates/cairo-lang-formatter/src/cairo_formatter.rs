@@ -22,12 +22,16 @@ pub struct FileDiff {
     pub formatted: String,
 }
 
+impl FileDiff {
+    pub fn display_colored(&self) -> FileDiffColoredDisplay {
+        FileDiffColoredDisplay::new(self.clone())
+    }
+}
+
 impl Display for FileDiff {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let patch = create_patch(&self.original, &self.formatted);
-        let patch_formatter = PatchFormatter::new().with_color();
-        let formatted_patch = patch_formatter.fmt_patch(&patch);
-        formatted_patch.fmt(f)
+        write!(f, "{patch}")
     }
 }
 
@@ -37,6 +41,31 @@ impl Debug for FileDiff {
         Display::fmt(self, f)?;
         write!(f, ")")?;
         Ok(())
+    }
+}
+
+pub struct FileDiffColoredDisplay {
+    diff: FileDiff,
+}
+
+impl FileDiffColoredDisplay {
+    pub fn new(diff: FileDiff) -> Self {
+        Self { diff }
+    }
+}
+
+impl Display for FileDiffColoredDisplay {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let patch = create_patch(&self.diff.original, &self.diff.formatted);
+        let patch_formatter = PatchFormatter::new().with_color();
+        let formatted_patch = patch_formatter.fmt_patch(&patch);
+        formatted_patch.fmt(f)
+    }
+}
+
+impl Debug for FileDiffColoredDisplay {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "FileDiffWithColors({:?})", self.diff)
     }
 }
 
