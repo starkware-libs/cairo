@@ -2,15 +2,15 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    ExternFunctionId, FreeFunctionId, FunctionSignatureId, FunctionWithBodyId, GenericParamId,
-    ImplFunctionId, ModuleItemId, ParamLongId, TopLevelLanguageElementId,
+    ExternFunctionId, FreeFunctionId, FunctionSignatureId, FunctionWithBodyId, ImplFunctionId,
+    ModuleItemId, ParamLongId, TopLevelLanguageElementId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
-use itertools::{chain, zip_eq};
+use itertools::{chain, Itertools};
 
 use super::attribute::Attribute;
 use super::modifiers;
@@ -202,24 +202,22 @@ impl ConcreteFunctionWithBody {
     }
     pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
         Ok(match self.generic_function {
-            GenericFunctionWithBodyId::Free(f) => GenericSubstitution(
-                db.free_function_generic_params(f)?
-                    .into_iter()
-                    .zip(self.generic_args.iter().copied())
-                    .collect(),
-            ),
+            GenericFunctionWithBodyId::Free(f) => {
+                GenericSubstitution::new(&db.free_function_generic_params(f)?, &self.generic_args)
+            }
             GenericFunctionWithBodyId::Impl(f) => {
                 let concrete_impl = db.lookup_intern_concrete_impl(f.concrete_impl);
-                GenericSubstitution(
-                    chain!(
-                        db.impl_function_generic_params(f.function)?
-                            .into_iter()
-                            .zip(self.generic_args.iter().copied()),
-                        db.impl_generic_params(concrete_impl.impl_id)?
-                            .into_iter()
-                            .zip(concrete_impl.generic_args.iter().copied())
+                GenericSubstitution::new(
+                    &chain!(
+                        db.impl_function_generic_params(f.function)?,
+                        db.impl_def_generic_params(concrete_impl.impl_def_id)?
                     )
-                    .collect(),
+                    .collect_vec(),
+                    &chain!(
+                        self.generic_args.iter().copied(),
+                        concrete_impl.generic_args.iter().copied()
+                    )
+                    .collect_vec(),
                 )
             }
         })
@@ -438,7 +436,7 @@ pub fn function_signature_signature(
 pub fn function_signature_generic_params(
     db: &dyn SemanticGroup,
     function_signature_id: FunctionSignatureId,
-) -> Maybe<Vec<GenericParamId>> {
+) -> Maybe<Vec<semantic::GenericParam>> {
     match function_signature_id {
         FunctionSignatureId::Free(free_function) => db.free_function_generic_params(free_function),
         FunctionSignatureId::Extern(extern_function) => {
@@ -462,28 +460,20 @@ pub fn concrete_function_signature(
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
     // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
-    let function_subs = zip_eq(generic_params, generic_args);
+    let function_substitution = GenericSubstitution::new(&generic_params, &generic_args);
     let substitution = match generic_function {
-        GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => {
-            GenericSubstitution(function_subs.collect())
-        }
+        GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => function_substitution,
         GenericFunctionId::Impl(id) => {
             let long_concrete_impl = db.lookup_intern_concrete_impl(id.concrete_impl);
-            let generic_params = db.impl_generic_params(long_concrete_impl.impl_id)?;
+            let generic_params = db.impl_def_generic_params(long_concrete_impl.impl_def_id)?;
             let generic_args = long_concrete_impl.generic_args;
-            GenericSubstitution(
-                chain!(function_subs, generic_params.into_iter().zip(generic_args.into_iter()))
-                    .collect(),
-            )
+            function_substitution.concat(GenericSubstitution::new(&generic_params, &generic_args))
         }
         GenericFunctionId::Trait(id) => {
             let long_concrete_trait = db.lookup_intern_concrete_trait(id.concrete_trait_id(db));
             let generic_params = db.trait_generic_params(long_concrete_trait.trait_id)?;
             let generic_args = long_concrete_trait.generic_args;
-            GenericSubstitution(
-                chain!(function_subs, generic_params.into_iter().zip(generic_args.into_iter()))
-                    .collect(),
-            )
+            function_substitution.concat(GenericSubstitution::new(&generic_params, &generic_args))
         }
     };
     let generic_signature = db.function_signature_signature(generic_function.signature(db))?;
@@ -575,7 +565,7 @@ pub struct FunctionDeclarationData {
     pub signature: semantic::Signature,
     /// The environment induced by the function's signature.
     pub environment: Environment,
-    pub generic_params: Vec<GenericParamId>,
+    pub generic_params: Vec<semantic::GenericParam>,
     pub attributes: Vec<Attribute>,
     pub resolved_lookback: Arc<ResolvedLookback>,
 }

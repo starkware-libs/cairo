@@ -1,6 +1,6 @@
-use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToOption};
-use cairo_lang_filesystem::ids::CrateLongId;
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
@@ -21,8 +21,12 @@ use crate::{
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
-    let core_crate = db.intern_crate(CrateLongId("core".into()));
+    let core_crate = core_crate(db);
     ModuleId::CrateRoot(core_crate)
+}
+
+pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
+    db.intern_crate(CrateLongId("core".into()))
 }
 
 pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -325,22 +329,22 @@ fn get_core_function_impl_method(
         .module_item_by_name(core_module, impl_name.clone())
         .expect("Failed to load core lib.")
         .unwrap_or_else(|| panic!("Impl '{impl_name}' was not found in core lib."));
-    let impl_id = match module_item_id {
+    let impl_def_id = match module_item_id {
         ModuleItemId::Use(use_id) => {
             db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::Impl)
             })
         }
-        _ => ImplId::option_from(module_item_id),
+        _ => ImplDefId::option_from(module_item_id),
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
     let function = db
-        .impl_functions(impl_id)
+        .impl_functions(impl_def_id)
         .ok()
         .and_then(|functions| functions.get(&method_name).cloned())
         .unwrap_or_else(|| panic!("no {method_name} in {impl_name}."));
     let concrete_impl =
-        db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args: vec![] });
+        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] });
     db.intern_function(FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {

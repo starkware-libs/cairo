@@ -429,6 +429,59 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<c
 
 //! > ==========================================================================
 
+//! > u8_is_zero libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(a: u8) -> u8 {
+    match integer::u8_is_zero(a) {
+        IsZeroResult::Zero(()) => 123_u8,
+        IsZeroResult::NonZero(x) => unwrap_nz(x),
+    }
+}
+
+//! > casm
+jmp rel 6 if [fp + -3] != 0;
+[ap + 0] = 123, ap++;
+jmp rel 3;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type u8 = u8;
+type NonZero<u8> = NonZero<u8>;
+
+libfunc u8_is_zero = u8_is_zero;
+libfunc branch_align = branch_align;
+libfunc u8_const<123> = u8_const<123>;
+libfunc store_temp<u8> = store_temp<u8>;
+libfunc rename<u8> = rename<u8>;
+libfunc jump = jump;
+libfunc unwrap_nz<u8> = unwrap_nz<u8>;
+
+u8_is_zero([0]) { fallthrough() 6([1]) };
+branch_align() -> ();
+u8_const<123>() -> ([2]);
+store_temp<u8>([2]) -> ([2]);
+rename<u8>([2]) -> ([3]);
+jump() { 9() };
+branch_align() -> ();
+unwrap_nz<u8>([1]) -> ([4]);
+store_temp<u8>([4]) -> ([3]);
+rename<u8>([3]) -> ([5]);
+return([5]);
+
+test::foo@0([0]: u8) -> (u8);
+
+//! > ==========================================================================
+
 //! > u8_safe_divmod libfunc
 
 //! > test_comments

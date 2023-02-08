@@ -271,3 +271,54 @@ Statements:
   (v8: core::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
   Return(v0, v8)
+
+//! > ==========================================================================
+
+//! > Borrow checking array
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(ref self: Query::<felt>, value: felt) {
+  let mut data = self.data;
+  array_append(ref data, value)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Query<T> {
+  data: Array::<T>, 
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:4:12
+fn foo(ref self: Query::<felt>, value: felt) {
+           ^**^
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: test::Query::<core::felt>, v1: core::felt
+Initial refs: v0: test::Query::<core::felt>
+Statements:
+  (v2: core::array::Array::<T>) <- struct_destructure(v0)
+    Ref changes: r0 <- v0
+  (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v2, v1)
+  (v4: ()) <- struct_construct()
+End:
+  Return(v0, v4)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: test::Query::<core::felt>, v1: core::felt
+Statements:
+  (v2: core::array::Array::<T>) <- struct_destructure(v0)
+  (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v2, v1)
+  (v4: ()) <- struct_construct()
+End:
+  Return(v0, v4)

@@ -1,9 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{
-    FreeFunctionId, FunctionSignatureId, GenericParamId, LanguageElementId,
-};
+use cairo_lang_defs::ids::{FreeFunctionId, FunctionSignatureId, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -56,7 +54,7 @@ pub fn free_function_declaration_implicits(
 pub fn free_function_generic_params(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Maybe<Vec<GenericParamId>> {
+) -> Maybe<Vec<semantic::GenericParam>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.generic_params)
 }
 
@@ -81,13 +79,17 @@ pub fn priv_free_function_declaration_data(
     let module_free_functions = db.module_free_functions(module_file_id.0)?;
     let function_syntax = module_free_functions.get(&free_function_id).to_maybe()?;
     let declaration = function_syntax.declaration(syntax_db);
+
+    // Generic params.
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
     );
-    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
+
     let mut environment = Environment::default();
 
     let signature_syntax = declaration.signature(syntax_db);
@@ -145,7 +147,13 @@ pub fn priv_free_function_body_data(
     let function_syntax = module_free_functions.get(&free_function_id).to_maybe()?.clone();
     // Compute declaration semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;
-    let resolver = Resolver::new(db, module_file_id, &declaration.generic_params);
+
+    // Generic params.
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    for generic_param in declaration.generic_params {
+        resolver.add_generic_param(generic_param);
+    }
+
     let environment = declaration.environment;
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(

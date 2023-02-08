@@ -504,9 +504,6 @@ error: Return type of impl function `FeltIdentity::foo` is incompatible with `Id
 
 //! > Repeating generic params in trait.
 
-//! > comments
-TODO(yuval): there should be a diagnostic about repeating generic params.
-
 //! > test_function_name
 test_function_diagnostics
 
@@ -531,9 +528,6 @@ impl FeltIdentity of Identity::<felt, felt> {
 //! > ==========================================================================
 
 //! > Repeating generic params in trait and function.
-
-//! > comments
-TODO(yuval): fix - the diagnostics here should be different - about already used generic param.
 
 //! > test_function_name
 test_function_diagnostics

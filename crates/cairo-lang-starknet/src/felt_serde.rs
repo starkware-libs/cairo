@@ -31,6 +31,10 @@ pub enum FeltSerdeError {
     InvalidInputForDeserialization,
     #[error("Invalid generic id for serialization.")]
     InvalidGenericIdForSerialization,
+    #[error("Invalid order of type declarations for serialization.")]
+    OutOfOrderTypeDeclarationsForSerialization,
+    #[error("Invalid order of libfunc declarations for serialization.")]
+    OutOfOrderLibfuncDeclarationsForSerialization,
 }
 
 /// Serializes a Sierra program into a vector of felts.
@@ -257,26 +261,45 @@ macro_rules! struct_serde {
     }
 }
 
-struct_serde! {
-    Program {
-        type_declarations: Vec<TypeDeclaration>,
-        libfunc_declarations: Vec<LibfuncDeclaration>,
-        statements: Vec<Statement>,
-        funcs: Vec<Function>,
+impl FeltSerde for Program {
+    fn serialize(&self, output: &mut Vec<BigIntAsHex>) -> Result<(), FeltSerdeError> {
+        self.type_declarations.len().serialize(output)?;
+        for (i, e) in self.type_declarations.iter().enumerate() {
+            if i as u64 != e.id.id {
+                return Err(FeltSerdeError::OutOfOrderTypeDeclarationsForSerialization);
+            }
+            e.long_id.serialize(output)?;
+        }
+        self.libfunc_declarations.len().serialize(output)?;
+        for (i, e) in self.libfunc_declarations.iter().enumerate() {
+            if i as u64 != e.id.id {
+                return Err(FeltSerdeError::OutOfOrderLibfuncDeclarationsForSerialization);
+            }
+            e.long_id.serialize(output)?;
+        }
+        FeltSerde::serialize(&self.statements, output)?;
+        FeltSerde::serialize(&self.funcs, output)
     }
-}
 
-struct_serde! {
-    TypeDeclaration {
-        id: ConcreteTypeId,
-        long_id: ConcreteTypeLongId,
-    }
-}
-
-struct_serde! {
-    LibfuncDeclaration {
-        id:  ConcreteLibfuncId,
-        long_id:  ConcreteLibfuncLongId,
+    fn deserialize(input: &[BigIntAsHex]) -> Result<(Self, &[BigIntAsHex]), FeltSerdeError> {
+        let (size, mut input) = usize::deserialize(input)?;
+        let mut type_declarations = Vec::with_capacity(size);
+        for i in 0..size {
+            let (long_id, next) = ConcreteTypeLongId::deserialize(input)?;
+            type_declarations.push(TypeDeclaration { id: ConcreteTypeId::from_usize(i), long_id });
+            input = next;
+        }
+        let (size, mut input) = usize::deserialize(input)?;
+        let mut libfunc_declarations = Vec::with_capacity(size);
+        for i in 0..size {
+            let (long_id, next) = ConcreteLibfuncLongId::deserialize(input)?;
+            libfunc_declarations
+                .push(LibfuncDeclaration { id: ConcreteLibfuncId::from_usize(i), long_id });
+            input = next;
+        }
+        let (statements, input) = FeltSerde::deserialize(input)?;
+        let (funcs, input) = FeltSerde::deserialize(input)?;
+        Ok((Self { type_declarations, libfunc_declarations, statements, funcs }, input))
     }
 }
 
