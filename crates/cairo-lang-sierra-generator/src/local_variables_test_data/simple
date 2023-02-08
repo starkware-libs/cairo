@@ -29,13 +29,49 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
   (v2: core::felt) <- core::felt_add(v1, v1)
+End:
+  Fallthrough(2, {})
+
+blk2:
+Inputs:
+Statements:
   (v3: core::felt) <- core::felt_add(v2, v2)
+End:
+  Fallthrough(3, {})
+
+blk3:
+Inputs:
+Statements:
   (v4: core::felt) <- test::revoke_ap()
   (v5: core::felt) <- core::felt_add(v0, v2)
+End:
+  Fallthrough(4, {})
+
+blk4:
+Inputs:
+Statements:
   (v6: core::felt) <- test::revoke_ap()
   (v7: core::felt) <- core::felt_add(v0, v2)
+End:
+  Fallthrough(5, {})
+
+blk5:
+Inputs:
+Statements:
   (v8: core::felt) <- core::felt_add(v7, v5)
+End:
+  Fallthrough(6, {})
+
+blk6:
+Inputs:
+Statements:
 End:
   Return(v0)
 
@@ -72,6 +108,12 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
   (v2: core::felt) <- test::revoke_ap()
 End:
   Return(v1)
@@ -113,12 +155,30 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
   (v2: core::felt) <- core::felt_add(v1, v1)
+End:
+  Fallthrough(2, {})
+
+blk2:
+Inputs:
+Statements:
   (v3: core::felt, v4: core::felt) <- core::dup::<core::felt>(v2)
   (v5: core::felt, v6: core::felt) <- core::dup::<core::felt>(v4)
   (v7: core::felt, v8: core::felt) <- core::dup::<core::felt>(v5)
   (v9: core::felt) <- test::revoke_ap()
   (v10: core::felt) <- core::felt_add(v7, v8)
+End:
+  Fallthrough(3, {})
+
+blk3:
+Inputs:
+Statements:
 End:
   Return(v10)
 

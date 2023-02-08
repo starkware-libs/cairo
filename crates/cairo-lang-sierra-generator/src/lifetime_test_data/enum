@@ -47,10 +47,8 @@ blk1:
 Inputs: v9: core::felt
 Statements:
   (v10: core::felt) <- core::felt_add(v9, v1)
-  (v11: core::felt) <- core::felt_add(v10, v2)
-  (v12: test::MyEnum) <- MyEnum::A(v11)
 End:
-  Callsite({})
+  Fallthrough(4, {})
 
 blk2:
 Inputs: v13: (core::felt, core::felt)
@@ -72,13 +70,27 @@ Statements:
 End:
   Return(v3)
 
+blk4:
+Inputs:
+Statements:
+  (v11: core::felt) <- core::felt_add(v10, v2)
+End:
+  Fallthrough(5, {})
+
+blk5:
+Inputs:
+Statements:
+  (v12: test::MyEnum) <- MyEnum::A(v11)
+End:
+  Callsite({})
+
 //! > last_use
 v3: ((BlockId(3), 1), 0)
 v7: ((BlockId(0), 3), 0)
 v5: ((BlockId(0), 1), 0)
-v11: ((BlockId(1), 2), 0)
-v2: ((BlockId(1), 1), 1)
-v10: ((BlockId(1), 1), 0)
+v11: ((BlockId(5), 0), 0)
+v2: ((BlockId(4), 0), 1)
+v10: ((BlockId(4), 0), 0)
 v1: ((BlockId(1), 0), 1)
 v9: ((BlockId(1), 0), 0)
 v16: ((BlockId(2), 2), 0)
@@ -90,7 +102,7 @@ v0: ((BlockId(3), 0), 0)
 PostStatement((BlockId(0), 3)): v8
 PostStatement((BlockId(0), 1)): v6
 BeginningOfBlock(BlockId(0)): v4, v2, v1
-PostStatement((BlockId(1), 2)): v12
+PostStatement((BlockId(5), 0)): v12
 PostStatement((BlockId(2), 2)): v17
 PostStatement((BlockId(2), 0)): v14, v15
 BeginningOfBlock(BlockId(2)): v1

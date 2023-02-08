@@ -52,10 +52,22 @@ Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
   (v3: (core::felt, core::bool)) <- struct_construct(v0, v2)
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
   (v4: core::felt) <- 6u
   (v5: ()) <- struct_construct()
   (v6: core::bool) <- bool::False(v5)
   (v7: (core::felt, core::bool)) <- struct_construct(v4, v6)
+End:
+  Fallthrough(2, {})
+
+blk2:
+Inputs:
+Statements:
   (v8: ()) <- struct_construct()
 End:
   Return(v8)
