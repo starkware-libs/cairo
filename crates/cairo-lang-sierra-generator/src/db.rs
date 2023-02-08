@@ -61,13 +61,13 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
     ) -> Maybe<Arc<cairo_lang_sierra::extensions::types::TypeInfo>>;
 
-    /// Private query to compute Sierra data about a free function.
+    /// Private query to compute Sierra data about a function with body.
     #[salsa::invoke(function_generator::priv_function_with_body_sierra_data)]
     fn priv_function_with_body_sierra_data(
         &self,
         function_id: ConcreteFunctionWithBodyId,
-    ) -> function_generator::SierraFreeFunctionData;
-    /// Returns the Sierra code (as [pre_sierra::Function]) for a given free function.
+    ) -> function_generator::SierraFunctionWithBodyData;
+    /// Returns the Sierra code (as [pre_sierra::Function]) for a given function with body.
     #[salsa::invoke(function_generator::function_with_body_sierra)]
     fn function_with_body_sierra(
         &self,
