@@ -3,7 +3,6 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_lowering as lowering;
 use cairo_lang_semantic::items::functions::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::program::GenStatement;
@@ -17,17 +16,10 @@ pub fn contains_cycle(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-    let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
-    for (_, block) in &lowered_function.blocks {
-        for statement in &block.statements {
-            if let lowering::Statement::Call(statement_call) = statement {
-                let concrete = db.lookup_intern_function(statement_call.function).function;
-                if let Some(function_id) = concrete.get_body(db.upcast()) {
-                    if db.contains_cycle(function_id)? {
-                        return Ok(true);
-                    }
-                }
-            }
+    let direct_callees = db.concrete_function_with_body_lowered_direct_callees(function_id);
+    for callee in direct_callees? {
+        if db.contains_cycle(callee)? {
+            return Ok(true);
         }
     }
 
