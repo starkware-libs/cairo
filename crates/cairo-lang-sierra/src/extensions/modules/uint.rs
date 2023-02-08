@@ -38,6 +38,8 @@ pub trait UintTraits: Default {
     const CONST: &'static str;
     /// The generic libfunc id for comparing equality.
     const EQUAL: &'static str;
+    /// The generic libfunc id for calculating the integer square root.
+    const SQUARE_ROOT: &'static str;
     /// The generic libfunc id for testing if less than.
     const LESS_THAN: &'static str;
     /// The generic libfunc id for testing if less than or equal.
@@ -151,6 +153,44 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintEqualLibfunc<T
             })
             .collect();
         Ok(LibfuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
+    }
+}
+
+/// Libfunc for calculating uint's square root.
+#[derive(Default)]
+pub struct UintSquareRootLibfunc<TUintTraits: UintTraits> {
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibfunc<TUintTraits> {
+    const STR_ID: &'static str = TUintTraits::SQUARE_ROOT;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(ty.clone()),
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) } },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
     }
 }
 
@@ -469,6 +509,7 @@ impl UintTraits for Uint8Traits {
     const IS_SMALL: bool = true;
     const CONST: &'static str = "u8_const";
     const EQUAL: &'static str = "u8_eq";
+    const SQUARE_ROOT: &'static str = "u8_sqrt";
     const LESS_THAN: &'static str = "u8_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u8_le";
     const OVERFLOWING_ADD: &'static str = "u8_overflowing_add";
@@ -509,6 +550,7 @@ impl UintTraits for Uint64Traits {
     const IS_SMALL: bool = true;
     const CONST: &'static str = "u64_const";
     const EQUAL: &'static str = "u64_eq";
+    const SQUARE_ROOT: &'static str = "u64_sqrt";
     const LESS_THAN: &'static str = "u64_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u64_le";
     const OVERFLOWING_ADD: &'static str = "u64_overflowing_add";

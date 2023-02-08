@@ -497,6 +497,14 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint128Concrete::SquareRoot(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(value)] => {
+                let root = BigInt::from(*value).sqrt();
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(root.to_u128().unwrap())], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint128Concrete::Equal(_) => match inputs {
             [CoreValue::Uint128(a), CoreValue::Uint128(b)] => {
                 // "False" branch (branch 0) is the case a != b.

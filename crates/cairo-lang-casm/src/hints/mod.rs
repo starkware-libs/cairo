@@ -29,6 +29,10 @@ pub enum Hint {
         quotient: CellRef,
         remainder: CellRef,
     },
+    SquareRoot {
+        value: ResOperand,
+        dst: CellRef,
+    },
     /// Finds some `x` and `y` such that `x * scalar + y = value` and `x <= max_x`.
     LinearSplit {
         value: ResOperand,
@@ -257,6 +261,9 @@ impl Display for Hint {
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
+            Hint::SquareRoot { value, dst } => {
+                write!(f, "(memory{dst}) = sqrt({})", ResOperandFormatter(value))
+            }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
                 let (value, scalar, max_x) = (
                     ResOperandFormatter(value),
