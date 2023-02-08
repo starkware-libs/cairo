@@ -228,7 +228,7 @@ fn print_diff(input: &Input<'_>, original_text: &str, formatted_text: &str) {
 }
 
 /// Sierra to casm compiler.
-/// Exits with 0/1 if the the compilation fails.
+/// Exits with 0/1 if the compilation fails.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct FormatterArgs {
