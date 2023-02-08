@@ -37,6 +37,7 @@ fn revoke_ap() -> felt {
 }
 
 fn non_literal() -> felt {
+    1 + 2;
     1
 }
 
