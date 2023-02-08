@@ -59,10 +59,10 @@ foo
 
 //! > module_code
 fn bar(a: felt, b: felt) -> felt {
-    0
+    bar(a, b)
 }
 fn bar2(a: felt, b: felt) -> felt {
-    0
+    bar2(a, b)
 }
 
 //! > semantic_diagnostics

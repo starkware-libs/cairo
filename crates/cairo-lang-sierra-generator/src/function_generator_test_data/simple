@@ -14,7 +14,7 @@ foo
 
 //! > module_code
 fn bar(x: felt, y: felt, z: felt) -> felt {
-    0
+    bar(x, y, z)
 }
 
 //! > semantic_diagnostics
@@ -24,7 +24,7 @@ fn bar(x: felt, y: felt, z: felt) -> felt {
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label1:
+label0:
 drop<felt>([1]) -> ()
 felt_const<5>() -> ([2])
 felt_add([0], [2]) -> ([3])

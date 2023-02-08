@@ -462,6 +462,7 @@ dependencies = [
 name = "cairo-lang-lowering"
 version = "1.0.0-alpha.2"
 dependencies = [
+ "assert_matches",
  "cairo-lang-debug",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
