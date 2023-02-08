@@ -3,25 +3,11 @@
 use core::hash::Hash;
 use std::collections::HashMap;
 
+use super::graph_node::GraphNode;
+
 #[cfg(test)]
 #[path = "strongly_connected_components_test.rs"]
 mod strongly_connected_components_test;
-
-/// A trait for a node in the graph. Note a GraphNode has to be able to provide its neighbors
-/// by itself, without additional information.
-pub trait GraphNode: Sized + Clone {
-    /// The type used to identify the nodes in the graph.
-    type NodeId: PartialEq + Eq + Hash + Clone;
-
-    /// Returns a list of the node's neighbors.
-    /// Must be stable for the SCC result to be stable. i.e. if the output for a node here doesn't
-    /// change between different runs, the computed SCC of the node is guaranteed to also not
-    /// change.
-    fn get_neighbors(&self) -> Vec<Self>;
-
-    /// Gets the node's ID.
-    fn get_id(&self) -> Self::NodeId;
-}
 
 /// A wrapper node to a GraphNode, to be used in the SCC algorithm. Contains the GraphNode
 /// additional state for the algorithm.
