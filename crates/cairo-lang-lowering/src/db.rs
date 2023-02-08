@@ -18,7 +18,7 @@ use crate::diagnostic::LoweringDiagnostic;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
 use crate::panic::lower_panics;
-use crate::{FlatLowered, StructuredLowered};
+use crate::{FlatLowered, Statement, StructuredLowered};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -50,6 +50,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the direct callees of the final lowered representation (after all the internal
+    /// transformations).
+    fn concrete_function_with_body_lowered_direct_callees(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Vec<ConcreteFunctionWithBodyId>>;
 
     /// Aggregates function level semantic diagnostics.
     fn function_with_body_lowering_diagnostics(
@@ -173,6 +180,25 @@ fn concrete_function_with_body_lowered(
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
     Ok(Arc::new(lowered))
+}
+
+fn concrete_function_with_body_lowered_direct_callees(
+    db: &dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId,
+) -> Maybe<Vec<ConcreteFunctionWithBodyId>> {
+    let mut direct_callees = Vec::new();
+    let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
+    for (_, block) in &lowered_function.blocks {
+        for statement in &block.statements {
+            if let Statement::Call(statement_call) = statement {
+                let concrete = db.lookup_intern_function(statement_call.function).function;
+                if let Some(function_id) = concrete.get_body(db.upcast()) {
+                    direct_callees.push(function_id);
+                }
+            }
+        }
+    }
+    Ok(direct_callees)
 }
 
 fn function_with_body_lowering_diagnostics(
