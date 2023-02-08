@@ -35,6 +35,10 @@ pub enum FeltSerdeError {
     OutOfOrderTypeDeclarationsForSerialization,
     #[error("Invalid order of libfunc declarations for serialization.")]
     OutOfOrderLibfuncDeclarationsForSerialization,
+    #[error("Invalid order of user functions declarations for serialization.")]
+    OutOfOrderUserFunctionDeclarationsForSerialization,
+    #[error("Invalid function declaration for serialization.")]
+    FunctionArgumentsMismatchInSerialization,
 }
 
 /// Serializes a Sierra program into a vector of felts.
@@ -263,6 +267,7 @@ macro_rules! struct_serde {
 
 impl FeltSerde for Program {
     fn serialize(&self, output: &mut Vec<BigIntAsHex>) -> Result<(), FeltSerdeError> {
+        // Type declarations.
         self.type_declarations.len().serialize(output)?;
         for (i, e) in self.type_declarations.iter().enumerate() {
             if i as u64 != e.id.id {
@@ -270,6 +275,7 @@ impl FeltSerde for Program {
             }
             e.long_id.serialize(output)?;
         }
+        // Libfunc declaration.
         self.libfunc_declarations.len().serialize(output)?;
         for (i, e) in self.libfunc_declarations.iter().enumerate() {
             if i as u64 != e.id.id {
@@ -277,11 +283,31 @@ impl FeltSerde for Program {
             }
             e.long_id.serialize(output)?;
         }
+        // Statements.
         FeltSerde::serialize(&self.statements, output)?;
-        FeltSerde::serialize(&self.funcs, output)
+        // Function declaration.
+        self.funcs.len().serialize(output)?;
+        for (i, f) in self.funcs.iter().enumerate() {
+            if i as u64 != f.id.id {
+                return Err(FeltSerdeError::OutOfOrderUserFunctionDeclarationsForSerialization);
+            }
+            f.signature.serialize(output)?;
+            if f.signature.param_types.len() != f.params.len() {
+                return Err(FeltSerdeError::FunctionArgumentsMismatchInSerialization);
+            }
+            for (param, ty) in f.params.iter().zip(f.signature.param_types.iter()) {
+                if param.ty != *ty {
+                    return Err(FeltSerdeError::FunctionArgumentsMismatchInSerialization);
+                }
+                param.id.serialize(output)?;
+            }
+            f.entry_point.serialize(output)?;
+        }
+        Ok(())
     }
 
     fn deserialize(input: &[BigIntAsHex]) -> Result<(Self, &[BigIntAsHex]), FeltSerdeError> {
+        // Type declarations.
         let (size, mut input) = usize::deserialize(input)?;
         let mut type_declarations = Vec::with_capacity(size);
         for i in 0..size {
@@ -289,6 +315,7 @@ impl FeltSerde for Program {
             type_declarations.push(TypeDeclaration { id: ConcreteTypeId::from_usize(i), long_id });
             input = next;
         }
+        // Libfunc declaration.
         let (size, mut input) = usize::deserialize(input)?;
         let mut libfunc_declarations = Vec::with_capacity(size);
         for i in 0..size {
@@ -297,18 +324,29 @@ impl FeltSerde for Program {
                 .push(LibfuncDeclaration { id: ConcreteLibfuncId::from_usize(i), long_id });
             input = next;
         }
+        // Statements.
         let (statements, input) = FeltSerde::deserialize(input)?;
-        let (funcs, input) = FeltSerde::deserialize(input)?;
+        // Function declaration.
+        let (size, mut input) = usize::deserialize(input)?;
+        let mut funcs = Vec::with_capacity(size);
+        for i in 0..size {
+            let (signature, next) = FunctionSignature::deserialize(input)?;
+            input = next;
+            let params = signature
+                .param_types
+                .iter()
+                .cloned()
+                .map(|ty| -> Result<Param, FeltSerdeError> {
+                    let (id, next) = VarId::deserialize(input)?;
+                    input = next;
+                    Ok(Param { id, ty })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let (entry_point, next) = StatementIdx::deserialize(input)?;
+            funcs.push(Function { id: FunctionId::from_usize(i), signature, params, entry_point });
+            input = next;
+        }
         Ok((Self { type_declarations, libfunc_declarations, statements, funcs }, input))
-    }
-}
-
-struct_serde! {
-    Function {
-        id: FunctionId,
-        signature: FunctionSignature,
-        params: Vec<Param>,
-        entry_point: StatementIdx,
     }
 }
 
@@ -330,13 +368,6 @@ struct_serde! {
     FunctionSignature {
         param_types:  Vec<ConcreteTypeId>,
         ret_types:  Vec<ConcreteTypeId>,
-    }
-}
-
-struct_serde! {
-    Param {
-        id:  VarId,
-        ty:  ConcreteTypeId,
     }
 }
 
