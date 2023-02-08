@@ -42,3 +42,26 @@ error: Short strings can only include ASCII characters.
  --> lib.cairo:2:13
     let a = '\u{1024}';
             ^********^
+
+//! > ==========================================================================
+
+//! > Type not supported for short string.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let a = 'a'_Pedersen;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: A literal with this type cannot be created.
+ --> lib.cairo:2:13
+    let a = 'a'_Pedersen;
+            ^**********^
