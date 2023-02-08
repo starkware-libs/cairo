@@ -321,10 +321,6 @@ pub fn build_sqrt(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, value] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
-
-    // (2**128-1) - (2**125-1)
-    let u125_upper_fixer: BigInt = BigInt::from(u128::MAX - (u128::pow(2, 125) - 1));
-
     add_input_variables! {casm_builder,
         buffer(3) range_check;
         deref value;
@@ -346,7 +342,7 @@ pub fn build_sqrt(
         // (root + (2**128-1) - (2**125-1)) is in [0, 2**128) and root is in [0, 2**128).
         // The second assertion is needed because if root is very large (e.g., P - 1) the first
         // assertion may be true.
-        const u125_upper_fixer = u125_upper_fixer;
+        const u125_upper_fixer = BigInt::from(u128::MAX - (u128::pow(2, 125) - 1));
         assert fixed_root = root + u125_upper_fixer;
         assert root = *(range_check++);
         assert fixed_root = *(range_check++);
@@ -358,9 +354,9 @@ pub fn build_sqrt(
         assert value_minus_root_squared = value - root_squared;
         assert value_minus_root_squared = *(range_check++);
 
-        // Assert value is in [0, (root + 1)^2 ) by asserting (2*root - (value - root^2)) is in
+        // Assert value is in [0, (root + 1)**2 ) by asserting (2*root - (value - root**2)) is in
         // [0, 2**128). this is equivalent because
-        // (root + 1)^2 - 1 - value = 2*root - (value - root^2) .
+        // (root + 1)**2 - 1 - value = 2*root - (value - root**2) .
         assert root_times_two = root + root;
         assert diff = root_times_two - value_minus_root_squared;
         assert diff = *(range_check++);
