@@ -9,6 +9,7 @@ use clap::Parser;
 use colored::Colorize;
 use ignore::WalkState::Continue;
 use ignore::{DirEntry, Error, ParallelVisitor, ParallelVisitorBuilder, WalkState};
+use log::warn;
 
 /// Outputs a string to stderr if the verbose flag is true.
 fn eprintln_if_verbose(s: &str, verbose: bool) {
@@ -40,15 +41,18 @@ struct FormatterArgs {
 }
 
 fn print_error(error: anyhow::Error, path: String, args: &FormatterArgs) {
+    let parsed_errors = if args.print_parsing_errors {
+        format!("{error}").red()
+    } else {
+        "Run with '--print-parsing-errors' to see error details.".red()
+    };
     eprintln!(
         "{}",
-        format!("A parsing error occurred in {path}. The content was not formatted.").red()
+        format!(
+            "A parsing error occurred in {path}. The content was not formatted.\n{parsed_errors}"
+        )
+        .red()
     );
-    if args.print_parsing_errors {
-        eprintln!("{}", format!("{error}").red());
-    } else {
-        eprintln!("{}", "Run with '--print-parsing-errors' to see error details.".red());
-    }
 }
 
 struct PathFormatter<'t> {
@@ -72,30 +76,62 @@ where
     }
 }
 
+fn check_file_formatting(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path) -> bool {
+    match fmt.format_to_string(&path) {
+        Ok(FormatOutcome::Identical(_)) => true,
+        Ok(FormatOutcome::DiffFound(diff)) => {
+            println!("Diff found in file {}:\n {}", path.display(), diff.display_colored());
+            false
+        }
+        Err(parsing_error) => {
+            print_error(parsing_error, path.display().to_string(), args);
+            false
+        }
+    }
+}
+
+fn format_file_in_place(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path) -> bool {
+    if let Err(parsing_error) = fmt.format_in_place(&path) {
+        print_error(parsing_error, path.display().to_string(), args);
+        false
+    } else {
+        true
+    }
+}
+
 impl<'t> ParallelVisitor for PathFormatter<'t> {
-    fn visit(&mut self, dir_entry: Result<DirEntry, Error>) -> WalkState {
-        let entry_path = dir_entry.unwrap();
-        if entry_path.file_type().unwrap().is_dir() {
+    fn visit(&mut self, dir_entry_res: Result<DirEntry, Error>) -> WalkState {
+        let dir_entry = if let Ok(dir_entry) = dir_entry_res {
+            dir_entry
+        } else {
+            warn!("Failed to read the file.");
+            return Continue;
+        };
+
+        let file_type = if let Some(file_type) = dir_entry.file_type() {
+            file_type
+        } else {
+            warn!("Failed to read filetype.");
+            return Continue;
+        };
+
+        if !file_type.is_file() {
             return Continue;
         }
-        let path = entry_path.path();
+
+        let file_path = dir_entry.path();
+
         if self.args.verbose {
-            eprintln!("Formatting file: {}.", path.display());
+            eprintln!("Formatting file: {}.", file_path.display());
         }
-        if self.args.check {
-            match self.fmt.format_to_string(&path) {
-                Ok(FormatOutcome::Identical(_)) => {}
-                Ok(FormatOutcome::DiffFound(diff)) => {
-                    println!("Diff found in file {}:\n {}", path.display(), diff.display_colored());
-                    self.all_correct.store(false, Ordering::Release);
-                }
-                Err(parsing_error) => {
-                    print_error(parsing_error, path.display().to_string(), self.args);
-                    self.all_correct.store(false, Ordering::Release);
-                }
-            }
-        } else if let Err(parsing_error) = self.fmt.format_in_place(&path) {
-            print_error(parsing_error, path.display().to_string(), self.args);
+
+        let success = if self.args.check {
+            check_file_formatting(self.fmt, self.args, file_path)
+        } else {
+            format_file_in_place(self.fmt, self.args, file_path)
+        };
+
+        if !success {
             self.all_correct.store(false, Ordering::Release);
         }
         Continue
