@@ -29,8 +29,8 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
-    true_literal_expr, try_get_const_libfunc_name_by_type, try_get_core_ty_by_name, unit_ty,
-    unwrap_error_propagation_type,
+    true_literal_expr, try_get_core_ty_by_name, unit_ty, unwrap_error_propagation_type,
+    validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -43,6 +43,7 @@ use crate::items::imp::find_impls_at_context;
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
@@ -1150,7 +1151,7 @@ fn literal_to_semantic(
     } else {
         db.core_felt_ty()
     };
-    try_get_const_libfunc_name_by_type(db, ty)
+    validate_literal(db, ty, value.clone())
         .map_err(|err| ctx.diagnostics.report(literal_syntax, err))?;
     Ok(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
 }
@@ -1171,17 +1172,14 @@ fn short_string_to_semantic(
         } else {
             db.core_felt_ty()
         };
-        try_get_const_libfunc_name_by_type(db, ty)
-            .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?;
         let unescaped_literal = unescape(literal).map_err(|err| {
             ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{err}")))
         })?;
+        let value = BigInt::from_bytes_be(Sign::Plus, unescaped_literal.as_bytes());
+        validate_literal(db, ty, value.clone())
+            .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?;
         if unescaped_literal.is_ascii() {
-            Ok(ExprLiteral {
-                value: BigInt::from_bytes_be(Sign::Plus, unescaped_literal.as_bytes()),
-                ty,
-                stable_ptr: short_string_syntax.stable_ptr().into(),
-            })
+            Ok(ExprLiteral { value, ty, stable_ptr: short_string_syntax.stable_ptr().into() })
         } else {
             Err(ctx.diagnostics.report(short_string_syntax, ShortStringMustBeAscii))
         }

@@ -35,6 +35,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
     ConcreteTraitLongId,
 };
+use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
 use crate::{
@@ -627,11 +628,11 @@ impl<'db> Resolver<'db> {
             ModuleItemId::Constant(id) => ResolvedGenericItem::Constant(id),
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
             ModuleItemId::Use(id) => {
-                // TODO(spapini): Before the last change, we called priv_use_semantic_data()
-                // directly for cycle handling. Do we need to handle cycle both on
-                // it and on the selector use_resolved_item() now?
+                // Note that `use_resolved_item` needs to be called before
+                // `use_semantic_diagnostics` to handle cycles.
+                let resolved_item = self.db.use_resolved_item(id)?;
                 diagnostics.diagnostics.extend(self.db.use_semantic_diagnostics(id));
-                self.db.use_resolved_item(id)?
+                resolved_item
             }
             ModuleItemId::FreeFunction(id) => {
                 ResolvedGenericItem::GenericFunction(GenericFunctionId::Free(id))

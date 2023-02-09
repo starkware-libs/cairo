@@ -41,7 +41,10 @@ pub struct PrivInlineData {
 /// Per function information for the inlining phase.
 #[derive(Debug, PartialEq, Eq)]
 pub struct InlineInfo {
+    // Indicates that the function can be inlined.
     pub is_inlineable: bool,
+    // Indicates that the function should be inlined.
+    pub should_inline: bool,
 }
 
 pub fn priv_inline_data(
@@ -67,7 +70,7 @@ fn gather_inlining_info(
     report_diagnostics: bool,
     function_id: FunctionWithBodyId,
 ) -> Maybe<InlineInfo> {
-    let mut info = InlineInfo { is_inlineable: false };
+    let mut info = InlineInfo { is_inlineable: false, should_inline: false };
     let defs_db = db.upcast();
     if db
             .function_with_body_direct_function_with_body_callees(function_id)?
@@ -87,12 +90,13 @@ fn gather_inlining_info(
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
     let root_block_id = lowered.root?;
-    let input_vars: HashSet<VariableId> =
-        lowered.blocks[root_block_id].inputs.iter().copied().collect();
+    let root_block = &lowered.blocks[root_block_id];
+
+    let input_vars: HashSet<VariableId> = root_block.inputs.iter().copied().collect();
     for (block_id, block) in lowered.blocks.iter() {
         match &block.end {
             FlatBlockEnd::Return(returns) => {
-                if returns.iter().any(|r| input_vars.contains(r)) {
+                if block_id == root_block_id && returns.iter().any(|r| input_vars.contains(r)) {
                     // TODO(ilya): Remove the following limitation.
                     if report_diagnostics {
                         diagnostics.report(
@@ -124,7 +128,43 @@ fn gather_inlining_info(
     }
 
     info.is_inlineable = true;
+    info.should_inline = should_inline(db, &lowered)?;
+
     Ok(info)
+}
+
+// A heuristic to decide if a function should be inlined.
+fn should_inline(db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
+    let root_block_id = lowered.root?;
+    let root_block = &lowered.blocks[root_block_id];
+
+    match &root_block.end {
+        FlatBlockEnd::Return(_) | FlatBlockEnd::Unreachable => {}
+        FlatBlockEnd::Callsite(_) | FlatBlockEnd::Fallthrough(..) | FlatBlockEnd::Goto(..) => {
+            panic!("Unexpected block end.");
+        }
+    };
+
+    if let [statement] = root_block.statements.as_slice() {
+        match statement {
+            // Inline function that only call another function.
+            // TODO(ilya): Inline libfunc calls once we have #[inline(never)].
+            Statement::Call(call_stmt) => {
+                let concrete_function = db.lookup_intern_function(call_stmt.function).function;
+                let semantic_db = db.upcast();
+                if concrete_function.get_body(semantic_db).is_some() {
+                    return Ok(true);
+                }
+            }
+
+            // Inline functions that return a literal.
+            Statement::Literal(_) => {
+                return Ok(true);
+            }
+            _ => {}
+        }
+    }
+    Ok(false)
 }
 
 /// Parses the inline attributes for a given function.
@@ -378,8 +418,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     self.inlining_failed = true;
                 }
 
-                if inline_data.config == InlineConfiguration::Always
-                    && inline_data.info.is_inlineable
+                if inline_data.info.is_inlineable
+                    && (inline_data.info.should_inline
+                        || inline_data.config == InlineConfiguration::Always)
                 {
                     return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
                 }

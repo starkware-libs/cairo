@@ -393,7 +393,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test inlining diagnostics for a function with an early return.
+//! > Test inlining of a function with an early return.
 
 //! > test_function_name
 test_function_inlining
@@ -503,3 +503,143 @@ End:
 //! > lowering_diagnostics
 
 //! > semantic_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining heuristic
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt) -> felt {
+  bar(a) + bar2(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(a: felt) -> felt {
+  bar2(a)
+}
+
+fn bar2(a: felt) -> felt {
+  1
+}
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+  (v2: core::felt) <- test::bar2(v0)
+  (v3: core::felt) <- core::FeltAdd::add(v1, v2)
+End:
+  Return(v3)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- 1u
+End:
+  Fallthrough(2, {})
+
+blk1:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+End:
+  Fallthrough(3, {})
+
+blk2:
+Inputs:
+Statements:
+End:
+  Fallthrough(1, {})
+
+blk3:
+Inputs:
+Statements:
+  (v3: core::felt) <- core::felt_add(v1, v2)
+End:
+  Fallthrough(4, {})
+
+blk4:
+Inputs:
+Statements:
+End:
+  Return(v3)
+
+//! > lowering_diagnostics
+
+//! > semantic_diagnostics
+
+//! > ==========================================================================
+
+//! > Test returning an input variable as is (not in root block).
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo() -> felt {
+  bar(0)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar(a: felt) -> felt {
+  if a == 0 {
+    return a;
+  }
+  1
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 0u
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 0u
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero => blk3,
+  }
+  (v1: core::felt) <- 1u
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Inputs:
+Statements:
+End:
+  Goto(1, {v0 -> v1})
+
+blk3:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite({})

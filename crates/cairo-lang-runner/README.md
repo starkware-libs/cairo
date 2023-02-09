@@ -46,6 +46,6 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 ```
 
 # Additional Information
-* Functions without calls to `get_gas` will not compile without `--available-gas` value.
-* Functions with calls to `get_gas` will not compile with `--available-gas` value.
+* Functions with calls to `get_gas` will not compile without `--available-gas` value.
+* Functions without calls to `get_gas` will not compile with `--available-gas` value.
 * When running functions returning arrays `--print-full-memory` should probably be used, to actually see the values contained in the array.

@@ -19,10 +19,11 @@ cairo_lang_test_utils::test_file_test!(
         ec: "ec",
         get_gas_all: "get_gas_all",
         nullable: "nullable",
-        u128: "u128",
         u8: "u8",
+        u16: "u16",
         u32: "u32",
         u64: "u64",
+        u128: "u128",
         bool: "bool",
     },
     run_small_e2e_test
