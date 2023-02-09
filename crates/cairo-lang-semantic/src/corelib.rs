@@ -348,7 +348,7 @@ fn get_core_function_impl_method(
     db.intern_function(FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
-                concrete_impl,
+                concrete_impl_id: concrete_impl,
                 function,
             }),
             generic_args: vec![],
