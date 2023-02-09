@@ -3,6 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{LanguageElementId, UseId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_utils::Upcast;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
@@ -65,15 +66,20 @@ pub fn use_semantic_diagnostics(
     db.priv_use_semantic_data(use_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::use_resolved_item].
-pub fn use_resolved_item(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<ResolvedGenericItem> {
-    db.priv_use_semantic_data(use_id)?.resolved_item
-}
-
 /// Query implementation of [crate::db::SemanticGroup::use_resolved_lookback].
 pub fn use_resolved_lookback(
     db: &dyn SemanticGroup,
     use_id: UseId,
 ) -> Maybe<Arc<ResolvedLookback>> {
     Ok(db.priv_use_semantic_data(use_id)?.resolved_lookback)
+}
+
+pub trait SemanticUseEx<'a>: Upcast<dyn SemanticGroup + 'a> {
+    /// Returns the resolved items.
+    ///
+    /// This is not a query as the cycle handling is done in priv_use_semantic_data.
+    fn use_resolved_item(&self, use_id: UseId) -> Maybe<ResolvedGenericItem> {
+        let db = self.upcast();
+        db.priv_use_semantic_data(use_id)?.resolved_item
+    }
 }

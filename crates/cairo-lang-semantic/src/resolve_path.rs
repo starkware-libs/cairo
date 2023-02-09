@@ -627,9 +627,6 @@ impl<'db> Resolver<'db> {
             ModuleItemId::Constant(id) => ResolvedGenericItem::Constant(id),
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
             ModuleItemId::Use(id) => {
-                // TODO(spapini): Before the last change, we called priv_use_semantic_data()
-                // directly for cycle handling. Do we need to handle cycle both on
-                // it and on the selector use_resolved_item() now?
                 diagnostics.diagnostics.extend(self.db.use_semantic_diagnostics(id));
                 self.db.use_resolved_item(id)?
             }

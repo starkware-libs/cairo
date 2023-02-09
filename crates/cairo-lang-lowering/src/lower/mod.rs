@@ -13,6 +13,7 @@ use semantic::corelib::{
     jump_nz_nonzero_variant, jump_nz_zero_variant, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
+use semantic::items::us::SemanticUseEx;
 use semantic::{ConcreteTypeId, ExprPropagateError, TypeLongId};
 
 use self::context::{
