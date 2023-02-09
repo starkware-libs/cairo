@@ -189,7 +189,7 @@ fn run_tests(
             }
             let result = runner
                 .run_function(name.as_str(), &[], test.available_gas)
-                .with_context(|| "Failed to run the function.")?;
+                .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
             Ok((
                 name,
                 match (&result.value, test.expectation) {
