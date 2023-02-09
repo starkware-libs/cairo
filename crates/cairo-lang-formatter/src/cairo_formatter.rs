@@ -6,15 +6,13 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context, Result};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile, CAIRO_FILE_EXTENSION};
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 use diffy::{create_patch, PatchFormatter};
 use ignore::types::TypesBuilder;
 use ignore::WalkBuilder;
 
 use crate::{get_formatted_file, FormatterConfig, CAIRO_FMT_IGNORE};
-
-const CAIRO_FILE_EXTENSION: &str = "cairo";
 
 #[derive(Clone)]
 pub struct FileDiff {
