@@ -134,7 +134,7 @@ fn gather_inlining_info(
 }
 
 // A heuristic to decide if a function should be inlined.
-fn should_inline(db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
+fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
     let root_block_id = lowered.root?;
     let root_block = &lowered.blocks[root_block_id];
 
@@ -147,14 +147,10 @@ fn should_inline(db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
 
     if let [statement] = root_block.statements.as_slice() {
         match statement {
-            // Inline function that only call another function.
+            // Inline function that only call another function or libfunc.
             // TODO(ilya): Inline libfunc calls once we have #[inline(never)].
-            Statement::Call(call_stmt) => {
-                let concrete_function = db.lookup_intern_function(call_stmt.function).function;
-                let semantic_db = db.upcast();
-                if concrete_function.get_body(semantic_db).is_some() {
-                    return Ok(true);
-                }
+            Statement::Call(_) => {
+                return Ok(true);
             }
 
             // Inline functions that return a literal.
