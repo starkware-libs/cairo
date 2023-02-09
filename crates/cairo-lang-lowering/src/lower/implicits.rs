@@ -5,7 +5,8 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, UnstableSalsaId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::TypeId;
-use cairo_lang_utils::strongly_connected_components::{compute_scc, GraphNode};
+use cairo_lang_utils::graph_algos::graph_node::GraphNode;
+use cairo_lang_utils::graph_algos::strongly_connected_components::compute_scc;
 use itertools::Itertools;
 use semantic::items::functions::GenericFunctionId;
 
