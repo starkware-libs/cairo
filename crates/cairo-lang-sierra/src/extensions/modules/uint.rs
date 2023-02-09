@@ -6,6 +6,7 @@ use super::felt::FeltType;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
+use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -54,6 +55,14 @@ pub trait UintTraits: Default {
     const TRY_FROM_FELT: &'static str;
     /// The generic libfunc id that divides two integers.
     const DIVMOD: &'static str;
+}
+
+/// Trait for implementing multiplication for unsigned integers.
+pub trait UintMulTraits: UintTraits {
+    /// The generic libfunc id that multiplies two integers.
+    const WIDE_MUL: &'static str;
+    /// The generic type id for this type multiplication result.
+    const WIDE_MUL_RES_TYPE_ID: GenericTypeId;
 }
 
 #[derive(Default)]
@@ -500,6 +509,40 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintDivmodLibfunc<
     }
 }
 
+/// Libfunc for uint wide multiplication.
+#[derive(Default)]
+pub struct UintWideMulLibfunc<TUintMulTraits: UintMulTraits> {
+    _phantom: PhantomData<TUintMulTraits>,
+}
+impl<TUintMulTraits: UintMulTraits> NoGenericArgsGenericLibfunc
+    for UintWideMulLibfunc<TUintMulTraits>
+{
+    const STR_ID: &'static str = TUintMulTraits::WIDE_MUL;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TUintMulTraits::GENERIC_TYPE_ID, &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(ty.clone()),
+                ParamSignature {
+                    ty,
+                    allow_deferred: false,
+                    allow_add_const: false,
+                    allow_const: true,
+                },
+            ],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(TUintMulTraits::WIDE_MUL_RES_TYPE_ID, &[])?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
 #[derive(Default)]
 pub struct Uint8Traits;
 
@@ -517,6 +560,11 @@ impl UintTraits for Uint8Traits {
     const TO_FELT: &'static str = "u8_to_felt";
     const TRY_FROM_FELT: &'static str = "u8_try_from_felt";
     const DIVMOD: &'static str = "u8_safe_divmod";
+}
+
+impl UintMulTraits for Uint8Traits {
+    const WIDE_MUL: &'static str = "u8_wide_mul";
+    const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Uint16Type as NamedType>::ID;
 }
 
 impl IsZeroTraits for Uint8Traits {
@@ -538,7 +586,55 @@ define_libfunc_hierarchy! {
         FromFelt(UintFromFeltLibfunc<Uint8Traits>),
         IsZero(IsZeroLibfunc<Uint8Traits>),
         Divmod(UintDivmodLibfunc<Uint8Traits>),
+        WideMul(UintWideMulLibfunc<Uint8Traits>),
     }, Uint8Concrete
+}
+
+#[derive(Default)]
+pub struct Uint16Traits;
+
+impl UintTraits for Uint16Traits {
+    type UintType = u16;
+    const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u16");
+    const IS_SMALL: bool = true;
+    const CONST: &'static str = "u16_const";
+    const EQUAL: &'static str = "u16_eq";
+    const SQUARE_ROOT: &'static str = "u16_sqrt";
+    const LESS_THAN: &'static str = "u16_lt";
+    const LESS_THAN_OR_EQUAL: &'static str = "u16_le";
+    const OVERFLOWING_ADD: &'static str = "u16_overflowing_add";
+    const OVERFLOWING_SUB: &'static str = "u16_overflowing_sub";
+    const TO_FELT: &'static str = "u16_to_felt";
+    const TRY_FROM_FELT: &'static str = "u16_try_from_felt";
+    const DIVMOD: &'static str = "u16_safe_divmod";
+}
+
+impl UintMulTraits for Uint16Traits {
+    const WIDE_MUL: &'static str = "u16_wide_mul";
+    const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Uint32Type as NamedType>::ID;
+}
+
+impl IsZeroTraits for Uint16Traits {
+    const IS_ZERO: &'static str = "u16_is_zero";
+    const GENERIC_TYPE_ID: GenericTypeId = <Uint16Type as NamedType>::ID;
+}
+
+/// Type for u16.
+pub type Uint16Type = UintType<Uint16Traits>;
+
+define_libfunc_hierarchy! {
+    pub enum Uint16Libfunc {
+        Const(UintConstLibfunc<Uint16Traits>),
+        Operation(UintOperationLibfunc<Uint16Traits>),
+        LessThan(UintLessThanLibfunc<Uint16Traits>),
+        Equal(UintEqualLibfunc<Uint16Traits>),
+        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint16Traits>),
+        ToFelt(UintToFeltLibfunc<Uint16Traits>),
+        FromFelt(UintFromFeltLibfunc<Uint16Traits>),
+        IsZero(IsZeroLibfunc<Uint16Traits>),
+        Divmod(UintDivmodLibfunc<Uint16Traits>),
+        WideMul(UintWideMulLibfunc<Uint16Traits>),
+    }, Uint16Concrete
 }
 
 #[derive(Default)]
@@ -560,6 +656,11 @@ impl UintTraits for Uint32Traits {
     const DIVMOD: &'static str = "u32_safe_divmod";
 }
 
+impl UintMulTraits for Uint32Traits {
+    const WIDE_MUL: &'static str = "u32_wide_mul";
+    const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
+}
+
 impl IsZeroTraits for Uint32Traits {
     const IS_ZERO: &'static str = "u32_is_zero";
     const GENERIC_TYPE_ID: GenericTypeId = <Uint32Type as NamedType>::ID;
@@ -579,6 +680,7 @@ define_libfunc_hierarchy! {
         FromFelt(UintFromFeltLibfunc<Uint32Traits>),
         IsZero(IsZeroLibfunc<Uint32Traits>),
         Divmod(UintDivmodLibfunc<Uint32Traits>),
+        WideMul(UintWideMulLibfunc<Uint32Traits>),
     }, Uint32Concrete
 }
 
@@ -601,6 +703,11 @@ impl UintTraits for Uint64Traits {
     const DIVMOD: &'static str = "u64_safe_divmod";
 }
 
+impl UintMulTraits for Uint64Traits {
+    const WIDE_MUL: &'static str = "u64_wide_mul";
+    const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Uint128Type as NamedType>::ID;
+}
+
 impl IsZeroTraits for Uint64Traits {
     const IS_ZERO: &'static str = "u64_is_zero";
     const GENERIC_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
@@ -620,5 +727,6 @@ define_libfunc_hierarchy! {
         FromFelt(UintFromFeltLibfunc<Uint64Traits>),
         IsZero(IsZeroLibfunc<Uint64Traits>),
         Divmod(UintDivmodLibfunc<Uint64Traits>),
+        WideMul(UintWideMulLibfunc<Uint64Traits>),
     }, Uint64Concrete
 }
