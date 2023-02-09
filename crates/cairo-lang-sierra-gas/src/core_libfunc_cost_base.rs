@@ -351,7 +351,9 @@ fn statement_vars_cost<'a, Ops: CostOperations, TokenTypes: Iterator<Item = &'a 
 /// Returns costs for u8 libfuncs.
 fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) => vec![ops.steps(0)],
+        Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) | Uint8Concrete::WideMul(_) => {
+            vec![ops.steps(0)]
+        }
         Uint8Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
                 vec![
@@ -400,7 +402,9 @@ fn u16_libfunc_cost<Ops: CostOperations>(
     libfunc: &Uint16Concrete,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint16Concrete::Const(_) | Uint16Concrete::ToFelt(_) => vec![ops.steps(0)],
+        Uint16Concrete::Const(_) | Uint16Concrete::ToFelt(_) | Uint16Concrete::WideMul(_) => {
+            vec![ops.steps(0)]
+        }
         Uint16Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
                 vec![
@@ -449,7 +453,9 @@ fn u32_libfunc_cost<Ops: CostOperations>(
     libfunc: &Uint32Concrete,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint32Concrete::Const(_) | Uint32Concrete::ToFelt(_) => vec![ops.steps(0)],
+        Uint32Concrete::Const(_) | Uint32Concrete::ToFelt(_) | Uint32Concrete::WideMul(_) => {
+            vec![ops.steps(0)]
+        }
         Uint32Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
                 vec![
@@ -498,7 +504,9 @@ fn u64_libfunc_cost<Ops: CostOperations>(
     libfunc: &Uint64Concrete,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint64Concrete::Const(_) | Uint64Concrete::ToFelt(_) => vec![ops.steps(0)],
+        Uint64Concrete::Const(_) | Uint64Concrete::ToFelt(_) | Uint64Concrete::WideMul(_) => {
+            vec![ops.steps(0)]
+        }
         Uint64Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
                 vec![

@@ -118,6 +118,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint8Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
             Uint8Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint8Concrete::Divmod(_) => vec![ApChange::Known(5)],
+            Uint8Concrete::WideMul(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint16(libfunc) => match libfunc {
             Uint16Concrete::Const(_) | Uint16Concrete::ToFelt(_) => vec![ApChange::Known(0)],
@@ -135,6 +136,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint16Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
             Uint16Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint16Concrete::Divmod(_) => vec![ApChange::Known(5)],
+            Uint16Concrete::WideMul(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint32(libfunc) => match libfunc {
             Uint32Concrete::Const(_) | Uint32Concrete::ToFelt(_) => vec![ApChange::Known(0)],
@@ -152,6 +154,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint32Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
             Uint32Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint32Concrete::Divmod(_) => vec![ApChange::Known(5)],
+            Uint32Concrete::WideMul(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint64(libfunc) => match libfunc {
             Uint64Concrete::Const(_) | Uint64Concrete::ToFelt(_) => vec![ApChange::Known(0)],
@@ -169,6 +172,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint64Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
             Uint64Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint64Concrete::Divmod(_) => vec![ApChange::Known(5)],
+            Uint64Concrete::WideMul(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint128(libfunc) => match libfunc {
             Uint128Concrete::Operation(libfunc) => match libfunc.operator {
