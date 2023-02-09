@@ -4,6 +4,7 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
+use num_bigint::BigInt;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
