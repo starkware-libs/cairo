@@ -1171,6 +1171,8 @@ fn short_string_to_semantic(
         } else {
             db.core_felt_ty()
         };
+        try_get_const_libfunc_name_by_type(db, ty)
+            .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?;
         let unescaped_literal = unescape(literal).map_err(|err| {
             ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{err}")))
         })?;
