@@ -331,6 +331,7 @@ use starknet::ContractAddress;
 // Cheatcodes
 mod cheatcodes;
 use cheatcodes::roll;
+use cheatcodes::declare;
 use cheatcodes::cheat_roll;
 
 // Internals.

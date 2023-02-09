@@ -10,3 +10,5 @@ fn roll(address: felt, caller_address: felt) -> () {
         },
     }
 }
+
+extern fn declare(contract: felt) -> Result::<felt, felt> nopanic;
