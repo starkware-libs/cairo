@@ -5,7 +5,7 @@ use test_case::test_case;
 use test_log::test;
 
 use super::GraphNode;
-use crate::strongly_connected_components::compute_scc;
+use crate::graph_algos::strongly_connected_components::compute_scc;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 struct IntegerNode {
