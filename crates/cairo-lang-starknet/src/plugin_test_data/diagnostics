@@ -154,7 +154,7 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
  --> contract:34:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
@@ -246,7 +246,7 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
     fn foo() -> (felt, felt) {
                              ^
 
-error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
  --> contract:55:13
             serde::Serde::<(felt, felt)>::serialize(ref arr, res);
             ^***************************************************^
@@ -355,7 +355,7 @@ error: Type not found.
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
-error: Function `deserialize` of trait `core::serde::Serde` has multiple implementations, in: core::serde::FeltSerde, core::serde::BoolSerde, core::serde::U8Serde, core::serde::U32Serde, core::serde::U64Serde, core::serde::U128Serde, core::serde::U256Serde, core::serde::ArrayFeltSerde
+error: Trait `core::serde::Serde` has multiple implementations, in: ImplDefId(core::serde::FeltSerde), ImplDefId(core::serde::BoolSerde), ImplDefId(core::serde::U8Serde), ImplDefId(core::serde::U32Serde), ImplDefId(core::serde::U64Serde), ImplDefId(core::serde::U128Serde), ImplDefId(core::serde::U256Serde), ImplDefId(core::serde::ArrayFeltSerde)
  --> contract:34:23
                 match serde::Serde::<T>::deserialize(ref data) {
                       ^**************************************^
@@ -471,17 +471,17 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
     fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
                                                              ^
 
-error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
  --> contract:34:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
-error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
  --> contract:44:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
-error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
  --> contract:74:13
             serde::Serde::<(felt, felt)>::serialize(ref arr, res);
             ^***************************************************^

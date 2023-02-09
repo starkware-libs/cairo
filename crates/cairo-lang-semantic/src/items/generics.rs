@@ -95,12 +95,12 @@ impl DebugWithDb<dyn SemanticGroup> for GenericParam {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamType {
-    id: GenericParamId,
+    pub id: GenericParamId,
 }
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamConst {
-    id: GenericParamId,
+    pub id: GenericParamId,
 }
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
