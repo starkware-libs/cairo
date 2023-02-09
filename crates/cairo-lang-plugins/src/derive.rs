@@ -55,7 +55,11 @@ fn generate_derive_code_for_type(
                         if let [ast::PathSegment::Simple(segment)] = &expr.elements(db)[..] {
                             let name = ident.text(db);
                             let derived = segment.ident(db).text(db);
-                            impls.push(format!("impl {name}{derived} of {derived}::<{name}>;\n"));
+                            if matches!(derived.as_str(), "Copy" | "Drop") {
+                                impls.push(format!(
+                                    "impl {name}{derived} of {derived}::<{name}>;\n"
+                                ));
+                            }
                         } else {
                             diagnostics.push(PluginDiagnostic {
                                 stable_ptr: expr.stable_ptr().untyped(),
