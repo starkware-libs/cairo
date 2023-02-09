@@ -1,9 +1,8 @@
-use crate::{define_libfunc_hierarchy, define_type_hierarchy};
+use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibfuncSignature, SignatureSpecializationContext, SierraApChange, OutputVarInfo, ParamSignature, BranchSignature,
 };
-use crate::extensions::{SpecializationError, NoGenericArgsGenericLibfunc, NamedType, OutputVarReferenceInfo, NoGenericArgsGenericType};
-use crate::ids::GenericTypeId;
+use crate::extensions::{SpecializationError, NoGenericArgsGenericLibfunc, NamedType, OutputVarReferenceInfo};
 
 use super::felt::FeltType;
 
