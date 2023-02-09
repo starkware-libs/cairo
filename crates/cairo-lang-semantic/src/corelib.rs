@@ -4,6 +4,8 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
+use num_bigint::BigInt;
+use num_traits::Num;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -463,31 +465,60 @@ pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
     get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
 }
 
-/// Returns the name of the libfunc that creates a constant of type `ty`.
-pub fn try_get_const_libfunc_name_by_type(
+/// Returns the name of the libfunc that creates a constant of type `ty`, and the max value of this
+/// type.
+pub fn try_get_literal_params_by_type(
     db: &dyn SemanticGroup,
     ty: TypeId,
-) -> Result<String, SemanticDiagnosticKind> {
+) -> Result<(String, BigInt), SemanticDiagnosticKind> {
     let felt_ty = core_felt_ty(db);
     let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
     let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
     let u32_ty = get_core_ty_by_name(db, "u32".into(), vec![]);
     let u64_ty = get_core_ty_by_name(db, "u64".into(), vec![]);
     if ty == felt_ty {
-        Ok("felt_const".into())
+        Ok((
+            "felt_const".into(),
+            // PRIME - 1
+            BigInt::from_str_radix(
+                "800000000000011000000000000000000000000000000000000000000000000",
+                16,
+            )
+            .unwrap(),
+        ))
     } else if ty == u8_ty {
-        Ok("u8_const".into())
+        Ok(("u8_const".into(), BigInt::from(u8::MAX)))
     } else if ty == u32_ty {
-        Ok("u32_const".into())
+        Ok(("u32_const".into(), BigInt::from(u32::MAX)))
     } else if ty == u64_ty {
-        Ok("u64_const".into())
+        Ok(("u64_const".into(), BigInt::from(u64::MAX)))
     } else if ty == u128_ty {
-        Ok("u128_const".into())
+        Ok(("u128_const".into(), BigInt::from(u128::MAX)))
     } else {
         Err(SemanticDiagnosticKind::NoLiteralFunctionFound)
     }
 }
 
+pub fn get_literal_params_by_type(db: &dyn SemanticGroup, ty: TypeId) -> (String, BigInt) {
+    try_get_literal_params_by_type(db, ty).unwrap()
+}
+
+pub fn try_get_const_libfunc_name_by_type(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Result<String, SemanticDiagnosticKind> {
+    let (libfunc_name, _) = try_get_literal_params_by_type(db, ty)?;
+    Ok(libfunc_name)
+}
+
 pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
     try_get_const_libfunc_name_by_type(db, ty).unwrap()
+}
+
+pub fn try_get_type_max_value(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Result<BigInt, SemanticDiagnosticKind> {
+    let (_, max_value) = try_get_literal_params_by_type(db, ty)?;
+    Ok(max_value)
 }

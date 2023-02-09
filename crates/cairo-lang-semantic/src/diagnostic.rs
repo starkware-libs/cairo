@@ -118,6 +118,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NoLiteralFunctionFound => {
                 "A literal with this type cannot be created.".into()
             }
+            SemanticDiagnosticKind::LiteralOutOfRange { ty } => {
+                format!("The value does not fit within the range of type {}.", ty.format(db))
+            }
             SemanticDiagnosticKind::NotAVariant => {
                 "Not a variant. Use the full name Enum::Variant.".into()
             }
@@ -571,6 +574,9 @@ pub enum SemanticDiagnosticKind {
     UnknownStruct,
     UnknownEnum,
     NoLiteralFunctionFound,
+    LiteralOutOfRange {
+        ty: semantic::TypeId,
+    },
     NotAVariant,
     NotAStruct,
     NotAType,
