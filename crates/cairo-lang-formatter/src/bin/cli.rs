@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::path::Path;
 use std::process::ExitCode;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use cairo_lang_formatter::{CairoFormatter, FormatOutcome, FormatterConfig, StdinFmt};
 use cairo_lang_utils::logging::init_logging;
@@ -52,14 +52,13 @@ fn print_error(error: anyhow::Error, path: String, args: &FormatterArgs) {
 }
 
 struct PathFormatter<'t> {
-    all_correct: &'t Mutex<bool>,
-    own_correct: bool,
+    all_correct: &'t AtomicBool,
     args: &'t FormatterArgs,
     fmt: &'t CairoFormatter,
 }
 
 struct PathFormatterBuilder<'t> {
-    all_correct: &'t Mutex<bool>,
+    all_correct: &'t AtomicBool,
     args: &'t FormatterArgs,
     fmt: &'t CairoFormatter,
 }
@@ -69,12 +68,7 @@ where
     't: 's,
 {
     fn build(&mut self) -> Box<dyn ParallelVisitor + 's> {
-        Box::new(PathFormatter {
-            all_correct: self.all_correct,
-            own_correct: true,
-            args: self.args,
-            fmt: self.fmt,
-        })
+        Box::new(PathFormatter { all_correct: self.all_correct, args: self.args, fmt: self.fmt })
     }
 }
 
@@ -93,24 +87,18 @@ impl<'t> ParallelVisitor for PathFormatter<'t> {
                 Ok(FormatOutcome::Identical(_)) => {}
                 Ok(FormatOutcome::DiffFound(diff)) => {
                     println!("Diff found in file {}:\n {}", path.display(), diff.display_colored());
-                    self.own_correct = false;
+                    self.all_correct.store(false, Ordering::Release);
                 }
                 Err(parsing_error) => {
                     print_error(parsing_error, path.display().to_string(), self.args);
-                    self.own_correct = false;
+                    self.all_correct.store(false, Ordering::Release);
                 }
             }
         } else if let Err(parsing_error) = self.fmt.format_in_place(&path) {
             print_error(parsing_error, path.display().to_string(), self.args);
-            self.own_correct = false;
+            self.all_correct.store(false, Ordering::Release);
         }
         Continue
-    }
-}
-
-impl<'t> Drop for PathFormatter<'t> {
-    fn drop(&mut self) {
-        *self.all_correct.lock().unwrap() &= self.own_correct;
     }
 }
 
@@ -121,12 +109,11 @@ fn format_path(start_path: &str, args: &FormatterArgs, fmt: &CairoFormatter) -> 
         walk.max_depth(Some(1));
     }
 
-    let all_correct = Mutex::new(true);
+    let all_correct = AtomicBool::new(true);
     let mut builder = PathFormatterBuilder { args, fmt, all_correct: &all_correct };
     walk.build_parallel().visit(&mut builder);
-    let result = *builder.all_correct.lock().unwrap();
 
-    result
+    builder.all_correct.load(Ordering::Acquire)
 }
 
 fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
