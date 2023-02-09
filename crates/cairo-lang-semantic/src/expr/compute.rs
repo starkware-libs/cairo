@@ -28,8 +28,8 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
-    true_literal_expr, try_get_const_libfunc_name_by_type, try_get_core_ty_by_name, unit_ty,
+    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr,
+    is_value_in_type_range, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_ty,
     unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
@@ -1150,7 +1150,7 @@ fn literal_to_semantic(
     } else {
         db.core_felt_ty()
     };
-    try_get_const_libfunc_name_by_type(db, ty)
+    is_value_in_type_range(db, ty, value.clone())
         .map_err(|err| ctx.diagnostics.report(literal_syntax, err))?;
     Ok(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
 }
@@ -1171,17 +1171,14 @@ fn short_string_to_semantic(
         } else {
             db.core_felt_ty()
         };
-        try_get_const_libfunc_name_by_type(db, ty)
-            .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?;
         let unescaped_literal = unescape(literal).map_err(|err| {
             ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{err}")))
         })?;
+        let value = BigInt::from_bytes_be(Sign::Plus, unescaped_literal.as_bytes());
+        is_value_in_type_range(db, ty, value.clone())
+            .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?;
         if unescaped_literal.is_ascii() {
-            Ok(ExprLiteral {
-                value: BigInt::from_bytes_be(Sign::Plus, unescaped_literal.as_bytes()),
-                ty,
-                stable_ptr: short_string_syntax.stable_ptr().into(),
-            })
+            Ok(ExprLiteral { value, ty, stable_ptr: short_string_syntax.stable_ptr().into() })
         } else {
             Err(ctx.diagnostics.report(short_string_syntax, ShortStringMustBeAscii))
         }
