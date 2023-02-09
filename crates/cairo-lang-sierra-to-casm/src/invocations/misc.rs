@@ -232,8 +232,7 @@ pub fn validate_under_limit<const K: u8>(
                 assert x = *(range_check++);
                 assert diff = x - u128_limit_minus_1;
                 jump Done if diff != 0;
-                InfiniteLoop:
-                jump InfiniteLoop;
+                fail;
             };
         }
         _ => unreachable!("Only K value of 1 or 2 are supported."),

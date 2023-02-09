@@ -326,3 +326,26 @@ fn test_array_access() {
         "}
     );
 }
+
+#[test]
+fn test_fail() {
+    let mut builder = CasmBuilder::default();
+    casm_build_extend! {builder,
+        const three = 3;
+        tempvar var = three;
+        jump X if var != 0;
+        fail;
+        X:
+    };
+    let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
+        builder.build(["Fallthrough"]);
+    assert!(awaiting_relocations.is_empty());
+    assert_eq!(
+        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
+        indoc! {"
+            [ap + 0] = 3, ap++;
+            jmp rel 4 if [ap + -1] != 0;
+            [fp + -1] = [fp + -1] + 1;
+        "}
+    );
+}
