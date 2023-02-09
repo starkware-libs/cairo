@@ -290,6 +290,116 @@ impl U8Rem of Rem::<u8> {
 }
 
 #[derive(Copy, Drop)]
+extern type u16;
+extern fn u16_const<value>() -> u16 nopanic;
+extern fn u16_to_felt(a: u16) -> felt nopanic;
+
+#[panic_with('u16_from OF', u16_from_felt)]
+extern fn u16_try_from_felt(a: felt) -> Option::<u16> implicits(RangeCheck) nopanic;
+
+extern fn u16_lt(a: u16, b: u16) -> bool implicits(RangeCheck) nopanic;
+extern fn u16_eq(a: u16, b: u16) -> bool implicits() nopanic;
+extern fn u16_le(a: u16, b: u16) -> bool implicits(RangeCheck) nopanic;
+
+impl U16PartialEq of PartialEq::<u16> {
+    #[inline(always)]
+    fn eq(a: u16, b: u16) -> bool {
+        u16_eq(a, b)
+    }
+    #[inline(always)]
+    fn ne(a: u16, b: u16) -> bool {
+        !(a == b)
+    }
+}
+
+impl U16PartialOrd of PartialOrd::<u16> {
+    #[inline(always)]
+    fn le(a: u16, b: u16) -> bool {
+        u16_le(a, b)
+    }
+    #[inline(always)]
+    fn ge(a: u16, b: u16) -> bool {
+        u16_le(b, a)
+    }
+    #[inline(always)]
+    fn lt(a: u16, b: u16) -> bool {
+        u16_lt(a, b)
+    }
+    #[inline(always)]
+    fn gt(a: u16, b: u16) -> bool {
+        u16_lt(b, a)
+    }
+}
+
+extern fn u16_overflowing_add(a: u16, b: u16) -> Result::<u16, u16> implicits(RangeCheck) nopanic;
+extern fn u16_overflowing_sub(a: u16, b: u16) -> Result::<u16, u16> implicits(RangeCheck) nopanic;
+
+fn u16_wrapping_add(a: u16, b: u16) -> u16 implicits(RangeCheck) nopanic {
+    match u16_overflowing_add(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u16_wrapping_sub(a: u16, b: u16) -> u16 implicits(RangeCheck) nopanic {
+    match u16_overflowing_sub(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u16_checked_add(a: u16, b: u16) -> Option::<u16> implicits(RangeCheck) nopanic {
+    match u16_overflowing_add(a, b) {
+        Result::Ok(r) => Option::<u16>::Some(r),
+        Result::Err(r) => Option::<u16>::None(()),
+    }
+}
+
+impl U16Add of Add::<u16> {
+    fn add(a: u16, b: u16) -> u16 {
+        u16_overflowing_add(a, b).expect('u16_add Overflow')
+    }
+}
+
+fn u16_checked_sub(a: u16, b: u16) -> Option::<u16> implicits(RangeCheck) nopanic {
+    match u16_overflowing_sub(a, b) {
+        Result::Ok(r) => Option::<u16>::Some(r),
+        Result::Err(r) => Option::<u16>::None(()),
+    }
+}
+
+impl U16Sub of Sub::<u16> {
+    fn sub(a: u16, b: u16) -> u16 {
+        u16_overflowing_sub(a, b).expect('u16_sub Overflow')
+    }
+}
+
+extern fn u16_is_zero(a: u16) -> IsZeroResult::<u16> implicits() nopanic;
+extern fn u16_safe_divmod(a: u16, b: NonZero::<u16>) -> (u16, u16) implicits(RangeCheck) nopanic;
+
+#[panic_with('u16 is 0', u16_as_non_zero)]
+fn u16_try_as_non_zero(a: u16) -> Option::<NonZero::<u16>> implicits() nopanic {
+    match u16_is_zero(a) {
+        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::NonZero(x) => Option::Some(x),
+    }
+}
+
+impl U16Div of Div::<u16> {
+    fn div(a: u16, b: u16) -> u16 {
+        let (q, r) = u16_safe_divmod(a, u16_as_non_zero(b));
+        q
+    }
+}
+
+impl U16Rem of Rem::<u16> {
+    fn rem(a: u16, b: u16) -> u16 {
+        let (q, r) = u16_safe_divmod(a, u16_as_non_zero(b));
+        r
+    }
+}
+
+#[derive(Copy, Drop)]
 extern type u32;
 extern fn u32_const<value>() -> u32 nopanic;
 extern fn u32_to_felt(a: u32) -> felt nopanic;

@@ -542,6 +542,47 @@ define_libfunc_hierarchy! {
 }
 
 #[derive(Default)]
+pub struct Uint16Traits;
+
+impl UintTraits for Uint16Traits {
+    type UintType = u16;
+    const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u16");
+    const IS_SMALL: bool = true;
+    const CONST: &'static str = "u16_const";
+    const EQUAL: &'static str = "u16_eq";
+    const SQUARE_ROOT: &'static str = "u16_sqrt";
+    const LESS_THAN: &'static str = "u16_lt";
+    const LESS_THAN_OR_EQUAL: &'static str = "u16_le";
+    const OVERFLOWING_ADD: &'static str = "u16_overflowing_add";
+    const OVERFLOWING_SUB: &'static str = "u16_overflowing_sub";
+    const TO_FELT: &'static str = "u16_to_felt";
+    const TRY_FROM_FELT: &'static str = "u16_try_from_felt";
+    const DIVMOD: &'static str = "u16_safe_divmod";
+}
+
+impl IsZeroTraits for Uint16Traits {
+    const IS_ZERO: &'static str = "u16_is_zero";
+    const GENERIC_TYPE_ID: GenericTypeId = <Uint16Type as NamedType>::ID;
+}
+
+/// Type for u16.
+pub type Uint16Type = UintType<Uint16Traits>;
+
+define_libfunc_hierarchy! {
+    pub enum Uint16Libfunc {
+        Const(UintConstLibfunc<Uint16Traits>),
+        Operation(UintOperationLibfunc<Uint16Traits>),
+        LessThan(UintLessThanLibfunc<Uint16Traits>),
+        Equal(UintEqualLibfunc<Uint16Traits>),
+        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint16Traits>),
+        ToFelt(UintToFeltLibfunc<Uint16Traits>),
+        FromFelt(UintFromFeltLibfunc<Uint16Traits>),
+        IsZero(IsZeroLibfunc<Uint16Traits>),
+        Divmod(UintDivmodLibfunc<Uint16Traits>),
+    }, Uint16Concrete
+}
+
+#[derive(Default)]
 pub struct Uint32Traits;
 
 impl UintTraits for Uint32Traits {

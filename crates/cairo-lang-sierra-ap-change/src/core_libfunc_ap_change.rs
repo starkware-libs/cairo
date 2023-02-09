@@ -15,7 +15,7 @@ use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
-    IntOperator, Uint32Concrete, Uint64Concrete, Uint8Concrete,
+    IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
 };
 use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -118,6 +118,23 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint8Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
             Uint8Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint8Concrete::Divmod(_) => vec![ApChange::Known(5)],
+        },
+        CoreConcreteLibfunc::Uint16(libfunc) => match libfunc {
+            Uint16Concrete::Const(_) | Uint16Concrete::ToFelt(_) => vec![ApChange::Known(0)],
+            Uint16Concrete::Operation(libfunc) => match libfunc.operator {
+                IntOperator::OverflowingAdd => {
+                    vec![ApChange::Known(3), ApChange::Known(3)]
+                }
+                IntOperator::OverflowingSub => {
+                    vec![ApChange::Known(2), ApChange::Known(4)]
+                }
+            },
+            Uint16Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
+            Uint16Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+            Uint16Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
+            Uint16Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
+            Uint16Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
+            Uint16Concrete::Divmod(_) => vec![ApChange::Known(5)],
         },
         CoreConcreteLibfunc::Uint32(libfunc) => match libfunc {
             Uint32Concrete::Const(_) | Uint32Concrete::ToFelt(_) => vec![ApChange::Known(0)],
