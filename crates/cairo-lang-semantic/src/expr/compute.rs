@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use ast::{BinaryOperator, PathSegment};
 use cairo_lang_defs::ids::{FunctionSignatureId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
-use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam};
+use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -227,6 +227,14 @@ fn compute_expr_unary_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
 
     let expr_ty = ctx.reduce_ty(expr.ty());
+    if let UnaryOperator::At(_) = unary_op {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(expr_ty));
+        return Ok(Expr::Snapshot(ExprSnapshot {
+            inner: ctx.exprs.alloc(expr),
+            ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        }));
+    }
     let function = match core_unary_operator(ctx.db, &unary_op, expr_ty) {
         Err(err_kind) => {
             return Err(ctx.diagnostics.report(&unary_op, err_kind));
@@ -475,6 +483,7 @@ pub fn compute_root_expr(
         match expr {
             Expr::Constant(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::Tuple(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
+            Expr::Snapshot(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::Assignment(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::Block(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::FunctionCall(call_expr) => {
@@ -1370,7 +1379,11 @@ fn member_access_expr(
                 .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name })),
         },
         TypeLongId::Tuple(_) => {
-            // TODO(spapini): Handle .0, .1, ...;
+            // TODO(spapini): Handle .0, .1, etc. .
+            Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
+        }
+        TypeLongId::Snapshot(_) => {
+            // TODO(spapini): Handle snapshot members.
             Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
         }
         TypeLongId::GenericParameter(_) => Err(ctx

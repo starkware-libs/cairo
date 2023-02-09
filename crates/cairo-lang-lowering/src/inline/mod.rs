@@ -20,7 +20,8 @@ use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest}
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall,
     StatementEnumConstruct, StatementLiteral, StatementMatchEnum, StatementMatchExtern,
-    StatementStructConstruct, StatementStructDestructure, VarRemapping, VariableId,
+    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
+    VariableId,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -334,6 +335,10 @@ impl<'a, 'b> Mapper<'a, 'b> {
                         (concrete_variant.clone(), self.renamed_blocks[block_id])
                     })
                     .collect(),
+            }),
+            Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot {
+                input: self.rename_var(&stmt.input),
+                output: self.rename_var(&stmt.output),
             }),
         }
     }

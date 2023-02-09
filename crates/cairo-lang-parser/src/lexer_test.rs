@@ -47,6 +47,7 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalUse => vec!["use"],
         SyntaxKind::TerminalAnd => vec!["&"],
         SyntaxKind::TerminalAndAnd => vec!["&&"],
+        SyntaxKind::TerminalAt => vec!["@"],
         SyntaxKind::TerminalColon => vec![":"],
         SyntaxKind::TerminalColonColon => vec!["::"],
         SyntaxKind::TerminalComma => vec![","],
@@ -113,6 +114,7 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalUse,
         SyntaxKind::TerminalAnd,
         SyntaxKind::TerminalAndAnd,
+        SyntaxKind::TerminalAt,
         SyntaxKind::TerminalOr,
         SyntaxKind::TerminalOrOr,
         SyntaxKind::TerminalXor,
@@ -315,7 +317,7 @@ fn test_cases() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
     let res: Vec<LexerTerminal> =
-        Lexer::from_text(db, test_source(), "let x: &T = @ 6; //  5+ 3;").collect();
+        Lexer::from_text(db, test_source(), "let x: &T = ` 6; //  5+ 3;").collect();
     assert_eq!(
         res,
         vec![
@@ -356,7 +358,7 @@ fn test_cases() {
                 trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
             },
             LexerTerminal {
-                text: "@".into(),
+                text: "`".into(),
                 kind: SyntaxKind::TerminalBadCharacters,
                 leading_trivia: vec![],
                 trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
@@ -391,7 +393,7 @@ fn test_bad_character() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
 
-    let text = "@";
+    let text = "`";
     let mut lexer = Lexer::from_text(db, test_source(), text);
     let terminal = lexer.next().unwrap();
     let token_text = terminal.text;

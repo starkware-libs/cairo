@@ -1,0 +1,40 @@
+//! > Test panic.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(x: felt) {
+    bar(@x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar(x: @felt) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v1: @core::felt) <- snapshot(v0)
+  () <- test::bar(v1)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: @core::felt) <- snapshot(v0)
+  () <- test::bar(v1)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)

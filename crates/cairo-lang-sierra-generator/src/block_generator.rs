@@ -235,6 +235,7 @@ pub fn generate_statement_code(
         lowering::Statement::StructDestructure(statement) => {
             generate_statement_struct_destructure_code(context, statement, statement_location)
         }
+        lowering::Statement::Snapshot(_) => todo!(),
     }
 }
 

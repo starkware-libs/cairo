@@ -154,7 +154,8 @@ impl<'a> BorrowChecker<'a> {
                 | Statement::Call(_)
                 | Statement::StructConstruct(_)
                 | Statement::StructDestructure(_)
-                | Statement::EnumConstruct(_) => continue,
+                | Statement::EnumConstruct(_)
+                | Statement::Snapshot(_) => continue,
             };
             return Some((stmt_offset + i, demand));
         }

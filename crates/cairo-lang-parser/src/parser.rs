@@ -568,6 +568,7 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is a unary operator, and returns a GreenId of the operator.
     fn parse_unary_operator(&mut self) -> UnaryOperatorGreen {
         match self.peek().kind {
+            SyntaxKind::TerminalAt => self.take::<TerminalAt>().into(),
             SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
             SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
             _ => unreachable!(),
@@ -679,6 +680,15 @@ impl<'a> Parser<'a> {
     fn try_parse_type_expr(&mut self) -> Option<ExprGreen> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
+            SyntaxKind::TerminalAt => {
+                let op = self.parse_unary_operator();
+                let expr = self.try_parse_type_expr().unwrap_or_else(|| {
+                    self.create_and_report_missing::<Expr>(
+                        ParserDiagnosticKind::MissingTypeExpression,
+                    )
+                });
+                Some(ExprUnary::new_green(self.db, op, expr).into())
+            }
             SyntaxKind::TerminalIdentifier => Some(self.parse_path().into()),
             SyntaxKind::TerminalLParen => Some(self.expect_parenthesized_expr()),
             _ => {
