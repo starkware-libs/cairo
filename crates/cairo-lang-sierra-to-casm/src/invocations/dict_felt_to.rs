@@ -150,44 +150,59 @@ fn build_dict_felt_to_squash(
             const one = 1;
             const zero = 0;
             const gas_refund_per_access = DICT_SQUASH_UNIQUE_KEY_COST;
+            // DestructDict is a wrapper for that provides a clean scope for dict_squash where local variables can be allocated.
+            // Push DestructDict arguments.
+            tempvar dict_destruct_arg_range_check_ptr = range_check_ptr;
+            tempvar dict_destruct_arg_gas_builtin = gas_builtin;
+            tempvar dict_destruct_arg_dict_manager_ptr = dict_manager_ptr;
+            tempvar dict_destruct_arg_dict_end_address = dict_end_address;
+            let (final_range_check_ptr,
+                final_gas_builtin,
+                final_dict_manager_ptr,
+                final_squashed_dict_start,
+                final_squashed_dict_end) = call DestructDict;
+            jump DONE;
+            DestructDict:
+            // Allocates function local variables for data needed after the function calls.
             localvar dict_index;
             localvar dict_accesses_len;
-            localvar local_gas_builtin = gas_builtin;
+            localvar local_gas_builtin = dict_destruct_arg_gas_builtin;
+            localvar local_range_check_ptr;
+            localvar local_squashed_dict_start;
+            localvar local_squashed_dict_end;
+            ap += 6;
             // Guess the index of the dictionary.
-            hint GetDictIndex {dict_manager_ptr: dict_manager_ptr, dict_end_ptr: dict_end_address} into {dict_index: dict_index};
-            localvar infos = *(dict_manager_ptr++);
-            localvar n_dicts = *(dict_manager_ptr++);
-            localvar n_destructed = *(dict_manager_ptr++);
+            hint GetDictIndex {dict_manager_ptr: dict_destruct_arg_dict_manager_ptr, dict_end_ptr: dict_destruct_arg_dict_end_address} into {dict_index: dict_index};
+            localvar infos = *(dict_destruct_arg_dict_manager_ptr++);
+            localvar n_dicts = *(dict_destruct_arg_dict_manager_ptr++);
+            localvar n_destructed = *(dict_destruct_arg_dict_manager_ptr++);
             // Add a reference the new dict manager pointer to return.
-            let new_dict_manager_ptr = dict_manager_ptr;
+            let new_dict_manager_ptr = dict_destruct_arg_dict_manager_ptr;
             // Verify that dict_index < n_dicts.
-            assert dict_index = *(range_check_ptr++); // Range check use
+            assert dict_index = *(dict_destruct_arg_range_check_ptr++); // Range check use
             tempvar n_dicts_minus_1 = n_dicts - one;
             tempvar n_dicts_minus_1_minus_index = n_dicts_minus_1 - dict_index;
-            assert n_dicts_minus_1_minus_index = *(range_check_ptr++); // Range check use
+            assert n_dicts_minus_1_minus_index = *(dict_destruct_arg_range_check_ptr++); // Range check use
             // Write the missing data in the dict_info (destruction index and the end of the dict_segment).
             tempvar info_offset = dict_index * dict_info_size;
             tempvar info_ptr = infos + info_offset;
             assert n_destructed = info_ptr[2];
-            assert dict_end_address = info_ptr[1];
+            assert dict_destruct_arg_dict_end_address = info_ptr[1];
+        }
+        // Split just to avoid recursion limit when the macro is parsed.
+        casm_build_extend! {casm_builder,
             // Write a new dict_manager data to the dict_manager segment (same except for the n_destructed which is incremented).
-            assert infos = *(dict_manager_ptr++);
-            assert n_dicts = *(dict_manager_ptr++);
+            assert infos = *(dict_destruct_arg_dict_manager_ptr++);
+            assert n_dicts = *(dict_destruct_arg_dict_manager_ptr++);
             tempvar n_destructed_plus_1 = n_destructed + one;
-            assert n_destructed_plus_1 = *(dict_manager_ptr++);
+            assert n_destructed_plus_1 = *(dict_destruct_arg_dict_manager_ptr++);
             // Find the len of the accesses segment.
             tempvar dict_accesses_start = info_ptr[0];
-            assert dict_accesses_len = dict_end_address - dict_accesses_start;
-
-            // Allocates function local variables.
-            localvar local_range_check_ptr;
-            localvar local_squashed_dict_start;
-            localvar local_squashed_dict_end;
-            ap += 3;
+            assert dict_accesses_len = dict_destruct_arg_dict_end_address - dict_accesses_start;
             // Push DictSquash arguments.
-            tempvar dict_squash_arg_range_check_ptr = range_check_ptr;
+            tempvar dict_squash_arg_range_check_ptr = dict_destruct_arg_range_check_ptr;
             tempvar dict_squash_arg_dict_accesses_start = info_ptr[0];
-            tempvar dict_squash_arg_dict_accesses_end = dict_end_address;
+            tempvar dict_squash_arg_dict_accesses_end = dict_destruct_arg_dict_end_address;
             let (range_check_ptr, squashed_dict_start, squashed_dict_end) = call DictSquash;
             // Store the returned values as local as they are needed after DefaultDictFinalizeInner.
             assert local_range_check_ptr = range_check_ptr;
@@ -208,12 +223,13 @@ fn build_dict_felt_to_squash(
             tempvar n_refunded_accesses = accesses_len_minus_squashed_len / dict_access_size;
             tempvar gas_to_refund = n_refunded_accesses * gas_refund_per_access;
             // Push the returned variables.
-            tempvar final_range_check_ptr = local_range_check_ptr;
-            tempvar final_gas_builtin = local_gas_builtin + gas_to_refund;
-            tempvar final_dict_manager_ptr = new_dict_manager_ptr;
-            tempvar final_squashed_dict_start = local_squashed_dict_start;
-            tempvar final_squashed_dict_end = local_squashed_dict_end;
-            jump DONE;
+            tempvar returned_range_check_ptr = local_range_check_ptr;
+            tempvar returned_gas_builtin = local_gas_builtin + gas_to_refund;
+            tempvar returned_dict_manager_ptr = new_dict_manager_ptr;
+            tempvar returned_squashed_dict_start = local_squashed_dict_start;
+            tempvar returned_squashed_dict_end = local_squashed_dict_end;
+            ret;
+            #{ fixed_steps += steps; steps = 0; }
         };
         (
             dict_access_size,
