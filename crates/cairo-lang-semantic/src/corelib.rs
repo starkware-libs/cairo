@@ -4,6 +4,8 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
+use num_bigint::BigInt;
+use num_traits::{Num, Signed};
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -463,34 +465,52 @@ pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
     get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
 }
 
-/// Returns the name of the libfunc that creates a constant of type `ty`.
-pub fn try_get_const_libfunc_name_by_type(
-    db: &dyn SemanticGroup,
-    ty: TypeId,
-) -> Result<String, SemanticDiagnosticKind> {
-    let felt_ty = core_felt_ty(db);
-    let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
-    let u16_ty = get_core_ty_by_name(db, "u16".into(), vec![]);
-    let u32_ty = get_core_ty_by_name(db, "u32".into(), vec![]);
-    let u64_ty = get_core_ty_by_name(db, "u64".into(), vec![]);
-    let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
-    if ty == felt_ty {
-        Ok("felt_const".into())
-    } else if ty == u8_ty {
-        Ok("u8_const".into())
-    } else if ty == u16_ty {
-        Ok("u16_const".into())
-    } else if ty == u32_ty {
-        Ok("u32_const".into())
-    } else if ty == u64_ty {
-        Ok("u64_const".into())
-    } else if ty == u128_ty {
-        Ok("u128_const".into())
+/// Returns the name of the libfunc that creates a constant of type `ty`;
+pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
+    if ty == core_felt_ty(db) {
+        "felt_const".into()
+    } else if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
+        "u8_const".into()
+    } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
+        "u16_const".into()
+    } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
+        "u32_const".into()
+    } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
+        "u64_const".into()
+    } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
+        "u128_const".into()
     } else {
-        Err(SemanticDiagnosticKind::NoLiteralFunctionFound)
+        panic!("No const libfunc for type {}.", ty.format(db))
     }
 }
 
-pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
-    try_get_const_libfunc_name_by_type(db, ty).unwrap()
+/// Validates that a given type is valid for a literal and that the value fits the range of the
+/// specific type.
+pub fn validate_literal(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+    value: BigInt,
+) -> Result<(), SemanticDiagnosticKind> {
+    let is_out_of_range = if ty == core_felt_ty(db) {
+        value.is_negative()
+            || value
+                > BigInt::from_str_radix(
+                    "800000000000011000000000000000000000000000000000000000000000000",
+                    16,
+                )
+                .unwrap()
+    } else if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
+        value.is_negative() || value.bits() > 8
+    } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
+        value.is_negative() || value.bits() > 16
+    } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
+        value.is_negative() || value.bits() > 32
+    } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
+        value.is_negative() || value.bits() > 64
+    } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
+        value.is_negative() || value.bits() > 128
+    } else {
+        return Err(SemanticDiagnosticKind::NoLiteralFunctionFound);
+    };
+    if is_out_of_range { Err(SemanticDiagnosticKind::LiteralOutOfRange { ty }) } else { Ok(()) }
 }
