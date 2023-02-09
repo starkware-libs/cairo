@@ -96,7 +96,7 @@ fn gather_inlining_info(
     for (block_id, block) in lowered.blocks.iter() {
         match &block.end {
             FlatBlockEnd::Return(returns) => {
-                if returns.iter().any(|r| input_vars.contains(r)) {
+                if block_id == root_block_id && returns.iter().any(|r| input_vars.contains(r)) {
                     // TODO(ilya): Remove the following limitation.
                     if report_diagnostics {
                         diagnostics.report(
