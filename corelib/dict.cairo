@@ -27,6 +27,8 @@ impl DictFeltToImpl<T> of DictFeltToTrait::<T> {
         dict_felt_to_read(ref self, key)
     }
     fn squash(self: DictFeltTo::<T>) -> SquashedDictFeltTo::<T> {
+        // TODO(ilya): Currently prevents inlining. remove after adding #[inline(never)].
+        let _ignore = 'extra-statement';
         dict_felt_to_squash(self)
     }
 }
