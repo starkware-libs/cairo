@@ -2,7 +2,7 @@
 //!
 //! This crate is responsible for formatting Cairo code.
 pub mod cairo_formatter;
-pub mod formatter;
+pub mod formatter_impl;
 pub mod node_properties;
 
 use std::sync::Arc;
@@ -14,7 +14,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 pub use crate::cairo_formatter::{CairoFormatter, FormatOutcome, StdinFmt};
-use crate::formatter::Formatter;
+use crate::formatter_impl::FormatterImpl;
 
 #[cfg(test)]
 mod test;
@@ -33,7 +33,7 @@ pub fn get_formatted_file(
     syntax_root: &SyntaxNode,
     config: FormatterConfig,
 ) -> String {
-    let mut formatter = Formatter::new(db, config);
+    let mut formatter = FormatterImpl::new(db, config);
     formatter.get_formatted_string(syntax_root)
 }
 
