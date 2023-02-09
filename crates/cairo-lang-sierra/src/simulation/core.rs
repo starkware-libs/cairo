@@ -562,6 +562,14 @@ fn simulate_u8_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint8Concrete::SquareRoot(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint8(value)] => {
+                let root = BigInt::from(*value).sqrt();
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(root.to_u128().unwrap())], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint8Concrete::Equal(_) => match inputs {
             [CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
                 // "False" branch (branch 0) is the case a != b.
@@ -638,6 +646,14 @@ fn simulate_u16_libfunc(
                 Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
             }
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint16Concrete::SquareRoot(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint16(value)] => {
+                let root = BigInt::from(*value).sqrt();
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(root.to_u128().unwrap())], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint16Concrete::Equal(_) => match inputs {
@@ -718,6 +734,14 @@ fn simulate_u32_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint32Concrete::SquareRoot(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint32(value)] => {
+                let root = BigInt::from(*value).sqrt();
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(root.to_u128().unwrap())], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint32Concrete::Equal(_) => match inputs {
             [CoreValue::Uint32(a), CoreValue::Uint32(b)] => {
                 // "False" branch (branch 0) is the case a != b.
@@ -794,6 +818,14 @@ fn simulate_u64_libfunc(
                 Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
             }
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::SquareRoot(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint64(value)] => {
+                let root = BigInt::from(*value).sqrt();
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(root.to_u128().unwrap())], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint64Concrete::Equal(_) => match inputs {
