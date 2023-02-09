@@ -70,6 +70,7 @@ pub fn function_all_implicits(
         GenericFunctionId::Impl(impl_function) => db
             .function_with_body_all_implicits_vec(FunctionWithBodyId::Impl(impl_function.function)),
         GenericFunctionId::Trait(_) => unreachable!(),
+        GenericFunctionId::ImplGenericParam(_) => todo!("Not yet supported"),
     }
 }
 
@@ -116,6 +117,7 @@ pub fn function_with_body_all_implicits(
                     db.extern_function_declaration_implicits(extern_function)?.into_iter().collect()
                 }
                 GenericFunctionId::Trait(_) => unreachable!(),
+                GenericFunctionId::ImplGenericParam(_) => todo!("Not yet supported"),
             };
         all_implicits.extend(&current_implicits);
     }
@@ -190,6 +192,7 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
             Ok(db.extern_function_signature(extern_function)?.panicable)
         }
         GenericFunctionId::Trait(_) => unreachable!(),
+        GenericFunctionId::ImplGenericParam(_) => todo!("Not yet supported"),
     }
 }
 
@@ -205,23 +208,25 @@ pub fn function_with_body_may_panic(
     for direct_callee in db.function_with_body_direct_callees(function)? {
         // For a function with a body, call this method recursively. To avoid cycles, first
         // check that the callee is not in this function's SCC.
-        let direct_callee_representative =
-            match db.lookup_intern_function(direct_callee).function.generic_function {
-                GenericFunctionId::Free(free_function) => {
-                    function_scc_representative(db, FunctionWithBodyId::Free(free_function))
+        let direct_callee_representative = match db
+            .lookup_intern_function(direct_callee)
+            .function
+            .generic_function
+        {
+            GenericFunctionId::Free(free_function) => {
+                function_scc_representative(db, FunctionWithBodyId::Free(free_function))
+            }
+            GenericFunctionId::Impl(impl_function) => {
+                function_scc_representative(db, FunctionWithBodyId::Impl(impl_function.function))
+            }
+            GenericFunctionId::Extern(extern_function) => {
+                if db.extern_function_signature(extern_function)?.panicable {
+                    return Ok(true);
                 }
-                GenericFunctionId::Impl(impl_function) => function_scc_representative(
-                    db,
-                    FunctionWithBodyId::Impl(impl_function.function),
-                ),
-                GenericFunctionId::Extern(extern_function) => {
-                    if db.extern_function_signature(extern_function)?.panicable {
-                        return Ok(true);
-                    }
-                    continue;
-                }
-                GenericFunctionId::Trait(_) => unreachable!(),
-            };
+                continue;
+            }
+            GenericFunctionId::Trait(_) | GenericFunctionId::ImplGenericParam(_) => unreachable!(),
+        };
         if direct_callee_representative == scc_representative {
             // We already have the implicits of this SCC - do nothing.
             continue;
