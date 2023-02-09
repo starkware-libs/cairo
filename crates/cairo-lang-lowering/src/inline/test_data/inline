@@ -578,6 +578,62 @@ End:
 
 //! > ==========================================================================
 
+//! > Test preventing inlining heuristic
+
+//! > test_function_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt) -> felt {
+  bar(a) + bar2(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn bar(a: felt) -> felt {
+  bar2(a)
+}
+
+#[inline(never)]
+fn bar2(a: felt) -> felt {
+  1
+}
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+  (v2: core::felt) <- test::bar2(v0)
+  (v3: core::felt) <- core::FeltAdd::add(v1, v2)
+End:
+  Return(v3)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+  (v2: core::felt) <- test::bar2(v0)
+  (v3: core::felt) <- core::felt_add(v1, v2)
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v3)
+
+//! > lowering_diagnostics
+
+//! > semantic_diagnostics
+
+//! > ==========================================================================
+
 //! > Test returning an input variable as is (not in root block).
 
 //! > test_function_name
