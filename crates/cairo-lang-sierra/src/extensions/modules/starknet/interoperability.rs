@@ -88,6 +88,27 @@ impl NoGenericArgsGenericLibfunc for ContractAddressTryFromFeltLibfunc {
     }
 }
 
+/// Libfunc for converting a ContractAddress into a felt.
+#[derive(Default)]
+pub struct ContractAddressToFeltLibfunc {}
+impl NoGenericArgsGenericLibfunc for ContractAddressToFeltLibfunc {
+    const STR_ID: &'static str = "contract_address_to_felt";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch(
+            vec![context.get_concrete_type(ContractAddressType::id(), &[])?],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(FeltType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
 /// Libfunc for a storage call contract system call.
 #[derive(Default)]
 pub struct CallContractLibfunc {}

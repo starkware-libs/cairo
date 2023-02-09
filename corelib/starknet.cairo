@@ -38,6 +38,8 @@ extern fn call_contract_syscall(
 extern fn contract_address_try_from_felt(
     address: felt
 ) -> Option::<ContractAddress> implicits(RangeCheck) nopanic;
+extern fn contract_address_to_felt(address: ContractAddress) -> felt nopanic;
+
 
 // Events.
 extern fn emit_event_syscall(
