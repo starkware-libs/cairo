@@ -373,6 +373,28 @@ pub fn build_sqrt(
     ))
 }
 
+/// Handles a small uint wide multiplication.
+pub fn build_small_wide_mul(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [a, b] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref a;
+        deref_or_immediate b;
+    };
+
+    casm_build_extend! {casm_builder,
+        let res = a * b;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res]], None)],
+        CostValidationInfo::default(),
+    ))
+}
+
 /// Builds instructions for Sierra u8 operations.
 pub fn build_u8(
     libfunc: &Uint8Concrete,
@@ -394,6 +416,7 @@ pub fn build_u8(
         Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
         Uint8Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint8Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint8Concrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }
 
@@ -418,6 +441,7 @@ pub fn build_u16(
         Uint16Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
         Uint16Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint16Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint16Concrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }
 
@@ -442,6 +466,7 @@ pub fn build_u32(
         Uint32Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
         Uint32Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint32Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint32Concrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }
 
@@ -466,5 +491,6 @@ pub fn build_u64(
         Uint64Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
         Uint64Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint64Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint64Concrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }

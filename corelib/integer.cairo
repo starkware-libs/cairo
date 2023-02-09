@@ -264,6 +264,14 @@ impl U8Sub of Sub::<u8> {
     }
 }
 
+extern fn u8_wide_mul(a: u8, b: u8) -> u16 implicits() nopanic;
+impl U8Mul of Mul::<u8> {
+    fn mul(a: u8, b: u8) -> u8 {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        u8_try_from_felt(u16_to_felt(u8_wide_mul(a, b))).expect('u8_mul Overflow')
+    }
+}
+
 extern fn u8_is_zero(a: u8) -> IsZeroResult::<u8> implicits() nopanic;
 extern fn u8_safe_divmod(a: u8, b: NonZero::<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
 
@@ -371,6 +379,14 @@ fn u16_checked_sub(a: u16, b: u16) -> Option::<u16> implicits(RangeCheck) nopani
 impl U16Sub of Sub::<u16> {
     fn sub(a: u16, b: u16) -> u16 {
         u16_overflowing_sub(a, b).expect('u16_sub Overflow')
+    }
+}
+
+extern fn u16_wide_mul(a: u16, b: u16) -> u32 implicits() nopanic;
+impl U16Mul of Mul::<u16> {
+    fn mul(a: u16, b: u16) -> u16 {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        u16_try_from_felt(u32_to_felt(u16_wide_mul(a, b))).expect('u16_mul Overflow')
     }
 }
 
@@ -484,6 +500,14 @@ impl U32Sub of Sub::<u32> {
     }
 }
 
+extern fn u32_wide_mul(a: u32, b: u32) -> u64 implicits() nopanic;
+impl U32Mul of Mul::<u32> {
+    fn mul(a: u32, b: u32) -> u32 {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        u32_try_from_felt(u64_to_felt(u32_wide_mul(a, b))).expect('u32_mul Overflow')
+    }
+}
+
 extern fn u32_is_zero(a: u32) -> IsZeroResult::<u32> implicits() nopanic;
 extern fn u32_safe_divmod(a: u32, b: NonZero::<u32>) -> (u32, u32) implicits(RangeCheck) nopanic;
 
@@ -591,6 +615,14 @@ fn u64_checked_sub(a: u64, b: u64) -> Option::<u64> implicits(RangeCheck) nopani
 impl U64Sub of Sub::<u64> {
     fn sub(a: u64, b: u64) -> u64 {
         u64_overflowing_sub(a, b).expect('u64_sub Overflow')
+    }
+}
+
+extern fn u64_wide_mul(a: u64, b: u64) -> u128 implicits() nopanic;
+impl U64Mul of Mul::<u64> {
+    fn mul(a: u64, b: u64) -> u64 {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        u64_try_from_felt(u128_to_felt(u64_wide_mul(a, b))).expect('u64_mul Overflow')
     }
 }
 

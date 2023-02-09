@@ -597,6 +597,13 @@ fn simulate_u8_libfunc(
         },
         Uint8Concrete::IsZero(_) => unimplemented!(),
         Uint8Concrete::Divmod(_) => unimplemented!(),
+        Uint8Concrete::WideMul(_) => match inputs {
+            [CoreValue::Uint8(lhs), CoreValue::Uint8(rhs)] => {
+                Ok((vec![CoreValue::Uint16(u16::from(*lhs) * u16::from(*rhs))], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
@@ -668,6 +675,13 @@ fn simulate_u16_libfunc(
         },
         Uint16Concrete::IsZero(_) => unimplemented!(),
         Uint16Concrete::Divmod(_) => unimplemented!(),
+        Uint16Concrete::WideMul(_) => match inputs {
+            [CoreValue::Uint16(lhs), CoreValue::Uint16(rhs)] => {
+                Ok((vec![CoreValue::Uint32(u32::from(*lhs) * u32::from(*rhs))], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
@@ -739,6 +753,13 @@ fn simulate_u32_libfunc(
         },
         Uint32Concrete::IsZero(_) => unimplemented!(),
         Uint32Concrete::Divmod(_) => unimplemented!(),
+        Uint32Concrete::WideMul(_) => match inputs {
+            [CoreValue::Uint32(lhs), CoreValue::Uint32(rhs)] => {
+                Ok((vec![CoreValue::Uint64(u64::from(*lhs) * u64::from(*rhs))], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
@@ -810,6 +831,13 @@ fn simulate_u64_libfunc(
         },
         Uint64Concrete::IsZero(_) => unimplemented!(),
         Uint64Concrete::Divmod(_) => unimplemented!(),
+        Uint64Concrete::WideMul(_) => match inputs {
+            [CoreValue::Uint64(lhs), CoreValue::Uint64(rhs)] => {
+                Ok((vec![CoreValue::Uint128(u128::from(*lhs) * u128::from(*rhs))], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
