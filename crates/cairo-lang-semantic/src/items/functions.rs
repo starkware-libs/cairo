@@ -2,14 +2,14 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    ExternFunctionId, FreeFunctionId, FunctionSignatureId, FunctionWithBodyId, ImplFunctionId,
-    ModuleItemId, ParamLongId, TopLevelLanguageElementId,
+    ExternFunctionId, FreeFunctionId, FunctionSignatureId, FunctionWithBodyId, GenericParamId,
+    ImplFunctionId, ModuleItemId, ParamLongId, TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
+use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionFrom};
 use itertools::{chain, Itertools};
 
 use super::attribute::Attribute;
@@ -21,12 +21,22 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
-use crate::{semantic, ConcreteImplId, GenericArgumentId, Parameter, SemanticDiagnostic};
+use crate::{
+    semantic, ConcreteImplId, GenericArgumentId, GenericParam, Parameter, SemanticDiagnostic,
+};
 
+/// A generic function of a concrete impl.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteImplGenericFunctionId {
-    pub concrete_impl: ConcreteImplId,
+    pub concrete_impl_id: ConcreteImplId,
     pub function: ImplFunctionId,
+}
+
+/// An associated function of an impl generic parameter(i.e. `TImpl::foo`).
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ImplGenericParamFunctionId {
+    pub param: GenericParamId,
+    pub trait_function_id: TraitFunctionId,
 }
 
 /// The ID of a generic function that can be concretized.
@@ -38,6 +48,8 @@ pub enum GenericFunctionId {
     Extern(ExternFunctionId),
     /// A generic function of a concrete impl.
     Impl(ConcreteImplGenericFunctionId),
+    /// A generic function of a concrete impl.
+    ImplGenericParam(ImplGenericParamFunctionId),
     // TODO(spapini): Remove when we separate semantic representations.
     Trait(ConcreteTraitGenericFunctionId),
 }
@@ -49,9 +61,9 @@ impl GenericFunctionId {
     ) {
         match self {
             GenericFunctionId::Impl(f) => {
-                let mut long_impl = db.lookup_intern_concrete_impl(f.concrete_impl);
+                let mut long_impl = db.lookup_intern_concrete_impl(f.concrete_impl_id);
                 functor(&mut long_impl.generic_args);
-                f.concrete_impl = db.intern_concrete_impl(long_impl);
+                f.concrete_impl_id = db.intern_concrete_impl(long_impl);
             }
             GenericFunctionId::Trait(f) => {
                 let mut long_trait = db.lookup_intern_concrete_trait(f.concrete_trait_id(db));
@@ -73,7 +85,7 @@ impl GenericFunctionId {
             GenericFunctionId::Impl(id) => {
                 format!(
                     "{:?}::{}",
-                    id.concrete_impl.debug(db.elongate()),
+                    id.concrete_impl_id.debug(db.elongate()),
                     id.function.name(defs_db)
                 )
             }
@@ -84,6 +96,9 @@ impl GenericFunctionId {
                     id.function_id(db).name(defs_db)
                 )
             }
+            GenericFunctionId::ImplGenericParam(id) => {
+                format!("{}::{}", id.param.name(defs_db), id.trait_function_id.name(defs_db))
+            }
         }
     }
     /// Gets the FunctionSignatureId of the generic function.
@@ -93,6 +108,9 @@ impl GenericFunctionId {
             GenericFunctionId::Extern(id) => FunctionSignatureId::Extern(id),
             GenericFunctionId::Impl(id) => FunctionSignatureId::Impl(id.function),
             GenericFunctionId::Trait(id) => FunctionSignatureId::Trait(id.function_id(db)),
+            GenericFunctionId::ImplGenericParam(id) => {
+                FunctionSignatureId::Trait(id.trait_function_id)
+            }
         }
     }
 }
@@ -159,6 +177,7 @@ impl FunctionId {
             }
             GenericFunctionId::Trait(_) => None,
             GenericFunctionId::Extern(_) => None,
+            GenericFunctionId::ImplGenericParam(_) => None,
         }
     }
 }
@@ -206,7 +225,7 @@ impl ConcreteFunctionWithBody {
                 GenericSubstitution::new(&db.free_function_generic_params(f)?, &self.generic_args)
             }
             GenericFunctionWithBodyId::Impl(f) => {
-                let concrete_impl = db.lookup_intern_concrete_impl(f.concrete_impl);
+                let concrete_impl = db.lookup_intern_concrete_impl(f.concrete_impl_id);
                 GenericSubstitution::new(
                     &chain!(
                         db.impl_function_generic_params(f.function)?,
@@ -464,7 +483,7 @@ pub fn concrete_function_signature(
     let substitution = match generic_function {
         GenericFunctionId::Free(_) | GenericFunctionId::Extern(_) => function_substitution,
         GenericFunctionId::Impl(id) => {
-            let long_concrete_impl = db.lookup_intern_concrete_impl(id.concrete_impl);
+            let long_concrete_impl = db.lookup_intern_concrete_impl(id.concrete_impl_id);
             let generic_params = db.impl_def_generic_params(long_concrete_impl.impl_def_id)?;
             let generic_args = long_concrete_impl.generic_args;
             function_substitution.concat(GenericSubstitution::new(&generic_params, &generic_args))
@@ -472,6 +491,14 @@ pub fn concrete_function_signature(
         GenericFunctionId::Trait(id) => {
             let long_concrete_trait = db.lookup_intern_concrete_trait(id.concrete_trait_id(db));
             let generic_params = db.trait_generic_params(long_concrete_trait.trait_id)?;
+            let generic_args = long_concrete_trait.generic_args;
+            function_substitution.concat(GenericSubstitution::new(&generic_params, &generic_args))
+        }
+        GenericFunctionId::ImplGenericParam(id) => {
+            let generic_params =
+                db.trait_generic_params(id.trait_function_id.trait_id(db.upcast()))?;
+            let param = extract_matches!(db.generic_param_semantic(id.param)?, GenericParam::Impl);
+            let long_concrete_trait = db.lookup_intern_concrete_trait(param.concrete_trait?);
             let generic_args = long_concrete_trait.generic_args;
             function_substitution.concat(GenericSubstitution::new(&generic_params, &generic_args))
         }

@@ -15,12 +15,12 @@ foo
 extern type MyType;
 
 //! > expected_diagnostics
-error: Function `mul` of trait `core::traits::Mul::<?0>` has no implementation in the context.
+error: Trait `core::traits::Mul::<?0>` has no implementation in the context.
  --> lib.cairo:3:9
     a + a * a;
         ^***^
 
-error: Function `add` of trait `core::traits::Add::<?1>` has no implementation in the context.
+error: Trait `core::traits::Add::<?1>` has no implementation in the context.
  --> lib.cairo:3:5
     a + a * a;
     ^*******^
@@ -64,7 +64,7 @@ error: Unexpected return type. Expected: "()", found: "?17".
 fn foo(a: felt, b: bool) implicits(RangeCheck) {
                                                ^
 
-error: Function `gt` of trait `core::traits::PartialOrd::<?16>` has no implementation in the context.
+error: Trait `core::traits::PartialOrd::<?16>` has no implementation in the context.
  --> lib.cairo:7:5
     a>a>a;
     ^***^
