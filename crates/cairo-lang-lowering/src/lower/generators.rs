@@ -55,19 +55,12 @@ impl Call {
             .into_iter()
             .map(|ty| ctx.new_var(VarRequest { ty, location: self.location }))
             .collect();
-        let implicit_outputs = ctx
-            .db
-            .function_all_implicits(self.function)
-            .unwrap_or_default()
-            .into_iter()
-            .map(|ty| ctx.new_var(VarRequest { ty, location: self.location }))
-            .collect();
         let ref_outputs = self
             .ref_tys
             .into_iter()
             .map(|ty| ctx.new_var(VarRequest { ty, location: self.location }))
             .collect();
-        let outputs = chain!(&implicit_outputs, &ref_outputs, &returns).copied().collect();
+        let outputs = chain!(&ref_outputs, &returns).copied().collect();
 
         scope.push_statement(Statement::Call(StatementCall {
             function: self.function,
@@ -75,7 +68,7 @@ impl Call {
             outputs,
         }));
 
-        CallResult { returns, ref_outputs, implicit_outputs }
+        CallResult { returns, ref_outputs }
     }
 }
 /// Result of adding a Call statement.
@@ -84,8 +77,6 @@ pub struct CallResult {
     pub returns: Vec<VariableId>,
     /// Output variables for function's `ref` parameters.
     pub ref_outputs: Vec<VariableId>,
-    /// Output variables for function's implicit parameters.
-    pub implicit_outputs: Vec<VariableId>,
 }
 
 /// Generator for [StatementEnumConstruct].

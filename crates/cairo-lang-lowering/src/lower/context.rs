@@ -181,8 +181,6 @@ pub struct LoweredExprExternEnum {
     pub concrete_enum_id: semantic::ConcreteEnumId,
     pub inputs: Vec<VariableId>,
     pub ref_args: Vec<semantic::VarId>,
-    /// The implicits used/changed by the function.
-    pub implicits: Vec<semantic::TypeId>,
     pub location: StableLocation,
 }
 impl LoweredExprExternEnum {
@@ -201,12 +199,6 @@ impl LoweredExprExternEnum {
             .map(|concrete_variant| {
                 let mut subscope = scope.subscope();
 
-                // Bind implicits.
-                for ty in &self.implicits {
-                    let var =
-                        subscope.add_input(ctx, VarRequest { ty: *ty, location: self.location });
-                    subscope.put_implicit(ctx, *ty, var);
-                }
                 // Bind the ref parameters.
                 for semantic in &self.ref_args {
                     let var = subscope.add_input(

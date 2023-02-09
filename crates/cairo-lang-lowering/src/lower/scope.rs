@@ -3,7 +3,6 @@ use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use itertools::chain;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use crate::{
@@ -21,10 +20,6 @@ pub struct BlockBuilder {
     /// Variables given as inputs to the block, including implicits. Relevant for function blocks /
     /// match arm blocks, etc...
     inputs: Vec<VariableId>,
-    /// A store for implicit variables, owning their OwnedVariable instances.
-    implicits: OrderedHashMap<semantic::TypeId, VariableId>,
-    // The implicits that are changed in this block.
-    changed_implicits: OrderedHashSet<semantic::TypeId>,
     /// A store for semantic variables, owning their OwnedVariable instances.
     semantics: OrderedHashMap<semantic::VarId, VariableId>,
     // The semantic variables that are added/changed in this block.
@@ -45,8 +40,6 @@ impl BlockBuilder {
             current_refs: (0..(ctx.implicits.len() + ctx.ref_params.len())).map(|_| None).collect(),
             initial_refs: None,
             inputs: vec![],
-            implicits: Default::default(),
-            changed_implicits: Default::default(),
             semantics: Default::default(),
             changed_semantics: Default::default(),
             statements: Default::default(),
@@ -61,8 +54,6 @@ impl BlockBuilder {
             current_refs: self.current_refs.clone(),
             initial_refs: None,
             inputs: vec![],
-            implicits: self.implicits.clone(),
-            changed_implicits: Default::default(),
             semantics: self.semantics.clone(),
             changed_semantics: Default::default(),
             statements: Default::default(),
@@ -83,32 +74,6 @@ impl BlockBuilder {
         let var_id = ctx.new_var(req);
         self.inputs.push(var_id);
         var_id
-    }
-
-    /// Binds an implicit to a lowered variable.
-    pub fn put_implicit(
-        &mut self,
-        ctx: &mut LoweringContext<'_>,
-        ty: semantic::TypeId,
-        var: VariableId,
-    ) {
-        if self.implicits.insert(ty, var) == Some(var) {
-            return;
-        }
-        self.changed_implicits.insert(ty);
-        let (implicit_index, _) = ctx
-            .implicits
-            .iter()
-            .enumerate()
-            .find(|(_, imp_ty)| **imp_ty == ty)
-            .expect("Unknown implicit.");
-        self.pending_ref_updates.insert(RefIndex(implicit_index), var);
-        self.current_refs[implicit_index] = Some(var);
-    }
-
-    /// Gets the current lowered variable bound to an implicit.
-    pub fn get_implicit(&mut self, ty: semantic::TypeId) -> VariableId {
-        self.implicits.get(&ty).copied().expect("Use of undefined implicit cannot happen.")
     }
 
     /// Binds a semantic variable to a lowered variable.
@@ -180,24 +145,14 @@ impl BlockBuilder {
 
     /// Ends a block with Panic.
     pub fn panic(self, ctx: &mut LoweringContext<'_>, data: VariableId) -> Maybe<StructuredBlock> {
-        let implicit_vars = ctx
-            .implicits
-            .iter()
-            .map(|ty| self.implicits.get(ty).copied())
-            .collect::<Option<Vec<_>>>()
-            .to_maybe()?;
-
-        let ref_vars = ctx
+        let refs = ctx
             .ref_params
             .iter()
             .map(|semantic_var_id| self.semantics.get(semantic_var_id).copied())
             .collect::<Option<Vec<_>>>()
             .to_maybe()?;
 
-        Ok(self.finalize(StructuredBlockEnd::Panic {
-            refs: chain!(implicit_vars, ref_vars).collect(),
-            data,
-        }))
+        Ok(self.finalize(StructuredBlockEnd::Panic { refs, data }))
     }
 
     /// Ends a block with Callsite.
@@ -207,24 +162,14 @@ impl BlockBuilder {
 
     /// Ends a block with Return.
     pub fn ret(self, ctx: &mut LoweringContext<'_>, expr: VariableId) -> Maybe<StructuredBlock> {
-        let implicit_vars = ctx
-            .implicits
-            .iter()
-            .map(|ty| self.implicits.get(ty).copied())
-            .collect::<Option<Vec<_>>>()
-            .to_maybe()?;
-
-        let ref_vars = ctx
+        let refs = ctx
             .ref_params
             .iter()
             .map(|semantic_var_id| self.semantics.get(semantic_var_id).copied())
             .collect::<Option<Vec<_>>>()
             .to_maybe()?;
 
-        Ok(self.finalize(StructuredBlockEnd::Return {
-            refs: chain!(implicit_vars, ref_vars).collect(),
-            returns: vec![expr],
-        }))
+        Ok(self.finalize(StructuredBlockEnd::Return { refs, returns: vec![expr] }))
     }
 
     /// Seals a block. This is meant to end a block when not all the information is necessarily
@@ -268,7 +213,6 @@ pub enum BlockEndIntent {
 #[derive(Debug, Default)]
 pub struct SemanticRemapping {
     expr: Option<VariableId>,
-    implicits: OrderedHashMap<semantic::TypeId, VariableId>,
     semantics: OrderedHashMap<semantic::VarId, VariableId>,
 }
 
@@ -287,9 +231,6 @@ impl SealedBlockBuilder {
             SealedBlockBuilder::GotoCallsite { scope, expr } => {
                 let mut remapping = VarRemapping::default();
                 // Since SemanticRemapping should have unique variable ids, these asserts will pass.
-                for (ty, remapped_var) in semantic_remapping.implicits.iter() {
-                    assert!(remapping.insert(*remapped_var, scope.implicits[*ty]).is_none());
-                }
                 for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
                     assert!(remapping.insert(*remapped_var, scope.semantics[*semantic]).is_none());
                 }
@@ -356,12 +297,6 @@ pub fn merge_sealed(
                 ctx.variables.alloc(var)
             });
         }
-        for implicit in subscope.changed_implicits.iter() {
-            semantic_remapping.implicits.entry(*implicit).or_insert_with(|| {
-                let var = ctx.variables[subscope.implicits[*implicit]].clone();
-                ctx.variables.alloc(var)
-            });
-        }
     }
 
     let blocks = sealed_blocks
@@ -373,9 +308,6 @@ pub fn merge_sealed(
         .collect();
 
     // Apply remapping on scope.
-    for (implicit, var) in semantic_remapping.implicits {
-        scope.put_implicit(ctx, implicit, var);
-    }
     for (semantic, var) in semantic_remapping.semantics {
         scope.put_semantic(ctx, semantic, var);
     }

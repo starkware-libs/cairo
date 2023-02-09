@@ -263,6 +263,8 @@ pub struct StatementCall {
     pub inputs: Vec<VariableId>,
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
+    /// Location for the call.
+    pub location: StableLocation,
 }
 
 /// A statement that calls an extern function with branches, and "calls" a possibly different block
@@ -277,6 +279,8 @@ pub struct StatementMatchExtern {
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
+    /// Location for the call.
+    pub location: StableLocation,
 }
 
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
