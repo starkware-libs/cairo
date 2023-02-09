@@ -456,6 +456,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
         CoreConcreteLibfunc::Ec(libfunc) => ec::build(libfunc, builder),
         CoreConcreteLibfunc::Uint8(libfunc) => uint::build_u8(libfunc, builder),
+        CoreConcreteLibfunc::Uint16(libfunc) => uint::build_u16(libfunc, builder),
         CoreConcreteLibfunc::Uint32(libfunc) => uint::build_u32(libfunc, builder),
         CoreConcreteLibfunc::Uint64(libfunc) => uint::build_u64(libfunc, builder),
         CoreConcreteLibfunc::Uint128(libfunc) => uint128::build(libfunc, builder),

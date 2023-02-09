@@ -25,7 +25,10 @@ use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
 use super::structure::{StructLibfunc, StructType};
-use super::uint::{Uint32Libfunc, Uint32Type, Uint64Libfunc, Uint64Type, Uint8Libfunc, Uint8Type};
+use super::uint::{
+    Uint16Libfunc, Uint16Type, Uint32Libfunc, Uint32Type, Uint64Libfunc, Uint64Type, Uint8Libfunc,
+    Uint8Type,
+};
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -40,10 +43,11 @@ define_type_hierarchy! {
         Felt(FeltType),
         GasBuiltin(GasBuiltinType),
         BuiltinCosts(BuiltinCostsType),
-        Uint128(Uint128Type),
         Uint8(Uint8Type),
+        Uint16(Uint16Type),
         Uint32(Uint32Type),
         Uint64(Uint64Type),
+        Uint128(Uint128Type),
         NonZero(NonZeroType),
         Nullable(NullableType),
         RangeCheck(RangeCheckType),
@@ -73,10 +77,11 @@ define_libfunc_hierarchy! {
         Felt(FeltLibfunc),
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
-        Uint128(Uint128Libfunc),
         Uint8(Uint8Libfunc),
+        Uint16(Uint16Libfunc),
         Uint32(Uint32Libfunc),
         Uint64(Uint64Libfunc),
+        Uint128(Uint128Libfunc),
         Mem(MemLibfunc),
         Nullable(NullableLibfunc),
         UnwrapNonZero(UnwrapNonZeroLibfunc),
