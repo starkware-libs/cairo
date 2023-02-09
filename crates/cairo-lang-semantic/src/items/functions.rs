@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionSignatureId, FunctionWithBodyId, ImplFunctionId,
-    ModuleItemId, ParamLongId, TopLevelLanguageElementId,
+    ModuleItemId, ParamLongId, TopLevelLanguageElementId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -274,6 +274,11 @@ impl ConcreteFunctionWithBodyId {
     }
     pub fn function_id(&self, db: &dyn SemanticGroup) -> FunctionId {
         self.get(db).function_id(db)
+    }
+}
+impl UnstableSalsaId for ConcreteFunctionWithBodyId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
     }
 }
 
