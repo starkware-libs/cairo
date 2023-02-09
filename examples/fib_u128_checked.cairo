@@ -1,7 +1,7 @@
 // Calculates fib...
 fn fib(a: u128, b: u128, n: u128) -> Option::<u128> implicits(RangeCheck) nopanic {
     // TODO(orizi): Use match on u128 when supported.
-    match u128_to_felt(n) {
+    match integer::u128_to_felt(n) {
         0 => Option::<u128>::Some(a),
         _ => {
             let r = fib(

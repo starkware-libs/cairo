@@ -3,6 +3,7 @@ use array::ArrayTrait;
 #[contract]
 mod TestContract {
     use array::ArrayTrait;
+    use traits::Into;
 
     struct Storage {
         value: felt,
@@ -19,7 +20,7 @@ mod TestContract {
     fn get_appended_array(arr: Array::<felt>) -> Array::<felt> {
         // `mut` is currently not allowed in the signature.
         let mut arr = arr;
-        let elem = u32_to_felt(arr.len());
+        let elem = arr.len().into();
         arr.append(elem);
         arr
     }
