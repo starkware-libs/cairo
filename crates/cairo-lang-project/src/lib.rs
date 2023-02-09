@@ -21,7 +21,7 @@ pub enum DeserializationError {
 const PROJECT_FILE_NAME: &str = "cairo_project.toml";
 
 /// Cairo project config, including its file content and metadata about the file.
-/// This file is expected to be at a root of a crate and specify the crate name and locaiton and
+/// This file is expected to be at a root of a crate and specify the crate name and location and
 /// of its dependency crates.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectConfig {
