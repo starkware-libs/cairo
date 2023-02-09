@@ -315,8 +315,7 @@ fn build_ec_state_add(
         jump NotSameX if denominator != 0;
         // X coordinate is identical; either the sum of the points is the point at infinity (not
         // allowed), or the points are equal, which is also not allowed (doubling).
-        InfiniteLoop:
-        jump InfiniteLoop;
+        fail;
         NotSameX:
         tempvar numerator = py - sy;
     };
