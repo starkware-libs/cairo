@@ -189,3 +189,25 @@ error: Unknown type.
  --> lib.cairo:8:13
     let b = 123_u129;
             ^******^
+
+//! > ==========================================================================
+
+//! > Test use cycle
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+}
+
+//! > module_code
+use self;
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'use' items.
+ --> lib.cairo:1:5
+use self;
+    ^**^

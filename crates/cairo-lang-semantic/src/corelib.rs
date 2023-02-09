@@ -15,6 +15,7 @@ use crate::expr::inference::Inference;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId};
+use crate::items::us::SemanticUseEx;
 use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{

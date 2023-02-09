@@ -120,9 +120,6 @@ pub trait SemanticGroup:
     /// Returns the semantic diagnostics of a use.
     #[salsa::invoke(items::us::use_semantic_diagnostics)]
     fn use_semantic_diagnostics(&self, use_id: UseId) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the semantic diagnostics of a use.
-    #[salsa::invoke(items::us::use_resolved_item)]
-    fn use_resolved_item(&self, use_id: UseId) -> Maybe<ResolvedGenericItem>;
     #[salsa::invoke(items::us::use_resolved_lookback)]
     fn use_resolved_lookback(&self, use_id: UseId) -> Maybe<Arc<ResolvedLookback>>;
 
