@@ -484,6 +484,7 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
             }
         }
         TypeLongId::Tuple(tys) => tys,
+        TypeLongId::Snapshot(_) => vec![],
         TypeLongId::GenericParameter(_) => {
             return Err(skip_diagnostic());
         }

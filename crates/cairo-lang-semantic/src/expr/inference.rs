@@ -88,6 +88,7 @@ impl<'db> Inference<'db> {
             TypeLongId::Tuple(tys) => {
                 TypeLongId::Tuple(tys.into_iter().map(|ty| self.reduce_ty(ty)).collect())
             }
+            TypeLongId::Snapshot(ty) => TypeLongId::Snapshot(self.reduce_ty(ty)),
             TypeLongId::Var(var) => return self.reduce_var(var),
             TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => return ty,
         };
@@ -211,6 +212,14 @@ impl<'db> Inference<'db> {
                     .collect::<Result<Vec<_>, _>>()?;
                 Ok(self.db.intern_type(TypeLongId::Tuple(tys)))
             }
+            TypeLongId::Snapshot(ty0) => {
+                let TypeLongId::Snapshot(ty1) = long_ty1 else {
+                    return Err(InferenceError::KindMismatch { ty0, ty1 });
+                };
+                // TODO(spapini): snapshot coercions.
+                let ty = self.conform_ty(ty0, ty1)?;
+                Ok(self.db.intern_type(TypeLongId::Snapshot(ty)))
+            }
             TypeLongId::GenericParameter(_) => Err(InferenceError::KindMismatch { ty0, ty1 }),
             TypeLongId::Var(var) => self.assign(var, ty1),
             TypeLongId::Missing(_) => Ok(ty0),
@@ -290,6 +299,7 @@ impl<'db> Inference<'db> {
                 self.generic_args_contain_var(&generic_args, var)
             }
             TypeLongId::Tuple(tys) => tys.into_iter().any(|ty| self.ty_contains_var(ty, var)),
+            TypeLongId::Snapshot(ty) => self.ty_contains_var(ty, var),
             TypeLongId::Var(new_var) => {
                 if new_var == var {
                     return true;

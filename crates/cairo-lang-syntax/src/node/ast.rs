@@ -1738,6 +1738,7 @@ impl TypedSyntaxNode for ExprUnary {
 pub enum UnaryOperator {
     Not(TerminalNot),
     Minus(TerminalMinus),
+    At(TerminalAt),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct UnaryOperatorPtr(pub SyntaxStablePtrId);
@@ -1756,6 +1757,11 @@ impl From<TerminalMinusPtr> for UnaryOperatorPtr {
         Self(value.0)
     }
 }
+impl From<TerminalAtPtr> for UnaryOperatorPtr {
+    fn from(value: TerminalAtPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalNotGreen> for UnaryOperatorGreen {
     fn from(value: TerminalNotGreen) -> Self {
         Self(value.0)
@@ -1763,6 +1769,11 @@ impl From<TerminalNotGreen> for UnaryOperatorGreen {
 }
 impl From<TerminalMinusGreen> for UnaryOperatorGreen {
     fn from(value: TerminalMinusGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalAtGreen> for UnaryOperatorGreen {
+    fn from(value: TerminalAtGreen) -> Self {
         Self(value.0)
     }
 }
@@ -1782,6 +1793,7 @@ impl TypedSyntaxNode for UnaryOperator {
             SyntaxKind::TerminalMinus => {
                 UnaryOperator::Minus(TerminalMinus::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalAt => UnaryOperator::At(TerminalAt::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "UnaryOperator"),
         }
     }
@@ -1789,6 +1801,7 @@ impl TypedSyntaxNode for UnaryOperator {
         match self {
             UnaryOperator::Not(x) => x.as_syntax_node(),
             UnaryOperator::Minus(x) => x.as_syntax_node(),
+            UnaryOperator::At(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
@@ -13932,6 +13945,147 @@ impl TypedSyntaxNode for TerminalArrow {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TerminalArrowPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenAt {
+    node: SyntaxNode,
+}
+impl Token for TokenAt {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenAtGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenAt,
+            details: GreenNodeDetails::Token(text),
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.node.0.green).details, GreenNodeDetails::Token)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenAtPtr(pub SyntaxStablePtrId);
+impl TokenAtPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenAtGreen(pub GreenId);
+impl TokenAtGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.0).details, GreenNodeDetails::Token)
+    }
+}
+impl TypedSyntaxNode for TokenAt {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenAt);
+    type StablePtr = TokenAtPtr;
+    type Green = TokenAtGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenAtGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenMissing,
+            details: GreenNodeDetails::Token("".into()),
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAt)
+            }
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenAtPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalAt {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Terminal for TerminalAt {
+    const KIND: SyntaxKind = SyntaxKind::TerminalAt;
+    type TokenType = TokenAt;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalAt as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TerminalAtGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalAt,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalAt {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenAt {
+        TokenAt::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalAtPtr(pub SyntaxStablePtrId);
+impl TerminalAtPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalAtGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalAt {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAt);
+    type StablePtr = TerminalAtPtr;
+    type Green = TerminalAtGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalAtGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalAt,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    Trivia::missing(db).0,
+                    TokenAt::missing(db).0,
+                    Trivia::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalAt,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalAt
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalAtPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

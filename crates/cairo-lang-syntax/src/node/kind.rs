@@ -151,6 +151,8 @@ pub enum SyntaxKind {
     TerminalAndAnd,
     TokenArrow,
     TerminalArrow,
+    TokenAt,
+    TerminalAt,
     TokenBadCharacters,
     TerminalBadCharacters,
     TokenColon,
@@ -258,6 +260,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd
                 | SyntaxKind::TokenArrow
+                | SyntaxKind::TokenAt
                 | SyntaxKind::TokenBadCharacters
                 | SyntaxKind::TokenColon
                 | SyntaxKind::TokenColonColon
@@ -330,6 +333,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
                 | SyntaxKind::TerminalArrow
+                | SyntaxKind::TerminalAt
                 | SyntaxKind::TerminalBadCharacters
                 | SyntaxKind::TerminalColon
                 | SyntaxKind::TerminalColonColon
