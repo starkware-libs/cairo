@@ -351,9 +351,8 @@ fn build_u128_from_felt(
             assert rced_value = *(range_check++);
             // If x != 0, jump to the end.
             jump FailureHandle if x != 0;
-        InfiniteLoop:
-            // Otherwise, start an infinite loop.
-            jump InfiniteLoop;
+            // Otherwise, fail.
+            fail;
         NoOverflow:
             assert value = *(range_check++);
     };
