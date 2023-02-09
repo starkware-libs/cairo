@@ -113,6 +113,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 }
             },
             Uint8Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
+            Uint8Concrete::SquareRoot(_) => vec![ApChange::Known(6)],
             Uint8Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Uint8Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
             Uint8Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
@@ -131,6 +132,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 }
             },
             Uint16Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
+            Uint16Concrete::SquareRoot(_) => vec![ApChange::Known(6)],
             Uint16Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Uint16Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
             Uint16Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
@@ -149,6 +151,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 }
             },
             Uint32Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
+            Uint32Concrete::SquareRoot(_) => vec![ApChange::Known(6)],
             Uint32Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Uint32Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
             Uint32Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
@@ -167,6 +170,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 }
             },
             Uint64Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
+            Uint64Concrete::SquareRoot(_) => vec![ApChange::Known(6)],
             Uint64Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Uint64Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
             Uint64Concrete::FromFelt(_) => vec![ApChange::Known(2), ApChange::Known(7)],
