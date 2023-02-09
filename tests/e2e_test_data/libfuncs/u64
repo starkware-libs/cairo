@@ -40,26 +40,22 @@ libfunc u64_overflowing_add = u64_overflowing_add;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 0> = enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<core::result::Result::<core::integer::u64, core::integer::u64>> = store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>;
-libfunc rename<core::result::Result::<core::integer::u64, core::integer::u64>> = rename<core::result::Result::<core::integer::u64, core::integer::u64>>;
 libfunc jump = jump;
 libfunc enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 1> = enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::result::Result::<core::integer::u64, core::integer::u64>> = rename<core::result::Result::<core::integer::u64, core::integer::u64>>;
 
-u64_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) };
+u64_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) };
 branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 0>([4]) -> ([7]);
-store_temp<RangeCheck>([3]) -> ([3]);
-rename<RangeCheck>([3]) -> ([8]);
-store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([7]) -> ([7]);
-rename<core::result::Result::<core::integer::u64, core::integer::u64>>([7]) -> ([9]);
-jump() { 14() };
+store_temp<RangeCheck>([3]) -> ([8]);
+store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([7]) -> ([9]);
+jump() { 10() };
 branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 1>([6]) -> ([10]);
-store_temp<RangeCheck>([5]) -> ([5]);
-rename<RangeCheck>([5]) -> ([8]);
-store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([10]) -> ([10]);
-rename<core::result::Result::<core::integer::u64, core::integer::u64>>([10]) -> ([9]);
+store_temp<RangeCheck>([5]) -> ([8]);
+store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([10]) -> ([9]);
 rename<RangeCheck>([8]) -> ([11]);
 rename<core::result::Result::<core::integer::u64, core::integer::u64>>([9]) -> ([12]);
 return([11], [12]);
@@ -111,26 +107,22 @@ libfunc u64_overflowing_sub = u64_overflowing_sub;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 0> = enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<core::result::Result::<core::integer::u64, core::integer::u64>> = store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>;
-libfunc rename<core::result::Result::<core::integer::u64, core::integer::u64>> = rename<core::result::Result::<core::integer::u64, core::integer::u64>>;
 libfunc jump = jump;
 libfunc enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 1> = enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::result::Result::<core::integer::u64, core::integer::u64>> = rename<core::result::Result::<core::integer::u64, core::integer::u64>>;
 
-u64_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) };
+u64_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) };
 branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 0>([4]) -> ([7]);
-store_temp<RangeCheck>([3]) -> ([3]);
-rename<RangeCheck>([3]) -> ([8]);
-store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([7]) -> ([7]);
-rename<core::result::Result::<core::integer::u64, core::integer::u64>>([7]) -> ([9]);
-jump() { 14() };
+store_temp<RangeCheck>([3]) -> ([8]);
+store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([7]) -> ([9]);
+jump() { 10() };
 branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 1>([6]) -> ([10]);
-store_temp<RangeCheck>([5]) -> ([5]);
-rename<RangeCheck>([5]) -> ([8]);
-store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([10]) -> ([10]);
-rename<core::result::Result::<core::integer::u64, core::integer::u64>>([10]) -> ([9]);
+store_temp<RangeCheck>([5]) -> ([8]);
+store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([10]) -> ([9]);
 rename<RangeCheck>([8]) -> ([11]);
 rename<core::result::Result::<core::integer::u64, core::integer::u64>>([9]) -> ([12]);
 return([11], [12]);
@@ -181,28 +173,24 @@ libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc rename<core::bool> = rename<core::bool>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::bool> = rename<core::bool>;
 
-u64_lt([0], [1], [2]) { fallthrough([3]) 9([4]) };
+u64_lt([0], [1], [2]) { fallthrough([3]) 7([4]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 0>([5]) -> ([6]);
-store_temp<RangeCheck>([3]) -> ([3]);
-rename<RangeCheck>([3]) -> ([7]);
-store_temp<core::bool>([6]) -> ([6]);
-rename<core::bool>([6]) -> ([8]);
-jump() { 16() };
+store_temp<RangeCheck>([3]) -> ([7]);
+store_temp<core::bool>([6]) -> ([8]);
+jump() { 12() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 enum_init<core::bool, 1>([9]) -> ([10]);
-store_temp<RangeCheck>([4]) -> ([4]);
-rename<RangeCheck>([4]) -> ([7]);
-store_temp<core::bool>([10]) -> ([10]);
-rename<core::bool>([10]) -> ([8]);
+store_temp<RangeCheck>([4]) -> ([7]);
+store_temp<core::bool>([10]) -> ([8]);
 rename<RangeCheck>([7]) -> ([11]);
 rename<core::bool>([8]) -> ([12]);
 return([11], [12]);
@@ -253,28 +241,24 @@ libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc rename<core::bool> = rename<core::bool>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::bool> = rename<core::bool>;
 
-u64_le([0], [1], [2]) { fallthrough([3]) 9([4]) };
+u64_le([0], [1], [2]) { fallthrough([3]) 7([4]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 0>([5]) -> ([6]);
-store_temp<RangeCheck>([3]) -> ([3]);
-rename<RangeCheck>([3]) -> ([7]);
-store_temp<core::bool>([6]) -> ([6]);
-rename<core::bool>([6]) -> ([8]);
-jump() { 16() };
+store_temp<RangeCheck>([3]) -> ([7]);
+store_temp<core::bool>([6]) -> ([8]);
+jump() { 12() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 enum_init<core::bool, 1>([9]) -> ([10]);
-store_temp<RangeCheck>([4]) -> ([4]);
-rename<RangeCheck>([4]) -> ([7]);
-store_temp<core::bool>([10]) -> ([10]);
-rename<core::bool>([10]) -> ([8]);
+store_temp<RangeCheck>([4]) -> ([7]);
+store_temp<core::bool>([10]) -> ([8]);
 rename<RangeCheck>([7]) -> ([11]);
 rename<core::bool>([8]) -> ([12]);
 return([11], [12]);
@@ -317,22 +301,20 @@ libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc rename<core::bool> = rename<core::bool>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc rename<core::bool> = rename<core::bool>;
 
-u64_eq([0], [1]) { fallthrough() 7() };
+u64_eq([0], [1]) { fallthrough() 6() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([2]);
 enum_init<core::bool, 0>([2]) -> ([3]);
-store_temp<core::bool>([3]) -> ([3]);
-rename<core::bool>([3]) -> ([4]);
-jump() { 12() };
+store_temp<core::bool>([3]) -> ([4]);
+jump() { 10() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 1>([5]) -> ([6]);
-store_temp<core::bool>([6]) -> ([6]);
-rename<core::bool>([6]) -> ([4]);
+store_temp<core::bool>([6]) -> ([4]);
 rename<core::bool>([4]) -> ([7]);
 return([7]);
 
@@ -399,33 +381,81 @@ libfunc u64_try_from_felt = u64_try_from_felt;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::integer::u64>, 0> = enum_init<core::option::Option::<core::integer::u64>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<core::option::Option::<core::integer::u64>> = store_temp<core::option::Option::<core::integer::u64>>;
-libfunc rename<core::option::Option::<core::integer::u64>> = rename<core::option::Option::<core::integer::u64>>;
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u64>, 1> = enum_init<core::option::Option::<core::integer::u64>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<core::integer::u64>> = rename<core::option::Option::<core::integer::u64>>;
 
-u64_try_from_felt([0], [1]) { fallthrough([2], [3]) 8([4]) };
+u64_try_from_felt([0], [1]) { fallthrough([2], [3]) 6([4]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::integer::u64>, 0>([3]) -> ([5]);
-store_temp<RangeCheck>([2]) -> ([2]);
-rename<RangeCheck>([2]) -> ([6]);
-store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([5]);
-rename<core::option::Option::<core::integer::u64>>([5]) -> ([7]);
-jump() { 15() };
+store_temp<RangeCheck>([2]) -> ([6]);
+store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([7]);
+jump() { 11() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([8]);
 enum_init<core::option::Option::<core::integer::u64>, 1>([8]) -> ([9]);
-store_temp<RangeCheck>([4]) -> ([4]);
-rename<RangeCheck>([4]) -> ([6]);
-store_temp<core::option::Option::<core::integer::u64>>([9]) -> ([9]);
-rename<core::option::Option::<core::integer::u64>>([9]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([6]);
+store_temp<core::option::Option::<core::integer::u64>>([9]) -> ([7]);
 rename<RangeCheck>([6]) -> ([10]);
 rename<core::option::Option::<core::integer::u64>>([7]) -> ([11]);
 return([10], [11]);
 
 test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<core::integer::u64>);
+
+//! > ==========================================================================
+
+//! > u64_is_zero libfunc
+
+//! > test_comments
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(a: u64) -> u64 {
+    match integer::u64_is_zero(a) {
+        IsZeroResult::Zero(()) => 1234_u64,
+        IsZeroResult::NonZero(x) => unwrap_nz(x),
+    }
+}
+
+//! > casm
+jmp rel 6 if [fp + -3] != 0;
+[ap + 0] = 1234, ap++;
+jmp rel 3;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type u64 = u64;
+type NonZero<u64> = NonZero<u64>;
+
+libfunc u64_is_zero = u64_is_zero;
+libfunc branch_align = branch_align;
+libfunc u64_const<1234> = u64_const<1234>;
+libfunc store_temp<u64> = store_temp<u64>;
+libfunc jump = jump;
+libfunc unwrap_nz<u64> = unwrap_nz<u64>;
+libfunc rename<u64> = rename<u64>;
+
+u64_is_zero([0]) { fallthrough() 5([1]) };
+branch_align() -> ();
+u64_const<1234>() -> ([2]);
+store_temp<u64>([2]) -> ([3]);
+jump() { 8() };
+branch_align() -> ();
+unwrap_nz<u64>([1]) -> ([4]);
+store_temp<u64>([4]) -> ([3]);
+rename<u64>([3]) -> ([5]);
+return([5]);
+
+test::foo@0([0]: u64) -> (u64);
 
 //! > ==========================================================================
 
@@ -467,16 +497,12 @@ type Tuple<u64, u64> = Struct<ut@Tuple, u64, u64>;
 libfunc u64_safe_divmod = u64_safe_divmod;
 libfunc struct_construct<Tuple<u64, u64>> = struct_construct<Tuple<u64, u64>>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<Tuple<u64, u64>> = store_temp<Tuple<u64, u64>>;
-libfunc rename<Tuple<u64, u64>> = rename<Tuple<u64, u64>>;
 
 u64_safe_divmod([0], [1], [2]) -> ([3], [4], [5]);
 struct_construct<Tuple<u64, u64>>([4], [5]) -> ([6]);
-store_temp<RangeCheck>([3]) -> ([3]);
-rename<RangeCheck>([3]) -> ([7]);
-store_temp<Tuple<u64, u64>>([6]) -> ([6]);
-rename<Tuple<u64, u64>>([6]) -> ([8]);
+store_temp<RangeCheck>([3]) -> ([7]);
+store_temp<Tuple<u64, u64>>([6]) -> ([8]);
 return([7], [8]);
 
 test::foo@0([0]: RangeCheck, [1]: u64, [2]: NonZero<u64>) -> (RangeCheck, Tuple<u64, u64>);

@@ -42,7 +42,12 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             LibfuncSignature {
                 param_signatures: vec![
                     ParamSignature::new(felt_ty.clone()),
-                    ParamSignature::new(felt_ty),
+                    ParamSignature {
+                        ty: felt_ty,
+                        allow_deferred: false,
+                        allow_add_const: false,
+                        allow_const: true,
+                    },
                 ],
                 branch_signatures: vec![BranchSignature {
                     vars,
@@ -64,6 +69,17 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                         param_idx: 0,
                     }),
+                }],
+                ap_change: SierraApChange::Known { new_vars_only: true },
+            }],
+            fallthrough: Some(0),
+        },
+        "felt_const" => LibfuncSignature {
+            param_signatures: vec![],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty: felt_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
                 }],
                 ap_change: SierraApChange::Known { new_vars_only: true },
             }],
@@ -460,10 +476,8 @@ fn store_temp_push_values() {
             "felt_add(5, 5) -> (6)",
             "store_temp<felt>(7) -> (7)",
             "store_temp<felt>(5) -> (100)",
-            "store_temp<felt>(2) -> (2)",
-            "rename<felt>(2) -> (101)",
-            "store_temp<felt>(6) -> (6)",
-            "rename<felt>(6) -> (102)",
+            "store_temp<felt>(2) -> (101)",
+            "store_temp<felt>(6) -> (102)",
             "store_temp<felt>(6) -> (103)",
             "nope() -> ()",
             "return(6)",
@@ -483,9 +497,9 @@ fn store_temp_push_values_with_dup() {
             &db,
             &[
                 // Deferred with dup.
-                ("2", "102", Some("202")),
+                ("2", "102", true),
                 // Temporary variable with dup.
-                ("0", "100", Some("200")),
+                ("0", "100", true),
             ],
         ),
         dummy_return_statement(&[]),
@@ -496,11 +510,10 @@ fn store_temp_push_values_with_dup() {
         vec![
             "felt_add(0, 1) -> (2)",
             "nope() -> ()",
-            "store_temp<felt>(2) -> (2)",
-            "dup<felt>(2) -> (2, 202)",
-            "rename<felt>(202) -> (102)",
-            "dup<felt>(0) -> (0, 200)",
-            "store_temp<felt>(200) -> (100)",
+            "store_temp<felt>(2) -> (102)",
+            "dup<felt>(102) -> (102, 2)",
+            "dup<felt>(0) -> (0, 100)",
+            "store_temp<felt>(100) -> (100)",
             "return()",
         ]
     );
@@ -720,8 +733,7 @@ fn consecutive_const_additions() {
             // There is no need to add a store_temp() instruction between two `felt_add3()`.
             "felt_add3(7) -> (8)",
             // Return.
-            "store_temp<felt>(8) -> (8)",
-            "rename<felt>(8) -> (9)",
+            "store_temp<felt>(8) -> (9)",
             "return(9)",
         ]
     );

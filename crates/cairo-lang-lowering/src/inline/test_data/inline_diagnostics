@@ -205,16 +205,6 @@ End:
   Return(v1)
 
 //! > lowering_diagnostics
-error: Inlining of functions with an early return is not supported.
- --> lib.cairo:1:1
-#[inline(always)]
-^***************^
-
-error: Inlining of functions with an early return is not supported.
- --> lib.cairo:1:1
-#[inline(always)]
-^***************^
-
 error: Inlining of functions where the end of the root block is unreachable is not supported.
  --> lib.cairo:1:1
 #[inline(always)]

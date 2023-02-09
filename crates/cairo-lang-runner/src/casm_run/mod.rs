@@ -194,6 +194,10 @@ impl HintProcessor for CairoHintProcessor {
                 )?;
                 insert_value_to_cellref!(vm, remainder, Felt::from(lhs_val % rhs_val))?;
             }
+            Hint::SquareRoot { value, dst } => {
+                let val = get_val(value)?.to_biguint();
+                insert_value_to_cellref!(vm, dst, Felt::from(val.sqrt()))?;
+            }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
                 let value = get_val(value)?.to_biguint();
                 let scalar = get_val(scalar)?.to_biguint();

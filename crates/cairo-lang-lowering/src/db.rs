@@ -18,7 +18,7 @@ use crate::diagnostic::LoweringDiagnostic;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
 use crate::panic::lower_panics;
-use crate::{FlatLowered, StructuredLowered};
+use crate::{FlatLowered, Statement, StructuredLowered};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -50,6 +50,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Computes the direct callees of the final lowered representation (after all the internal
+    /// transformations).
+    fn concrete_function_with_body_lowered_direct_callees(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Vec<ConcreteFunctionWithBodyId>>;
 
     /// Aggregates function level semantic diagnostics.
     fn function_with_body_lowering_diagnostics(
@@ -175,6 +182,25 @@ fn concrete_function_with_body_lowered(
     Ok(Arc::new(lowered))
 }
 
+fn concrete_function_with_body_lowered_direct_callees(
+    db: &dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId,
+) -> Maybe<Vec<ConcreteFunctionWithBodyId>> {
+    let mut direct_callees = Vec::new();
+    let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
+    for (_, block) in &lowered_function.blocks {
+        for statement in &block.statements {
+            if let Statement::Call(statement_call) = statement {
+                let concrete = db.lookup_intern_function(statement_call.function).function;
+                if let Some(function_id) = concrete.get_body(db.upcast()) {
+                    direct_callees.push(function_id);
+                }
+            }
+        }
+    }
+    Ok(direct_callees)
+}
+
 fn function_with_body_lowering_diagnostics(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
@@ -220,19 +246,19 @@ fn module_lowering_diagnostics(
             ModuleItemId::Enum(_) => {}
             ModuleItemId::TypeAlias(_) => {}
             ModuleItemId::Trait(_) => {}
-            ModuleItemId::Impl(impl_id) => {
+            ModuleItemId::Impl(impl_def_id) => {
                 // TODO(ilya): Enable diagnostics for generic impls once we resolve
                 // `Variable not dropped.` error on variables with generic types.
 
                 // Skip diagnostics for impls with generic params.
-                if !db.impl_generic_params(*impl_id)?.is_empty()
-                    && impl_id.parent_module(db.upcast()).owning_crate(db.upcast())
+                if !db.impl_def_generic_params(*impl_def_id)?.is_empty()
+                    && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast())
                         == core_crate(db.upcast())
                 {
                     continue;
                 }
 
-                for impl_func in db.impl_functions(*impl_id)?.values() {
+                for impl_func in db.impl_functions(*impl_def_id)?.values() {
                     let function_id = FunctionWithBodyId::Impl(*impl_func);
                     diagnostics.extend(
                         db.function_with_body_lowering_diagnostics(function_id)?.deref().clone(),

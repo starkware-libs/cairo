@@ -4,7 +4,7 @@ use super::range_check::RangeCheckType;
 use super::uint::{
     IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
     UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
-    UintToFeltLibfunc, UintTraits, UintType,
+    UintSquareRootLibfunc, UintToFeltLibfunc, UintTraits, UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -28,6 +28,7 @@ define_libfunc_hierarchy! {
         WideMul(Uint128WideMulLibfunc),
         LessThan(UintLessThanLibfunc<Uint128Traits>),
         Equal(UintEqualLibfunc<Uint128Traits>),
+        SquareRoot(UintSquareRootLibfunc<Uint128Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint128Traits>),
         Const(UintConstLibfunc<Uint128Traits>),
         FromFelt(Uint128sFromFeltLibfunc),
@@ -45,6 +46,7 @@ impl UintTraits for Uint128Traits {
     const IS_SMALL: bool = false;
     const CONST: &'static str = "u128_const";
     const EQUAL: &'static str = "u128_eq";
+    const SQUARE_ROOT: &'static str = "u128_sqrt";
     const LESS_THAN: &'static str = "u128_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u128_le";
     const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";

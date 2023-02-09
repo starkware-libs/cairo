@@ -6,7 +6,7 @@ block_generator_test
 //! > function
 fn foo(mut z: MyStruct) -> () {
     let x = bar(1, 2, ref z);
-    bar(x, x + x, ref z);
+    bar(x, felt_add(x, x), ref z);
 }
 
 fn bar(a: felt, b: felt, ref z: MyStruct) -> felt {
@@ -18,14 +18,11 @@ foo
 
 //! > module_code
 extern type MyStruct;
+impl MyStructDrop of Drop::<MyStruct>;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable not dropped.
- --> lib.cairo:4:5
-    bar(x, x + x, ref z);
-    ^******************^
 
 //! > sierra_gen_diagnostics
 
@@ -77,17 +74,17 @@ fn bar2(a: felt, b: felt) -> felt {
 //! > sierra_code
 felt_const<7>() -> ([0])
 felt_const<7>() -> ([1])
-PushValues([0]: felt, [1]: felt) -> ([4] [3], [5])
-function_call<user@test::bar>([4], [5]) -> ([2])
+PushValues([0]: felt, [1]: felt) -> ([3]*, [4])
+function_call<user@test::bar>([3], [4]) -> ([2])
 drop<felt>([2]) -> ()
-felt_const<7>() -> ([6])
-PushValues([0]: felt, [6]: felt) -> ([9] [8], [10])
-function_call<user@test::bar>([9], [10]) -> ([7])
-felt_const<7>() -> ([11])
-PushValues([0]: felt, [11]: felt) -> ([13], [14])
-function_call<user@test::bar>([13], [14]) -> ([12])
-PushValues([7]: felt, [12]: felt) -> ([16], [17])
-function_call<user@test::bar2>([16], [17]) -> ([15])
+felt_const<7>() -> ([5])
+PushValues([0]: felt, [5]: felt) -> ([7]*, [8])
+function_call<user@test::bar>([7], [8]) -> ([6])
+felt_const<7>() -> ([9])
+PushValues([0]: felt, [9]: felt) -> ([11], [12])
+function_call<user@test::bar>([11], [12]) -> ([10])
+PushValues([6]: felt, [10]: felt) -> ([14], [15])
+function_call<user@test::bar2>([14], [15]) -> ([13])
 
 //! > ==========================================================================
 

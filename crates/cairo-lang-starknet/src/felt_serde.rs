@@ -31,6 +31,14 @@ pub enum FeltSerdeError {
     InvalidInputForDeserialization,
     #[error("Invalid generic id for serialization.")]
     InvalidGenericIdForSerialization,
+    #[error("Invalid order of type declarations for serialization.")]
+    OutOfOrderTypeDeclarationsForSerialization,
+    #[error("Invalid order of libfunc declarations for serialization.")]
+    OutOfOrderLibfuncDeclarationsForSerialization,
+    #[error("Invalid order of user functions declarations for serialization.")]
+    OutOfOrderUserFunctionDeclarationsForSerialization,
+    #[error("Invalid function declaration for serialization.")]
+    FunctionArgumentsMismatchInSerialization,
 }
 
 /// Serializes a Sierra program into a vector of felts.
@@ -182,6 +190,17 @@ macro_rules! generic_id_serde {
 generic_id_serde!(GenericTypeId);
 generic_id_serde!(GenericLibfuncId);
 
+impl FeltSerde for UserTypeId {
+    fn serialize(&self, output: &mut Vec<BigIntAsHex>) -> Result<(), FeltSerdeError> {
+        output.push(BigIntAsHex { value: self.id.clone() });
+        Ok(())
+    }
+    fn deserialize(input: &[BigIntAsHex]) -> Result<(Self, &[BigIntAsHex]), FeltSerdeError> {
+        let first = input.first().ok_or(FeltSerdeError::InvalidInputForDeserialization)?;
+        Ok((Self { id: first.value.clone(), debug_name: None }, &input[1..]))
+    }
+}
+
 // Impls for other ids.
 
 macro_rules! id_serde {
@@ -203,7 +222,6 @@ macro_rules! id_serde {
 id_serde!(ConcreteTypeId);
 id_serde!(ConcreteLibfuncId);
 id_serde!(VarId);
-id_serde!(UserTypeId);
 id_serde!(FunctionId);
 
 // Impls for structs.
@@ -257,35 +275,88 @@ macro_rules! struct_serde {
     }
 }
 
-struct_serde! {
-    Program {
-        type_declarations: Vec<TypeDeclaration>,
-        libfunc_declarations: Vec<LibfuncDeclaration>,
-        statements: Vec<Statement>,
-        funcs: Vec<Function>,
+impl FeltSerde for Program {
+    fn serialize(&self, output: &mut Vec<BigIntAsHex>) -> Result<(), FeltSerdeError> {
+        // Type declarations.
+        self.type_declarations.len().serialize(output)?;
+        for (i, e) in self.type_declarations.iter().enumerate() {
+            if i as u64 != e.id.id {
+                return Err(FeltSerdeError::OutOfOrderTypeDeclarationsForSerialization);
+            }
+            e.long_id.serialize(output)?;
+        }
+        // Libfunc declaration.
+        self.libfunc_declarations.len().serialize(output)?;
+        for (i, e) in self.libfunc_declarations.iter().enumerate() {
+            if i as u64 != e.id.id {
+                return Err(FeltSerdeError::OutOfOrderLibfuncDeclarationsForSerialization);
+            }
+            e.long_id.serialize(output)?;
+        }
+        // Statements.
+        FeltSerde::serialize(&self.statements, output)?;
+        // Function declaration.
+        self.funcs.len().serialize(output)?;
+        for (i, f) in self.funcs.iter().enumerate() {
+            if i as u64 != f.id.id {
+                return Err(FeltSerdeError::OutOfOrderUserFunctionDeclarationsForSerialization);
+            }
+            f.signature.serialize(output)?;
+            if f.signature.param_types.len() != f.params.len() {
+                return Err(FeltSerdeError::FunctionArgumentsMismatchInSerialization);
+            }
+            for (param, ty) in f.params.iter().zip(f.signature.param_types.iter()) {
+                if param.ty != *ty {
+                    return Err(FeltSerdeError::FunctionArgumentsMismatchInSerialization);
+                }
+                param.id.serialize(output)?;
+            }
+            f.entry_point.serialize(output)?;
+        }
+        Ok(())
     }
-}
 
-struct_serde! {
-    TypeDeclaration {
-        id: ConcreteTypeId,
-        long_id: ConcreteTypeLongId,
-    }
-}
-
-struct_serde! {
-    LibfuncDeclaration {
-        id:  ConcreteLibfuncId,
-        long_id:  ConcreteLibfuncLongId,
-    }
-}
-
-struct_serde! {
-    Function {
-        id: FunctionId,
-        signature: FunctionSignature,
-        params: Vec<Param>,
-        entry_point: StatementIdx,
+    fn deserialize(input: &[BigIntAsHex]) -> Result<(Self, &[BigIntAsHex]), FeltSerdeError> {
+        // Type declarations.
+        let (size, mut input) = usize::deserialize(input)?;
+        let mut type_declarations = Vec::with_capacity(size);
+        for i in 0..size {
+            let (long_id, next) = ConcreteTypeLongId::deserialize(input)?;
+            type_declarations.push(TypeDeclaration { id: ConcreteTypeId::from_usize(i), long_id });
+            input = next;
+        }
+        // Libfunc declaration.
+        let (size, mut input) = usize::deserialize(input)?;
+        let mut libfunc_declarations = Vec::with_capacity(size);
+        for i in 0..size {
+            let (long_id, next) = ConcreteLibfuncLongId::deserialize(input)?;
+            libfunc_declarations
+                .push(LibfuncDeclaration { id: ConcreteLibfuncId::from_usize(i), long_id });
+            input = next;
+        }
+        // Statements.
+        let (statements, input) = FeltSerde::deserialize(input)?;
+        // Function declaration.
+        let (size, mut input) = usize::deserialize(input)?;
+        let mut funcs = Vec::with_capacity(size);
+        for i in 0..size {
+            let (signature, next) = FunctionSignature::deserialize(input)?;
+            input = next;
+            let params = signature
+                .param_types
+                .iter()
+                .cloned()
+                .map(|ty| -> Result<Param, FeltSerdeError> {
+                    let (id, next) = VarId::deserialize(input)?;
+                    input = next;
+                    Ok(Param { id, ty })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let (entry_point, next) = StatementIdx::deserialize(input)?;
+            funcs.push(Function { id: FunctionId::from_usize(i), signature, params, entry_point });
+            input = next;
+        }
+        Ok((Self { type_declarations, libfunc_declarations, statements, funcs }, input))
     }
 }
 
@@ -307,13 +378,6 @@ struct_serde! {
     FunctionSignature {
         param_types:  Vec<ConcreteTypeId>,
         ret_types:  Vec<ConcreteTypeId>,
-    }
-}
-
-struct_serde! {
-    Param {
-        id:  VarId,
-        ty:  ConcreteTypeId,
     }
 }
 

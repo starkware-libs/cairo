@@ -23,7 +23,7 @@ use crate::utils::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SierraFreeFunctionData {
+pub struct SierraFunctionWithBodyData {
     pub function: Maybe<Arc<pre_sierra::Function>>,
 }
 
@@ -31,9 +31,9 @@ pub struct SierraFreeFunctionData {
 pub fn priv_function_with_body_sierra_data(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
-) -> SierraFreeFunctionData {
+) -> SierraFunctionWithBodyData {
     let function = get_function_code(db, function_id);
-    SierraFreeFunctionData { function }
+    SierraFunctionWithBodyData { function }
 }
 
 /// Query implementation of [SierraGenGroup::function_with_body_sierra].

@@ -631,6 +631,7 @@ dependencies = [
  "regex",
  "salsa",
  "serde",
+ "sha3",
  "smol_str",
  "test-case",
  "test-log",

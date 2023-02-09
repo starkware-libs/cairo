@@ -16,8 +16,8 @@ cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "1.0.0-alpha.2" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.2" }
 id-arena.workspace = true
-itertools.workspace = true
 indexmap.workspace = true
+itertools.workspace = true
 cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-alpha.2" }
 num-bigint.workspace = true
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.2" }

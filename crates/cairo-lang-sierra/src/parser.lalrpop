@@ -63,7 +63,7 @@ FunctionId: FunctionId = {
 
 UserTypeId: UserTypeId = {
     <id:ConcreteLabel> => UserTypeId::from_string(id),
-    "[" <id:UnsignedInt> "]" => UserTypeId::new(id),
+    "[" <id:BigInt> "]" => UserTypeId { id: id.try_into().unwrap(), debug_name: None },
 }
 
 VarId: VarId = {

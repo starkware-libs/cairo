@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use anyhow::{ensure, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
@@ -43,11 +44,11 @@ pub enum StarknetCompilationError {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractClass {
     pub sierra_program: Vec<BigIntAsHex>,
-    pub sierra_program_debug_info: cairo_lang_sierra::debug_info::DebugInfo,
+    pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,
     /// The sierra version used in compilation.
     pub sierra_version_id: usize,
     pub entry_points_by_type: ContractEntryPoints,
-    pub abi: Contract,
+    pub abi: Option<Contract>,
 }
 
 impl ContractClass {
@@ -162,19 +163,18 @@ fn compile_contract_with_prepared_and_checked_db(
         .into_iter()
         .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db, f))
         .collect();
-    let sierra_program = db
+    let mut sierra_program = db
         .get_sierra_program_for_functions(
             chain!(&external_functions, &constructor_functions).cloned().collect(),
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
 
+    if compiler_config.replace_ids {
+        sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
+    }
     let replacer = CanonicalReplacer::from_program(&sierra_program);
-    let sierra_program = if compiler_config.replace_ids {
-        replace_sierra_ids_in_program(db, &sierra_program)
-    } else {
-        replacer.apply(&sierra_program)
-    };
+    let sierra_program = replacer.apply(&sierra_program);
 
     let entry_points_by_type = ContractEntryPoints {
         external: get_entry_points(db, &external_functions, &replacer)?,
@@ -184,12 +184,12 @@ fn compile_contract_with_prepared_and_checked_db(
     };
     let contract_class = ContractClass {
         sierra_program: sierra_to_felts(&sierra_program)?,
-        sierra_program_debug_info: cairo_lang_sierra::debug_info::DebugInfo::extract(
+        sierra_program_debug_info: Some(cairo_lang_sierra::debug_info::DebugInfo::extract(
             &sierra_program,
-        ),
+        )),
         sierra_version_id: sierra_version::CURRENT_VERSION_ID,
         entry_points_by_type,
-        abi: Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?,
+        abi: Some(Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?),
     };
     contract_class.verify_compatible_sierra_version()?;
     Ok(contract_class)

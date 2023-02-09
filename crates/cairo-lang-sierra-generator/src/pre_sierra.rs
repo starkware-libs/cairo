@@ -69,12 +69,8 @@ impl std::fmt::Display for Statement {
                 write!(f, ") -> (")?;
                 write_comma_separated(
                     f,
-                    values.iter().map(|PushValue { var_on_stack, dup_var, .. }| {
-                        if let Some(dup_var) = dup_var {
-                            format!("{var_on_stack} {dup_var}")
-                        } else {
-                            format!("{var_on_stack}")
-                        }
+                    values.iter().map(|PushValue { var_on_stack, dup, .. }| {
+                        if *dup { format!("{var_on_stack}*") } else { format!("{var_on_stack}") }
                     }),
                 )?;
                 write!(f, ")")
@@ -93,8 +89,8 @@ pub struct PushValue {
     pub var_on_stack: sierra::ids::VarId,
     /// The type of the variable.
     pub ty: ConcreteTypeId,
-    /// Indicates whether the variable should be duplicated before pushing it.
-    pub dup_var: Option<sierra::ids::VarId>,
+    /// Indicates whether the variable should be duplicated before it is pushed.
+    pub dup: bool,
 }
 
 /// Represents a pre-sierra label.

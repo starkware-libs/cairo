@@ -30,7 +30,19 @@ Statements:
   (v2: core::felt) <- core::felt_const::<LiteralLongId { value: -1 }>()
   (v1: core::felt) <- core::felt_mul(v0, v2)
 End:
+  Fallthrough(2, {})
+
+blk1:
+Inputs:
+Statements:
+End:
   Return(v1)
+
+blk2:
+Inputs:
+Statements:
+End:
+  Fallthrough(1, {})
 
 //! > lowering_diagnostics
 
@@ -76,19 +88,25 @@ Inputs: v0: core::option::Option::<core::felt>
 Statements:
   (v1: core::felt) <- 2u
   () <- match_enum(v0) {
-    Option::Some => blk1,
-    Option::None => blk2,
+    Option::Some => blk2,
+    Option::None => blk3,
   }
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
 End:
   Return(v2)
 
-blk1:
+blk2:
 Inputs: v3: core::felt
 Statements:
 End:
   Callsite({v3 -> v2})
 
-blk2:
+blk3:
 Inputs: v4: ()
 Statements:
   () <- struct_destructure(v4)
@@ -134,7 +152,19 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
 End:
+  Fallthrough(2, {})
+
+blk1:
+Inputs:
+Statements:
+End:
   Return(v1)
+
+blk2:
+Inputs:
+Statements:
+End:
+  Fallthrough(1, {})
 
 //! > lowering_diagnostics
 
@@ -180,11 +210,53 @@ blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v2: core::felt) <- core::felt_add(v0, v1)
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
   (v4: core::felt) <- core::felt_mul(v2, v1)
-  (v5: core::felt) <- core::felt_mul(v1, v2)
-  (v3: core::felt) <- core::felt_add(v4, v5)
+End:
+  Fallthrough(4, {})
+
+blk2:
+Inputs:
+Statements:
 End:
   Return(v3)
+
+blk3:
+Inputs:
+Statements:
+  (v5: core::felt) <- core::felt_mul(v1, v2)
+End:
+  Fallthrough(6, {})
+
+blk4:
+Inputs:
+Statements:
+End:
+  Fallthrough(3, {})
+
+blk5:
+Inputs:
+Statements:
+  (v3: core::felt) <- core::felt_add(v4, v5)
+End:
+  Fallthrough(7, {})
+
+blk6:
+Inputs:
+Statements:
+End:
+  Fallthrough(5, {})
+
+blk7:
+Inputs:
+Statements:
+End:
+  Fallthrough(2, {})
 
 //! > lowering_diagnostics
 
@@ -235,7 +307,31 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_mul(v0, v0)
 End:
+  Fallthrough(4, {})
+
+blk1:
+Inputs:
+Statements:
+End:
   Return(v1)
+
+blk2:
+Inputs:
+Statements:
+End:
+  Fallthrough(1, {})
+
+blk3:
+Inputs:
+Statements:
+End:
+  Fallthrough(2, {})
+
+blk4:
+Inputs:
+Statements:
+End:
+  Fallthrough(3, {})
 
 //! > lowering_diagnostics
 
@@ -275,9 +371,21 @@ blk0 (root):
 Inputs:
 Statements:
   (v0: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
   (v1: core::felt) <- 5u
   (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v0, v1)
   (v2: ()) <- struct_construct()
+End:
+  Fallthrough(2, {})
+
+blk2:
+Inputs:
+Statements:
 End:
   Return(v2)
 
@@ -355,17 +463,13 @@ Statements:
 End:
   Callsite({v0 -> v5})
 
-blk2:
+blk2 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
   (v2: core::felt) <- core::felt_sub(v0, v1)
-  () <- match core::felt_is_zero(v2) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
-  Return(v5)
+  Fallthrough(6, {})
 
 blk3:
 Inputs:
@@ -386,10 +490,16 @@ Statements:
 End:
   Callsite({})
 
+blk6:
+Inputs:
+Statements:
+  () <- match core::felt_is_zero(v2) {
+    IsZeroResult::Zero => blk0,
+    IsZeroResult::NonZero => blk1,
+  }
+End:
+  Return(v5)
+
 //! > lowering_diagnostics
-error: Inlining of functions with an early return is not supported.
- --> lib.cairo:1:1
-#[inline(always)]
-^***************^
 
 //! > semantic_diagnostics

@@ -26,8 +26,7 @@ use crate::utils::{
 
 /// A map from variables that should be stored as local to their allocated
 /// space.
-pub type LocalVariables =
-    OrderedHashMap<cairo_lang_sierra::ids::VarId, cairo_lang_sierra::ids::VarId>;
+pub type LocalVariables = OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>;
 
 /// Information about a libfunc, required by the `store_variables` module.
 pub struct LibfuncInfo {
@@ -186,7 +185,7 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// temp/local by the function).
     fn prepare_libfunc_arguments(
         &mut self,
-        args: &[cairo_lang_sierra::ids::VarId],
+        args: &[sierra::ids::VarId],
         param_signatures: &[ParamSignature],
     ) -> OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo> {
         let mut deferred_args =
@@ -214,33 +213,33 @@ impl<'a> AddStoreVariableStatements<'a> {
     ///   is, it was not stored as temp/local by the function).
     fn prepare_libfunc_argument(
         &mut self,
-        arg: &cairo_lang_sierra::ids::VarId,
+        arg: &sierra::ids::VarId,
         allow_deferred: bool,
         allow_add_const: bool,
         allow_const: bool,
     ) -> (bool, Option<DeferredVariableInfo>) {
         let mut res_deferred_info: Option<DeferredVariableInfo> = None;
 
-        if let Some(deferred_info) = self.state().deferred_variables.get(arg).cloned() {
+        if let Some(deferred_info) = self.state().deferred_variables.swap_remove(arg) {
             match deferred_info.kind {
                 state::DeferredVariableKind::Const => {
                     if !allow_const {
-                        return (self.store_deferred(arg), None);
+                        return (self.store_deferred(arg, deferred_info), None);
                     }
                 }
                 state::DeferredVariableKind::AddConst => {
                     if !allow_add_const {
-                        return (self.store_deferred(arg), None);
+                        return (self.store_deferred(arg, deferred_info), None);
                     }
                 }
                 state::DeferredVariableKind::Generic => {
                     if !allow_deferred {
-                        return (self.store_deferred(arg), None);
+                        return (self.store_deferred(arg, deferred_info), None);
                     }
                 }
             };
 
-            res_deferred_info = self.state().deferred_variables.swap_remove(arg);
+            res_deferred_info = Some(deferred_info);
         }
 
         if self.state().temporary_variables.get(arg).is_some() {
@@ -250,19 +249,31 @@ impl<'a> AddStoreVariableStatements<'a> {
         (false, res_deferred_info)
     }
 
-    /// Adds a store_temp() or store_local() instruction for the given deferred variable and removes
-    /// it from the `deferred_variables` map.
+    /// Adds a store_temp() or store_local() instruction for the given deferred variable.
+    /// The variable should be removed from the `deferred_variables` map prior to this call.
     ///
     /// Returns `true` if the variable was copied to the stack.
-    fn store_deferred(&mut self, var: &cairo_lang_sierra::ids::VarId) -> bool {
-        let deferred_info = self.state().deferred_variables[var.clone()].clone();
-        self.state().deferred_variables.swap_remove(var);
+    fn store_deferred(
+        &mut self,
+        var: &sierra::ids::VarId,
+        deferred_info: DeferredVariableInfo,
+    ) -> bool {
+        self.store_deferred_ex(var, var, deferred_info)
+    }
+
+    /// Same as `store_deferred` only allows the `store_temp` case to use a different variable.
+    fn store_deferred_ex(
+        &mut self,
+        var: &sierra::ids::VarId,
+        var_on_stack: &sierra::ids::VarId,
+        deferred_info: DeferredVariableInfo,
+    ) -> bool {
         // Check if this variable should be a local variable.
         if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
-            self.store_local(var, var, &uninitialized_local_var_id, &deferred_info.ty);
+            self.store_local(var, &uninitialized_local_var_id, &deferred_info.ty);
             false
         } else {
-            self.store_temp(var, var, &deferred_info.ty);
+            self.store_temp(var, var_on_stack, &deferred_info.ty);
             true
         }
     }
@@ -275,36 +286,41 @@ impl<'a> AddStoreVariableStatements<'a> {
         // Optimization: check if there is a prefix of `push_values` that is already on the stack.
         let prefix_size = self.known_stack().compute_on_stack_prefix_size(push_values);
 
-        for (i, pre_sierra::PushValue { var, var_on_stack, ty, dup_var }) in
+        for (i, pre_sierra::PushValue { var, var_on_stack, ty, dup }) in
             push_values.iter().enumerate()
         {
-            let should_rename = if self.state().deferred_variables.contains_key(var) {
-                // Convert the deferred variable into a temporary variable, by calling
-                // `prepare_libfunc_argument`.
-                // `should_rename` should be set to `true` if the variable was copied onto the
-                // stack.
-                self.prepare_libfunc_argument(var, false, false, true).0
-            } else {
-                // Check if this is part of the prefix. If it is, rename instead of adding
-                // `store_temp`.
-                i < prefix_size
-            };
+            let is_on_stack =
+                if let Some(deferred_info) = self.state().deferred_variables.swap_remove(var) {
+                    if self.store_deferred_ex(var, var_on_stack, deferred_info) {
+                        if *dup {
+                            // In the dup case we dup `var_on_stack` that is ready for push into
+                            // `var` that should still be available.
+                            self.dup(var_on_stack, var, ty);
+                        }
+                        continue;
+                    } else {
+                        false
+                    }
+                } else {
+                    // Check if this is part of the prefix. If it is, rename instead of adding
+                    // `store_temp`.
+                    i < prefix_size
+                };
 
-            // Duplicate the variable if needed.
-            let var = if let Some(dup_var) = dup_var {
-                self.dup(var, dup_var, ty);
-                dup_var
+            if is_on_stack {
+                if *dup {
+                    self.dup(var, var_on_stack, ty);
+                } else {
+                    self.rename_var(var, var_on_stack, ty);
+                }
             } else {
-                var
-            };
-
-            if should_rename {
-                // Note: the original variable may still be used after the following `rename`
-                // statement. In such a case, it will be dupped before the `rename`
-                // by `add_dups_and_drops()`.
-                self.rename_var(var, var_on_stack, ty);
-            } else {
-                self.store_temp(var, var_on_stack, ty);
+                let src = if *dup {
+                    self.dup(var, var_on_stack, ty);
+                    var_on_stack
+                } else {
+                    var
+                };
+                self.store_temp(src, var_on_stack, ty);
             }
         }
     }
@@ -331,19 +347,19 @@ impl<'a> AddStoreVariableStatements<'a> {
 
     /// Copies the given variable into a local variable if it is marked as local.
     /// Removes it from [State::temporary_variables].
-    fn store_temp_as_local(&mut self, var: &cairo_lang_sierra::ids::VarId) {
+    fn store_temp_as_local(&mut self, var: &sierra::ids::VarId) {
         if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
             let ty = self.state().temporary_variables.swap_remove(var).unwrap();
-            self.store_local(var, var, &uninitialized_local_var_id, &ty);
+            self.store_local(var, &uninitialized_local_var_id, &ty);
         }
     }
 
     /// Stores all the deffered and temporary variables as local variables.
     fn store_variables_as_locals(&mut self) {
         let mut vars_to_store: Vec<(
-            cairo_lang_sierra::ids::VarId,
-            cairo_lang_sierra::ids::VarId,
-            cairo_lang_sierra::ids::ConcreteTypeId,
+            sierra::ids::VarId,
+            sierra::ids::VarId,
+            sierra::ids::ConcreteTypeId,
         )> = vec![];
         for (var, deferred_info) in self.state_ref().deferred_variables.iter() {
             if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
@@ -356,7 +372,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
 
         for (var, uninitialized_local_var_id, ty) in vars_to_store {
-            self.store_local(&var, &var, &uninitialized_local_var_id, &ty);
+            self.store_local(&var, &uninitialized_local_var_id, &ty);
             assert!(self.state().deferred_variables.swap_remove(&var).is_some());
         }
 
@@ -380,11 +396,12 @@ impl<'a> AddStoreVariableStatements<'a> {
         self.result
     }
 
+    /// Adds a `store_temp` command storing `var` into `var_on_stack`.
     fn store_temp(
         &mut self,
-        var: &cairo_lang_sierra::ids::VarId,
-        var_on_stack: &cairo_lang_sierra::ids::VarId,
-        ty: &cairo_lang_sierra::ids::ConcreteTypeId,
+        var: &sierra::ids::VarId,
+        var_on_stack: &sierra::ids::VarId,
+        ty: &sierra::ids::ConcreteTypeId,
     ) {
         self.result.push(simple_statement(
             store_temp_libfunc_id(self.db, ty.clone()),
@@ -396,26 +413,27 @@ impl<'a> AddStoreVariableStatements<'a> {
         self.state().temporary_variables.insert(var_on_stack.clone(), ty.clone());
     }
 
+    /// Adds a `store_local` command storing `var` into itself using the preallocated
+    /// `uninitialized_local_var_id`.
     fn store_local(
         &mut self,
-        var: &cairo_lang_sierra::ids::VarId,
-        var_on_stack: &cairo_lang_sierra::ids::VarId,
-        uninitialized_local_var_id: &cairo_lang_sierra::ids::VarId,
-        ty: &cairo_lang_sierra::ids::ConcreteTypeId,
+        var: &sierra::ids::VarId,
+        uninitialized_local_var_id: &sierra::ids::VarId,
+        ty: &sierra::ids::ConcreteTypeId,
     ) {
         self.result.push(simple_statement(
             store_local_libfunc_id(self.db, ty.clone()),
             &[uninitialized_local_var_id.clone(), var.clone()],
-            &[var_on_stack.clone()],
+            &[var.clone()],
         ));
     }
 
     /// Adds a call to the dup() libfunc, duplicating `var` into `dup_var`.
     fn dup(
         &mut self,
-        var: &cairo_lang_sierra::ids::VarId,
-        dup_var: &cairo_lang_sierra::ids::VarId,
-        ty: &cairo_lang_sierra::ids::ConcreteTypeId,
+        var: &sierra::ids::VarId,
+        dup_var: &sierra::ids::VarId,
+        ty: &sierra::ids::ConcreteTypeId,
     ) {
         self.result.push(simple_statement(
             dup_libfunc_id(self.db, ty.clone()),
@@ -427,9 +445,9 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// Adds a call to the rename() libfunc, renaming `src` to `dst`.
     fn rename_var(
         &mut self,
-        src: &cairo_lang_sierra::ids::VarId,
-        dst: &cairo_lang_sierra::ids::VarId,
-        ty: &cairo_lang_sierra::ids::ConcreteTypeId,
+        src: &sierra::ids::VarId,
+        dst: &sierra::ids::VarId,
+        ty: &sierra::ids::ConcreteTypeId,
     ) {
         self.result.push(simple_statement(
             rename_libfunc_id(self.db, ty.clone()),

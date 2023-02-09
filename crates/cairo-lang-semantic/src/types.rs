@@ -9,20 +9,36 @@ use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, OptionFrom};
-use itertools::Itertools;
+use itertools::{zip_eq, Itertools};
 
 use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{Inference, TypeVar};
-use crate::items::imp::{find_impls_at_context, ImplLookupContext};
+use crate::items::imp::{find_impls_at_context, ImplId, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
-use crate::{semantic, ConcreteImplId, ConcreteVariant, FunctionId, GenericArgumentId};
+use crate::{
+    semantic, ConcreteImplId, ConcreteVariant, FunctionId, GenericArgumentId, GenericParam,
+};
 
 /// A substitution of generic arguments in generic parameters. Used for concretization.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GenericSubstitution(pub OrderedHashMap<GenericParamId, GenericArgumentId>);
+impl GenericSubstitution {
+    pub fn new(generic_params: &[GenericParam], generic_args: &[GenericArgumentId]) -> Self {
+        GenericSubstitution(
+            zip_eq(generic_params.iter().map(|param| param.id()), generic_args.iter().copied())
+                .collect(),
+        )
+    }
+    pub fn concat(mut self, other: GenericSubstitution) -> Self {
+        for (key, value) in other.0.into_iter() {
+            self.0.insert(key, value);
+        }
+        self
+    }
+}
 impl Deref for GenericSubstitution {
     type Target = OrderedHashMap<GenericParamId, GenericArgumentId>;
 
@@ -226,68 +242,40 @@ impl ConcreteExternTypeId {
 
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
-pub fn resolve_type_with_inference(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    inference: &mut Inference<'_>,
-    resolver: &mut Resolver<'_>,
-    ty_syntax: &ast::Expr,
-) -> TypeId {
-    maybe_resolve_type(db, diagnostics, inference, resolver, ty_syntax)
-        .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
-}
 pub fn resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, &mut Inference::disabled(db), resolver, ty_syntax)
+    maybe_resolve_type(db, diagnostics, resolver, ty_syntax)
         .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
 }
 pub fn maybe_resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    inference: &mut Inference<'_>,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> Maybe<TypeId> {
     let syntax_db = db.upcast();
     Ok(match ty_syntax {
         ast::Expr::Path(path) => {
-            match resolver.resolve_concrete_path(
-                diagnostics,
-                inference,
-                path,
-                NotFoundItemType::Type,
-            )? {
+            match resolver.resolve_concrete_path(diagnostics, path, NotFoundItemType::Type)? {
                 ResolvedConcreteItem::Type(ty) => ty,
                 _ => {
                     return Err(diagnostics.report(path, NotAType));
                 }
             }
         }
-        ast::Expr::Parenthesized(expr_syntax) => resolve_type_with_inference(
-            db,
-            diagnostics,
-            inference,
-            resolver,
-            &expr_syntax.expr(syntax_db),
-        ),
+        ast::Expr::Parenthesized(expr_syntax) => {
+            resolve_type(db, diagnostics, resolver, &expr_syntax.expr(syntax_db))
+        }
         ast::Expr::Tuple(tuple_syntax) => {
             let sub_tys = tuple_syntax
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
-                .map(|subexpr_syntax| {
-                    resolve_type_with_inference(
-                        db,
-                        diagnostics,
-                        inference,
-                        resolver,
-                        &subexpr_syntax,
-                    )
-                })
+                .map(|subexpr_syntax| resolve_type(db, diagnostics, resolver, &subexpr_syntax))
                 .collect();
             db.intern_type(TypeLongId::Tuple(sub_tys))
         }
@@ -301,7 +289,7 @@ pub fn maybe_resolve_type(
 pub fn generic_type_generic_params(
     db: &dyn SemanticGroup,
     generic_type: GenericTypeId,
-) -> Maybe<Vec<GenericParamId>> {
+) -> Maybe<Vec<semantic::GenericParam>> {
     match generic_type {
         GenericTypeId::Struct(id) => db.struct_generic_params(id),
         GenericTypeId::Enum(id) => db.enum_generic_params(id),
@@ -370,8 +358,8 @@ pub fn substitute_generics_args_inplace(
         match arg {
             GenericArgumentId::Type(ty) => *ty = substitute_ty(db.upcast(), substitution, *ty),
             GenericArgumentId::Literal(_) => {}
-            GenericArgumentId::Impl(concrete_impl) => {
-                *concrete_impl = substitute_impl(db.upcast(), substitution, *concrete_impl)
+            GenericArgumentId::Impl(ImplId::Concrete(concrete_impl_id)) => {
+                *concrete_impl_id = substitute_impl(db.upcast(), substitution, *concrete_impl_id)
             }
         }
     }

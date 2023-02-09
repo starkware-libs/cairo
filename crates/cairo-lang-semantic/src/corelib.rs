@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
@@ -329,22 +329,22 @@ fn get_core_function_impl_method(
         .module_item_by_name(core_module, impl_name.clone())
         .expect("Failed to load core lib.")
         .unwrap_or_else(|| panic!("Impl '{impl_name}' was not found in core lib."));
-    let impl_id = match module_item_id {
+    let impl_def_id = match module_item_id {
         ModuleItemId::Use(use_id) => {
             db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::Impl)
             })
         }
-        _ => ImplId::option_from(module_item_id),
+        _ => ImplDefId::option_from(module_item_id),
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
     let function = db
-        .impl_functions(impl_id)
+        .impl_functions(impl_def_id)
         .ok()
         .and_then(|functions| functions.get(&method_name).cloned())
         .unwrap_or_else(|| panic!("no {method_name} in {impl_name}."));
     let concrete_impl =
-        db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args: vec![] });
+        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] });
     db.intern_function(FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
@@ -471,11 +471,14 @@ pub fn try_get_const_libfunc_name_by_type(
     let felt_ty = core_felt_ty(db);
     let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
     let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
+    let u32_ty = get_core_ty_by_name(db, "u32".into(), vec![]);
     let u64_ty = get_core_ty_by_name(db, "u64".into(), vec![]);
     if ty == felt_ty {
         Ok("felt_const".into())
     } else if ty == u8_ty {
         Ok("u8_const".into())
+    } else if ty == u32_ty {
+        Ok("u32_const".into())
     } else if ty == u64_ty {
         Ok("u64_const".into())
     } else if ty == u128_ty {

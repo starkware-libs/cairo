@@ -113,6 +113,30 @@ fn test_ecdsa() {
         ecdsa::check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s),
         'ecdsa returned false'
     );
+    assert(
+        !ecdsa::check_ecdsa_signature(
+            message_hash: message_hash + 1, :public_key, :signature_r, :signature_s
+        ),
+        'ecdsa - wrong message'
+    );
+    assert(
+        !ecdsa::check_ecdsa_signature(
+            :message_hash, public_key: public_key + 1, :signature_r, :signature_s
+        ),
+        'ecdsa - wrong public_key'
+    );
+    assert(
+        !ecdsa::check_ecdsa_signature(
+            :message_hash, :public_key, signature_r: signature_r + 1, :signature_s
+        ),
+        'ecdsa - wrong r'
+    );
+    assert(
+        !ecdsa::check_ecdsa_signature(
+            :message_hash, :public_key, :signature_r, signature_s: signature_s + 1
+        ),
+        'ecdsa - wrong s'
+    );
 }
 
 #[test]
@@ -159,6 +183,8 @@ fn test_u8_operators() {
     assert(1_u8 + 3_u8 == 4_u8, '1 + 3 == 4');
     assert(3_u8 + 6_u8 == 9_u8, '3 + 6 == 9');
     assert(3_u8 - 1_u8 == 2_u8, '3 - 1 == 2');
+    assert(19_u8 / 7_u8 == 2_u8, '19 / 7 == 2');
+    assert(19_u8 % 7_u8 == 5_u8, '19 % 7 == 5');
     assert(231_u8 - 131_u8 == 100_u8, '231-131=100');
     assert(1_u8 < 4_u8, '1 < 4');
     assert(1_u8 <= 4_u8, '1 <= 4');
@@ -206,6 +232,85 @@ fn test_u8_add_overflow_2() {
     200_u8 + 60_u8;
 }
 
+#[test]
+#[should_panic]
+fn test_u8_div_by_0() {
+    2_u8 / 0_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_u8_mod_by_0() {
+    2_u8 % 0_u8;
+}
+
+#[test]
+fn test_u32_operators() {
+    assert(1_u32 == 1_u32, '1 == 1');
+    assert(1_u32 != 2_u32, '1 != 2');
+    assert(1_u32 + 3_u32 == 4_u32, '1 + 3 == 4');
+    assert(3_u32 + 6_u32 == 9_u32, '3 + 6 == 9');
+    assert(3_u32 - 1_u32 == 2_u32, '3 - 1 == 2');
+    assert(231_u32 - 131_u32 == 100_u32, '231-131=100');
+    assert(510670725_u32 / 7_u32 == 72952960_u32, '510670725 / 7 == 72952960');
+    assert(510670725_u32 % 7_u32 == 5_u32, '510670725 % 7 == 5');
+    assert(1_u32 < 4_u32, '1 < 4');
+    assert(1_u32 <= 4_u32, '1 <= 4');
+    assert(!(4_u32 < 4_u32), '!(4 < 4)');
+    assert(4_u32 <= 4_u32, '4 <= 4');
+    assert(5_u32 > 2_u32, '5 > 2');
+    assert(5_u32 >= 2_u32, '5 >= 2');
+    assert(!(3_u32 > 3_u32), '!(3 > 3)');
+    assert(3_u32 >= 3_u32, '3 >= 3');
+}
+
+#[test]
+#[should_panic]
+fn test_u32_sub_overflow_1() {
+    0_u32 - 1_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_sub_overflow_2() {
+    0_u32 - 3_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_sub_overflow_3() {
+    1_u32 - 3_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_sub_overflow_4() {
+    100_u32 - 250_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_add_overflow_1() {
+    0x80000000_u32 + 0x80000000_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_add_overflow_2() {
+    0x90000000_u32 + 0x80000001_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_div_by_0() {
+    2_u32 / 0_u32;
+}
+
+#[test]
+#[should_panic]
+fn test_u32_mod_by_0() {
+    0_u32 % 0_u32;
+}
 
 #[test]
 fn test_u64_operators() {
@@ -215,6 +320,11 @@ fn test_u64_operators() {
     assert(3_u64 + 6_u64 == 9_u64, '3 + 6 == 9');
     assert(3_u64 - 1_u64 == 2_u64, '3 - 1 == 2');
     assert(231_u64 - 131_u64 == 100_u64, '231-131=100');
+    assert(
+        5010670477878974275_u64 / 7_u64 == 715810068268424896_u64,
+        '5010670477878974275 / 7 == 715810068268424896'
+    );
+    assert(5010670477878974275_u64 % 7_u64 == 3_u64, '5010670477878974275 % 7 == 5');
     assert(1_u64 < 4_u64, '1 < 4');
     assert(1_u64 <= 4_u64, '1 <= 4');
     assert(!(4_u64 < 4_u64), '!(4 < 4)');
@@ -262,6 +372,18 @@ fn test_u64_add_overflow_2() {
 }
 
 #[test]
+#[should_panic]
+fn test_u64_div_by_0() {
+    2_u64 / 0_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_u64_mod_by_0() {
+    0_u64 % 0_u64;
+}
+
+#[test]
 fn test_u128_operators() {
     assert(1_u128 == 1_u128, '1 == 1');
     assert(!(1_u128 == 2_u128), '!(1 == 2)');
@@ -290,6 +412,18 @@ fn test_u128_operators() {
     assert((2_u128 & 2_u128) == 2_u128, '2 & 2 == 2');
     assert((2_u128 & 3_u128) == 2_u128, '2 & 3 == 2');
     assert((3_u128 ^ 6_u128) == 5_u128, '3 ^ 6 == 5');
+    assert(u128_sqrt(9_u128) == 3_u128, 'u128_sqrt(9) == 3');
+    assert(u128_sqrt(10_u128) == 3_u128, 'u128_sqrt(10) == 3');
+    assert(
+        u128_sqrt(1267650600228229401496703205376_u128) == 1125899906842624_u128,
+        'u128_sqrt(2^100) == 2^50'
+    );
+    assert(
+        u128_sqrt(340282366920938463463374607431768211455_u128) == 18446744073709551615_u128,
+        'u128_sqrt(2^128 - 1) == 18,446,744,073,709,551,615'
+    );
+    assert(u128_sqrt(1_u128) == 1_u128, 'u128_sqrt(1) == 1');
+    assert(u128_sqrt(0_u128) == 0_u128, 'u128_sqrt(0) == 0');
 }
 
 fn pow_2_127() -> u128 {

@@ -59,11 +59,9 @@ type Box<felt> = Box<felt>;
 
 libfunc unbox<felt> = unbox<felt>;
 libfunc store_temp<felt> = store_temp<felt>;
-libfunc rename<felt> = rename<felt>;
 
 unbox<felt>([0]) -> ([1]);
-store_temp<felt>([1]) -> ([1]);
-rename<felt>([1]) -> ([2]);
+store_temp<felt>([1]) -> ([2]);
 return([2]);
 
 test::foo@0([0]: Box<felt>) -> (felt);
@@ -135,11 +133,9 @@ type Box<core::integer::u256> = Box<core::integer::u256>;
 
 libfunc unbox<core::integer::u256> = unbox<core::integer::u256>;
 libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
-libfunc rename<core::integer::u256> = rename<core::integer::u256>;
 
 unbox<core::integer::u256>([0]) -> ([1]);
-store_temp<core::integer::u256>([1]) -> ([1]);
-rename<core::integer::u256>([1]) -> ([2]);
+store_temp<core::integer::u256>([1]) -> ([2]);
 return([2]);
 
 test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
@@ -274,11 +270,9 @@ type Box<test::Empty> = Box<test::Empty>;
 
 libfunc unbox<test::Empty> = unbox<test::Empty>;
 libfunc store_temp<test::Empty> = store_temp<test::Empty>;
-libfunc rename<test::Empty> = rename<test::Empty>;
 
 unbox<test::Empty>([0]) -> ([1]);
-store_temp<test::Empty>([1]) -> ([1]);
-rename<test::Empty>([1]) -> ([2]);
+store_temp<test::Empty>([1]) -> ([2]);
 return([2]);
 
 test::foo@0([0]: Box<test::Empty>) -> (test::Empty);
