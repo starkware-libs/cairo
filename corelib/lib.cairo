@@ -189,7 +189,7 @@ use array::array_len;
 use array::ArrayTrait;
 use array::ArrayImpl;
 impl ArrayFeltDrop of Drop::<Array::<felt>>;
-type usize = u64;
+type usize = u32;
 
 // Dictionary.
 mod dict;
