@@ -77,7 +77,10 @@ fn build_builtin_get_gas(
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
         tempvar has_enough_gas;
-        hint TestLessThanOrEqual {lhs: total_requested_count, rhs: gas_counter} into {dst: has_enough_gas};
+        hint TestLessThanOrEqual {
+            lhs: total_requested_count,
+            rhs: gas_counter
+        } into {dst: has_enough_gas};
         jump HasEnoughGas if has_enough_gas != 0;
         // In this case amount > gas_counter_value, so amount - gas_counter_value - 1 >= 0.
         tempvar gas_diff = gas_counter - total_requested_count;
