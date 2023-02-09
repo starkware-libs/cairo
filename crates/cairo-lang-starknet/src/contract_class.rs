@@ -52,7 +52,7 @@ pub struct ContractClass {
 }
 
 impl ContractClass {
-    /// Checks that all the used libfuncs in the contract class are allwed in the contract class
+    /// Checks that all the used libfuncs in the contract class are allowed in the contract class
     /// sierra version.
     pub fn verify_compatible_sierra_version(&self) -> Result<(), SierraVersionError> {
         let sierra_version = lookup_sierra_version(self.sierra_version_id)?;
