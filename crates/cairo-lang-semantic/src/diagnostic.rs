@@ -16,6 +16,7 @@ use cairo_lang_diagnostics::{
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use itertools::Itertools;
+use num_bigint::BigInt;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -117,6 +118,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
             SemanticDiagnosticKind::NoLiteralFunctionFound => {
                 "A literal with this type cannot be created.".into()
+            }
+            SemanticDiagnosticKind::LiteralOutOfRange { ty } => {
+                format!("The value does not fit within the range of type {}.", ty.format(db))
             }
             SemanticDiagnosticKind::NotAVariant => {
                 "Not a variant. Use the full name Enum::Variant.".into()
@@ -571,6 +575,9 @@ pub enum SemanticDiagnosticKind {
     UnknownStruct,
     UnknownEnum,
     NoLiteralFunctionFound,
+    LiteralOutOfRange {
+        ty: semantic::TypeId,
+    },
     NotAVariant,
     NotAStruct,
     NotAType,

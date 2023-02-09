@@ -1,9 +1,13 @@
+use std::str::FromStr;
+
 use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
+use num_bigint::{BigInt, BigUint};
+use num_traits::Num;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -487,4 +491,31 @@ pub fn try_get_const_libfunc_name_by_type(
 
 pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
     try_get_const_libfunc_name_by_type(db, ty).unwrap()
+}
+
+/// Returns the name of the libfunc that creates a constant of type `ty`.
+pub fn try_get_type_max_value(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Result<BigInt, SemanticDiagnosticKind> {
+    let felt_ty = core_felt_ty(db);
+    let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
+    let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
+    let u64_ty = get_core_ty_by_name(db, "u64".into(), vec![]);
+    if ty == felt_ty {
+        // PRIME - 1
+        Ok(BigInt::from_str_radix(
+            "800000000000011000000000000000000000000000000000000000000000000",
+            16,
+        )
+        .unwrap())
+    } else if ty == u8_ty {
+        Ok((BigInt::from(1) << 8) - 1)
+    } else if ty == u64_ty {
+        Ok((BigInt::from(1) << 64) - 1)
+    } else if ty == u128_ty {
+        Ok((BigInt::from(1) << 128) - 1)
+    } else {
+        Err(SemanticDiagnosticKind::NoLiteralFunctionFound)
+    }
 }
