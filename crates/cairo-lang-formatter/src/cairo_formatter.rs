@@ -32,17 +32,13 @@ impl FileDiff {
 
 impl Display for FileDiff {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let patch = create_patch(&self.original, &self.formatted);
-        write!(f, "{patch}")
+        write!(f, "{}", create_patch(&self.original, &self.formatted))
     }
 }
 
 impl Debug for FileDiff {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "FileDiff(")?;
-        Display::fmt(self, f)?;
-        write!(f, ")")?;
-        Ok(())
+        writeln!(f, "FileDiff({self})")
     }
 }
 
@@ -65,7 +61,7 @@ impl<'a> Display for FileDiffColoredDisplay<'a> {
 
 impl<'a> Debug for FileDiffColoredDisplay<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "FileDiffWithColors({:?})", self.diff)
+        writeln!(f, "FileDiffColoredDisplay({:?})", self.diff)
     }
 }
 
