@@ -1,7 +1,11 @@
 use cairo_lang_casm::{builder::{CasmBuilder},  casm_build_extend};
+use cairo_lang_sierra_gas::core_libfunc_cost::ConstCost;
 
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo};
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+
+// pub const SYSTEM_CALL_COST: i32 =
+//     ConstCost { steps: 100, holes: 0, range_checks: 0 }.cost();
 
 pub fn build_declare(
     builder: CompiledInvocationBuilder<'_>,
@@ -33,7 +37,10 @@ pub fn build_declare(
                 Some(failure_handle_statement_id),
             ),
         ],
-        None
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: None,
+        },
     ))
 
 }

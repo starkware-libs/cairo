@@ -3,8 +3,12 @@ use std::collections::HashMap;
 
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
+use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
-use cairo_lang_sierra::extensions::ConcreteType;
+use cairo_lang_sierra::extensions::range_check::RangeCheckType;
+use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
+use cairo_lang_sierra::extensions::ec::EcOpType;
+use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::program::{Function};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
@@ -21,7 +25,6 @@ use serde::{Deserialize, Serialize};
 use num_bigint::BigInt;
 use thiserror::Error;   
 use smol_str::SmolStr;
-
 
 #[derive(Debug, Error)]
 pub enum GeneratorError {
@@ -209,11 +212,11 @@ impl SierraCasmGenerator {
             .into_iter()
             .collect();
         // The offset [fp - i] for each of this builtins in this configuration.
-        let builtin_offset: HashMap<cairo_lang_sierra::ids::ConcreteTypeId, i16> = HashMap::from([
-            (cairo_lang_sierra::ids::ConcreteTypeId::new_inline("Pedersen"), 6),
-            (cairo_lang_sierra::ids::ConcreteTypeId::new_inline("RangeCheck"), 5),
-            (cairo_lang_sierra::ids::ConcreteTypeId::new_inline("Bitwise"), 4),
-            (cairo_lang_sierra::ids::ConcreteTypeId::new_inline("EcOp"), 3),
+        let builtin_offset: HashMap<cairo_lang_sierra::ids::GenericTypeId, i16> = HashMap::from([
+            (PedersenType::ID, 6),
+            (RangeCheckType::ID, 5),
+            (BitwiseType::ID, 4),
+            (EcOpType::ID, 3),
         ]);
         if func.signature.param_types.contains(&"DictManager".into()) {
             casm_extend! {ctx,
@@ -230,7 +233,9 @@ impl SierraCasmGenerator {
             }
         }
         for (i, ty) in func.signature.param_types.iter().enumerate() {
-            if let Some(offset) = builtin_offset.get(ty) {
+            let info = self.get_info(ty);
+            let generic_ty = &info.long_id.generic_id;
+            if let Some(offset) = builtin_offset.get(generic_ty) {
                 casm_extend! {ctx,
                     [ap + 0] = [fp - offset], ap++;
                 }
@@ -289,6 +294,13 @@ impl SierraCasmGenerator {
             ret;
         }
         .instructions
+    }
+
+    fn get_info(
+        &self,
+        ty: &cairo_lang_sierra::ids::ConcreteTypeId,
+    ) -> &cairo_lang_sierra::extensions::types::TypeInfo {
+        self.sierra_program_registry.get_type(ty).unwrap().info()
     }
 }
 

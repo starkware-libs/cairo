@@ -29,6 +29,7 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use itertools::Itertools;
 
+use crate::cheatcodes_libfunc_cost_base::cheatcodes_libfunc_cost_base;
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
 #[derive(Default, Debug)]
@@ -334,7 +335,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             NullableConcreteLibfunc::FromNullable(_) => vec![ops.steps(1), ops.steps(1)],
         },
         CoreConcreteLibfunc::Debug(_) => vec![ops.steps(1)],
-        CoreConcreteLibfunc::Cheatcodes(_) => vec![ops.steps(0), ops.steps(0)],
+        CoreConcreteLibfunc::Cheatcodes(libfunc) => cheatcodes_libfunc_cost_base(ops, libfunc) 
     }
 }
 

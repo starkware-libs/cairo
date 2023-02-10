@@ -1,6 +1,6 @@
 use cairo_lang_casm::{builder::{CasmBuilder},  casm_build_extend};
 
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo};
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 
 pub fn build_roll(
@@ -32,7 +32,10 @@ pub fn build_roll(
                 Some(failure_handle_statement_id),
             ),
         ],
-        None
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: None,
+        },
     ))
 
 }
