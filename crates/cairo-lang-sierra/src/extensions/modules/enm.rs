@@ -21,6 +21,7 @@ use cairo_lang_utils::try_extract_matches;
 use num_bigint::ToBigInt;
 use num_traits::Signed;
 
+use super::snapshot::snapshot_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -112,6 +113,7 @@ define_libfunc_hierarchy! {
     pub enum EnumLibfunc {
         Init(EnumInitLibfunc),
         Match(EnumMatchLibfunc),
+        SnapshotMatch(EnumSnapshotMatchLibfunc),
     }, EnumConcreteLibfunc
 }
 
@@ -224,6 +226,43 @@ impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
 
         Ok(LibfuncSignature {
             param_signatures: vec![enum_type.into()],
+            branch_signatures,
+            fallthrough: None,
+        })
+    }
+}
+
+/// Libfunc for matching an enum snapshot.
+#[derive(Default)]
+pub struct EnumSnapshotMatchLibfunc {}
+impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
+    const STR_ID: &'static str = "enum_snapshot_match";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let enum_type = args_as_single_type(args)?;
+        let generic_args = context.get_type_info(enum_type.clone())?.long_id.generic_args;
+        let variant_types =
+            EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
+                .variants;
+        let branch_signatures = variant_types
+            .into_iter()
+            .map(|ty| {
+                Ok(BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: snapshot_ty(context, ty)?,
+                        ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(LibfuncSignature {
+            param_signatures: vec![snapshot_ty(context, enum_type)?.into()],
             branch_signatures,
             fallthrough: None,
         })

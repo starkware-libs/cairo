@@ -80,6 +80,14 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 duplicatable: false,
                 size: 1,
             })
+        } else if id == "NonDupEnum".into() || id == "NonDupStruct".into() {
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: false,
+                duplicatable: false,
+                size: 2,
+            })
         } else if id == "SnapshotRangeCheck".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
@@ -288,6 +296,8 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("enum_match", vec![type_arg("Option")] => Ok(()); "enum_match<Option>")]
 #[test_case("enum_match", vec![value_arg(4)] => Err(UnsupportedGenericArg); "enum_match<4>")]
 #[test_case("enum_match", vec![] => Err(WrongNumberOfGenericArgs); "enum_match")]
+#[test_case("enum_snapshot_match", vec![type_arg("Option")] => Ok(()); "enum_snapshot_match<Option>")]
+#[test_case("enum_snapshot_match", vec![type_arg("NonDupEnum")] => Ok(()); "enum_snapshot_match<NonDupEnum>")]
 #[test_case("struct_construct", vec![type_arg("U128AndFelt")] => Ok(());
             "struct_construct<U128AndFelt>")]
 #[test_case("struct_construct", vec![value_arg(4)] => Err(UnsupportedGenericArg);
@@ -296,11 +306,18 @@ Ok(());"enum_init<Option,1>")]
             "struct_deconstruct<U128AndFelt>")]
 #[test_case("struct_deconstruct", vec![value_arg(4)] => Err(UnsupportedGenericArg);
             "struct_deconstruct<4>")]
+#[test_case("struct_snapshot_deconstruct", vec![type_arg("U128AndFelt")] => Ok(());
+            "struct_snapshot_deconstruct<U128AndFelt>")]
+#[test_case("struct_snapshot_deconstruct", vec![type_arg("NonDupStruct")] => Ok(());
+            "struct_snapshot_deconstruct<NonDupStruct>")]
 #[test_case("storage_read_syscall", vec![] => Ok(()); "storage_read_syscall")]
 #[test_case("storage_write_syscall", vec![] => Ok(()); "storage_write_syscall")]
 #[test_case("call_contract_syscall", vec![] => Ok(()); "call_contract_syscall")]
 #[test_case("emit_event_syscall", vec![] => Ok(()); "emit_event_syscall")]
 #[test_case("snapshot_take", vec![type_arg("RangeCheck")] => Ok(()); "snapshot_take<RangeCheck>")]
+#[test_case("snapshot_take", vec![type_arg("NonDupStruct")] => Ok(());
+            "snapshot_take<NonDupStruct>")]
+#[test_case("snapshot_take", vec![type_arg("NonDupEnum")] => Ok(()); "snapshot_take<NonDupEnum>")]
 #[test_case("snapshot_take", vec![type_arg("felt")] => Ok(()); "snapshot_take<felt>")]
 #[test_case("snapshot_take", vec![type_arg("SnapshotRangeCheck")] => Ok(());
             "snapshot_take<SnapshotRangeCheck>")]

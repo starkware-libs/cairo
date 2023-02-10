@@ -264,10 +264,14 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(1)]
         }
         Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(1)],
-        Enum(EnumConcreteLibfunc::Match(sig)) => {
+        Enum(EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig)) => {
             vec![ops.steps(1); sig.signature.branch_signatures.len()]
         }
-        Struct(StructConcreteLibfunc::Construct(_) | StructConcreteLibfunc::Deconstruct(_)) => {
+        Struct(
+            StructConcreteLibfunc::Construct(_)
+            | StructConcreteLibfunc::Deconstruct(_)
+            | StructConcreteLibfunc::SnapshotDeconstruct(_),
+        ) => {
             vec![ops.steps(0)]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::New(_)) => {
