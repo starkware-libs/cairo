@@ -6,8 +6,8 @@ use cairo_lang_sierra::extensions::builtin_cost::{
 };
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup,
-    Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint64, Uint8,
-    UnconditionalJump, UnwrapNonZero,
+    Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16, Uint32, Uint64,
+    Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
@@ -19,8 +19,10 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
-use cairo_lang_sierra::extensions::strct::StructConcreteLibfunc;
-use cairo_lang_sierra::extensions::uint::{IntOperator, Uint64Concrete, Uint8Concrete};
+use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
+use cairo_lang_sierra::extensions::uint::{
+    IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
+};
 use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -37,12 +39,23 @@ pub struct ConstCost {
 }
 impl ConstCost {
     pub const fn cost(&self) -> i32 {
-        self.steps * 100 + self.holes * 10 + self.range_checks * 50
+        self.steps * 100 + self.holes * 10 + self.range_checks * 70
     }
 }
 
-/// The cost of a dictionary access in the squash stage.
-pub const DICT_SQUASH_ACCESS_COST: i32 = ConstCost { steps: 84, holes: 0, range_checks: 0 }.cost();
+// The costs of the dict_squash libfunc, divided into different parts.
+/// The cost per each unique key in the dictionary.
+pub const DICT_SQUASH_UNIQUE_KEY_COST: i32 =
+    ConstCost { steps: 64, holes: 0, range_checks: 6 }.cost();
+/// The cost per each access to a key after the first access.
+pub const DICT_SQUASH_REPEATED_ACCESS_COST: i32 =
+    ConstCost { steps: 12, holes: 0, range_checks: 1 }.cost();
+/// The cost not dependent on the number of keys and access.
+pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 89, holes: 0, range_checks: 3 }.cost();
+/// The cost to charge per each read/write access. `DICT_SQUASH_UNIQUE_KEY_COST` is refunded for
+/// each repeated access in dict_squash.
+pub const DICT_SQUASH_ACCESS_COST: i32 =
+    DICT_SQUASH_UNIQUE_KEY_COST + DICT_SQUASH_REPEATED_ACCESS_COST;
 
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
@@ -205,7 +218,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
         }
         Array(ArrayConcreteLibfunc::PopFront(_)) => vec![ops.steps(2), ops.steps(3)],
-        Array(ArrayConcreteLibfunc::At(libfunc)) => {
+        Array(ArrayConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![
                     ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
@@ -223,6 +236,8 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         }
         Uint128(libfunc) => u128_libfunc_cost(ops, libfunc),
         Uint8(libfunc) => u8_libfunc_cost(ops, libfunc),
+        Uint16(libfunc) => u16_libfunc_cost(ops, libfunc),
+        Uint32(libfunc) => u32_libfunc_cost(ops, libfunc),
         Uint64(libfunc) => u64_libfunc_cost(ops, libfunc),
         Felt(libfunc) => felt_libfunc_cost(ops, libfunc),
         Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) => {
@@ -275,14 +290,15 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             ]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Squash(_)) => {
-            // Dict squash have a fixed cost of 92 + `DICT_SQUASH_ACCESS_COST` for each dict access.
-            // Only the fixed cost is charged here, so that we would alway be able to
-            // call squash even if rnning out of gas. The cost of the proccesing of the
-            // first key is `DICT_SQUASH_ACCESS_COST`, and each access for an existing
-            // key costs only 12. In each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
-            // `DICT_SQUASH_ACCESS_COST - 12` gas are refunded per each succesive access
-            // in dict squash.
-            vec![ops.steps(92)]
+            // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
+            // for each dict access. Only the fixed cost is charged here, so that we
+            // would alway be able to call squash even if running out of gas. The cost
+            // of the proccesing of the first key is `DICT_SQUASH_ACCESS_COST`, and each
+            // access for an existing key costs only 'DICT_SQUASH_REPEATED_ACCESS_COST'.
+            // In each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
+            // `DICT_SQUASH_ACCESS_COST - DICT_SQUASH_REPEATED_ACCESS_COST` gas are refunded per
+            // each succesive access in dict squash.
+            vec![ops.cost_token(DICT_SQUASH_FIXED_COST, CostTokenType::Const)]
         }
         Pedersen(_) => {
             vec![ops.steps(2)]
@@ -336,7 +352,9 @@ fn statement_vars_cost<'a, Ops: CostOperations, TokenTypes: Iterator<Item = &'a 
 /// Returns costs for u8 libfuncs.
 fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) => vec![ops.steps(0)],
+        Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) | Uint8Concrete::WideMul(_) => {
+            vec![ops.steps(0)]
+        }
         Uint8Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
                 vec![
@@ -372,6 +390,112 @@ fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> V
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
             ]
         }
+        Uint8Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
+        Uint8Concrete::Divmod(_) => {
+            vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
+        }
+    }
+}
+
+/// Returns costs for u16 libfuncs.
+fn u16_libfunc_cost<Ops: CostOperations>(
+    ops: &Ops,
+    libfunc: &Uint16Concrete,
+) -> Vec<Ops::CostType> {
+    match libfunc {
+        Uint16Concrete::Const(_) | Uint16Concrete::ToFelt(_) | Uint16Concrete::WideMul(_) => {
+            vec![ops.steps(0)]
+        }
+        Uint16Concrete::Operation(libfunc) => match libfunc.operator {
+            IntOperator::OverflowingAdd => {
+                vec![
+                    ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+                ]
+            }
+            IntOperator::OverflowingSub => {
+                vec![
+                    ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                ]
+            }
+        },
+        Uint16Concrete::LessThan(_) => {
+            vec![
+                ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+            ]
+        }
+        Uint16Concrete::Equal(_) => {
+            vec![ops.steps(2), ops.steps(3)]
+        }
+        Uint16Concrete::LessThanOrEqual(_) => {
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+            ]
+        }
+        Uint16Concrete::FromFelt(_) => {
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 2 }),
+                ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
+            ]
+        }
+        Uint16Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
+        Uint16Concrete::Divmod(_) => {
+            vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
+        }
+    }
+}
+
+/// Returns costs for u32 libfuncs.
+fn u32_libfunc_cost<Ops: CostOperations>(
+    ops: &Ops,
+    libfunc: &Uint32Concrete,
+) -> Vec<Ops::CostType> {
+    match libfunc {
+        Uint32Concrete::Const(_) | Uint32Concrete::ToFelt(_) | Uint32Concrete::WideMul(_) => {
+            vec![ops.steps(0)]
+        }
+        Uint32Concrete::Operation(libfunc) => match libfunc.operator {
+            IntOperator::OverflowingAdd => {
+                vec![
+                    ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+                ]
+            }
+            IntOperator::OverflowingSub => {
+                vec![
+                    ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                ]
+            }
+        },
+        Uint32Concrete::LessThan(_) => {
+            vec![
+                ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+            ]
+        }
+        Uint32Concrete::Equal(_) => {
+            vec![ops.steps(2), ops.steps(3)]
+        }
+        Uint32Concrete::LessThanOrEqual(_) => {
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+            ]
+        }
+        Uint32Concrete::FromFelt(_) => {
+            vec![
+                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 2 }),
+                ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
+            ]
+        }
+        Uint32Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
+        Uint32Concrete::Divmod(_) => {
+            vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
+        }
     }
 }
 
@@ -381,7 +505,9 @@ fn u64_libfunc_cost<Ops: CostOperations>(
     libfunc: &Uint64Concrete,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint64Concrete::Const(_) | Uint64Concrete::ToFelt(_) => vec![ops.steps(0)],
+        Uint64Concrete::Const(_) | Uint64Concrete::ToFelt(_) | Uint64Concrete::WideMul(_) => {
+            vec![ops.steps(0)]
+        }
         Uint64Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
                 vec![
@@ -417,6 +543,10 @@ fn u64_libfunc_cost<Ops: CostOperations>(
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
             ]
         }
+        Uint64Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
+        Uint64Concrete::Divmod(_) => {
+            vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
+        }
     }
 }
 
@@ -435,7 +565,7 @@ fn u128_libfunc_cost<Ops: CostOperations>(
                 ]
             }
         },
-        Uint128Concrete::DivMod(_) => {
+        Uint128Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 11, holes: 0, range_checks: 4 })]
         }
         Uint128Concrete::WideMul(_) => {
@@ -461,6 +591,9 @@ fn u128_libfunc_cost<Ops: CostOperations>(
         }
         Uint128Concrete::Equal(_) => {
             vec![ops.steps(2), ops.steps(3)]
+        }
+        Uint128Concrete::SquareRoot(_) => {
+            vec![ops.const_cost(ConstCost { steps: 9, holes: 0, range_checks: 4 })]
         }
         Uint128Concrete::LessThanOrEqual(_) => {
             vec![

@@ -13,20 +13,14 @@ impl GenericTypeArgGenericType for SquashedDictFeltToTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        wrapped_info: TypeInfo,
+        TypeInfo { size, storable, droppable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // TODO(Gil): the implementation support values of size 1. Remove when other sizes are
         // supported.
-        if !wrapped_info.storable || wrapped_info.size != 1 {
-            Err(SpecializationError::UnsupportedGenericArg)
+        if storable && size == 1 {
+            Ok(TypeInfo { long_id, duplicatable: false, droppable, storable: true, size: 2 })
         } else {
-            Ok(TypeInfo {
-                long_id,
-                duplicatable: false,
-                droppable: wrapped_info.droppable,
-                storable: true,
-                size: 2,
-            })
+            Err(SpecializationError::UnsupportedGenericArg)
         }
     }
 }

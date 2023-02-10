@@ -6,7 +6,7 @@ use std::fmt::Display;
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionSignatureId, ImplFunctionId, ImplId, ModuleFileId, StructId,
+    EnumId, FunctionSignatureId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -34,25 +34,35 @@ impl SemanticDiagnostics {
     pub fn build(self) -> Diagnostics<SemanticDiagnostic> {
         self.diagnostics.build()
     }
+    /// Report a diagnostic in the location of the given node.
     pub fn report<TNode: TypedSyntaxNode>(
         &mut self,
         node: &TNode,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::from_ast(self.module_file_id, node),
+        self.diagnostics
+            .add(SemanticDiagnostic::new(StableLocation::from_ast(self.module_file_id, node), kind))
+    }
+    /// Report a diagnostic in the location after the given node (with width 0).
+    pub fn report_after<TNode: TypedSyntaxNode>(
+        &mut self,
+        node: &TNode,
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded {
+        self.diagnostics.add(SemanticDiagnostic::new_after(
+            StableLocation::from_ast(self.module_file_id, node),
             kind,
-        })
+        ))
     }
     pub fn report_by_ptr(
         &mut self,
         stable_ptr: SyntaxStablePtrId,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::new(self.module_file_id, stable_ptr),
+        self.diagnostics.add(SemanticDiagnostic::new(
+            StableLocation::new(self.module_file_id, stable_ptr),
             kind,
-        })
+        ))
     }
 }
 
@@ -60,6 +70,19 @@ impl SemanticDiagnostics {
 pub struct SemanticDiagnostic {
     pub stable_location: StableLocation,
     pub kind: SemanticDiagnosticKind,
+    /// true if the diagnostic should be reported *after* the given location. Normally false, in
+    /// which case the diagnostic points to the given location (as-is).
+    pub after: bool,
+}
+impl SemanticDiagnostic {
+    /// Create a diagnostic in the given location.
+    pub fn new(stable_location: StableLocation, kind: SemanticDiagnosticKind) -> Self {
+        SemanticDiagnostic { stable_location, kind, after: false }
+    }
+    /// Create a diagnostic in the location after the given location (with width 0).
+    pub fn new_after(stable_location: StableLocation, kind: SemanticDiagnosticKind) -> Self {
+        SemanticDiagnostic { stable_location, kind, after: true }
+    }
 }
 impl DiagnosticEntry for SemanticDiagnostic {
     type DbType = dyn SemanticGroup;
@@ -95,6 +118,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NoLiteralFunctionFound => {
                 "A literal with this type cannot be created.".into()
             }
+            SemanticDiagnosticKind::LiteralOutOfRange { ty } => {
+                format!("The value does not fit within the range of type {}.", ty.format(db))
+            }
             SemanticDiagnosticKind::NotAVariant => {
                 "Not a variant. Use the full name Enum::Variant.".into()
             }
@@ -102,14 +128,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NotAType => "Not a type.".into(),
             SemanticDiagnosticKind::NotATrait => "Not a trait.".into(),
             SemanticDiagnosticKind::FunctionNotMemberOfTrait {
-                impl_id,
+                impl_def_id,
                 impl_function_id,
                 trait_id,
             } => {
                 let defs_db = db.upcast();
                 format!(
                     "Impl function `{}::{}` is not a member of trait `{}`.",
-                    impl_id.name(defs_db),
+                    impl_def_id.name(defs_db),
                     impl_function_id.name(defs_db),
                     trait_id.name(defs_db)
                 )
@@ -132,7 +158,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!(r#"Missing member "{member_name}"."#)
             }
             SemanticDiagnosticKind::WrongNumberOfParameters {
-                impl_id,
+                impl_def_id,
                 impl_function_id,
                 trait_id,
                 expected,
@@ -143,7 +169,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!(
                     "The number of parameters in the impl function `{}::{}` is incompatible with \
                      `{}::{}`. Expected: {}, actual: {}.",
-                    impl_id.name(defs_db),
+                    impl_def_id.name(defs_db),
                     function_name,
                     trait_id.name(defs_db),
                     function_name,
@@ -164,7 +190,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Impl generics not yet supported.".to_string()
             }
             SemanticDiagnosticKind::WrongParameterType {
-                impl_id,
+                impl_def_id,
                 impl_function_id,
                 trait_id,
                 expected_ty,
@@ -175,7 +201,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!(
                     "Parameter type of impl function `{}::{}` is incompatible with `{}::{}`. \
                      Expected: `{}`, actual: `{}`.",
-                    impl_id.name(defs_db),
+                    impl_def_id.name(defs_db),
                     function_name,
                     trait_id.name(defs_db),
                     function_name,
@@ -204,7 +230,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 )
             }
             SemanticDiagnosticKind::ParamaterShouldBeReference {
-                impl_id,
+                impl_def_id,
                 impl_function_id,
                 trait_id,
             } => {
@@ -213,14 +239,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!(
                     "Parameter of impl function {}::{} is incompatible with {}::{}. It should be \
                      a reference.",
-                    impl_id.name(defs_db),
+                    impl_def_id.name(defs_db),
                     function_name,
                     trait_id.name(defs_db),
                     function_name,
                 )
             }
-            SemanticDiagnosticKind::ParamaterShouldNotBeReference {
-                impl_id,
+            SemanticDiagnosticKind::ParameterShouldNotBeReference {
+                impl_def_id,
                 impl_function_id,
                 trait_id,
             } => {
@@ -229,7 +255,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!(
                     "Parameter of impl function {}::{} is incompatible with {}::{}. It should not \
                      be a reference.",
-                    impl_id.name(defs_db),
+                    impl_def_id.name(defs_db),
                     function_name,
                     trait_id.name(defs_db),
                     function_name,
@@ -257,7 +283,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 )
             }
             SemanticDiagnosticKind::WrongReturnTypeForImpl {
-                impl_id,
+                impl_def_id,
                 impl_function_id,
                 trait_id,
                 expected_ty,
@@ -268,7 +294,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!(
                     "Return type of impl function `{}::{}` is incompatible with `{}::{}`. \
                      Expected: `{}`, actual: `{}`.",
-                    impl_id.name(defs_db),
+                    impl_def_id.name(defs_db),
                     function_name,
                     trait_id.name(defs_db),
                     function_name,
@@ -496,14 +522,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::OnlyLiteralConstants => {
                 "Only literal constants are currently supported.".into()
             }
-            SemanticDiagnosticKind::ExternFunctionWithImplGenericsNotSupported => {
-                "Extern functions with impl generics are not supported".into()
+            SemanticDiagnosticKind::ExternItemWithImplGenericsNotSupported => {
+                "Extern items with impl generics are not supported".into()
+            }
+            SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
+            SemanticDiagnosticKind::TraitMismatch => {
+                "Supplied impl does not match the required trait".into()
             }
         }
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        let location = self.stable_location.diagnostic_location(db.upcast());
+        let mut location = self.stable_location.diagnostic_location(db.upcast());
+        if self.after {
+            location = location.after();
+        }
         match &self.kind {
             SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, .. } => {
                 DiagnosticLocation { span: diagnostic.span, ..location }
@@ -541,12 +574,15 @@ pub enum SemanticDiagnosticKind {
     UnknownStruct,
     UnknownEnum,
     NoLiteralFunctionFound,
+    LiteralOutOfRange {
+        ty: semantic::TypeId,
+    },
     NotAVariant,
     NotAStruct,
     NotAType,
     NotATrait,
     FunctionNotMemberOfTrait {
-        impl_id: ImplId,
+        impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
@@ -560,7 +596,7 @@ pub enum SemanticDiagnosticKind {
         member_name: SmolStr,
     },
     WrongNumberOfParameters {
-        impl_id: ImplId,
+        impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
         expected: usize,
@@ -577,7 +613,7 @@ pub enum SemanticDiagnosticKind {
     ConstGenericInferenceUnsupported,
     ImplGenericsUnsupported,
     WrongParameterType {
-        impl_id: ImplId,
+        impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
@@ -593,12 +629,12 @@ pub enum SemanticDiagnosticKind {
         function_id: TraitFunctionId,
     },
     ParamaterShouldBeReference {
-        impl_id: ImplId,
+        impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
-    ParamaterShouldNotBeReference {
-        impl_id: ImplId,
+    ParameterShouldNotBeReference {
+        impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
@@ -615,7 +651,7 @@ pub enum SemanticDiagnosticKind {
         actual_ty: semantic::TypeId,
     },
     WrongReturnTypeForImpl {
-        impl_id: ImplId,
+        impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
@@ -631,7 +667,7 @@ pub enum SemanticDiagnosticKind {
     },
     MultipleImplementationOfTraitFunction {
         trait_id: TraitId,
-        all_impl_ids: Vec<ImplId>,
+        all_impl_ids: Vec<ImplDefId>,
         function_name: SmolStr,
     },
     VariableNotFound {
@@ -742,7 +778,9 @@ pub enum SemanticDiagnosticKind {
         feature_name: UnsupportedOutsideOfFunctionFeatureName,
     },
     OnlyLiteralConstants,
-    ExternFunctionWithImplGenericsNotSupported,
+    ExternItemWithImplGenericsNotSupported,
+    MissingSemicolon,
+    TraitMismatch,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

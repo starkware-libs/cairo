@@ -23,7 +23,7 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
             Result::Ok(x) => x,
             Result::Err(_) => {
                 let mut data = ArrayTrait::new();
-                data.append(err)
+                data.append(err);
                 panic(data)
             },
         }
@@ -35,7 +35,7 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
         match self {
             Result::Ok(_) => {
                 let mut data = ArrayTrait::new();
-                data.append(err)
+                data.append(err);
                 panic(data)
             },
             Result::Err(x) => x,

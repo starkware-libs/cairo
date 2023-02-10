@@ -15,8 +15,11 @@ pub trait AsDynMacroPlugin {
         Self: 'a;
 }
 
-/// A trait for mapping plugin generated diagnostics to more readable diagnostics.
-pub trait DiagnosticMapper:
+/// A trait for Plugins auxiliary data.
+///
+/// The auxiliary data can assist in mapping plugin generated diagnostics to more readable
+/// diagnostics.
+pub trait PluginAuxData:
     std::fmt::Debug + Sync + Send + GeneratedFileAuxData + AsDynGeneratedFileAuxData
 {
     fn map_diag(
@@ -35,27 +38,28 @@ pub struct PluginMappedDiagnostic {
     pub message: String,
 }
 
+// `dyn` wrapper for `PluginAuxData`.
 #[derive(Clone, Debug)]
-pub struct DynDiagnosticMapper(pub Arc<dyn DiagnosticMapper>);
-impl DynDiagnosticMapper {
-    pub fn new<T: DiagnosticMapper + 'static>(mapper: T) -> Self {
-        DynDiagnosticMapper(Arc::new(mapper))
+pub struct DynPluginAuxData(pub Arc<dyn PluginAuxData>);
+impl DynPluginAuxData {
+    pub fn new<T: PluginAuxData + 'static>(aux_data: T) -> Self {
+        DynPluginAuxData(Arc::new(aux_data))
     }
 }
-impl Deref for DynDiagnosticMapper {
-    type Target = Arc<dyn DiagnosticMapper>;
+impl Deref for DynPluginAuxData {
+    type Target = Arc<dyn PluginAuxData>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
-impl GeneratedFileAuxData for DynDiagnosticMapper {
+impl GeneratedFileAuxData for DynPluginAuxData {
     fn as_any(&self) -> &dyn Any {
         self
     }
 
     fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<DynDiagnosticMapper>() {
+        if let Some(other) = other.as_any().downcast_ref::<DynPluginAuxData>() {
             self.0.eq(other.0.as_dyn_macro_token())
         } else {
             false
@@ -64,8 +68,8 @@ impl GeneratedFileAuxData for DynDiagnosticMapper {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct TrivialMapper {}
-impl GeneratedFileAuxData for TrivialMapper {
+pub struct TrivialPluginAuxData {}
+impl GeneratedFileAuxData for TrivialPluginAuxData {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -74,12 +78,12 @@ impl GeneratedFileAuxData for TrivialMapper {
         if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
     }
 }
-impl AsDynGeneratedFileAuxData for TrivialMapper {
+impl AsDynGeneratedFileAuxData for TrivialPluginAuxData {
     fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
         self
     }
 }
-impl DiagnosticMapper for TrivialMapper {
+impl PluginAuxData for TrivialPluginAuxData {
     fn map_diag(
         &self,
         _db: &dyn SemanticGroup,

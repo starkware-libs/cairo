@@ -41,14 +41,13 @@ pub fn priv_module_items_data(
         };
 
         if items.insert(name.clone(), *item).is_some() {
-            diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation::new(
-                    item.module_file_id(def_db),
-                    // TODO(ilya): Give the name as the location.
-                    item.untyped_stable_ptr(def_db),
-                ),
-                kind: SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.clone() },
-            });
+            let stable_location = StableLocation::new(
+                item.module_file_id(def_db),
+                // TODO(ilya): Give the name as the location.
+                item.untyped_stable_ptr(def_db),
+            );
+            let kind = SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.clone() };
+            diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
         }
     }
     Ok(Arc::new(ModuleSemanticData { items, diagnostics: diagnostics.build() }))

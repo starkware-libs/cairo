@@ -10,7 +10,7 @@ use cairo_lang_diagnostics::DiagnosticEntry;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::patcher::{ModifiedNode, PatchBuilder, Patches, RewriteNode};
 use cairo_lang_semantic::plugin::{
-    AsDynGeneratedFileAuxData, AsDynMacroPlugin, DiagnosticMapper, DynDiagnosticMapper,
+    AsDynGeneratedFileAuxData, AsDynMacroPlugin, DynPluginAuxData, PluginAuxData,
     PluginMappedDiagnostic, SemanticPlugin,
 };
 use cairo_lang_semantic::SemanticDiagnostic;
@@ -32,17 +32,23 @@ const EXTERNAL_ATTR: &str = "external";
 const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const VIEW_ATTR: &str = "view";
 pub const EVENT_ATTR: &str = "event";
-pub const GENERATED_CONTRACT_ATTR: &str = "generated_contract";
 pub const ABI_TRAIT: &str = "__abi";
+pub const STORAGE_STRUCT_NAME: &str = "Storage";
 pub const EXTERNAL_MODULE: &str = "__external";
 pub const CONSTRUCTOR_MODULE: &str = "__constructor";
 
-/// The diagnostics remapper of the plugin.
+// TODO(ilya): Move AuxData logic to a separate file.
+
+/// Contract related auxiliary data of the Starknet plugin.
 #[derive(Debug, PartialEq, Eq)]
-pub struct DiagnosticRemapper {
+pub struct StarkNetContractAuxData {
+    /// Patches of code that need translation in case they have diagnostics.
     patches: Patches,
+
+    /// A list of contracts that were processed by the plugin.
+    pub contracts: Vec<smol_str::SmolStr>,
 }
-impl GeneratedFileAuxData for DiagnosticRemapper {
+impl GeneratedFileAuxData for StarkNetContractAuxData {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -50,12 +56,45 @@ impl GeneratedFileAuxData for DiagnosticRemapper {
         if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
     }
 }
-impl AsDynGeneratedFileAuxData for DiagnosticRemapper {
+impl AsDynGeneratedFileAuxData for StarkNetContractAuxData {
     fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
         self
     }
 }
-impl DiagnosticMapper for DiagnosticRemapper {
+impl PluginAuxData for StarkNetContractAuxData {
+    fn map_diag(
+        &self,
+        db: &(dyn SemanticGroup + 'static),
+        diag: &dyn std::any::Any,
+    ) -> Option<PluginMappedDiagnostic> {
+        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
+        let span = self
+            .patches
+            .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
+        Some(PluginMappedDiagnostic { span, message: diag.format(db) })
+    }
+}
+
+/// Contract related auxiliary data of the Starknet plugin.
+#[derive(Debug, PartialEq, Eq)]
+pub struct StarkNetABIAuxData {
+    /// Patches of code that need translation in case they have diagnostics.
+    patches: Patches,
+}
+impl GeneratedFileAuxData for StarkNetABIAuxData {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool {
+        if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
+    }
+}
+impl AsDynGeneratedFileAuxData for StarkNetABIAuxData {
+    fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
+        self
+    }
+}
+impl PluginAuxData for StarkNetABIAuxData {
     fn map_diag(
         &self,
         db: &(dyn SemanticGroup + 'static),
@@ -235,7 +274,7 @@ $deserialization_code$
         code: Some(PluginGeneratedFile {
             name: dispatcher_name.into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(DiagnosticRemapper {
+            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetABIAuxData {
                 patches: builder.patches,
             })),
         }),
@@ -265,17 +304,54 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         }
     };
     let mut diagnostics = vec![];
-
+    let mut kept_original_items = Vec::new();
+    // Uses to do in generated inner modules so that everything that is available in the contract
+    // module is still available.
+    let mut extra_uses = vec![];
+    for item in body.items(db).elements(db) {
+        // Skipping elements that only generate other code, but their code itself is ignored.
+        if matches!(&item, ast::Item::FreeFunction(item) if item.has_attr(db, EVENT_ATTR))
+            || matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
+        {
+            continue;
+        }
+        kept_original_items.push(RewriteNode::Copied(item.as_syntax_node()));
+        if let Some(ident) = match item {
+            ast::Item::Constant(item) => Some(item.name(db)),
+            ast::Item::Module(item) => Some(item.name(db)),
+            ast::Item::Use(item) => {
+                if let Some(ast::PathSegment::Simple(final_section)) =
+                    item.name(db).elements(db).last()
+                {
+                    Some(final_section.ident(db))
+                } else {
+                    None
+                }
+            }
+            ast::Item::Impl(item) => Some(item.name(db)),
+            ast::Item::Struct(item) => Some(item.name(db)),
+            ast::Item::Enum(item) => Some(item.name(db)),
+            ast::Item::TypeAlias(item) => Some(item.name(db)),
+            // Externs, trait declrations and free functions are not directly required in generated
+            // inner modules.
+            ast::Item::ExternFunction(_)
+            | ast::Item::ExternType(_)
+            | ast::Item::Trait(_)
+            | ast::Item::FreeFunction(_) => None,
+        } {
+            extra_uses.push(RewriteNode::Text(format!("\n        use super::{};", ident.text(db))));
+        }
+    }
+    let extra_uses_node = RewriteNode::Modified(ModifiedNode { children: extra_uses });
     let mut generated_external_functions = Vec::new();
     let mut generated_constructor_functions = Vec::new();
 
     let mut storage_code = RewriteNode::Text("".to_string());
-    let mut original_items = Vec::new();
     let mut abi_functions = Vec::new();
     let mut event_functions = Vec::new();
     let mut abi_events = Vec::new();
     for item in body.items(db).elements(db) {
-        let keep_original = match &item {
+        match &item {
             ast::Item::FreeFunction(item_function)
                 if item_function.has_attr(db, EXTERNAL_ATTR)
                     || item_function.has_attr(db, VIEW_ATTR)
@@ -320,8 +396,6 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                         diagnostics.extend(entry_point_diagnostics);
                     }
                 }
-
-                true
             }
             ast::Item::FreeFunction(item_function) if item_function.has_attr(db, EVENT_ATTR) => {
                 let (rewrite_nodes, event_diagnostics) = handle_event(db, item_function.clone());
@@ -331,26 +405,23 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                     abi_events.push(abi_event_rewrite);
                 }
                 diagnostics.extend(event_diagnostics);
-                false
             }
-            ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == "Storage" => {
+            ast::Item::Struct(item_struct)
+                if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
+            {
                 let (storage_rewrite_node, storage_diagnostics) =
-                    handle_storage_struct(db, item_struct.clone());
+                    handle_storage_struct(db, item_struct.clone(), &extra_uses_node);
                 storage_code = storage_rewrite_node;
                 diagnostics.extend(storage_diagnostics);
-                false
             }
-            _ => true,
-        };
-        if keep_original {
-            original_items.push(RewriteNode::Copied(item.as_syntax_node()));
+            _ => {}
         }
     }
 
+    let module_name_ast = module_ast.name(db);
     let generated_contract_mod = RewriteNode::interpolate_patched(
         formatdoc!(
             "
-            #[{GENERATED_CONTRACT_ATTR}]
             mod $contract_name$ {{
                 use starknet::SyscallResultTrait;
                 use starknet::SyscallResultTraitImpl;
@@ -365,11 +436,11 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                     $abi_events$
                 }}
 
-                mod {EXTERNAL_MODULE} {{
+                mod {EXTERNAL_MODULE} {{$extra_uses$
                     $generated_external_functions$
                 }}
 
-                mod {CONSTRUCTOR_MODULE} {{
+                mod {CONSTRUCTOR_MODULE} {{$extra_uses$
                     $generated_constructor_functions$
                 }}
             }}
@@ -377,15 +448,16 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
         )
         .as_str(),
         HashMap::from([
-            (
-                "contract_name".to_string(),
-                RewriteNode::Trimmed(module_ast.name(db).as_syntax_node()),
-            ),
+            ("contract_name".to_string(), RewriteNode::Trimmed(module_name_ast.as_syntax_node())),
             (
                 "original_items".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: original_items }),
+                RewriteNode::Modified(ModifiedNode { children: kept_original_items }),
             ),
             ("storage_code".to_string(), storage_code),
+            (
+                "event_functions".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: event_functions }),
+            ),
             (
                 "abi_functions".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: abi_functions }),
@@ -394,6 +466,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 "abi_events".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: abi_events }),
             ),
+            ("extra_uses".to_string(), extra_uses_node),
             (
                 "generated_external_functions".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: generated_external_functions }),
@@ -402,23 +475,21 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 "generated_constructor_functions".to_string(),
                 RewriteNode::Modified(ModifiedNode { children: generated_constructor_functions }),
             ),
-            (
-                "event_functions".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: event_functions }),
-            ),
         ]),
     );
 
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(generated_contract_mod);
-
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynDiagnosticMapper::new(DiagnosticRemapper {
-                patches: builder.patches,
-            })),
+            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(
+                StarkNetContractAuxData {
+                    patches: builder.patches,
+                    contracts: vec![module_name_ast.text(db)],
+                },
+            )),
         }),
         diagnostics,
         remove_original_item: true,
@@ -545,6 +616,7 @@ fn handle_event(
 fn handle_storage_struct(
     db: &dyn SyntaxGroup,
     struct_ast: ast::ItemStruct,
+    extra_uses_node: &RewriteNode,
 ) -> (RewriteNode, Vec<PluginDiagnostic>) {
     let mut members_code = Vec::new();
     let mut diagnostics = vec![];
@@ -562,6 +634,7 @@ fn handle_storage_struct(
                             "storage_var_name".to_string(),
                             RewriteNode::Trimmed(member.name(db).as_syntax_node()),
                         ),
+                        ("extra_uses".to_string(), extra_uses_node.clone()),
                         (
                             "key_type".to_string(),
                             RewriteNode::Trimmed(key_type_ast.as_syntax_node()),
@@ -587,6 +660,7 @@ fn handle_storage_struct(
                             "storage_var_name".to_string(),
                             RewriteNode::Trimmed(member.name(db).as_syntax_node()),
                         ),
+                        ("extra_uses".to_string(), extra_uses_node.clone()),
                         ("type_name".to_string(), RewriteNode::Trimmed(type_ast.as_syntax_node())),
                     ]),
                 ));
@@ -633,7 +707,7 @@ fn try_extract_mapping_types(
 fn handle_simple_storage_var(address: &str) -> String {
     format!(
         "
-    mod $storage_var_name$ {{
+    mod $storage_var_name$ {{$extra_uses$
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
@@ -665,7 +739,7 @@ fn handle_simple_storage_var(address: &str) -> String {
 fn handle_legacy_mapping_storage_var(address: &str) -> String {
     format!(
         "
-    mod $storage_var_name$ {{
+    mod $storage_var_name$ {{$extra_uses$
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
@@ -751,7 +825,7 @@ fn generate_entry_point_wrapper(
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
                 "\n            let res = ",
-                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res)"),
+                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res);"),
             )
         }
     };
@@ -778,7 +852,7 @@ fn generate_entry_point_wrapper(
                 }},
             }}
             {arg_definitions}
-            if array_len(ref data) != 0_usize {{
+            if !array::ArrayTrait::is_empty(ref data) {{
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

@@ -6,7 +6,7 @@ test_function_lowering
 //! > function
 fn foo(ref a: felt, b: felt, c: felt) -> felt {
     a = b;
-    a = bar()
+    a = bar();
     c
 }
 

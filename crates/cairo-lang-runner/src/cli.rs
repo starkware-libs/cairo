@@ -4,7 +4,7 @@ use std::path::Path;
 
 use anyhow::{Context, Ok};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_runner::SierraCasmRunner;
@@ -31,14 +31,11 @@ struct Args {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let mut builder = RootDatabase::builder();
-    builder.with_dev_corelib().unwrap();
-    let mut db_val = builder.build();
-    let db = &mut db_val;
+    let db = &mut RootDatabase::builder().detect_corelib().build()?;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
-    if check_and_eprint_diagnostics(db) {
+    if DiagnosticsReporter::stderr().check(db) {
         anyhow::bail!("failed to compile: {}", args.path);
     }
 

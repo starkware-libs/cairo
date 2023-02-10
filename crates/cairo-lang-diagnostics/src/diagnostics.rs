@@ -24,6 +24,12 @@ pub struct DiagnosticLocation {
     pub file_id: FileId,
     pub span: TextSpan,
 }
+impl DiagnosticLocation {
+    /// Get the location of right after this diagnostic's location (with width 0).
+    pub fn after(&self) -> Self {
+        Self { file_id: self.file_id, span: self.span.after() }
+    }
+}
 
 /// This struct is used to ensure that when an error occurs, a diagnostic is properly reported.
 ///

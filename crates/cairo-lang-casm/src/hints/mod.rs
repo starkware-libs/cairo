@@ -29,6 +29,10 @@ pub enum Hint {
         quotient: CellRef,
         remainder: CellRef,
     },
+    SquareRoot {
+        value: ResOperand,
+        dst: CellRef,
+    },
     /// Finds some `x` and `y` such that `x * scalar + y = value` and `x <= max_x`.
     LinearSplit {
         value: ResOperand,
@@ -37,8 +41,6 @@ pub enum Hint {
         x: CellRef,
         y: CellRef,
     },
-    EnterScope,
-    ExitScope,
     /// Allocates a new dict segment, and write its start address into the dict_infos segment.
     AllocDictFeltTo {
         dict_manager_ptr: ResOperand,
@@ -62,10 +64,6 @@ pub enum Hint {
         dict_manager_ptr: ResOperand,
         dict_end_ptr: ResOperand,
         dict_index: CellRef,
-    },
-    /// Creates a new scope with the variables needed for dict_squash.
-    EnterDictSquashScope {
-        dict_end_ptr: ResOperand,
     },
     /// Sets the end of a finalized dict in the vm tracker of the dict.
     SetDictTrackerEnd {
@@ -273,6 +271,9 @@ impl Display for Hint {
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
+            Hint::SquareRoot { value, dst } => {
+                write!(f, "(memory{dst}) = sqrt({})", ResOperandFormatter(value))
+            }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
                 let (value, scalar, max_x) = (
                     ResOperandFormatter(value),
@@ -291,8 +292,6 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::EnterScope => write!(f, "vm_enter_scope()"),
-            Hint::ExitScope => write!(f, "vm_exit_scope()"),
             Hint::RandomEcPoint { x, y } => {
                 writedoc!(
                     f,
@@ -400,22 +399,6 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::EnterDictSquashScope { dict_end_ptr } => writedoc!(
-                f,
-                "
-
-                    # Prepare arguments for dict_new. In particular, the same dictionary values \
-                 should be copied
-                    # to the new (squashed) dictionary.
-                    vm_enter_scope({{
-                        # Make __dict_manager accessible.
-                        '__dict_manager': __dict_manager,
-                        # Create a copy of the dict, in case it changes in the future.
-                        'initial_dict': dict(__dict_manager.get_dict({})),
-                    }})
-                ",
-                ResOperandFormatter(dict_end_ptr),
-            ),
             Hint::SetDictTrackerEnd { squashed_dict_start, squashed_dict_end } => {
                 let (squashed_dict_start, squashed_dict_end) = (
                     ResOperandFormatter(squashed_dict_start),

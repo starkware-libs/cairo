@@ -11,7 +11,7 @@ fn foo(x: felt) -> felt {
     match felt_is_zero(x) {
         IsZeroResult::Zero(_) => 1,
         IsZeroResult::NonZero(y) => {
-            revoke_ap()
+            revoke_ap();
             // y is not revoked, since it's the same as x, which is local.
             unwrap_nz::<felt>(y)
         },
@@ -20,7 +20,7 @@ fn foo(x: felt) -> felt {
     match felt_is_zero(x2) {
         IsZeroResult::Zero(_) => 1,
         IsZeroResult::NonZero(y) => {
-            revoke_ap()
+            revoke_ap();
             // x2 is revoked, since y is identical to x2.
             unwrap_nz::<felt>(y)
         },
@@ -72,6 +72,12 @@ Statements:
     IsZeroResult::NonZero => blk1,
   }
   (v6: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(5, {})
+
+blk5:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v6) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
@@ -81,6 +87,8 @@ End:
 
 //! > local_variables
 v6
+
+//! > block_infos
 
 //! > ==========================================================================
 
@@ -98,7 +106,7 @@ fn foo(x: felt) -> felt {
     let x2 = x1 + x1;
     let x3 = if x2 == 0 { 1 } else { 2 };
     // The "if" revokes "x1".
-    x1 + x3
+    x1 + x3;
     let x4 = if x1 == 0 { 1 } else { 2 };
     revoke_ap();
     x4
@@ -143,12 +151,30 @@ blk4 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(5, {})
+
+blk5:
+Inputs:
+Statements:
   (v2: core::felt) <- core::felt_add(v1, v1)
+End:
+  Fallthrough(6, {})
+
+blk6:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v2) {
     IsZeroResult::Zero => blk0,
     IsZeroResult::NonZero => blk1,
   }
   (v7: core::felt) <- core::felt_add(v1, v6)
+End:
+  Fallthrough(7, {})
+
+blk7:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v1) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
@@ -159,6 +185,8 @@ End:
 
 //! > local_variables
 v1, v11
+
+//! > block_infos
 
 //! > ==========================================================================
 
@@ -177,7 +205,7 @@ fn foo(x: felt) -> felt {
     match felt_is_zero(x) {
         IsZeroResult::Zero(_) => 1,
         IsZeroResult::NonZero(y) => {
-            revoke_ap()
+            revoke_ap();
             return 0;
         },
     }
@@ -237,18 +265,38 @@ blk4 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(5, {})
+
+blk5:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk0,
     IsZeroResult::NonZero => blk1,
   }
   (v7: core::felt) <- core::felt_add(v1, v0)
+End:
+  Fallthrough(6, {})
+
+blk6:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
   }
   (v12: core::felt) <- core::felt_add(v7, v0)
 End:
+  Fallthrough(7, {})
+
+blk7:
+Inputs:
+Statements:
+End:
   Return(v12)
 
 //! > local_variables
 v7
+
+//! > block_infos

@@ -11,6 +11,8 @@ pub enum CoreValue {
     GasBuiltin(i64),
     RangeCheck,
     Uint8(u8),
+    Uint16(u16),
+    Uint32(u32),
     Uint64(u64),
     Uint128(u128),
     NonZero(Box<CoreValue>),

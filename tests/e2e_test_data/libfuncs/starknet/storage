@@ -44,13 +44,13 @@ memory[ap + -1] = y
 [ap + -7] = [[fp + -4] + 2];
 [ap + -7] = [ap + -3] + 340282366920938463463374607431768211455;
 jmp rel 4 if [ap + -3] != 0;
-jmp rel 0;
+[fp + -1] = [fp + -1] + 1;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = [ap + -2], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1200})
+test::foo: OrderedHashMap({Const: 1410})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -59,12 +59,10 @@ type StorageBaseAddress = StorageBaseAddress;
 
 libfunc storage_base_address_from_felt = storage_base_address_from_felt;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc store_temp<StorageBaseAddress> = store_temp<StorageBaseAddress>;
 
 storage_base_address_from_felt([0], [1]) -> ([2], [3]);
-store_temp<RangeCheck>([2]) -> ([2]);
-rename<RangeCheck>([2]) -> ([4]);
+store_temp<RangeCheck>([2]) -> ([4]);
 store_temp<StorageBaseAddress>([3]) -> ([5]);
 return([4], [5]);
 
@@ -98,11 +96,9 @@ type StorageAddress = StorageAddress;
 
 libfunc storage_address_from_base_and_offset = storage_address_from_base_and_offset;
 libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
-libfunc rename<StorageAddress> = rename<StorageAddress>;
 
 storage_address_from_base_and_offset([0], [1]) -> ([2]);
-store_temp<StorageAddress>([2]) -> ([2]);
-rename<StorageAddress>([2]) -> ([3]);
+store_temp<StorageAddress>([2]) -> ([3]);
 return([3]);
 
 test::foo@0([0]: StorageBaseAddress, [1]: u8) -> (StorageAddress);
@@ -146,7 +142,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 5700})
+test::foo: OrderedHashMap({Const: 11400})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -160,32 +156,26 @@ libfunc storage_read_syscall = storage_read_syscall;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc store_temp<System> = store_temp<System>;
-libfunc rename<System> = rename<System>;
 libfunc store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>> = store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>;
-libfunc rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>> = rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>;
 libfunc jump = jump;
 libfunc enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<System> = rename<System>;
+libfunc rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>> = rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>;
 
-storage_read_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 10([7], [8], [9]) };
+storage_read_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
 branch_align() -> ();
 enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>([6]) -> ([10]);
-store_temp<GasBuiltin>([4]) -> ([4]);
-rename<GasBuiltin>([4]) -> ([11]);
-store_temp<System>([5]) -> ([5]);
-rename<System>([5]) -> ([12]);
-store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([10]) -> ([10]);
-rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([10]) -> ([13]);
-jump() { 18() };
+store_temp<GasBuiltin>([4]) -> ([11]);
+store_temp<System>([5]) -> ([12]);
+store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([10]) -> ([13]);
+jump() { 12() };
 branch_align() -> ();
 enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>([9]) -> ([14]);
-store_temp<GasBuiltin>([7]) -> ([7]);
-rename<GasBuiltin>([7]) -> ([11]);
-store_temp<System>([8]) -> ([8]);
-rename<System>([8]) -> ([12]);
-store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([14]) -> ([14]);
-rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([14]) -> ([13]);
+store_temp<GasBuiltin>([7]) -> ([11]);
+store_temp<System>([8]) -> ([12]);
+store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([14]) -> ([13]);
 rename<GasBuiltin>([11]) -> ([15]);
 rename<System>([12]) -> ([16]);
 rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([13]) -> ([17]);
@@ -233,7 +223,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 5700})
+test::foo: OrderedHashMap({Const: 11500})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -249,33 +239,27 @@ libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc store_temp<System> = store_temp<System>;
-libfunc rename<System> = rename<System>;
 libfunc store_temp<core::result::Result::<(), core::array::Array::<core::felt>>> = store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>;
-libfunc rename<core::result::Result::<(), core::array::Array::<core::felt>>> = rename<core::result::Result::<(), core::array::Array::<core::felt>>>;
 libfunc jump = jump;
 libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<System> = rename<System>;
+libfunc rename<core::result::Result::<(), core::array::Array::<core::felt>>> = rename<core::result::Result::<(), core::array::Array::<core::felt>>>;
 
-storage_write_syscall([0], [1], [2], [3], [4]) { fallthrough([5], [6]) 11([7], [8], [9]) };
+storage_write_syscall([0], [1], [2], [3], [4]) { fallthrough([5], [6]) 8([7], [8], [9]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([10]);
 enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>([10]) -> ([11]);
-store_temp<GasBuiltin>([5]) -> ([5]);
-rename<GasBuiltin>([5]) -> ([12]);
-store_temp<System>([6]) -> ([6]);
-rename<System>([6]) -> ([13]);
-store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([11]) -> ([11]);
-rename<core::result::Result::<(), core::array::Array::<core::felt>>>([11]) -> ([14]);
-jump() { 19() };
+store_temp<GasBuiltin>([5]) -> ([12]);
+store_temp<System>([6]) -> ([13]);
+store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([11]) -> ([14]);
+jump() { 13() };
 branch_align() -> ();
 enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>([9]) -> ([15]);
-store_temp<GasBuiltin>([7]) -> ([7]);
-rename<GasBuiltin>([7]) -> ([12]);
-store_temp<System>([8]) -> ([8]);
-rename<System>([8]) -> ([13]);
-store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([15]) -> ([15]);
-rename<core::result::Result::<(), core::array::Array::<core::felt>>>([15]) -> ([14]);
+store_temp<GasBuiltin>([7]) -> ([12]);
+store_temp<System>([8]) -> ([13]);
+store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([15]) -> ([14]);
 rename<GasBuiltin>([12]) -> ([16]);
 rename<System>([13]) -> ([17]);
 rename<core::result::Result::<(), core::array::Array::<core::felt>>>([14]) -> ([18]);

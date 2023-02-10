@@ -11,10 +11,10 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
-use crate::block_generator::{generate_block_code, generate_return_code};
+use crate::block_generator::generate_block_code;
 use crate::db::SierraGenGroup;
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::lifetime::{find_variable_lifetime, SierraGenVar, StatementLocation};
+use crate::lifetime::{find_variable_lifetime, SierraGenVar};
 use crate::local_variables::find_local_variables;
 use crate::pre_sierra::{self, Statement};
 use crate::store_variables::{add_store_statements, LibfuncInfo, LocalVariables};
@@ -23,7 +23,7 @@ use crate::utils::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SierraFreeFunctionData {
+pub struct SierraFunctionWithBodyData {
     pub function: Maybe<Arc<pre_sierra::Function>>,
 }
 
@@ -31,9 +31,9 @@ pub struct SierraFreeFunctionData {
 pub fn priv_function_with_body_sierra_data(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
-) -> SierraFreeFunctionData {
+) -> SierraFunctionWithBodyData {
     let function = get_function_code(db, function_id);
-    SierraFreeFunctionData { function }
+    SierraFunctionWithBodyData { function }
 }
 
 /// Query implementation of [SierraGenGroup::function_with_body_sierra].
@@ -84,23 +84,14 @@ fn get_function_code(
     statements.extend(allocate_local_statements);
 
     let prolog_size = statements.len();
-    // Generate the function's body.
-    let body_statements = generate_block_code(&mut context, block_id, block)?;
-    statements.extend(body_statements);
 
-    // Generate the return statement if necessary.
-    let return_statement_location: StatementLocation = (block_id, block.statements.len());
-    match &block.end {
-        lowering::FlatBlockEnd::Callsite(_) => panic!("Root block may not end with callsite."),
-        lowering::FlatBlockEnd::Return(returned_variables) => {
-            statements.extend(generate_return_code(
-                &mut context,
-                returned_variables,
-                &return_statement_location,
-            )?);
-        }
-        lowering::FlatBlockEnd::Unreachable => {}
-    };
+    if let lowering::FlatBlockEnd::Callsite(_) = block.end {
+        panic!("Root block may not end with callsite.");
+    }
+
+    // Generate the function's body.
+    let (body_statements, _fallthrough) = generate_block_code(&mut context, block_id)?;
+    statements.extend(body_statements);
 
     let statements = add_store_statements(
         context.get_db(),

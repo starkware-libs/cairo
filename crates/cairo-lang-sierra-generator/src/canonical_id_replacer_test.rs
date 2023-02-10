@@ -7,7 +7,8 @@ use crate::replace_ids::SierraIdReplacer;
 
 #[test]
 fn test_replacer() {
-    let input = indoc! {"
+    let input = ProgramParser::new()
+        .parse(indoc! {"
             type felt = felt;
             type NonZeroFelt = NonZero<felt>;
             type BoxFelt = Box<felt>;
@@ -36,9 +37,11 @@ fn test_replacer() {
             foo@10([1]: felt, [2]: felt) -> (felt, felt);
             box_and_back@26([1]: felt) -> (felt);
             box_and_back_wrapper@31([1]: felt) -> (felt);
-        "};
+        "})
+        .unwrap();
 
-    let expecetd_output = indoc! {"
+    let expected_output = ProgramParser::new()
+        .parse(indoc! {"
             type [0] = felt;
             type [1] = NonZero<[0]>;
             type [2] = Box<[0]>;
@@ -67,11 +70,10 @@ fn test_replacer() {
             [1]@10([1]: [0], [2]: [0]) -> ([0], [0]);
             [2]@26([1]: [0]) -> ([0]);
             [3]@31([1]: [0]) -> ([0]);
-        "};
+        "})
+        .unwrap();
 
-    let program = ProgramParser::new().parse(input).unwrap();
+    let replacer = CanonicalReplacer::from_program(&input);
 
-    let replacer = CanonicalReplacer::from_program(&program);
-
-    assert_eq!(format!("{}", replacer.apply(&program)), expecetd_output)
+    assert_eq!(replacer.apply(&input), expected_output);
 }

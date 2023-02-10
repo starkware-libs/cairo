@@ -19,7 +19,7 @@ pub fn build(
             IntOperator::OverflowingAdd => build_u128_overflowing_add(builder),
             IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
         },
-        Uint128Concrete::DivMod(_) => build_u128_divmod(builder),
+        Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
         Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),
@@ -27,6 +27,7 @@ pub fn build(
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
         Uint128Concrete::LessThan(_) => super::uint::build_less_than(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
+        Uint128Concrete::SquareRoot(_) => super::uint::build_sqrt(builder),
         Uint128Concrete::LessThanOrEqual(_) => super::uint::build_less_than_or_equal(builder),
     }
 }
@@ -64,10 +65,10 @@ fn build_u128_overflowing_add(
             ("Fallthrough", &[&[range_check], &[a_plus_b]], None),
             ("Target", &[&[range_check], &[wrapping_a_plus_b]], Some(failure_handle_statement_id)),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }
 
@@ -104,10 +105,10 @@ fn build_u128_overflowing_sub(
             ("Fallthrough", &[&[range_check], &[a_minus_b]], None),
             ("Target", &[&[range_check], &[wrapping_a_minus_b]], Some(failure_handle_statement_id)),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }
 
@@ -173,10 +174,10 @@ fn build_u128_divmod(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }
 
@@ -232,7 +233,10 @@ fn build_u128_widemul(
         tempvar partial_upper_word;
         tempvar a1_b0_bottom;
         // Break a1_b into 128 and 64 bits parts, as explained above.
-        hint DivMod { lhs: a1_b, rhs: u64_limit } into { quotient: partial_upper_word, remainder: a1_b0_bottom };
+        hint DivMod {
+            lhs: a1_b,
+            rhs: u64_limit
+        } into { quotient: partial_upper_word, remainder: a1_b0_bottom };
 
         // Verify that a1_b0_bottom is in [0, 2**64) and partial_upper_word in [0, 2**128).
         tempvar fixed_a1_b0_bottom = a1_b0_bottom + u64_upper_fixer;
@@ -259,7 +263,10 @@ fn build_u128_widemul(
         // at 192 bits and `shifted_a1_b0_bottom` can contribute at most 1 additional bit,
         // added to (the carry of) `lower_uint128_with_carry = a0_b + shifted_a1_b0_bottom`.
         const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-        hint DivMod { lhs: lower_uint128_with_carry, rhs: u128_limit } into { quotient: carry, remainder: lower_uint128 };
+        hint DivMod {
+            lhs: lower_uint128_with_carry,
+            rhs: u128_limit
+        } into { quotient: carry, remainder: lower_uint128 };
 
         // Verify that `carry` is in [0, 2**65) and `lower_uint128` is in [0, 2**128).
         const carry_range_fixer = u128::MAX - (2u128.pow(65) - 1);
@@ -280,10 +287,10 @@ fn build_u128_widemul(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[upper_uint128], &[lower_uint128]], None)],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }
 
@@ -344,9 +351,8 @@ fn build_u128_from_felt(
             assert rced_value = *(range_check++);
             // If x != 0, jump to the end.
             jump FailureHandle if x != 0;
-        InfiniteLoop:
-            // Otherwise, start an infinite loop.
-            jump InfiniteLoop;
+            // Otherwise, fail.
+            fail;
         NoOverflow:
             assert value = *(range_check++);
     };
@@ -356,9 +362,9 @@ fn build_u128_from_felt(
             ("Fallthrough", &[&[range_check], &[value]], None),
             ("FailureHandle", &[&[range_check], &[x], &[y]], Some(failure_handle_statement_id)),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
-        }),
+        },
     ))
 }

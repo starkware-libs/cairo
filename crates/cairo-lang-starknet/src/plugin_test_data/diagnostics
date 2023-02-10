@@ -36,7 +36,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -82,7 +81,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -124,7 +122,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if array_len(ref data) != 0_usize {
+            if !array::ArrayTrait::is_empty(ref data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -157,7 +155,7 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:35:23
+ --> contract:34:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
@@ -177,7 +175,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -210,7 +207,7 @@ mod TestContract {
                 },
             }
             
-            if array_len(ref data) != 0_usize {
+            if !array::ArrayTrait::is_empty(ref data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -232,7 +229,7 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res)
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
             arr
         }
         
@@ -250,8 +247,8 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
                              ^
 
 error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:56:13
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res)
+ --> contract:55:13
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
             ^***************************************************^
 
 //! > ==========================================================================
@@ -270,7 +267,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -312,7 +308,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if array_len(ref data) != 0_usize {
+            if !array::ArrayTrait::is_empty(ref data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -350,17 +346,17 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
           ^*^
 
 error: Variable not dropped.
- --> contract:7:15
+ --> contract:6:15
     fn foo<T>(x: T) {
               ^
 
 error: Type not found.
- --> contract:35:38
+ --> contract:34:38
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
-error: Function `deserialize` of trait `core::serde::Serde` has multiple implementations, in: core::serde::FeltSerde, core::serde::BoolSerde, core::serde::U8Serde, core::serde::U64Serde, core::serde::U128Serde, core::serde::U256Serde, core::serde::ArrayFeltSerde
- --> contract:35:23
+error: Function `deserialize` of trait `core::serde::Serde` has multiple implementations, in: core::serde::FeltSerde, core::serde::BoolSerde, core::serde::U8Serde, core::serde::U32Serde, core::serde::U64Serde, core::serde::U128Serde, core::serde::U256Serde, core::serde::ArrayFeltSerde
+ --> contract:34:23
                 match serde::Serde::<T>::deserialize(ref data) {
                       ^**************************************^
 
@@ -385,7 +381,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -437,7 +432,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if array_len(ref data) != 0_usize {
+            if !array::ArrayTrait::is_empty(ref data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -459,7 +454,7 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res)
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
             arr
         }
         
@@ -477,18 +472,18 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
                                                              ^
 
 error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:35:23
+ --> contract:34:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
 error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:45:23
+ --> contract:44:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
 error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:75:13
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res)
+ --> contract:74:13
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
             ^***************************************************^
 
 //! > ==========================================================================
@@ -508,7 +503,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -554,7 +548,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -600,7 +593,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -646,7 +638,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -693,7 +684,6 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;

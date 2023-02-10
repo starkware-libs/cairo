@@ -46,7 +46,10 @@ fn build_get_gas(
         let orig_range_check = range_check;
         tempvar has_enough_gas;
         const requested_count_imm = requested_count;
-        hint TestLessThanOrEqual {lhs: requested_count_imm, rhs: gas_counter} into {dst: has_enough_gas};
+        hint TestLessThanOrEqual {
+            lhs: requested_count_imm,
+            rhs: gas_counter
+        } into {dst: has_enough_gas};
         jump HasEnoughGas if has_enough_gas != 0;
         const gas_counter_fix = (BigInt::from(u128::MAX) + 1 - requested_count) as BigInt;
         tempvar gas_diff = gas_counter + gas_counter_fix;
@@ -63,10 +66,10 @@ fn build_get_gas(
             ("Fallthrough", &[&[range_check], &[updated_gas]], None),
             ("Failure", &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
         ],
-        Some(CostValidationInfo {
+        CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: Some([-requested_count as i32, 0]),
-        }),
+        },
     ))
 }
 

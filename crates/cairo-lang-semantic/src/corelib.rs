@@ -1,9 +1,11 @@
-use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToOption};
-use cairo_lang_filesystem::ids::CrateLongId;
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
+use num_bigint::BigInt;
+use num_traits::{Num, Signed};
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -13,6 +15,7 @@ use crate::expr::inference::Inference;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId};
+use crate::items::us::SemanticUseEx;
 use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
@@ -21,8 +24,12 @@ use crate::{
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
-    let core_crate = db.intern_crate(CrateLongId("core".into()));
+    let core_crate = core_crate(db);
     ModuleId::CrateRoot(core_crate)
+}
+
+pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
+    db.intern_crate(CrateLongId("core".into()))
 }
 
 pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -325,22 +332,22 @@ fn get_core_function_impl_method(
         .module_item_by_name(core_module, impl_name.clone())
         .expect("Failed to load core lib.")
         .unwrap_or_else(|| panic!("Impl '{impl_name}' was not found in core lib."));
-    let impl_id = match module_item_id {
+    let impl_def_id = match module_item_id {
         ModuleItemId::Use(use_id) => {
             db.use_resolved_item(use_id).to_option().and_then(|resolved_generic_item| {
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::Impl)
             })
         }
-        _ => ImplId::option_from(module_item_id),
+        _ => ImplDefId::option_from(module_item_id),
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
     let function = db
-        .impl_functions(impl_id)
+        .impl_functions(impl_def_id)
         .ok()
         .and_then(|functions| functions.get(&method_name).cloned())
         .unwrap_or_else(|| panic!("no {method_name} in {impl_name}."));
     let concrete_impl =
-        db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args: vec![] });
+        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] });
     db.intern_function(FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
@@ -459,28 +466,52 @@ pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
     get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
 }
 
-/// Returns the name of the libfunc that creates a constant of type `ty`.
-pub fn try_get_const_libfunc_name_by_type(
-    db: &dyn SemanticGroup,
-    ty: TypeId,
-) -> Result<String, SemanticDiagnosticKind> {
-    let felt_ty = core_felt_ty(db);
-    let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
-    let u8_ty = get_core_ty_by_name(db, "u8".into(), vec![]);
-    let u64_ty = get_core_ty_by_name(db, "u64".into(), vec![]);
-    if ty == felt_ty {
-        Ok("felt_const".into())
-    } else if ty == u8_ty {
-        Ok("u8_const".into())
-    } else if ty == u64_ty {
-        Ok("u64_const".into())
-    } else if ty == u128_ty {
-        Ok("u128_const".into())
+/// Returns the name of the libfunc that creates a constant of type `ty`;
+pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
+    if ty == core_felt_ty(db) {
+        "felt_const".into()
+    } else if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
+        "u8_const".into()
+    } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
+        "u16_const".into()
+    } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
+        "u32_const".into()
+    } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
+        "u64_const".into()
+    } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
+        "u128_const".into()
     } else {
-        Err(SemanticDiagnosticKind::NoLiteralFunctionFound)
+        panic!("No const libfunc for type {}.", ty.format(db))
     }
 }
 
-pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
-    try_get_const_libfunc_name_by_type(db, ty).unwrap()
+/// Validates that a given type is valid for a literal and that the value fits the range of the
+/// specific type.
+pub fn validate_literal(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+    value: BigInt,
+) -> Result<(), SemanticDiagnosticKind> {
+    let is_out_of_range = if ty == core_felt_ty(db) {
+        value.is_negative()
+            || value
+                > BigInt::from_str_radix(
+                    "800000000000011000000000000000000000000000000000000000000000000",
+                    16,
+                )
+                .unwrap()
+    } else if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
+        value.is_negative() || value.bits() > 8
+    } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
+        value.is_negative() || value.bits() > 16
+    } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
+        value.is_negative() || value.bits() > 32
+    } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
+        value.is_negative() || value.bits() > 64
+    } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
+        value.is_negative() || value.bits() > 128
+    } else {
+        return Err(SemanticDiagnosticKind::NoLiteralFunctionFound);
+    };
+    if is_out_of_range { Err(SemanticDiagnosticKind::LiteralOutOfRange { ty }) } else { Ok(()) }
 }

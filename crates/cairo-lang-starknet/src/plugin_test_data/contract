@@ -22,14 +22,13 @@ mod TestContract {
     #[event]
     fn awesome_event(x: felt, y: u128) {
     }
-    
+
     #[event]
     fn best_event_ever() {
     }
 }
 
 //! > generated_cairo_code
-#[generated_contract]
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
@@ -116,7 +115,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if array_len(ref data) != 0_usize {
+            if !array::ArrayTrait::is_empty(ref data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -139,7 +138,7 @@ mod TestContract {
             // References.
             serde::Serde::<felt>::serialize(ref arr, __arg_arg);
             // Result.
-            serde::Serde::<felt>::serialize(ref arr, res)
+            serde::Serde::<felt>::serialize(ref arr, res);
             arr
         }
         fn set_something(mut data: Array::<felt>) -> Array::<felt> {
@@ -173,7 +172,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if array_len(ref data) != 0_usize {
+            if !array::ArrayTrait::is_empty(ref data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

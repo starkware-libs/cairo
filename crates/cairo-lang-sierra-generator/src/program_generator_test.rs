@@ -22,7 +22,7 @@ fn test_program_generator() {
                 }
 
                 fn bar(a: felt) -> felt {
-                    felt_add(a, a)
+                    felt_add(felt_add(a, a), a)
                 }
             "});
 
@@ -47,10 +47,12 @@ fn test_program_generator() {
             rename<felt>([2]) -> ([4]);
             return([4]);
             dup<felt>([0]) -> ([0], [2]);
-            felt_add([2], [0]) -> ([1]);
+            dup<felt>([0]) -> ([0], [3]);
+            felt_add([2], [3]) -> ([1]);
             store_temp<felt>([1]) -> ([1]);
-            rename<felt>([1]) -> ([3]);
-            return([3]);
+            felt_add([1], [0]) -> ([4]);
+            store_temp<felt>([4]) -> ([5]);
+            return([5]);
 
             test::foo@0([0]: felt) -> (felt);
             test::bar@6([0]: felt) -> (felt);
@@ -78,13 +80,11 @@ fn test_type_dependency() {
             libfunc store_temp<Box<Box<felt>>> = store_temp<Box<Box<felt>>>;
             libfunc unbox<Box<felt>> = unbox<Box<felt>>;
             libfunc store_temp<Box<felt>> = store_temp<Box<felt>>;
-            libfunc rename<Box<felt>> = rename<Box<felt>>;
 
             unbox<Box<Box<felt>>>([0]) -> ([1]);
             store_temp<Box<Box<felt>>>([1]) -> ([1]);
             unbox<Box<felt>>([1]) -> ([2]);
-            store_temp<Box<felt>>([2]) -> ([2]);
-            rename<Box<felt>>([2]) -> ([3]);
+            store_temp<Box<felt>>([2]) -> ([3]);
             return([3]);
 
             test::unbox_twice@0([0]: Box<Box<Box<felt>>>) -> (Box<felt>);

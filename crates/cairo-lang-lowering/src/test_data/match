@@ -57,7 +57,7 @@ Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- core::felt_add(v0, v3)
 End:
-  Callsite({v4 -> v5})
+  Fallthrough(3, {})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
@@ -75,6 +75,12 @@ Statements:
   }
 End:
   Return(v5)
+
+blk3:
+Inputs:
+Statements:
+End:
+  Callsite({v4 -> v5})
 
 //! > ==========================================================================
 

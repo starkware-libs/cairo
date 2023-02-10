@@ -1,11 +1,10 @@
 use super::felt::FeltType;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
-use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
 use super::uint::{
-    IntOperator, UintConstLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
+    IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
     UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
-    UintToFeltLibfunc, UintTraits, UintType,
+    UintSquareRootLibfunc, UintToFeltLibfunc, UintTraits, UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -16,7 +15,7 @@ use crate::extensions::{
     GenericLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{id_from_string, GenericLibfuncId, GenericTypeId};
+use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type for u128.
@@ -25,10 +24,11 @@ pub type Uint128Type = UintType<Uint128Traits>;
 define_libfunc_hierarchy! {
     pub enum Uint128Libfunc {
         Operation(UintOperationLibfunc<Uint128Traits>),
-        DivMod(Uint128DivModLibfunc),
+        Divmod(UintDivmodLibfunc<Uint128Traits>),
         WideMul(Uint128WideMulLibfunc),
         LessThan(UintLessThanLibfunc<Uint128Traits>),
         Equal(UintEqualLibfunc<Uint128Traits>),
+        SquareRoot(UintSquareRootLibfunc<Uint128Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint128Traits>),
         Const(UintConstLibfunc<Uint128Traits>),
         FromFelt(Uint128sFromFeltLibfunc),
@@ -46,12 +46,14 @@ impl UintTraits for Uint128Traits {
     const IS_SMALL: bool = false;
     const CONST: &'static str = "u128_const";
     const EQUAL: &'static str = "u128_eq";
+    const SQUARE_ROOT: &'static str = "u128_sqrt";
     const LESS_THAN: &'static str = "u128_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u128_le";
     const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u128_overflowing_sub";
     const TO_FELT: &'static str = "u128_to_felt";
     const TRY_FROM_FELT: &'static str = "u128_try_from_felt";
+    const DIVMOD: &'static str = "u128_safe_divmod";
 }
 
 impl IsZeroTraits for Uint128Traits {
@@ -72,9 +74,9 @@ impl GenericLibfunc for Uint128OperationLibfunc {
     type Concrete = UintOperationConcreteLibfunc;
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        const OVERFLOWING_ADD: u64 = id_from_string("u128_overflowing_add");
-        const OVERFLOWING_SUB: u64 = id_from_string("u128_overflowing_sub");
-        match id.id {
+        const OVERFLOWING_ADD: &str = "u128_overflowing_add";
+        const OVERFLOWING_SUB: &str = "u128_overflowing_sub";
+        match id.0.as_str() {
             OVERFLOWING_ADD => Some(Self::new(IntOperator::OverflowingAdd)),
             OVERFLOWING_SUB => Some(Self::new(IntOperator::OverflowingSub)),
             _ => None,
@@ -147,47 +149,6 @@ impl GenericLibfunc for Uint128OperationLibfunc {
             operator: self.operator,
             signature: self.specialize_signature(context.upcast(), args)?,
         })
-    }
-}
-
-/// Libfunc for u128 divmod.
-#[derive(Default)]
-pub struct Uint128DivModLibfunc {}
-impl NoGenericArgsGenericLibfunc for Uint128DivModLibfunc {
-    const STR_ID: &'static str = "u128_safe_divmod";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
-                ParamSignature::new(ty.clone()),
-                ParamSignature::new(nonzero_ty(context, &ty)?),
-            ],
-            vec![
-                OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
-                OutputVarInfo {
-                    ty: ty.clone(),
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-                },
-                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) } },
-            ],
-            SierraApChange::Known { new_vars_only: false },
-        ))
     }
 }
 

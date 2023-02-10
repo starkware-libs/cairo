@@ -150,7 +150,7 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
 }
 
 fn token_separators() -> Vec<&'static str> {
-    vec![" ", "\t", "\n", " // Comment\n"]
+    vec![" ", "\t", "\n", " // Comment with unicode é\n"]
 }
 
 fn need_separator(

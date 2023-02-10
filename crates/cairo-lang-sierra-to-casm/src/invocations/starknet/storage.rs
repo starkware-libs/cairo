@@ -3,12 +3,15 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
+use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
 use num_bigint::{BigInt, ToBigInt};
 use num_traits::Signed;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::validate_under_limit;
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 use crate::references::ReferenceExpression;
 
 /// Handles the storage_base_address_const libfunc.
@@ -37,7 +40,11 @@ pub fn build_storage_address_from_base_and_offset(
         deref_or_immediate offset;
     };
     casm_build_extend!(casm_builder, let res = base + offset;);
-    Ok(builder.build_from_casm_builder(casm_builder, [("Fallthrough", &[&[res]], None)], None))
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res]], None)],
+        Default::default(),
+    ))
 }
 
 /// Handles the storage_base_address_const libfunc.
@@ -54,6 +61,7 @@ pub fn build_storage_base_address_from_felt(
     let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     casm_build_extend! {casm_builder,
         const limit = addr_bound.clone();
+        let orig_range_check = range_check;
         // Allocating all vars in the beginning for easier AP-Alignment between the two branches,
         // as well as making sure we use `res` as the last cell, making it the last on stack.
         tempvar is_small;
@@ -81,7 +89,10 @@ pub fn build_storage_base_address_from_felt(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[res]], None)],
-        None,
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 
@@ -135,7 +146,10 @@ pub fn build_storage_read(
                 Some(failure_handle_statement_id),
             ),
         ],
-        None,
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
+        },
     ))
 }
 
@@ -185,6 +199,9 @@ pub fn build_storage_write(
                 Some(failure_handle_statement_id),
             ),
         ],
-        None,
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
+        },
     ))
 }

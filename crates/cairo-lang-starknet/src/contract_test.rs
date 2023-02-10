@@ -1,22 +1,23 @@
+use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_semantic::test_utils::{setup_test_crate, SemanticDatabaseForTesting};
+use cairo_lang_semantic::test_utils::setup_test_crate;
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
 use crate::contract::{find_contracts, get_module_functions, starknet_keccak};
+use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::plugin::EXTERNAL_MODULE;
 
 #[test]
 fn test_contract_resolving() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
+    let db = &mut RootDatabase::builder().detect_corelib().with_starknet().build().unwrap();
     let _crate_id = setup_test_crate(
         db,
         indoc! {"
             mod NotAContract {}
 
-            #[generated_contract]
+            #[contract]
             mod ERC20 {
                 fn internal_func(ref system: System) -> felt {
                     1
@@ -27,15 +28,6 @@ fn test_contract_resolving() {
 
                 #[external]
                 fn ep2() {}
-
-                trait __abi {
-                    fn ep1();
-                    fn ep2();
-                }
-                mod __external {
-                    fn ep1() {}
-                    fn ep2() {}
-                }
             }
         "},
     );

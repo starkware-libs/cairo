@@ -19,9 +19,9 @@ use crate::utils::{
     struct_deconstruct_libfunc_id,
 };
 
-/// Generates Sierra code that computes a given [lowering::FlatBlock].
+/// Generates Sierra code for the body of the given [lowering::FlatBlock].
 /// Returns a list of Sierra statements.
-pub fn generate_block_code(
+pub fn generate_block_body_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
     block: &lowering::FlatBlock,
@@ -77,42 +77,25 @@ fn add_drop_statements(
     Ok(())
 }
 
-/// Generates Sierra code that computes a given [lowering::FlatBlock].
-/// Pushes the values "returned" by the block on the top of the stack, and binds them to
-/// the given `binds` variables.
+/// Generates Sierra for a given [lowering::FlatBlock].
 ///
-/// Returns a list of Sierra statements and a boolean indicating whether the block may continue to
-/// the next instruction (true) or not (false).
-pub fn generate_block_code_and_push_values(
+/// Returns a list of Sierra statements and a boolean indicating whether the block may fallthrough
+/// to the next instruction (true) or not (false).
+pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
 ) -> Maybe<(Vec<pre_sierra::Statement>, bool)> {
     let block = context.get_lowered_block(block_id);
     let statement_location: StatementLocation = (block_id, block.statements.len());
 
-    let mut statements = generate_block_code(context, block_id, block)?;
+    let mut statements = generate_block_body_code(context, block_id, block)?;
     match &block.end {
         lowering::FlatBlockEnd::Callsite(remapping) => {
-            let mut push_values = Vec::<pre_sierra::PushValue>::new();
-            for (idx, (output, inner_output)) in remapping.iter().enumerate() {
-                let use_location = UseLocation { statement_location, idx };
-                let dup_var = get_dup_var_if_needed(context, &use_location);
-
-                let ty = context.get_variable_sierra_type(*inner_output)?;
-                let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
-                assert_eq!(
-                    ty, var_on_stack_ty,
-                    "Internal compiler error: Inconsistent types in \
-                     generate_block_code_and_push_values()."
-                );
-                push_values.push(pre_sierra::PushValue {
-                    var: context.get_sierra_variable(*inner_output),
-                    var_on_stack: context.get_sierra_variable(*output),
-                    ty,
-                    dup_var,
-                })
-            }
-            statements.push(pre_sierra::Statement::PushValues(push_values));
+            statements.push(generate_push_values_statement_for_remapping(
+                context,
+                statement_location,
+                remapping,
+            )?);
             Ok((statements, true))
         }
         lowering::FlatBlockEnd::Return(returned_variables) => {
@@ -123,8 +106,67 @@ pub fn generate_block_code_and_push_values(
             )?);
             Ok((statements, false))
         }
+        lowering::FlatBlockEnd::Fallthrough(block_id, remapping) => {
+            statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
+                id: context.block_label(*block_id),
+            }));
+
+            statements.push(generate_push_values_statement_for_remapping(
+                context,
+                statement_location,
+                remapping,
+            )?);
+
+            let (code, fallthrough) = generate_block_code(context, *block_id)?;
+            statements.extend(code);
+            Ok((statements, fallthrough))
+        }
+        lowering::FlatBlockEnd::Goto(block_id, remapping) => {
+            statements.push(generate_push_values_statement_for_remapping(
+                context,
+                statement_location,
+                remapping,
+            )?);
+
+            statements.push(jump_statement(
+                jump_libfunc_id(context.get_db()),
+                context.block_label(*block_id),
+            ));
+            // Here we might reach the next statement through after jumping to
+            // *block_id, but we don't fallthrough into the next statement.
+            // I.e. if this is a match arm, there is no need to add a jump to the statment that
+            // follows the match after this block.
+            Ok((statements, false))
+        }
         lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),
     }
+}
+
+/// Generates a push_values statement that corresponds to `remapping`.
+fn generate_push_values_statement_for_remapping(
+    context: &mut ExprGeneratorContext<'_>,
+    statement_location: (lowering::BlockId, usize),
+    remapping: &lowering::VarRemapping,
+) -> Maybe<pre_sierra::Statement> {
+    let mut push_values = Vec::<pre_sierra::PushValue>::new();
+    for (idx, (output, inner_output)) in remapping.iter().enumerate() {
+        let use_location = UseLocation { statement_location, idx };
+        let should_dup = should_dup(context, &use_location);
+
+        let ty = context.get_variable_sierra_type(*inner_output)?;
+        let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
+        assert_eq!(
+            ty, var_on_stack_ty,
+            "Internal compiler error: Inconsistent types in generate_block_code()."
+        );
+        push_values.push(pre_sierra::PushValue {
+            var: context.get_sierra_variable(*inner_output),
+            var_on_stack: context.get_sierra_variable(*output),
+            ty,
+            dup: should_dup,
+        })
+    }
+    Ok(pre_sierra::Statement::PushValues(push_values))
 }
 
 /// Generates Sierra code for a `return` statement.
@@ -143,7 +185,7 @@ pub fn generate_return_code(
 
     for (idx, returned_variable) in returned_variables.iter().enumerate() {
         let use_location = UseLocation { statement_location: *statement_location, idx };
-        let dup_var = get_dup_var_if_needed(context, &use_location);
+        let should_dup = should_dup(context, &use_location);
 
         let return_variable_on_stack = context.allocate_sierra_variable();
         return_variables_on_stack.push(return_variable_on_stack.clone());
@@ -151,7 +193,7 @@ pub fn generate_return_code(
             var: context.get_sierra_variable(*returned_variable),
             var_on_stack: return_variable_on_stack,
             ty: context.get_variable_sierra_type(*returned_variable)?,
-            dup_var,
+            dup: should_dup,
         });
     }
 
@@ -235,7 +277,7 @@ fn generate_statement_call_code(
 
             for (idx, (var_id, var)) in zip_eq(&statement.inputs, inputs).enumerate() {
                 let use_location = UseLocation { statement_location: *statement_location, idx };
-                let dup_var = get_dup_var_if_needed(context, &use_location);
+                let should_dup = should_dup(context, &use_location);
                 // Allocate a temporary Sierra variable that represents the argument placed on the
                 // stack.
                 let arg_on_stack = context.allocate_sierra_variable();
@@ -243,7 +285,7 @@ fn generate_statement_call_code(
                     var,
                     var_on_stack: arg_on_stack.clone(),
                     ty: context.get_variable_sierra_type(*var_id)?,
-                    dup_var,
+                    dup: should_dup,
                 });
                 args_on_stack.push(arg_on_stack);
             }
@@ -272,14 +314,9 @@ fn generate_statement_call_code(
     }
 }
 
-/// Returns `None` if the variable at the given location should not be duplicated.
-/// Otherwise, allocates a variable for the duplicated copy and returns it.
-fn get_dup_var_if_needed(
-    context: &mut ExprGeneratorContext<'_>,
-    use_location: &UseLocation,
-) -> Option<sierra::ids::VarId> {
-    let should_dup = !context.is_last_use(use_location);
-    if should_dup { Some(context.allocate_sierra_variable()) } else { None }
+/// Returns if the variable at the given location should be duplicated.
+fn should_dup(context: &mut ExprGeneratorContext<'_>, use_location: &UseLocation) -> bool {
+    !context.is_last_use(use_location)
 }
 
 /// Adds calls to the `dup` libfunc for the given [StatementLocation] and the given statement's
@@ -376,10 +413,10 @@ fn generate_statement_match_extern_code(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let (code, is_reachable) = generate_block_code_and_push_values(context, *block_id)?;
+        let (code, fallthrough) = generate_block_code(context, *block_id)?;
         statements.extend(code);
 
-        if is_reachable {
+        if fallthrough {
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
                 statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
@@ -503,10 +540,10 @@ fn generate_statement_match_enum(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let (code, is_reachable) = generate_block_code_and_push_values(context, *arm)?;
+        let (code, fallthrough) = generate_block_code(context, *arm)?;
         statements.extend(code);
 
-        if is_reachable {
+        if fallthrough {
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
                 statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));

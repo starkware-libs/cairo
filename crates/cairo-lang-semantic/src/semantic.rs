@@ -1,6 +1,5 @@
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{GenericKind, LocalVarId};
+use cairo_lang_defs::ids::LocalVarId;
 // Reexport objects
 pub use cairo_lang_defs::ids::{ParamId, VarId};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -18,10 +17,10 @@ pub use crate::items::function_with_body::FunctionBody;
 pub use crate::items::functions::{
     ConcreteFunction, ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, Signature,
 };
+pub use crate::items::generics::{GenericArgumentId, GenericParam};
 pub use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
-pub use crate::items::strct::Member;
+pub use crate::items::structure::Member;
 pub use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
-use crate::literals::LiteralId;
 pub use crate::types::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteStructId, ConcreteTypeId, TypeId, TypeLongId,
 };
@@ -86,45 +85,6 @@ impl Variable {
         match self {
             Variable::Local(local) => local.is_mut,
             Variable::Param(param) => param.mutability != Mutability::Immutable,
-        }
-    }
-}
-
-/// Generic argument.
-/// A value assigned to a generic parameter.
-/// May be a type, impl, constant, etc..
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum GenericArgumentId {
-    Type(TypeId),
-    Literal(LiteralId),
-    Impl(ConcreteImplId), // TODO(spapini): impls and constants as generic values.
-}
-impl GenericArgumentId {
-    pub fn kind(&self) -> GenericKind {
-        match self {
-            GenericArgumentId::Type(_) => GenericKind::Type,
-            GenericArgumentId::Literal(_) => GenericKind::Const,
-            GenericArgumentId::Impl(_) => GenericKind::Impl,
-        }
-    }
-    pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        match self {
-            GenericArgumentId::Type(ty) => ty.format(db),
-            GenericArgumentId::Literal(lit) => lit.format(db),
-            GenericArgumentId::Impl(imp) => format!("{:?}", imp.debug(db.elongate())),
-        }
-    }
-}
-impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        db: &(dyn SemanticGroup + 'static),
-    ) -> std::fmt::Result {
-        match self {
-            GenericArgumentId::Type(id) => write!(f, "{:?}", id.debug(db)),
-            GenericArgumentId::Literal(id) => write!(f, "{:?}", id.debug(db)),
-            GenericArgumentId::Impl(id) => write!(f, "{:?}", id.debug(db)),
         }
     }
 }

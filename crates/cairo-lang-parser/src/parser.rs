@@ -6,7 +6,7 @@ use std::mem;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::{TextOffset, TextSpan};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -29,11 +29,11 @@ pub struct Parser<'a> {
     /// A vector of pending trivia to be added as leading trivia to the next valid terminal.
     pending_trivia: Vec<TriviumGreen>,
     /// The current offset, excluding the current terminal.
-    offset: u32,
+    offset: TextOffset,
     /// The width of the current terminal being handled.
-    current_width: u32,
+    current_width: TextWidth,
     /// The length of the trailing trivia following the last read token.
-    last_trivia_length: u32,
+    last_trivia_length: TextWidth,
     diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
 }
 
@@ -72,9 +72,9 @@ impl<'a> Parser<'a> {
             lexer,
             next_terminal,
             pending_trivia: Vec::new(),
-            offset: 0,
-            current_width: 0,
-            last_trivia_length: 0,
+            offset: Default::default(),
+            current_width: Default::default(),
+            last_trivia_length: Default::default(),
             diagnostics,
         };
         let green = parser.parse_syntax_file();
@@ -86,11 +86,11 @@ impl<'a> Parser<'a> {
         &mut self,
         missing_kind: ParserDiagnosticKind,
     ) -> T::Green {
-        let next_offset = (self.offset + self.current_width - self.last_trivia_length) as usize;
+        let next_offset = self.offset.add_width(self.current_width - self.last_trivia_length);
         self.diagnostics.add(ParserDiagnostic {
             file_id: self.file_id,
             kind: missing_kind,
-            span: TextSpan { start: TextOffset(next_offset), end: TextOffset(next_offset + 1) },
+            span: TextSpan { start: next_offset, end: next_offset },
         });
         T::missing(self.db)
     }
@@ -116,7 +116,7 @@ impl<'a> Parser<'a> {
         // Fix offset in case there are skipped tokens before EOF. This is usually done in
         // self.take_raw() but here we don't call self.take_raw as it tries to read the next
         // token, which doesn't exist.
-        self.offset += self.current_width;
+        self.offset = self.offset.add_width(self.current_width);
 
         let eof = self.add_trivia_to_terminal::<TerminalEndOfFile>(self.next_terminal.clone());
         SyntaxFile::new_green(self.db, items, eof)
@@ -1486,7 +1486,7 @@ impl<'a> Parser<'a> {
 
     /// Takes a terminal from the Lexer and places it in self.next_terminal.
     fn take_raw(&mut self) -> LexerTerminal {
-        self.offset += self.current_width;
+        self.offset = self.offset.add_width(self.current_width);
         self.current_width = self.next_terminal.width(self.db);
         self.last_trivia_length =
             self.next_terminal.trailing_trivia.iter().map(|y| y.0.width(self.db)).sum();
@@ -1500,10 +1500,14 @@ impl<'a> Parser<'a> {
     fn skip_token(&mut self, diagnostic_kind: ParserDiagnosticKind) {
         let terminal = self.take_raw();
 
-        let diag_start =
-            (terminal.leading_trivia.iter().map(|trivium| trivium.0.width(self.db)).sum::<u32>()
-                + self.offset) as usize;
-        let diag_end = diag_start + terminal.text.len();
+        let diag_start = self.offset.add_width(
+            terminal
+                .leading_trivia
+                .iter()
+                .map(|trivium| trivium.0.width(self.db))
+                .sum::<TextWidth>(),
+        );
+        let diag_end = diag_start.add_width(TextWidth::from_str(&terminal.text));
 
         // Add to pending trivia.
         self.pending_trivia.extend(terminal.leading_trivia);
@@ -1512,7 +1516,7 @@ impl<'a> Parser<'a> {
         self.diagnostics.add(ParserDiagnostic {
             file_id: self.file_id,
             kind: diagnostic_kind,
-            span: TextSpan { start: TextOffset(diag_start), end: TextOffset(diag_end) },
+            span: TextSpan { start: diag_start, end: diag_end },
         });
     }
 
@@ -1534,11 +1538,15 @@ impl<'a> Parser<'a> {
         let mut diag_end = None;
         while !should_stop(self.peek().kind) {
             let terminal = self.take_raw();
-            diag_start.get_or_insert(self.offset as usize);
-            diag_end = Some((self.offset as usize) + terminal.text.len());
+            diag_start.get_or_insert(self.offset);
+            diag_end = Some(self.offset.add_width(TextWidth::from_str(&terminal.text)));
+
+            self.pending_trivia.extend(terminal.leading_trivia);
+            self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
+            self.pending_trivia.extend(terminal.trailing_trivia);
         }
         if let (Some(diag_start), Some(diag_end)) = (diag_start, diag_end) {
-            Err(SkippedError(TextSpan { start: TextOffset(diag_start), end: TextOffset(diag_end) }))
+            Err(SkippedError(TextSpan { start: diag_start, end: diag_end }))
         } else {
             Ok(())
         }

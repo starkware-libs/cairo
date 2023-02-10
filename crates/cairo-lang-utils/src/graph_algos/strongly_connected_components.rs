@@ -3,22 +3,11 @@
 use core::hash::Hash;
 use std::collections::HashMap;
 
+use super::graph_node::GraphNode;
+
 #[cfg(test)]
 #[path = "strongly_connected_components_test.rs"]
 mod strongly_connected_components_test;
-
-/// A trait for a node in the graph. Note a GraphNode has to be able to provide its neighbors
-/// by itself, without additional information.
-pub trait GraphNode: Sized + Clone {
-    /// The type used to identify the nodes in the graph.
-    type NodeId: PartialEq + Eq + Hash + Clone;
-
-    /// Returns a list of the node's neighbors
-    fn get_neighbors(&self) -> Vec<Self>;
-
-    /// Gets the node's ID.
-    fn get_id(&self) -> Self::NodeId;
-}
 
 /// A wrapper node to a GraphNode, to be used in the SCC algorithm. Contains the GraphNode
 /// additional state for the algorithm.
@@ -61,14 +50,14 @@ impl<Node: GraphNode> SccAlgoContext<Node> {
 }
 
 /// Computes the SCC (Strongly Connected Component) of the given node in its graph.
-pub fn compute_scc<Node: GraphNode>(root: Node) -> Vec<Node::NodeId> {
+pub fn compute_scc<Node: GraphNode>(root: &Node) -> Vec<Node::NodeId> {
     let mut ctx = SccAlgoContext::new(root.get_id());
     compute_scc_recursive(&mut ctx, root);
     ctx.result
 }
 
 /// The recursive call to compute the SCC of a given node.
-fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, current_node: Node) {
+fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, current_node: &Node) {
     let mut current_wrapper_node = SccAlgoNode {
         node: current_node.clone(),
         index: ctx.next_index,
@@ -85,7 +74,7 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
         match ctx.known_nodes.get(&neighbor_id) {
             None => {
                 // neighbor was not visited yet. Visit it and maybe apply its lowlink to root.
-                compute_scc_recursive(ctx, neighbor.clone());
+                compute_scc_recursive(ctx, &neighbor);
                 // Now neighbor should be in known_nodes.
                 current_wrapper_node.lowlink = std::cmp::min(
                     current_wrapper_node.lowlink,

@@ -262,6 +262,12 @@ impl ModuleId {
             }
         }
     }
+    pub fn owning_crate(&self, db: &dyn DefsGroup) -> CrateId {
+        match self {
+            ModuleId::CrateRoot(crate_id) => *crate_id,
+            ModuleId::Submodule(submodule) => submodule.parent_module(db).owning_crate(db),
+        }
+    }
 }
 impl DebugWithDb<dyn DefsGroup> for ModuleId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
@@ -285,7 +291,7 @@ define_language_element_id_as_enum! {
         Enum(EnumId),
         TypeAlias(TypeAliasId),
         Trait(TraitId),
-        Impl(ImplId),
+        Impl(ImplDefId),
         ExternType(ExternTypeId),
         ExternFunction(ExternFunctionId),
     }
@@ -320,7 +326,7 @@ impl UnstableSalsaId for FreeFunctionId {
     }
 }
 
-define_language_element_id!(ImplId, ImplLongId, ast::ItemImpl, lookup_intern_impl, name);
+define_language_element_id!(ImplDefId, ImplDefLongId, ast::ItemImpl, lookup_intern_impl, name);
 define_language_element_id_partial!(
     ImplFunctionId,
     ImplFunctionLongId,
@@ -329,7 +335,7 @@ define_language_element_id_partial!(
     name
 );
 impl ImplFunctionId {
-    pub fn impl_id(&self, db: &dyn DefsGroup) -> ImplId {
+    pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
         let ImplFunctionLongId(module_file_id, ptr) = db.lookup_intern_impl_function(*self);
         // TODO(spapini): Use a parent function.
         let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(ptr.untyped()) else {
@@ -342,7 +348,7 @@ impl ImplFunctionId {
             panic!()
         };
         let impl_ptr = ast::ItemImplPtr(parent);
-        db.intern_impl(ImplLongId(module_file_id, impl_ptr))
+        db.intern_impl(ImplDefLongId(module_file_id, impl_ptr))
     }
 }
 impl UnstableSalsaId for ImplFunctionId {
@@ -352,7 +358,7 @@ impl UnstableSalsaId for ImplFunctionId {
 }
 impl TopLevelLanguageElementId for ImplFunctionId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.impl_id(db).name(db), self.name(db))
+        format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
     }
 
     fn name(&self, db: &dyn DefsGroup) -> SmolStr {
@@ -521,7 +527,7 @@ define_language_element_id_as_enum! {
         TraitFunc(TraitFunctionId),
         ImplFunc(ImplFunctionId),
         Trait(TraitId),
-        Impl(ImplId),
+        Impl(ImplDefId),
         Struct(StructId),
         Enum(EnumId),
         ExternType(ExternTypeId),
@@ -585,7 +591,7 @@ impl GenericItemId {
                 }
             }
             SyntaxKind::ItemImpl => GenericItemId::Impl(
-                db.intern_impl(ImplLongId(module_file, ast::ItemImplPtr(stable_ptr))),
+                db.intern_impl(ImplDefLongId(module_file, ast::ItemImplPtr(stable_ptr))),
             ),
             SyntaxKind::ItemTrait => GenericItemId::Trait(
                 db.intern_trait(TraitLongId(module_file, ast::ItemTraitPtr(stable_ptr))),

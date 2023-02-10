@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{GenericParamId, LanguageElementId, MemberId, MemberLongId, StructId};
+use cairo_lang_defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -18,14 +18,14 @@ use crate::types::{resolve_type, substitute_ty, ConcreteStructId, GenericSubstit
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
-#[path = "strct_test.rs"]
+#[path = "structure_test.rs"]
 mod test;
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct StructData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    generic_params: Vec<GenericParamId>,
+    generic_params: Vec<semantic::GenericParam>,
     members: OrderedHashMap<SmolStr, Member>,
     attributes: Vec<Attribute>,
     resolved_lookback: Arc<ResolvedLookback>,
@@ -49,7 +49,7 @@ pub fn struct_semantic_diagnostics(
 pub fn struct_generic_params(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Maybe<Vec<GenericParamId>> {
+) -> Maybe<Vec<semantic::GenericParam>> {
     Ok(db.priv_struct_semantic_data(struct_id)?.generic_params)
 }
 
@@ -87,13 +87,14 @@ pub fn priv_struct_semantic_data(db: &dyn SemanticGroup, struct_id: StructId) ->
     let syntax_db = db.upcast();
 
     // Generic params.
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
+        &mut resolver,
         module_file_id,
         &struct_ast.generic_params(db.upcast()),
     );
-    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     // Members.
     let mut members = OrderedHashMap::default();
@@ -133,8 +134,7 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let db = self.upcast();
         let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
         let generic_args = db.lookup_intern_concrete_struct(concrete_struct_id).generic_args;
-        let substitution =
-            GenericSubstitution(generic_params.into_iter().zip(generic_args.into_iter()).collect());
+        let substitution = GenericSubstitution::new(&generic_params, &generic_args);
 
         let generic_members =
             self.upcast().struct_members(concrete_struct_id.struct_id(self.upcast()))?;

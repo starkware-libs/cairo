@@ -12,7 +12,6 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-al
 salsa.workspace = true
 smol_str.workspace = true
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.2" }
-substring.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true

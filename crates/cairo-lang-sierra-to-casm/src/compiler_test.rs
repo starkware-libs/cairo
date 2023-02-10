@@ -303,17 +303,17 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3], ap++;
                 ret;
-                %{ memory[ap + 0] = 950 <= memory[ap + -2] %}
+                %{ memory[ap + 0] = 970 <= memory[ap + -2] %}
 
                 jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap + -3] + 340282366920938463463374607431768210506, ap++;
+                [ap + 0] = [ap + -3] + 340282366920938463463374607431768210486, ap++;
                 [ap + -1] = [[ap + -5] + 0];
                 jmp rel 13;
 
                 // Statement # 31
                 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
                 // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
-                [ap + -3] = [ap + 0] + 950, ap++;
+                [ap + -3] = [ap + 0] + 970, ap++;
                 [ap + -1] = [[ap + -5] + 0];
                 [ap + -6] = [ap + 0] + 1, ap++;
                 [ap + 0] = [ap + -6] + 1, ap++;

@@ -5,8 +5,8 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context};
-use cairo_lang_compiler::db::RootDatabaseBuilder;
-use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
+use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
@@ -72,15 +72,12 @@ fn main() -> anyhow::Result<()> {
     if args.starknet {
         plugins.push(Arc::new(StarkNetPlugin {}));
     }
-    let mut builder = RootDatabaseBuilder::empty();
-    builder.with_plugins(plugins).with_dev_corelib().unwrap();
-    let mut db_val = builder.build();
-    let db = &mut db_val;
+    let db = &mut RootDatabase::builder().with_plugins(plugins).detect_corelib().build()?;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
-    if check_and_eprint_diagnostics(db) {
-        anyhow::bail!("failed to compile: {}", args.path);
+    if DiagnosticsReporter::stderr().check(db) {
+        bail!("failed to compile: {}", args.path);
     }
     let all_tests = find_all_tests(db, main_crate_ids);
     let sierra_program = db
@@ -192,7 +189,7 @@ fn run_tests(
             }
             let result = runner
                 .run_function(name.as_str(), &[], test.available_gas)
-                .with_context(|| "Failed to run the function.")?;
+                .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
             Ok((
                 name,
                 match (&result.value, test.expectation) {
