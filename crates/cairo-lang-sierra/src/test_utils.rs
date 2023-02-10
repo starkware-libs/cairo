@@ -29,6 +29,7 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("StorageBaseAddress".into(), as_type_long_id("StorageBaseAddress", &[]));
     elements.insert("StorageAddress".into(), as_type_long_id("StorageAddress", &[]));
     elements.insert("ContractAddress".into(), as_type_long_id("ContractAddress", &[]));
+    elements.insert("SnapshotRangeCheck".into(), as_type_long_id("Snapshot", &["RangeCheck"]));
     elements
 }
 

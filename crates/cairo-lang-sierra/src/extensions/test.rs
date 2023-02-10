@@ -72,12 +72,20 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 duplicatable: false,
                 size: 0,
             })
-        } else if id == "GasBuiltin".into() || id == "System".into() {
+        } else if id == "GasBuiltin".into() || id == "System".into() || id == "RangeCheck".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: true,
                 droppable: false,
                 duplicatable: false,
+                size: 1,
+            })
+        } else if id == "SnapshotRangeCheck".into() {
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: true,
+                duplicatable: true,
                 size: 1,
             })
         } else {
@@ -174,6 +182,12 @@ impl SpecializationContext for MockSpecializationContext {
             "Struct<u128, felt>")]
 #[test_case("System", vec![] => Ok(()); "System")]
 #[test_case("StorageBaseAddress", vec![] => Ok(()); "StorageBaseAddress")]
+#[test_case("Snapshot", vec![type_arg("RangeCheck")] => Ok(()); "Snapshot<RangeCheck>")]
+#[test_case("Snapshot", vec![type_arg("felt")] => Err(UnsupportedGenericArg); "Snapshot<felt>")]
+#[test_case("Snapshot", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
+            "Snapshot<UninitializedFelt>")]
+#[test_case("Snapshot", vec![type_arg("SnapshotRangeCheck")] => Err(UnsupportedGenericArg);
+            "Snapshot<SnapshotRangeCheck>")]
 fn find_type_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -286,6 +300,10 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("storage_write_syscall", vec![] => Ok(()); "storage_write_syscall")]
 #[test_case("call_contract_syscall", vec![] => Ok(()); "call_contract_syscall")]
 #[test_case("emit_event_syscall", vec![] => Ok(()); "emit_event_syscall")]
+#[test_case("snapshot_take", vec![type_arg("RangeCheck")] => Ok(()); "snapshot_take<RangeCheck>")]
+#[test_case("snapshot_take", vec![type_arg("felt")] => Ok(()); "snapshot_take<felt>")]
+#[test_case("snapshot_take", vec![type_arg("SnapshotRangeCheck")] => Ok(());
+            "snapshot_take<SnapshotRangeCheck>")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,

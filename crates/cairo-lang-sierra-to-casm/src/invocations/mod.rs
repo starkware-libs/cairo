@@ -479,6 +479,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
         CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
         CoreConcreteLibfunc::Debug(libfunc) => debug::build(libfunc, builder),
+        CoreConcreteLibfunc::SnapshotTake(_) => misc::build_identity(builder),
     }
 }
 
