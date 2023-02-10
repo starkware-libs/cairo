@@ -25,7 +25,9 @@ pub fn build(
         EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, num_variants, .. }) => {
             build_enum_init(builder, *index, *num_variants)
         }
-        EnumConcreteLibfunc::Match(_) => build_enum_match(builder),
+        EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_) => {
+            build_enum_match(builder)
+        }
     }
 }
 
