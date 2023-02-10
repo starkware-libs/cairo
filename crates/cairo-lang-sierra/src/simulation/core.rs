@@ -324,6 +324,10 @@ pub fn simulate<
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
+        CoreConcreteLibfunc::SnapshotTake(_) => match &inputs[..] {
+            [_] => Ok((inputs, 0)),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
