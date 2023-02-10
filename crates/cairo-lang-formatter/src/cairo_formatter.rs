@@ -14,6 +14,10 @@ use ignore::WalkBuilder;
 
 use crate::{get_formatted_file, FormatterConfig, CAIRO_FMT_IGNORE};
 
+/// A struct encapsulating the changes made by the formatter in a single file.
+///
+/// This struct implements [`Display`] and [`Debug`] traits, showing differences between
+/// the original and modified file content.
 #[derive(Clone)]
 pub struct FileDiff {
     pub original: String,
@@ -42,6 +46,10 @@ impl Debug for FileDiff {
     }
 }
 
+/// A helper struct for displaying a file diff with colored output.
+///
+/// This is implements a [`Display`] trait, so it can be used with `format!` and `println!`.
+/// If you prefer output without colors, use [`FileDiff`] instead.
 pub struct FileDiffColoredDisplay<'a> {
     diff: &'a FileDiff,
 }
@@ -61,6 +69,10 @@ impl<'a> Debug for FileDiffColoredDisplay<'a> {
     }
 }
 
+/// An output from file formatting.
+///
+/// Differentiates between already formatted files and files that differ after formatting.
+/// Contains the original file content and the formatted file content.
 #[derive(Debug)]
 pub enum FormatOutcome {
     Identical(String),
@@ -76,10 +88,15 @@ impl FormatOutcome {
     }
 }
 
+/// A struct used to indicate that the formatter input should be read from stdin.
+/// Implements the [`FormattableInput`] trait.
 pub struct StdinFmt;
 
+/// A trait for types that can be used as input for the cairo formatter.
 pub trait FormattableInput {
+    /// Converts the input to a [`FileId`] that can be used by the formatter.
     fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId>;
+    /// Overwrites the content of the input with the given string.
     fn overwrite_content(&self, _content: String) -> Result<()>;
 }
 
@@ -142,6 +159,10 @@ fn format_input(input: &dyn FormattableInput, config: &FormatterConfig) -> Resul
     }
 }
 
+/// A struct for formatting cairo files.
+///
+/// The formatter can operate on all types implementing the [`FormattableInput`] trait.
+/// Allows formatting in place, and for formatting to a string.
 #[derive(Debug)]
 pub struct CairoFormatter {
     formatter_config: FormatterConfig,
@@ -153,6 +174,8 @@ impl CairoFormatter {
     }
 
     /// Returns a preconfigured `ignore::WalkBuilder` for the given path.
+    ///
+    /// Can be used for recursively formatting a directory under given path.
     pub fn walk(&self, path: &Path) -> WalkBuilder {
         let mut builder = WalkBuilder::new(path);
         builder.add_custom_ignore_filename(CAIRO_FMT_IGNORE);
@@ -168,6 +191,7 @@ impl CairoFormatter {
     }
 
     /// Formats the path in place, writing changes to the files.
+    /// The ['FormattaableInput'] trait implementation defines the method for persisting changes.
     pub fn format_in_place(&self, input: &dyn FormattableInput) -> Result<FormatOutcome> {
         match format_input(input, &self.formatter_config)? {
             FormatOutcome::DiffFound(diff) => {
@@ -180,6 +204,7 @@ impl CairoFormatter {
     }
 
     /// Formats the path and returns the formatted string.
+    /// No changes are persisted. The original file is not modified.
     pub fn format_to_string(&self, input: &dyn FormattableInput) -> Result<FormatOutcome> {
         format_input(input, &self.formatter_config)
     }
