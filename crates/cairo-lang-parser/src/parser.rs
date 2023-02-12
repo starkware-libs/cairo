@@ -541,7 +541,7 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is an operator (binary or unary).
     /// Returns a GreenId of the operator or None if the operator is a unary-only operator.
     fn try_parse_binary_operator(&mut self) -> Option<BinaryOperatorGreen> {
-        if self.peek().kind == SyntaxKind::TerminalNot {
+        if matches!(self.peek().kind, SyntaxKind::TerminalNot | SyntaxKind::TerminalAt) {
             None
         } else {
             Some(match self.peek().kind {
@@ -566,7 +566,7 @@ impl<'a> Parser<'a> {
         }
     }
     /// Assumes the current token is a unary operator, and returns a GreenId of the operator.
-    fn parse_unary_operator(&mut self) -> UnaryOperatorGreen {
+    fn expect_unary_operator(&mut self) -> UnaryOperatorGreen {
         match self.peek().kind {
             SyntaxKind::TerminalAt => self.take::<TerminalAt>().into(),
             SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
@@ -587,7 +587,7 @@ impl<'a> Parser<'a> {
         lbrace_allowed: LbraceAllowed,
     ) -> Option<ExprGreen> {
         let mut expr = if let Some(precedence) = get_unary_operator_precedence(self.peek().kind) {
-            let op = self.parse_unary_operator();
+            let op = self.expect_unary_operator();
             let expr = self.parse_expr_limited(precedence, lbrace_allowed);
             ExprUnary::new_green(self.db, op, expr).into()
         } else {
@@ -681,7 +681,7 @@ impl<'a> Parser<'a> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             SyntaxKind::TerminalAt => {
-                let op = self.parse_unary_operator();
+                let op = self.take::<TerminalAt>().into();
                 let expr = self.try_parse_type_expr().unwrap_or_else(|| {
                     self.create_and_report_missing::<Expr>(
                         ParserDiagnosticKind::MissingTypeExpression,
