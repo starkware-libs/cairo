@@ -128,7 +128,18 @@ fn bar1(b: @felt) {
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: @test::A
+Initial refs:
+Statements:
+  () <- match_enum(v0) {
+    A::A => blk1,
+    A::B => blk2,
+  }
+End:
+  Fallthrough(3, {})
+
+blk1:
 Inputs: v1: @core::array::Array::<core::felt>
 Initial refs:
 Statements:
@@ -136,7 +147,7 @@ Statements:
 End:
   Callsite({v2 -> v5})
 
-blk1:
+blk2:
 Inputs: v3: @core::felt
 Initial refs:
 Statements:
@@ -144,39 +155,41 @@ Statements:
 End:
   Callsite({v4 -> v5})
 
-blk2 (root):
-Inputs: v0: @test::A
+blk3:
+Inputs:
 Initial refs:
 Statements:
-  () <- match_enum(v0) {
-    A::A => blk0,
-    A::B => blk1,
-  }
 End:
   Return(v0)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: @test::A
+Statements:
+  () <- match_enum(v0) {
+    A::A => blk1,
+    A::B => blk2,
+  }
+End:
+  Fallthrough(blk3, {})
+
+blk1:
 Inputs: v1: @core::array::Array::<core::felt>
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
   Callsite({})
 
-blk1:
+blk2:
 Inputs: v3: @core::felt
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
   Callsite({})
 
-blk2 (root):
-Inputs: v0: @test::A
+blk3:
+Inputs:
 Statements:
-  () <- match_enum(v0) {
-    A::A => blk0,
-    A::B => blk1,
-  }
 End:
   Return(v0)
 

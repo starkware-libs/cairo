@@ -83,6 +83,26 @@ impl<'a> BorrowChecker<'a> {
         demand
     }
 
+    /// gets the demand of the variables prior to the given remapping.
+    /// Also returns a new remapping of only the entries that are used according to the demand. The
+    /// caller can use it for optimizing the remapping.
+    fn get_remapping_demand(
+        &mut self,
+        target_block_id: &BlockId,
+        remapping: &VarRemapping,
+        callsite_info: Option<CallsiteInfo<'_>>,
+    ) -> (VarRemapping, Demand) {
+        let mut demand = self.get_demand(callsite_info, RealBlock(*target_block_id, 0));
+        let mut new_remapping = VarRemapping::default();
+        for (dst, src) in remapping.iter() {
+            if demand.vars.swap_remove(dst) {
+                demand.vars.insert(*src);
+                new_remapping.insert(*dst, *src);
+            }
+        }
+        (new_remapping, demand)
+    }
+
     /// Computes the variables [Demand] from a [FlatBlockEnd], while outputting borrow checking
     /// diagnostics.
     fn get_block_end_demand(
@@ -92,9 +112,33 @@ impl<'a> BorrowChecker<'a> {
         callsite_info: Option<CallsiteInfo<'_>>,
     ) -> Demand {
         let demand = match block_end {
-            FlatBlockEnd::Fallthrough(_target_block_id, _remapping)
-            | FlatBlockEnd::Goto(_target_block_id, _remapping) => todo!(),
+            FlatBlockEnd::Fallthrough(target_block_id, remapping) => {
+                let (new_remapping, demand) =
+                    self.get_remapping_demand(target_block_id, remapping, callsite_info);
+                assert!(
+                    self.new_ends
+                        .insert(
+                            block_id,
+                            FlatBlockEnd::Fallthrough(*target_block_id, new_remapping)
+                        )
+                        .is_none(),
+                    "Borrow checker cannot visit a block more than once."
+                );
+                demand
+            }
+            FlatBlockEnd::Goto(target_block_id, remapping) => {
+                let (new_remapping, demand) =
+                    self.get_remapping_demand(target_block_id, remapping, callsite_info);
+                assert!(
+                    self.new_ends
+                        .insert(block_id, FlatBlockEnd::Goto(*target_block_id, new_remapping))
+                        .is_none(),
+                    "Borrow checker cannot visit a block more than once."
+                );
+                demand
+            }
             FlatBlockEnd::Callsite(remapping) => {
+                // TODO(yuval): remove in the future, or export to function.
                 let callsite_info = callsite_info.unwrap();
                 let mut demand =
                     self.get_demand(callsite_info.parent.cloned(), callsite_info.return_site);
@@ -113,6 +157,7 @@ impl<'a> BorrowChecker<'a> {
             }
             FlatBlockEnd::Return(vars) => Demand { vars: vars.iter().copied().collect() },
             FlatBlockEnd::Unreachable => Demand::default(),
+            FlatBlockEnd::NotSet => unreachable!(),
         };
         demand
     }
