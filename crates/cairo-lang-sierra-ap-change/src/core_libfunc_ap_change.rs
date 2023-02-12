@@ -231,6 +231,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_) => {
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
+            StarkNetConcreteLibfunc::ContractAddressToFelt(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibfunc::CallContract(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
