@@ -332,6 +332,7 @@ pub fn simulate<
             [value] => Ok((vec![value.clone(), value.clone()], 0)),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        CoreConcreteLibfunc::Cast(_) => unimplemented!(),
     }
 }
 
