@@ -38,8 +38,10 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
-use crate::items::imp::find_impls_at_context;
+use crate::items::functions::{
+    ConcreteImplGenericFunctionId, GenericFunctionId, ImplGenericParamFunctionId,
+};
+use crate::items::imp::{has_impl_at_context, ImplId};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
@@ -455,14 +457,29 @@ pub fn resolve_trait_function(
     resolver: &mut Resolver<'_>,
     concrete_trait_function: ConcreteTraitGenericFunctionId,
     stable_ptr: SyntaxStablePtrId,
-) -> Maybe<ConcreteImplGenericFunctionId> {
+) -> Maybe<GenericFunctionId> {
     // Resolve impl.
-    let concrete_impl = resolver.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
-    let impl_def_id = db.lookup_intern_concrete_impl(concrete_impl).impl_def_id;
-    let impl_function = db
-        .impl_function_by_trait_function(impl_def_id, concrete_trait_function.function_id(db))?
-        .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
-    Ok(ConcreteImplGenericFunctionId { concrete_impl, function: impl_function })
+
+    let trait_function_id = concrete_trait_function.function_id(db);
+    let impl_id = resolver.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
+    match impl_id {
+        ImplId::Concrete(concrete_impl_id) => {
+            let impl_def_id = concrete_impl_id.impl_def_id(db);
+            let function = db
+                .impl_function_by_trait_function(impl_def_id, trait_function_id)?
+                .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
+            Ok(GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
+                concrete_impl_id,
+                function,
+            }))
+        }
+        ImplId::GenericParameter(param) => {
+            Ok(GenericFunctionId::ImplGenericParam(ImplGenericParamFunctionId {
+                param,
+                trait_function_id,
+            }))
+        }
+    }
 }
 
 pub fn compute_root_expr(
@@ -496,14 +513,14 @@ pub fn compute_root_expr(
                 if let GenericFunctionId::Trait(concrete_trait_function) =
                     long_function_id.function.generic_function
                 {
-                    let concrete_impl_function = match resolve_trait_function(
+                    let generic_function = match resolve_trait_function(
                         ctx.db,
                         ctx.diagnostics,
                         &mut ctx.resolver,
                         concrete_trait_function,
                         call_expr.stable_ptr.untyped(),
                     ) {
-                        Ok(concrete_impl_function) => concrete_impl_function,
+                        Ok(generic_function) => generic_function,
                         Err(diag_added) => {
                             *expr = Expr::Missing(ExprMissing {
                                 ty: TypeId::missing(ctx.db, diag_added),
@@ -514,8 +531,7 @@ pub fn compute_root_expr(
                         }
                     };
 
-                    long_function_id.function.generic_function =
-                        GenericFunctionId::Impl(concrete_impl_function);
+                    long_function_id.function.generic_function = generic_function;
                 }
                 long_function_id.function.generic_function.generic_args_apply(
                     ctx.db,
@@ -1271,15 +1287,11 @@ fn method_call_expr(
 
             // Find impls for it.
             let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
-            let Ok(impls) = find_impls_at_context(
+            let Ok(true) = has_impl_at_context(
                 ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()
             ) else {
                 continue;
             };
-
-            if impls.is_empty() {
-                continue;
-            }
 
             candidates.push(trait_function);
         }

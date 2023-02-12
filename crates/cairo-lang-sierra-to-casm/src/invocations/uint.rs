@@ -404,6 +404,7 @@ pub fn build_u8(
     match libfunc {
         Uint8Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint8Concrete::LessThan(_) => build_less_than(builder),
+        Uint8Concrete::SquareRoot(_) => build_sqrt(builder),
         Uint8Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint8Concrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
         Uint8Concrete::Operation(libfunc) => match libfunc.operator {
@@ -429,6 +430,7 @@ pub fn build_u16(
     match libfunc {
         Uint16Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint16Concrete::LessThan(_) => build_less_than(builder),
+        Uint16Concrete::SquareRoot(_) => build_sqrt(builder),
         Uint16Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint16Concrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
         Uint16Concrete::Operation(libfunc) => match libfunc.operator {
@@ -454,6 +456,7 @@ pub fn build_u32(
     match libfunc {
         Uint32Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint32Concrete::LessThan(_) => build_less_than(builder),
+        Uint32Concrete::SquareRoot(_) => build_sqrt(builder),
         Uint32Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint32Concrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
         Uint32Concrete::Operation(libfunc) => match libfunc.operator {
@@ -479,6 +482,7 @@ pub fn build_u64(
     match libfunc {
         Uint64Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint64Concrete::LessThan(_) => build_less_than(builder),
+        Uint64Concrete::SquareRoot(_) => build_sqrt(builder),
         Uint64Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint64Concrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
         Uint64Concrete::Operation(libfunc) => match libfunc.operator {
