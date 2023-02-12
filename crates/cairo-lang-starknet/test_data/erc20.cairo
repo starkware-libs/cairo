@@ -1,7 +1,5 @@
 #[contract]
 mod ERC20 {
-    use starknet::get_caller_address;
-
     struct Storage {
         name: felt,
         symbol: felt,
@@ -9,6 +7,12 @@ mod ERC20 {
         total_supply: u256,
         balances: LegacyMap::<felt, u256>,
         allowances: LegacyMap::<(felt, felt), u256>,
+    }
+
+    // TODO(ilya): use `ContractAddress` for addresses in this contract and remove the following.
+    // A wrapper around get_caller_address that returns a felt.
+    fn get_caller_address() -> felt {
+        starknet::contract_address_to_felt(starknet::get_caller_address())
     }
 
     #[event]
