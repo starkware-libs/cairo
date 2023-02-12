@@ -79,6 +79,7 @@ test_function_diagnostics
 //! > function
 fn foo() {
     -(1 == 2);
+    -1_u8;
     !17;
 }
 
@@ -93,7 +94,12 @@ error: Unary operator '-' is not supported for type 'core::bool'.
     -(1 == 2);
     ^
 
-error: Unary operator '!' is not supported for type 'core::felt'.
+error: Unary operator '-' is not supported for type 'core::integer::u8'.
  --> lib.cairo:3:5
+    -1_u8;
+    ^
+
+error: Unary operator '!' is not supported for type 'core::felt'.
+ --> lib.cairo:4:5
     !17;
     ^
