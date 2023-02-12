@@ -11,7 +11,7 @@ pub enum SpecializationError {
     UnsupportedId,
     #[error("Expected a different number of generic arguments")]
     WrongNumberOfGenericArgs,
-    #[error("Provided generic arg is unsupported")]
+    #[error("Provided generic argument is unsupported")]
     UnsupportedGenericArg,
     #[error("index is out of a relevant range")]
     IndexOutOfRange {

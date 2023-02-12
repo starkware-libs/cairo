@@ -885,3 +885,7 @@ fn u256_from_felt(a: felt) -> u256 implicits(RangeCheck) nopanic {
         U128sFromFeltResult::Wide((high, low)) => u256 { low, high },
     }
 }
+
+// TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
+//   will not lead to Sierra errors.
+extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;

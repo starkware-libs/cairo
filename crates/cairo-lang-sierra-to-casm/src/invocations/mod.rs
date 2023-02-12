@@ -33,6 +33,7 @@ mod bitwise;
 mod boolean;
 mod boxing;
 mod builtin_cost;
+mod casts;
 mod debug;
 mod dict_felt_to;
 mod ec;
@@ -453,6 +454,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Felt(libfunc) => felt::build(libfunc, builder),
         CoreConcreteLibfunc::Bitwise(_) => bitwise::build(builder),
         CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
+        CoreConcreteLibfunc::Cast(libfunc) => casts::build(libfunc, builder),
         CoreConcreteLibfunc::Ec(libfunc) => ec::build(libfunc, builder),
         CoreConcreteLibfunc::Uint8(libfunc) => uint::build_u8(libfunc, builder),
         CoreConcreteLibfunc::Uint16(libfunc) => uint::build_u16(libfunc, builder),
