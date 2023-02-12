@@ -225,6 +225,9 @@ impl<'a> PanicBlockLoweringContext<'a> {
     ) -> PanicLoweringContext<'a> {
         let end = match end {
             StructuredBlockEnd::Callsite(rets) => FlatBlockEnd::Callsite(rets),
+            StructuredBlockEnd::Fallthrough { target, remapping } => {
+                FlatBlockEnd::Fallthrough(target, remapping)
+            }
             StructuredBlockEnd::Panic { refs, data } => {
                 // Wrap with PanicResult::Err.
                 let ty = self.db().intern_type(semantic::TypeLongId::Concrete(
@@ -261,6 +264,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 FlatBlockEnd::Return(chain!(refs, [output]).collect())
             }
             StructuredBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
+            StructuredBlockEnd::NotSet => unreachable!(),
         };
         self.ctx.flat_blocks.alloc(FlatBlock { inputs, statements: self.statements, end });
         self.ctx
