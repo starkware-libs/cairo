@@ -13,6 +13,7 @@
 
 use cairo_lang_utils::try_extract_matches;
 
+use super::snapshot::snapshot_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -102,6 +103,7 @@ define_libfunc_hierarchy! {
     pub enum StructLibfunc {
         Construct(StructConstructLibfunc),
         Deconstruct(StructDeconstructLibfunc),
+        SnapshotDeconstruct(StructSnapshotDeconstructLibfunc),
     }, StructConcreteLibfunc
 }
 
@@ -167,6 +169,40 @@ impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
                     ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                 })
                 .collect(),
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+/// Libfunc for deconstructing a struct snapshot.
+#[derive(Default)]
+pub struct StructSnapshotDeconstructLibfunc {}
+impl SignatureOnlyGenericLibfunc for StructSnapshotDeconstructLibfunc {
+    const STR_ID: &'static str = "struct_snapshot_deconstruct";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let struct_type = args_as_single_type(args)?;
+        let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
+        let member_types =
+            StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
+                .members;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![snapshot_ty(context, struct_type)?],
+            member_types
+                .into_iter()
+                .map(|ty| {
+                    Ok(OutputVarInfo {
+                        ty: snapshot_ty(context, ty)?,
+                        // All memory of the deconstruction would have the same lifetime as the
+                        // first param - as it is its deconstruction.
+                        ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                    })
+                })
+                .collect::<Result<Vec<_>, _>>()?,
             SierraApChange::Known { new_vars_only: true },
         ))
     }
