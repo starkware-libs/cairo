@@ -276,6 +276,7 @@ use integer::u128_from_felt;
 use integer::u128_try_from_felt;
 use integer::u128_to_felt;
 use integer::u128_sqrt;
+use integer::upcast;
 use integer::U128Add;
 use integer::U128Sub;
 use integer::U128Mul;

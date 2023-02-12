@@ -332,6 +332,7 @@ pub fn simulate<
             [_] => Ok((inputs, 0)),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        CoreConcreteLibfunc::Cast(_) => unimplemented!(),
     }
 }
 
