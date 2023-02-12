@@ -1,7 +1,7 @@
 use crate::extensions::NoGenericArgsGenericType;
 use crate::ids::GenericTypeId;
 
-/// Type for StarkNet system object.
+/// Type for Starknet system object.
 /// Used to make system calls.
 #[derive(Default)]
 pub struct SystemType {}

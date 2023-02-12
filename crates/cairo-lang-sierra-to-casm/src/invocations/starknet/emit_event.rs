@@ -8,7 +8,7 @@ use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
 };
 
-/// Builds instructions for StarkNet emit event system call.
+/// Builds instructions for Starknet emit event system call.
 pub fn build_emit_event(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

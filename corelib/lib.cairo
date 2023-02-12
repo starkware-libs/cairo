@@ -382,7 +382,7 @@ use hash::Pedersen;
 // Debug.
 mod debug;
 
-// StarkNet
+// Starknet
 mod starknet;
 use starknet::System;
 use starknet::ContractAddress;
