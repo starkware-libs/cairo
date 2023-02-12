@@ -294,6 +294,20 @@ fn compute_expr_binary_semantic(
             _ => Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
         };
     }
+    call_core_binary_op(ctx, syntax, lexpr, rexpr)
+}
+
+/// Get the function call expression of a binary operation that is defined in the corelib.
+fn call_core_binary_op(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprBinary,
+    lexpr: Expr,
+    rexpr: Expr,
+) -> Maybe<Expr> {
+    let db = ctx.db;
+    let stable_ptr = syntax.stable_ptr().into();
+    let binary_op = syntax.op(db.upcast());
+
     ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
     let function = match core_binary_operator(
@@ -307,10 +321,12 @@ fn compute_expr_binary_semantic(
         }
         Ok(function) => function,
     };
+    let sig = ctx.db.concrete_function_signature(function)?;
+    let first_param = sig.params.into_iter().next().unwrap();
     expr_function_call(
         ctx,
         function,
-        vec![(lexpr, None, Mutability::Immutable), (rexpr, None, Mutability::Immutable)],
+        vec![(lexpr, None, first_param.mutability), (rexpr, None, Mutability::Immutable)],
         stable_ptr,
         binary_op.stable_ptr().untyped(),
     )
@@ -1540,7 +1556,7 @@ fn expr_function_call(
             }
             ref_args.push(expr_var.var);
         } else {
-            // Verify that it is passed explicitly as 'ref'.
+            // Verify that it is passed without modifiers.
             if mutability != Mutability::Immutable {
                 ctx.diagnostics
                     .report_by_ptr(arg.stable_ptr().untyped(), ImmutableArgWithModifiers);
