@@ -16,7 +16,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{Inference, TypeVar};
-use crate::items::imp::{find_impls_at_context, ImplId, ImplLookupContext};
+use crate::items::imp::{has_impl_at_context, ImplId, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{
     semantic, ConcreteImplId, ConcreteVariant, FunctionId, GenericArgumentId, GenericParam,
@@ -372,6 +372,14 @@ pub fn substitute_generics_args_inplace(
             GenericArgumentId::Impl(ImplId::Concrete(concrete_impl_id)) => {
                 *concrete_impl_id = substitute_impl(db.upcast(), substitution, *concrete_impl_id)
             }
+            GenericArgumentId::Impl(ImplId::GenericParameter(param)) => {
+                if let Some(impl_arg) = substitution.get(param) {
+                    *arg = GenericArgumentId::Impl(*extract_matches!(
+                        impl_arg,
+                        GenericArgumentId::Impl
+                    ));
+                }
+            }
         }
     }
 }
@@ -424,41 +432,37 @@ pub fn type_info(
             if !lookup_context.extra_modules.contains(&module) {
                 lookup_context.extra_modules.push(module);
             }
-            let droppable = !find_impls_at_context(
+            let droppable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_drop_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
-            let duplicatable = !find_impls_at_context(
+            )?;
+            let duplicatable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_copy_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
+            )?;
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::GenericParameter(_) => {
-            let droppable = !find_impls_at_context(
+            let droppable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_drop_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
-            let duplicatable = !find_impls_at_context(
+            )?;
+            let duplicatable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_copy_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
+            )?;
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::Tuple(tys) => {

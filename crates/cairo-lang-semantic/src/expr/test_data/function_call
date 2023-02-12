@@ -160,7 +160,7 @@ error: Unknown function.
     d.bar();
       ^*^
 
-error: Function `add` of trait `core::traits::Add::<?0>` has no implementation in the context.
+error: Trait `core::traits::Add::<?0>` has no implementation in the context.
  --> lib.cairo:5:5
     d + 0;
     ^***^
