@@ -246,6 +246,7 @@ pub fn unwrap_error_propagation_type(
             semantic::ConcreteTypeId::Struct(_) | semantic::ConcreteTypeId::Extern(_),
         )
         | TypeLongId::Tuple(_)
+        | TypeLongId::Snapshot(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_) => None,
     }
@@ -277,6 +278,8 @@ pub fn core_unary_operator(
 
         UnaryOperator::Not(_) if ty == bool_ty => "bool_not",
         UnaryOperator::Not(_) => return unsupported_operator("!"),
+
+        UnaryOperator::At(_) => unreachable!("@ is not an unary operator."),
     };
     Ok(get_core_function_id(db, function_name.into(), vec![]))
 }

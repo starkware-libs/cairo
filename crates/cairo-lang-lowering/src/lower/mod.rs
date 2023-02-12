@@ -306,6 +306,7 @@ fn lower_expr(
     match expr {
         semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, scope),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, scope),
+        semantic::Expr::Snapshot(expr) => lower_expr_snapshot(ctx, expr, scope),
         semantic::Expr::Assignment(expr) => lower_expr_assignment(ctx, expr, scope),
         semantic::Expr::Block(expr) => lower_expr_block(ctx, scope, expr),
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, scope),
@@ -366,6 +367,19 @@ fn lower_expr_tuple(
         .map(|arg_expr_id| lower_expr(ctx, scope, *arg_expr_id))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(LoweredExpr::Tuple { exprs: inputs, location })
+}
+
+/// Lowers an expression of type [semantic::ExprSnapshot].
+fn lower_expr_snapshot(
+    ctx: &mut LoweringContext<'_>,
+    expr: &semantic::ExprSnapshot,
+    scope: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a snapshot: {:?}", expr.debug(&ctx.expr_formatter));
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+    let input = lower_expr(ctx, scope, expr.inner)?.var(ctx, scope)?;
+
+    Ok(LoweredExpr::AtVariable(generators::Snapshot { input, location }.add(ctx, scope)))
 }
 
 /// Lowers an expression of type [semantic::ExprFunctionCall].

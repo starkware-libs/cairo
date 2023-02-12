@@ -159,6 +159,7 @@ fn inner_find_local_variables(
                     &[statement_enum_construct.output],
                 );
             }
+            lowering::Statement::Snapshot(_) => todo!(),
         }
     }
 

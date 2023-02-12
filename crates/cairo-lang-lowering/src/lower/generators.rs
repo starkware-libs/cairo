@@ -14,7 +14,7 @@ use crate::objects::{
     Statement, StatementCall, StatementLiteral, StatementStructConstruct,
     StatementStructDestructure,
 };
-use crate::StatementEnumConstruct;
+use crate::{StatementEnumConstruct, StatementSnapshot};
 
 /// Generator for [StatementLiteral].
 pub struct Literal {
@@ -102,6 +102,23 @@ impl EnumConstruct {
         let output = ctx.new_var(VarRequest { ty, location: self.location });
         scope.push_finalized_statement(Statement::EnumConstruct(StatementEnumConstruct {
             variant: self.variant,
+            input: self.input,
+            output,
+        }));
+        output
+    }
+}
+
+/// Generator for [StatementSnapshot].
+pub struct Snapshot {
+    pub input: VariableId,
+    pub location: StableLocation,
+}
+impl Snapshot {
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockBuilder) -> VariableId {
+        let ty = ctx.db.intern_type(semantic::TypeLongId::Snapshot(ctx.variables[self.input].ty));
+        let output = ctx.new_var(VarRequest { ty, location: self.location });
+        scope.push_finalized_statement(Statement::Snapshot(StatementSnapshot {
             input: self.input,
             output,
         }));

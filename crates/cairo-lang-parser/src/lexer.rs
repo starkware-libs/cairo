@@ -252,6 +252,7 @@ impl<'a> Lexer<'a> {
                 '&' => self.pick_kind('&', TokenKind::AndAnd, TokenKind::And),
                 '|' => self.pick_kind('|', TokenKind::OrOr, TokenKind::Or),
                 '^' => self.take_token_of_kind(TokenKind::Xor),
+                '@' => self.take_token_of_kind(TokenKind::At),
                 _ => self.take_token_of_kind(TokenKind::BadCharacters),
             }
         } else {
@@ -338,6 +339,7 @@ enum TokenKind {
     // Punctuation.
     And,
     AndAnd,
+    At,
     Or,
     OrOr,
     Xor,
@@ -405,6 +407,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::NoPanic => SyntaxKind::TerminalNoPanic,
         TokenKind::And => SyntaxKind::TerminalAnd,
         TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
+        TokenKind::At => SyntaxKind::TerminalAt,
         TokenKind::Or => SyntaxKind::TerminalOr,
         TokenKind::OrOr => SyntaxKind::TerminalOrOr,
         TokenKind::Xor => SyntaxKind::TerminalXor,
