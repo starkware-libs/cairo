@@ -42,16 +42,13 @@ store_temp<felt>([12]) -> ([12])
 store_local<felt>([2], [1]) -> ([1])
 function_call<user@test::bar>([12]) -> ([11])
 felt_add([1], [11]) -> ([13])
-label1:
 store_temp<felt>([13]) -> ([15])
 function_call<user@test::bar>([15]) -> ([14])
 felt_add([3], [14]) -> ([5])
-label2:
 store_temp<felt>([0]) -> ([17])
 store_local<felt>([6], [5]) -> ([5])
 function_call<user@test::bar>([17]) -> ([16])
 felt_add([5], [16]) -> ([18])
-label3:
 store_temp<felt>([18]) -> ([19])
 return([19])
 
@@ -111,7 +108,6 @@ store_local<felt>([3], [2]) -> ([2])
 function_call<user@test::revoke_ap>() -> ([10])
 drop<felt>([10]) -> ()
 felt_add([0], [2]) -> ([11])
-label4:
 store_temp<felt>([11]) -> ([12])
 return([12])
 
@@ -145,13 +141,11 @@ alloc_local<felt>() -> ([2])
 finalize_locals() -> ()
 dup<felt>([0]) -> ([0], [3])
 felt_add([3], [0]) -> ([1])
-label1:
 store_local<felt>([2], [1]) -> ([1])
 dup<felt>([1]) -> ([1], [5])
 store_temp<felt>([5]) -> ([5])
 function_call<user@test::foo>([5]) -> ([4])
 felt_add([4], [1]) -> ([6])
-label2:
 store_temp<felt>([6]) -> ([7])
 return([7])
 
