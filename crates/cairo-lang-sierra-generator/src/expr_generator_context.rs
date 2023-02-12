@@ -73,6 +73,16 @@ impl<'a> ExprGeneratorContext<'a> {
         sierra_var
     }
 
+    /// Maps a lowering variable to a sierra variable.
+    /// I.e. every instance of `lowering_var_id` is replaced by lowering_var_id.
+    pub fn add_variables_mapping(
+        &mut self,
+        lowering_var_id: lowering::VariableId,
+        sierra_var_id: cairo_lang_sierra::ids::VarId,
+    ) {
+        self.variables.insert(SierraGenVar::LoweringVar(lowering_var_id), sierra_var_id);
+    }
+
     /// Same as [Self::get_sierra_variable] except that it operates of a list of variables.
     pub fn get_sierra_variables(
         &mut self,
