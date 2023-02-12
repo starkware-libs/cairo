@@ -81,11 +81,6 @@ End:
   Return(v0)
 
 //! > lowering_diagnostics
-error: Unsupported `inline` arguments.
- --> lib.cairo:2:9
-#[inline(never)]
-        ^*****^
-
 error: Redundant `inline` attribute.
  --> lib.cairo:2:3
 #[inline(never)]
