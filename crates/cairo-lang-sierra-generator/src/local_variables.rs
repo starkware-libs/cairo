@@ -177,13 +177,17 @@ fn inner_find_local_variables(
             let vars = remapping.values().copied().collect_vec();
             state.use_variables(&vars, res);
 
-            for var_id in remapping.keys().cloned() {
-                state.set_variable_status(var_id, VariableStatus::TemporaryVariable);
-            }
-
-            if let Some(BlockInfo { known_ap_change: false }) = ctx.block_infos.get(target_block_id)
-            {
-                known_ap_change = false;
+            if let Some(block_info) = ctx.block_infos.get(target_block_id) {
+                if let BlockInfo { known_ap_change: false } = block_info {
+                    known_ap_change = false;
+                }
+                for var_id in remapping.keys().cloned() {
+                    state.set_variable_status(var_id, VariableStatus::TemporaryVariable);
+                }
+            } else {
+                for (dst_var_id, src_var_id) in remapping.iter() {
+                    state.set_variable_status(*dst_var_id, VariableStatus::Alias(*src_var_id));
+                }
             }
 
             if !inner_find_local_variables(ctx, *target_block_id, state, res)? {

@@ -8,7 +8,7 @@ foo
 
 //! > function_code
 fn foo(x: felt) -> felt {
-   bar(x)
+    bar(x)
 }
 
 //! > module_code
@@ -26,13 +26,7 @@ fn bar(x: felt) -> felt {
 
 // Revokes ap since this function is recursive.
 fn revoke_ap() {
-  revoke_ap()
-}
-
-
-struct MyStruct {
-    a: felt,
-    b: felt,
+    revoke_ap()
 }
 
 //! > lowering_format
@@ -98,7 +92,7 @@ foo
 
 //! > function_code
 fn foo(x: felt) -> felt {
-   bar(x) + x
+    bar(x) + x
 }
 
 //! > module_code
@@ -118,12 +112,6 @@ fn bar(x: felt) -> felt {
 // Revokes ap since this function is recursive.
 fn revoke_ap() {
   revoke_ap()
-}
-
-
-struct MyStruct {
-    a: felt,
-    b: felt,
 }
 
 //! > lowering_format
@@ -184,3 +172,58 @@ v6
 
 //! > block_infos
 blk1: known_ap_change: true.
+
+//! > ==========================================================================
+
+//! > Remapping - fallthrough without incoming gotos
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: felt) -> felt {
+    let y = bar(x + 1);
+    revoke_ap();
+    y
+}
+
+//! > module_code
+#[inline(always)]
+fn bar(x: felt) -> felt {
+    x
+}
+
+// Revokes ap since this function is recursive.
+fn revoke_ap() {
+  revoke_ap()
+}
+
+//! > lowering_format
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- 1u
+  (v2: core::felt) <- core::felt_add(v0, v1)
+End:
+  Fallthrough(1, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Fallthrough(2, {v2 -> v3})
+
+blk2:
+Inputs:
+Statements:
+  (v4: ()) <- test::revoke_ap()
+End:
+  Return(v3)
+
+//! > local_variables
+v2
+
+//! > block_infos
