@@ -103,6 +103,10 @@ impl<'a> ExprGeneratorContext<'a> {
         }
     }
 
+    pub fn block_has_label(&mut self, block_id: &BlockId) -> bool {
+        self.block_labels.get(block_id).is_some()
+    }
+
     /// Returns the [cairo_lang_sierra::ids::ConcreteTypeId] associated with
     /// [lowering::VariableId].
     pub fn get_variable_sierra_type(
