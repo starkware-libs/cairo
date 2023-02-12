@@ -11,15 +11,26 @@ pub struct BlockId(pub usize);
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Blocks<T>(pub Vec<T>);
 
-impl<T> Blocks<T> {
+impl<T: Default> Blocks<T> {
     pub fn new() -> Self {
         Blocks(vec![])
     }
     pub fn alloc(&mut self, block: T) -> BlockId {
-        let res = BlockId(self.0.len());
+        let id = BlockId(self.0.len());
         self.0.push(block);
-        res
+        id
     }
+    /// Allocate a new block ID. The block itself should be populated later.
+    pub fn alloc_empty(&mut self) -> BlockId {
+        let id = BlockId(self.0.len());
+        self.0.push(T::default());
+        id
+    }
+    /// Sets an already-allocated block.
+    pub fn set_block(&mut self, id: BlockId, block: T) {
+        self.0[id.0] = block;
+    }
+
     pub fn iter(&self) -> BlocksIter<'_, T> {
         self.into_iter()
     }

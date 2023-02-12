@@ -62,58 +62,18 @@ fn foo(val: Option::<felt>) -> felt {
 foo
 
 //! > module_code
-/// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
-#[inline(always)]
-fn bar<T>(val: Option::<T>, val2: T) -> T {
-    match val {
-        Option::Some(x) => x,
-        Option::None(()) => val2,
-    }
-}
 
 //! > semantic_diagnostics
+error: Function not found.
+ --> lib.cairo:2:3
+  bar(val, 2)
+  ^*^
 
 //! > before
-blk0 (root):
-Inputs: v0: core::option::Option::<core::felt>
-Statements:
-  (v1: core::felt) <- 2u
-  (v2: core::felt) <- test::bar::<core::felt>(v0, v1)
-End:
-  Return(v2)
-
-//! > after
-blk0 (root):
-Inputs: v0: core::option::Option::<core::felt>
-Statements:
-  (v1: core::felt) <- 2u
-  () <- match_enum(v0) {
-    Option::Some => blk2,
-    Option::None => blk3,
-  }
-End:
-  Fallthrough(blk1, {v3 -> v2})
-
-blk1:
-Inputs:
-Statements:
-End:
-  Return(v2)
-
-blk2:
-Inputs: v4: core::felt
-Statements:
-End:
-  Callsite({v4 -> v3})
-
-blk3:
-Inputs: v5: ()
-Statements:
-  () <- struct_destructure(v5)
-End:
-  Callsite({v1 -> v3})
 
 //! > lowering_diagnostics
+
+//! > after
 
 //! > ==========================================================================
 
@@ -146,6 +106,8 @@ Statements:
 End:
   Return(v1)
 
+//! > lowering_diagnostics
+
 //! > after
 blk0 (root):
 Inputs: v0: core::felt
@@ -165,8 +127,6 @@ Inputs:
 Statements:
 End:
   Fallthrough(blk1, {v2 -> v1})
-
-//! > lowering_diagnostics
 
 //! > ==========================================================================
 
@@ -400,11 +360,7 @@ test_function_inlining
 
 //! > function
 fn foo(a: felt) -> felt {
-  if a == 2 {
     bar(a)
-  } else {
-    a
-  }
 }
 
 //! > function_name
@@ -416,93 +372,905 @@ fn bar(a: felt) -> felt {
   if a == 0 {
     return 1;
   }
-  0
-}
-
-//! > before
-blk0:
-Inputs:
-Statements:
-  (v3: core::felt) <- test::bar(v0)
 End:
-  Callsite({v3 -> v5})
+  Fallthrough(blk6, {})
 
 blk1:
-Inputs: v4: core::NonZero::<core::felt>
+Inputs: v9: ()
 Statements:
-End:
-  Callsite({v0 -> v5})
-
-blk2 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 2u
-  (v2: core::felt) <- core::FeltSub::sub(v0, v1)
-  () <- match core::felt_is_zero(v2) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
+  () <- match core::integer::u128_eq(v4, v6) {
+    bool::False => blk8,
+    bool::True => blk9,
   }
 End:
-  Return(v5)
+  Fallthrough(blk7, {v24 -> v10})
 
-//! > after
-blk0:
-Inputs:
+blk2:
+Inputs: v11: ()
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero => blk5,
+  () <- match core::integer::u128_lt(v0, v3, v5) {
+    bool::False => blk12,
+    bool::True => blk13,
   }
-  (v6: core::felt) <- 0u
 End:
-  Fallthrough(blk3, {v6 -> v3})
-
-blk1:
-Inputs: v4: core::NonZero::<core::felt>
-Statements:
-End:
-  Callsite({v0 -> v5})
-
-blk2 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 2u
-  (v9: core::felt) <- core::felt_sub(v0, v1)
-End:
-  Fallthrough(blk6, {v9 -> v2})
+  Fallthrough(blk11, {v29 -> v13, v30 -> v12})
 
 blk3:
-Inputs:
+Inputs: v14: ()
 Statements:
+  (v15: ()) <- struct_construct()
+  (v16: core::bool) <- bool::False(v15)
 End:
-  Callsite({v3 -> v5})
+  Callsite({v0 -> v18, v16 -> v17})
 
 blk4:
 Inputs:
 Statements:
-  (v7: core::felt) <- 1u
 End:
-  Goto(blk3, {v7 -> v3})
+  Callsite({v18 -> v23, v17 -> v22})
 
 blk5:
-Inputs: v8: core::NonZero::<core::felt>
+Inputs: v19: ()
 Statements:
+  (v20: ()) <- struct_construct()
+  (v21: core::bool) <- bool::False(v20)
 End:
-  Callsite({})
+  Callsite({v0 -> v23, v21 -> v22})
 
 blk6:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v2) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
-  Return(v5)
+  Return(v23, v22)
 
 //! > lowering_diagnostics
 
 //! > semantic_diagnostics
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:6:4
+End:
+   ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:9:5
+blk1:
+    ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:10:7
+Inputs: v9: ()
+      ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:10:11
+Inputs: v9: ()
+          ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:11:11
+Statements:
+          ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:16:4
+End:
+   ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:17:26
+  Fallthrough(blk7, {v24 -> v10})
+                         ^^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:19:5
+blk2:
+    ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:20:7
+Inputs: v11: ()
+      ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:20:12
+Inputs: v11: ()
+           ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:21:11
+Statements:
+          ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:26:4
+End:
+   ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:27:27
+  Fallthrough(blk11, {v29 -> v13, v30 -> v12})
+                          ^^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:27:33
+  Fallthrough(blk11, {v29 -> v13, v30 -> v12})
+                                ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:27:39
+  Fallthrough(blk11, {v29 -> v13, v30 -> v12})
+                                      ^^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:29:5
+blk3:
+    ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:30:7
+Inputs: v14: ()
+      ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:30:12
+Inputs: v14: ()
+           ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:31:11
+Statements:
+          ^
+
+error: Missing token TerminalComma.
+ --> lib.cairo:32:7
+  (v15: ()) <- struct_construct()
+      ^
+
+error: Skipped tokens. Expected: expression.
+ --> lib.cairo:32:7
+  (v15: ()) <- struct_construct()
+      ^
+
+error: Missing token TerminalComma.
+ --> lib.cairo:33:7
+  (v16: core::bool) <- bool::False(v15)
+      ^
+
+error: Skipped tokens. Expected: expression.
+ --> lib.cairo:33:7
+  (v16: core::bool) <- bool::False(v15)
+      ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:34:4
+End:
+   ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:35:16
+  Callsite({v0 -> v18, v16 -> v17})
+               ^^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:35:22
+  Callsite({v0 -> v18, v16 -> v17})
+                     ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:35:28
+  Callsite({v0 -> v18, v16 -> v17})
+                           ^^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:37:5
+blk4:
+    ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:38:7
+Inputs:
+      ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:39:11
+Statements:
+          ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:40:4
+End:
+   ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:41:17
+  Callsite({v18 -> v23, v17 -> v22})
+                ^^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:41:23
+  Callsite({v18 -> v23, v17 -> v22})
+                      ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:41:29
+  Callsite({v18 -> v23, v17 -> v22})
+                            ^^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:43:5
+blk5:
+    ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:44:7
+Inputs: v19: ()
+      ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:44:12
+Inputs: v19: ()
+           ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:45:11
+Statements:
+          ^
+
+error: Missing token TerminalComma.
+ --> lib.cairo:46:7
+  (v20: ()) <- struct_construct()
+      ^
+
+error: Skipped tokens. Expected: expression.
+ --> lib.cairo:46:7
+  (v20: ()) <- struct_construct()
+      ^
+
+error: Missing token TerminalComma.
+ --> lib.cairo:47:7
+  (v21: core::bool) <- bool::False(v20)
+      ^
+
+error: Skipped tokens. Expected: expression.
+ --> lib.cairo:47:7
+  (v21: core::bool) <- bool::False(v20)
+      ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:48:4
+End:
+   ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:49:16
+  Callsite({v0 -> v23, v21 -> v22})
+               ^^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:49:22
+  Callsite({v0 -> v23, v21 -> v22})
+                     ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:49:28
+  Callsite({v0 -> v23, v21 -> v22})
+                           ^^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:51:5
+blk6:
+    ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:52:7
+Inputs:
+      ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:53:11
+Statements:
+          ^
+
+error: Skipped tokens. Expected: statement.
+ --> lib.cairo:54:4
+End:
+   ^
+
+error: Missing token TerminalRBrace.
+ --> lib.cairo:55:19
+  Return(v23, v22)
+                  ^
+
+error: Identifier not found.
+ --> lib.cairo:6:1
+End:
+^*^
+
+error: Missing semicolon
+ --> lib.cairo:6:4
+End:
+   ^
+
+error: Function not found.
+ --> lib.cairo:7:3
+  Fallthrough(blk6, {})
+  ^*********^
+
+error: Missing semicolon
+ --> lib.cairo:7:24
+  Fallthrough(blk6, {})
+                       ^
+
+error: Identifier not found.
+ --> lib.cairo:9:1
+blk1:
+^**^
+
+error: Missing semicolon
+ --> lib.cairo:9:5
+blk1:
+    ^
+
+error: Identifier not found.
+ --> lib.cairo:10:1
+Inputs: v9: ()
+^****^
+
+error: Missing semicolon
+ --> lib.cairo:10:7
+Inputs: v9: ()
+      ^
+
+error: Identifier not found.
+ --> lib.cairo:10:9
+Inputs: v9: ()
+        ^^
+
+error: Missing semicolon
+ --> lib.cairo:10:11
+Inputs: v9: ()
+          ^
+
+error: Missing semicolon
+ --> lib.cairo:10:15
+Inputs: v9: ()
+              ^
+
+error: Identifier not found.
+ --> lib.cairo:11:1
+Statements:
+^********^
+
+error: Missing semicolon
+ --> lib.cairo:11:11
+Statements:
+          ^
+
+error: Identifier not found.
+ --> lib.cairo:12:38
+  () <- match core::integer::u128_eq(v4, v6) {
+                                     ^^
+
+error: Identifier not found.
+ --> lib.cairo:12:42
+  () <- match core::integer::u128_eq(v4, v6) {
+                                         ^^
+
+error: Unsupported feature.
+ --> lib.cairo:13:5
+    bool::False => blk8,
+    ^*********^
+
+error: Unsupported feature.
+ --> lib.cairo:14:5
+    bool::True => blk9,
+    ^********^
+
+error: Missing semicolon
+ --> lib.cairo:15:4
+  }
+   ^
+
+error: Identifier not found.
+ --> lib.cairo:16:1
+End:
+^*^
+
+error: Missing semicolon
+ --> lib.cairo:16:4
+End:
+   ^
+
+error: Function not found.
+ --> lib.cairo:17:3
+  Fallthrough(blk7, {v24 -> v10})
+  ^*********^
+
+error: Missing semicolon
+ --> lib.cairo:17:34
+  Fallthrough(blk7, {v24 -> v10})
+                                 ^
+
+error: Identifier not found.
+ --> lib.cairo:19:1
+blk2:
+^**^
+
+error: Missing semicolon
+ --> lib.cairo:19:5
+blk2:
+    ^
+
+error: Identifier not found.
+ --> lib.cairo:20:1
+Inputs: v11: ()
+^****^
+
+error: Missing semicolon
+ --> lib.cairo:20:7
+Inputs: v11: ()
+      ^
+
+error: Identifier not found.
+ --> lib.cairo:20:9
+Inputs: v11: ()
+        ^*^
+
+error: Missing semicolon
+ --> lib.cairo:20:12
+Inputs: v11: ()
+           ^
+
+error: Missing semicolon
+ --> lib.cairo:20:16
+Inputs: v11: ()
+               ^
+
+error: Identifier not found.
+ --> lib.cairo:21:1
+Statements:
+^********^
+
+error: Missing semicolon
+ --> lib.cairo:21:11
+Statements:
+          ^
+
+error: Identifier not found.
+ --> lib.cairo:22:38
+  () <- match core::integer::u128_lt(v0, v3, v5) {
+                                     ^^
+
+error: Identifier not found.
+ --> lib.cairo:22:42
+  () <- match core::integer::u128_lt(v0, v3, v5) {
+                                         ^^
+
+error: Identifier not found.
+ --> lib.cairo:22:46
+  () <- match core::integer::u128_lt(v0, v3, v5) {
+                                             ^^
+
+error: Wrong number of arguments. Expected 2, found: 3
+ --> lib.cairo:22:15
+  () <- match core::integer::u128_lt(v0, v3, v5) {
+              ^********************************^
+
+error: Unsupported feature.
+ --> lib.cairo:23:5
+    bool::False => blk12,
+    ^*********^
+
+error: Unsupported feature.
+ --> lib.cairo:24:5
+    bool::True => blk13,
+    ^********^
+
+error: Missing semicolon
+ --> lib.cairo:25:4
+  }
+   ^
+
+error: Identifier not found.
+ --> lib.cairo:26:1
+End:
+^*^
+
+error: Missing semicolon
+ --> lib.cairo:26:4
+End:
+   ^
+
+error: Function not found.
+ --> lib.cairo:27:3
+  Fallthrough(blk11, {v29 -> v13, v30 -> v12})
+  ^*********^
+
+error: Missing semicolon
+ --> lib.cairo:27:47
+  Fallthrough(blk11, {v29 -> v13, v30 -> v12})
+                                              ^
+
+error: Identifier not found.
+ --> lib.cairo:29:1
+blk3:
+^**^
+
+error: Missing semicolon
+ --> lib.cairo:29:5
+blk3:
+    ^
+
+error: Identifier not found.
+ --> lib.cairo:30:1
+Inputs: v14: ()
+^****^
+
+error: Missing semicolon
+ --> lib.cairo:30:7
+Inputs: v14: ()
+      ^
+
+error: Identifier not found.
+ --> lib.cairo:30:9
+Inputs: v14: ()
+        ^*^
+
+error: Missing semicolon
+ --> lib.cairo:30:12
+Inputs: v14: ()
+           ^
+
+error: Missing semicolon
+ --> lib.cairo:30:16
+Inputs: v14: ()
+               ^
+
+error: Identifier not found.
+ --> lib.cairo:31:1
+Statements:
+^********^
+
+error: Missing semicolon
+ --> lib.cairo:31:11
+Statements:
+          ^
+
+error: Identifier not found.
+ --> lib.cairo:32:4
+  (v15: ()) <- struct_construct()
+   ^*^
+
+error: Function not found.
+ --> lib.cairo:32:16
+  (v15: ()) <- struct_construct()
+               ^**************^
+
+error: Missing semicolon
+ --> lib.cairo:32:34
+  (v15: ()) <- struct_construct()
+                                 ^
+
+error: Identifier not found.
+ --> lib.cairo:33:4
+  (v16: core::bool) <- bool::False(v15)
+   ^*^
+
+error: Expected variable or constant, found type.
+ --> lib.cairo:33:9
+  (v16: core::bool) <- bool::False(v15)
+        ^********^
+
+error: Identifier not found.
+ --> lib.cairo:33:36
+  (v16: core::bool) <- bool::False(v15)
+                                   ^*^
+
+error: Unexpected argument type. Expected: "(<missing>, <missing>)", found: "core::bool".
+ --> lib.cairo:33:22
+  (v16: core::bool) <- bool::False(v15)
+                     ^****************^
+
+error: Missing semicolon
+ --> lib.cairo:33:40
+  (v16: core::bool) <- bool::False(v15)
+                                       ^
+
+error: Identifier not found.
+ --> lib.cairo:34:1
+End:
+^*^
+
+error: Missing semicolon
+ --> lib.cairo:34:4
+End:
+   ^
+
+error: Function not found.
+ --> lib.cairo:35:3
+  Callsite({v0 -> v18, v16 -> v17})
+  ^******^
+
+error: Missing semicolon
+ --> lib.cairo:35:36
+  Callsite({v0 -> v18, v16 -> v17})
+                                   ^
+
+error: Identifier not found.
+ --> lib.cairo:37:1
+blk4:
+^**^
+
+error: Missing semicolon
+ --> lib.cairo:37:5
+blk4:
+    ^
+
+error: Identifier not found.
+ --> lib.cairo:38:1
+Inputs:
+^****^
+
+error: Missing semicolon
+ --> lib.cairo:38:7
+Inputs:
+      ^
+
+error: Identifier not found.
+ --> lib.cairo:39:1
+Statements:
+^********^
+
+error: Missing semicolon
+ --> lib.cairo:39:11
+Statements:
+          ^
+
+error: Identifier not found.
+ --> lib.cairo:40:1
+End:
+^*^
+
+error: Missing semicolon
+ --> lib.cairo:40:4
+End:
+   ^
+
+error: Function not found.
+ --> lib.cairo:41:3
+  Callsite({v18 -> v23, v17 -> v22})
+  ^******^
+
+error: Missing semicolon
+ --> lib.cairo:41:37
+  Callsite({v18 -> v23, v17 -> v22})
+                                    ^
+
+error: Identifier not found.
+ --> lib.cairo:43:1
+blk5:
+^**^
+
+error: Missing semicolon
+ --> lib.cairo:43:5
+blk5:
+    ^
+
+error: Identifier not found.
+ --> lib.cairo:44:1
+Inputs: v19: ()
+^****^
+
+error: Missing semicolon
+ --> lib.cairo:44:7
+Inputs: v19: ()
+      ^
+
+error: Identifier not found.
+ --> lib.cairo:44:9
+Inputs: v19: ()
+        ^*^
+
+error: Missing semicolon
+ --> lib.cairo:44:12
+Inputs: v19: ()
+           ^
+
+error: Missing semicolon
+ --> lib.cairo:44:16
+Inputs: v19: ()
+               ^
+
+error: Identifier not found.
+ --> lib.cairo:45:1
+Statements:
+^********^
+
+error: Missing semicolon
+ --> lib.cairo:45:11
+Statements:
+          ^
+
+error: Identifier not found.
+ --> lib.cairo:46:4
+  (v20: ()) <- struct_construct()
+   ^*^
+
+error: Function not found.
+ --> lib.cairo:46:16
+  (v20: ()) <- struct_construct()
+               ^**************^
+
+error: Missing semicolon
+ --> lib.cairo:46:34
+  (v20: ()) <- struct_construct()
+                                 ^
+
+error: Identifier not found.
+ --> lib.cairo:47:4
+  (v21: core::bool) <- bool::False(v20)
+   ^*^
+
+error: Expected variable or constant, found type.
+ --> lib.cairo:47:9
+  (v21: core::bool) <- bool::False(v20)
+        ^********^
+
+error: Identifier not found.
+ --> lib.cairo:47:36
+  (v21: core::bool) <- bool::False(v20)
+                                   ^*^
+
+error: Unexpected argument type. Expected: "(<missing>, <missing>)", found: "core::bool".
+ --> lib.cairo:47:22
+  (v21: core::bool) <- bool::False(v20)
+                     ^****************^
+
+error: Missing semicolon
+ --> lib.cairo:47:40
+  (v21: core::bool) <- bool::False(v20)
+                                       ^
+
+error: Identifier not found.
+ --> lib.cairo:48:1
+End:
+^*^
+
+error: Missing semicolon
+ --> lib.cairo:48:4
+End:
+   ^
+
+error: Function not found.
+ --> lib.cairo:49:3
+  Callsite({v0 -> v23, v21 -> v22})
+  ^******^
+
+error: Missing semicolon
+ --> lib.cairo:49:36
+  Callsite({v0 -> v23, v21 -> v22})
+                                   ^
+
+error: Identifier not found.
+ --> lib.cairo:51:1
+blk6:
+^**^
+
+error: Missing semicolon
+ --> lib.cairo:51:5
+blk6:
+    ^
+
+error: Identifier not found.
+ --> lib.cairo:52:1
+Inputs:
+^****^
+
+error: Missing semicolon
+ --> lib.cairo:52:7
+Inputs:
+      ^
+
+error: Identifier not found.
+ --> lib.cairo:53:1
+Statements:
+^********^
+
+error: Missing semicolon
+ --> lib.cairo:53:11
+Statements:
+          ^
+
+error: Identifier not found.
+ --> lib.cairo:54:1
+End:
+^*^
+
+error: Missing semicolon
+ --> lib.cairo:54:4
+End:
+   ^
+
+error: Function not found.
+ --> lib.cairo:55:3
+  Return(v23, v22)
+  ^****^
+
+error: Trait `core::traits::Neg::<?1>` has no implementation in the context.
+ --> lib.cairo:12:7
+  () <- match core::integer::u128_eq(v4, v6) {
+      ^**************************************^
+
+error: Trait `core::traits::PartialOrd::<?2>` has no implementation in the context.
+ --> lib.cairo:12:3
+  () <- match core::integer::u128_eq(v4, v6) {
+  ^******************************************^
+
+error: Trait `core::traits::Neg::<?3>` has no implementation in the context.
+ --> lib.cairo:22:7
+  () <- match core::integer::u128_lt(v0, v3, v5) {
+      ^******************************************^
+
+error: Trait `core::traits::PartialOrd::<?4>` has no implementation in the context.
+ --> lib.cairo:22:3
+  () <- match core::integer::u128_lt(v0, v3, v5) {
+  ^**********************************************^
+
+error: Trait `core::traits::Neg::<?5>` has no implementation in the context.
+ --> lib.cairo:32:14
+  (v15: ()) <- struct_construct()
+             ^******************^
+
+error: Trait `core::traits::PartialOrd::<?6>` has no implementation in the context.
+ --> lib.cairo:32:3
+  (v15: ()) <- struct_construct()
+  ^*****************************^
+
+error: Trait `core::traits::Neg::<?7>` has no implementation in the context.
+ --> lib.cairo:33:22
+  (v16: core::bool) <- bool::False(v15)
+                     ^****************^
+
+error: Trait `core::traits::PartialOrd::<?8>` has no implementation in the context.
+ --> lib.cairo:33:3
+  (v16: core::bool) <- bool::False(v15)
+  ^***********************************^
+
+error: Trait `core::traits::Neg::<?9>` has no implementation in the context.
+ --> lib.cairo:46:14
+  (v20: ()) <- struct_construct()
+             ^******************^
+
+error: Trait `core::traits::PartialOrd::<?10>` has no implementation in the context.
+ --> lib.cairo:46:3
+  (v20: ()) <- struct_construct()
+  ^*****************************^
+
+error: Trait `core::traits::Neg::<?11>` has no implementation in the context.
+ --> lib.cairo:47:22
+  (v21: core::bool) <- bool::False(v20)
+                     ^****************^
+
+error: Trait `core::traits::PartialOrd::<?12>` has no implementation in the context.
+ --> lib.cairo:47:3
+  (v21: core::bool) <- bool::False(v20)
+  ^***********************************^
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -612,6 +1380,10 @@ Statements:
 End:
   Return(v3)
 
+//! > lowering_diagnostics
+
+//! > semantic_diagnostics
+
 //! > after
 blk0 (root):
 Inputs: v0: core::felt
@@ -627,10 +1399,6 @@ Inputs:
 Statements:
 End:
   Return(v3)
-
-//! > lowering_diagnostics
-
-//! > semantic_diagnostics
 
 //! > ==========================================================================
 
@@ -678,9 +1446,8 @@ Statements:
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
   }
-  (v2: core::felt) <- 1u
 End:
-  Fallthrough(blk1, {v2 -> v1})
+  Fallthrough(blk4, {})
 
 blk1:
 Inputs:
@@ -695,10 +1462,17 @@ End:
   Goto(blk1, {v0 -> v1})
 
 blk3:
-Inputs: v3: core::NonZero::<core::felt>
+Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Callsite({})
+
+blk4:
+Inputs:
+Statements:
+  (v3: core::felt) <- 1u
+End:
+  Fallthrough(blk1, {v3 -> v1})
 
 //! > ==========================================================================
 
@@ -731,6 +1505,8 @@ Statements:
 End:
   Return(v1)
 
+//! > lowering_diagnostics
+
 //! > after
 blk0 (root):
 Inputs: v0: core::felt
@@ -743,8 +1519,6 @@ Inputs:
 Statements:
 End:
   Return(v1)
-
-//! > lowering_diagnostics
 
 //! > ==========================================================================
 
@@ -815,11 +1589,11 @@ Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
 Statements:
   (v21: core::integer::u128) <- 1u
   () <- match core::integer::u128_eq(v1, v21) {
-    bool::False => blk9,
-    bool::True => blk10,
+    bool::False => blk10,
+    bool::True => blk11,
   }
 End:
-  Fallthrough(blk8, {v22 -> v20})
+  Fallthrough(blk12, {})
 
 blk1:
 Inputs: v6: core::integer::u128
@@ -846,48 +1620,54 @@ End:
   Return(v4, v8)
 
 blk4:
-Inputs: v13: ()
+Inputs: v12: ()
 Statements:
   (v27: core::RangeCheck, v33: core::PanicResult::<core::integer::u128>) <- core::integer::U128Add::add(v0, v2, v1)
   () <- match_enum(v33) {
-    PanicResult::Ok => blk12,
-    PanicResult::Err => blk13,
+    PanicResult::Ok => blk14,
+    PanicResult::Err => blk15,
   }
   (v28: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v29)
 End:
-  Fallthrough(blk11, {v27 -> v11, v28 -> v14})
+  Fallthrough(blk13, {v27 -> v10, v28 -> v13})
 
 blk5:
-Inputs: v16: ()
+Inputs: v15: ()
 Statements:
 End:
   Callsite({})
 
 blk6:
+Inputs:
+Statements:
+  (v16: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
+End:
+  Fallthrough(blk3, {v0 -> v4, v16 -> v5})
+
+blk7:
 Inputs: v17: core::integer::u128
 Statements:
 End:
-  Callsite({v17 -> v15})
+  Callsite({v17 -> v14})
 
-blk7:
+blk8:
 Inputs: v19: core::array::Array::<core::felt>
 Statements:
   (v18: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v19)
 End:
-  Goto(blk3, {v11 -> v4, v18 -> v5})
+  Goto(blk3, {v10 -> v4, v18 -> v5})
 
-blk8:
+blk9:
 Inputs:
 Statements:
   () <- match_enum(v20) {
     bool::False => blk5,
     bool::True => blk4,
   }
-  (v10: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
 End:
-  Fallthrough(blk3, {v0 -> v4, v10 -> v5})
+  Fallthrough(blk6, {})
 
-blk9:
+blk10:
 Inputs:
 Statements:
   (v24: ()) <- struct_construct()
@@ -895,7 +1675,7 @@ Statements:
 End:
   Callsite({v23 -> v22})
 
-blk10:
+blk11:
 Inputs:
 Statements:
   (v26: ()) <- struct_construct()
@@ -903,28 +1683,34 @@ Statements:
 End:
   Callsite({v25 -> v22})
 
-blk11:
+blk12:
 Inputs:
 Statements:
-  () <- match_enum(v14) {
-    PanicResult::Ok => blk6,
-    PanicResult::Err => blk7,
-  }
-  (v12: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v15)
 End:
-  Goto(blk3, {v11 -> v4, v12 -> v5})
+  Fallthrough(blk9, {v22 -> v20})
 
-blk12:
+blk13:
+Inputs:
+Statements:
+  () <- match_enum(v13) {
+    PanicResult::Ok => blk7,
+    PanicResult::Err => blk8,
+  }
+  (v11: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v14)
+End:
+  Goto(blk3, {v10 -> v4, v11 -> v5})
+
+blk14:
 Inputs: v30: core::integer::u128
 Statements:
 End:
   Callsite({v30 -> v29})
 
-blk13:
+blk15:
 Inputs: v32: core::array::Array::<core::felt>
 Statements:
   (v31: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v32)
 End:
-  Goto(blk11, {v27 -> v11, v31 -> v14})
+  Goto(blk13, {v27 -> v10, v31 -> v13})
 
 //! > lowering_diagnostics

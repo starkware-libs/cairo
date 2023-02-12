@@ -39,6 +39,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredLowered {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        if matches!(self.end, StructuredBlockEnd::NotSet) {
+            panic!("There should not be blocks that are not yet set");
+        }
         write!(f, "Inputs:")?;
         let mut inputs = self.inputs.iter().peekable();
         while let Some(var) = inputs.next() {
@@ -95,6 +98,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
             StructuredBlockEnd::Callsite(remapping) => {
                 return write!(f, "  Callsite({:?})", remapping.debug(ctx));
             }
+            StructuredBlockEnd::Fallthrough { target, remapping } => {
+                return write!(f, "  Fallthrough({}, {:?})", target.0, remapping.debug(ctx));
+            }
             StructuredBlockEnd::Return { refs, returns } => {
                 write!(f, "  Return(")?;
                 chain!(refs, returns).copied().collect()
@@ -106,6 +112,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
             StructuredBlockEnd::Unreachable => {
                 return write!(f, "  Unreachable");
             }
+            StructuredBlockEnd::NotSet => unreachable!(),
         };
         let mut outputs = outputs.iter().peekable();
         while let Some(var) = outputs.next() {
@@ -183,6 +190,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
             FlatBlockEnd::Unreachable => {
                 return write!(f, "  Unreachable");
             }
+            FlatBlockEnd::NotSet => unreachable!(),
         };
         let mut outputs = outputs.iter().peekable();
         while let Some(var) = outputs.next() {

@@ -8,11 +8,10 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_syntax::node::ast;
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, Itertools};
 
-use crate::blocks::FlatBlocks;
+use crate::blocks::{Blocks, FlatBlocks};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
@@ -96,13 +95,14 @@ fn gather_inlining_info(
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
     let root_block_id = lowered.root?;
+    let last_block_id = find_last_block(root_block_id, &lowered.blocks);
 
     for (block_id, block) in lowered.blocks.iter() {
         match &block.end {
             FlatBlockEnd::Return(_) => {}
-            FlatBlockEnd::Unreachable => {
+            FlatBlockEnd::Unreachable | FlatBlockEnd::Goto(..) | FlatBlockEnd::Fallthrough(..) => {
                 // TODO(ilya): Remove the following limitation.
-                if block_id == root_block_id {
+                if block_id == last_block_id {
                     if report_diagnostics {
                         diagnostics.report(
                             function_id.untyped_stable_ptr(defs_db),
@@ -112,8 +112,9 @@ fn gather_inlining_info(
                     return Ok(info);
                 }
             }
-            FlatBlockEnd::Callsite(_) | FlatBlockEnd::Fallthrough(..) | FlatBlockEnd::Goto(..) => {
-                if block_id == root_block_id {
+            FlatBlockEnd::NotSet => unreachable!(),
+            FlatBlockEnd::Callsite(_) => {
+                if block_id == root_block_id || block_id == last_block_id {
                     panic!("Unexpected block end.");
                 }
             }
@@ -132,8 +133,11 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
     let root_block = &lowered.blocks[root_block_id];
 
     match &root_block.end {
-        FlatBlockEnd::Return(_) | FlatBlockEnd::Unreachable => {}
-        FlatBlockEnd::Callsite(_) | FlatBlockEnd::Fallthrough(..) | FlatBlockEnd::Goto(..) => {
+        FlatBlockEnd::Return(_)
+        | FlatBlockEnd::Unreachable
+        | FlatBlockEnd::Goto(..)
+        | FlatBlockEnd::Fallthrough(..) => {}
+        FlatBlockEnd::Callsite(_) | FlatBlockEnd::NotSet => {
             panic!("Unexpected block end.");
         }
     };
@@ -245,7 +249,7 @@ impl BlockQueue {
         self.block_queue.push_back(block);
         BlockId(self.flat_blocks.len() + self.block_queue.len())
     }
-    //. Pops a block from the queue.
+    // Pops a block from the queue.
     fn dequeue(&mut self) -> Option<FlatBlock> {
         self.block_queue.pop_front()
     }
@@ -266,9 +270,9 @@ pub struct Mapper<'a, 'b> {
     lowered: &'a FlatLowered,
     renamed_vars: HashMap<VariableId, VariableId>,
 
-    /// Auxiliary information for map_block_id.
+    /// An offset that is added to all the block IDs in order to translate them into the new
+    /// lowering representation.
     block_id_offset: BlockId,
-    root_block_id: BlockId,
 }
 impl<'a, 'b> Mapper<'a, 'b> {
     /// Maps a var id from the original lowering representation to the equivalent id in the
@@ -286,12 +290,9 @@ impl<'a, 'b> Mapper<'a, 'b> {
     /// Maps a block id from the original lowering representation to the equivalent id in the
     /// new lowering representation.
     fn map_block_id(&mut self, orig_block_id: &BlockId) -> BlockId {
-        // TODO(ilya): Removing the following logic once root_block_id == 0.
-        BlockId(
-            self.block_id_offset.0
-                + orig_block_id.0
-                + if orig_block_id.0 > self.root_block_id.0 { 0 } else { 1 },
-        )
+        // block id 0 is for the root block, which can't be mapped.
+        assert_ne!(orig_block_id.0, 0);
+        BlockId(self.block_id_offset.0 + orig_block_id.0)
     }
 
     /// Applies map_var_id to all the variable in the `remapping`.
@@ -438,9 +439,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
         Ok(())
     }
 
-    /// Inlines the given function, with the given input and outputs variables.
-    /// The statements that needs to replace the call statement in the original block
-    /// are pushed into the statement_rewrite_stack.
+    /// Inlines the given function, with the given input and output variables.
+    /// The statements that need to replace the call statement in the original block
+    /// are pushed into the `statement_rewrite_stack`.
     /// May also push additional blocks to the block queue.
     /// The function takes an optional return block id to handle early returns.
     pub fn inline_function(
@@ -453,8 +454,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         let root_block_id = lowered.root?;
         let root_block = &lowered.blocks[root_block_id];
 
-        // Create a new block with all the statements that follow
-        // the call statement.
+        // Create a new block with all the statements that follow the call statement.
         let return_block_id = self.block_queue.enqueue_block(FlatBlock {
             inputs: vec![],
             statements: self.statement_rewrite_stack.consume(),
@@ -474,47 +474,52 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 root_block.inputs.iter().cloned(),
                 inputs.iter().cloned()
             )),
+            // `return_block_id` is already assigned to a block. Block id 0 is skipped (root block).
+            // Thus, the next block id to assign is `return_block_id`.
             block_id_offset: return_block_id,
-            root_block_id,
         };
 
-        self.block_end = FlatBlockEnd::Fallthrough(
+        // Find the last block of the function.
+        let last_block_id = find_last_block(root_block_id, &lowered.blocks);
+        // let last_block = &lowered.blocks[last_block_id];
+
+        // The outputs of the function are the outputs of the last block.
+        // let actual_outputs: Vec<VariableId> = match &last_block.end {
+        //     FlatBlockEnd::Return(vars) => vars.to_vec(),
+        //     FlatBlockEnd::Fallthrough(_, var_remapping) | FlatBlockEnd::Goto(_, var_remapping) =>
+        // {         var_remapping.keys().cloned().collect()
+        //     }
+        //     FlatBlockEnd::Callsite(_) | FlatBlockEnd::Unreachable | FlatBlockEnd::NotSet => {
+        //         unreachable!()
+        //     }
+        // };
+
+        // self.block_end = FlatBlockEnd::Fallthrough(
+        //     return_block_id,
+        //     VarRemapping {
+        //         remapping: OrderedHashMap::from_iter(izip!(
+        //             outputs.iter().cloned(),
+        //             actual_outputs.iter().map(|var_id| mapper.map_var_id(var_id)),
+        //         )),
+        //     },
+        // );
+        // TODO(yg): this is true for ft. What about return?
+        self.block_end = fix_block_end(
+            &root_block.end,
+            &mut mapper,
             return_block_id,
-            VarRemapping {
-                remapping: OrderedHashMap::from_iter(izip!(
-                    outputs.iter().cloned(),
-                    extract_matches!(&root_block.end, FlatBlockEnd::Return)
-                        .iter()
-                        .map(|var_id| mapper.map_var_id(var_id)),
-                )),
-            },
+            outputs,
+            root_block_id == last_block_id,
         );
 
-        for (block_id, block) in lowered.blocks.iter() {
-            if block_id == root_block_id {
-                continue;
-            }
-            let end = match &block.end {
-                FlatBlockEnd::Callsite(remapping) => {
-                    FlatBlockEnd::Callsite(mapper.update_remapping(remapping))
-                }
-                FlatBlockEnd::Return(returns) => FlatBlockEnd::Goto(
-                    return_block_id,
-                    VarRemapping {
-                        remapping: OrderedHashMap::from_iter(izip!(
-                            outputs.iter().cloned(),
-                            returns.iter().map(|var_id| mapper.map_var_id(var_id)),
-                        )),
-                    },
-                ),
-
-                FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
-                FlatBlockEnd::Fallthrough(block_id, remapping)
-                | FlatBlockEnd::Goto(block_id, remapping) => FlatBlockEnd::Goto(
-                    mapper.map_block_id(block_id),
-                    mapper.update_remapping(remapping),
-                ),
-            };
+        for (block_id, block) in lowered.blocks.iter().skip(1) {
+            let end = fix_block_end(
+                &block.end,
+                &mut mapper,
+                return_block_id,
+                outputs,
+                block_id == last_block_id,
+            );
 
             let new_block = FlatBlock {
                 inputs: block.inputs.iter().map(|v| mapper.map_var_id(v)).collect(),
@@ -538,6 +543,54 @@ impl<'db> FunctionInlinerRewriter<'db> {
 
         Ok(())
     }
+}
+
+// TODO(yg): consider moving into Mapper impl. doc
+fn fix_block_end(
+    block_end: &FlatBlockEnd,
+    mapper: &mut Mapper,
+    return_block_id: BlockId,
+    outputs: &[id_arena::Id<crate::Variable>],
+    is_last_block: bool,
+) -> FlatBlockEnd {
+    match block_end {
+        FlatBlockEnd::Callsite(remapping) => {
+            FlatBlockEnd::Callsite(mapper.update_remapping(remapping))
+        }
+        FlatBlockEnd::Return(returns) => {
+            let remapping = VarRemapping {
+                remapping: OrderedHashMap::from_iter(izip!(
+                    outputs.iter().cloned(),
+                    returns.iter().map(|var_id| mapper.map_var_id(var_id)),
+                )),
+            };
+            if is_last_block {
+                FlatBlockEnd::Fallthrough(return_block_id, remapping)
+            } else {
+                FlatBlockEnd::Goto(return_block_id, remapping)
+            }
+        }
+
+        FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
+        FlatBlockEnd::Fallthrough(target_block_id, remapping) => FlatBlockEnd::Fallthrough(
+            mapper.map_block_id(target_block_id),
+            mapper.update_remapping(remapping),
+        ),
+        FlatBlockEnd::Goto(target_block_id, remapping) => FlatBlockEnd::Goto(
+            mapper.map_block_id(target_block_id),
+            mapper.update_remapping(remapping),
+        ),
+        FlatBlockEnd::NotSet => unreachable!(),
+    }
+}
+
+// TODO(yg): move?, doc.
+fn find_last_block(root_block_id: BlockId, blocks: &Blocks<FlatBlock>) -> BlockId {
+    let mut cur_block_id = root_block_id;
+    while let FlatBlockEnd::Fallthrough(target_id, _) = blocks[cur_block_id].end {
+        cur_block_id = target_id;
+    }
+    cur_block_id
 }
 
 pub fn apply_inlining(

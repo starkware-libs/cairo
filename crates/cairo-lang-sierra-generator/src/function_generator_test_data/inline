@@ -40,21 +40,22 @@ felt_is_zero([2]) { fallthrough() label1([4]) }
 branch_align() -> ()
 felt_is_zero([0]) { fallthrough() label3([5]) }
 branch_align() -> ()
-felt_const<1>() -> ([6])
-store_temp<felt>([6]) -> ([7])
+drop<felt>([6]) -> ()
+felt_const<1>() -> ([7])
+store_temp<felt>([7]) -> ([8])
 jump() { label5() }
 label3:
 branch_align() -> ()
 drop<NonZero<felt>>([5]) -> ()
 label4:
-felt_const<0>() -> ([8])
-store_temp<felt>([8]) -> ([7])
+store_temp<felt>([6]) -> ([8])
 label5:
-rename<felt>([7]) -> ([9])
+rename<felt>([8]) -> ([9])
 jump() { label2() }
 label1:
 branch_align() -> ()
 drop<NonZero<felt>>([4]) -> ()
+drop<felt>([6]) -> ()
 store_temp<felt>([0]) -> ([9])
 label2:
 rename<felt>([9]) -> ([10])

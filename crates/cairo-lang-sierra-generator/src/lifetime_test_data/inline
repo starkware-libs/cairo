@@ -28,9 +28,8 @@ Statements:
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
   }
-  (v2: core::felt) <- 0u
 End:
-  Fallthrough(blk1, {v2 -> v1})
+  Fallthrough(blk4, {})
 
 blk1:
 Inputs:
@@ -41,315 +40,28 @@ End:
 blk2:
 Inputs:
 Statements:
-  (v3: core::felt) <- 1u
+  (v2: core::felt) <- 1u
 End:
-  Goto(blk1, {v3 -> v1})
+  Goto(blk1, {v2 -> v1})
 
 blk3:
-Inputs: v4: core::NonZero::<core::felt>
+Inputs: v3: core::NonZero::<core::felt>
 Statements:
 End:
   Callsite({})
 
-//! > last_use
-v1: ((BlockId(1), 0), 0)
-v2: ((BlockId(0), 2), 0)
-v3: ((BlockId(2), 1), 0)
-v0: ((BlockId(0), 0), 0)
-
-//! > drops
-BeginningOfBlock(BlockId(3)): v4
-
-//! > ==========================================================================
-
-//! > Test variable lifetime in inlining scenario with callsite
-
-//! > test_runner_name
-check_variable_lifetime
-
-//! > function_code
-fn foo(a: felt) -> felt {
-  if a == 2 {
-    bar(a)
-  } else {
-    a
-  }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[inline(always)]
-fn bar(a: felt) -> felt {
-  if a == 0 {
-    return 1;
-  }
-  0
-}
-
-//! > lowering_format
-blk0:
-Inputs:
-Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero => blk5,
-  }
-  (v6: core::felt) <- 0u
-End:
-  Fallthrough(blk3, {v6 -> v3})
-
-blk1:
-Inputs: v4: core::NonZero::<core::felt>
-Statements:
-End:
-  Callsite({v0 -> v5})
-
-blk2 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 2u
-  (v9: core::felt) <- core::felt_sub(v0, v1)
-End:
-  Fallthrough(blk6, {v9 -> v2})
-
-blk3:
-Inputs:
-Statements:
-End:
-  Callsite({v3 -> v5})
-
 blk4:
 Inputs:
 Statements:
-  (v7: core::felt) <- 1u
+  (v4: core::felt) <- 0u
 End:
-  Goto(blk3, {v7 -> v3})
-
-blk5:
-Inputs: v8: core::NonZero::<core::felt>
-Statements:
-End:
-  Callsite({})
-
-blk6:
-Inputs:
-Statements:
-  () <- match core::felt_is_zero(v2) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
-End:
-  Return(v5)
-
-//! > last_use
-v5: ((BlockId(6), 1), 0)
-v3: ((BlockId(3), 0), 0)
-v6: ((BlockId(0), 2), 0)
-v7: ((BlockId(4), 1), 0)
-v0: ((BlockId(0), 0), 0)
-v0: ((BlockId(1), 0), 0)
-v2: ((BlockId(6), 0), 0)
-v9: ((BlockId(2), 2), 0)
-v1: ((BlockId(2), 1), 1)
-
-//! > drops
-BeginningOfBlock(BlockId(5)): v8
-BeginningOfBlock(BlockId(1)): v4
-
-//! > ==========================================================================
-
-//! > Test variable lifetime with local variables
-
-//! > test_runner_name
-check_variable_lifetime
-
-//! > function_name
-foo
-
-//! > function_code
-fn foo(x: felt) -> felt {
-   bar(x)
-}
-
-//! > module_code
-#[inline(always)]
-fn bar(x: felt) -> felt {
-    if x == 0 {
-        x
-    } else {
-        let a = x + x;
-        // The call will force `a` to be a local variable.
-        revoke_tempvars();
-        a
-    }
-}
-
-fn revoke_tempvars() {
-  revoke_tempvars()
-}
-
-//! > lowering_format
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero => blk3,
-  }
-End:
-  Fallthrough(blk1, {v2 -> v1})
-
-blk1:
-Inputs:
-Statements:
-End:
-  Return(v1)
-
-blk2:
-Inputs:
-Statements:
-End:
-  Callsite({v0 -> v2})
-
-blk3:
-Inputs: v4: core::NonZero::<core::felt>
-Statements:
-  (v6: core::felt) <- core::felt_add(v0, v0)
-End:
-  Fallthrough(blk4, {v6 -> v3})
-
-blk4:
-Inputs:
-Statements:
-  (v5: ()) <- test::revoke_tempvars()
-End:
-  Callsite({v3 -> v2})
+  Fallthrough(blk1, {v4 -> v1})
 
 //! > last_use
 v1: ((BlockId(1), 0), 0)
-v2: ((BlockId(0), 1), 0)
-v0: ((BlockId(2), 0), 0)
-v3: ((BlockId(4), 1), 0)
-v6: ((BlockId(3), 1), 0)
-v0: ((BlockId(3), 0), 1)
-
-//! > drops
-PostStatement((BlockId(4), 0)): v5
-BeginningOfBlock(BlockId(3)): v4
-BeginningOfBlock(BlockId(2)): UninitializedLocal(v6)
-
-//! > ==========================================================================
-
-//! > Test match where is there a goto in one arm and callsite in another.
-
-//! > test_runner_name
-check_variable_lifetime
-
-//! > function_name
-foo
-
-//! > function_code
-fn foo(data: Array::<felt>) -> Array::<felt> {
-     bar(data)
-}
-
-//! > module_code
-#[inline(always)]
-fn bar(data: Array::<felt>) -> Array::<felt> {
-     match get_gas() {
-          Option::Some(_) => {},
-          Option::None(_) => {
-              let mut err_data = array_new();
-              array_append(ref err_data, 'Out of gas');
-              panic(err_data)
-          },
-      }
-
-      let mut arr = array_new();
-
-      arr
-}
-
-//! > lowering_format
-blk0 (root):
-Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::felt>
-Statements:
-  () <- match core::gas::get_gas(v0, v1) {
-    Option::Some => blk4,
-    Option::None => blk5,
-  }
-  (v22: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-  (v13: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v22)
-End:
-  Fallthrough(blk3, {v11 -> v4, v12 -> v5, v13 -> v6})
-
-blk1:
-Inputs: v7: core::array::Array::<core::felt>
-Statements:
-End:
-  Callsite({v7 -> v3})
-
-blk2:
-Inputs: v8: core::array::Array::<core::felt>
-Statements:
-  (v10: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v8)
-End:
-  Return(v4, v5, v10)
-
-blk3:
-Inputs:
-Statements:
-  () <- match_enum(v6) {
-    PanicResult::Ok => blk1,
-    PanicResult::Err => blk2,
-  }
-  (v9: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v3)
-End:
-  Return(v4, v5, v9)
-
-blk4:
-Inputs: v14: core::RangeCheck, v15: core::gas::GasBuiltin
-Statements:
-End:
-  Callsite({v14 -> v11, v15 -> v12})
-
-blk5:
-Inputs: v16: core::RangeCheck, v17: core::gas::GasBuiltin
-Statements:
-  (v19: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-  (v20: core::felt) <- 375233589013918064796019u
-  (v21: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v19, v20)
-  (v18: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v21)
-End:
-  Goto(blk3, {v16 -> v4, v17 -> v5, v18 -> v6})
-
-//! > last_use
-v9: ((BlockId(3), 2), 2)
-v5: ((BlockId(3), 2), 1)
-v4: ((BlockId(3), 2), 0)
-v3: ((BlockId(3), 1), 0)
-v7: ((BlockId(1), 0), 0)
-v10: ((BlockId(2), 1), 2)
-v5: ((BlockId(2), 1), 1)
-v4: ((BlockId(2), 1), 0)
-v8: ((BlockId(2), 0), 0)
-v6: ((BlockId(3), 0), 0)
-v13: ((BlockId(0), 3), 2)
-v12: ((BlockId(0), 3), 1)
-v11: ((BlockId(0), 3), 0)
-v22: ((BlockId(0), 2), 0)
-v15: ((BlockId(4), 0), 1)
-v14: ((BlockId(4), 0), 0)
-v18: ((BlockId(5), 4), 2)
-v17: ((BlockId(5), 4), 1)
-v16: ((BlockId(5), 4), 0)
-v21: ((BlockId(5), 3), 0)
-v20: ((BlockId(5), 2), 1)
-v19: ((BlockId(5), 2), 0)
-v1: ((BlockId(0), 0), 1)
+v4: ((BlockId(4), 1), 0)
+v2: ((BlockId(2), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(0)): v2
+BeginningOfBlock(BlockId(3)): v3

@@ -31,7 +31,20 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Initial refs:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk2,
+    bool::True => blk1,
+  }
+End:
+  Fallthrough(3, {})
+
+blk1:
 Inputs: v4: ()
 Initial refs:
 Statements:
@@ -40,7 +53,7 @@ Statements:
 End:
   Callsite({})
 
-blk1:
+blk2:
 Inputs: v5: ()
 Initial refs:
 Statements:
@@ -48,23 +61,29 @@ Statements:
 End:
   Callsite({})
 
-blk2 (root):
-Inputs: v0: test::ACopy, v1: test::ADrop
+blk3:
+Inputs:
 Initial refs:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
-    bool::False => blk1,
-    bool::True => blk0,
-  }
   () <- test::use_a_copy(v0)
   (v6: ()) <- struct_construct()
 End:
   Return(v6)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk2,
+    bool::True => blk1,
+  }
+End:
+  Fallthrough(blk3, {})
+
+blk1:
 Inputs: v4: ()
 Statements:
   () <- test::use_a_copy(v0)
@@ -72,22 +91,16 @@ Statements:
 End:
   Callsite({})
 
-blk1:
+blk2:
 Inputs: v5: ()
 Statements:
   () <- test::use_a_drop(v1)
 End:
   Callsite({})
 
-blk2 (root):
-Inputs: v0: test::ACopy, v1: test::ADrop
+blk3:
+Inputs:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
-    bool::False => blk1,
-    bool::True => blk0,
-  }
   () <- test::use_a_copy(v0)
   (v6: ()) <- struct_construct()
 End:
@@ -131,7 +144,20 @@ fn foo(x: ACopy, y: ADrop) {
                  ^
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Initial refs:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk2,
+    bool::True => blk1,
+  }
+End:
+  Fallthrough(3, {})
+
+blk1:
 Inputs: v4: ()
 Initial refs:
 Statements:
@@ -140,30 +166,36 @@ Statements:
 End:
   Callsite({})
 
-blk1:
+blk2:
 Inputs: v5: ()
 Initial refs:
 Statements:
 End:
   Callsite({})
 
-blk2 (root):
-Inputs: v0: test::ACopy, v1: test::ADrop
+blk3:
+Inputs:
 Initial refs:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
-    bool::False => blk1,
-    bool::True => blk0,
-  }
   () <- test::use_a_drop(v1)
   (v6: ()) <- struct_construct()
 End:
   Return(v6)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: test::ACopy, v1: test::ADrop
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk2,
+    bool::True => blk1,
+  }
+End:
+  Fallthrough(blk3, {})
+
+blk1:
 Inputs: v4: ()
 Statements:
   () <- test::use_a_copy(v0)
@@ -171,21 +203,15 @@ Statements:
 End:
   Callsite({})
 
-blk1:
+blk2:
 Inputs: v5: ()
 Statements:
 End:
   Callsite({})
 
-blk2 (root):
-Inputs: v0: test::ACopy, v1: test::ADrop
+blk3:
+Inputs:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
-    bool::False => blk1,
-    bool::True => blk0,
-  }
   () <- test::use_a_drop(v1)
   (v6: ()) <- struct_construct()
 End:
@@ -290,7 +316,7 @@ foo
 
 //! > module_code
 struct Query<T> {
-  data: Array::<T>, 
+  data: Array::<T>,
 }
 
 //! > semantic_diagnostics
