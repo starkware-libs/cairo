@@ -235,6 +235,7 @@ pub fn generate_statement_code(
         lowering::Statement::StructDestructure(statement) => {
             generate_statement_struct_destructure_code(context, statement, statement_location)
         }
+        lowering::Statement::Snapshot(_) => todo!(),
     }
 }
 
@@ -310,7 +311,7 @@ fn generate_statement_call_code(
             statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
             Ok(statements)
         }
-        GenericFunctionId::Trait(_) => unreachable!(),
+        GenericFunctionId::Trait(_) | GenericFunctionId::ImplGenericParam(_) => unreachable!(),
     }
 }
 

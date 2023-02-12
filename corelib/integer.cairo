@@ -264,6 +264,14 @@ impl U8Sub of Sub::<u8> {
     }
 }
 
+extern fn u8_wide_mul(a: u8, b: u8) -> u16 implicits() nopanic;
+impl U8Mul of Mul::<u8> {
+    fn mul(a: u8, b: u8) -> u8 {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        u8_try_from_felt(u16_to_felt(u8_wide_mul(a, b))).expect('u8_mul Overflow')
+    }
+}
+
 extern fn u8_is_zero(a: u8) -> IsZeroResult::<u8> implicits() nopanic;
 extern fn u8_safe_divmod(a: u8, b: NonZero::<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
 
@@ -285,6 +293,124 @@ impl U8Div of Div::<u8> {
 impl U8Rem of Rem::<u8> {
     fn rem(a: u8, b: u8) -> u8 {
         let (q, r) = u8_safe_divmod(a, u8_as_non_zero(b));
+        r
+    }
+}
+
+#[derive(Copy, Drop)]
+extern type u16;
+extern fn u16_const<value>() -> u16 nopanic;
+extern fn u16_to_felt(a: u16) -> felt nopanic;
+
+#[panic_with('u16_from OF', u16_from_felt)]
+extern fn u16_try_from_felt(a: felt) -> Option::<u16> implicits(RangeCheck) nopanic;
+
+extern fn u16_lt(a: u16, b: u16) -> bool implicits(RangeCheck) nopanic;
+extern fn u16_eq(a: u16, b: u16) -> bool implicits() nopanic;
+extern fn u16_le(a: u16, b: u16) -> bool implicits(RangeCheck) nopanic;
+
+impl U16PartialEq of PartialEq::<u16> {
+    #[inline(always)]
+    fn eq(a: u16, b: u16) -> bool {
+        u16_eq(a, b)
+    }
+    #[inline(always)]
+    fn ne(a: u16, b: u16) -> bool {
+        !(a == b)
+    }
+}
+
+impl U16PartialOrd of PartialOrd::<u16> {
+    #[inline(always)]
+    fn le(a: u16, b: u16) -> bool {
+        u16_le(a, b)
+    }
+    #[inline(always)]
+    fn ge(a: u16, b: u16) -> bool {
+        u16_le(b, a)
+    }
+    #[inline(always)]
+    fn lt(a: u16, b: u16) -> bool {
+        u16_lt(a, b)
+    }
+    #[inline(always)]
+    fn gt(a: u16, b: u16) -> bool {
+        u16_lt(b, a)
+    }
+}
+
+extern fn u16_overflowing_add(a: u16, b: u16) -> Result::<u16, u16> implicits(RangeCheck) nopanic;
+extern fn u16_overflowing_sub(a: u16, b: u16) -> Result::<u16, u16> implicits(RangeCheck) nopanic;
+
+fn u16_wrapping_add(a: u16, b: u16) -> u16 implicits(RangeCheck) nopanic {
+    match u16_overflowing_add(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u16_wrapping_sub(a: u16, b: u16) -> u16 implicits(RangeCheck) nopanic {
+    match u16_overflowing_sub(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
+fn u16_checked_add(a: u16, b: u16) -> Option::<u16> implicits(RangeCheck) nopanic {
+    match u16_overflowing_add(a, b) {
+        Result::Ok(r) => Option::<u16>::Some(r),
+        Result::Err(r) => Option::<u16>::None(()),
+    }
+}
+
+impl U16Add of Add::<u16> {
+    fn add(a: u16, b: u16) -> u16 {
+        u16_overflowing_add(a, b).expect('u16_add Overflow')
+    }
+}
+
+fn u16_checked_sub(a: u16, b: u16) -> Option::<u16> implicits(RangeCheck) nopanic {
+    match u16_overflowing_sub(a, b) {
+        Result::Ok(r) => Option::<u16>::Some(r),
+        Result::Err(r) => Option::<u16>::None(()),
+    }
+}
+
+impl U16Sub of Sub::<u16> {
+    fn sub(a: u16, b: u16) -> u16 {
+        u16_overflowing_sub(a, b).expect('u16_sub Overflow')
+    }
+}
+
+extern fn u16_wide_mul(a: u16, b: u16) -> u32 implicits() nopanic;
+impl U16Mul of Mul::<u16> {
+    fn mul(a: u16, b: u16) -> u16 {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        u16_try_from_felt(u32_to_felt(u16_wide_mul(a, b))).expect('u16_mul Overflow')
+    }
+}
+
+extern fn u16_is_zero(a: u16) -> IsZeroResult::<u16> implicits() nopanic;
+extern fn u16_safe_divmod(a: u16, b: NonZero::<u16>) -> (u16, u16) implicits(RangeCheck) nopanic;
+
+#[panic_with('u16 is 0', u16_as_non_zero)]
+fn u16_try_as_non_zero(a: u16) -> Option::<NonZero::<u16>> implicits() nopanic {
+    match u16_is_zero(a) {
+        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::NonZero(x) => Option::Some(x),
+    }
+}
+
+impl U16Div of Div::<u16> {
+    fn div(a: u16, b: u16) -> u16 {
+        let (q, r) = u16_safe_divmod(a, u16_as_non_zero(b));
+        q
+    }
+}
+
+impl U16Rem of Rem::<u16> {
+    fn rem(a: u16, b: u16) -> u16 {
+        let (q, r) = u16_safe_divmod(a, u16_as_non_zero(b));
         r
     }
 }
@@ -371,6 +497,14 @@ fn u32_checked_sub(a: u32, b: u32) -> Option::<u32> implicits(RangeCheck) nopani
 impl U32Sub of Sub::<u32> {
     fn sub(a: u32, b: u32) -> u32 {
         u32_overflowing_sub(a, b).expect('u32_sub Overflow')
+    }
+}
+
+extern fn u32_wide_mul(a: u32, b: u32) -> u64 implicits() nopanic;
+impl U32Mul of Mul::<u32> {
+    fn mul(a: u32, b: u32) -> u32 {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        u32_try_from_felt(u64_to_felt(u32_wide_mul(a, b))).expect('u32_mul Overflow')
     }
 }
 
@@ -481,6 +615,14 @@ fn u64_checked_sub(a: u64, b: u64) -> Option::<u64> implicits(RangeCheck) nopani
 impl U64Sub of Sub::<u64> {
     fn sub(a: u64, b: u64) -> u64 {
         u64_overflowing_sub(a, b).expect('u64_sub Overflow')
+    }
+}
+
+extern fn u64_wide_mul(a: u64, b: u64) -> u128 implicits() nopanic;
+impl U64Mul of Mul::<u64> {
+    fn mul(a: u64, b: u64) -> u64 {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        u64_try_from_felt(u128_to_felt(u64_wide_mul(a, b))).expect('u64_mul Overflow')
     }
 }
 

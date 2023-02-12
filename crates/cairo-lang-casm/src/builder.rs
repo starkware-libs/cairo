@@ -523,6 +523,24 @@ impl CasmBuilder {
         self.main_state.steps = 0;
     }
 
+    /// Create an assert that would always fail.
+    pub fn fail(&mut self) {
+        let cell = CellRef { offset: -1, register: Register::FP };
+        let instruction = self.get_instruction(
+            InstructionBody::AssertEq(AssertEqInstruction {
+                a: cell,
+                b: ResOperand::BinOp(BinOpOperand {
+                    op: Operation::Add,
+                    a: cell,
+                    b: DerefOrImmediate::Immediate(1.into()),
+                }),
+            }),
+            false,
+        );
+        self.statements.push(Statement::Final(instruction));
+        self.reachable = false;
+    }
+
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
     fn get_value(&self, var: Var, adjust_ap: bool) -> CellExpression {
         if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
@@ -768,6 +786,10 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, $label:ident: $($tok:tt)*) => {
         $builder.label(std::stringify!($label).to_owned());
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, fail; $($tok:tt)*) => {
+        $builder.fail();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, hint $hint_name:ident {

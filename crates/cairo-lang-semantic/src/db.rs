@@ -120,9 +120,6 @@ pub trait SemanticGroup:
     /// Returns the semantic diagnostics of a use.
     #[salsa::invoke(items::us::use_semantic_diagnostics)]
     fn use_semantic_diagnostics(&self, use_id: UseId) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the semantic diagnostics of a use.
-    #[salsa::invoke(items::us::use_resolved_item)]
-    fn use_resolved_item(&self, use_id: UseId) -> Maybe<ResolvedGenericItem>;
     #[salsa::invoke(items::us::use_resolved_lookback)]
     fn use_resolved_lookback(&self, use_id: UseId) -> Maybe<Arc<ResolvedLookback>>;
 
@@ -374,12 +371,18 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<Arc<ResolvedLookback>>;
+    /// Returns the trait function of an impl function.
+    #[salsa::invoke(items::imp::impl_function_trait_function)]
+    fn impl_function_trait_function(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<TraitFunctionId>;
     /// Private query to compute data about an impl function declaration.
     #[salsa::invoke(items::imp::priv_impl_function_declaration_data)]
     fn priv_impl_function_declaration_data(
         &self,
         impl_function_id: ImplFunctionId,
-    ) -> Maybe<items::functions::FunctionDeclarationData>;
+    ) -> Maybe<items::imp::ImplFunctionDeclarationData>;
 
     /// Returns the semantic diagnostics of an impl function definition (declaration + body).
     #[salsa::invoke(items::imp::impl_function_body_diagnostics)]

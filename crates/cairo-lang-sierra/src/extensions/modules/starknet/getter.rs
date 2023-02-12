@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 
+use super::interoperability::ContractAddressType;
 use super::syscalls::SystemType;
 use crate::extensions::array::ArrayType;
 use crate::extensions::felt::FeltType;
@@ -107,5 +108,5 @@ impl<TGetterTraits: GetterTraits> NoGenericArgsGenericLibfunc for GetterLibfunc<
 pub struct GetCallerAddressTrait {}
 impl GetterTraits for GetCallerAddressTrait {
     const STR_ID: &'static str = "get_caller_address_syscall";
-    type InfoType = FeltType;
+    type InfoType = ContractAddressType;
 }

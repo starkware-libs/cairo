@@ -82,6 +82,7 @@ pub struct StatementReturn {
 #[debug_db(ExprFormatter<'a>)]
 pub enum Expr {
     Tuple(ExprTuple),
+    Snapshot(ExprSnapshot),
     Assignment(ExprAssignment),
     Block(ExprBlock),
     FunctionCall(ExprFunctionCall),
@@ -99,8 +100,9 @@ pub enum Expr {
 impl Expr {
     pub fn ty(&self) -> semantic::TypeId {
         match self {
-            Expr::Tuple(expr) => expr.ty,
             Expr::Assignment(expr) => expr.ty,
+            Expr::Tuple(expr) => expr.ty,
+            Expr::Snapshot(expr) => expr.ty,
             Expr::Block(expr) => expr.ty,
             Expr::FunctionCall(expr) => expr.ty,
             Expr::Match(expr) => expr.ty,
@@ -119,6 +121,7 @@ impl Expr {
         match self {
             Expr::Assignment(expr) => expr.stable_ptr,
             Expr::Tuple(expr) => expr.stable_ptr,
+            Expr::Snapshot(expr) => expr.stable_ptr,
             Expr::Block(expr) => expr.stable_ptr,
             Expr::FunctionCall(expr) => expr.stable_ptr,
             Expr::Match(expr) => expr.stable_ptr,
@@ -139,6 +142,15 @@ impl Expr {
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprTuple {
     pub items: Vec<ExprId>,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprSnapshot {
+    pub inner: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,

@@ -3,8 +3,8 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::uint::{
-    IntOperator, Uint32Concrete, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc,
-    UintTraits,
+    IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
+    UintConstConcreteLibfunc, UintTraits,
 };
 use num_bigint::{BigInt, ToBigInt};
 
@@ -373,28 +373,77 @@ pub fn build_sqrt(
     ))
 }
 
+/// Handles a small uint wide multiplication.
+pub fn build_small_wide_mul(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [a, b] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref a;
+        deref_or_immediate b;
+    };
+
+    casm_build_extend! {casm_builder,
+        let res = a * b;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res]], None)],
+        CostValidationInfo::default(),
+    ))
+}
+
 /// Builds instructions for Sierra u8 operations.
 pub fn build_u8(
     libfunc: &Uint8Concrete,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
+    const LIMIT: u128 = u8::MAX as u128 + 1;
     match libfunc {
         Uint8Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint8Concrete::LessThan(_) => build_less_than(builder),
+        Uint8Concrete::SquareRoot(_) => build_sqrt(builder),
         Uint8Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint8Concrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
         Uint8Concrete::Operation(libfunc) => match libfunc.operator {
-            IntOperator::OverflowingAdd => {
-                build_small_uint_overflowing_add(builder, u8::MAX as u128 + 1)
-            }
+            IntOperator::OverflowingAdd => build_small_uint_overflowing_add(builder, LIMIT),
             IntOperator::OverflowingSub => {
-                build_small_uint_overflowing_sub(builder, BigInt::from(u8::MAX) + 1)
+                build_small_uint_overflowing_sub(builder, BigInt::from(LIMIT))
             }
         },
         Uint8Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<256, 2>(builder),
+        Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
         Uint8Concrete::IsZero(_) => misc::build_is_zero(builder),
-        Uint8Concrete::Divmod(_) => build_divmod::<256>(builder),
+        Uint8Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint8Concrete::WideMul(_) => build_small_wide_mul(builder),
+    }
+}
+
+/// Builds instructions for Sierra u16 operations.
+pub fn build_u16(
+    libfunc: &Uint16Concrete,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    const LIMIT: u128 = u16::MAX as u128 + 1;
+    match libfunc {
+        Uint16Concrete::Const(libfunc) => build_const(libfunc, builder),
+        Uint16Concrete::LessThan(_) => build_less_than(builder),
+        Uint16Concrete::SquareRoot(_) => build_sqrt(builder),
+        Uint16Concrete::Equal(_) => misc::build_cell_eq(builder),
+        Uint16Concrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
+        Uint16Concrete::Operation(libfunc) => match libfunc.operator {
+            IntOperator::OverflowingAdd => build_small_uint_overflowing_add(builder, LIMIT),
+            IntOperator::OverflowingSub => {
+                build_small_uint_overflowing_sub(builder, BigInt::from(LIMIT))
+            }
+        },
+        Uint16Concrete::ToFelt(_) => misc::build_identity(builder),
+        Uint16Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
+        Uint16Concrete::IsZero(_) => misc::build_is_zero(builder),
+        Uint16Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint16Concrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }
 
@@ -403,23 +452,24 @@ pub fn build_u32(
     libfunc: &Uint32Concrete,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
+    const LIMIT: u128 = u32::MAX as u128 + 1;
     match libfunc {
         Uint32Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint32Concrete::LessThan(_) => build_less_than(builder),
+        Uint32Concrete::SquareRoot(_) => build_sqrt(builder),
         Uint32Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint32Concrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
         Uint32Concrete::Operation(libfunc) => match libfunc.operator {
-            IntOperator::OverflowingAdd => {
-                build_small_uint_overflowing_add(builder, u32::MAX as u128 + 1)
-            }
+            IntOperator::OverflowingAdd => build_small_uint_overflowing_add(builder, LIMIT),
             IntOperator::OverflowingSub => {
-                build_small_uint_overflowing_sub(builder, BigInt::from(u32::MAX) + 1)
+                build_small_uint_overflowing_sub(builder, BigInt::from(LIMIT))
             }
         },
         Uint32Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint32Concrete::FromFelt(_) => build_small_uint_from_felt::<0x100000000, 2>(builder),
+        Uint32Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
         Uint32Concrete::IsZero(_) => misc::build_is_zero(builder),
-        Uint32Concrete::Divmod(_) => build_divmod::<0x100000000>(builder),
+        Uint32Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint32Concrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }
 
@@ -428,24 +478,23 @@ pub fn build_u64(
     libfunc: &Uint64Concrete,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
+    const LIMIT: u128 = u64::MAX as u128 + 1;
     match libfunc {
         Uint64Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint64Concrete::LessThan(_) => build_less_than(builder),
+        Uint64Concrete::SquareRoot(_) => build_sqrt(builder),
         Uint64Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint64Concrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
         Uint64Concrete::Operation(libfunc) => match libfunc.operator {
-            IntOperator::OverflowingAdd => {
-                build_small_uint_overflowing_add(builder, u64::MAX as u128 + 1)
-            }
+            IntOperator::OverflowingAdd => build_small_uint_overflowing_add(builder, LIMIT),
             IntOperator::OverflowingSub => {
-                build_small_uint_overflowing_sub(builder, BigInt::from(u64::MAX) + 1)
+                build_small_uint_overflowing_sub(builder, BigInt::from(LIMIT))
             }
         },
         Uint64Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint64Concrete::FromFelt(_) => {
-            build_small_uint_from_felt::<0x10000000000000000, 2>(builder)
-        }
+        Uint64Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
         Uint64Concrete::IsZero(_) => misc::build_is_zero(builder),
-        Uint64Concrete::Divmod(_) => build_divmod::<0x10000000000000000>(builder),
+        Uint64Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint64Concrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }

@@ -538,7 +538,7 @@ pub trait SyntaxNodeFormat {
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
 }
 
-pub struct Formatter<'a> {
+pub struct FormatterImpl<'a> {
     db: &'a dyn SyntaxGroup,
     config: FormatterConfig,
     /// A buffer for the current line.
@@ -550,7 +550,7 @@ pub struct Formatter<'a> {
     is_current_line_whitespaces: bool,
 }
 
-impl<'a> Formatter<'a> {
+impl<'a> FormatterImpl<'a> {
     pub fn new(db: &'a dyn SyntaxGroup, config: FormatterConfig) -> Self {
         Self {
             db,

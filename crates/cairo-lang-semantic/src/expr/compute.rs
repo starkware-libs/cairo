@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use ast::{BinaryOperator, PathSegment};
 use cairo_lang_defs::ids::{FunctionSignatureId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
-use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam};
+use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -29,8 +29,8 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
-    true_literal_expr, try_get_const_libfunc_name_by_type, try_get_core_ty_by_name, unit_ty,
-    unwrap_error_propagation_type,
+    true_literal_expr, try_get_core_ty_by_name, unit_ty, unwrap_error_propagation_type,
+    validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -38,11 +38,14 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
-use crate::items::imp::find_impls_at_context;
+use crate::items::functions::{
+    ConcreteImplGenericFunctionId, GenericFunctionId, ImplGenericParamFunctionId,
+};
+use crate::items::imp::{has_impl_at_context, ImplId};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
@@ -226,6 +229,14 @@ fn compute_expr_unary_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
 
     let expr_ty = ctx.reduce_ty(expr.ty());
+    if let UnaryOperator::At(_) = unary_op {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(expr_ty));
+        return Ok(Expr::Snapshot(ExprSnapshot {
+            inner: ctx.exprs.alloc(expr),
+            ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        }));
+    }
     let function = match core_unary_operator(ctx.db, &unary_op, expr_ty) {
         Err(err_kind) => {
             return Err(ctx.diagnostics.report(&unary_op, err_kind));
@@ -446,14 +457,29 @@ pub fn resolve_trait_function(
     resolver: &mut Resolver<'_>,
     concrete_trait_function: ConcreteTraitGenericFunctionId,
     stable_ptr: SyntaxStablePtrId,
-) -> Maybe<ConcreteImplGenericFunctionId> {
+) -> Maybe<GenericFunctionId> {
     // Resolve impl.
-    let concrete_impl = resolver.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
-    let impl_def_id = db.lookup_intern_concrete_impl(concrete_impl).impl_def_id;
-    let impl_function = db
-        .impl_function_by_trait_function(impl_def_id, concrete_trait_function.function_id(db))?
-        .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
-    Ok(ConcreteImplGenericFunctionId { concrete_impl, function: impl_function })
+
+    let trait_function_id = concrete_trait_function.function_id(db);
+    let impl_id = resolver.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
+    match impl_id {
+        ImplId::Concrete(concrete_impl_id) => {
+            let impl_def_id = concrete_impl_id.impl_def_id(db);
+            let function = db
+                .impl_function_by_trait_function(impl_def_id, trait_function_id)?
+                .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
+            Ok(GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
+                concrete_impl_id,
+                function,
+            }))
+        }
+        ImplId::GenericParameter(param) => {
+            Ok(GenericFunctionId::ImplGenericParam(ImplGenericParamFunctionId {
+                param,
+                trait_function_id,
+            }))
+        }
+    }
 }
 
 pub fn compute_root_expr(
@@ -474,6 +500,7 @@ pub fn compute_root_expr(
         match expr {
             Expr::Constant(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::Tuple(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
+            Expr::Snapshot(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::Assignment(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::Block(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::FunctionCall(call_expr) => {
@@ -486,14 +513,14 @@ pub fn compute_root_expr(
                 if let GenericFunctionId::Trait(concrete_trait_function) =
                     long_function_id.function.generic_function
                 {
-                    let concrete_impl_function = match resolve_trait_function(
+                    let generic_function = match resolve_trait_function(
                         ctx.db,
                         ctx.diagnostics,
                         &mut ctx.resolver,
                         concrete_trait_function,
                         call_expr.stable_ptr.untyped(),
                     ) {
-                        Ok(concrete_impl_function) => concrete_impl_function,
+                        Ok(generic_function) => generic_function,
                         Err(diag_added) => {
                             *expr = Expr::Missing(ExprMissing {
                                 ty: TypeId::missing(ctx.db, diag_added),
@@ -504,8 +531,7 @@ pub fn compute_root_expr(
                         }
                     };
 
-                    long_function_id.function.generic_function =
-                        GenericFunctionId::Impl(concrete_impl_function);
+                    long_function_id.function.generic_function = generic_function;
                 }
                 long_function_id.function.generic_function.generic_args_apply(
                     ctx.db,
@@ -1150,7 +1176,7 @@ fn literal_to_semantic(
     } else {
         db.core_felt_ty()
     };
-    try_get_const_libfunc_name_by_type(db, ty)
+    validate_literal(db, ty, value.clone())
         .map_err(|err| ctx.diagnostics.report(literal_syntax, err))?;
     Ok(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
 }
@@ -1171,17 +1197,14 @@ fn short_string_to_semantic(
         } else {
             db.core_felt_ty()
         };
-        try_get_const_libfunc_name_by_type(db, ty)
-            .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?;
         let unescaped_literal = unescape(literal).map_err(|err| {
             ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{err}")))
         })?;
+        let value = BigInt::from_bytes_be(Sign::Plus, unescaped_literal.as_bytes());
+        validate_literal(db, ty, value.clone())
+            .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?;
         if unescaped_literal.is_ascii() {
-            Ok(ExprLiteral {
-                value: BigInt::from_bytes_be(Sign::Plus, unescaped_literal.as_bytes()),
-                ty,
-                stable_ptr: short_string_syntax.stable_ptr().into(),
-            })
+            Ok(ExprLiteral { value, ty, stable_ptr: short_string_syntax.stable_ptr().into() })
         } else {
             Err(ctx.diagnostics.report(short_string_syntax, ShortStringMustBeAscii))
         }
@@ -1264,15 +1287,11 @@ fn method_call_expr(
 
             // Find impls for it.
             let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
-            let Ok(impls) = find_impls_at_context(
+            let Ok(true) = has_impl_at_context(
                 ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()
             ) else {
                 continue;
             };
-
-            if impls.is_empty() {
-                continue;
-            }
 
             candidates.push(trait_function);
         }
@@ -1372,7 +1391,11 @@ fn member_access_expr(
                 .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name })),
         },
         TypeLongId::Tuple(_) => {
-            // TODO(spapini): Handle .0, .1, ...;
+            // TODO(spapini): Handle .0, .1, etc. .
+            Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
+        }
+        TypeLongId::Snapshot(_) => {
+            // TODO(spapini): Handle snapshot members.
             Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
         }
         TypeLongId::GenericParameter(_) => Err(ctx
