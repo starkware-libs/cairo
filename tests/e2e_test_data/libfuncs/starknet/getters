@@ -6,7 +6,7 @@
 run_small_e2e_test
 
 //! > cairo
-fn foo() -> Result::<felt, Array::<felt>> {
+fn foo() -> Result::<starknet::ContractAddress, Array::<felt>> {
     starknet::get_caller_address_syscall()
 }
 
@@ -36,37 +36,38 @@ test::foo: OrderedHashMap({Const: 11200})
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
 type System = System;
+type ContractAddress = ContractAddress;
 type felt = felt;
 type Array<felt> = Array<felt>;
-type core::result::Result::<core::felt, core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<core::felt, core::array::Array::<core::felt>>, felt, Array<felt>>;
+type core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, ContractAddress, Array<felt>>;
 
 libfunc get_caller_address_syscall = get_caller_address_syscall;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>;
+libfunc enum_init<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<System> = store_temp<System>;
-libfunc store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>> = store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>;
+libfunc store_temp<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>> = store_temp<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>;
 libfunc jump = jump;
-libfunc enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>;
+libfunc enum_init<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, 1>;
 libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
-libfunc rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>> = rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>;
+libfunc rename<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>> = rename<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>;
 
 get_caller_address_syscall([0], [1]) { fallthrough([2], [3], [4]) 7([5], [6], [7]) };
 branch_align() -> ();
-enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>([4]) -> ([8]);
+enum_init<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, 0>([4]) -> ([8]);
 store_temp<GasBuiltin>([2]) -> ([9]);
 store_temp<System>([3]) -> ([10]);
-store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([8]) -> ([11]);
+store_temp<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>([8]) -> ([11]);
 jump() { 12() };
 branch_align() -> ();
-enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>([7]) -> ([12]);
+enum_init<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, 1>([7]) -> ([12]);
 store_temp<GasBuiltin>([5]) -> ([9]);
 store_temp<System>([6]) -> ([10]);
-store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([12]) -> ([11]);
+store_temp<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>([12]) -> ([11]);
 rename<GasBuiltin>([9]) -> ([13]);
 rename<System>([10]) -> ([14]);
-rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([11]) -> ([15]);
+rename<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>([11]) -> ([15]);
 return([13], [14], [15]);
 
-test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::Result::<core::felt, core::array::Array::<core::felt>>);
+test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>);
