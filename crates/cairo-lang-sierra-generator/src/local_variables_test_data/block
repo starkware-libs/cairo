@@ -31,39 +31,39 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v8: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Fallthrough(1, {v8 -> v1})
 
 blk1:
 Inputs:
 Statements:
-  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v9: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(2, {})
+  Fallthrough(2, {v9 -> v2})
 
 blk2:
 Inputs:
 Statements:
   (v3: core::felt) <- test::revoke_ap()
-  (v4: core::felt) <- core::felt_add(v1, v1)
+  (v10: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(3, {})
+  Fallthrough(3, {v10 -> v4})
 
 blk3:
 Inputs:
 Statements:
-  (v5: core::felt) <- core::felt_add(v1, v2)
+  (v11: core::felt) <- core::felt_add(v1, v2)
 End:
-  Fallthrough(4, {})
+  Fallthrough(4, {v11 -> v5})
 
 blk4:
 Inputs:
 Statements:
   (v6: core::felt) <- test::revoke_ap()
-  (v7: core::felt) <- core::felt_add(v1, v4)
+  (v12: core::felt) <- core::felt_add(v1, v4)
 End:
-  Fallthrough(5, {})
+  Fallthrough(5, {v12 -> v7})
 
 blk5:
 Inputs:

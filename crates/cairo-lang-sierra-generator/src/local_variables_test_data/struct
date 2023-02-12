@@ -34,9 +34,9 @@ impl MyStructDrop of Drop::<MyStruct>;
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v13: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Fallthrough(1, {v13 -> v1})
 
 blk1:
 Inputs:

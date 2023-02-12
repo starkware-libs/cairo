@@ -36,28 +36,29 @@ felt_const<2>() -> ([1])
 dup<felt>([0]) -> ([0], [3])
 felt_sub([3], [1]) -> ([2])
 label1:
-store_temp<felt>([2]) -> ([2])
-felt_is_zero([2]) { fallthrough() label2([4]) }
+store_temp<felt>([2]) -> ([4])
+felt_is_zero([4]) { fallthrough() label2([5]) }
 branch_align() -> ()
-felt_is_zero([0]) { fallthrough() label4([5]) }
+felt_is_zero([0]) { fallthrough() label4([6]) }
 branch_align() -> ()
-felt_const<1>() -> ([6])
-store_temp<felt>([6]) -> ([7])
+felt_const<1>() -> ([7])
+store_temp<felt>([7]) -> ([8])
 jump() { label6() }
 label4:
 branch_align() -> ()
-drop<NonZero<felt>>([5]) -> ()
-drop<felt>([7]) -> ()
+drop<NonZero<felt>>([6]) -> ()
+drop<felt>([9]) -> ()
 label5:
-felt_const<0>() -> ([7])
+felt_const<0>() -> ([9])
 label6:
-store_temp<felt>([7]) -> ([8])
+store_temp<felt>([9]) -> ([8])
+rename<felt>([8]) -> ([10])
 jump() { label3() }
 label2:
 branch_align() -> ()
-drop<NonZero<felt>>([4]) -> ()
-drop<felt>([7]) -> ()
-store_temp<felt>([0]) -> ([8])
+drop<NonZero<felt>>([5]) -> ()
+drop<felt>([9]) -> ()
+store_temp<felt>([0]) -> ([10])
 label3:
-rename<felt>([8]) -> ([9])
-return([9])
+rename<felt>([10]) -> ([11])
+return([11])

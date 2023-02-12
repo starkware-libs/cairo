@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod test;
 
-use std::collections::hash_map::Entry;
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
@@ -446,25 +445,17 @@ impl<'db> FunctionInlinerRewriter<'db> {
             renamed_blocks: HashMap::new(),
         };
 
-        // Try to avoid using output_remapping as it causes more store_temps to be generated.
-        // TODO(ilya): make var_remapping more efficient and remove the following.
-        let mut output_remapping = VarRemapping::default();
-        for (returned_var_id, output_var_id) in
-            izip!(extract_matches!(&root_block.end, FlatBlockEnd::Return).iter(), outputs.iter())
-        {
-            match mapper.renamed_vars.entry(*returned_var_id) {
-                Entry::Vacant(e) => {
-                    // Use var_id renaming as it results in better code.
-                    e.insert(*output_var_id);
-                }
-                Entry::Occupied(_) => {
-                    // `returned_var_id` was already renamed, fallback to output_remapping:
-                    // (mapper.rename_var(returned_var_id) -> output_var_id).
-                    output_remapping.insert(*output_var_id, mapper.rename_var(returned_var_id));
-                }
-            }
-        }
-        self.block_end = FlatBlockEnd::Fallthrough(return_block_id, output_remapping);
+        self.block_end = FlatBlockEnd::Fallthrough(
+            return_block_id,
+            VarRemapping {
+                remapping: OrderedHashMap::from_iter(izip!(
+                    outputs.iter().cloned(),
+                    extract_matches!(&root_block.end, FlatBlockEnd::Return)
+                        .iter()
+                        .map(|var_id| mapper.rename_var(var_id)),
+                )),
+            },
+        );
 
         for (block_id, block) in lowered.blocks.iter() {
             if block_id == root_block_id {

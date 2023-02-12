@@ -470,7 +470,8 @@ branch_align() -> ();
 ec_point_zero() -> ([4]);
 store_temp<EcPoint>([4]) -> ([3]);
 rename<EcPoint>([3]) -> ([5]);
-return([5]);
+rename<EcPoint>([5]) -> ([6]);
+return([6]);
 
 test::foo@0([0]: EcState) -> (EcPoint);
 

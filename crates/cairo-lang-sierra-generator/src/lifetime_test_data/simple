@@ -22,31 +22,31 @@ fn foo(x: felt, y: felt) -> felt {
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v2: core::felt) <- core::felt_add(v0, v0)
+  (v8: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Fallthrough(1, {v8 -> v2})
 
 blk1:
 Inputs:
 Statements:
-  (v3: core::felt) <- core::felt_add(v2, v2)
+  (v9: core::felt) <- core::felt_add(v2, v2)
 End:
-  Fallthrough(2, {})
+  Fallthrough(2, {v9 -> v3})
 
 blk2:
 Inputs:
 Statements:
-  (v4: core::felt) <- core::felt_add(v3, v3)
+  (v10: core::felt) <- core::felt_add(v3, v3)
 End:
-  Fallthrough(3, {})
+  Fallthrough(3, {v10 -> v4})
 
 blk3:
 Inputs:
 Statements:
   (v5: core::felt) <- 1u
-  (v6: core::felt) <- core::felt_add(v3, v5)
+  (v11: core::felt) <- core::felt_add(v3, v5)
 End:
-  Fallthrough(4, {})
+  Fallthrough(4, {v11 -> v6})
 
 blk4:
 Inputs:
@@ -57,12 +57,16 @@ End:
 
 //! > last_use
 v2: ((BlockId(4), 1), 0)
+v11: ((BlockId(3), 2), 0)
 v5: ((BlockId(3), 1), 1)
 v3: ((BlockId(3), 1), 0)
+v10: ((BlockId(2), 1), 0)
+v9: ((BlockId(1), 1), 0)
+v8: ((BlockId(0), 1), 0)
 v0: ((BlockId(0), 0), 1)
 
 //! > drops
 PostStatement((BlockId(4), 0)): v7
-PostStatement((BlockId(3), 1)): v6
-PostStatement((BlockId(2), 0)): v4
+BeginningOfBlock(BlockId(4)): v6
+BeginningOfBlock(BlockId(3)): v4
 BeginningOfBlock(BlockId(0)): v1

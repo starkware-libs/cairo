@@ -30,9 +30,9 @@ End:
 blk1:
 Inputs: v1: core::NonZero::<core::felt>
 Statements:
-  (v2: core::felt) <- core::felt_add(v0, v0)
+  (v6: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(3, {})
+  Fallthrough(3, {v6 -> v2})
 
 blk2 (root):
 Inputs: v0: core::felt
@@ -57,6 +57,7 @@ v5: ((BlockId(2), 1), 0)
 v0: ((BlockId(0), 0), 0)
 v2: ((BlockId(3), 2), 0)
 v3: ((BlockId(3), 1), 0)
+v6: ((BlockId(1), 1), 0)
 v0: ((BlockId(1), 0), 1)
 
 //! > drops

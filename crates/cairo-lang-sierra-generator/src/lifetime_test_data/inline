@@ -28,9 +28,9 @@ Statements:
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
   }
-  (v1: core::felt) <- 0u
+  (v2: core::felt) <- 0u
 End:
-  Fallthrough(1, {})
+  Fallthrough(1, {v2 -> v1})
 
 blk1:
 Inputs:
@@ -41,23 +41,24 @@ End:
 blk2:
 Inputs:
 Statements:
-  (v2: core::felt) <- 1u
+  (v3: core::felt) <- 1u
 End:
-  Goto(1, {v2 -> v1})
+  Goto(1, {v3 -> v1})
 
 blk3:
-Inputs: v3: core::NonZero::<core::felt>
+Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
   Callsite({})
 
 //! > last_use
 v1: ((BlockId(1), 0), 0)
-v2: ((BlockId(2), 1), 0)
+v2: ((BlockId(0), 2), 0)
+v3: ((BlockId(2), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(3)): v3, v1
+BeginningOfBlock(BlockId(3)): v4, v2
 
 //! > ==========================================================================
 
@@ -95,9 +96,9 @@ Statements:
     IsZeroResult::Zero => blk4,
     IsZeroResult::NonZero => blk5,
   }
-  (v3: core::felt) <- 0u
+  (v6: core::felt) <- 0u
 End:
-  Fallthrough(3, {})
+  Fallthrough(3, {v6 -> v3})
 
 blk1:
 Inputs: v4: core::NonZero::<core::felt>
@@ -109,9 +110,9 @@ blk2 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
-  (v2: core::felt) <- core::felt_sub(v0, v1)
+  (v9: core::felt) <- core::felt_sub(v0, v1)
 End:
-  Fallthrough(6, {})
+  Fallthrough(6, {v9 -> v2})
 
 blk3:
 Inputs:
@@ -122,12 +123,12 @@ End:
 blk4:
 Inputs:
 Statements:
-  (v6: core::felt) <- 1u
+  (v7: core::felt) <- 1u
 End:
-  Goto(3, {v6 -> v3})
+  Goto(3, {v7 -> v3})
 
 blk5:
-Inputs: v7: core::NonZero::<core::felt>
+Inputs: v8: core::NonZero::<core::felt>
 Statements:
 End:
   Callsite({})
@@ -145,15 +146,17 @@ End:
 //! > last_use
 v5: ((BlockId(6), 1), 0)
 v3: ((BlockId(3), 0), 0)
-v6: ((BlockId(4), 1), 0)
+v6: ((BlockId(0), 2), 0)
+v7: ((BlockId(4), 1), 0)
 v0: ((BlockId(0), 0), 0)
 v0: ((BlockId(1), 0), 0)
 v2: ((BlockId(6), 0), 0)
+v9: ((BlockId(2), 2), 0)
 v1: ((BlockId(2), 1), 1)
 
 //! > drops
-BeginningOfBlock(BlockId(5)): v7, v3
-BeginningOfBlock(BlockId(1)): v4, v3
+BeginningOfBlock(BlockId(5)): v8, v6
+BeginningOfBlock(BlockId(1)): v4, v6
 
 //! > ==========================================================================
 
@@ -196,7 +199,7 @@ Statements:
     IsZeroResult::NonZero => blk3,
   }
 End:
-  Fallthrough(1, {})
+  Fallthrough(1, {v2 -> v1})
 
 blk1:
 Inputs:
@@ -208,29 +211,31 @@ blk2:
 Inputs:
 Statements:
 End:
-  Callsite({v0 -> v1})
+  Callsite({v0 -> v2})
 
 blk3:
-Inputs: v4: core::NonZero::<core::felt>
+Inputs: v5: core::NonZero::<core::felt>
 Statements:
-  (v2: core::felt) <- core::felt_add(v0, v0)
+  (v6: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(4, {})
+  Fallthrough(4, {v6 -> v3})
 
 blk4:
 Inputs:
 Statements:
-  (v3: ()) <- test::revoke_tempvars()
+  (v4: ()) <- test::revoke_tempvars()
 End:
-  Callsite({v2 -> v1})
+  Callsite({v3 -> v2})
 
 //! > last_use
 v1: ((BlockId(1), 0), 0)
+v2: ((BlockId(0), 1), 0)
 v0: ((BlockId(2), 0), 0)
-v2: ((BlockId(4), 1), 0)
+v3: ((BlockId(4), 1), 0)
+v6: ((BlockId(3), 1), 0)
 v0: ((BlockId(3), 0), 1)
 
 //! > drops
-PostStatement((BlockId(4), 0)): v3
-BeginningOfBlock(BlockId(3)): v4
-BeginningOfBlock(BlockId(2)): UninitializedLocal(v2)
+PostStatement((BlockId(4), 0)): v4
+BeginningOfBlock(BlockId(3)): v5
+BeginningOfBlock(BlockId(2)): UninitializedLocal(v3)

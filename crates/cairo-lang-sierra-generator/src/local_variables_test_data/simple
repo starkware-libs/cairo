@@ -28,46 +28,46 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v9: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Fallthrough(1, {v9 -> v1})
 
 blk1:
 Inputs:
 Statements:
-  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v10: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(2, {})
+  Fallthrough(2, {v10 -> v2})
 
 blk2:
 Inputs:
 Statements:
-  (v3: core::felt) <- core::felt_add(v2, v2)
+  (v11: core::felt) <- core::felt_add(v2, v2)
 End:
-  Fallthrough(3, {})
+  Fallthrough(3, {v11 -> v3})
 
 blk3:
 Inputs:
 Statements:
   (v4: core::felt) <- test::revoke_ap()
-  (v5: core::felt) <- core::felt_add(v0, v2)
+  (v12: core::felt) <- core::felt_add(v0, v2)
 End:
-  Fallthrough(4, {})
+  Fallthrough(4, {v12 -> v5})
 
 blk4:
 Inputs:
 Statements:
   (v6: core::felt) <- test::revoke_ap()
-  (v7: core::felt) <- core::felt_add(v0, v2)
+  (v13: core::felt) <- core::felt_add(v0, v2)
 End:
-  Fallthrough(5, {})
+  Fallthrough(5, {v13 -> v7})
 
 blk5:
 Inputs:
 Statements:
-  (v8: core::felt) <- core::felt_add(v7, v5)
+  (v14: core::felt) <- core::felt_add(v7, v5)
 End:
-  Fallthrough(6, {})
+  Fallthrough(6, {v14 -> v8})
 
 blk6:
 Inputs:
@@ -107,9 +107,9 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v3: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Fallthrough(1, {v3 -> v1})
 
 blk1:
 Inputs:
@@ -154,16 +154,16 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v11: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Fallthrough(1, {v11 -> v1})
 
 blk1:
 Inputs:
 Statements:
-  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v12: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(2, {})
+  Fallthrough(2, {v12 -> v2})
 
 blk2:
 Inputs:
@@ -172,9 +172,9 @@ Statements:
   (v5: core::felt, v6: core::felt) <- core::dup::<core::felt>(v4)
   (v7: core::felt, v8: core::felt) <- core::dup::<core::felt>(v5)
   (v9: core::felt) <- test::revoke_ap()
-  (v10: core::felt) <- core::felt_add(v7, v8)
+  (v13: core::felt) <- core::felt_add(v7, v8)
 End:
-  Fallthrough(3, {})
+  Fallthrough(3, {v13 -> v10})
 
 blk3:
 Inputs:

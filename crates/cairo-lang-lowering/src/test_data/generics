@@ -51,9 +51,9 @@ Statements:
   (v0: core::felt) <- 5u
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v3: (core::felt, core::bool)) <- struct_construct(v0, v2)
+  (v9: (core::felt, core::bool)) <- struct_construct(v0, v2)
 End:
-  Fallthrough(1, {})
+  Fallthrough(1, {v9 -> v3})
 
 blk1:
 Inputs:
@@ -61,9 +61,9 @@ Statements:
   (v4: core::felt) <- 6u
   (v5: ()) <- struct_construct()
   (v6: core::bool) <- bool::False(v5)
-  (v7: (core::felt, core::bool)) <- struct_construct(v4, v6)
+  (v10: (core::felt, core::bool)) <- struct_construct(v4, v6)
 End:
-  Fallthrough(2, {})
+  Fallthrough(2, {v10 -> v7})
 
 blk2:
 Inputs:
