@@ -55,9 +55,9 @@ blk0:
 Inputs:
 Statements:
   (v3: core::felt) <- 1u
-  (v4: core::felt) <- core::felt_add(v0, v3)
+  (v6: core::felt) <- core::felt_add(v0, v3)
 End:
-  Fallthrough(3, {})
+  Fallthrough(3, {v6 -> v4})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
