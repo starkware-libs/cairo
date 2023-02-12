@@ -260,5 +260,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
         },
         CoreConcreteLibfunc::Debug(_) => vec![ApChange::Known(0)],
+        CoreConcreteLibfunc::SnapshotTake(_) => vec![ApChange::Known(0)],
     }
 }
