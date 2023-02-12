@@ -107,10 +107,11 @@ pub fn generate_block_code(
             Ok((statements, false))
         }
         lowering::FlatBlockEnd::Fallthrough(block_id, remapping) => {
-            statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
-                id: context.block_label(*block_id),
-            }));
-
+            if context.block_has_label(block_id) {
+                statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
+                    id: context.block_label(*block_id),
+                }));
+            }
             statements.push(generate_push_values_statement_for_remapping(
                 context,
                 statement_location,
