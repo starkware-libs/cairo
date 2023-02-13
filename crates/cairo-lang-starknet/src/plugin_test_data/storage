@@ -186,10 +186,14 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }

@@ -342,6 +342,7 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
             extra_uses.push(RewriteNode::Text(format!("\n        use super::{};", ident.text(db))));
         }
     }
+
     let extra_uses_node = RewriteNode::Modified(ModifiedNode { children: extra_uses });
     let mut generated_external_functions = Vec::new();
     let mut generated_constructor_functions = Vec::new();
@@ -437,10 +438,14 @@ fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult
                 }}
 
                 mod {EXTERNAL_MODULE} {{$extra_uses$
+                    use starknet_serde::ContractAddressSerde;
+
                     $generated_external_functions$
                 }}
 
                 mod {CONSTRUCTOR_MODULE} {{$extra_uses$
+                    use starknet_serde::ContractAddressSerde;
+
                     $generated_constructor_functions$
                 }}
             }}

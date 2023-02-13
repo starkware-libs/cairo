@@ -16,16 +16,13 @@ mod TestContract {
     }
 
     #[external]
-    fn set_something(ref arg: felt, num: felt) {
-    }
+    fn set_something(ref arg: felt, num: felt) {}
 
     #[event]
-    fn awesome_event(x: felt, y: u128) {
-    }
+    fn awesome_event(x: felt, y: u128) {}
 
     #[event]
-    fn best_event_ever() {
-    }
+    fn best_event_ever() {}
 }
 
 //! > generated_cairo_code
@@ -43,8 +40,7 @@ mod TestContract {
     }
 
     #[external]
-    fn set_something(ref arg: felt, num: felt) {
-    }
+    fn set_something(ref arg: felt, num: felt) {}
 
     
 
@@ -84,6 +80,8 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         fn get_something(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
@@ -200,6 +198,8 @@ mod TestContract {
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }
