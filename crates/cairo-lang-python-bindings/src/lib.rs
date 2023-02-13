@@ -10,7 +10,6 @@ use pyo3::exceptions::RuntimeError;
 use anyhow::Context;
 
 use cairo_lang_compiler::{
-    db::RootDatabaseBuilder,
     compile_cairo_project_at_path as compile_cairo_to_sierra_at_path,
     CompilerConfig,
 };
@@ -27,8 +26,9 @@ use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_plugins::derive::DerivePlugin;
 use cairo_lang_plugins::panicable::PanicablePlugin;
 use cairo_lang_plugins::config::ConfigPlugin;
-use cairo_lang_compiler::diagnostics::check_and_eprint_diagnostics;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_diagnostics::ToOption;
@@ -67,7 +67,7 @@ fn call_sierra_to_casm_compiler(input_path: &str, output_path: Option<&str>) -> 
     Ok(Some(casm_program_contents))
 }
 
-// call_cairo_to_casm_compiler = call_cairo_to_sierra_compiler + call_sierra_to_casm_compiler
+// // call_cairo_to_casm_compiler = call_cairo_to_sierra_compiler + call_sierra_to_casm_compiler
 #[pyfunction]
 fn call_cairo_to_casm_compiler(input_path: &str, output_path: Option<&str>, maybe_cairo_paths: Option<Vec<&str>>) -> PyResult<Option<String>> {
     let sierra_program = call_cairo_to_sierra_compiler(input_path, None, maybe_cairo_paths)?.unwrap();
@@ -95,7 +95,7 @@ fn call_starknet_contract_compiler(input_path: &str, output_path: Option<&str>, 
 }
 
 fn starknet_cairo_to_casm(input_path: &str, maybe_cairo_paths: Option<Vec<&str>>) -> Result<String, anyhow::Error> {
-    let contract = compile_starknet(&PathBuf::from(input_path), true, maybe_cairo_paths)?;
+    let contract = compile_starknet(&PathBuf::from(input_path), CompilerConfig { replace_ids: true, ..CompilerConfig::default() }, maybe_cairo_paths)?;
     let sierra = serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?;
 
     let contract_class: ContractClass = serde_json::from_str(&sierra[..])
@@ -110,7 +110,7 @@ fn starknet_cairo_to_casm(input_path: &str, maybe_cairo_paths: Option<Vec<&str>>
     Ok(casm)
 }
 
-// returns tuple[sierra if no output_path, list[test_names]]
+// // returns tuple[sierra if no output_path, list[test_names]]
 #[pyfunction]
 fn call_test_collector(path: &str, output_path: Option<&str>, maybe_cairo_paths: Option<Vec<&str>>) -> PyResult<(Option<String>, Vec<String>)> {
     // code taken from crates/cairo-lang-test-runner/src/cli.rs
@@ -119,11 +119,9 @@ fn call_test_collector(path: &str, output_path: Option<&str>, maybe_cairo_paths:
         Arc::new(PanicablePlugin {}),
         Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
     ];
-    let mut builder = RootDatabaseBuilder::empty();
-    builder.with_plugins(plugins).with_dev_corelib().unwrap();
-    let mut db_val = builder.build();
-    let db = &mut db_val;
-
+    let db = &mut RootDatabase::builder().with_plugins(plugins).detect_corelib().build()
+        .map_err(|_| PyErr::new::<RuntimeError, _>("Failed to build database"))?;
+    
     let main_crate_ids = setup_project(db, Path::new(&path)).map_err(|_| PyErr::new::<RuntimeError, _>(format!("Failed to setup project for path: {}", path)))?;
     if let Some(cairo_paths) = maybe_cairo_paths {
         for cairo_path in cairo_paths {
@@ -131,8 +129,8 @@ fn call_test_collector(path: &str, output_path: Option<&str>, maybe_cairo_paths:
         }
     }
 
-    if check_and_eprint_diagnostics(db) {
-        return Err(PyErr::new::<RuntimeError, _>(format!("failed to compile: {}", path)));
+    if DiagnosticsReporter::stderr().check(db) {
+        return Err(PyErr::new::<RuntimeError, _>("Failed to add cairo path"));
     }
     let all_tests = find_all_tests(db, main_crate_ids);
 
