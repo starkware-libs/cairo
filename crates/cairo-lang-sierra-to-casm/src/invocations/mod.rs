@@ -450,7 +450,6 @@ pub fn compile_invocation(
     let builder =
         CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
-        // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibfunc::Felt(libfunc) => felt::build(libfunc, builder),
         CoreConcreteLibfunc::Bitwise(_) => bitwise::build(builder),
         CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),

@@ -25,7 +25,6 @@ fn main() -> anyhow::Result<()> {
     )
     .with_context(|| "deserialization Failed.")?;
 
-    // TODO(ilya): Fix entry points.
     let casm_contract = CasmContractClass::from_contract_class(contract_class)
         .with_context(|| "Compilation failed.")?;
 
