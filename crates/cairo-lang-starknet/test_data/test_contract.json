@@ -7955,7 +7955,7 @@
       "name": "call_foo",
       "inputs": [
         {
-          "name": "foo_address",
+          "name": "another_contract_address",
           "ty": "core::starknet::ContractAddress"
         },
         {
