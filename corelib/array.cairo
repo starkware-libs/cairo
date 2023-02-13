@@ -49,3 +49,14 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
 
 // Impls for common generic types
 impl ArrayFeltDrop of Drop::<Array::<felt>>;
+impl ArrayFeltCopy of Copy::<Array::<felt>>;
+impl ArrayU8Drop of Drop::<Array::<u8>>;
+impl ArrayU8Copy of Copy::<Array::<u8>>;
+impl ArrayU32Drop of Drop::<Array::<u32>>;
+impl ArrayU32Copy of Copy::<Array::<u32>>;
+impl ArrayU64Drop of Drop::<Array::<u64>>;
+impl ArrayU64Copy of Copy::<Array::<u64>>;
+impl ArrayU128Drop of Drop::<Array::<u128>>;
+impl ArrayU128Copy of Copy::<Array::<u128>>;
+impl ArrayU256Drop of Drop::<Array::<u256>>;
+impl ArrayU256Copy of Copy::<Array::<u256>>;
