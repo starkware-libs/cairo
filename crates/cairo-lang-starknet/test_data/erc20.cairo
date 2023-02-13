@@ -1,8 +1,9 @@
 #[contract]
 mod ERC20 {
+    use zero::Zero;
     use starknet::get_caller_address;
     use starknet::contract_address_const;
-    use starknet::contract_address_to_felt;
+    use starknet::ContractAddressZero;
 
     struct Storage {
         name: felt,
@@ -26,7 +27,7 @@ mod ERC20 {
         name::write(name_);
         symbol::write(symbol_);
         decimals::write(decimals_);
-        assert(contract_address_to_felt(recipient) != 0, 'ERC20: mint to the 0 address');
+        assert(!recipient.is_zero(), 'ERC20: mint to the 0 address');
         total_supply::write(initial_supply);
         balances::write(recipient, initial_supply);
         Transfer(contract_address_const::<0>(), recipient, initial_supply);
@@ -94,8 +95,8 @@ mod ERC20 {
     }
 
     fn transfer_helper(sender: ContractAddress, recipient: ContractAddress, amount: u256) {
-        assert(contract_address_to_felt(sender) != 0, 'ERC20: transfer from 0');
-        assert(contract_address_to_felt(recipient) != 0, 'ERC20: transfer to 0');
+        assert(!sender.is_zero(), 'ERC20: transfer from 0');
+        assert(!recipient.is_zero(), 'ERC20: transfer to 0');
         balances::write(sender, balances::read(sender) - amount);
         balances::write(recipient, balances::read(recipient) + amount);
         Transfer(sender, recipient, amount);
@@ -112,7 +113,7 @@ mod ERC20 {
     }
 
     fn approve_helper(owner: ContractAddress, spender: ContractAddress, amount: u256) {
-        assert(contract_address_to_felt(spender) != 0, 'ERC20: approve from 0');
+        assert(!spender.is_zero(), 'ERC20: approve from 0');
         allowances::write((owner, spender), amount);
         Approval(owner, spender, amount);
     }
