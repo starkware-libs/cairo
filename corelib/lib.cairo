@@ -367,6 +367,7 @@ mod cheatcodes;
 use cheatcodes::roll;
 use cheatcodes::declare;
 use cheatcodes::cheat_roll;
+use cheatcodes :: prepare_tp;
 
 // Internals.
 mod internal;

@@ -4,12 +4,14 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::{SpecializationError, NoGenericArgsGenericLibfunc, NamedType, OutputVarReferenceInfo};
 
+use super::array::ArrayType;
 use super::felt::FeltType;
 
 define_libfunc_hierarchy! {
     pub enum CheatcodesLibFunc {
         Roll(RollLibFunc),
         Declare(DeclareLibFunc),
+        Prepare(PrepareLibFunc),
     }, CheatcodesConcreteLibFunc
 }
 
@@ -85,6 +87,54 @@ impl NoGenericArgsGenericLibfunc for RollLibFunc {
                 BranchSignature {
                     vars: vec![
                         // Error reason
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+/// LibFunc for creating a new array.
+#[derive(Default)]
+pub struct PrepareLibFunc {}
+impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
+    const STR_ID: &'static str = "prepare_tp";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(felt_ty.clone()),
+            ],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?,
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                        },
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
                         OutputVarInfo {
                             ty: felt_ty.clone(),
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },

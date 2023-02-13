@@ -26,4 +26,16 @@ fn test_declare() {
    }
 }
 
+fn test_prepare() {
+   match prepare_tp(555) {
+      Result::Ok((a, b, c)) => (),
+      Result::Err(x) => {
+         let mut data = array_new::<felt>();
+         array_append::<felt>(ref data, x);
+         panic(data)
+      },
+   }
+}
+
+
 
