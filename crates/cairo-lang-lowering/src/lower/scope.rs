@@ -227,21 +227,6 @@ impl BlockBuilder {
         }))
     }
 
-    /// Seals a block. This is meant to end a block when not all the information is necessarily
-    /// known yet, e.g. where the callsite is and what is the remapping we need to perform.
-    pub fn seal(
-        self,
-        ctx: &mut LoweringContext<'_>,
-        scope_end: BlockEndIntent,
-    ) -> Maybe<SealedBlockBuilder> {
-        match scope_end {
-            BlockEndIntent::Callsite(expr) => Ok(self.goto_callsite(expr)),
-            BlockEndIntent::Return(expr) => self.ret(ctx, expr).map(From::from),
-            BlockEndIntent::Panic(data_var) => self.panic(ctx, data_var).map(From::from),
-            BlockEndIntent::Unreachable => Ok(self.unreachable().into()),
-        }
-    }
-
     /// Ends a block with known ending information. Used by [SealedBlockBuilder].
     fn finalize(self, end: StructuredBlockEnd) -> StructuredBlock {
         StructuredBlock {
@@ -251,16 +236,6 @@ impl BlockBuilder {
             end,
         }
     }
-}
-
-/// Describes how a block ends, with missing information regarding callsite and remapping.
-/// Used for sealing a block, and later finalizing this sealed block to create a
-/// [StructuredBlockEnd].
-pub enum BlockEndIntent {
-    Callsite(Option<VariableId>),
-    Return(VariableId),
-    Panic(VariableId),
-    Unreachable,
 }
 
 /// Remapping of lowered variables with more semantic information regarding what is the semantic
