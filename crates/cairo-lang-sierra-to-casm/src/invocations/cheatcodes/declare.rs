@@ -1,5 +1,4 @@
 use cairo_lang_casm::{builder::{CasmBuilder},  casm_build_extend};
-use cairo_lang_sierra_gas::core_libfunc_cost::ConstCost;
 
 use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo};
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
