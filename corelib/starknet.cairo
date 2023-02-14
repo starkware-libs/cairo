@@ -1,3 +1,5 @@
+use zeroable::Zeroable;
+
 extern type System;
 #[derive(Copy, Drop)]
 extern type StorageBaseAddress;
@@ -145,5 +147,16 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
                 panic(revert_reason)
             },
         }
+    }
+}
+
+impl ContractAddressZeroable of Zeroable::<ContractAddress> {
+    fn zero() -> ContractAddress {
+        contract_address_const::<0>()
+    }
+
+    #[inline(always)]
+    fn is_zero(self: ContractAddress) -> bool {
+        contract_address_to_felt(self).is_zero()
     }
 }
