@@ -56,6 +56,7 @@ impl SyntaxNodeFormat for SyntaxNode {
         match self.kind(db) {
             SyntaxKind::TokenDot
             | SyntaxKind::TokenNot
+            | SyntaxKind::TokenAt
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack

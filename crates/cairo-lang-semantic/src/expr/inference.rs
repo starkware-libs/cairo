@@ -459,12 +459,19 @@ impl<'db> Inference<'db> {
         if first_param.name != "self" {
             return None;
         }
+
+        // If the function takes a snapshot of self_ty, fix the param type.
+        let fixed_param_ty = match self.db.lookup_intern_type(first_param.ty) {
+            TypeLongId::Snapshot(ty) if ty == self_ty => ty,
+            _ => first_param.ty,
+        };
+
         let generic_params = self.db.trait_generic_params(trait_id).ok()?;
 
         let generic_args = self
             .infer_generics(
                 &generic_params,
-                &[GenericArgumentId::Type(first_param.ty)],
+                &[GenericArgumentId::Type(fixed_param_ty)],
                 &[GenericArgumentId::Type(self_ty)],
                 stable_ptr,
             )
