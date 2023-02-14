@@ -1,16 +1,21 @@
 mod traits;
 use traits::Add;
+use traits::AddEq;
 use traits::BitAnd;
 use traits::BitOr;
 use traits::BitXor;
 use traits::Copy;
 use traits::Div;
+use traits::DivEq;
 use traits::Drop;
 use traits::Mul;
+use traits::MulEq;
 use traits::PartialEq;
 use traits::PartialOrd;
 use traits::Rem;
+use traits::RemEq;
 use traits::Sub;
+use traits::SubEq;
 use traits::ToBool;
 
 #[derive(Copy, Drop)]
@@ -83,6 +88,13 @@ impl FeltAdd of Add::<felt> {
         felt_add(a, b)
     }
 }
+impl FeltAddEq of AddEq::<felt> {
+    #[inline(always)]
+    fn add_eq(ref self: felt, other: felt) {
+        self = Add::add(self, other);
+    }
+}
+
 extern fn felt_add(a: felt, b: felt) -> felt nopanic;
 impl FeltSub of Sub::<felt> {
     #[inline(always)]
@@ -90,6 +102,13 @@ impl FeltSub of Sub::<felt> {
         felt_sub(a, b)
     }
 }
+impl FeltSubEq of SubEq::<felt> {
+    #[inline(always)]
+    fn sub_eq(ref self: felt, other: felt) {
+        self = Sub::sub(self, other);
+    }
+}
+
 extern fn felt_sub(a: felt, b: felt) -> felt nopanic;
 impl FeltMul of Mul::<felt> {
     #[inline(always)]
@@ -97,6 +116,13 @@ impl FeltMul of Mul::<felt> {
         felt_mul(a, b)
     }
 }
+impl FeltMulEq of MulEq::<felt> {
+    #[inline(always)]
+    fn mul_eq(ref self: felt, other: felt) {
+        self = Mul::mul(self, other);
+    }
+}
+
 extern fn felt_mul(a: felt, b: felt) -> felt nopanic;
 #[inline(always)]
 fn felt_neg(a: felt) -> felt {
@@ -347,6 +373,7 @@ fn assert(cond: bool, err_code: felt) {
 
 // Serialization and Deserialization.
 mod serde;
+mod starknet_serde;
 
 // Hash functions.
 mod hash;
@@ -363,6 +390,9 @@ use starknet::ContractAddress;
 
 // Internals.
 mod internal;
+
+mod zeroable;
+use zeroable::Zeroable;
 
 #[cfg(test)]
 mod test;

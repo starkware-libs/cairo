@@ -29,6 +29,17 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("StorageBaseAddress".into(), as_type_long_id("StorageBaseAddress", &[]));
     elements.insert("StorageAddress".into(), as_type_long_id("StorageAddress", &[]));
     elements.insert("ContractAddress".into(), as_type_long_id("ContractAddress", &[]));
+    elements.insert("SnapshotRangeCheck".into(), as_type_long_id("Snapshot", &["RangeCheck"]));
+    elements.insert(
+        "NonDupStruct".into(),
+        as_named_type_long_id("Struct", "NonDupStruct", &["felt", "RangeCheck"]),
+    );
+    elements.insert("SnapshotNonDupStruct".into(), as_type_long_id("Snapshot", &["NonDupStruct"]));
+    elements.insert(
+        "NonDupEnum".into(),
+        as_named_type_long_id("Enum", "NonDupEnum", &["felt", "RangeCheck"]),
+    );
+    elements.insert("SnapshotNonDupEnum".into(), as_type_long_id("Snapshot", &["NonDupEnum"]));
     elements
 }
 

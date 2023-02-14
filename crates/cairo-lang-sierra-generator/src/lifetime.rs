@@ -181,7 +181,8 @@ fn inner_find_variable_lifetime(
             | lowering::Statement::Call(_)
             | lowering::Statement::StructConstruct(_)
             | lowering::Statement::StructDestructure(_)
-            | lowering::Statement::EnumConstruct(_) => {}
+            | lowering::Statement::EnumConstruct(_)
+            | lowering::Statement::Snapshot(_) => {}
             lowering::Statement::MatchExtern(statement_match_extern) => {
                 let arm_blocks: Vec<_> =
                     statement_match_extern.arms.iter().map(|(_, block_id)| *block_id).collect();

@@ -16,7 +16,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{Inference, TypeVar};
-use crate::items::imp::{find_impls_at_context, ImplId, ImplLookupContext};
+use crate::items::imp::{has_impl_at_context, ImplId, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{
     semantic, ConcreteImplId, ConcreteVariant, FunctionId, GenericArgumentId, GenericParam,
@@ -59,6 +59,7 @@ pub enum TypeLongId {
     /// Some expressions might have invalid types during processing, either due to errors or
     /// during inference.
     Tuple(Vec<TypeId>),
+    Snapshot(TypeId),
     GenericParameter(GenericParamId),
     Var(TypeVar),
     Missing(DiagnosticAdded),
@@ -104,6 +105,7 @@ impl TypeLongId {
                     format!("({})", inner_types.iter().map(|ty| ty.format(db)).join(", "))
                 }
             }
+            TypeLongId::Snapshot(ty) => format!("@{}", ty.format(db)),
             TypeLongId::GenericParameter(generic_param) => {
                 generic_param.name(db.upcast()).to_string()
             }
@@ -279,6 +281,12 @@ pub fn maybe_resolve_type(
                 .collect();
             db.intern_type(TypeLongId::Tuple(sub_tys))
         }
+        ast::Expr::Unary(unary_syntax)
+            if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::At(_)) =>
+        {
+            let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
+            db.intern_type(TypeLongId::Snapshot(ty))
+        }
         _ => {
             return Err(diagnostics.report(ty_syntax, UnknownType));
         }
@@ -313,6 +321,9 @@ pub fn substitute_ty(
         TypeLongId::Tuple(tys) => db.intern_type(TypeLongId::Tuple(
             tys.into_iter().map(|ty| substitute_ty(db, substitution, ty)).collect(),
         )),
+        TypeLongId::Snapshot(ty) => {
+            db.intern_type(TypeLongId::Snapshot(substitute_ty(db, substitution, ty)))
+        }
         TypeLongId::GenericParameter(generic_param) => substitution
             .get(&generic_param)
             .map(|generic_arg| *extract_matches!(generic_arg, GenericArgumentId::Type))
@@ -360,6 +371,14 @@ pub fn substitute_generics_args_inplace(
             GenericArgumentId::Literal(_) => {}
             GenericArgumentId::Impl(ImplId::Concrete(concrete_impl_id)) => {
                 *concrete_impl_id = substitute_impl(db.upcast(), substitution, *concrete_impl_id)
+            }
+            GenericArgumentId::Impl(ImplId::GenericParameter(param)) => {
+                if let Some(impl_arg) = substitution.get(param) {
+                    *arg = GenericArgumentId::Impl(*extract_matches!(
+                        impl_arg,
+                        GenericArgumentId::Impl
+                    ));
+                }
             }
         }
     }
@@ -413,41 +432,37 @@ pub fn type_info(
             if !lookup_context.extra_modules.contains(&module) {
                 lookup_context.extra_modules.push(module);
             }
-            let droppable = !find_impls_at_context(
+            let droppable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_drop_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
-            let duplicatable = !find_impls_at_context(
+            )?;
+            let duplicatable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_copy_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
+            )?;
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::GenericParameter(_) => {
-            let droppable = !find_impls_at_context(
+            let droppable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_drop_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
-            let duplicatable = !find_impls_at_context(
+            )?;
+            let duplicatable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_copy_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
+            )?;
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::Tuple(tys) => {
@@ -463,5 +478,6 @@ pub fn type_info(
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }
+        TypeLongId::Snapshot(_) => TypeInfo { droppable: true, duplicatable: true },
     })
 }

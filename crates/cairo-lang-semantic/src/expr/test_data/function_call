@@ -77,7 +77,7 @@ fn bar(a: felt, ref b: felt) {
 }
 
 //! > expected_diagnostics
-error: ref argument must be a passed with a preceding 'ref'.
+error: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:6:12
     bar(a, a);
            ^
@@ -87,22 +87,22 @@ error: ref argument must be a mutable variable.
     bar(b, b);
            ^
 
-error: ref argument must be a passed with a preceding 'ref'.
+error: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:7:12
     bar(b, b);
            ^
 
-error: ref argument must be a passed with a preceding 'ref'.
+error: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:8:12
     bar(c, c);
            ^
 
-error: Argument cannot have modifiers.
+error: Argument to immutable parameter cannot have modifiers.
  --> lib.cairo:9:13
     bar(ref a, ref a);
             ^
 
-error: Argument cannot have modifiers.
+error: Argument to immutable parameter cannot have modifiers.
  --> lib.cairo:10:13
     bar(ref b, ref b);
             ^
@@ -112,7 +112,7 @@ error: ref argument must be a mutable variable.
     bar(ref b, ref b);
                    ^
 
-error: Argument cannot have modifiers.
+error: Argument to immutable parameter cannot have modifiers.
  --> lib.cairo:11:13
     bar(ref c, ref c);
             ^
@@ -160,7 +160,7 @@ error: Unknown function.
     d.bar();
       ^*^
 
-error: Function `add` of trait `core::traits::Add::<?0>` has no implementation in the context.
+error: Trait `core::traits::Add::<?0>` has no implementation in the context.
  --> lib.cairo:5:5
     d + 0;
     ^***^

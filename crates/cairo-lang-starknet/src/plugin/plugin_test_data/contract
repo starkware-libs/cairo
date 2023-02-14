@@ -16,16 +16,13 @@ mod TestContract {
     }
 
     #[external]
-    fn set_something(ref arg: felt, num: felt) {
-    }
+    fn set_something(ref arg: felt, num: felt) {}
 
     #[event]
-    fn awesome_event(x: felt, y: u128) {
-    }
+    fn awesome_event(x: felt, data: Array::<felt>) {}
 
     #[event]
-    fn best_event_ever() {
-    }
+    fn best_event_ever() {}
 }
 
 //! > generated_cairo_code
@@ -43,30 +40,29 @@ mod TestContract {
     }
 
     #[external]
-    fn set_something(ref arg: felt, num: felt) {
-    }
+    fn set_something(ref arg: felt, num: felt) {}
 
     
 
     
     #[event]
-    fn awesome_event(x: felt, y: u128) {
-        let mut keys = array_new();
-        array_append(ref keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
-        let mut data = array_new();
-        serde::Serde::<felt>::serialize(ref data, x);
-        serde::Serde::<u128>::serialize(ref data, y);
+    fn awesome_event(x: felt, data: Array::<felt>) {
+        let mut __keys = array_new();
+        array_append(ref __keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
+        let mut __data = array_new();
+        serde::Serde::<felt>::serialize(ref __data, x);
+        serde::Serde::<Array::<felt>>::serialize(ref __data, data);
         
-        starknet::emit_event_syscall(keys, data).unwrap_syscall()
+        starknet::emit_event_syscall(__keys, __data).unwrap_syscall()
     }
             
     #[event]
     fn best_event_ever() {
-        let mut keys = array_new();
-        array_append(ref keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
-        let mut data = array_new();
+        let mut __keys = array_new();
+        array_append(ref __keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
+        let mut __data = array_new();
         
-        starknet::emit_event_syscall(keys, data).unwrap_syscall()
+        starknet::emit_event_syscall(__keys, __data).unwrap_syscall()
     }
             
 
@@ -77,13 +73,15 @@ mod TestContract {
         fn set_something(ref arg: felt, num: felt);
         
         #[event]
-        fn awesome_event(x: felt, y: u128);
+        fn awesome_event(x: felt, data: Array::<felt>);
         #[event]
         fn best_event_ever();
         
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         fn get_something(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
@@ -200,6 +198,8 @@ mod TestContract {
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }

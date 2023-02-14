@@ -15,8 +15,8 @@ use crate::pre_sierra;
 use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, dup_libfunc_id,
     enum_init_libfunc_id, get_concrete_libfunc_id, jump_libfunc_id, jump_statement,
-    match_enum_libfunc_id, return_statement, simple_statement, struct_construct_libfunc_id,
-    struct_deconstruct_libfunc_id,
+    match_enum_libfunc_id, return_statement, simple_statement, snapshot_take_libfunc_id,
+    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Generates Sierra code for the body of the given [lowering::FlatBlock].
@@ -107,10 +107,11 @@ pub fn generate_block_code(
             Ok((statements, false))
         }
         lowering::FlatBlockEnd::Fallthrough(block_id, remapping) => {
-            statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
-                id: context.block_label(*block_id),
-            }));
-
+            if context.block_has_label(block_id) {
+                statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
+                    id: context.block_label(*block_id),
+                }));
+            }
             statements.push(generate_push_values_statement_for_remapping(
                 context,
                 statement_location,
@@ -235,6 +236,9 @@ pub fn generate_statement_code(
         lowering::Statement::StructDestructure(statement) => {
             generate_statement_struct_destructure_code(context, statement, statement_location)
         }
+        lowering::Statement::Snapshot(statement) => {
+            generate_statement_snapshot(context, statement, statement_location)
+        }
     }
 }
 
@@ -310,7 +314,7 @@ fn generate_statement_call_code(
             statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
             Ok(statements)
         }
-        GenericFunctionId::Trait(_) => unreachable!(),
+        GenericFunctionId::Trait(_) | GenericFunctionId::ImplGenericParam(_) => unreachable!(),
     }
 }
 
@@ -553,5 +557,26 @@ fn generate_statement_match_enum(
     // Post match.
     statements.push(end_label);
 
+    Ok(statements)
+}
+
+/// Generates Sierra code for [lowering::StatementSnapshot].
+fn generate_statement_snapshot(
+    context: &mut ExprGeneratorContext<'_>,
+    statement: &lowering::StatementSnapshot,
+    _statement_location: &StatementLocation,
+) -> Maybe<Vec<pre_sierra::Statement>> {
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+    let input = context.get_sierra_variable(statement.input);
+
+    statements.push(simple_statement(
+        snapshot_take_libfunc_id(
+            context.get_db(),
+            context.get_variable_sierra_type(statement.input)?,
+        ),
+        &[input.clone()],
+        &[input, context.get_sierra_variable(statement.output)],
+    ));
     Ok(statements)
 }

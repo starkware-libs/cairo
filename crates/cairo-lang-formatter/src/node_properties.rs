@@ -3,7 +3,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::{grandparent_kind, parent_kind};
 use cairo_lang_syntax::node::SyntaxNode;
 
-use crate::formatter::{
+use crate::formatter_impl::{
     BreakLinePointIndentation, BreakLinePointProperties, SyntaxNodeFormat, WrappingBreakLinePoints,
 };
 
@@ -424,7 +424,12 @@ impl SyntaxNodeFormat for SyntaxNode {
                     )),
                     trailing: None,
                 },
-                SyntaxKind::TokenEq => WrappingBreakLinePoints {
+                SyntaxKind::TokenEq
+                | SyntaxKind::TokenPlusEq
+                | SyntaxKind::TokenMinusEq
+                | SyntaxKind::TokenMulEq
+                | SyntaxKind::TokenDivEq
+                | SyntaxKind::TokenModEq => WrappingBreakLinePoints {
                     leading: None,
                     trailing: Some(BreakLinePointProperties::new(
                         10,

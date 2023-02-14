@@ -151,6 +151,8 @@ pub enum SyntaxKind {
     TerminalAndAnd,
     TokenArrow,
     TerminalArrow,
+    TokenAt,
+    TerminalAt,
     TokenBadCharacters,
     TerminalBadCharacters,
     TokenColon,
@@ -161,6 +163,8 @@ pub enum SyntaxKind {
     TerminalComma,
     TokenDiv,
     TerminalDiv,
+    TokenDivEq,
+    TerminalDivEq,
     TokenDot,
     TerminalDot,
     TokenDotDot,
@@ -191,10 +195,16 @@ pub enum SyntaxKind {
     TerminalMatchArrow,
     TokenMinus,
     TerminalMinus,
+    TokenMinusEq,
+    TerminalMinusEq,
     TokenMod,
     TerminalMod,
+    TokenModEq,
+    TerminalModEq,
     TokenMul,
     TerminalMul,
+    TokenMulEq,
+    TerminalMulEq,
     TokenNeq,
     TerminalNeq,
     TokenNot,
@@ -205,6 +215,8 @@ pub enum SyntaxKind {
     TerminalOrOr,
     TokenPlus,
     TerminalPlus,
+    TokenPlusEq,
+    TerminalPlusEq,
     TokenQuestionMark,
     TerminalQuestionMark,
     TokenRBrace,
@@ -258,11 +270,13 @@ impl SyntaxKind {
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd
                 | SyntaxKind::TokenArrow
+                | SyntaxKind::TokenAt
                 | SyntaxKind::TokenBadCharacters
                 | SyntaxKind::TokenColon
                 | SyntaxKind::TokenColonColon
                 | SyntaxKind::TokenComma
                 | SyntaxKind::TokenDiv
+                | SyntaxKind::TokenDivEq
                 | SyntaxKind::TokenDot
                 | SyntaxKind::TokenDotDot
                 | SyntaxKind::TokenEndOfFile
@@ -278,13 +292,17 @@ impl SyntaxKind {
                 | SyntaxKind::TokenLT
                 | SyntaxKind::TokenMatchArrow
                 | SyntaxKind::TokenMinus
+                | SyntaxKind::TokenMinusEq
                 | SyntaxKind::TokenMod
+                | SyntaxKind::TokenModEq
                 | SyntaxKind::TokenMul
+                | SyntaxKind::TokenMulEq
                 | SyntaxKind::TokenNeq
                 | SyntaxKind::TokenNot
                 | SyntaxKind::TokenOr
                 | SyntaxKind::TokenOrOr
                 | SyntaxKind::TokenPlus
+                | SyntaxKind::TokenPlusEq
                 | SyntaxKind::TokenQuestionMark
                 | SyntaxKind::TokenRBrace
                 | SyntaxKind::TokenRBrack
@@ -330,11 +348,13 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
                 | SyntaxKind::TerminalArrow
+                | SyntaxKind::TerminalAt
                 | SyntaxKind::TerminalBadCharacters
                 | SyntaxKind::TerminalColon
                 | SyntaxKind::TerminalColonColon
                 | SyntaxKind::TerminalComma
                 | SyntaxKind::TerminalDiv
+                | SyntaxKind::TerminalDivEq
                 | SyntaxKind::TerminalDot
                 | SyntaxKind::TerminalDotDot
                 | SyntaxKind::TerminalEndOfFile
@@ -350,13 +370,17 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalLT
                 | SyntaxKind::TerminalMatchArrow
                 | SyntaxKind::TerminalMinus
+                | SyntaxKind::TerminalMinusEq
                 | SyntaxKind::TerminalMod
+                | SyntaxKind::TerminalModEq
                 | SyntaxKind::TerminalMul
+                | SyntaxKind::TerminalMulEq
                 | SyntaxKind::TerminalNeq
                 | SyntaxKind::TerminalNot
                 | SyntaxKind::TerminalOr
                 | SyntaxKind::TerminalOrOr
                 | SyntaxKind::TerminalPlus
+                | SyntaxKind::TerminalPlusEq
                 | SyntaxKind::TerminalQuestionMark
                 | SyntaxKind::TerminalRBrace
                 | SyntaxKind::TerminalRBrack

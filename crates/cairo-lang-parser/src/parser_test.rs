@@ -311,12 +311,13 @@ cairo_lang_test_utils::test_file_test!(
         item_free_function: "item_free_function",
         function_signature: "function_signature",
         function_call: "function_call",
-        not_isnt_a_binary_operator: "not_isnt_a_binary_operator",
+        unary_only_operators: "unary_only_operators",
         item_trait: "item_trait",
         let_statement: "let_statement",
         if_else: "if_else",
         literal: "literal",
         module: "module",
+        op_eq: "op_eq",
     },
     test_partial_parser_tree
 );

@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod test;
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::hash_map::Entry;
+use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
@@ -10,7 +11,7 @@ use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{chain, izip, Itertools};
+use itertools::{izip, Itertools};
 
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
@@ -19,7 +20,8 @@ use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest}
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall,
     StatementEnumConstruct, StatementLiteral, StatementMatchEnum, StatementMatchExtern,
-    StatementStructConstruct, StatementStructDestructure, VarRemapping, VariableId,
+    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
+    VariableId,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -27,6 +29,7 @@ pub enum InlineConfiguration {
     // The user did not specify any inlining preferences.
     None,
     Always,
+    Never,
 }
 
 /// data about inlining.
@@ -54,10 +57,14 @@ pub fn priv_inline_data(
     let mut diagnostics = LoweringDiagnostics::new(function_id.module_file_id(db.upcast()));
     let config = parse_inline_attribute(db, &mut diagnostics, function_id)?;
 
-    // If the the function is marked as #[inline(always)], we need to report
-    // inlining problems.
-    let report_diagnostics = config == InlineConfiguration::Always;
-    let info = gather_inlining_info(db, &mut diagnostics, report_diagnostics, function_id)?;
+    let info = if config == InlineConfiguration::Never {
+        InlineInfo { is_inlineable: false, should_inline: false }
+    } else {
+        // If the the function is marked as #[inline(always)], we need to report
+        // inlining problems.
+        let report_diagnostics = config == InlineConfiguration::Always;
+        gather_inlining_info(db, &mut diagnostics, report_diagnostics, function_id)?
+    };
 
     Ok(Arc::new(PrivInlineData { diagnostics: diagnostics.build(), config, info }))
 }
@@ -90,23 +97,10 @@ fn gather_inlining_info(
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
     let root_block_id = lowered.root?;
-    let root_block = &lowered.blocks[root_block_id];
 
-    let input_vars: HashSet<VariableId> = root_block.inputs.iter().copied().collect();
     for (block_id, block) in lowered.blocks.iter() {
         match &block.end {
-            FlatBlockEnd::Return(returns) => {
-                if block_id == root_block_id && returns.iter().any(|r| input_vars.contains(r)) {
-                    // TODO(ilya): Remove the following limitation.
-                    if report_diagnostics {
-                        diagnostics.report(
-                            function_id.untyped_stable_ptr(defs_db),
-                            LoweringDiagnosticKind::InliningFunctionWithIdentityVarsNotSupported,
-                        );
-                    }
-                    return Ok(info);
-                }
-            }
+            FlatBlockEnd::Return(_) => {}
             FlatBlockEnd::Unreachable => {
                 // TODO(ilya): Remove the following limitation.
                 if block_id == root_block_id {
@@ -134,7 +128,7 @@ fn gather_inlining_info(
 }
 
 // A heuristic to decide if a function should be inlined.
-fn should_inline(db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
+fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
     let root_block_id = lowered.root?;
     let root_block = &lowered.blocks[root_block_id];
 
@@ -144,27 +138,8 @@ fn should_inline(db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
             panic!("Unexpected block end.");
         }
     };
-
-    if let [statement] = root_block.statements.as_slice() {
-        match statement {
-            // Inline function that only call another function.
-            // TODO(ilya): Inline libfunc calls once we have #[inline(never)].
-            Statement::Call(call_stmt) => {
-                let concrete_function = db.lookup_intern_function(call_stmt.function).function;
-                let semantic_db = db.upcast();
-                if concrete_function.get_body(semantic_db).is_some() {
-                    return Ok(true);
-                }
-            }
-
-            // Inline functions that return a literal.
-            Statement::Literal(_) => {
-                return Ok(true);
-            }
-            _ => {}
-        }
-    }
-    Ok(false)
+    // Inline function that only call another function or returns a literal.
+    Ok(matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Literal(_)]))
 }
 
 /// Parses the inline attributes for a given function.
@@ -183,6 +158,9 @@ fn parse_inline_attribute(
         match &attr.args[..] {
             [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "always" => {
                 config = InlineConfiguration::Always;
+            }
+            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "never" => {
+                config = InlineConfiguration::Never;
             }
             [] => {
                 diagnostics.report(
@@ -358,6 +336,10 @@ impl<'a, 'b> Mapper<'a, 'b> {
                     })
                     .collect(),
             }),
+            Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot {
+                input: self.rename_var(&stmt.input),
+                output: self.rename_var(&stmt.output),
+            }),
         }
     }
 }
@@ -462,20 +444,32 @@ impl<'db> FunctionInlinerRewriter<'db> {
         let mut mapper = Mapper {
             ctx: &mut self.ctx,
             lowered: &lowered,
-            renamed_vars: HashMap::<VariableId, VariableId>::from_iter(chain!(
-                izip!(lowered.blocks[root_block_id].inputs.iter().cloned(), inputs.iter().cloned()),
-                izip!(
-                    extract_matches!(&root_block.end, FlatBlockEnd::Return).iter().cloned(),
-                    outputs.iter().cloned()
-                )
+            renamed_vars: HashMap::<VariableId, VariableId>::from_iter(izip!(
+                root_block.inputs.iter().cloned(),
+                inputs.iter().cloned()
             )),
             renamed_blocks: HashMap::new(),
         };
 
-        self.block_end = FlatBlockEnd::Fallthrough(
-            return_block_id,
-            VarRemapping { remapping: OrderedHashMap::default() },
-        );
+        // Try to avoid using output_remapping as it causes more store_temps to be generated.
+        // TODO(ilya): make var_remapping more efficient and remove the following.
+        let mut output_remapping = VarRemapping::default();
+        for (returned_var_id, output_var_id) in
+            izip!(extract_matches!(&root_block.end, FlatBlockEnd::Return).iter(), outputs.iter())
+        {
+            match mapper.renamed_vars.entry(*returned_var_id) {
+                Entry::Vacant(e) => {
+                    // Use var_id renaming as it results in better code.
+                    e.insert(*output_var_id);
+                }
+                Entry::Occupied(_) => {
+                    // `returned_var_id` was already renamed, fallback to output_remapping:
+                    // (mapper.rename_var(returned_var_id) -> output_var_id).
+                    output_remapping.insert(*output_var_id, mapper.rename_var(returned_var_id));
+                }
+            }
+        }
+        self.block_end = FlatBlockEnd::Fallthrough(return_block_id, output_remapping);
 
         for (block_id, block) in lowered.blocks.iter() {
             if block_id == root_block_id {

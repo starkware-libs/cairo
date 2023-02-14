@@ -70,7 +70,8 @@ impl<'a> BorrowChecker<'a> {
             .rev()
         {
             demand.variables_introduced(self, &stmt.outputs());
-            demand.variables_used(self, &stmt.inputs());
+            let take = !matches!(stmt, Statement::Snapshot(_));
+            demand.variables_used(self, &stmt.inputs(), take);
         }
 
         if stmt_offset == 0 {
@@ -147,14 +148,15 @@ impl<'a> BorrowChecker<'a> {
                         })
                         .collect();
                     let mut demand = self.merge_demands(arm_demands);
-                    demand.variables_used(self, &stmt.inputs()[..]);
+                    demand.variables_used(self, &stmt.inputs()[..], true);
                     demand
                 }
                 Statement::Literal(_)
                 | Statement::Call(_)
                 | Statement::StructConstruct(_)
                 | Statement::StructDestructure(_)
-                | Statement::EnumConstruct(_) => continue,
+                | Statement::EnumConstruct(_)
+                | Statement::Snapshot(_) => continue,
             };
             return Some((stmt_offset + i, demand));
         }

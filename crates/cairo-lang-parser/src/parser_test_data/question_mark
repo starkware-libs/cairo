@@ -12,6 +12,8 @@ fn f() {
     let block_eval = 7 + { other_expr };
     let multi = error_of_errors????;
     let super_expr = (a? + b?)?;
+    let member_value = value.member?;
+    let method_return = value.method()?;
 }
 
 //! > expected_diagnostics

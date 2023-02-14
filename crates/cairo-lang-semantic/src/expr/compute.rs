@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use ast::{BinaryOperator, PathSegment};
 use cairo_lang_defs::ids::{FunctionSignatureId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
-use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam};
+use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -38,8 +38,10 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
-use crate::items::imp::find_impls_at_context;
+use crate::items::functions::{
+    ConcreteImplGenericFunctionId, GenericFunctionId, ImplGenericParamFunctionId,
+};
+use crate::items::imp::{has_impl_at_context, ImplId};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
@@ -227,6 +229,14 @@ fn compute_expr_unary_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
 
     let expr_ty = ctx.reduce_ty(expr.ty());
+    if let UnaryOperator::At(_) = unary_op {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(expr_ty));
+        return Ok(Expr::Snapshot(ExprSnapshot {
+            inner: ctx.exprs.alloc(expr),
+            ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        }));
+    }
     let function = match core_unary_operator(ctx.db, &unary_op, expr_ty) {
         Err(err_kind) => {
             return Err(ctx.diagnostics.report(&unary_op, err_kind));
@@ -284,6 +294,20 @@ fn compute_expr_binary_semantic(
             _ => Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
         };
     }
+    call_core_binary_op(ctx, syntax, lexpr, rexpr)
+}
+
+/// Get the function call expression of a binary operation that is defined in the corelib.
+fn call_core_binary_op(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprBinary,
+    lexpr: Expr,
+    rexpr: Expr,
+) -> Maybe<Expr> {
+    let db = ctx.db;
+    let stable_ptr = syntax.stable_ptr().into();
+    let binary_op = syntax.op(db.upcast());
+
     ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
     let function = match core_binary_operator(
@@ -297,10 +321,12 @@ fn compute_expr_binary_semantic(
         }
         Ok(function) => function,
     };
+    let sig = ctx.db.concrete_function_signature(function)?;
+    let first_param = sig.params.into_iter().next().unwrap();
     expr_function_call(
         ctx,
         function,
-        vec![(lexpr, None, Mutability::Immutable), (rexpr, None, Mutability::Immutable)],
+        vec![(lexpr, None, first_param.mutability), (rexpr, None, Mutability::Immutable)],
         stable_ptr,
         binary_op.stable_ptr().untyped(),
     )
@@ -447,14 +473,29 @@ pub fn resolve_trait_function(
     resolver: &mut Resolver<'_>,
     concrete_trait_function: ConcreteTraitGenericFunctionId,
     stable_ptr: SyntaxStablePtrId,
-) -> Maybe<ConcreteImplGenericFunctionId> {
+) -> Maybe<GenericFunctionId> {
     // Resolve impl.
-    let concrete_impl = resolver.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
-    let impl_def_id = db.lookup_intern_concrete_impl(concrete_impl).impl_def_id;
-    let impl_function = db
-        .impl_function_by_trait_function(impl_def_id, concrete_trait_function.function_id(db))?
-        .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
-    Ok(ConcreteImplGenericFunctionId { concrete_impl, function: impl_function })
+
+    let trait_function_id = concrete_trait_function.function_id(db);
+    let impl_id = resolver.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
+    match impl_id {
+        ImplId::Concrete(concrete_impl_id) => {
+            let impl_def_id = concrete_impl_id.impl_def_id(db);
+            let function = db
+                .impl_function_by_trait_function(impl_def_id, trait_function_id)?
+                .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
+            Ok(GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
+                concrete_impl_id,
+                function,
+            }))
+        }
+        ImplId::GenericParameter(param) => {
+            Ok(GenericFunctionId::ImplGenericParam(ImplGenericParamFunctionId {
+                param,
+                trait_function_id,
+            }))
+        }
+    }
 }
 
 pub fn compute_root_expr(
@@ -475,6 +516,7 @@ pub fn compute_root_expr(
         match expr {
             Expr::Constant(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::Tuple(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
+            Expr::Snapshot(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::Assignment(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::Block(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
             Expr::FunctionCall(call_expr) => {
@@ -487,14 +529,14 @@ pub fn compute_root_expr(
                 if let GenericFunctionId::Trait(concrete_trait_function) =
                     long_function_id.function.generic_function
                 {
-                    let concrete_impl_function = match resolve_trait_function(
+                    let generic_function = match resolve_trait_function(
                         ctx.db,
                         ctx.diagnostics,
                         &mut ctx.resolver,
                         concrete_trait_function,
                         call_expr.stable_ptr.untyped(),
                     ) {
-                        Ok(concrete_impl_function) => concrete_impl_function,
+                        Ok(generic_function) => generic_function,
                         Err(diag_added) => {
                             *expr = Expr::Missing(ExprMissing {
                                 ty: TypeId::missing(ctx.db, diag_added),
@@ -505,8 +547,7 @@ pub fn compute_root_expr(
                         }
                     };
 
-                    long_function_id.function.generic_function =
-                        GenericFunctionId::Impl(concrete_impl_function);
+                    long_function_id.function.generic_function = generic_function;
                 }
                 long_function_id.function.generic_function.generic_args_apply(
                     ctx.db,
@@ -1262,15 +1303,11 @@ fn method_call_expr(
 
             // Find impls for it.
             let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
-            let Ok(impls) = find_impls_at_context(
+            let Ok(true) = has_impl_at_context(
                 ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()
             ) else {
                 continue;
             };
-
-            if impls.is_empty() {
-                continue;
-            }
 
             candidates.push(trait_function);
         }
@@ -1370,7 +1407,11 @@ fn member_access_expr(
                 .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name })),
         },
         TypeLongId::Tuple(_) => {
-            // TODO(spapini): Handle .0, .1, ...;
+            // TODO(spapini): Handle .0, .1, etc. .
+            Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
+        }
+        TypeLongId::Snapshot(_) => {
+            // TODO(spapini): Handle snapshot members.
             Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
         }
         TypeLongId::GenericParameter(_) => Err(ctx
@@ -1515,7 +1556,7 @@ fn expr_function_call(
             }
             ref_args.push(expr_var.var);
         } else {
-            // Verify that it is passed explicitly as 'ref'.
+            // Verify that it is passed without modifiers.
             if mutability != Mutability::Immutable {
                 ctx.diagnostics
                     .report_by_ptr(arg.stable_ptr().untyped(), ImmutableArgWithModifiers);

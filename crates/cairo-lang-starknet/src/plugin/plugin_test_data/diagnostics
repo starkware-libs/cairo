@@ -51,10 +51,14 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }
@@ -101,6 +105,8 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
@@ -149,13 +155,15 @@ mod TestContract {
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }
 
 //! > expected_diagnostics
-error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:34:23
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:36:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
@@ -195,6 +203,8 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
@@ -236,6 +246,8 @@ mod TestContract {
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }
@@ -246,8 +258,8 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
     fn foo() -> (felt, felt) {
                              ^
 
-error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:55:13
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:57:13
             serde::Serde::<(felt, felt)>::serialize(ref arr, res);
             ^***************************************************^
 
@@ -287,6 +299,8 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
@@ -335,6 +349,8 @@ mod TestContract {
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }
@@ -351,12 +367,12 @@ error: Variable not dropped.
               ^
 
 error: Type not found.
- --> contract:34:38
+ --> contract:36:38
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
-error: Function `deserialize` of trait `core::serde::Serde` has multiple implementations, in: core::serde::FeltSerde, core::serde::BoolSerde, core::serde::U8Serde, core::serde::U32Serde, core::serde::U64Serde, core::serde::U128Serde, core::serde::U256Serde, core::serde::ArrayFeltSerde
- --> contract:34:23
+error: Trait `core::serde::Serde` has multiple implementations, in: "core::starknet_serde::ContractAddressSerde", "core::serde::FeltSerde", "core::serde::BoolSerde", "core::serde::U8Serde", "core::serde::U32Serde", "core::serde::U64Serde", "core::serde::U128Serde", "core::serde::U256Serde", "core::serde::ArrayFeltSerde"
+ --> contract:36:23
                 match serde::Serde::<T>::deserialize(ref data) {
                       ^**************************************^
 
@@ -401,6 +417,8 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
@@ -461,6 +479,8 @@ mod TestContract {
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }
@@ -471,18 +491,18 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
     fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
                                                              ^
 
-error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:34:23
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:36:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
-error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:44:23
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:46:23
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                       ^*************************************************^
 
-error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:74:13
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:76:13
             serde::Serde::<(felt, felt)>::serialize(ref arr, res);
             ^***************************************************^
 
@@ -518,10 +538,14 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }
@@ -563,10 +587,14 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }
@@ -608,10 +636,14 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }
@@ -653,10 +685,14 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }
@@ -699,10 +735,14 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }

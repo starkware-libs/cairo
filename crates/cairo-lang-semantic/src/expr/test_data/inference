@@ -57,7 +57,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: ref argument must be a passed with a preceding 'ref'.
+error: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:3:18
     array_append(arr, arr)
                  ^*^
@@ -229,17 +229,17 @@ impl MyImpl4 of MyTrait::<Option::<bool>> {
 }
 
 //! > expected_diagnostics
-error: Function `foo` of trait `test::MyTrait` has multiple implementations, in: test::MyImpl1, test::MyImpl2
+error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
  --> lib.cairo:17:4
    MyTrait::foo(5);
    ^*************^
 
-error: Function `foo` of trait `test::MyTrait::<?1>` has no implementation in the context.
+error: Trait `test::MyTrait::<?1>` has no implementation in the context.
  --> lib.cairo:18:4
    MyTrait::foo(true);
    ^****************^
 
-error: Function `foo` of trait `test::MyTrait` has multiple implementations, in: test::MyImpl3, test::MyImpl4
+error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl3", "test::MyImpl4"
  --> lib.cairo:20:4
    MyTrait::foo(Option::None(()));
    ^****************************^

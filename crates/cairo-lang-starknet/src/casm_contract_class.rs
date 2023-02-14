@@ -25,9 +25,9 @@ use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
 use thiserror::Error;
 
+use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
-use crate::sierra_version::SierraVersionError;
 
 /// The expected gas cost of an entrypoint that begins with get_gas() immediately.
 pub const ENTRY_POINT_COST: i32 = 10000;
@@ -41,7 +41,7 @@ pub enum StarknetSierraCompilationError {
     #[error(transparent)]
     MetadataError(#[from] MetadataError),
     #[error(transparent)]
-    SierraVersionError(#[from] SierraVersionError),
+    AllowedLibfuncsError(#[from] AllowedLibfuncsError),
     #[error("Invalid entry point.")]
     EntryPointError,
     #[error("{0} is not a supported builtin type.")]

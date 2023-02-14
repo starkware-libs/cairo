@@ -1,5 +1,4 @@
 {
-    "version_id": 1,
     "allowed_libfuncs": [
         "get_gas_all",
         "get_builtin_costs",
@@ -61,6 +60,7 @@
         "get_caller_address_syscall",
         "contract_address_const",
         "contract_address_try_from_felt",
+        "contract_address_to_felt",
         "call_contract_syscall",
         "ec_point_zero",
         "ec_point_try_new",

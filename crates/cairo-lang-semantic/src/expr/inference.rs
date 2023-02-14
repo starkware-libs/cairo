@@ -2,7 +2,8 @@
 
 use std::collections::HashMap;
 
-use cairo_lang_defs::ids::{GenericKind, TraitFunctionId, TraitId};
+use cairo_lang_defs::ids::{GenericKind, ImplDefId, TraitFunctionId, TraitId};
+use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use itertools::{zip_eq, Itertools};
 
@@ -11,8 +12,8 @@ use crate::db::SemanticGroup;
 use crate::items::imp::ImplId;
 use crate::types::{substitute_generics_args_inplace, ConcreteEnumLongId, GenericSubstitution};
 use crate::{
-    ConcreteEnumId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
-    GenericArgumentId, GenericParam, Pattern, TypeId, TypeLongId,
+    ConcreteEnumId, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
+    ConcreteVariant, GenericArgumentId, GenericParam, Pattern, TypeId, TypeLongId,
 };
 
 /// A type variable, created when a generic type argument is not passed, and thus is not known
@@ -23,9 +24,10 @@ pub struct TypeVar {
 }
 
 // TODO(spapini): Add to diagnostics.
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum InferenceError {
     Disabled,
+    Failed(DiagnosticAdded),
     Cycle { type_var: TypeVar },
     KindMismatch { ty0: TypeId, ty1: TypeId },
     GenericArgMismatch { garg0: GenericArgumentId, garg1: GenericArgumentId },
@@ -88,6 +90,7 @@ impl<'db> Inference<'db> {
             TypeLongId::Tuple(tys) => {
                 TypeLongId::Tuple(tys.into_iter().map(|ty| self.reduce_ty(ty)).collect())
             }
+            TypeLongId::Snapshot(ty) => TypeLongId::Snapshot(self.reduce_ty(ty)),
             TypeLongId::Var(var) => return self.reduce_var(var),
             TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => return ty,
         };
@@ -211,6 +214,14 @@ impl<'db> Inference<'db> {
                     .collect::<Result<Vec<_>, _>>()?;
                 Ok(self.db.intern_type(TypeLongId::Tuple(tys)))
             }
+            TypeLongId::Snapshot(ty0) => {
+                let TypeLongId::Snapshot(ty1) = long_ty1 else {
+                    return Err(InferenceError::KindMismatch { ty0, ty1 });
+                };
+                // TODO(spapini): snapshot coercions.
+                let ty = self.conform_ty(ty0, ty1)?;
+                Ok(self.db.intern_type(TypeLongId::Snapshot(ty)))
+            }
             TypeLongId::GenericParameter(_) => Err(InferenceError::KindMismatch { ty0, ty1 }),
             TypeLongId::Var(var) => self.assign(var, ty1),
             TypeLongId::Missing(_) => Ok(ty0),
@@ -290,6 +301,7 @@ impl<'db> Inference<'db> {
                 self.generic_args_contain_var(&generic_args, var)
             }
             TypeLongId::Tuple(tys) => tys.into_iter().any(|ty| self.ty_contains_var(ty, var)),
+            TypeLongId::Snapshot(ty) => self.ty_contains_var(ty, var),
             TypeLongId::Var(new_var) => {
                 if new_var == var {
                     return true;
@@ -313,11 +325,13 @@ impl<'db> Inference<'db> {
         generic_args.iter().any(|garg| match garg {
             GenericArgumentId::Type(ty) => self.ty_contains_var(*ty, var),
             GenericArgumentId::Literal(_) => false,
-            GenericArgumentId::Impl(ImplId::Concrete(concrete_impl_id)) => self
-                .generic_args_contain_var(
+            GenericArgumentId::Impl(impl_id) => match impl_id {
+                ImplId::Concrete(concrete_impl_id) => self.generic_args_contain_var(
                     &self.db.lookup_intern_concrete_impl(*concrete_impl_id).generic_args,
                     var,
                 ),
+                ImplId::GenericParameter(_) => false,
+            },
         })
     }
 
@@ -345,6 +359,65 @@ impl<'db> Inference<'db> {
             stable_ptr,
         );
         res.is_ok()
+    }
+
+    /// Determines if a impl (possibly with free generic params) can provide a concrete trait.
+    pub fn can_impl_trait(
+        &self,
+        impl_def_id: ImplDefId,
+        concrete_trait_id: ConcreteTraitId,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> bool {
+        let Ok(imp_generic_param) = self.db.impl_def_generic_params(impl_def_id) else {
+            return false
+        };
+        let Ok(imp_concrete_trait) = self.db.impl_def_concrete_trait(impl_def_id) else {
+            return false
+        };
+        if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
+            return false;
+        }
+
+        let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
+        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(imp_concrete_trait);
+        self.can_infer_generics(
+            &imp_generic_param,
+            &long_imp_concrete_trait.generic_args,
+            &long_concrete_trait.generic_args,
+            stable_ptr,
+        )
+    }
+
+    /// Infers all the variables required to make an impl (possibly with free generic params) can
+    /// provide a concrete trait.
+    pub fn infer_impl_trait(
+        &mut self,
+        impl_def_id: ImplDefId,
+        concrete_trait_id: ConcreteTraitId,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Result<ImplId, InferenceError> {
+        let imp_generic_params =
+            self.db.impl_def_generic_params(impl_def_id).map_err(InferenceError::Failed)?;
+        let imp_concrete_trait =
+            self.db.impl_def_concrete_trait(impl_def_id).map_err(InferenceError::Failed)?;
+        if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
+            return Err(InferenceError::TraitMismatch {
+                trt0: imp_concrete_trait.trait_id(self.db),
+                trt1: concrete_trait_id.trait_id(self.db),
+            });
+        }
+
+        let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
+        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(imp_concrete_trait);
+        let generic_args = self.infer_generics(
+            &imp_generic_params,
+            &long_imp_concrete_trait.generic_args,
+            &long_concrete_trait.generic_args,
+            stable_ptr,
+        )?;
+        Ok(ImplId::Concrete(
+            self.db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args }),
+        ))
     }
 
     /// Chooses and assignment to generic_params s.t. generic_args will be substituted to

@@ -103,6 +103,13 @@ impl<'a> ExprGeneratorContext<'a> {
         }
     }
 
+    /// Returns true if the block `block_id` was assigned a label.
+    ///
+    /// Blocks that are not reachable through `FlatBlockEnd::Goto` are not assigned a label.
+    pub fn block_has_label(&self, block_id: &BlockId) -> bool {
+        self.block_labels.get(block_id).is_some()
+    }
+
     /// Returns the [cairo_lang_sierra::ids::ConcreteTypeId] associated with
     /// [lowering::VariableId].
     pub fn get_variable_sierra_type(

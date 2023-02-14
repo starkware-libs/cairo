@@ -401,8 +401,13 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintToFeltLibfunc<
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch(
-            vec![context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?],
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?,
+                allow_deferred: true,
+                allow_add_const: true,
+                allow_const: true,
+            }],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(FeltType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
@@ -580,6 +585,7 @@ define_libfunc_hierarchy! {
         Const(UintConstLibfunc<Uint8Traits>),
         Operation(UintOperationLibfunc<Uint8Traits>),
         LessThan(UintLessThanLibfunc<Uint8Traits>),
+        SquareRoot(UintSquareRootLibfunc<Uint8Traits>),
         Equal(UintEqualLibfunc<Uint8Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
         ToFelt(UintToFeltLibfunc<Uint8Traits>),
@@ -627,6 +633,7 @@ define_libfunc_hierarchy! {
         Const(UintConstLibfunc<Uint16Traits>),
         Operation(UintOperationLibfunc<Uint16Traits>),
         LessThan(UintLessThanLibfunc<Uint16Traits>),
+        SquareRoot(UintSquareRootLibfunc<Uint16Traits>),
         Equal(UintEqualLibfunc<Uint16Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint16Traits>),
         ToFelt(UintToFeltLibfunc<Uint16Traits>),
@@ -674,6 +681,7 @@ define_libfunc_hierarchy! {
         Const(UintConstLibfunc<Uint32Traits>),
         Operation(UintOperationLibfunc<Uint32Traits>),
         LessThan(UintLessThanLibfunc<Uint32Traits>),
+        SquareRoot(UintSquareRootLibfunc<Uint32Traits>),
         Equal(UintEqualLibfunc<Uint32Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint32Traits>),
         ToFelt(UintToFeltLibfunc<Uint32Traits>),
@@ -721,6 +729,7 @@ define_libfunc_hierarchy! {
         Const(UintConstLibfunc<Uint64Traits>),
         Operation(UintOperationLibfunc<Uint64Traits>),
         LessThan(UintLessThanLibfunc<Uint64Traits>),
+        SquareRoot(UintSquareRootLibfunc<Uint64Traits>),
         Equal(UintEqualLibfunc<Uint64Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint64Traits>),
         ToFelt(UintToFeltLibfunc<Uint64Traits>),

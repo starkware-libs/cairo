@@ -1,3 +1,5 @@
+use zeroable::Zeroable;
+
 extern type System;
 #[derive(Copy, Drop)]
 extern type StorageBaseAddress;
@@ -38,6 +40,8 @@ extern fn call_contract_syscall(
 extern fn contract_address_try_from_felt(
     address: felt
 ) -> Option::<ContractAddress> implicits(RangeCheck) nopanic;
+extern fn contract_address_to_felt(address: ContractAddress) -> felt nopanic;
+
 
 // Events.
 extern fn emit_event_syscall(
@@ -45,11 +49,11 @@ extern fn emit_event_syscall(
 ) -> SyscallResult::<()> implicits(GasBuiltin, System) nopanic;
 
 // Getters.
-extern fn get_caller_address_syscall() -> SyscallResult::<felt> implicits(
+extern fn get_caller_address_syscall() -> SyscallResult::<ContractAddress> implicits(
     GasBuiltin, System
 ) nopanic;
 
-fn get_caller_address() -> felt {
+fn get_caller_address() -> ContractAddress {
     get_caller_address_syscall().unwrap_syscall()
 }
 
@@ -143,5 +147,16 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
                 panic(revert_reason)
             },
         }
+    }
+}
+
+impl ContractAddressZeroable of Zeroable::<ContractAddress> {
+    fn zero() -> ContractAddress {
+        contract_address_const::<0>()
+    }
+
+    #[inline(always)]
+    fn is_zero(self: ContractAddress) -> bool {
+        contract_address_to_felt(self).is_zero()
     }
 }

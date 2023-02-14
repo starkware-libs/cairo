@@ -41,46 +41,6 @@ End:
 
 //! > ==========================================================================
 
-//! > Test inlining diagnostics for a function an identity function.
-
-//! > test_function_name
-test_function_inlining
-
-//! > function
-#[inline(always)]
-fn foo(n: felt) -> felt {
-  n
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > semantic_diagnostics
-
-//! > before
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-End:
-  Return(v0)
-
-//! > after
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-End:
-  Return(v0)
-
-//! > lowering_diagnostics
-error: Inlining of functions that directly returns one of its inputs is not supported.
- --> lib.cairo:1:1
-#[inline(always)]
-^***************^
-
-//! > ==========================================================================
-
 //! > Test inlining attribute diagnostics.
 
 //! > test_function_name
@@ -121,11 +81,6 @@ End:
   Return(v0)
 
 //! > lowering_diagnostics
-error: Unsupported `inline` arguments.
- --> lib.cairo:2:9
-#[inline(never)]
-        ^*****^
-
 error: Redundant `inline` attribute.
  --> lib.cairo:2:3
 #[inline(never)]

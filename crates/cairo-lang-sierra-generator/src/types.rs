@@ -89,6 +89,12 @@ pub fn get_concrete_type_id(
                 .collect(),
             }))
         }
+        semantic::TypeLongId::Snapshot(ty) => Ok(db.intern_concrete_type(ConcreteTypeLongId {
+            generic_id: "Snapshot".into(),
+            generic_args: vec![cairo_lang_sierra::program::GenericArg::Type(
+                db.get_concrete_type_id(ty).unwrap(),
+            )],
+        })),
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {

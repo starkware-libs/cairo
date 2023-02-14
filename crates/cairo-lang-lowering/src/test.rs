@@ -25,6 +25,7 @@ cairo_lang_test_utils::test_file_test!(
         match_ :"match",
         panic :"panic",
         rebindings :"rebindings",
+        snapshot :"snapshot",
         struct_ :"struct",
         tests :"tests",
         tuple :"tuple",

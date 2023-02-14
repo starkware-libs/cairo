@@ -215,6 +215,8 @@ pub enum Statement {
     // Enums.
     EnumConstruct(StatementEnumConstruct),
     MatchEnum(StatementMatchEnum),
+
+    Snapshot(StatementSnapshot),
 }
 impl Statement {
     pub fn inputs(&self) -> Vec<VariableId> {
@@ -226,6 +228,7 @@ impl Statement {
             Statement::StructDestructure(stmt) => vec![stmt.input],
             Statement::EnumConstruct(stmt) => vec![stmt.input],
             Statement::MatchEnum(stmt) => vec![stmt.input],
+            Statement::Snapshot(stmt) => vec![stmt.input],
         }
     }
     pub fn outputs(&self) -> Vec<VariableId> {
@@ -237,6 +240,7 @@ impl Statement {
             Statement::StructDestructure(stmt) => stmt.outputs.clone(),
             Statement::EnumConstruct(stmt) => vec![stmt.output],
             Statement::MatchEnum(_) => vec![],
+            Statement::Snapshot(stmt) => vec![stmt.output],
         }
     }
 }
@@ -313,4 +317,12 @@ pub struct StatementStructDestructure {
     pub input: VariableId,
     /// The variables to bind values to.
     pub outputs: Vec<VariableId>,
+}
+
+/// A statement that takes a snapshot of a variable.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatementSnapshot {
+    pub input: VariableId,
+    /// The variable to bind the value to.
+    pub output: VariableId,
 }

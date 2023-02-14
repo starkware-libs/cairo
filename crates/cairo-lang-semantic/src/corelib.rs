@@ -246,6 +246,7 @@ pub fn unwrap_error_propagation_type(
             semantic::ConcreteTypeId::Struct(_) | semantic::ConcreteTypeId::Extern(_),
         )
         | TypeLongId::Tuple(_)
+        | TypeLongId::Snapshot(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_) => None,
     }
@@ -277,6 +278,8 @@ pub fn core_unary_operator(
 
         UnaryOperator::Not(_) if ty == bool_ty => "bool_not",
         UnaryOperator::Not(_) => return unsupported_operator("!"),
+
+        UnaryOperator::At(_) => unreachable!("@ is not an unary operator."),
     };
     Ok(get_core_function_id(db, function_name.into(), vec![]))
 }
@@ -289,10 +292,15 @@ pub fn core_binary_operator(
 ) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
     let (trait_name, function_name) = match binary_op {
         BinaryOperator::Plus(_) => ("Add", "add"),
+        BinaryOperator::PlusEq(_) => ("AddEq", "add_eq"),
         BinaryOperator::Minus(_) => ("Sub", "sub"),
+        BinaryOperator::MinusEq(_) => ("SubEq", "sub_eq"),
         BinaryOperator::Mul(_) => ("Mul", "mul"),
+        BinaryOperator::MulEq(_) => ("MulEq", "mul_eq"),
         BinaryOperator::Div(_) => ("Div", "div"),
+        BinaryOperator::DivEq(_) => ("DivEq", "div_eq"),
         BinaryOperator::Mod(_) => ("Rem", "rem"),
+        BinaryOperator::ModEq(_) => ("RemEq", "rem_eq"),
         BinaryOperator::EqEq(_) => ("PartialEq", "eq"),
         BinaryOperator::Neq(_) => ("PartialEq", "ne"),
         BinaryOperator::LE(_) => ("PartialOrd", "le"),
@@ -351,7 +359,7 @@ fn get_core_function_impl_method(
     db.intern_function(FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
-                concrete_impl,
+                concrete_impl_id: concrete_impl,
                 function,
             }),
             generic_args: vec![],

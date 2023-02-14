@@ -46,7 +46,7 @@ pub fn test_expand_contract(
 
 cairo_lang_test_utils::test_file_test!(
     expand_contract,
-    "src/plugin_test_data",
+    "src/plugin/plugin_test_data",
     {
         diagnostics: "diagnostics",
         contract: "contract",

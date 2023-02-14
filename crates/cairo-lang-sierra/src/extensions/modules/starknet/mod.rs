@@ -17,7 +17,7 @@ pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
 
 use self::getter::{GetCallerAddressTrait, GetterLibfunc};
-use self::interoperability::ContractAddressTryFromFeltLibfunc;
+use self::interoperability::{ContractAddressToFeltLibfunc, ContractAddressTryFromFeltLibfunc};
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc, StorageAddressType,
     StorageBaseAddressFromFeltLibfunc,
@@ -37,6 +37,7 @@ define_libfunc_hierarchy! {
          CallContract(CallContractLibfunc),
          ContractAddressConst(ContractAddressConstLibfunc),
          ContractAddressTryFromFelt(ContractAddressTryFromFeltLibfunc),
+         ContractAddressToFelt(ContractAddressToFeltLibfunc),
          StorageRead(StorageReadLibfunc),
          StorageWrite(StorageWriteLibfunc),
          StorageBaseAddressConst(StorageBaseAddressConstLibfunc),

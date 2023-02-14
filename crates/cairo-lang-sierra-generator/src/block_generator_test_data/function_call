@@ -9,6 +9,7 @@ fn foo(mut z: MyStruct) -> () {
     bar(x, felt_add(x, x), ref z);
 }
 
+#[inline(never)]
 fn bar(a: felt, b: felt, ref z: MyStruct) -> felt {
     0
 }
