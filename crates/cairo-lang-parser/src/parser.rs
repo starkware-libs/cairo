@@ -610,6 +610,12 @@ impl<'a> Parser<'a> {
                     self.take::<TerminalQuestionMark>(),
                 )
                 .into();
+            } else if self.peek().kind == SyntaxKind::TerminalLBrack {
+                let lbrack = self.take::<TerminalLBrack>();
+                let subscript_expr = self.parse_expr();
+                let rbrack = self.parse_token::<TerminalRBrack>();
+                expr = ExprArraySubscript::new_green(self.db, expr, lbrack, subscript_expr, rbrack)
+                    .into();
             } else if let Some(op) = self.try_parse_binary_operator() {
                 let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
                 expr = ExprBinary::new_green(self.db, expr, op, rhs).into();

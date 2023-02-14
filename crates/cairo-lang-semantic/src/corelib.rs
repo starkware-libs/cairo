@@ -321,6 +321,14 @@ pub fn core_binary_operator(
     )))
 }
 
+pub fn array_at(
+    db: &dyn SemanticGroup,
+    inference: &mut Inference<'_>,
+    stable_ptr: SyntaxStablePtrId,
+) -> FunctionId {
+    get_core_trait_function_infer(db, inference, "ArrayTrait".into(), "at".into(), stable_ptr)
+}
+
 pub fn felt_eq(db: &dyn SemanticGroup) -> FunctionId {
     get_core_function_impl_method(db, "FeltPartialEq".into(), "eq".into())
 }

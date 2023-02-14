@@ -30,7 +30,8 @@ pub fn get_spec() -> Vec<Node> {
             .node("Match")
             .node("If")
             .node("ErrorPropagate")
-            .node("FieldInitShorthand"),
+            .node("FieldInitShorthand")
+            .node("ArraySubscript"),
     )
     .add_separated_list("ExprList", "Expr", "TerminalComma")
     .add_struct(StructBuilder::new("ArgNameClause")
@@ -166,6 +167,12 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_option("ElseClause")
     .add_struct(StructBuilder::new("ExprErrorPropagate").node("expr", "Expr").node("op", "TerminalQuestionMark"))
+    .add_struct(StructBuilder::new("ExprArraySubscript")
+        .node("expr", "Expr")
+        .node("lbrack", "TerminalLBrack")
+        .node("subscript_expr", "Expr")
+        .node("rbrack", "TerminalRBrack")
+    )
     // --- Struct ctor ---
     .add_struct(StructBuilder::new("StructArgExpr")
         .node("colon", "TerminalColon")

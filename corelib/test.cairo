@@ -796,7 +796,7 @@ fn test_array_helper(idx: usize) -> felt {
     arr.append(10);
     arr.append(11);
     arr.append(12);
-    array_at(ref arr, idx)
+    arr[idx]
 }
 
 #[test]
