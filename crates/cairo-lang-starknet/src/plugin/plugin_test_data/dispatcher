@@ -6,7 +6,7 @@ test_expand_contract
 //! > cairo_code
 #[abi]
 trait IContract {
-    fn get_something(arg: felt, num: felt) -> felt;
+    fn get_something(arg: starknet::ContractAddress, num: felt) -> felt;
 
     fn empty();
 
@@ -19,7 +19,7 @@ trait IContract {
 //! > generated_cairo_code
 #[abi]
 trait IContract {
-    fn get_something(arg: felt, num: felt) -> felt;
+    fn get_something(arg: starknet::ContractAddress, num: felt) -> felt;
 
     fn empty();
 
@@ -34,9 +34,9 @@ mod IContractDispatcher {
     use option::OptionTrait;
     use option::OptionTraitImpl;
 
-    fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
+    fn get_something(contract_address: ContractAddress, arg: starknet::ContractAddress, num: felt) -> felt {
         let mut calldata = array_new();
-        serde::Serde::<felt>::serialize(ref calldata, arg);
+        serde::Serde::<starknet::ContractAddress>::serialize(ref calldata, arg);
         serde::Serde::<felt>::serialize(ref calldata, num);
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -70,3 +70,8 @@ error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a con
  --> lib.cairo:7:32
     fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
                                ^*^
+
+error: Trait `core::serde::Serde::<core::starknet::ContractAddress>` has no implementation in the context.
+ --> IContractDispatcher:9:9
+        serde::Serde::<starknet::ContractAddress>::serialize(ref calldata, arg);
+        ^*********************************************************************^
