@@ -50,5 +50,8 @@ pub fn build(
         }
         StarkNetConcreteLibfunc::EmitEvent(_) => build_emit_event(builder),
         StarkNetConcreteLibfunc::GetCallerAddress(_) => build_getter(builder, "GetCallerAddress"),
+        StarkNetConcreteLibfunc::GetContractAddress(_) => {
+            build_getter(builder, "GetContractAddress")
+        }
     }
 }
