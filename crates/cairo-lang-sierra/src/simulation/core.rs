@@ -234,13 +234,17 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        Enum(EnumConcreteLibfunc::Match(_)) => match &inputs[..] {
-            [CoreValue::Enum { value, index }] => Ok((vec![*value.clone()], *index)),
-            [_] => Err(LibfuncSimulationError::WrongArgType),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
+        Enum(EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_)) => {
+            match &inputs[..] {
+                [CoreValue::Enum { value, index }] => Ok((vec![*value.clone()], *index)),
+                [_] => Err(LibfuncSimulationError::WrongArgType),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+            }
+        }
         Struct(StructConcreteLibfunc::Construct(_)) => Ok((vec![CoreValue::Struct(inputs)], 0)),
-        Struct(StructConcreteLibfunc::Deconstruct(_)) => match &inputs[..] {
+        Struct(
+            StructConcreteLibfunc::Deconstruct(_) | StructConcreteLibfunc::SnapshotDeconstruct(_),
+        ) => match &inputs[..] {
             [CoreValue::Struct(_)] => {
                 // Extracting the values instead of cloning them, as the match is on a reference.
                 Ok((extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Struct), 0))
@@ -324,6 +328,10 @@ pub fn simulate<
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
+        CoreConcreteLibfunc::SnapshotTake(_) => match &inputs[..] {
+            [_] => Ok((inputs, 0)),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 

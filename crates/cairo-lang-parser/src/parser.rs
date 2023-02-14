@@ -16,7 +16,7 @@ use syntax::node::green::{GreenNode, GreenNodeDetails};
 
 use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
-use crate::operators::{get_binary_operator_precedence, get_unary_operator_precedence};
+use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
 use crate::ParserDiagnostic;
 
@@ -541,7 +541,7 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is an operator (binary or unary).
     /// Returns a GreenId of the operator or None if the operator is a unary-only operator.
     fn try_parse_binary_operator(&mut self) -> Option<BinaryOperatorGreen> {
-        if self.peek().kind == SyntaxKind::TerminalNot {
+        if matches!(self.peek().kind, SyntaxKind::TerminalNot | SyntaxKind::TerminalAt) {
             None
         } else {
             Some(match self.peek().kind {
@@ -571,7 +571,7 @@ impl<'a> Parser<'a> {
         }
     }
     /// Assumes the current token is a unary operator, and returns a GreenId of the operator.
-    fn parse_unary_operator(&mut self) -> UnaryOperatorGreen {
+    fn expect_unary_operator(&mut self) -> UnaryOperatorGreen {
         match self.peek().kind {
             SyntaxKind::TerminalAt => self.take::<TerminalAt>().into(),
             SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
@@ -592,27 +592,25 @@ impl<'a> Parser<'a> {
         lbrace_allowed: LbraceAllowed,
     ) -> Option<ExprGreen> {
         let mut expr = if let Some(precedence) = get_unary_operator_precedence(self.peek().kind) {
-            let op = self.parse_unary_operator();
+            let op = self.expect_unary_operator();
             let expr = self.parse_expr_limited(precedence, lbrace_allowed);
             ExprUnary::new_green(self.db, op, expr).into()
         } else {
             self.try_parse_atom(lbrace_allowed)?
         };
 
-        // ? operator has the highest precedence, so we now find all the usages after.
-        while self.peek().kind == SyntaxKind::TerminalQuestionMark {
-            expr = ExprErrorPropagate::new_green(
-                self.db,
-                expr,
-                self.parse_token::<TerminalQuestionMark>(),
-            )
-            .into();
-        }
-        while let Some(precedence) = get_binary_operator_precedence(self.peek().kind) {
+        while let Some(precedence) = get_post_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Some(expr);
             }
-            if let Some(op) = self.try_parse_binary_operator() {
+            if self.peek().kind == SyntaxKind::TerminalQuestionMark {
+                expr = ExprErrorPropagate::new_green(
+                    self.db,
+                    expr,
+                    self.take::<TerminalQuestionMark>(),
+                )
+                .into();
+            } else if let Some(op) = self.try_parse_binary_operator() {
                 let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
                 expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
             } else {
@@ -686,7 +684,7 @@ impl<'a> Parser<'a> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             SyntaxKind::TerminalAt => {
-                let op = self.parse_unary_operator();
+                let op = self.take::<TerminalAt>().into();
                 let expr = self.try_parse_type_expr().unwrap_or_else(|| {
                     self.create_and_report_missing::<Expr>(
                         ParserDiagnosticKind::MissingTypeExpression,

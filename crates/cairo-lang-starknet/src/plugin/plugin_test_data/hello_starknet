@@ -78,6 +78,8 @@ mod HelloStarknet {
     }
 
     mod __external {
+        use starknet_serde::ContractAddressSerde;
+
         fn increase_balance(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
@@ -163,6 +165,8 @@ mod HelloStarknet {
     }
 
     mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }

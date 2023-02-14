@@ -282,12 +282,53 @@
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       └── ident (kind: TokenIdentifier): 'member_value'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: TokenEq): '='
+    │   │       │   │   ├── rhs (kind: ExprErrorPropagate)
+    │   │       │   │   │   ├── expr (kind: ExprBinary)
+    │   │       │   │   │   │   ├── lhs (kind: ExprPath)
+    │   │       │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'value'
+    │   │       │   │   │   │   ├── op (kind: TokenDot): '.'
+    │   │       │   │   │   │   └── rhs (kind: ExprPath)
+    │   │       │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │           └── ident (kind: TokenIdentifier): 'member'
+    │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
+    │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │       │   ├── child #8 (kind: StatementLet)
+    │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── pattern (kind: ExprPath)
+    │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       └── ident (kind: TokenIdentifier): 'method_return'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: TokenEq): '='
+    │   │       │   │   ├── rhs (kind: ExprErrorPropagate)
+    │   │       │   │   │   ├── expr (kind: ExprBinary)
+    │   │       │   │   │   │   ├── lhs (kind: ExprPath)
+    │   │       │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'value'
+    │   │       │   │   │   │   ├── op (kind: TokenDot): '.'
+    │   │       │   │   │   │   └── rhs (kind: ExprFunctionCall)
+    │   │       │   │   │   │       ├── path (kind: ExprPath)
+    │   │       │   │   │   │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │       └── ident (kind: TokenIdentifier): 'method'
+    │   │       │   │   │   │       └── arguments (kind: ArgListParenthesized)
+    │   │       │   │   │   │           ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │   │           ├── args (kind: ArgList) []
+    │   │       │   │   │   │           └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
+    │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │       │   ├── child #9 (kind: StatementLet)
+    │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── pattern (kind: ExprPath)
+    │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: TokenEq): '='
     │   │       │   │   ├── rhs (kind: TokenTrue): 'true'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #8 (kind: StatementExpr)
+    │   │       │   ├── child #10 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -295,7 +336,7 @@
     │   │       │   │   │   ├── op (kind: TokenEq): '='
     │   │       │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #9 (kind: StatementExpr)
+    │   │       │   ├── child #11 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -311,7 +352,7 @@
     │   │       │   │   │       │                   └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #10 (kind: StatementExpr)
+    │   │       │   ├── child #12 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
@@ -335,7 +376,7 @@
     │   │       │   │   │       │                   └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
-    │   │       │   └── child #11 (kind: StatementReturn)
+    │   │       │   └── child #13 (kind: StatementReturn)
     │   │       │       ├── return_kw (kind: TokenReturn): 'return'
     │   │       │       ├── expr (kind: ExprPath)
     │   │       │       │   └── item #0 (kind: PathSegmentSimple)
@@ -527,37 +568,37 @@ fn foo(,var1: int,, mut ref var2: felt,) -> int {
                   ^
 
 error: Missing token TerminalRBrace.
- --> test1.cairo:28:14
+ --> test1.cairo:30:14
     return x;
              ^
 
 error: Missing token TerminalSemicolon.
- --> test1.cairo:33:45
+ --> test1.cairo:35:45
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                             ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> test1.cairo:33:45
+ --> test1.cairo:35:45
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                             ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> test1.cairo:33:46
+ --> test1.cairo:35:46
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                              ^*^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> test1.cairo:33:49
+ --> test1.cairo:35:49
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                                 ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> test1.cairo:33:51
+ --> test1.cairo:35:51
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                                   ^*****^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
- --> test1.cairo:33:58
+ --> test1.cairo:35:58
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                                          ^
 

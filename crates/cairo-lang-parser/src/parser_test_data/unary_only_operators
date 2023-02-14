@@ -11,6 +11,7 @@ test_partial_parser_tree
 //! > cairo_code
 fn foo() {
     1 ! 2;
+    1 @ 2;
 }
 
 //! > top_level_kind
@@ -25,8 +26,16 @@ StatementList
     ├── child #0 (kind: StatementExpr)
     │   ├── expr (kind: TokenLiteralNumber): '1'
     │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
-    └── child #1 (kind: StatementExpr)
+    ├── child #1 (kind: StatementExpr)
+    │   ├── expr (kind: ExprUnary)
+    │   │   ├── op (kind: TokenNot): '!'
+    │   │   └── expr (kind: TokenLiteralNumber): '2'
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    ├── child #2 (kind: StatementExpr)
+    │   ├── expr (kind: TokenLiteralNumber): '1'
+    │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    └── child #3 (kind: StatementExpr)
         ├── expr (kind: ExprUnary)
-        │   ├── op (kind: TokenNot): '!'
+        │   ├── op (kind: TokenAt): '@'
         │   └── expr (kind: TokenLiteralNumber): '2'
         └── semicolon (kind: TokenSemicolon): ';'

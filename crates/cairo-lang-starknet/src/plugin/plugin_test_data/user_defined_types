@@ -152,6 +152,8 @@ mod TestContract {
         use super::WrappedFeltSerde;
         use super::WrappedFeltStorageAccess;
         use super::WrappedFeltLegacyHash;
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 
@@ -161,6 +163,8 @@ mod TestContract {
         use super::WrappedFeltSerde;
         use super::WrappedFeltStorageAccess;
         use super::WrappedFeltLegacyHash;
+        use starknet_serde::ContractAddressSerde;
+
         
     }
 }

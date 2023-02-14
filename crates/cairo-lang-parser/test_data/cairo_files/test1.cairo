@@ -20,6 +20,8 @@ fn foo(,var1: int,, mut ref var2: felt,) -> int {
     let block_combination = {5} + match x { E::V1(_) => 4, E::V2(_) => 2 }
         - if cond { 32 } else { 1 };
     let w = calc_with_error(x, y?, z)?;
+    let member_value = value.member?;
+    let method_return = value.method()?;
     let x = true; // bla1
                   // bla2
     z = 5;

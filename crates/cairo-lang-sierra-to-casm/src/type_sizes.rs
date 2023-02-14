@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType, CoreTypeConcrete};
 use cairo_lang_sierra::extensions::starknet::StarkNetTypeConcrete;
-use cairo_lang_sierra::extensions::types::InfoAndTypeConcreteType;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra::program_registry::ProgramRegistry;
@@ -41,8 +40,8 @@ pub fn get_type_size_map(
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::EcPoint(_)
             | CoreTypeConcrete::SquashedDictFeltTo(_) => Some(2),
-            CoreTypeConcrete::NonZero(InfoAndTypeConcreteType { ty, .. }) => {
-                type_sizes.get(ty).cloned()
+            CoreTypeConcrete::NonZero(wrapped_ty) | CoreTypeConcrete::Snapshot(wrapped_ty) => {
+                type_sizes.get(&wrapped_ty.ty).cloned()
             }
             CoreTypeConcrete::EcState(_) => Some(3),
             CoreTypeConcrete::Enum(enum_type) => {
