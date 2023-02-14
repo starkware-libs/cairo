@@ -111,12 +111,20 @@ pub fn generate_block_code(
                 statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
                     id: context.block_label(*block_id),
                 }));
+
+                statements.push(generate_push_values_statement_for_remapping(
+                    context,
+                    statement_location,
+                    remapping,
+                )?);
+            } else {
+                // There are no goto's leading to this block, so we can use var_remapping
+                // instead of `generate_push_values_statement_for_remapping`.
+                for (dst_var_id, src_var_id) in remapping.iter() {
+                    let sierra_var_id = context.get_sierra_variable(*src_var_id);
+                    context.add_variable_mapping(*dst_var_id, sierra_var_id);
+                }
             }
-            statements.push(generate_push_values_statement_for_remapping(
-                context,
-                statement_location,
-                remapping,
-            )?);
 
             let (code, fallthrough) = generate_block_code(context, *block_id)?;
             statements.extend(code);
