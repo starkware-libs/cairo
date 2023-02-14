@@ -28,7 +28,7 @@ impl ContractDeclaration {
     }
 }
 
-/// A variant of eth-keccak that computes a value that fits in a StarkNet field element.
+/// A variant of eth-keccak that computes a value that fits in a Starknet field element.
 pub fn starknet_keccak(data: &[u8]) -> BigUint {
     let mut hasher = Keccak256::new();
     hasher.update(data);

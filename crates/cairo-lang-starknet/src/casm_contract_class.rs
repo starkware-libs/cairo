@@ -50,7 +50,7 @@ pub enum StarknetSierraCompilationError {
     InvalidEntryPointSignature,
 }
 
-/// Represents a contract in the StarkNet network.
+/// Represents a contract in the Starknet network.
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]

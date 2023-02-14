@@ -40,7 +40,7 @@ pub enum StarknetCompilationError {
     SierraVersionError(#[from] SierraVersionError),
 }
 
-/// Represents a contract in the StarkNet network.
+/// Represents a contract in the Starknet network.
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractClass {
     pub sierra_program: Vec<BigIntAsHex>,
@@ -120,7 +120,7 @@ fn compile_only_contract_in_prepared_db(
     Ok(classes.remove(0))
 }
 
-/// Runs StarkNet contracts compiler.
+/// Runs Starknet contracts compiler.
 ///
 /// # Arguments
 /// * `db` - Preloaded compilation database.
@@ -145,7 +145,7 @@ pub fn compile_prepared_db(
         .try_collect()
 }
 
-/// Compile declared StarkNet contract.
+/// Compile declared Starknet contract.
 ///
 /// The `contract` value **must** come from `db`, for example as a result of calling
 /// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked by caller
