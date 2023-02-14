@@ -462,7 +462,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 felt_dup([1]) -> ([1], [2]);
                 return ([1]);
                 test_program@0([1]: felt) -> ();
-            "}, "[2] is dangling at #1.";
+            "}, "Variable [2] is dangling at #1.";
             "Dangling references")]
 #[test_case(indoc! {"
                 type felt = felt;

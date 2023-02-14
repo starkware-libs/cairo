@@ -390,7 +390,12 @@ impl LocalVariablesState {
                 // Recursively visit `alias`.
                 self.use_variable(*alias, res);
             }
-            Some(VariableStatus::TemporaryVariable | VariableStatus::Constant) | None => {}
+            Some(VariableStatus::Constant) => {
+                // When the constant is used, it is stored as a temporary variable. Further uses of
+                // that variable will use the temporary variable rather than the constant.
+                self.variables.insert(var_id, VariableStatus::TemporaryVariable);
+            }
+            Some(VariableStatus::TemporaryVariable) | None => {}
         }
     }
 
