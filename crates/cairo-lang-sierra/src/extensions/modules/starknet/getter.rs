@@ -110,3 +110,10 @@ impl GetterTraits for GetCallerAddressTrait {
     const STR_ID: &'static str = "get_caller_address_syscall";
     type InfoType = ContractAddressType;
 }
+
+#[derive(Default)]
+pub struct GetContractAddressTrait {}
+impl GetterTraits for GetContractAddressTrait {
+    const STR_ID: &'static str = "get_contract_address_syscall";
+    type InfoType = ContractAddressType;
+}
