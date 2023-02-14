@@ -73,18 +73,18 @@ fn get_sequencer_address() -> ContractAddress {
     get_sequencer_address_syscall().unwrap_syscall()
 }
 
-extern fn get_block_number_syscall() -> SyscallResult::<u128> implicits(GasBuiltin, System) nopanic;
+extern fn get_block_number_syscall() -> SyscallResult::<u64> implicits(GasBuiltin, System) nopanic;
 
-fn get_block_number() -> u128 {
+fn get_block_number() -> u64 {
     get_block_number_syscall().unwrap_syscall()
 }
 
-extern fn get_block_timestamp_syscall() -> SyscallResult::<u128> implicits(
+extern fn get_block_timestamp_syscall() -> SyscallResult::<u64> implicits(
     GasBuiltin, System
 ) nopanic;
 
 // TODO(ilya): Consider Adding a type for timestamps.
-fn get_block_timestamp() -> u128 {
+fn get_block_timestamp() -> u64 {
     get_block_timestamp_syscall().unwrap_syscall()
 }
 
