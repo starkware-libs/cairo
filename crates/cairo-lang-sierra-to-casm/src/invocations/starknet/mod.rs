@@ -53,5 +53,10 @@ pub fn build(
         StarkNetConcreteLibfunc::GetContractAddress(_) => {
             build_getter(builder, "GetContractAddress")
         }
+        StarkNetConcreteLibfunc::GetSequencerAddress(_) => {
+            build_getter(builder, "GetSequencerAddress")
+        }
+        StarkNetConcreteLibfunc::GetBlockNumber(_) => build_getter(builder, "GetBlockNumber"),
+        StarkNetConcreteLibfunc::GetBlockTimestamp(_) => build_getter(builder, "GetBlockTimestmp"),
     }
 }

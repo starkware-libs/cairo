@@ -251,7 +251,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibfunc::EmitEvent(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             StarkNetConcreteLibfunc::GetCallerAddress(_)
-            | StarkNetConcreteLibfunc::GetContractAddress(_) => {
+            | StarkNetConcreteLibfunc::GetContractAddress(_)
+            | StarkNetConcreteLibfunc::GetSequencerAddress(_)
+            | StarkNetConcreteLibfunc::GetBlockNumber(_)
+            | StarkNetConcreteLibfunc::GetBlockTimestamp(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
         },
