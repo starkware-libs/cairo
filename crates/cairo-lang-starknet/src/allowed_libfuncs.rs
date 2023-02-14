@@ -13,7 +13,8 @@ pub enum AllowedLibfuncsError {
     UnexpectedAllowedLibfuncsList { allowed_libfuncs_list_name: String },
     #[error(
         "Libfunc {invalid_libfunc} is not allowed in the libfuncs list \
-         '{allowed_libfuncs_list_name}'."
+         '{allowed_libfuncs_list_name}'.\n Run with '--allowed_libfuncs_list_name \
+         {DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST}' to allow all libfuncs."
     )]
     UnsupportedLibfunc { invalid_libfunc: String, allowed_libfuncs_list_name: String },
 }
