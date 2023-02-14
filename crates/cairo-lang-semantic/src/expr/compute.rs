@@ -1310,7 +1310,7 @@ fn method_call_expr(
 
             // Check if trait function signature's first param can fit our expr type.
             let mut inference = ctx.resolver.inference.clone();
-            let Some(concrete_trait_id) = inference.infer_concrete_trait_by_self(
+            let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
                 trait_function, lexpr.ty(), stable_ptr.untyped()
             ) else {
                 continue;
@@ -1343,7 +1343,7 @@ fn method_call_expr(
         }
     };
 
-    let concrete_trait_id = ctx
+    let (concrete_trait_id, n_snapshots) = ctx
         .resolver
         .inference
         .infer_concrete_trait_by_self(trait_function, lexpr.ty(), stable_ptr.untyped())
@@ -1370,8 +1370,15 @@ fn method_call_expr(
         },
     });
 
+    let mut fixed_lexpr = lexpr;
+    for _ in 0..n_snapshots {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(fixed_lexpr.ty()));
+        fixed_lexpr =
+            Expr::Snapshot(ExprSnapshot { inner: ctx.exprs.alloc(fixed_lexpr), ty, stable_ptr });
+    }
+
     let named_args: Vec<_> = chain!(
-        [(lexpr, None, first_param.mutability)],
+        [(fixed_lexpr, None, first_param.mutability)],
         expr.arguments(syntax_db)
             .args(syntax_db)
             .elements(syntax_db)
