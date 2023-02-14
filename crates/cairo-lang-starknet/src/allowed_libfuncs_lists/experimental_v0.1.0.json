@@ -1,5 +1,4 @@
 {
-    "version_id": 1,
     "allowed_libfuncs": [
         "get_gas_all",
         "get_builtin_costs",
