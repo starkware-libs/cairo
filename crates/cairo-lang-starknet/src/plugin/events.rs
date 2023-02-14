@@ -59,7 +59,7 @@ pub fn handle_event(
 
         // TODO(yuval): use panicable version of deserializations when supported.
         let param_serialization = RewriteNode::interpolate_patched(
-            &format!("serde::Serde::<{type_name}>::serialize(ref data, $param_name$);\n        "),
+            &format!("serde::Serde::<{type_name}>::serialize(ref __data, $param_name$);\n        "),
             HashMap::from([(
                 "param_name".to_string(),
                 RewriteNode::Trimmed(param_name.as_syntax_node()),
@@ -90,11 +90,11 @@ pub fn handle_event(
                     "
     $attrs$
     $declaration$ {{
-        let mut keys = array_new();
-        array_append(ref keys, {event_key});
-        let mut data = array_new();
+        let mut __keys = array_new();
+        array_append(ref __keys, {event_key});
+        let mut __data = array_new();
         $param_serializations$
-        starknet::emit_event_syscall(keys, data).unwrap_syscall()
+        starknet::emit_event_syscall(__keys, __data).unwrap_syscall()
     }}
             "
                 ),
