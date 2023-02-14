@@ -138,7 +138,7 @@ pub fn compile(
         match statement {
             Statement::Return(ref_ids) => {
                 let (annotations, return_refs) = program_annotations
-                    .get_annotations_after_take_args(statement_idx, ref_ids.iter())
+                    .get_annotations_after_take_args(statement_idx, ref_ids.iter(), true)
                     .map_err(|err| Box::new(err.into()))?;
 
                 if let Some(var_id) = annotations.refs.keys().next() {
@@ -169,13 +169,15 @@ pub fn compile(
                 instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
             }
             Statement::Invocation(invocation) => {
-                let (annotations, invoke_refs) = program_annotations
-                    .get_annotations_after_take_args(statement_idx, invocation.args.iter())
-                    .map_err(|err| Box::new(err.into()))?;
-
                 let libfunc = registry
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
+
+                let take = !matches!(libfunc, CoreConcreteLibfunc::SnapshotTake(_));
+                let (annotations, invoke_refs) = program_annotations
+                    .get_annotations_after_take_args(statement_idx, invocation.args.iter(), take)
+                    .map_err(|err| Box::new(err.into()))?;
+
                 check_basic_structure(statement_idx, invocation, libfunc)?;
 
                 let param_types: Vec<_> = libfunc

@@ -25,13 +25,25 @@ impl EditStateError {
 }
 
 /// Given a map with var ids as keys, extracts out the given ids, failing if some id is missing.
-pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
+/// Removes the variables from the state.
+pub fn take_args<'a, V: 'a + std::cmp::PartialEq + Clone>(
+    state: HashMap<VarId, V>,
+    ids: impl Iterator<Item = &'a VarId>,
+) -> Result<(HashMap<VarId, V>, Vec<V>), EditStateError> {
+    get_or_take_args(state, ids, true)
+}
+
+/// Given a map with var ids as keys, extracts out the given ids, failing if some id is missing.
+/// If take is true, removes the variables from the state.
+pub fn get_or_take_args<'a, V: 'a + std::cmp::PartialEq + Clone>(
     mut state: HashMap<VarId, V>,
     ids: impl Iterator<Item = &'a VarId>,
+    take: bool,
 ) -> Result<(HashMap<VarId, V>, Vec<V>), EditStateError> {
     let mut vals = vec![];
     for id in ids {
-        match state.remove(id) {
+        let res = if take { state.remove(id) } else { state.get(id).cloned() };
+        match res {
             None => {
                 return Err(EditStateError::MissingReference(id.clone()));
             }

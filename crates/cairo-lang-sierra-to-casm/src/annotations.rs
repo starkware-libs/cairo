@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::iter;
 
 use cairo_lang_casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
-use cairo_lang_sierra::edit_state::{put_results, take_args};
+use cairo_lang_sierra::edit_state::{get_or_take_args, put_results};
 use cairo_lang_sierra::ids::{FunctionId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
 use itertools::zip_eq;
@@ -180,6 +180,7 @@ impl ProgramAnnotations {
         &self,
         statement_idx: StatementIdx,
         ref_ids: impl Iterator<Item = &'a VarId>,
+        take: bool,
     ) -> Result<(StatementAnnotations, Vec<ReferenceValue>), AnnotationError> {
         let statement_annotations = self.per_statement_annotations[statement_idx.0]
             .as_ref()
@@ -187,7 +188,7 @@ impl ProgramAnnotations {
             .clone();
 
         let (statement_refs, taken_refs) =
-            take_args(statement_annotations.refs, ref_ids).map_err(|error| {
+            get_or_take_args(statement_annotations.refs, ref_ids, take).map_err(|error| {
                 AnnotationError::MissingReferenceError { statement_idx, var_id: error.var_id() }
             })?;
         Ok((StatementAnnotations { refs: statement_refs, ..statement_annotations }, taken_refs))

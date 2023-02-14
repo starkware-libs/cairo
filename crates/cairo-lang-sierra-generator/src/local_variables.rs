@@ -16,7 +16,8 @@ use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, match_enum_libfunc_id,
-    statement_outputs, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    snapshot_take_libfunc_id, statement_outputs, struct_construct_libfunc_id,
+    struct_deconstruct_libfunc_id,
 };
 
 /// Given the lowering of a function, returns the set of variables which should be stored as local
@@ -159,7 +160,19 @@ fn inner_find_local_variables(
                     &[statement_enum_construct.output],
                 );
             }
-            lowering::Statement::Snapshot(_) => todo!(),
+            lowering::Statement::Snapshot(statement_snapshot) => {
+                let ty = ctx.db.get_concrete_type_id(
+                    ctx.lowered_function.variables[statement_snapshot.output].ty,
+                )?;
+                handle_function_call(
+                    ctx.db,
+                    &mut state,
+                    &mut known_ap_change,
+                    snapshot_take_libfunc_id(ctx.db, ty),
+                    &[statement_snapshot.input],
+                    &[statement_snapshot.output],
+                );
+            }
         }
     }
 
