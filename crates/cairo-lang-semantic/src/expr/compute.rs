@@ -28,7 +28,7 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
+    self, core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
     true_literal_expr, try_get_core_ty_by_name, unit_ty, unwrap_error_propagation_type,
     validate_literal,
 };
@@ -215,6 +215,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
             Err(ctx.diagnostics.report(syntax, Unsupported))
         }
+        ast::Expr::ArraySubscript(expr) => compute_expr_array_subscript_semantic(ctx, expr),
     }
 }
 fn compute_expr_unary_semantic(
@@ -747,6 +748,25 @@ fn compute_expr_error_propagate_semantic(
         func_err_variant,
         stable_ptr: syntax.stable_ptr().into(),
     }))
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprArraySubscript].
+fn compute_expr_array_subscript_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprArraySubscript,
+) -> Maybe<Expr> {
+    let syntax_db = ctx.db.upcast();
+    let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let subscript_expr = compute_expr_semantic(ctx, &syntax.subscript_expr(syntax_db));
+    let function =
+        corelib::array_at(ctx.db, &mut ctx.resolver.inference, syntax.stable_ptr().untyped());
+    expr_function_call(
+        ctx,
+        function,
+        vec![(expr, None, Mutability::Reference), (subscript_expr, None, Mutability::Immutable)],
+        syntax.stable_ptr().into(),
+        syntax.stable_ptr().untyped(),
+    )
 }
 
 /// Computes the semantic model of a pattern, or None if invalid.
