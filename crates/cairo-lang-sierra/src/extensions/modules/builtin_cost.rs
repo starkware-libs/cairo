@@ -57,8 +57,11 @@ impl CostTokenType {
                 panic!("offset_in_builtin_costs is not supported for '{}'.", self.camel_case_name())
             }
             CostTokenType::Pedersen => 0,
-            CostTokenType::Bitwise => 1,
-            CostTokenType::EcOp => 2,
+            // CostTokenType::RangeCheck (unused) => 1,
+            // CostTokenType::Ecdsa => 2,
+            CostTokenType::Bitwise => 3,
+            CostTokenType::EcOp => 4,
+            // CostTokenType::Poseidon => 5,
         }
     }
 }
