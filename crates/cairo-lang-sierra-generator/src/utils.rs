@@ -103,6 +103,17 @@ pub fn enum_init_libfunc_id(
     })
 }
 
+/// Returns the [cairo_lang_sierra::program::ConcreteLibfuncLongId] associated with `snapshot_take`.
+pub fn snapshot_take_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: cairo_lang_sierra::ids::ConcreteTypeId,
+) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
+        generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("snapshot_take"),
+        generic_args: vec![cairo_lang_sierra::program::GenericArg::Type(ty)],
+    })
+}
+
 /// Returns the [cairo_lang_sierra::program::ConcreteLibfuncLongId] associated with `rename`.
 pub fn rename_libfunc_id(
     db: &dyn SierraGenGroup,

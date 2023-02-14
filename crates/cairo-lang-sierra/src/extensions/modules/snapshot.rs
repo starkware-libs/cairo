@@ -65,10 +65,16 @@ impl SignatureOnlyGenericLibfunc for SnapshotTakeLibfunc {
                 allow_add_const: true,
                 allow_const: true,
             }],
-            vec![OutputVarInfo {
-                ty: snapshot_ty(context, ty)?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
+            vec![
+                OutputVarInfo {
+                    ty: ty.clone(),
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+                OutputVarInfo {
+                    ty: snapshot_ty(context, ty)?,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+            ],
             SierraApChange::Known { new_vars_only: true },
         ))
     }

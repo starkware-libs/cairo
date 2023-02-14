@@ -329,7 +329,7 @@ pub fn simulate<
             }
         }
         CoreConcreteLibfunc::SnapshotTake(_) => match &inputs[..] {
-            [_] => Ok((inputs, 0)),
+            [value] => Ok((vec![value.clone(), value.clone()], 0)),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
     }

@@ -391,5 +391,8 @@ use starknet::ContractAddress;
 // Internals.
 mod internal;
 
+mod zeroable;
+use zeroable::Zeroable;
+
 #[cfg(test)]
 mod test;
