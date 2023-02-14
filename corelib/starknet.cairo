@@ -1,3 +1,5 @@
+use zeroable::Zeroable;
+
 extern type System;
 #[derive(Copy, Drop)]
 extern type StorageBaseAddress;
@@ -54,6 +56,15 @@ extern fn get_caller_address_syscall() -> SyscallResult::<ContractAddress> impli
 fn get_caller_address() -> ContractAddress {
     get_caller_address_syscall().unwrap_syscall()
 }
+
+extern fn get_contract_address_syscall() -> SyscallResult::<ContractAddress> implicits(
+    GasBuiltin, System
+) nopanic;
+
+fn get_contract_address() -> ContractAddress {
+    get_contract_address_syscall().unwrap_syscall()
+}
+
 
 trait StorageAccess<T> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult::<T>;
@@ -145,5 +156,16 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
                 panic(revert_reason)
             },
         }
+    }
+}
+
+impl ContractAddressZeroable of Zeroable::<ContractAddress> {
+    fn zero() -> ContractAddress {
+        contract_address_const::<0>()
+    }
+
+    #[inline(always)]
+    fn is_zero(self: ContractAddress) -> bool {
+        contract_address_to_felt(self).is_zero()
     }
 }

@@ -1,0 +1,27 @@
+name: release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Official Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install musl tools.
+        run: sudo apt-get install -y musl-tools
+
+      - name: Build in unknown linux
+        run: ./scripts/release_tar.sh x86_64-unknown-linux-musl
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/x86_64-unknown-linux-musl.tar.gz
+          asset_name: release-x86_64-unknown-linux-musl.tar.gz
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: "Cairo compiler."
