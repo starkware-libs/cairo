@@ -50,6 +50,7 @@
         "function_call",
         "into_box",
         "unbox",
+        "snapshot_take",
         "storage_base_address_const",
         "storage_address_from_base",
         "storage_address_from_base_and_offset",

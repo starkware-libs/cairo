@@ -211,7 +211,7 @@ fn build_array_len(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[arr_start, arr_end], &[length]], None)],
+        [("Fallthrough", &[&[length]], None)],
         Default::default(),
     ))
 }
