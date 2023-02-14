@@ -366,7 +366,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<felt>) -> usize {
-    array_len::<felt>(ref arr)
+    array_len::<felt>(@arr)
 }
 
 //! > casm
@@ -381,14 +381,17 @@ test::foo: OrderedHashMap({Const: 300})
 //! > sierra_code
 type felt = felt;
 type Array<felt> = Array<felt>;
+type Snapshot<Array<felt>> = Snapshot<Array<felt>>;
 type u32 = u32;
 
+libfunc snapshot_take<Array<felt>> = snapshot_take<Array<felt>>;
 libfunc array_len<felt> = array_len<felt>;
 libfunc store_temp<Array<felt>> = store_temp<Array<felt>>;
 libfunc store_temp<u32> = store_temp<u32>;
 
-array_len<felt>([0]) -> ([1], [2]);
-store_temp<Array<felt>>([1]) -> ([3]);
+snapshot_take<Array<felt>>([0]) -> ([0], [1]);
+array_len<felt>([1]) -> ([2]);
+store_temp<Array<felt>>([0]) -> ([3]);
 store_temp<u32>([2]) -> ([4]);
 return([3], [4]);
 
@@ -405,7 +408,7 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(ref arr: Array::<u256>) -> usize {
-    array_len::<u256>(ref arr)
+    array_len::<u256>(@arr)
 }
 
 //! > casm
@@ -422,14 +425,17 @@ test::foo: OrderedHashMap({Const: 400})
 type u128 = u128;
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
 type Array<core::integer::u256> = Array<core::integer::u256>;
+type Snapshot<Array<core::integer::u256>> = Snapshot<Array<core::integer::u256>>;
 type u32 = u32;
 
+libfunc snapshot_take<Array<core::integer::u256>> = snapshot_take<Array<core::integer::u256>>;
 libfunc array_len<core::integer::u256> = array_len<core::integer::u256>;
 libfunc store_temp<Array<core::integer::u256>> = store_temp<Array<core::integer::u256>>;
 libfunc store_temp<u32> = store_temp<u32>;
 
-array_len<core::integer::u256>([0]) -> ([1], [2]);
-store_temp<Array<core::integer::u256>>([1]) -> ([3]);
+snapshot_take<Array<core::integer::u256>>([0]) -> ([0], [1]);
+array_len<core::integer::u256>([1]) -> ([2]);
+store_temp<Array<core::integer::u256>>([0]) -> ([3]);
 store_temp<u32>([2]) -> ([4]);
 return([3], [4]);
 
