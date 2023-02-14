@@ -39,7 +39,7 @@ pub enum CompilationError {
     ReferencesError { statement_idx: StatementIdx, error: ReferencesError },
     #[error("#{statement_idx}: Invocation mismatched to libfunc")]
     LibfuncInvocationMismatch { statement_idx: StatementIdx },
-    #[error("{var_id} is dangling at #{statement_idx}.")]
+    #[error("Variable {var_id} is dangling at #{statement_idx}.")]
     DanglingReferences { statement_idx: StatementIdx, var_id: VarId },
 
     #[error("#{source_statement_idx}->#{destination_statement_idx}: Expected branch align")]
