@@ -43,7 +43,7 @@ FunctionSignature
     │   │   │   │   └── item #1 (kind: ExprPath)
     │   │   │   │       └── item #0 (kind: PathSegmentSimple)
     │   │   │   │           └── ident (kind: TokenIdentifier): 'arg2'
-    │   │   │   └── rangle (kind: TokenRParen): ')'
+    │   │   │   └── rparen (kind: TokenRParen): ')'
     │   │   └── rbrack (kind: TokenRBrack): ']'
     │   └── child #2 (kind: Attribute)
     │       ├── hash (kind: TokenHash): '#'

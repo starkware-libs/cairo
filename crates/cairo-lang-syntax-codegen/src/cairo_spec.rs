@@ -354,7 +354,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_struct(StructBuilder::new("AttributeArgs")
         .node("lparen", "TerminalLParen")
         .node("arg_list", "AttributeArgList")
-        .node("rangle", "TerminalRParen")
+        .node("rparen", "TerminalRParen")
     )
     .add_separated_list("AttributeArgList", "Expr", "TerminalComma")
     .add_struct(StructBuilder::new("FunctionDeclaration")
