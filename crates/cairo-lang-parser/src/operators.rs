@@ -10,11 +10,8 @@ pub fn get_unary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
 }
 pub fn get_post_operator_precedence(kind: SyntaxKind) -> Option<usize> {
     match kind {
-        // TODO(spapini): This should precede unary operators.
         SyntaxKind::TerminalDot => Some(0),
         SyntaxKind::TerminalQuestionMark => Some(1),
-
-        // TODO(yuval): support unary-only/non-binary operators. "not" can't be binary.
         SyntaxKind::TerminalAt | SyntaxKind::TerminalNot => Some(2),
         SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv | SyntaxKind::TerminalMod => Some(3),
         SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => Some(4),
