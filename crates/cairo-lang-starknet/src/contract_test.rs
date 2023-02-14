@@ -7,7 +7,7 @@ use pretty_assertions::assert_eq;
 
 use crate::contract::{find_contracts, get_module_functions, starknet_keccak};
 use crate::db::StarknetRootDatabaseBuilderEx;
-use crate::plugin::EXTERNAL_MODULE;
+use crate::plugin::consts::EXTERNAL_MODULE;
 
 #[test]
 fn test_contract_resolving() {

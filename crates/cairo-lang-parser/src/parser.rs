@@ -16,7 +16,7 @@ use syntax::node::green::{GreenNode, GreenNodeDetails};
 
 use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
-use crate::operators::{get_binary_operator_precedence, get_unary_operator_precedence};
+use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
 use crate::ParserDiagnostic;
 
@@ -599,20 +599,18 @@ impl<'a> Parser<'a> {
             self.try_parse_atom(lbrace_allowed)?
         };
 
-        // ? operator has the highest precedence, so we now find all the usages after.
-        while self.peek().kind == SyntaxKind::TerminalQuestionMark {
-            expr = ExprErrorPropagate::new_green(
-                self.db,
-                expr,
-                self.parse_token::<TerminalQuestionMark>(),
-            )
-            .into();
-        }
-        while let Some(precedence) = get_binary_operator_precedence(self.peek().kind) {
+        while let Some(precedence) = get_post_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Some(expr);
             }
-            if let Some(op) = self.try_parse_binary_operator() {
+            if self.peek().kind == SyntaxKind::TerminalQuestionMark {
+                expr = ExprErrorPropagate::new_green(
+                    self.db,
+                    expr,
+                    self.take::<TerminalQuestionMark>(),
+                )
+                .into();
+            } else if let Some(op) = self.try_parse_binary_operator() {
                 let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
                 expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
             } else {

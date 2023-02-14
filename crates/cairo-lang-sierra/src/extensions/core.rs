@@ -22,6 +22,7 @@ use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::range_check::RangeCheckType;
+use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
 use super::structure::{StructLibfunc, StructType};
@@ -59,6 +60,7 @@ define_type_hierarchy! {
         Pedersen(PedersenType),
         StarkNet(StarkNetType),
         DictManager(DictManagerType),
+        Snapshot(SnapshotType),
     }, CoreTypeConcrete
 }
 
@@ -92,5 +94,6 @@ define_libfunc_hierarchy! {
         Pedersen(PedersenLibfunc),
         StarkNet(StarkNetLibfunc),
         Debug(DebugLibfunc),
+        SnapshotTake(SnapshotTakeLibfunc),
     }, CoreConcreteLibfunc
 }

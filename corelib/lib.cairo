@@ -373,6 +373,7 @@ fn assert(cond: bool, err_code: felt) {
 
 // Serialization and Deserialization.
 mod serde;
+mod starknet_serde;
 
 // Hash functions.
 mod hash;

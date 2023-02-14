@@ -214,12 +214,14 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::UnconditionalJump(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::Enum(libfunc) => match libfunc {
             EnumConcreteLibfunc::Init(_) => vec![ApChange::Known(0)],
-            EnumConcreteLibfunc::Match(libfunc) => {
+            EnumConcreteLibfunc::Match(libfunc) | EnumConcreteLibfunc::SnapshotMatch(libfunc) => {
                 vec![ApChange::Known(0); libfunc.signature.branch_signatures.len()]
             }
         },
         CoreConcreteLibfunc::Struct(libfunc) => match libfunc {
-            StructConcreteLibfunc::Construct(_) | StructConcreteLibfunc::Deconstruct(_) => {
+            StructConcreteLibfunc::Construct(_)
+            | StructConcreteLibfunc::Deconstruct(_)
+            | StructConcreteLibfunc::SnapshotDeconstruct(_) => {
                 vec![ApChange::Known(0)]
             }
         },
@@ -260,5 +262,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
         },
         CoreConcreteLibfunc::Debug(_) => vec![ApChange::Known(0)],
+        CoreConcreteLibfunc::SnapshotTake(_) => vec![ApChange::Known(0)],
     }
 }

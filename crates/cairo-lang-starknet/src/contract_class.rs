@@ -25,7 +25,7 @@ use crate::contract::{
 };
 use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::felt_serde::{sierra_from_felts, sierra_to_felts};
-use crate::plugin::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE};
+use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE};
 use crate::sierra_version::{self, lookup_sierra_version, SierraVersionError};
 
 #[cfg(test)]

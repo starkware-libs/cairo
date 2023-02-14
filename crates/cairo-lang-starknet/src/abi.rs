@@ -3,7 +3,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::plugin::{EVENT_ATTR, VIEW_ATTR};
+use crate::plugin::consts::{EVENT_ATTR, VIEW_ATTR};
 
 #[cfg(test)]
 #[path = "abi_test.rs"]
