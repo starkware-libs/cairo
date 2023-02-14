@@ -31,7 +31,8 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
         StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::EmitEvent(_) => syscall_cost(ops, 9, 9),
-        StarkNetConcreteLibfunc::GetCallerAddress(_) => syscall_cost(ops, 5, 5),
+        StarkNetConcreteLibfunc::GetCallerAddress(_)
+        | StarkNetConcreteLibfunc::GetContractAddress(_) => syscall_cost(ops, 5, 5),
     }
 }
 
