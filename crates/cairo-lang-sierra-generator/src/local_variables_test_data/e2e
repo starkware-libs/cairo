@@ -190,3 +190,42 @@ function_call<user@test::revoke_ap>() -> ([4])
 drop<felt>([4]) -> ()
 store_temp<felt>([2]) -> ([5])
 return([5])
+
+//! > ==========================================================================
+
+//! > Test locals with consts
+
+//! > test_function_name
+test_function_generator
+
+//! > function
+fn foo() -> felt {
+    let a = 5;
+    revoke_ap();
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn revoke_ap() -> felt {
+    revoke_ap()
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label0:
+alloc_local<felt>() -> ([1])
+finalize_locals() -> ()
+felt_const<5>() -> ([0])
+store_local<felt>([1], [0]) -> ([0])
+function_call<user@test::revoke_ap>() -> ([2])
+drop<felt>([2]) -> ()
+store_temp<felt>([0]) -> ([3])
+return([3])
