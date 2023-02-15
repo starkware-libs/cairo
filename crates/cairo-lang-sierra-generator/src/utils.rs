@@ -332,10 +332,28 @@ fn collect_outputs(
     blocks: &[lowering::BlockId],
 ) -> Vec<id_arena::Id<lowering::Variable>> {
     for block in blocks {
-        if let lowering::FlatBlockEnd::Callsite(remapping) = &lowered_function.blocks[*block].end {
-            // It is guaranteed by lowering phase that all of the variables mapped to are the same.
-            return remapping.keys().copied().collect();
+        if let Some(value) = block_outputs(lowered_function, block) {
+            return value;
         }
     }
     vec![]
+}
+
+/// Collects output variables from a block.
+fn block_outputs(
+    lowered_function: &lowering::FlatLowered,
+    block: &lowering::BlockId,
+) -> Option<Vec<id_arena::Id<lowering::Variable>>> {
+    match &lowered_function.blocks[*block].end {
+        lowering::FlatBlockEnd::Callsite(remapping) => {
+            return Some(remapping.keys().copied().collect());
+        }
+        lowering::FlatBlockEnd::Fallthrough(block_id, _) => {
+            return block_outputs(lowered_function, block_id);
+        }
+        lowering::FlatBlockEnd::Return(_) => {}
+        lowering::FlatBlockEnd::Unreachable => {}
+        lowering::FlatBlockEnd::Goto(_, _) => {}
+    }
+    None
 }
