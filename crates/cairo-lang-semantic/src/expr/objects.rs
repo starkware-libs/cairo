@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{ConstantId, MemberId, StructId, VarId};
+use cairo_lang_defs::ids::{ConstantId, MemberId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{self};
@@ -8,7 +8,7 @@ use num_bigint::BigInt;
 
 use super::fmt::ExprFormatter;
 use super::pattern::Pattern;
-use crate::{semantic, FunctionId};
+use crate::{semantic, ConcreteStructId, FunctionId};
 
 pub type ExprId = Id<Expr>;
 pub type StatementId = Id<Statement>;
@@ -242,7 +242,7 @@ pub struct ExprLiteral {
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprMemberAccess {
     pub expr: semantic::ExprId,
-    pub struct_id: StructId,
+    pub concrete_struct_id: ConcreteStructId,
     pub member: MemberId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
@@ -254,7 +254,7 @@ pub struct ExprMemberAccess {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprStructCtor {
-    pub struct_id: StructId,
+    pub concrete_struct_id: ConcreteStructId,
     pub members: Vec<(MemberId, ExprId)>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]

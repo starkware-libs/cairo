@@ -3,7 +3,7 @@ use cairo_lang_semantic::types::{
 };
 
 use crate::db::LoweringGroup;
-use crate::FlatLowered;
+use crate::{FlatLowered, Statement};
 
 /// Concretizes a lowered generic function by applying a generic parameter substitution on its
 /// variable types, variants and called functions.
@@ -21,24 +21,27 @@ pub fn concretize_lowered(
     for block in lowered.blocks.0.iter_mut() {
         for stmt in block.statements.iter_mut() {
             match stmt {
-                crate::Statement::Call(stmt) => {
+                Statement::Call(stmt) => {
                     substitute_function(semantic_db, substitution, &mut stmt.function);
                 }
-                crate::Statement::MatchExtern(stmt) => {
+                Statement::MatchExtern(stmt) => {
                     substitute_function(semantic_db, substitution, &mut stmt.function);
                     for (variant, _) in stmt.arms.iter_mut() {
                         substitute_variant(semantic_db, substitution, variant);
                     }
                 }
-                crate::Statement::MatchEnum(stmt) => {
+                Statement::MatchEnum(stmt) => {
                     for (variant, _) in stmt.arms.iter_mut() {
                         substitute_variant(semantic_db, substitution, variant);
                     }
                 }
-                crate::Statement::EnumConstruct(stmt) => {
+                Statement::EnumConstruct(stmt) => {
                     substitute_variant(semantic_db, substitution, &mut stmt.variant);
                 }
-                _ => {}
+                Statement::Snapshot(_)
+                | Statement::Literal(_)
+                | Statement::StructConstruct(_)
+                | Statement::StructDestructure(_) => {}
             }
         }
     }
