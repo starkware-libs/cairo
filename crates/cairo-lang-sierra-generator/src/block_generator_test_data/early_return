@@ -23,14 +23,14 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-felt_is_zero([0]) { fallthrough() label0([1]) }
+felt_is_zero([1]) { fallthrough() label0([0]) }
 branch_align() -> ()
 felt_const<1>() -> ([2])
 PushValues([2]: felt) -> ([3])
 return([3])
 label0:
 branch_align() -> ()
-drop<NonZero<felt>>([1]) -> ()
+drop<NonZero<felt>>([0]) -> ()
 PushValues() -> ()
 label1:
 felt_const<2>() -> ([4])

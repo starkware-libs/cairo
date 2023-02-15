@@ -16,7 +16,7 @@ libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::felt>, 1> = enum_init<core::option::Option::<core::felt>, 1>;
 libfunc rename<core::option::Option::<core::felt>> = rename<core::option::Option::<core::felt>>;
 
-enum_match<core::option::Option::<(core::felt, core::felt)>>([0]) { 1([1]) 7([2]) };
+enum_match<core::option::Option::<(core::felt, core::felt)>>([0]) { fallthrough([1]) 7([2]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<felt, felt>>([1]) -> ([3], [4]);
 drop<felt>([4]) -> ();
