@@ -211,7 +211,7 @@ impl CasmBuilder {
         var
     }
 
-    /// Allocates a new variable in memory, either local (FP-baser) or temp (AP-based).
+    /// Allocates a new variable in memory, either local (FP-based) or temp (AP-based).
     pub fn alloc_var(&mut self, local_var: bool) -> Var {
         let var = self.add_var(CellExpression::Deref(CellRef {
             offset: self.main_state.allocated,
