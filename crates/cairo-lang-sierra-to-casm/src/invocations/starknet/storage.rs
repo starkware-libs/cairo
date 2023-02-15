@@ -96,7 +96,7 @@ pub fn build_storage_base_address_from_felt(
     ))
 }
 
-/// Builds instructions for StarkNet read system call.
+/// Builds instructions for Starknet read system call.
 pub fn build_storage_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -153,7 +153,7 @@ pub fn build_storage_read(
     ))
 }
 
-/// Builds instructions for StarkNet write system call.
+/// Builds instructions for Starknet write system call.
 pub fn build_storage_write(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
