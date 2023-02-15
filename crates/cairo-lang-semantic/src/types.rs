@@ -481,3 +481,21 @@ pub fn type_info(
         TypeLongId::Snapshot(_) => TypeInfo { droppable: true, duplicatable: true },
     })
 }
+
+pub fn peel_snapshots(db: &dyn SemanticGroup, ty: TypeId) -> (usize, TypeLongId) {
+    let mut long_ty = db.lookup_intern_type(ty);
+    let mut n_snapshots = 0;
+    while let TypeLongId::Snapshot(ty) = long_ty {
+        long_ty = db.lookup_intern_type(ty);
+        n_snapshots += 1;
+    }
+    (n_snapshots, long_ty)
+}
+
+pub fn wrap_in_snapshots(db: &dyn SemanticGroup, ty: TypeId, n_snapshots: usize) -> TypeId {
+    let mut ty = ty;
+    for _ in 0..n_snapshots {
+        ty = db.intern_type(TypeLongId::Snapshot(ty));
+    }
+    ty
+}
