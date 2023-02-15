@@ -1,5 +1,4 @@
-jmp rel 9 if [fp + -5] != 0;
-jmp rel 2;
+jmp rel 7 if [fp + -5] != 0;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4], ap++;
 jmp rel 7;

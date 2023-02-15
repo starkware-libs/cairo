@@ -40,8 +40,8 @@ libfunc enum_match<core::PanicResult::<core::felt>> = enum_match<core::PanicResu
 libfunc pedersen = pedersen;
 
 revoke_ap_tracking() -> ();
-dup<felt>([3]) -> ([3], [4]);
-felt_is_zero([4]) { fallthrough() 12([5]) };
+dup<felt>([3]) -> ([3], [5]);
+felt_is_zero([5]) { fallthrough() 12([4]) };
 branch_align() -> ();
 drop<felt>([3]) -> ();
 felt_const<0>() -> ([6]);
@@ -52,7 +52,7 @@ store_temp<Pedersen>([2]) -> ([10]);
 store_temp<core::PanicResult::<core::felt>>([7]) -> ([11]);
 return([8], [9], [10], [11]);
 branch_align() -> ();
-drop<NonZero<felt>>([5]) -> ();
+drop<NonZero<felt>>([4]) -> ();
 get_builtin_costs() -> ([12]);
 store_temp<BuiltinCosts>([12]) -> ([12]);
 get_gas_all([0], [1], [12]) { fallthrough([13], [14]) 23([15], [16]) };
@@ -84,7 +84,7 @@ rename<GasBuiltin>([19]) -> ([37]);
 store_temp<Pedersen>([2]) -> ([38]);
 store_temp<felt>([30]) -> ([39]);
 function_call<user@hash_chain_gas::hash_chain_gas::hash_chain>([36], [37], [38], [39]) -> ([32], [33], [34], [35]);
-enum_match<core::PanicResult::<core::felt>>([35]) { 46([40]) 49([41]) };
+enum_match<core::PanicResult::<core::felt>>([35]) { fallthrough([40]) 49([41]) };
 branch_align() -> ();
 store_temp<felt>([40]) -> ([42]);
 jump() { 57() };
