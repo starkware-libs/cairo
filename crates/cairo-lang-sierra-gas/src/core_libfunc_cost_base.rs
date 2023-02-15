@@ -51,7 +51,7 @@ pub const DICT_SQUASH_UNIQUE_KEY_COST: i32 =
 pub const DICT_SQUASH_REPEATED_ACCESS_COST: i32 =
     ConstCost { steps: 12, holes: 0, range_checks: 1 }.cost();
 /// The cost not dependent on the number of keys and access.
-pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 89, holes: 0, range_checks: 3 }.cost();
+pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 90, holes: 0, range_checks: 3 }.cost();
 /// The cost to charge per each read/write access. `DICT_SQUASH_UNIQUE_KEY_COST` is refunded for
 /// each repeated access in dict_squash.
 pub const DICT_SQUASH_ACCESS_COST: i32 =
