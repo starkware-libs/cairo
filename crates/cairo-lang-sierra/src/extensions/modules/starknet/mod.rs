@@ -1,3 +1,7 @@
+use crate::extensions::lib_func::SignatureSpecializationContext;
+use crate::extensions::{NamedType, SpecializationError};
+use crate::ids::{ConcreteTypeId, UserTypeId};
+use crate::program::GenericArg;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 pub mod storage;
@@ -18,13 +22,18 @@ use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, Contrac
 
 use self::getter::{
     GetBlockNumberTrait, GetBlockTimestampTrait, GetCallerAddressTrait, GetContractAddressTrait,
-    GetSequencerAddressTrait, GetterLibfunc,
+    GetSequencerAddressTrait, GetTxInfoTrait, GetterLibfunc,
 };
 use self::interoperability::{ContractAddressToFeltLibfunc, ContractAddressTryFromFeltLibfunc};
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc, StorageAddressType,
     StorageBaseAddressFromFeltLibfunc,
 };
+use super::array::ArrayType;
+use super::felt::FeltType;
+use super::snapshot::SnapshotType;
+use super::structure::StructType;
+use super::uint128::Uint128Type;
 
 define_type_hierarchy! {
     pub enum StarkNetType {
@@ -53,5 +62,45 @@ define_libfunc_hierarchy! {
          GetCallerAddress(GetterLibfunc<GetCallerAddressTrait>),
          GetContractAddress(GetterLibfunc<GetContractAddressTrait>),
          GetSequencerAddress(GetterLibfunc<GetSequencerAddressTrait>),
+         GetTxInfo(GetterLibfunc<GetTxInfoTrait>),
     }, StarkNetConcreteLibfunc
+}
+
+/// Helper for TxInfo type def.
+fn get_tx_info_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+    let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
+    let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+    let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
+    let felt_array_snapshot_ty =
+        context.get_wrapped_concrete_type(SnapshotType::id(), felt_array_ty)?;
+    let felt_array_span_ty = context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::span::Span::<core::felt>")),
+            GenericArg::Type(felt_array_snapshot_ty),
+        ],
+    )?;
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::starknet::TxInfo")),
+            // version
+            GenericArg::Type(felt_ty.clone()),
+            // account_contract_address
+            GenericArg::Type(contract_address_ty),
+            // max_fee
+            GenericArg::Type(u128_ty),
+            // signature
+            GenericArg::Type(felt_array_span_ty),
+            // transaction_hash
+            GenericArg::Type(felt_ty.clone()),
+            // chain_id
+            GenericArg::Type(felt_ty.clone()),
+            // nonce
+            GenericArg::Type(felt_ty),
+        ],
+    )
 }

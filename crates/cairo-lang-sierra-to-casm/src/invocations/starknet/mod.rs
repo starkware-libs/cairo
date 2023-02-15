@@ -58,5 +58,6 @@ pub fn build(
         }
         StarkNetConcreteLibfunc::GetBlockNumber(_) => build_getter(builder, "GetBlockNumber"),
         StarkNetConcreteLibfunc::GetBlockTimestamp(_) => build_getter(builder, "GetBlockTimestmp"),
+        StarkNetConcreteLibfunc::GetTxInfo(_) => build_getter(builder, "GetTxInfo"),
     }
 }
