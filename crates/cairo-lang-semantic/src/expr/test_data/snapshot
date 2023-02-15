@@ -1,0 +1,22 @@
+//! > Test struct snapshot.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: @A) {
+    bar(a.a, a.b);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: Array::<felt>,
+    b: felt,
+}
+fn bar(a: @Array::<felt>, b: @felt) {
+}
+
+//! > expected_diagnostics
