@@ -54,7 +54,6 @@ fn foo(e: SingleVariant) -> felt {
 }
 
 //! > casm
-jmp rel 2;
 [ap + 0] = 0, ap++;
 ret;
 
@@ -72,7 +71,7 @@ libfunc felt_const<0> = felt_const<0>;
 libfunc store_temp<felt> = store_temp<felt>;
 libfunc rename<felt> = rename<felt>;
 
-enum_match<test::SingleVariant>([0]) { 1([1]) };
+enum_match<test::SingleVariant>([0]) -> ([1]);
 branch_align() -> ();
 drop<felt>([1]) -> ();
 felt_const<0>() -> ([2]);
@@ -144,8 +143,7 @@ fn foo(e: Option) -> felt {
 }
 
 //! > casm
-jmp rel 8 if [fp + -4] != 0;
-jmp rel 2;
+jmp rel 6 if [fp + -4] != 0;
 [ap + 0] = 0, ap++;
 jmp rel 4;
 [ap + 0] = 1, ap++;
@@ -169,7 +167,7 @@ libfunc drop<Unit> = drop<Unit>;
 libfunc felt_const<1> = felt_const<1>;
 libfunc rename<felt> = rename<felt>;
 
-enum_match<test::Option>([0]) { 1([1]) 6([2]) };
+enum_match<test::Option>([0]) { fallthrough([1]) 6([2]) };
 branch_align() -> ();
 drop<felt>([1]) -> ();
 felt_const<0>() -> ([3]);
@@ -276,7 +274,7 @@ libfunc felt_const<1> = felt_const<1>;
 libfunc felt_const<2> = felt_const<2>;
 libfunc rename<felt> = rename<felt>;
 
-enum_match<test::Color>([0]) { 1([1]) 6([2]) 11([3]) };
+enum_match<test::Color>([0]) { fallthrough([1]) 6([2]) 11([3]) };
 branch_align() -> ();
 drop<felt>([1]) -> ();
 felt_const<0>() -> ([4]);

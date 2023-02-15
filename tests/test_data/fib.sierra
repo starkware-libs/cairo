@@ -16,15 +16,15 @@ libfunc function_call<user@fib::fib::fib> = function_call<user@fib::fib::fib>;
 libfunc rename<felt> = rename<felt>;
 
 revoke_ap_tracking() -> ();
-dup<felt>([2]) -> ([2], [3]);
-felt_is_zero([3]) { fallthrough() 8([4]) };
+dup<felt>([2]) -> ([2], [4]);
+felt_is_zero([4]) { fallthrough() 8([3]) };
 branch_align() -> ();
 drop<felt>([1]) -> ();
 drop<felt>([2]) -> ();
 store_temp<felt>([0]) -> ([5]);
 jump() { 19() };
 branch_align() -> ();
-drop<NonZero<felt>>([4]) -> ();
+drop<NonZero<felt>>([3]) -> ();
 dup<felt>([1]) -> ([1], [7]);
 felt_add([0], [7]) -> ([6]);
 felt_const<1>() -> ([8]);

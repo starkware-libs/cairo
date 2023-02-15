@@ -62,7 +62,7 @@ enum_init<core::bool, 0>([10]) -> ([11]);
 store_temp<core::bool>([11]) -> ([9]);
 bool_not_impl([9]) -> ([12]);
 store_temp<core::bool>([12]) -> ([12]);
-enum_match<core::bool>([12]) { 36([13]) 42([14]) };
+enum_match<core::bool>([12]) { fallthrough([13]) 42([14]) };
 branch_align() -> ();
 drop<Unit>([13]) -> ();
 drop<felt>([1]) -> ();

@@ -56,9 +56,7 @@
     "0x480680017fff8000",
     "0x0",
     "0x20680017fff7ffe",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127fff7fff8000",
     "0x10780017fff7fff",
     "0x10",
@@ -97,9 +95,7 @@
     "0x480680017fff8000",
     "0x0",
     "0x20680017fff7ffe",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127fff7fff8000",
     "0x10780017fff7fff",
     "0x10",
@@ -138,9 +134,7 @@
     "0x480680017fff8000",
     "0x0",
     "0x20680017fff7ffe",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127fff7fff8000",
     "0x10780017fff7fff",
     "0x10",
@@ -176,14 +170,12 @@
     "0x1",
     "0x48307ffe80007fff",
     "0x20680017fff7fff",
-    "0x6",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x4",
     "0x10780017fff7fff",
     "0x13",
     "0x480a7ffb7fff8000",
     "0x1104800180018000",
-    "0x19f",
+    "0x193",
     "0x40780017fff7fff",
     "0x1",
     "0x480680017fff8000",
@@ -199,9 +191,9 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x3c3",
+    "0x39b",
     "0x482480017fff8000",
-    "0x3c2",
+    "0x39a",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -240,11 +232,9 @@
     "0x480a80037fff8000",
     "0x480a80047fff8000",
     "0x1104800180018000",
-    "0x168",
+    "0x15c",
     "0x20680017fff7ffd",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127ffe7fff8000",
     "0x10780017fff7fff",
     "0xa",
@@ -262,12 +252,12 @@
     "0x48127ffe7fff8000",
     "0x48127ff87fff8000",
     "0x1104800180018000",
-    "0x185",
+    "0x177",
     "0x48127ffe7fff8000",
     "0x48127ffe7fff8000",
     "0x48127ff57fff8000",
     "0x1104800180018000",
-    "0x180",
+    "0x172",
     "0x48127fb07fff8000",
     "0x48127fe97fff8000",
     "0x48127fe97fff8000",
@@ -327,14 +317,12 @@
     "0x1",
     "0x48307ffe80007fff",
     "0x20680017fff7fff",
-    "0x6",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x4",
     "0x10780017fff7fff",
     "0x13",
     "0x480a7ffb7fff8000",
     "0x1104800180018000",
-    "0x108",
+    "0x100",
     "0x40780017fff7fff",
     "0x1",
     "0x480680017fff8000",
@@ -350,9 +338,9 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x32c",
+    "0x308",
     "0x482480017fff8000",
-    "0x32b",
+    "0x307",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -387,7 +375,7 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x10d",
+    "0x101",
     "0x40780017fff7fff",
     "0x1",
     "0x48127ffb7fff8000",
@@ -434,12 +422,10 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0xdf",
+    "0xd3",
     "0x40137fe87fff8001",
     "0x20680017fff7ffe",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127fff7fff8000",
     "0x10780017fff7fff",
     "0x10",
@@ -461,13 +447,11 @@
     "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
     "0x1104800180018000",
-    "0x115",
+    "0x109",
     "0x40137fe17fff8002",
     "0x40137ffb7fff8000",
     "0x20680017fff7ffe",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127fff7fff8000",
     "0x10780017fff7fff",
     "0x10",
@@ -503,14 +487,12 @@
     "0x1",
     "0x48307ffe80007fff",
     "0x20680017fff7fff",
-    "0x6",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x4",
     "0x10780017fff7fff",
     "0x13",
     "0x480a7ffb7fff8000",
     "0x1104800180018000",
-    "0x58",
+    "0x56",
     "0x40780017fff7fff",
     "0x1",
     "0x480680017fff8000",
@@ -526,9 +508,9 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x27c",
+    "0x25e",
     "0x482480017fff8000",
-    "0x27b",
+    "0x25d",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -566,11 +548,9 @@
     "0x480a80027fff8000",
     "0x480a80037fff8000",
     "0x1104800180018000",
-    "0xec",
+    "0xe0",
     "0x20680017fff7ffd",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127ffe7fff8000",
     "0x10780017fff7fff",
     "0xa",
@@ -588,7 +568,7 @@
     "0x48127ffe7fff8000",
     "0x48127ffc7fff8000",
     "0x1104800180018000",
-    "0xf7",
+    "0xeb",
     "0x48127fea7fff8000",
     "0x48127fea7fff8000",
     "0x48127fea7fff8000",
@@ -602,11 +582,9 @@
     "0x480a7ff97fff8000",
     "0x480a7ffa7fff8000",
     "0x1104800180018000",
-    "0xf1",
+    "0xe5",
     "0x20680017fff7ffd",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127ffe7fff8000",
     "0x10780017fff7fff",
     "0xc",
@@ -625,11 +603,9 @@
     "0x482480017ffd8000",
     "0x1",
     "0x1104800180018000",
-    "0x112",
+    "0x106",
     "0x20680017fff7ffd",
-    "0x6",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x4",
     "0x10780017fff7fff",
     "0xa",
     "0x48127ffb7fff8000",
@@ -676,9 +652,7 @@
     "0x480680017fff8000",
     "0x0",
     "0x20680017fff7ffe",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127fff7fff8000",
     "0x10780017fff7fff",
     "0xc",
@@ -757,9 +731,7 @@
     "0x480680017fff8000",
     "0x0",
     "0x20680017fff7ffe",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127fff7fff8000",
     "0x10780017fff7fff",
     "0xc",
@@ -776,11 +748,9 @@
     "0x480a7ffb7fff8000",
     "0x48127ffe7fff8000",
     "0x1104800180018000",
-    "0xb3",
+    "0xab",
     "0x20680017fff7ffe",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127fff7fff8000",
     "0x10780017fff7fff",
     "0xc",
@@ -807,11 +777,9 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0xbb",
+    "0xb5",
     "0x20680017fff7ffd",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127ffe7fff8000",
     "0x10780017fff7fff",
     "0xc",
@@ -838,7 +806,7 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff46",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff4e",
     "0x48127ffe7fff8000",
     "0x48127ffe7fff8000",
     "0x208b7fff7fff7ffe",
@@ -873,11 +841,9 @@
     "0x480280067ffd8000",
     "0x480280077ffd8000",
     "0x1104800180018000",
-    "0xd1",
+    "0xc9",
     "0x20680017fff7ffd",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127ffe7fff8000",
     "0x10780017fff7fff",
     "0xb",
@@ -931,11 +897,9 @@
     "0x480280077ffc8000",
     "0x480280087ffc8000",
     "0x1104800180018000",
-    "0xab",
+    "0xa3",
     "0x20680017fff7ffd",
-    "0x6",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x4",
     "0x10780017fff7fff",
     "0x9",
     "0x48127ff67fff8000",
@@ -999,7 +963,7 @@
     "0x48127ffe7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff5d",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff61",
     "0x480680017fff8000",
     "0x43616c6c436f6e7472616374",
     "0x400280007ffb7fff",
@@ -1027,11 +991,9 @@
     "0x480280077ffb8000",
     "0x480280087ffb8000",
     "0x1104800180018000",
-    "0x5d",
+    "0x55",
     "0x20680017fff7ffd",
-    "0x8",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x6",
     "0x48127ffe7fff8000",
     "0x48127ffe7fff8000",
     "0x10780017fff7fff",
@@ -1050,15 +1012,13 @@
     "0x48127ffd7fff8000",
     "0x48127ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffec9",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffed5",
     "0x480680017fff8000",
     "0x52657475726e6564206461746120746f6f2073686f7274",
     "0x1104800180018000",
-    "0x56",
+    "0x4e",
     "0x20680017fff7ffd",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x48127ffe7fff8000",
     "0x10780017fff7fff",
     "0xc",
@@ -1082,9 +1042,7 @@
     "0x0",
     "0x208b7fff7fff7ffe",
     "0x20780017fff7ffb",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x480a7ffc7fff8000",
     "0x10780017fff7fff",
     "0x9",
@@ -1102,9 +1060,7 @@
     "0x0",
     "0x208b7fff7fff7ffe",
     "0x20780017fff7ffb",
-    "0x6",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x4",
     "0x10780017fff7fff",
     "0x7",
     "0x480680017fff8000",
@@ -1120,9 +1076,7 @@
     "0x0",
     "0x208b7fff7fff7ffe",
     "0x20780017fff7ffb",
-    "0x8",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x6",
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x10780017fff7fff",
@@ -1140,9 +1094,7 @@
     "0x48127ffd7fff8000",
     "0x208b7fff7fff7ffe",
     "0x20780017fff7ffb",
-    "0x7",
-    "0x10780017fff7fff",
-    "0x2",
+    "0x5",
     "0x480a7ffc7fff8000",
     "0x10780017fff7fff",
     "0xb",
@@ -1176,73 +1128,79 @@
       ]
     ],
     [
-      60,
+      58,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      101,
+      97,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      142,
+      136,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      182,
+      174,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      201,
+      193,
       [
         "memory[ap + 0] = 31200 <= memory[fp + 1]"
       ]
     ],
     [
-      218,
+      210,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      254,
+      244,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      276,
+      266,
       [
         "memory[ap + 0] = 0 <= memory[fp + -6]"
       ]
     ],
     [
-      291,
+      281,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      333,
+      321,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      352,
+      340,
       [
         "memory[ap + 0] = 100 <= memory[fp + 1]"
       ]
     ],
     [
-      369,
+      357,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      374,
       [
         "memory[ap + 0] = segments.add()"
       ]
@@ -1250,113 +1208,107 @@
     [
       386,
       [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      398,
-      [
         "memory[ap + 0] = 2770 <= memory[fp + -6]"
       ]
     ],
     [
-      413,
+      401,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      441,
+      427,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      469,
+      453,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      509,
+      491,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      528,
+      510,
       [
         "memory[ap + 0] = 25010 <= memory[fp + 1]"
       ]
     ],
     [
-      545,
+      527,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      580,
+      560,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      690,
+      664,
       [
         "memory[ap + 4] = memory[ap + -1] < 3618502788666131106986593281521497120414687020801267626233049500247285301248"
       ]
     ],
     [
-      694,
+      668,
       [
         "\n(value, scalar) = (memory[ap + 3], 313594649253062377472)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
       ]
     ],
     [
-      704,
+      678,
       [
         "\n(value, scalar) = (memory[ap + -2], 10633823966279326983230456482242756608)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -1] = x\nmemory[ap + 0] = y\n"
       ]
     ],
     [
-      850,
+      818,
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
       ]
     ],
     [
-      907,
+      873,
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
       ]
     ],
     [
-      952,
+      916,
       [
         "memory[ap + 0] = memory[fp + -3] < 340282366920938463463374607431768211456"
       ]
     ],
     [
-      954,
+      918,
       [
         "(memory[ap + 3], memory[ap + 4]) = divmod(memory[fp + -3], 340282366920938463463374607431768211456)"
       ]
     ],
     [
-      991,
+      955,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      1005,
+      969,
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -5])"
       ]
     ],
     [
-      1144,
+      1096,
       [
         "memory[ap + 0] = segments.add()"
       ]
@@ -1373,14 +1325,14 @@
       },
       {
         "selector": "0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80",
-        "offset": 274,
+        "offset": 264,
         "builtins": [
           "range_check"
         ]
       },
       {
         "selector": "0x3d778356014c91effae9863ee4a8c2663d8fa2e9f0c4145c1e01f5435ced0be",
-        "offset": 396,
+        "offset": 384,
         "builtins": [
           "range_check"
         ]
