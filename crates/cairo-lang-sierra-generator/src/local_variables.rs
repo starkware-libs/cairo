@@ -106,7 +106,7 @@ fn inner_find_local_variables(
                 let concrete_enum_type = ctx.db.get_concrete_type_id(
                     ctx.lowered_function.variables[statement_match_enum.input].ty,
                 )?;
-                let concrete_function_id = match_enum_libfunc_id(ctx.db, concrete_enum_type);
+                let concrete_function_id = match_enum_libfunc_id(ctx.db, concrete_enum_type)?;
 
                 known_ap_change &= handle_match(
                     ctx,
@@ -142,7 +142,7 @@ fn inner_find_local_variables(
                     ctx.db,
                     &mut state,
                     &mut known_ap_change,
-                    struct_deconstruct_libfunc_id(ctx.db, ty),
+                    struct_deconstruct_libfunc_id(ctx.db, ty)?,
                     &[statement_struct_destructure.input],
                     &statement_struct_destructure.outputs,
                 );
