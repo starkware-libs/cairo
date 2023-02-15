@@ -14,6 +14,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
+use crate::ids::ConcreteTypeId;
 
 /// Trait for implementing getters.
 pub trait GetterTraits: Default {
@@ -23,20 +24,40 @@ pub trait GetterTraits: Default {
     type InfoType: NoGenericArgsGenericType;
 }
 
+/// Same as GetterTraits, but with a function to return the concrete TypeId.
+pub trait GetterTraitsEx: Default {
+    /// The generic libfunc id for the getter libfunc.
+    const STR_ID: &'static str;
+    /// The simple sierra generic type returned by the getter.
+    fn info_type_id(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<ConcreteTypeId, SpecializationError>;
+}
+
+impl<TGetterTraits: GetterTraits> GetterTraitsEx for TGetterTraits {
+    const STR_ID: &'static str = TGetterTraits::STR_ID;
+    fn info_type_id(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<ConcreteTypeId, SpecializationError> {
+        context.get_concrete_type(TGetterTraits::InfoType::id(), &[])
+    }
+}
+
 /// Libfunc for a getter system call.
 #[derive(Default)]
-pub struct GetterLibfunc<TGetterTraits: GetterTraits> {
-    _phantom: PhantomData<TGetterTraits>,
+pub struct GetterLibfunc<TGetterTraitsEx: GetterTraitsEx> {
+    _phantom: PhantomData<TGetterTraitsEx>,
 }
-impl<TGetterTraits: GetterTraits> NoGenericArgsGenericLibfunc for GetterLibfunc<TGetterTraits> {
-    const STR_ID: &'static str = TGetterTraits::STR_ID;
-
+impl<TGetterTraitsEx: GetterTraitsEx> NoGenericArgsGenericLibfunc
+    for GetterLibfunc<TGetterTraitsEx>
+{
+    const STR_ID: &'static str = TGetterTraitsEx::STR_ID;
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        let info_ty = context.get_concrete_type(TGetterTraits::InfoType::id(), &[])?;
+        let info_ty = TGetterTraitsEx::info_type_id(context)?;
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?;
@@ -138,4 +159,16 @@ pub struct GetBlockTimestampTrait {}
 impl GetterTraits for GetBlockTimestampTrait {
     const STR_ID: &'static str = "get_block_timestamp_syscall";
     type InfoType = Uint64Type;
+}
+
+#[derive(Default)]
+pub struct GetTxInfoTrait {}
+impl GetterTraitsEx for GetTxInfoTrait {
+    const STR_ID: &'static str = "get_tx_info_syscall";
+
+    fn info_type_id(
+        _context: &dyn SignatureSpecializationContext,
+    ) -> Result<ConcreteTypeId, SpecializationError> {
+        todo!();
+    }
 }
