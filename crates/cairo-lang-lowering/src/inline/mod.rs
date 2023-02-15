@@ -90,33 +90,6 @@ fn gather_inlining_info(
     }
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
-    // TODO(yuval): Consider caching the result and use it in the next phase.
-    let last_block_id = find_last_block(&lowered.blocks)?;
-
-    for (block_id, block) in lowered.blocks.iter() {
-        match &block.end {
-            FlatBlockEnd::Return(_) => {}
-            FlatBlockEnd::Unreachable | FlatBlockEnd::Goto(..) | FlatBlockEnd::Fallthrough(..) => {
-                // TODO(ilya): Remove the following limitation.
-                if block_id == last_block_id {
-                    if report_diagnostics {
-                        diagnostics.report(
-                            function_id.untyped_stable_ptr(defs_db),
-                            LoweringDiagnosticKind::InliningFunctionWithUnreachableEndNotSupported,
-                        );
-                    }
-                    return Ok(info);
-                }
-            }
-            FlatBlockEnd::NotSet => unreachable!(),
-            FlatBlockEnd::Callsite(_) => {
-                if block_id.is_root() || block_id == last_block_id {
-                    panic!("Unexpected block end.");
-                }
-            }
-        };
-    }
-
     info.is_inlinable = true;
     info.should_inline = should_inline(db, &lowered)?;
 
@@ -432,20 +405,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
             VarRemapping::default(),
         );
 
-        // Find the last block of the function.
-        let last_block_id = find_last_block(&lowered.blocks)?;
-
         for (block_id, block) in lowered.blocks.iter() {
             let mut block = mapper.rebuild_block(block);
             // Remove the inputs from the root block.
             if block_id.is_root() {
                 block.inputs = vec![];
-            }
-            // The last block should end with Fallthrough and not Goto.
-            if block_id == last_block_id {
-                if let FlatBlockEnd::Goto(target, remapping) = block.end {
-                    block.end = FlatBlockEnd::Fallthrough(target, remapping);
-                }
             }
 
             assert_eq!(
@@ -457,17 +421,6 @@ impl<'db> FunctionInlinerRewriter<'db> {
 
         Ok(())
     }
-}
-
-/// Finds the last block of a function, given its root block.
-/// Returns an error if `blocks` doesn't contain a root block (0).
-fn find_last_block(blocks: &Blocks<FlatBlock>) -> Maybe<BlockId> {
-    blocks.has_root()?;
-    let mut cur_block_id = BlockId::root();
-    while let FlatBlockEnd::Fallthrough(target_id, _) = blocks[cur_block_id].end {
-        cur_block_id = target_id;
-    }
-    Ok(cur_block_id)
 }
 
 pub fn apply_inlining(

@@ -5,6 +5,7 @@ use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::LoweringGroup;
+use crate::flow::add_fallthroughs;
 use crate::fmt::LoweredFormatter;
 use crate::inline::apply_inlining;
 use crate::test_utils::LoweringDatabaseForTesting;
@@ -38,6 +39,7 @@ fn test_function_inlining(
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     apply_inlining(db, test_function.function_id, &mut after).unwrap();
+    add_fallthroughs(&mut after);
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
