@@ -237,7 +237,12 @@ fn compute_expr_unary_semantic(
             stable_ptr: syntax.stable_ptr().into(),
         }));
     }
-    let function = match core_unary_operator(ctx.db, &unary_op, expr_ty) {
+    let function = match core_unary_operator(
+        ctx.db,
+        &mut ctx.resolver.inference,
+        &unary_op,
+        syntax.stable_ptr().untyped(),
+    )? {
         Err(err_kind) => {
             return Err(ctx.diagnostics.report(&unary_op, err_kind));
         }
