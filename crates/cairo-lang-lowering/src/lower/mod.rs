@@ -13,6 +13,7 @@ use semantic::corelib::{
     jump_nz_nonzero_variant, jump_nz_zero_variant, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
+use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{ConcreteTypeId, ExprPropagateError, TypeLongId};
 
 use self::context::{
@@ -251,7 +252,7 @@ fn lower_single_pattern(
                 var_reqs: members
                     .iter()
                     .map(|(_, member)| VarRequest {
-                        ty: member.ty,
+                        ty: wrap_in_snapshots(ctx.db.upcast(), member.ty, structure.n_snapshots),
                         location: ctx.get_location(
                             required_members
                                 .get(&member.id)
@@ -508,7 +509,8 @@ fn lower_expr_match(
         return lower_optimized_extern_match(ctx, scope, extern_enum, &expr.arms);
     }
 
-    let (concrete_enum_id, concrete_variants) = extract_concrete_enum(ctx, expr)?;
+    let ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots } =
+        extract_concrete_enum(ctx, expr)?;
     let expr_var = lowered_expr.var(ctx, scope)?;
 
     // Merge arm blocks.
@@ -534,7 +536,10 @@ fn lower_expr_match(
                 ctx.get_location(enum_pattern.inner_pattern.stable_ptr().untyped());
             let variant_expr = LoweredExpr::AtVariable(subscope.add_input(
                 ctx,
-                VarRequest { ty: concrete_variant.ty, location: pattern_location },
+                VarRequest {
+                    ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
+                    location: pattern_location,
+                },
             ));
 
             match lower_single_pattern(
@@ -702,18 +707,24 @@ fn lower_expr_match_felt(
     merged.expr
 }
 
+/// Information about the enum of a match statement. See [extract_concrete_enum].
+struct ExtractedEnumDetails {
+    concrete_enum_id: semantic::ConcreteEnumId,
+    concrete_variants: Vec<semantic::ConcreteVariant>,
+    n_snapshots: usize,
+}
+
 /// Extracts concrete enum and variants from a match expression. Assumes it is indeed a concrete
 /// enum.
 fn extract_concrete_enum(
     ctx: &mut LoweringContext<'_>,
     expr: &semantic::ExprMatch,
-) -> Result<(semantic::ConcreteEnumId, Vec<semantic::ConcreteVariant>), LoweringFlowError> {
-    let concrete_ty = try_extract_matches!(
-        ctx.db.lookup_intern_type(ctx.function_body.exprs[expr.matched_expr].ty()),
-        TypeLongId::Concrete
-    )
-    .to_maybe()
-    .map_err(LoweringFlowError::Failed)?;
+) -> Result<ExtractedEnumDetails, LoweringFlowError> {
+    let ty = ctx.function_body.exprs[expr.matched_expr].ty();
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db.upcast(), ty);
+    let concrete_ty = try_extract_matches!(long_ty, TypeLongId::Concrete)
+        .to_maybe()
+        .map_err(LoweringFlowError::Failed)?;
     let concrete_enum_id = try_extract_matches!(concrete_ty, ConcreteTypeId::Enum)
         .to_maybe()
         .map_err(LoweringFlowError::Failed)?;
@@ -736,7 +747,7 @@ fn extract_concrete_enum(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
         ));
     }
-    Ok((concrete_enum_id, concrete_variants))
+    Ok(ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots })
 }
 
 /// Lowers a sequence of expressions and return them all. If the flow ended in the middle,
@@ -790,7 +801,10 @@ fn lower_expr_member_access(
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
             input: lower_expr(ctx, scope, expr.expr)?.var(ctx, scope)?,
-            member_tys: members.into_iter().map(|(_, member)| member.ty).collect(),
+            member_tys: members
+                .into_iter()
+                .map(|(_, member)| wrap_in_snapshots(ctx.db.upcast(), member.ty, expr.n_snapshots))
+                .collect(),
             member_idx,
             location,
         }

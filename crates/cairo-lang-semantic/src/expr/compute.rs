@@ -49,7 +49,7 @@ use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
-use crate::types::{resolve_type, ConcreteTypeId};
+use crate::types::{peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId};
 use crate::{ConcreteFunction, FunctionLongId, Mutability, Parameter, PatternStruct, Signature};
 
 /// Context for computing the semantic model of expression trees.
@@ -875,20 +875,22 @@ fn compute_pattern_semantic(
             })
         }
         ast::Pattern::Enum(enum_pattern) => {
+            // Peel all snapshot wrappers.
+            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+
             // Check that type is an enum, and get the concrete enum from it.
-            let concrete_enum =
-                try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
-                    .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
-                    .ok_or_else(|| {
-                        // Don't add a diagnostic if the type is missing.
-                        // A diagnostic should've already been added.
-                        if !ty.is_missing(ctx.db) {
-                            ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty })
-                        } else {
-                            // TODO(lior): Take the DiagnosticAdded from the missing type.
-                            skip_diagnostic()
-                        }
-                    })?;
+            let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
+                .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
+                .ok_or_else(|| {
+                    // Don't add a diagnostic if the type is missing.
+                    // A diagnostic should've already been added.
+                    if !ty.is_missing(ctx.db) {
+                        ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty })
+                    } else {
+                        // TODO(lior): Take the DiagnosticAdded from the missing type.
+                        skip_diagnostic()
+                    }
+                })?;
 
             // Extract the enum variant from the path syntax.
             let path = enum_pattern.path(syntax_db);
@@ -917,7 +919,7 @@ fn compute_pattern_semantic(
                 .map_err(|_| ctx.diagnostics.report(&path, UnknownEnum))?;
 
             // Compute inner pattern.
-            let ty = concrete_variant.ty;
+            let ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
             let inner_pattern =
                 compute_pattern_semantic(ctx, enum_pattern.pattern(syntax_db), ty)?.into();
             Pattern::EnumVariant(PatternEnumVariant {
@@ -945,20 +947,22 @@ fn compute_pattern_semantic(
             identifier.stable_ptr().into(),
         ),
         ast::Pattern::Struct(pattern_struct) => {
+            // Peel all snapshot wrappers.
+            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+
             // Check that type is an struct, and get the concrete struct from it.
-            let concrete_struct =
-                try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
-                    .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
-                    .ok_or_else(|| {
-                        // Don't add a diagnostic if the type is missing.
-                        // A diagnostic should've already been added.
-                        if !ty.is_missing(ctx.db) {
-                            ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty })
-                        } else {
-                            // TODO(lior): Take the DiagnosticAdded from the missing type.
-                            skip_diagnostic()
-                        }
-                    })?;
+            let concrete_struct = try_extract_matches!(long_ty, TypeLongId::Concrete)
+                .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
+                .ok_or_else(|| {
+                    // Don't add a diagnostic if the type is missing.
+                    // A diagnostic should've already been added.
+                    if !ty.is_missing(ctx.db) {
+                        ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty })
+                    } else {
+                        // TODO(lior): Take the DiagnosticAdded from the missing type.
+                        skip_diagnostic()
+                    }
+                })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct.struct_id(ctx.db);
             let mut members = ctx.db.struct_members(struct_id).expect("This is a valid struct.");
@@ -984,11 +988,12 @@ fn compute_pattern_semantic(
                     PatternStructParam::Single(single) => {
                         let name = single.name(syntax_db);
                         let member = get_member(ctx, name.text(syntax_db)).to_maybe()?;
+                        let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                         let pattern = create_variable_pattern(
                             ctx,
                             name,
                             &single.modifiers(syntax_db).elements(syntax_db),
-                            member.ty,
+                            ty,
                             single.stable_ptr().into(),
                         );
                         field_patterns.push((member, Box::new(pattern)));
@@ -996,8 +1001,9 @@ fn compute_pattern_semantic(
                     PatternStructParam::WithExpr(with_expr) => {
                         let member = get_member(ctx, with_expr.name(syntax_db).text(syntax_db))
                             .to_maybe()?;
+                        let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                         let pattern =
-                            compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), member.ty)?;
+                            compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), ty)?;
                         field_patterns.push((member, Box::new(pattern)));
                     }
                     PatternStructParam::Tail(_) => {
@@ -1014,14 +1020,17 @@ fn compute_pattern_semantic(
                 id: struct_id,
                 field_patterns,
                 ty,
+                n_snapshots,
                 stable_ptr: pattern_struct.stable_ptr(),
             })
         }
         ast::Pattern::Tuple(pattern_tuple) => {
-            let tys = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Tuple)
-                .ok_or_else(|| {
-                    ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty })
-                })?;
+            // Peel all snapshot wrappers.
+            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+
+            let tys = try_extract_matches!(long_ty, TypeLongId::Tuple).ok_or_else(|| {
+                ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty })
+            })?;
 
             let patterns_ast = pattern_tuple.patterns(syntax_db).elements(syntax_db);
             if tys.len() != patterns_ast.len() {
@@ -1035,6 +1044,7 @@ fn compute_pattern_semantic(
             }
             // Iterator of Option<Pattern?, for each field.
             let pattern_options = zip_eq(patterns_ast.into_iter(), tys).map(|(pattern_ast, ty)| {
+                let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
                 Ok(Box::new(compute_pattern_semantic(ctx, pattern_ast, ty)?))
             });
             // If all are Some, collect into a Vec.
@@ -1384,7 +1394,8 @@ fn member_access_expr(
 
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
-    match ctx.db.lookup_intern_type(lexpr.ty()) {
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, lexpr.ty());
+    match long_ty {
         TypeLongId::Concrete(concrete) => match concrete {
             ConcreteTypeId::Struct(concrete_struct_id) => {
                 // TODO(lior): Add a diagnostic test when accessing a member of a missing type.
@@ -1403,7 +1414,8 @@ fn member_access_expr(
                     expr: lexpr_id,
                     struct_id: concrete_struct_id.struct_id(ctx.db),
                     member: member.id,
-                    ty: member.ty,
+                    ty: wrap_in_snapshots(ctx.db, member.ty, n_snapshots),
+                    n_snapshots,
                     stable_ptr,
                 }))
             }
