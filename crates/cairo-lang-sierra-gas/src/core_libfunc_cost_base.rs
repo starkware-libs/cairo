@@ -1,3 +1,5 @@
+use std::iter;
+
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
@@ -27,7 +29,7 @@ use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
-use itertools::Itertools;
+use itertools::{chain, Itertools};
 
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
@@ -263,9 +265,16 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Mem(FinalizeLocals(_)) | UnconditionalJump(_) => {
             vec![ops.steps(1)]
         }
-        Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(1)],
+        Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(0)],
         Enum(EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig)) => {
-            vec![ops.steps(1); sig.signature.branch_signatures.len()]
+            let n = sig.signature.branch_signatures.len();
+            match n {
+                0 => unreachable!(),
+                1 => vec![ops.steps(0)],
+                2 => vec![ops.steps(1); 2],
+                _ => chain!(iter::once(ops.steps(1)), itertools::repeat_n(ops.steps(2), n - 1),)
+                    .collect_vec(),
+            }
         }
         Struct(
             StructConcreteLibfunc::Construct(_)
