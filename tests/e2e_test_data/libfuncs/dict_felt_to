@@ -168,7 +168,7 @@ fn foo(dict: DictFeltTo::<felt>) -> SquashedDictFeltTo::<felt> {
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 226;
+jmp rel 228;
 [fp + 2] = [fp + -5], ap++;
 ap += 6;
 %{
@@ -242,16 +242,17 @@ __dict_manager.get_tracker(memory[fp + 0]).current_ptr = memory[ap + -1].address
 [ap + 0] = [ap + -3], ap++;
 ret;
 [fp + -4] = [fp + 0] + [fp + -5], ap++;
-jmp rel 5 if [fp + 0] != 0, ap++;
-[ap + 1] = [fp + -6], ap++;
-[ap + 1] = [fp + -3], ap++;
+ap += 2;
+jmp rel 5 if [fp + 0] != 0;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -3], ap++;
 ret;
-[fp + 0] = [ap + 1] * 3, ap++;
+[fp + 0] = [ap + 0] * 3, ap++;
 %{
 dict_access_size = 3
 address = memory[fp + -5].address_
 assert memory[fp + 0] % dict_access_size == 0, 'Accesses array size must be divisible by DictAccess.SIZE'
-n_accesses = memory[ap + 0]
+n_accesses = memory[ap + -1]
 if '__squash_dict_max_size' in globals():
     assert n_accesses <= __squash_dict_max_size, f'squash_dict() can only be used with n_accesses<={__squash_dict_max_size}. ' f'Got: n_accesses={n_accesses}.'
 # A map from key to the list of indices accessing it.
@@ -266,10 +267,10 @@ memory[fp + 2] = 1 if keys[0] >= range_check_builtin.bound else 0
 memory[fp + 1] = key = keys.pop()
 %}
 jmp rel 7 if [fp + 2] != 0, ap++;
-[fp + 1] = [[fp + -6] + 0], ap++;
+[fp + 1] = [[fp + -6] + 0];
 [ap + -1] = [fp + -6] + 1;
 jmp rel 3;
-[ap + 0] = [fp + -6], ap++;
+[ap + -1] = [fp + -6];
 [ap + 0] = [fp + -5], ap++;
 [fp + -4] = [ap + 0] + 1, ap++;
 [ap + 0] = [fp + 1], ap++;
@@ -423,7 +424,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 9610})
+test::foo: OrderedHashMap({Const: 9710})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;

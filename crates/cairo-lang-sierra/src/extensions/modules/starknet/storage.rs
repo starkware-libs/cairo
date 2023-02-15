@@ -16,7 +16,7 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
 
-/// Type for StarkNet storage base address, a value in the range [0, 2 ** 251 - 256).
+/// Type for Starknet storage base address, a value in the range [0, 2 ** 251 - 256).
 #[derive(Default)]
 pub struct StorageBaseAddressType {}
 impl NoGenericArgsGenericType for StorageBaseAddressType {
@@ -38,7 +38,7 @@ impl ConstGenLibfunc for StorageBaseAddressConstLibfuncWrapped {
 pub type StorageBaseAddressConstLibfunc =
     WrapConstGenLibfunc<StorageBaseAddressConstLibfuncWrapped>;
 
-/// Type for StarkNet storage base address, a value in the range [0, 2 ** 251).
+/// Type for Starknet storage base address, a value in the range [0, 2 ** 251).
 #[derive(Default)]
 pub struct StorageAddressType {}
 impl NoGenericArgsGenericType for StorageAddressType {

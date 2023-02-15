@@ -150,11 +150,6 @@ error: Unexpected argument type. Expected: "test::MyStruct", found: "core::felt"
     d + 0;
         ^
 
-error: Unary operator '-' is not supported for type 'test::MyStruct'.
- --> lib.cairo:6:5
-    - d;
-    ^
-
 error: Unknown function.
  --> lib.cairo:7:7
     d.bar();
@@ -164,3 +159,8 @@ error: Trait `core::traits::Add::<?0>` has no implementation in the context.
  --> lib.cairo:5:5
     d + 0;
     ^***^
+
+error: Trait `core::traits::Neg::<?1>` has no implementation in the context.
+ --> lib.cairo:6:5
+    - d;
+    ^*^

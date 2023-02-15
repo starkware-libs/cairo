@@ -14,7 +14,7 @@ use crate::invocations::{
 };
 use crate::references::ReferenceExpression;
 
-/// Builds instructions for StarkNet call contract system call.
+/// Builds instructions for Starknet call contract system call.
 pub fn build_call_contract(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

@@ -342,6 +342,7 @@ fn build_dict_felt_to_squash(
                 squash_dict_arg_dict_accesses_end - squash_dict_arg_dict_accesses_start;
             localvar first_key;
             localvar big_keys;
+            ap += 2;
             jump SquashDictNotEmpty if ptr_diff != 0;
             tempvar returned_range_check_ptr = squash_dict_arg_range_check_ptr;
             tempvar returned_squashed_dict_end = squash_dict_arg_squashed_dict_start;
