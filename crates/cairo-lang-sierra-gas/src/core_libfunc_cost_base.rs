@@ -1,3 +1,5 @@
+use std::iter;
+
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
@@ -27,7 +29,7 @@ use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
-use itertools::Itertools;
+use itertools::{chain, Itertools};
 
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
@@ -263,8 +265,25 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Mem(FinalizeLocals(_)) | UnconditionalJump(_) => {
             vec![ops.steps(1)]
         }
-        Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(1)],
-        Enum(EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig)) => {
+        Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(2)],
+        // TODO(yg): can match 2 be optimized in case the last branch is empty? (remove the "jmp rel
+        // 2")
+        Enum(EnumConcreteLibfunc::Match(sig)) => {
+            let n = sig.signature.branch_signatures.len();
+            match n {
+                0 => unreachable!(),
+                1 => vec![ops.steps(0)],
+                2 => vec![ops.steps(2), ops.steps(1)],
+                _ => chain!(
+                    iter::once(ops.steps(2)),
+                    itertools::repeat_n(ops.steps(3), n - 2),
+                    iter::once(ops.steps(2)),
+                )
+                .collect_vec(),
+            }
+        }
+        // TODO(yg): is snapshot the same as match? If so, remerge them.
+        Enum(EnumConcreteLibfunc::SnapshotMatch(sig)) => {
             vec![ops.steps(1); sig.signature.branch_signatures.len()]
         }
         Struct(
