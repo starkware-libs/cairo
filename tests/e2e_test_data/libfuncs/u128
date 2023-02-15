@@ -474,6 +474,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 
 //! > test_comments
 //! Different cases of a,b produce different code. This is why u128_eq has multiple e2e tests.
+//! This case produces the same code as the case (a deref, b immediate).
 
 //! > test_function_name
 run_small_e2e_test
@@ -590,7 +591,6 @@ test::foo@0() -> (core::bool);
 
 //! > test_comments
 //! see the comment for: u128_eq libfunc (a deref, b deref). 
-//! The opposite case (a deref, b immediate) is the same as (a deref, b deref).
 
 //! > test_function_name
 run_small_e2e_test
