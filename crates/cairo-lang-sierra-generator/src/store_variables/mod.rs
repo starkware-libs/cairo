@@ -289,23 +289,34 @@ impl<'a> AddStoreVariableStatements<'a> {
         for (i, pre_sierra::PushValue { var, var_on_stack, ty, dup }) in
             push_values.iter().enumerate()
         {
-            let is_on_stack =
-                if let Some(deferred_info) = self.state().deferred_variables.swap_remove(var) {
-                    if self.store_deferred_ex(var, var_on_stack, deferred_info) {
-                        if *dup {
-                            // In the dup case we dup `var_on_stack` that is ready for push into
-                            // `var` that should still be available.
-                            self.dup(var_on_stack, var, ty);
-                        }
-                        continue;
+            let is_on_stack = if let Some(deferred_info) =
+                self.state().deferred_variables.swap_remove(var)
+            {
+                if let DeferredVariableKind::Const = deferred_info.kind {
+                    // TODO(orizi): This is an ugly fix for case of literals. Fix properly.
+                    if *dup {
+                        self.dup(var, var_on_stack, ty);
+                        self.state().deferred_variables.insert(var.clone(), deferred_info.clone());
+                        self.store_temp(var_on_stack, var_on_stack, ty);
                     } else {
-                        false
+                        self.store_temp(var, var_on_stack, ty);
                     }
+                    continue;
+                } else if self.store_deferred_ex(var, var_on_stack, deferred_info) {
+                    if *dup {
+                        // In the dup case we dup `var_on_stack` that is ready for push into
+                        // `var` that should still be available.
+                        self.dup(var_on_stack, var, ty);
+                    }
+                    continue;
                 } else {
-                    // Check if this is part of the prefix. If it is, rename instead of adding
-                    // `store_temp`.
-                    i < prefix_size
-                };
+                    false
+                }
+            } else {
+                // Check if this is part of the prefix. If it is, rename instead of adding
+                // `store_temp`.
+                i < prefix_size
+            };
 
             if is_on_stack {
                 if *dup {
