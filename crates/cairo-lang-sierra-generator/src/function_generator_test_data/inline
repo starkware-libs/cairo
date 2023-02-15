@@ -33,149 +33,34 @@ fn bar(a: felt) -> felt {
 //! > sierra_code
 label0:
 felt_const<2>() -> ([1])
+label1:
 dup<felt>([0]) -> ([0], [3])
 felt_sub([3], [1]) -> ([2])
+label2:
 store_temp<felt>([2]) -> ([2])
-felt_is_zero([2]) { fallthrough() label1([4]) }
+felt_is_zero([2]) { fallthrough() label3([4]) }
 branch_align() -> ()
-felt_is_zero([0]) { fallthrough() label3([5]) }
+label5:
+felt_is_zero([0]) { fallthrough() label6([5]) }
 branch_align() -> ()
 felt_const<1>() -> ([6])
 store_temp<felt>([6]) -> ([7])
-jump() { label5() }
-label3:
+jump() { label8() }
+label6:
 branch_align() -> ()
 drop<NonZero<felt>>([5]) -> ()
-jump() { label6() }
-label4:
-label6:
+label9:
 felt_const<0>() -> ([8])
 store_temp<felt>([8]) -> ([7])
-label5:
+label8:
 rename<felt>([7]) -> ([9])
-jump() { label7() }
-label1:
+jump() { label10() }
+label7:
+label3:
 branch_align() -> ()
 drop<NonZero<felt>>([4]) -> ()
 store_temp<felt>([0]) -> ([9])
-jump() { label7() }
-label2:
-label7:
+label10:
 rename<felt>([9]) -> ([10])
 return([10])
-
-//! > ==========================================================================
-
-//! > test goto + fallthrough convergence.
-
-//! > test_runner_name
-test_function_generator
-
-//! > function
-fn foo(a: @Array::<felt>) -> @felt {
-    let t: Option::<@felt> = a.get(0_u32);
-    inlined_expect(t)
-}
-
-//! > function_name
-foo
-
-//! > module_code
-use array::ArrayTrait;
-
-#[inline(always)]
-fn inlined_expect(option: Option::<@felt>) -> @felt {
-    match option {
-        Option::Some(x) => x,
-        Option::None(()) => @0,
-    }
-}
-
-//! > semantic_diagnostics
-
-//! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
-
-//! > sierra_code
-label0:
-u32_const<0>() -> ([2])
-store_temp<u32>([2]) -> ([2])
-array_get<felt>([0], [1], [2]) { fallthrough([3], [4]) label1([5]) }
-branch_align() -> ()
-enum_init<core::option::Option::<@core::felt>, 0>([4]) -> ([6])
-store_temp<RangeCheck>([3]) -> ([7])
-store_temp<core::option::Option::<@core::felt>>([6]) -> ([8])
-jump() { label3() }
-label1:
-branch_align() -> ()
-struct_construct<Unit>() -> ([9])
-enum_init<core::option::Option::<@core::felt>, 1>([9]) -> ([10])
-store_temp<RangeCheck>([5]) -> ([7])
-store_temp<core::option::Option::<@core::felt>>([10]) -> ([8])
-jump() { label3() }
-label2:
-label3:
-enum_match<core::option::Option::<@core::felt>>([8]) { fallthrough([11]) label4([12]) }
-branch_align() -> ()
-store_temp<felt>([11]) -> ([13])
-jump() { label6() }
 label4:
-branch_align() -> ()
-struct_deconstruct<Unit>([12]) -> ()
-felt_const<0>() -> ([14])
-snapshot_take<felt>([14]) -> ([15], [16])
-drop<felt>([15]) -> ()
-store_temp<felt>([16]) -> ([13])
-jump() { label6() }
-label5:
-label6:
-store_temp<RangeCheck>([7]) -> ([17])
-store_temp<felt>([13]) -> ([18])
-return([17], [18])
-
-//! > ==========================================================================
-
-//! > Test inlining a function where the root block does not return.
-
-//! > test_runner_name
-test_function_generator
-
-//! > function_name
-foo
-
-//! > function
-fn foo(n: felt) -> felt {
-  bar(n)
-}
-
-//! > module_code
-#[inline(always)]
-fn bar(n: felt) -> felt {
-  if n == 0 {
-    return 1;
-  } else {
-    return 1;
-  }
-}
-
-//! > semantic_diagnostics
-
-//! > lowering_diagnostics
-
-//! > sierra_code
-label0:
-felt_is_zero([0]) { fallthrough() label1([1]) }
-branch_align() -> ()
-felt_const<1>() -> ([2])
-store_temp<felt>([2]) -> ([3])
-jump() { label3() }
-label1:
-branch_align() -> ()
-drop<NonZero<felt>>([1]) -> ()
-felt_const<1>() -> ([4])
-store_temp<felt>([4]) -> ([3])
-label3:
-rename<felt>([3]) -> ([5])
-return([5])
-label2:

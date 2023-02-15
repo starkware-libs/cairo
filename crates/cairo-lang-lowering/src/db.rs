@@ -20,6 +20,7 @@ use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
+use crate::topological_sort::topological_sort;
 use crate::{FlatLowered, Statement, StructuredLowered};
 
 // Salsa database interface.
@@ -182,6 +183,7 @@ fn concrete_function_with_body_lowered(
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
     optimize_remappings(&mut lowered);
+    topological_sort(&mut lowered);
     add_fallthroughs(&mut lowered);
     Ok(Arc::new(lowered))
 }
