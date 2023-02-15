@@ -72,3 +72,11 @@ trait PartialOrd<T> {
 trait ToBool<T> {
     fn to_bool(self: T) -> bool;
 }
+
+trait Neg<T> {
+    fn neg(a: T) -> T;
+}
+
+trait Not<T> {
+    fn not(a: T) -> T;
+}

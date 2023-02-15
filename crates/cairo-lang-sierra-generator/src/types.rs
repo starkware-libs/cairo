@@ -2,10 +2,12 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
+use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::program::ConcreteTypeLongId;
 use itertools::chain;
 
 use crate::db::SierraGenGroup;
+use crate::specialization_context::SierraSignatureSpecializationContext;
 
 /// Interns and returns the Sierra concrete type id for a user defined struct or enum.
 fn get_user_type_concrete_type_id<GenericArgTyIter: Iterator<Item = semantic::TypeId>>(
@@ -89,12 +91,10 @@ pub fn get_concrete_type_id(
                 .collect(),
             }))
         }
-        semantic::TypeLongId::Snapshot(ty) => Ok(db.intern_concrete_type(ConcreteTypeLongId {
-            generic_id: "Snapshot".into(),
-            generic_args: vec![cairo_lang_sierra::program::GenericArg::Type(
-                db.get_concrete_type_id(ty).unwrap(),
-            )],
-        })),
+        semantic::TypeLongId::Snapshot(ty) => {
+            let inner_ty = db.get_concrete_type_id(ty).unwrap();
+            Ok(snapshot_ty(&SierraSignatureSpecializationContext(db), inner_ty).unwrap())
+        }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::Missing(_) => {
