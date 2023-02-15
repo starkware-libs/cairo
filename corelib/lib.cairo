@@ -17,6 +17,8 @@ use traits::RemEq;
 use traits::Sub;
 use traits::SubEq;
 use traits::ToBool;
+use traits::Not;
+use traits::Neg;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -44,9 +46,12 @@ impl BoolBitOr of BitOr::<bool> {
 
 extern fn bool_not_impl(a: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
-fn bool_not(a: bool) -> bool implicits() nopanic {
-    let (r, ) = bool_not_impl(a);
-    r
+impl BoolNot of Not::<bool> {
+    #[inline(always)]
+    fn not(a: bool) -> bool implicits() nopanic {
+        let (r, ) = bool_not_impl(a);
+        r
+    }
 }
 
 extern fn bool_xor_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
@@ -124,9 +129,12 @@ impl FeltMulEq of MulEq::<felt> {
 }
 
 extern fn felt_mul(a: felt, b: felt) -> felt nopanic;
-#[inline(always)]
-fn felt_neg(a: felt) -> felt {
-    a * felt_const::<-1>()
+
+impl FeltNeg of Neg::<felt> {
+    #[inline(always)]
+    fn neg(a: felt) -> felt {
+        a * felt_const::<-1>()
+    }
 }
 
 extern type NonZero<T>;
@@ -383,7 +391,7 @@ use hash::Pedersen;
 // Debug.
 mod debug;
 
-// StarkNet
+// Starknet
 mod starknet;
 use starknet::System;
 use starknet::ContractAddress;

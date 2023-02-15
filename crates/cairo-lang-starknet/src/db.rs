@@ -6,13 +6,13 @@ use cairo_lang_plugins::get_default_plugins;
 use crate::plugin::StarkNetPlugin;
 
 pub trait StarknetRootDatabaseBuilderEx {
-    /// Tunes a compiler database to StarkNet (e.g. StarkNet plugin).
+    /// Tunes a compiler database to Starknet (e.g. Starknet plugin).
     fn with_starknet(&mut self) -> &mut Self;
 }
 
 impl StarknetRootDatabaseBuilderEx for RootDatabaseBuilder {
     fn with_starknet(&mut self) -> &mut Self {
-        // Override implicit precedence for compatibility with the StarkNet OS.
+        // Override implicit precedence for compatibility with the Starknet OS.
         let precedence = ["Pedersen", "RangeCheck", "Bitwise", "EcOp", "GasBuiltin", "System"];
 
         let mut plugins = get_default_plugins();
