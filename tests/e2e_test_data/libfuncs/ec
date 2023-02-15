@@ -62,7 +62,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1200})
+test::foo: OrderedHashMap({Const: 1100})
 
 //! > sierra_code
 type felt = felt;
@@ -141,7 +141,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1300})
+test::foo: OrderedHashMap({Const: 1200})
 
 //! > sierra_code
 type felt = felt;
