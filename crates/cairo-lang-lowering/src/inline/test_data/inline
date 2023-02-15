@@ -19,7 +19,7 @@ foo
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_neg(v0)
+  (v1: core::felt) <- core::FeltNeg::neg(v0)
 End:
   Return(v1)
 
