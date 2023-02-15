@@ -148,7 +148,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 800})
+test::foo: OrderedHashMap({Const: 700})
 
 //! > sierra_code
 type felt = felt;
@@ -220,7 +220,7 @@ ap += 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1170})
+test::foo: OrderedHashMap({Const: 1070})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -299,7 +299,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1380})
+test::foo: OrderedHashMap({Const: 1280})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
