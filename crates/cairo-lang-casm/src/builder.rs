@@ -445,7 +445,11 @@ impl CasmBuilder {
         let mut main_vars: HashMap<Var, CellExpression> = HashMap::default();
         let ap_change = self.main_state.ap_change;
         let cell_to_var_flags = |cell: &CellRef| {
-            if cell.register == Register::AP { (true, false) } else { (false, true) }
+            if cell.register == Register::AP {
+                (true, false)
+            } else {
+                (false, true)
+            }
         };
         for (var, value) in self.main_state.vars.iter() {
             let (function_var, main_var) = match value {
@@ -508,6 +512,7 @@ impl CasmBuilder {
 
     /// A return statement in the code.
     pub fn ret(&mut self) {
+        self.main_state.validate_finality();
         let instruction = self.get_instruction(InstructionBody::Ret(RetInstruction {}), false);
         self.statements.push(Statement::Final(instruction));
         self.reachable = false;
@@ -543,7 +548,11 @@ impl CasmBuilder {
 
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
     fn get_value(&self, var: Var, adjust_ap: bool) -> CellExpression {
-        if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
+        if adjust_ap {
+            self.main_state.get_adjusted(var)
+        } else {
+            self.main_state.get_value(var)
+        }
     }
 
     /// Returns `var`s value as a cell reference, with fixed ap if `adjust_ap` is true.

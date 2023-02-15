@@ -825,6 +825,12 @@ fn test_dict_new() -> DictFeltTo::<felt> {
 }
 
 #[test]
+fn test_dict_squash_empty() {
+    let mut dict: DictFeltTo::<felt> = DictFeltToTrait::new();
+    let squashed_dict = dict.squash();
+}
+
+#[test]
 fn test_dict_default_val() {
     let mut dict = DictFeltToTrait::new();
     let default_val = dict.get(0);
