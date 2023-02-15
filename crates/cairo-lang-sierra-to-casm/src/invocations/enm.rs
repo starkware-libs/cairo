@@ -69,8 +69,7 @@ fn build_enum_init(
         // - To jump to the first variant (`index` == 0) we add "jump rel 1", as the jump
         // instruction with a deref operand is of size 1.
         // - To jump to the variant in index i, we add "jump rel (2 * i + 1)" as the rest of the
-        // jump instructions are with an immediate operand, which makes them of size
-        // 2.
+        // jump instructions are with an immediate operand, which makes them of size 2.
         if index.checked_mul(2).and_then(|x| x.checked_add(1)).is_none() {
             return Err(InvocationError::IntegerOverflow);
         }
@@ -161,6 +160,7 @@ fn build_enum_match(
 /// type unit_ty = Tuple;
 /// type Option = Enum<felt_ty, unit_ty>;
 /// libfunc init_option_some = enum_init<Option, 0>;
+/// libfunc match_option = enum_match<Option>;
 /// felt_const<8>() -> (felt8);
 /// init_option_some(felt8=[ap-5]) -> (enum_var);
 /// ````
@@ -221,15 +221,15 @@ fn build_enum_match_short(
 /// For example, with this setup
 /// ```ignore
 /// type felt_ty = felt;
-/// type unit_ty = Tuple;
-/// type Option = Enum<felt_ty, unit_ty>;
-/// libfunc init_option_some = enum_init<Option, 0>;
+/// type Positivity = Enum<felt_ty, felt_ty, felt_ty>;
+/// libfunc init_positive = enum_init<Positivity, 0>;
+/// libfunc match_positivity = enum_match<Positivity>;
 /// felt_const<8>() -> (felt8);
-/// init_option_some(felt8=[ap-5]) -> (enum_var);
+/// init_positive(felt8=[ap-5]) -> (enum_var);
 /// ````
 /// this "Sierra statement" (3-variants-enum)
 /// ```ignore
-/// match_option(enum_var=[ap-10]) {1000(pos=[ap-9]), 2000(neg=[ap-9]), 3000(zero=[ap-9])};
+/// match_positivity(enum_var=[ap-10]) {1000(pos=[ap-9]), 2000(neg=[ap-9]), 3000(zero=[ap-9])};
 /// ```
 /// translates to these casm instructions:
 /// ```ignore
@@ -239,7 +239,7 @@ fn build_enum_match_short(
 /// jmp rel <jump_offset_3000>
 /// ```
 /// Where in the first location of the enum_var there will be the jmp_table_idx (1 for the first
-/// branch, 2 for the second and so on).
+/// branch, 3 for the second and so on - (2 * i + 1) for the i'th branch ).
 ///
 /// Assumes that self.invocation.branches.len() == target_statement_ids.len()
 /// == output_expressions.len() and that self.invocation.branches.len() > 2.
