@@ -306,7 +306,7 @@ blk0 (root):
 Inputs: v0: test::Query::<core::felt>, v1: core::felt
 Initial refs: v0: test::Query::<core::felt>
 Statements:
-  (v2: core::array::Array::<T>) <- struct_destructure(v0)
+  (v2: core::array::Array::<core::felt>) <- struct_destructure(v0)
     Ref changes: r0 <- v0
   (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v2, v1)
   (v4: ()) <- struct_construct()
@@ -317,7 +317,7 @@ End:
 blk0 (root):
 Inputs: v0: test::Query::<core::felt>, v1: core::felt
 Statements:
-  (v2: core::array::Array::<T>) <- struct_destructure(v0)
+  (v2: core::array::Array::<core::felt>) <- struct_destructure(v0)
   (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v2, v1)
   (v4: ()) <- struct_construct()
 End:

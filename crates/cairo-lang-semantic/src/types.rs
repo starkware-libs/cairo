@@ -212,6 +212,15 @@ impl ConcreteStructId {
         db.lookup_intern_concrete_struct(*self).struct_id
     }
 }
+impl DebugWithDb<dyn SemanticGroup> for ConcreteStructLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{:?}", ConcreteTypeId::Struct(db.intern_concrete_struct(self.clone())).debug(db))
+    }
+}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteEnumLongId {

@@ -13,6 +13,7 @@ use semantic::corelib::{
     jump_nz_nonzero_variant, jump_nz_zero_variant, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
+use semantic::items::structure::SemanticStructEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{ConcreteTypeId, ExprPropagateError, TypeLongId};
 
@@ -243,7 +244,10 @@ fn lower_single_pattern(
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
         semantic::Pattern::Struct(structure) => {
-            let members = ctx.db.struct_members(structure.id).map_err(LoweringFlowError::Failed)?;
+            let members = ctx
+                .db
+                .concrete_struct_members(structure.concrete_struct_id)
+                .map_err(LoweringFlowError::Failed)?;
             let mut required_members = UnorderedHashMap::from_iter(
                 structure.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
             );
@@ -792,7 +796,10 @@ fn lower_expr_member_access(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a member-access expression: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let members = ctx.db.struct_members(expr.struct_id).map_err(LoweringFlowError::Failed)?;
+    let members = ctx
+        .db
+        .concrete_struct_members(expr.concrete_struct_id)
+        .map_err(LoweringFlowError::Failed)?;
     let member_idx = members
         .iter()
         .position(|(_, member)| member.id == expr.member)
@@ -820,7 +827,10 @@ fn lower_expr_struct_ctor(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a struct c'tor expression: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let members = ctx.db.struct_members(expr.struct_id).map_err(LoweringFlowError::Failed)?;
+    let members = ctx
+        .db
+        .concrete_struct_members(expr.concrete_struct_id)
+        .map_err(LoweringFlowError::Failed)?;
     let member_expr = UnorderedHashMap::from_iter(expr.members.iter().cloned());
     Ok(LoweredExpr::AtVariable(
         generators::StructConstruct {

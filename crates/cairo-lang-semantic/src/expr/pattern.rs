@@ -1,5 +1,4 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::StructId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast;
 use smol_str::SmolStr;
@@ -7,7 +6,7 @@ use smol_str::SmolStr;
 use super::fmt::ExprFormatter;
 use crate::corelib::core_felt_ty;
 use crate::db::SemanticGroup;
-use crate::{semantic, ExprLiteral, LocalVariable};
+use crate::{semantic, ConcreteStructId, ExprLiteral, LocalVariable};
 
 /// Semantic representation of a Pattern.
 /// A pattern is a way to "destructure" values. A pattern may introduce new variables that are bound
@@ -96,7 +95,7 @@ impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternStruct {
-    pub id: StructId,
+    pub concrete_struct_id: ConcreteStructId,
     // TODO(spapini): This should be ConcreteMember, when available.
     pub field_patterns: Vec<(semantic::Member, Box<Pattern>)>,
     pub ty: semantic::TypeId,

@@ -12,11 +12,11 @@ use crate::db::SemanticGroup;
 use crate::items::imp::ImplId;
 use crate::types::{
     peel_snapshots, substitute_generics_args_inplace, substitute_ty, ConcreteEnumLongId,
-    GenericSubstitution,
+    ConcreteStructLongId, GenericSubstitution,
 };
 use crate::{
-    ConcreteEnumId, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
-    ConcreteVariant, GenericArgumentId, GenericParam, Pattern, TypeId, TypeLongId,
+    ConcreteEnumId, ConcreteImplLongId, ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId,
+    ConcreteTypeId, ConcreteVariant, GenericArgumentId, GenericParam, Pattern, TypeId, TypeLongId,
 };
 
 /// A type variable, created when a generic type argument is not passed, and thus is not known
@@ -115,6 +115,18 @@ impl<'db> Inference<'db> {
         self.db.intern_concrete_enum(ConcreteEnumLongId { generic_args, ..concrete_enum })
     }
 
+    /// Gets current canonical representation for a [ConcreteStructId] after all known
+    /// substitutions.
+    pub fn reduce_concrete_struct(
+        &mut self,
+        concrete_struct_id: ConcreteStructId,
+    ) -> ConcreteStructId {
+        let concrete_struct = self.db.lookup_intern_concrete_struct(concrete_struct_id);
+        let generic_args = self.reduce_generic_args(&concrete_struct.generic_args);
+
+        self.db.intern_concrete_struct(ConcreteStructLongId { generic_args, ..concrete_struct })
+    }
+
     /// Gets current canonical representation for a [TypeVar] after all known substitutions.
     pub fn reduce_var(&mut self, var: TypeVar) -> TypeId {
         if let Some(new_ty) = self.assignment.get(&var) {
@@ -147,23 +159,27 @@ impl<'db> Inference<'db> {
     /// updates inplace.
     pub fn reduce_pattern(&mut self, pattern: &mut Pattern) {
         match pattern {
-            Pattern::Variable(pat) => pat.var.ty = self.reduce_ty(pat.var.ty),
-            Pattern::Struct(pat) => {
-                pat.ty = self.reduce_ty(pat.ty);
-                for (_, pat) in pat.field_patterns.iter_mut() {
+            Pattern::Variable(variable_pattern) => {
+                variable_pattern.var.ty = self.reduce_ty(variable_pattern.var.ty)
+            }
+            Pattern::Struct(struct_pattern) => {
+                struct_pattern.ty = self.reduce_ty(struct_pattern.ty);
+                struct_pattern.concrete_struct_id =
+                    self.reduce_concrete_struct(struct_pattern.concrete_struct_id);
+                for (_, pat) in struct_pattern.field_patterns.iter_mut() {
                     self.reduce_pattern(pat);
                 }
             }
-            Pattern::Tuple(pat) => {
-                pat.ty = self.reduce_ty(pat.ty);
-                for pat in pat.field_patterns.iter_mut() {
+            Pattern::Tuple(tuple_pattern) => {
+                tuple_pattern.ty = self.reduce_ty(tuple_pattern.ty);
+                for pat in tuple_pattern.field_patterns.iter_mut() {
                     self.reduce_pattern(pat);
                 }
             }
-            Pattern::EnumVariant(pat) => {
-                self.reduce_concrete_variant(&mut pat.variant);
-                pat.ty = self.reduce_ty(pat.ty);
-                self.reduce_pattern(&mut pat.inner_pattern);
+            Pattern::EnumVariant(variant_pattern) => {
+                self.reduce_concrete_variant(&mut variant_pattern.variant);
+                variant_pattern.ty = self.reduce_ty(variant_pattern.ty);
+                self.reduce_pattern(&mut variant_pattern.inner_pattern);
             }
             Pattern::Literal(_) | Pattern::Otherwise(_) => {}
         }

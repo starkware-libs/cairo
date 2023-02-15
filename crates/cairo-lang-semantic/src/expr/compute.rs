@@ -573,7 +573,11 @@ pub fn compute_root_expr(
             Expr::Literal(_) => {
                 // TODO(spapini): Support literal inference. Perhaps using Numeric trait.
             }
-            Expr::MemberAccess(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
+            Expr::MemberAccess(expr) => {
+                expr.concrete_struct_id =
+                    ctx.resolver.inference.reduce_concrete_struct(expr.concrete_struct_id);
+                expr.ty = ctx.resolver.inference.reduce_ty(expr.ty)
+            }
             Expr::StructCtor(expr) => {
                 expr.ty = ctx.resolver.inference.reduce_ty(expr.ty);
             }
@@ -951,7 +955,7 @@ fn compute_pattern_semantic(
             let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
 
             // Check that type is an struct, and get the concrete struct from it.
-            let concrete_struct = try_extract_matches!(long_ty, TypeLongId::Concrete)
+            let concrete_struct_id = try_extract_matches!(long_ty, TypeLongId::Concrete)
                 .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
                 .ok_or_else(|| {
                     // Don't add a diagnostic if the type is missing.
@@ -964,8 +968,8 @@ fn compute_pattern_semantic(
                     }
                 })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
-            let struct_id = concrete_struct.struct_id(ctx.db);
-            let mut members = ctx.db.struct_members(struct_id).expect("This is a valid struct.");
+            let struct_id = concrete_struct_id.struct_id(ctx.db);
+            let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?;
             let mut used_members = UnorderedHashSet::default();
             let mut get_member = |ctx: &mut ComputationContext<'_>, member_name: SmolStr| {
                 let member = members.swap_remove(&member_name).on_none(|| {
@@ -1017,7 +1021,7 @@ fn compute_pattern_semantic(
                 }
             }
             Pattern::Struct(PatternStruct {
-                id: struct_id,
+                concrete_struct_id,
                 field_patterns,
                 ty,
                 n_snapshots,
@@ -1100,11 +1104,12 @@ fn struct_ctor_expr(
     let ty = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
     ty.check_not_missing(db)?;
 
-    let concrete_struct = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
-        .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
-        .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
+    let concrete_struct_id =
+        try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
+            .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
+            .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
 
-    let members = db.concrete_struct_members(concrete_struct)?;
+    let members = db.concrete_struct_members(concrete_struct_id)?;
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
     // A set of struct members for which a diagnostic has been reported.
     let mut skipped_members: UnorderedHashSet<MemberId> = UnorderedHashSet::default();
@@ -1163,9 +1168,9 @@ fn struct_ctor_expr(
     }
 
     Ok(Expr::StructCtor(ExprStructCtor {
-        struct_id: concrete_struct.struct_id(db),
+        concrete_struct_id,
         members: member_exprs.into_iter().collect(),
-        ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct))),
+        ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))),
         stable_ptr: ctor_syntax.stable_ptr().into(),
     }))
 }
@@ -1419,7 +1424,7 @@ fn member_access_expr(
                 let lexpr_id = ctx.exprs.alloc(lexpr);
                 Ok(Expr::MemberAccess(ExprMemberAccess {
                     expr: lexpr_id,
-                    struct_id: concrete_struct_id.struct_id(ctx.db),
+                    concrete_struct_id,
                     member: member.id,
                     ty: wrap_in_snapshots(ctx.db, member.ty, n_snapshots),
                     n_snapshots,
