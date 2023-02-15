@@ -7414,14 +7414,14 @@ pub struct AttributeArgs {
 impl AttributeArgs {
     pub const INDEX_LPAREN: usize = 0;
     pub const INDEX_ARG_LIST: usize = 1;
-    pub const INDEX_RANGLE: usize = 2;
+    pub const INDEX_RPAREN: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lparen: TerminalLParenGreen,
         arg_list: AttributeArgListGreen,
-        rangle: TerminalRParenGreen,
+        rparen: TerminalRParenGreen,
     ) -> AttributeArgsGreen {
-        let children: Vec<GreenId> = vec![lparen.0, arg_list.0, rangle.0];
+        let children: Vec<GreenId> = vec![lparen.0, arg_list.0, rparen.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         AttributeArgsGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::AttributeArgs,
@@ -7436,7 +7436,7 @@ impl AttributeArgs {
     pub fn arg_list(&self, db: &dyn SyntaxGroup) -> AttributeArgList {
         AttributeArgList::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn rangle(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
         TerminalRParen::from_syntax_node(db, self.children[2].clone())
     }
 }

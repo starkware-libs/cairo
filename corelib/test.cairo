@@ -2,6 +2,7 @@ use array::ArrayTrait;
 use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
+use hash::LegacyHash;
 
 #[test]
 #[should_panic]
@@ -822,6 +823,12 @@ fn test_array_out_of_bound_2() {
 #[test]
 fn test_dict_new() -> DictFeltTo::<felt> {
     DictFeltToTrait::new()
+}
+
+#[test]
+fn test_dict_squash_empty() {
+    let mut dict: DictFeltTo::<felt> = DictFeltToTrait::new();
+    let squashed_dict = dict.squash();
 }
 
 #[test]
