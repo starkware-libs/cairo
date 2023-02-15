@@ -7,6 +7,7 @@ cairo_lang_test_utils::test_file_test!(
         inline: "inline",
         match_: "match",
         simple: "simple",
+        literals: "literals",
 
     },
     test_function_generator

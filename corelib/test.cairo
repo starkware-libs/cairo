@@ -2,6 +2,7 @@ use array::ArrayTrait;
 use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
+use hash::LegacyHash;
 
 #[test]
 #[should_panic]
@@ -867,4 +868,16 @@ fn test_box_unbox_u256() {
     let boxed_y = into_box::<u256>(y);
     assert(unbox::<u256>(boxed_x) == as_u256(1_u128, 0_u128), 'unbox u256 x');
     assert(unbox::<u256>(boxed_y) == as_u256(1_u128, 1_u128), 'unbox u256 y');
+}
+
+#[test]
+fn test_bug_test() {
+    let a = 1;
+    let b = 2;
+    let mut c = 0;
+    if a < b {
+        c = LegacyHash::hash(a, b);
+    } else {
+        c = LegacyHash::hash(b, a);
+    }
 }
