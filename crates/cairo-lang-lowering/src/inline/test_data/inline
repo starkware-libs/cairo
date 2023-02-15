@@ -1150,3 +1150,77 @@ End:
   Goto(blk15, {v27 -> v13, v33 -> v14})
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining a function where the root block does not return.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+fn foo(n: felt) -> felt {
+  bar(n)
+}
+
+//! > module_code
+#[inline(always)]
+fn bar(n: felt) -> felt {
+  if n == 0 {
+    return 1;
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Fallthrough(blk2, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Inputs:
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero => blk4,
+  }
+End:
+  Unreachable
+
+blk3:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+End:
+  Goto(blk1, {v2 -> v1})
+
+blk4:
+Inputs: v3: core::NonZero::<core::felt>
+Statements:
+  (v4: core::felt) <- 1u
+End:
+  Fallthrough(blk1, {v4 -> v1})
+
+//! > lowering_diagnostics

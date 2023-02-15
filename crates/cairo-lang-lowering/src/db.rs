@@ -15,6 +15,7 @@ use semantic::items::functions::ConcreteFunctionWithBodyId;
 use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::diagnostic::LoweringDiagnostic;
+use crate::flow::add_fallthroughs;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
 use crate::panic::lower_panics;
@@ -179,6 +180,7 @@ fn concrete_function_with_body_lowered(
     // TODO(spapini): passing function.function_with_body_id might be weird here.
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
+    add_fallthroughs(&mut lowered);
     Ok(Arc::new(lowered))
 }
 
