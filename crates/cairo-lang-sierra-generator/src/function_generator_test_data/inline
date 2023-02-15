@@ -133,3 +133,49 @@ label6:
 store_temp<RangeCheck>([7]) -> ([17])
 store_temp<felt>([13]) -> ([18])
 return([17], [18])
+
+//! > ==========================================================================
+
+//! > Test inlining a function where the root block does not return.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function_name
+foo
+
+//! > function
+fn foo(n: felt) -> felt {
+  bar(n)
+}
+
+//! > module_code
+#[inline(always)]
+fn bar(n: felt) -> felt {
+  if n == 0 {
+    return 1;
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_code
+label0:
+felt_is_zero([0]) { fallthrough() label1([1]) }
+branch_align() -> ()
+felt_const<1>() -> ([2])
+store_temp<felt>([2]) -> ([3])
+jump() { label3() }
+label1:
+branch_align() -> ()
+drop<NonZero<felt>>([1]) -> ()
+felt_const<1>() -> ([4])
+store_temp<felt>([4]) -> ([3])
+label3:
+rename<felt>([3]) -> ([5])
+return([5])
+label2:
