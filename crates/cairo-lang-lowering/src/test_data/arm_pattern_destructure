@@ -52,7 +52,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(9, {})
+  Unreachable
 
 blk1:
 Inputs: v1: (core::felt, (core::felt, core::felt))
@@ -128,68 +128,68 @@ blk0 (root):
 Inputs: v0: test::MyEnum
 Statements:
   () <- match_enum(v0) {
-    MyEnum::a => blk1,
-    MyEnum::b => blk2,
-    MyEnum::c => blk3,
-    MyEnum::d => blk4,
-    MyEnum::e => blk5,
-    MyEnum::f => blk6,
-    MyEnum::g => blk7,
-    MyEnum::h => blk8,
+    MyEnum::a => blk8,
+    MyEnum::b => blk7,
+    MyEnum::c => blk6,
+    MyEnum::d => blk5,
+    MyEnum::e => blk4,
+    MyEnum::f => blk3,
+    MyEnum::g => blk2,
+    MyEnum::h => blk1,
   }
+End:
+  Unreachable
+
+blk1:
+Inputs: v17: core::felt
+Statements:
 End:
   Fallthrough(blk9, {})
 
-blk1:
-Inputs: v1: (core::felt, (core::felt, core::felt))
-Statements:
-  (v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v1)
-  (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
-End:
-  Goto(blk9, {})
-
 blk2:
-Inputs: v6: (core::felt, (core::felt, core::felt))
+Inputs: v16: (core::felt,)
 Statements:
-  (v7: core::felt, v8: (core::felt, core::felt)) <- struct_destructure(v6)
 End:
   Goto(blk9, {})
 
 blk3:
-Inputs: v9: (core::felt, (core::felt, core::felt))
-Statements:
-End:
-  Goto(blk9, {})
-
-blk4:
-Inputs: v10: (core::felt, core::felt)
-Statements:
-  (v11: core::felt, v12: core::felt) <- struct_destructure(v10)
-End:
-  Goto(blk9, {})
-
-blk5:
-Inputs: v13: (core::felt, core::felt)
-Statements:
-End:
-  Goto(blk9, {})
-
-blk6:
 Inputs: v14: (core::felt,)
 Statements:
   (v15: core::felt) <- struct_destructure(v14)
 End:
   Goto(blk9, {})
 
-blk7:
-Inputs: v16: (core::felt,)
+blk4:
+Inputs: v13: (core::felt, core::felt)
 Statements:
 End:
   Goto(blk9, {})
 
-blk8:
-Inputs: v17: core::felt
+blk5:
+Inputs: v10: (core::felt, core::felt)
 Statements:
+  (v11: core::felt, v12: core::felt) <- struct_destructure(v10)
+End:
+  Goto(blk9, {})
+
+blk6:
+Inputs: v9: (core::felt, (core::felt, core::felt))
+Statements:
+End:
+  Goto(blk9, {})
+
+blk7:
+Inputs: v6: (core::felt, (core::felt, core::felt))
+Statements:
+  (v7: core::felt, v8: (core::felt, core::felt)) <- struct_destructure(v6)
+End:
+  Goto(blk9, {})
+
+blk8:
+Inputs: v1: (core::felt, (core::felt, core::felt))
+Statements:
+  (v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v1)
+  (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
 End:
   Goto(blk9, {})
 
@@ -257,7 +257,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(9, {})
+  Unreachable
 
 blk1:
 Inputs: v0: core::felt, v1: (core::felt, core::felt)
@@ -332,67 +332,67 @@ blk0 (root):
 Inputs:
 Statements:
   () <- match test::bar() {
-    MyEnum::a => blk1,
-    MyEnum::b => blk2,
-    MyEnum::c => blk3,
-    MyEnum::d => blk4,
-    MyEnum::e => blk5,
-    MyEnum::f => blk6,
-    MyEnum::g => blk7,
-    MyEnum::h => blk8,
+    MyEnum::a => blk8,
+    MyEnum::b => blk7,
+    MyEnum::c => blk6,
+    MyEnum::d => blk5,
+    MyEnum::e => blk4,
+    MyEnum::f => blk3,
+    MyEnum::g => blk2,
+    MyEnum::h => blk1,
   }
+End:
+  Unreachable
+
+blk1:
+Inputs: v17: core::felt
+Statements:
 End:
   Fallthrough(blk9, {})
 
-blk1:
-Inputs: v0: core::felt, v1: (core::felt, core::felt)
-Statements:
-  (v2: core::felt, v3: core::felt) <- struct_destructure(v1)
-End:
-  Goto(blk9, {})
-
 blk2:
-Inputs: v4: core::felt, v5: (core::felt, core::felt)
-Statements:
-End:
-  Goto(blk9, {})
-
-blk3:
-Inputs: v6: core::felt, v7: (core::felt, core::felt)
-Statements:
-  (v8: (core::felt, (core::felt, core::felt))) <- struct_construct(v6, v7)
-End:
-  Goto(blk9, {})
-
-blk4:
-Inputs: v9: core::felt, v10: core::felt
-Statements:
-End:
-  Goto(blk9, {})
-
-blk5:
-Inputs: v11: core::felt, v12: core::felt
-Statements:
-  (v13: (core::felt, core::felt)) <- struct_construct(v11, v12)
-End:
-  Goto(blk9, {})
-
-blk6:
-Inputs: v14: core::felt
-Statements:
-End:
-  Goto(blk9, {})
-
-blk7:
 Inputs: v15: core::felt
 Statements:
   (v16: (core::felt,)) <- struct_construct(v15)
 End:
   Goto(blk9, {})
 
-blk8:
-Inputs: v17: core::felt
+blk3:
+Inputs: v14: core::felt
 Statements:
+End:
+  Goto(blk9, {})
+
+blk4:
+Inputs: v11: core::felt, v12: core::felt
+Statements:
+  (v13: (core::felt, core::felt)) <- struct_construct(v11, v12)
+End:
+  Goto(blk9, {})
+
+blk5:
+Inputs: v9: core::felt, v10: core::felt
+Statements:
+End:
+  Goto(blk9, {})
+
+blk6:
+Inputs: v6: core::felt, v7: (core::felt, core::felt)
+Statements:
+  (v8: (core::felt, (core::felt, core::felt))) <- struct_construct(v6, v7)
+End:
+  Goto(blk9, {})
+
+blk7:
+Inputs: v4: core::felt, v5: (core::felt, core::felt)
+Statements:
+End:
+  Goto(blk9, {})
+
+blk8:
+Inputs: v0: core::felt, v1: (core::felt, core::felt)
+Statements:
+  (v2: core::felt, v3: core::felt) <- struct_destructure(v1)
 End:
   Goto(blk9, {})
 
@@ -461,7 +461,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(9, {})
+  Unreachable
 
 blk1:
 Inputs: v0: core::felt, v1: (core::felt, core::felt)
@@ -549,7 +549,7 @@ Statements:
     MyEnum::h => blk17,
   }
 End:
-  Fallthrough(18, {})
+  Unreachable
 
 blk10:
 Inputs: v29: (core::felt, (core::felt, core::felt))
@@ -625,67 +625,26 @@ blk0 (root):
 Inputs:
 Statements:
   () <- match test::bar() {
-    MyEnum::a => blk1,
-    MyEnum::b => blk2,
-    MyEnum::c => blk3,
-    MyEnum::d => blk4,
-    MyEnum::e => blk5,
-    MyEnum::f => blk6,
-    MyEnum::g => blk7,
-    MyEnum::h => blk8,
+    MyEnum::a => blk8,
+    MyEnum::b => blk7,
+    MyEnum::c => blk6,
+    MyEnum::d => blk5,
+    MyEnum::e => blk4,
+    MyEnum::f => blk3,
+    MyEnum::g => blk2,
+    MyEnum::h => blk1,
   }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk1:
-Inputs: v0: core::felt, v1: (core::felt, core::felt)
+Inputs: v26: core::felt
 Statements:
-  (v2: (core::felt, (core::felt, core::felt))) <- struct_construct(v0, v1)
-  (v3: test::MyEnum) <- MyEnum::a(v2)
+  (v27: test::MyEnum) <- MyEnum::h(v26)
 End:
-  Goto(blk9, {v3 -> v28})
+  Fallthrough(blk9, {v27 -> v28})
 
 blk2:
-Inputs: v4: core::felt, v5: (core::felt, core::felt)
-Statements:
-  (v6: (core::felt, (core::felt, core::felt))) <- struct_construct(v4, v5)
-  (v7: test::MyEnum) <- MyEnum::b(v6)
-End:
-  Goto(blk9, {v7 -> v28})
-
-blk3:
-Inputs: v8: core::felt, v9: (core::felt, core::felt)
-Statements:
-  (v10: (core::felt, (core::felt, core::felt))) <- struct_construct(v8, v9)
-  (v11: test::MyEnum) <- MyEnum::c(v10)
-End:
-  Goto(blk9, {v11 -> v28})
-
-blk4:
-Inputs: v12: core::felt, v13: core::felt
-Statements:
-  (v14: (core::felt, core::felt)) <- struct_construct(v12, v13)
-  (v15: test::MyEnum) <- MyEnum::d(v14)
-End:
-  Goto(blk9, {v15 -> v28})
-
-blk5:
-Inputs: v16: core::felt, v17: core::felt
-Statements:
-  (v18: (core::felt, core::felt)) <- struct_construct(v16, v17)
-  (v19: test::MyEnum) <- MyEnum::e(v18)
-End:
-  Goto(blk9, {v19 -> v28})
-
-blk6:
-Inputs: v20: core::felt
-Statements:
-  (v21: (core::felt,)) <- struct_construct(v20)
-  (v22: test::MyEnum) <- MyEnum::f(v21)
-End:
-  Goto(blk9, {v22 -> v28})
-
-blk7:
 Inputs: v23: core::felt
 Statements:
   (v24: (core::felt,)) <- struct_construct(v23)
@@ -693,79 +652,120 @@ Statements:
 End:
   Goto(blk9, {v25 -> v28})
 
-blk8:
-Inputs: v26: core::felt
+blk3:
+Inputs: v20: core::felt
 Statements:
-  (v27: test::MyEnum) <- MyEnum::h(v26)
+  (v21: (core::felt,)) <- struct_construct(v20)
+  (v22: test::MyEnum) <- MyEnum::f(v21)
 End:
-  Goto(blk9, {v27 -> v28})
+  Goto(blk9, {v22 -> v28})
+
+blk4:
+Inputs: v16: core::felt, v17: core::felt
+Statements:
+  (v18: (core::felt, core::felt)) <- struct_construct(v16, v17)
+  (v19: test::MyEnum) <- MyEnum::e(v18)
+End:
+  Goto(blk9, {v19 -> v28})
+
+blk5:
+Inputs: v12: core::felt, v13: core::felt
+Statements:
+  (v14: (core::felt, core::felt)) <- struct_construct(v12, v13)
+  (v15: test::MyEnum) <- MyEnum::d(v14)
+End:
+  Goto(blk9, {v15 -> v28})
+
+blk6:
+Inputs: v8: core::felt, v9: (core::felt, core::felt)
+Statements:
+  (v10: (core::felt, (core::felt, core::felt))) <- struct_construct(v8, v9)
+  (v11: test::MyEnum) <- MyEnum::c(v10)
+End:
+  Goto(blk9, {v11 -> v28})
+
+blk7:
+Inputs: v4: core::felt, v5: (core::felt, core::felt)
+Statements:
+  (v6: (core::felt, (core::felt, core::felt))) <- struct_construct(v4, v5)
+  (v7: test::MyEnum) <- MyEnum::b(v6)
+End:
+  Goto(blk9, {v7 -> v28})
+
+blk8:
+Inputs: v0: core::felt, v1: (core::felt, core::felt)
+Statements:
+  (v2: (core::felt, (core::felt, core::felt))) <- struct_construct(v0, v1)
+  (v3: test::MyEnum) <- MyEnum::a(v2)
+End:
+  Goto(blk9, {v3 -> v28})
 
 blk9:
 Inputs:
 Statements:
   () <- match_enum(v28) {
-    MyEnum::a => blk10,
-    MyEnum::b => blk11,
-    MyEnum::c => blk12,
-    MyEnum::d => blk13,
-    MyEnum::e => blk14,
-    MyEnum::f => blk15,
-    MyEnum::g => blk16,
-    MyEnum::h => blk17,
+    MyEnum::a => blk17,
+    MyEnum::b => blk16,
+    MyEnum::c => blk15,
+    MyEnum::d => blk14,
+    MyEnum::e => blk13,
+    MyEnum::f => blk12,
+    MyEnum::g => blk11,
+    MyEnum::h => blk10,
   }
+End:
+  Unreachable
+
+blk10:
+Inputs: v45: core::felt
+Statements:
 End:
   Fallthrough(blk18, {})
 
-blk10:
-Inputs: v29: (core::felt, (core::felt, core::felt))
-Statements:
-  (v30: core::felt, v31: (core::felt, core::felt)) <- struct_destructure(v29)
-  (v32: core::felt, v33: core::felt) <- struct_destructure(v31)
-End:
-  Goto(blk18, {})
-
 blk11:
-Inputs: v34: (core::felt, (core::felt, core::felt))
+Inputs: v44: (core::felt,)
 Statements:
-  (v35: core::felt, v36: (core::felt, core::felt)) <- struct_destructure(v34)
 End:
   Goto(blk18, {})
 
 blk12:
-Inputs: v37: (core::felt, (core::felt, core::felt))
-Statements:
-End:
-  Goto(blk18, {})
-
-blk13:
-Inputs: v38: (core::felt, core::felt)
-Statements:
-  (v39: core::felt, v40: core::felt) <- struct_destructure(v38)
-End:
-  Goto(blk18, {})
-
-blk14:
-Inputs: v41: (core::felt, core::felt)
-Statements:
-End:
-  Goto(blk18, {})
-
-blk15:
 Inputs: v42: (core::felt,)
 Statements:
   (v43: core::felt) <- struct_destructure(v42)
 End:
   Goto(blk18, {})
 
-blk16:
-Inputs: v44: (core::felt,)
+blk13:
+Inputs: v41: (core::felt, core::felt)
 Statements:
 End:
   Goto(blk18, {})
 
-blk17:
-Inputs: v45: core::felt
+blk14:
+Inputs: v38: (core::felt, core::felt)
 Statements:
+  (v39: core::felt, v40: core::felt) <- struct_destructure(v38)
+End:
+  Goto(blk18, {})
+
+blk15:
+Inputs: v37: (core::felt, (core::felt, core::felt))
+Statements:
+End:
+  Goto(blk18, {})
+
+blk16:
+Inputs: v34: (core::felt, (core::felt, core::felt))
+Statements:
+  (v35: core::felt, v36: (core::felt, core::felt)) <- struct_destructure(v34)
+End:
+  Goto(blk18, {})
+
+blk17:
+Inputs: v29: (core::felt, (core::felt, core::felt))
+Statements:
+  (v30: core::felt, v31: (core::felt, core::felt)) <- struct_destructure(v29)
+  (v32: core::felt, v33: core::felt) <- struct_destructure(v31)
 End:
   Goto(blk18, {})
 
@@ -834,7 +834,7 @@ Statements:
   }
     Ref changes: r0 <- v37
 End:
-  Fallthrough(9, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
@@ -913,69 +913,69 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt
 Statements:
   () <- match test::bar(v0, v1) {
-    MyEnum::a => blk1,
-    MyEnum::b => blk2,
-    MyEnum::c => blk3,
-    MyEnum::d => blk4,
-    MyEnum::e => blk5,
-    MyEnum::f => blk6,
-    MyEnum::g => blk7,
-    MyEnum::h => blk8,
+    MyEnum::a => blk8,
+    MyEnum::b => blk7,
+    MyEnum::c => blk6,
+    MyEnum::d => blk5,
+    MyEnum::e => blk4,
+    MyEnum::f => blk3,
+    MyEnum::g => blk2,
+    MyEnum::h => blk1,
   }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk1:
-Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
+Inputs: v33: core::RangeCheck, v34: core::felt, v35: core::felt
 Statements:
-  (v6: core::felt, v7: core::felt) <- struct_destructure(v5)
 End:
-  Goto(blk9, {v2 -> v37})
+  Fallthrough(blk9, {v33 -> v37})
 
 blk2:
-Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
-Statements:
-End:
-  Goto(blk9, {v8 -> v37})
-
-blk3:
-Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: (core::felt, core::felt)
-Statements:
-  (v16: (core::felt, (core::felt, core::felt))) <- struct_construct(v14, v15)
-End:
-  Goto(blk9, {v12 -> v37})
-
-blk4:
-Inputs: v17: core::RangeCheck, v18: core::felt, v19: core::felt, v20: core::felt
-Statements:
-End:
-  Goto(blk9, {v17 -> v37})
-
-blk5:
-Inputs: v21: core::RangeCheck, v22: core::felt, v23: core::felt, v24: core::felt
-Statements:
-  (v25: (core::felt, core::felt)) <- struct_construct(v23, v24)
-End:
-  Goto(blk9, {v21 -> v37})
-
-blk6:
-Inputs: v26: core::RangeCheck, v27: core::felt, v28: core::felt
-Statements:
-End:
-  Goto(blk9, {v26 -> v37})
-
-blk7:
 Inputs: v29: core::RangeCheck, v30: core::felt, v31: core::felt
 Statements:
   (v32: (core::felt,)) <- struct_construct(v31)
 End:
   Goto(blk9, {v29 -> v37})
 
-blk8:
-Inputs: v33: core::RangeCheck, v34: core::felt, v35: core::felt
+blk3:
+Inputs: v26: core::RangeCheck, v27: core::felt, v28: core::felt
 Statements:
 End:
-  Goto(blk9, {v33 -> v37})
+  Goto(blk9, {v26 -> v37})
+
+blk4:
+Inputs: v21: core::RangeCheck, v22: core::felt, v23: core::felt, v24: core::felt
+Statements:
+  (v25: (core::felt, core::felt)) <- struct_construct(v23, v24)
+End:
+  Goto(blk9, {v21 -> v37})
+
+blk5:
+Inputs: v17: core::RangeCheck, v18: core::felt, v19: core::felt, v20: core::felt
+Statements:
+End:
+  Goto(blk9, {v17 -> v37})
+
+blk6:
+Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: (core::felt, core::felt)
+Statements:
+  (v16: (core::felt, (core::felt, core::felt))) <- struct_construct(v14, v15)
+End:
+  Goto(blk9, {v12 -> v37})
+
+blk7:
+Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
+Statements:
+End:
+  Goto(blk9, {v8 -> v37})
+
+blk8:
+Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
+Statements:
+  (v6: core::felt, v7: core::felt) <- struct_destructure(v5)
+End:
+  Goto(blk9, {v2 -> v37})
 
 blk9:
 Inputs:
@@ -1043,7 +1043,7 @@ Statements:
   }
     Ref changes: r0 <- v48
 End:
-  Fallthrough(9, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
@@ -1139,7 +1139,7 @@ Statements:
     MyEnum::h => blk17,
   }
 End:
-  Fallthrough(18, {})
+  Unreachable
 
 blk10:
 Inputs: v49: (core::felt, (core::felt, core::felt))
@@ -1215,67 +1215,26 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt
 Statements:
   () <- match test::bar(v0, v1) {
-    MyEnum::a => blk1,
-    MyEnum::b => blk2,
-    MyEnum::c => blk3,
-    MyEnum::d => blk4,
-    MyEnum::e => blk5,
-    MyEnum::f => blk6,
-    MyEnum::g => blk7,
-    MyEnum::h => blk8,
+    MyEnum::a => blk8,
+    MyEnum::b => blk7,
+    MyEnum::c => blk6,
+    MyEnum::d => blk5,
+    MyEnum::e => blk4,
+    MyEnum::f => blk3,
+    MyEnum::g => blk2,
+    MyEnum::h => blk1,
   }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk1:
-Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
+Inputs: v42: core::RangeCheck, v43: core::felt, v44: core::felt
 Statements:
-  (v6: (core::felt, (core::felt, core::felt))) <- struct_construct(v4, v5)
-  (v7: test::MyEnum) <- MyEnum::a(v6)
+  (v45: test::MyEnum) <- MyEnum::h(v44)
 End:
-  Goto(blk9, {v2 -> v48, v7 -> v46})
+  Fallthrough(blk9, {v42 -> v48, v45 -> v46})
 
 blk2:
-Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
-Statements:
-  (v12: (core::felt, (core::felt, core::felt))) <- struct_construct(v10, v11)
-  (v13: test::MyEnum) <- MyEnum::b(v12)
-End:
-  Goto(blk9, {v8 -> v48, v13 -> v46})
-
-blk3:
-Inputs: v14: core::RangeCheck, v15: core::felt, v16: core::felt, v17: (core::felt, core::felt)
-Statements:
-  (v18: (core::felt, (core::felt, core::felt))) <- struct_construct(v16, v17)
-  (v19: test::MyEnum) <- MyEnum::c(v18)
-End:
-  Goto(blk9, {v14 -> v48, v19 -> v46})
-
-blk4:
-Inputs: v20: core::RangeCheck, v21: core::felt, v22: core::felt, v23: core::felt
-Statements:
-  (v24: (core::felt, core::felt)) <- struct_construct(v22, v23)
-  (v25: test::MyEnum) <- MyEnum::d(v24)
-End:
-  Goto(blk9, {v20 -> v48, v25 -> v46})
-
-blk5:
-Inputs: v26: core::RangeCheck, v27: core::felt, v28: core::felt, v29: core::felt
-Statements:
-  (v30: (core::felt, core::felt)) <- struct_construct(v28, v29)
-  (v31: test::MyEnum) <- MyEnum::e(v30)
-End:
-  Goto(blk9, {v26 -> v48, v31 -> v46})
-
-blk6:
-Inputs: v32: core::RangeCheck, v33: core::felt, v34: core::felt
-Statements:
-  (v35: (core::felt,)) <- struct_construct(v34)
-  (v36: test::MyEnum) <- MyEnum::f(v35)
-End:
-  Goto(blk9, {v32 -> v48, v36 -> v46})
-
-blk7:
 Inputs: v37: core::RangeCheck, v38: core::felt, v39: core::felt
 Statements:
   (v40: (core::felt,)) <- struct_construct(v39)
@@ -1283,79 +1242,120 @@ Statements:
 End:
   Goto(blk9, {v37 -> v48, v41 -> v46})
 
-blk8:
-Inputs: v42: core::RangeCheck, v43: core::felt, v44: core::felt
+blk3:
+Inputs: v32: core::RangeCheck, v33: core::felt, v34: core::felt
 Statements:
-  (v45: test::MyEnum) <- MyEnum::h(v44)
+  (v35: (core::felt,)) <- struct_construct(v34)
+  (v36: test::MyEnum) <- MyEnum::f(v35)
 End:
-  Goto(blk9, {v42 -> v48, v45 -> v46})
+  Goto(blk9, {v32 -> v48, v36 -> v46})
+
+blk4:
+Inputs: v26: core::RangeCheck, v27: core::felt, v28: core::felt, v29: core::felt
+Statements:
+  (v30: (core::felt, core::felt)) <- struct_construct(v28, v29)
+  (v31: test::MyEnum) <- MyEnum::e(v30)
+End:
+  Goto(blk9, {v26 -> v48, v31 -> v46})
+
+blk5:
+Inputs: v20: core::RangeCheck, v21: core::felt, v22: core::felt, v23: core::felt
+Statements:
+  (v24: (core::felt, core::felt)) <- struct_construct(v22, v23)
+  (v25: test::MyEnum) <- MyEnum::d(v24)
+End:
+  Goto(blk9, {v20 -> v48, v25 -> v46})
+
+blk6:
+Inputs: v14: core::RangeCheck, v15: core::felt, v16: core::felt, v17: (core::felt, core::felt)
+Statements:
+  (v18: (core::felt, (core::felt, core::felt))) <- struct_construct(v16, v17)
+  (v19: test::MyEnum) <- MyEnum::c(v18)
+End:
+  Goto(blk9, {v14 -> v48, v19 -> v46})
+
+blk7:
+Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
+Statements:
+  (v12: (core::felt, (core::felt, core::felt))) <- struct_construct(v10, v11)
+  (v13: test::MyEnum) <- MyEnum::b(v12)
+End:
+  Goto(blk9, {v8 -> v48, v13 -> v46})
+
+blk8:
+Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
+Statements:
+  (v6: (core::felt, (core::felt, core::felt))) <- struct_construct(v4, v5)
+  (v7: test::MyEnum) <- MyEnum::a(v6)
+End:
+  Goto(blk9, {v2 -> v48, v7 -> v46})
 
 blk9:
 Inputs:
 Statements:
   () <- match_enum(v46) {
-    MyEnum::a => blk10,
-    MyEnum::b => blk11,
-    MyEnum::c => blk12,
-    MyEnum::d => blk13,
-    MyEnum::e => blk14,
-    MyEnum::f => blk15,
-    MyEnum::g => blk16,
-    MyEnum::h => blk17,
+    MyEnum::a => blk17,
+    MyEnum::b => blk16,
+    MyEnum::c => blk15,
+    MyEnum::d => blk14,
+    MyEnum::e => blk13,
+    MyEnum::f => blk12,
+    MyEnum::g => blk11,
+    MyEnum::h => blk10,
   }
+End:
+  Unreachable
+
+blk10:
+Inputs: v65: core::felt
+Statements:
 End:
   Fallthrough(blk18, {})
 
-blk10:
-Inputs: v49: (core::felt, (core::felt, core::felt))
-Statements:
-  (v50: core::felt, v51: (core::felt, core::felt)) <- struct_destructure(v49)
-  (v52: core::felt, v53: core::felt) <- struct_destructure(v51)
-End:
-  Goto(blk18, {})
-
 blk11:
-Inputs: v54: (core::felt, (core::felt, core::felt))
+Inputs: v64: (core::felt,)
 Statements:
-  (v55: core::felt, v56: (core::felt, core::felt)) <- struct_destructure(v54)
 End:
   Goto(blk18, {})
 
 blk12:
-Inputs: v57: (core::felt, (core::felt, core::felt))
-Statements:
-End:
-  Goto(blk18, {})
-
-blk13:
-Inputs: v58: (core::felt, core::felt)
-Statements:
-  (v59: core::felt, v60: core::felt) <- struct_destructure(v58)
-End:
-  Goto(blk18, {})
-
-blk14:
-Inputs: v61: (core::felt, core::felt)
-Statements:
-End:
-  Goto(blk18, {})
-
-blk15:
 Inputs: v62: (core::felt,)
 Statements:
   (v63: core::felt) <- struct_destructure(v62)
 End:
   Goto(blk18, {})
 
-blk16:
-Inputs: v64: (core::felt,)
+blk13:
+Inputs: v61: (core::felt, core::felt)
 Statements:
 End:
   Goto(blk18, {})
 
-blk17:
-Inputs: v65: core::felt
+blk14:
+Inputs: v58: (core::felt, core::felt)
 Statements:
+  (v59: core::felt, v60: core::felt) <- struct_destructure(v58)
+End:
+  Goto(blk18, {})
+
+blk15:
+Inputs: v57: (core::felt, (core::felt, core::felt))
+Statements:
+End:
+  Goto(blk18, {})
+
+blk16:
+Inputs: v54: (core::felt, (core::felt, core::felt))
+Statements:
+  (v55: core::felt, v56: (core::felt, core::felt)) <- struct_destructure(v54)
+End:
+  Goto(blk18, {})
+
+blk17:
+Inputs: v49: (core::felt, (core::felt, core::felt))
+Statements:
+  (v50: core::felt, v51: (core::felt, core::felt)) <- struct_destructure(v49)
+  (v52: core::felt, v53: core::felt) <- struct_destructure(v51)
 End:
   Goto(blk18, {})
 

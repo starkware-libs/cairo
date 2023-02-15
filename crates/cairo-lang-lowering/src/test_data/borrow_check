@@ -42,7 +42,7 @@ Statements:
     bool::True => blk1,
   }
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs: v4: ()
@@ -81,7 +81,7 @@ Statements:
     bool::True => blk1,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs: v4: ()
@@ -89,7 +89,7 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Goto(blk3, {})
+  Fallthrough(blk3, {})
 
 blk2:
 Inputs: v5: ()
@@ -155,7 +155,7 @@ Statements:
     bool::True => blk1,
   }
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs: v4: ()

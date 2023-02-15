@@ -14,22 +14,25 @@ use crate::{
 pub type StatementLocation = (BlockId, usize);
 
 /// Analyzer trait to implement for each specific analysis.
+#[allow(unused_variables)]
 pub trait Analyzer {
     type Info: Clone;
-    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, block: &FlatBlock);
+    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, block: &FlatBlock) {}
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
         stmt: &Statement,
-    );
+    ) {
+    }
     fn visit_remapping(
         &mut self,
         info: &mut Self::Info,
         block_id: BlockId,
         target_block_id: BlockId,
         remapping: &VarRemapping,
-    );
+    ) {
+    }
     // TODO(spapini): These will become block ends instead of statements.
     fn merge_match(
         &mut self,
@@ -118,9 +121,13 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
             let info = match stmt {
                 Statement::MatchExtern(StatementMatchExtern { arms, .. })
                 | Statement::MatchEnum(StatementMatchEnum { arms, .. }) => {
+                    // Analyze arms in reverse - last arm is analyzed first.
+                    // To retrieve the arm infos in the original order, we reverse before and after.
                     let arm_infos = arms
                         .iter()
+                        .rev()
                         .map(|(_, arm_block)| (*arm_block, self.get_block_info(*arm_block)))
+                        .rev()
                         .collect_vec();
                     self.analyzer.merge_match(statement_location, stmt, &arm_infos[..])
                 }

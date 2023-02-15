@@ -34,7 +34,7 @@ felt_const<0>() -> ([5]);
 struct_construct<Unit>() -> ([6]);
 struct_construct<fib_struct::fib_struct::FibResult>([0], [5], [6]) -> ([7]);
 store_temp<fib_struct::fib_struct::FibResult>([7]) -> ([8]);
-jump() { 34() };
+jump() { 33() };
 branch_align() -> ();
 drop<NonZero<felt>>([3]) -> ();
 dup<felt>([1]) -> ([1], [10]);
@@ -57,7 +57,6 @@ felt_add([22], [24]) -> ([25]);
 struct_construct<Unit>() -> ([26]);
 struct_construct<fib_struct::fib_struct::FibResult>([18], [25], [26]) -> ([27]);
 store_temp<fib_struct::fib_struct::FibResult>([27]) -> ([8]);
-jump() { 34() };
 rename<fib_struct::fib_struct::FibResult>([8]) -> ([28]);
 return([28]);
 

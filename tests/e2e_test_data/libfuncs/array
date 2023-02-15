@@ -140,16 +140,15 @@ jmp rel 10;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [[fp + -4] + 0], ap++;
-jmp rel 10;
+jmp rel 8;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 800})
+test::foo: OrderedHashMap({Const: 700})
 
 //! > sierra_code
 type felt = felt;
@@ -173,13 +172,12 @@ branch_align() -> ();
 enum_init<core::option::Option::<core::felt>, 0>([2]) -> ([4]);
 store_temp<Array<felt>>([1]) -> ([5]);
 store_temp<core::option::Option::<core::felt>>([4]) -> ([6]);
-jump() { 12() };
+jump() { 11() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([7]);
 enum_init<core::option::Option::<core::felt>, 1>([7]) -> ([8]);
 store_temp<Array<felt>>([3]) -> ([5]);
 store_temp<core::option::Option::<core::felt>>([8]) -> ([6]);
-jump() { 12() };
 rename<Array<felt>>([5]) -> ([9]);
 rename<core::option::Option::<core::felt>>([6]) -> ([10]);
 return([9], [10]);
@@ -214,16 +212,15 @@ jmp rel 14;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [[ap + -3] + 0], ap++;
-jmp rel 12;
+jmp rel 10;
 ap += 2;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1090})
+test::foo: OrderedHashMap({Const: 1070})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -250,13 +247,12 @@ branch_align() -> ();
 enum_init<core::option::Option::<@core::felt>, 0>([4]) -> ([6]);
 store_temp<RangeCheck>([3]) -> ([7]);
 store_temp<core::option::Option::<@core::felt>>([6]) -> ([8]);
-jump() { 12() };
+jump() { 11() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 enum_init<core::option::Option::<@core::felt>, 1>([9]) -> ([10]);
 store_temp<RangeCheck>([5]) -> ([7]);
 store_temp<core::option::Option::<@core::felt>>([10]) -> ([8]);
-jump() { 12() };
 rename<RangeCheck>([7]) -> ([11]);
 rename<core::option::Option::<@core::felt>>([8]) -> ([12]);
 return([11], [12]);
@@ -294,17 +290,16 @@ jmp rel 15;
 [ap + 0] = 0, ap++;
 [ap + 0] = [[ap + -3] + 0], ap++;
 [ap + 0] = [[ap + -4] + 1], ap++;
-jmp rel 14;
+jmp rel 12;
 ap += 1;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1380})
+test::foo: OrderedHashMap({Const: 1280})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -332,13 +327,12 @@ branch_align() -> ();
 enum_init<core::option::Option::<@core::integer::u256>, 0>([4]) -> ([6]);
 store_temp<RangeCheck>([3]) -> ([7]);
 store_temp<core::option::Option::<@core::integer::u256>>([6]) -> ([8]);
-jump() { 12() };
+jump() { 11() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 enum_init<core::option::Option::<@core::integer::u256>, 1>([9]) -> ([10]);
 store_temp<RangeCheck>([5]) -> ([7]);
 store_temp<core::option::Option::<@core::integer::u256>>([10]) -> ([8]);
-jump() { 12() };
 rename<RangeCheck>([7]) -> ([11]);
 rename<core::option::Option::<@core::integer::u256>>([8]) -> ([12]);
 return([11], [12]);
@@ -376,17 +370,16 @@ jmp rel 15;
 [ap + 0] = 0, ap++;
 [ap + 0] = [[ap + -3] + 0], ap++;
 [ap + 0] = [[ap + -4] + 1], ap++;
-jmp rel 14;
+jmp rel 12;
 ap += 1;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1380})
+test::foo: OrderedHashMap({Const: 1280})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -415,13 +408,12 @@ branch_align() -> ();
 enum_init<core::option::Option::<@core::array::Array::<core::felt>>, 0>([4]) -> ([6]);
 store_temp<RangeCheck>([3]) -> ([7]);
 store_temp<core::option::Option::<@core::array::Array::<core::felt>>>([6]) -> ([8]);
-jump() { 12() };
+jump() { 11() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 enum_init<core::option::Option::<@core::array::Array::<core::felt>>, 1>([9]) -> ([10]);
 store_temp<RangeCheck>([5]) -> ([7]);
 store_temp<core::option::Option::<@core::array::Array::<core::felt>>>([10]) -> ([8]);
-jump() { 12() };
 rename<RangeCheck>([7]) -> ([11]);
 rename<core::option::Option::<@core::array::Array::<core::felt>>>([8]) -> ([12]);
 return([11], [12]);

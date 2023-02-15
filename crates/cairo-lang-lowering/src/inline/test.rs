@@ -10,6 +10,7 @@ use crate::db::LoweringGroup;
 use crate::flow::add_fallthroughs;
 use crate::fmt::LoweredFormatter;
 use crate::inline::apply_inlining;
+use crate::optimizations::remappings::optimize_remappings;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -43,6 +44,8 @@ fn test_function_inlining(
 
     let mut after = before.deref().clone();
     apply_inlining(db, test_function.function_id, &mut after).unwrap();
+    optimize_remappings(&mut after);
+    add_fallthroughs(&mut after);
 
     // TODO(ilya): Move 'add_fallthroughs' to a dedicated test.
     add_fallthroughs(&mut after);
