@@ -10,7 +10,10 @@ use itertools::{zip_eq, Itertools};
 use crate::corelib::never_ty;
 use crate::db::SemanticGroup;
 use crate::items::imp::ImplId;
-use crate::types::{substitute_generics_args_inplace, ConcreteEnumLongId, GenericSubstitution};
+use crate::types::{
+    peel_snapshots, substitute_generics_args_inplace, substitute_ty, ConcreteEnumLongId,
+    GenericSubstitution,
+};
 use crate::{
     ConcreteEnumId, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
     ConcreteVariant, GenericArgumentId, GenericParam, Pattern, TypeId, TypeLongId,
@@ -169,23 +172,43 @@ impl<'db> Inference<'db> {
     /// Conforms ty0 to ty1. Should be called when ty0 should be coerced to ty1. Not symmetric.
     /// Returns the reduced type for ty0, or an error if the type is no coercible.
     pub fn conform_ty(&mut self, ty0: TypeId, ty1: TypeId) -> Result<TypeId, InferenceError> {
+        Ok(self.conform_ty_ex(ty0, ty1, false)?.0)
+    }
+
+    /// Same as conform_ty but supports adding snapshots to ty0 if `ty0_is_self` is true.
+    /// Returns the reduced type for ty0 and the number of snapshots that needs to be added
+    /// for the types to conform.
+    pub fn conform_ty_ex(
+        &mut self,
+        ty0: TypeId,
+        ty1: TypeId,
+        ty0_is_self: bool,
+    ) -> Result<(TypeId, usize), InferenceError> {
+        let n_snapshots = 0;
+
         let ty0 = self.reduce_ty(ty0);
         let ty1 = self.reduce_ty(ty1);
         if ty0 == never_ty(self.db) {
-            return Ok(ty1);
+            return Ok((ty1, n_snapshots));
         }
         if ty0 == ty1 {
-            return Ok(ty0);
+            return Ok((ty0, n_snapshots));
         }
-        let long_ty0 = self.db.lookup_intern_type(ty0);
         let long_ty1 = self.db.lookup_intern_type(ty1);
         match long_ty1 {
-            TypeLongId::Var(var) => return self.assign(var, ty0),
-            TypeLongId::Missing(_) => return Ok(ty1),
+            TypeLongId::Var(var) => return Ok((self.assign(var, ty0)?, n_snapshots)),
+            TypeLongId::Missing(_) => return Ok((ty1, n_snapshots)),
+            TypeLongId::Snapshot(inner_ty) if ty0_is_self && inner_ty == ty0 => {
+                return Ok((ty1, n_snapshots));
+            }
             _ => {}
         }
+        let long_ty0 = self.db.lookup_intern_type(ty0);
+
         match long_ty0 {
             TypeLongId::Concrete(concrete0) => {
+                let (n_snapshots, long_ty1) = peel_snapshots(self.db, ty1);
+
                 let TypeLongId::Concrete(concrete1) = long_ty1 else {
                     return Err(InferenceError::KindMismatch { ty0, ty1 });
                 };
@@ -200,9 +223,10 @@ impl<'db> Inference<'db> {
                     concrete0.generic_type(self.db),
                     gargs,
                 ));
-                Ok(self.db.intern_type(long_ty))
+                Ok((self.db.intern_type(long_ty), n_snapshots))
             }
             TypeLongId::Tuple(tys0) => {
+                let (n_snapshots, long_ty1) = peel_snapshots(self.db, ty1);
                 let TypeLongId::Tuple(tys1) = long_ty1 else {
                     return Err(InferenceError::KindMismatch { ty0, ty1 });
                 };
@@ -212,19 +236,18 @@ impl<'db> Inference<'db> {
                 let tys = zip_eq(tys0, tys1)
                     .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
                     .collect::<Result<Vec<_>, _>>()?;
-                Ok(self.db.intern_type(TypeLongId::Tuple(tys)))
+                Ok((self.db.intern_type(TypeLongId::Tuple(tys)), n_snapshots))
             }
             TypeLongId::Snapshot(ty0) => {
                 let TypeLongId::Snapshot(ty1) = long_ty1 else {
                     return Err(InferenceError::KindMismatch { ty0, ty1 });
                 };
-                // TODO(spapini): snapshot coercions.
-                let ty = self.conform_ty(ty0, ty1)?;
-                Ok(self.db.intern_type(TypeLongId::Snapshot(ty)))
+                let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
+                Ok((self.db.intern_type(TypeLongId::Snapshot(ty)), n_snapshots))
             }
             TypeLongId::GenericParameter(_) => Err(InferenceError::KindMismatch { ty0, ty1 }),
-            TypeLongId::Var(var) => self.assign(var, ty1),
-            TypeLongId::Missing(_) => Ok(ty0),
+            TypeLongId::Var(var) => Ok((self.assign(var, ty1)?, n_snapshots)),
+            TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
         }
     }
 
@@ -447,12 +470,15 @@ impl<'db> Inference<'db> {
     }
 
     /// Tries to infer a trait function as a method for `self_ty`.
+    /// Supports snapshot snapshot coercions.
+    ///
+    /// Returns the deduced type and the number of snapshots that need to be added to it.
     pub fn infer_concrete_trait_by_self(
         &mut self,
         trait_function: TraitFunctionId,
         self_ty: TypeId,
         stable_ptr: SyntaxStablePtrId,
-    ) -> Option<ConcreteTraitId> {
+    ) -> Option<(ConcreteTraitId, usize)> {
         let trait_id = trait_function.trait_id(self.db.upcast());
         let signature = self.db.trait_function_signature(trait_function).ok()?;
         let first_param = signature.params.into_iter().next()?;
@@ -461,14 +487,22 @@ impl<'db> Inference<'db> {
         }
         let generic_params = self.db.trait_generic_params(trait_id).ok()?;
 
-        let generic_args = self
-            .infer_generics(
-                &generic_params,
-                &[GenericArgumentId::Type(first_param.ty)],
-                &[GenericArgumentId::Type(self_ty)],
-                stable_ptr,
-            )
-            .ok()?;
-        Some(self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }))
+        let substitution = GenericSubstitution(
+            generic_params
+                .iter()
+                .map(|param| (param.id(), GenericArgumentId::Type(self.new_var(stable_ptr))))
+                .collect(),
+        );
+
+        let fixed_param_ty = substitute_ty(self.db, &substitution, first_param.ty);
+        let (_, n_snapshots) = self.conform_ty_ex(self_ty, fixed_param_ty, true).ok()?;
+
+        let generic_args =
+            generic_params.iter().map(|param| substitution[param.id()]).collect_vec();
+
+        Some((
+            self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }),
+            n_snapshots,
+        ))
     }
 }

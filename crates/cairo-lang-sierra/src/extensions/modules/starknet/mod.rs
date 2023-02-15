@@ -16,7 +16,10 @@ use emit_event::EmitEventLibfunc;
 pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
 
-use self::getter::{GetCallerAddressTrait, GetContractAddressTrait, GetterLibfunc};
+use self::getter::{
+    GetBlockNumberTrait, GetBlockTimestampTrait, GetCallerAddressTrait, GetContractAddressTrait,
+    GetSequencerAddressTrait, GetterLibfunc,
+};
 use self::interoperability::{ContractAddressToFeltLibfunc, ContractAddressTryFromFeltLibfunc};
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc, StorageAddressType,
@@ -45,7 +48,10 @@ define_libfunc_hierarchy! {
          StorageAddressFromBase(StorageAddressFromBaseLibfunc),
          StorageAddressFromBaseAndOffset(StorageAddressFromBaseAndOffsetLibfunc),
          EmitEvent(EmitEventLibfunc),
+         GetBlockNumber(GetterLibfunc<GetBlockNumberTrait>),
+         GetBlockTimestamp(GetterLibfunc<GetBlockTimestampTrait>),
          GetCallerAddress(GetterLibfunc<GetCallerAddressTrait>),
          GetContractAddress(GetterLibfunc<GetContractAddressTrait>),
+         GetSequencerAddress(GetterLibfunc<GetSequencerAddressTrait>),
     }, StarkNetConcreteLibfunc
 }

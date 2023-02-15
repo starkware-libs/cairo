@@ -65,6 +65,29 @@ fn get_contract_address() -> ContractAddress {
     get_contract_address_syscall().unwrap_syscall()
 }
 
+extern fn get_sequencer_address_syscall() -> SyscallResult::<ContractAddress> implicits(
+    GasBuiltin, System
+) nopanic;
+
+fn get_sequencer_address() -> ContractAddress {
+    get_sequencer_address_syscall().unwrap_syscall()
+}
+
+extern fn get_block_number_syscall() -> SyscallResult::<u64> implicits(GasBuiltin, System) nopanic;
+
+fn get_block_number() -> u64 {
+    get_block_number_syscall().unwrap_syscall()
+}
+
+extern fn get_block_timestamp_syscall() -> SyscallResult::<u64> implicits(
+    GasBuiltin, System
+) nopanic;
+
+// TODO(ilya): Consider Adding a type for timestamps.
+fn get_block_timestamp() -> u64 {
+    get_block_timestamp_syscall().unwrap_syscall()
+}
+
 
 trait StorageAccess<T> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult::<T>;
