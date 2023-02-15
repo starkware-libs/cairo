@@ -1,8 +1,10 @@
 use std::marker::PhantomData;
 
+use super::get_tx_info_type;
 use super::interoperability::ContractAddressType;
 use super::syscalls::SystemType;
 use crate::extensions::array::ArrayType;
+use crate::extensions::boxing::BoxType;
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
 use crate::extensions::lib_func::{
@@ -15,6 +17,7 @@ use crate::extensions::{
     SpecializationError,
 };
 use crate::ids::ConcreteTypeId;
+use crate::program::GenericArg;
 
 /// Trait for implementing getters.
 pub trait GetterTraits: Default {
@@ -167,8 +170,8 @@ impl GetterTraitsEx for GetTxInfoTrait {
     const STR_ID: &'static str = "get_tx_info_syscall";
 
     fn info_type_id(
-        _context: &dyn SignatureSpecializationContext,
+        context: &dyn SignatureSpecializationContext,
     ) -> Result<ConcreteTypeId, SpecializationError> {
-        todo!();
+        context.get_concrete_type(BoxType::id(), &[GenericArg::Type(get_tx_info_type(context)?)])
     }
 }
