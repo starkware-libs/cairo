@@ -508,6 +508,7 @@ impl CasmBuilder {
 
     /// A return statement in the code.
     pub fn ret(&mut self) {
+        self.main_state.validate_finality();
         let instruction = self.get_instruction(InstructionBody::Ret(RetInstruction {}), false);
         self.statements.push(Statement::Final(instruction));
         self.reachable = false;
