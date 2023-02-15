@@ -100,6 +100,7 @@ pub struct PatternStruct {
     // TODO(spapini): This should be ConcreteMember, when available.
     pub field_patterns: Vec<(semantic::Member, Box<Pattern>)>,
     pub ty: semantic::TypeId,
+    pub n_snapshots: usize,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::PatternStructPtr,
 }
