@@ -337,8 +337,7 @@ pub fn substitute_ty(
             .get(&generic_param)
             .map(|generic_arg| *extract_matches!(generic_arg, GenericArgumentId::Type))
             .unwrap_or(ty),
-        TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
-        TypeLongId::Missing(_) => ty,
+        TypeLongId::Var(_) | TypeLongId::Missing(_) => ty,
     }
 }
 

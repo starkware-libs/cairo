@@ -2,6 +2,9 @@ struct Span<T> {
     snapshot: @Array::<T>
 }
 
+impl SpanFeltCopy of Copy::<Span::<felt>>;
+impl SpanFeltDrop of Drop::<Span::<felt>>;
+
 trait SpanTrait<T> {
     fn len(self: Span::<T>) -> usize;
     fn is_empty(self: Span::<T>) -> bool;
