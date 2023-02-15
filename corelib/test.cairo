@@ -2,6 +2,7 @@ use array::ArrayTrait;
 use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
+use hash::LegacyHash;
 
 #[test]
 #[should_panic]
