@@ -19,6 +19,7 @@ cairo_lang_test_utils::test_file_test!(
         inline: "inline",
         locals: "locals",
         simple: "simple",
+        snapshot: "snapshot",
         struct_: "struct",
         match_: "match",
     },
