@@ -55,11 +55,10 @@ jmp rel 8 if [ap + -1] != 0;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
-jmp rel 10;
+jmp rel 8;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
@@ -85,12 +84,11 @@ ec_point_try_new_nz([0], [1]) { fallthrough([2]) 5() };
 branch_align() -> ();
 enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 0>([2]) -> ([3]);
 store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([3]) -> ([4]);
-jump() { 10() };
+jump() { 9() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 1>([5]) -> ([6]);
 store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([6]) -> ([4]);
-jump() { 10() };
 rename<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([4]) -> ([7]);
 return([7]);
 
@@ -136,15 +134,14 @@ jmp rel 8;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [ap + -5], ap++;
-jmp rel 10;
+jmp rel 8;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1300})
+test::foo: OrderedHashMap({Const: 1200})
 
 //! > sierra_code
 type felt = felt;
@@ -166,12 +163,11 @@ ec_point_from_x_nz([0]) { fallthrough([1]) 5() };
 branch_align() -> ();
 enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 0>([1]) -> ([2]);
 store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([2]) -> ([3]);
-jump() { 10() };
+jump() { 9() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([4]);
 enum_init<core::option::Option::<core::NonZero::<core::ec::EcPoint>>, 1>([4]) -> ([5]);
 store_temp<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([5]) -> ([3]);
-jump() { 10() };
 rename<core::option::Option::<core::NonZero::<core::ec::EcPoint>>>([3]) -> ([6]);
 return([6]);
 
@@ -239,9 +235,8 @@ fn foo(p: EcPoint) -> felt {
 //! > casm
 jmp rel 6 if [fp + -3] != 0;
 [ap + 0] = 1, ap++;
-jmp rel 5;
+jmp rel 3;
 [ap + 0] = [fp + -4], ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
@@ -265,12 +260,11 @@ ec_point_is_zero([0]) { fallthrough() 5([1]) };
 branch_align() -> ();
 felt_const<1>() -> ([2]);
 store_temp<felt>([2]) -> ([3]);
-jump() { 10() };
+jump() { 9() };
 branch_align() -> ();
 ec_point_unwrap([1]) -> ([4], [5]);
 drop<felt>([5]) -> ();
 store_temp<felt>([4]) -> ([3]);
-jump() { 10() };
 rename<felt>([3]) -> ([6]);
 return([6]);
 
@@ -443,11 +437,10 @@ jmp rel 14;
 [ap + -1] = [ap + 0] + [fp + -4], ap++;
 [ap + 0] = [ap + -4], ap++;
 [ap + 0] = [ap + -2], ap++;
-jmp rel 10;
+jmp rel 8;
 ap += 8;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
@@ -472,11 +465,10 @@ branch_align() -> ();
 store_temp<NonZero<EcPoint>>([1]) -> ([1]);
 unwrap_nz<EcPoint>([1]) -> ([2]);
 rename<EcPoint>([2]) -> ([3]);
-jump() { 10() };
+jump() { 9() };
 branch_align() -> ();
 ec_point_zero() -> ([4]);
 store_temp<EcPoint>([4]) -> ([3]);
-jump() { 10() };
 rename<EcPoint>([3]) -> ([5]);
 return([5]);
 

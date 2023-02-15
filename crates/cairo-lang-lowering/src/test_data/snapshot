@@ -142,7 +142,7 @@ Statements:
     A::C => blk3,
   }
 End:
-  Fallthrough(4, {})
+  Unreachable
 
 blk1:
 Inputs: v1: @core::array::Array::<core::felt>
@@ -181,19 +181,20 @@ blk0 (root):
 Inputs: v0: @test::A
 Statements:
   () <- match_enum(v0) {
-    A::A => blk1,
+    A::A => blk3,
     A::B => blk2,
-    A::C => blk3,
+    A::C => blk1,
   }
 End:
-  Fallthrough(blk4, {})
+  Unreachable
 
 blk1:
-Inputs: v1: @core::array::Array::<core::felt>
+Inputs: v5: @(core::felt, core::array::Array::<core::felt>)
 Statements:
-  (v2: ()) <- test::bar0(v1)
+  (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
+  (v8: ()) <- test::bar2(v6, v7)
 End:
-  Goto(blk4, {})
+  Fallthrough(blk4, {})
 
 blk2:
 Inputs: v3: @core::felt
@@ -203,10 +204,9 @@ End:
   Goto(blk4, {})
 
 blk3:
-Inputs: v5: @(core::felt, core::array::Array::<core::felt>)
+Inputs: v1: @core::array::Array::<core::felt>
 Statements:
-  (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
-  (v8: ()) <- test::bar2(v6, v7)
+  (v2: ()) <- test::bar0(v1)
 End:
   Goto(blk4, {})
 

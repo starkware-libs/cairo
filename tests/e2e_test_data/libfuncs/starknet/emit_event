@@ -26,13 +26,12 @@ jmp rel 13 if [ap + -1] != 0;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 11;
+jmp rel 9;
 [ap + 0] = [[fp + -7] + 6], ap++;
 [ap + 0] = [fp + -7] + 10, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [[fp + -7] + 8], ap++;
 [ap + 0] = [[fp + -7] + 9], ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
@@ -66,13 +65,12 @@ enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>([9]) 
 store_temp<GasBuiltin>([4]) -> ([11]);
 store_temp<System>([5]) -> ([12]);
 store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([10]) -> ([13]);
-jump() { 14() };
+jump() { 13() };
 branch_align() -> ();
 enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>([8]) -> ([14]);
 store_temp<GasBuiltin>([6]) -> ([11]);
 store_temp<System>([7]) -> ([12]);
 store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([14]) -> ([13]);
-jump() { 14() };
 rename<GasBuiltin>([11]) -> ([15]);
 rename<System>([12]) -> ([16]);
 rename<core::result::Result::<(), core::array::Array::<core::felt>>>([13]) -> ([17]);

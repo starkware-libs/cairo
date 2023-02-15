@@ -12,6 +12,7 @@ pub mod lower;
 pub mod objects;
 pub mod optimizations;
 pub mod panic;
+pub mod topsort;
 pub mod utils;
 
 #[cfg(test)]

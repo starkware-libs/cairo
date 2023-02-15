@@ -38,7 +38,9 @@ branch_align() -> ()
 drop<NonZero<felt>>([1]) -> ()
 felt_const<4>() -> ([4])
 PushValues([4]: felt) -> ([3])
-jump() { label2() }
+label2:
+PushValues([3]: felt) -> ([5])
+return([5])
 label1:
 
 //! > ==========================================================================
@@ -81,5 +83,7 @@ drop<NonZero<felt>>([1]) -> ()
 drop<felt>([0]) -> ()
 felt_const<7>() -> ([4])
 PushValues([4]: felt) -> ([3])
-jump() { label2() }
+label2:
+PushValues([3]: felt) -> ([5])
+return([5])
 label1:

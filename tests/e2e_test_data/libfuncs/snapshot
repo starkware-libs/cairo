@@ -177,11 +177,10 @@ jmp rel 8 if [fp + -5] != 0;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel -6;
-jmp rel 9;
+jmp rel 7;
 ap += 1;
 [ap + 0] = [fp + -4], ap++;
 call rel -12;
-jmp rel 2;
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
@@ -190,7 +189,7 @@ ret;
 //! > function_costs
 test::bar0: OrderedHashMap({})
 test::bar1: OrderedHashMap({})
-test::foo: OrderedHashMap({Const: 910})
+test::foo: OrderedHashMap({Const: 900})
 
 //! > sierra_code
 type felt = felt;
@@ -229,12 +228,11 @@ branch_align() -> ();
 store_temp<Snapshot<Array<felt>>>([1]) -> ([5]);
 function_call<user@test::bar0>([5]) -> ([4]);
 drop<Unit>([4]) -> ();
-jump() { 20() };
+jump() { 19() };
 branch_align() -> ();
 store_temp<felt>([2]) -> ([7]);
 function_call<user@test::bar1>([7]) -> ([6]);
 drop<Unit>([6]) -> ();
-jump() { 20() };
 store_temp<Snapshot<test::A>>([0]) -> ([8]);
 return([8]);
 

@@ -58,96 +58,96 @@ Statements:
   (v1: core::felt) <- 2u
   (v2: core::felt) <- test::non_literal()
   () <- match_enum(v0) {
-    MyEnum::A => blk1,
-    MyEnum::B => blk2,
+    MyEnum::A => blk6,
+    MyEnum::B => blk1,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
-Inputs: v3: core::felt
-Statements:
-  (v4: core::felt) <- test::revoke_ap()
-End:
-  Fallthrough(blk5, {})
-
-blk2:
 Inputs: v6: core::felt
 Statements:
 End:
-  Fallthrough(blk7, {})
+  Fallthrough(blk2, {})
+
+blk2:
+Inputs:
+Statements:
+  (v14: core::felt) <- core::felt_add(v6, v6)
+End:
+  Fallthrough(blk3, {})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk9, {})
+  Fallthrough(blk4, {})
 
 blk4:
 Inputs:
 Statements:
+  (v16: core::felt) <- core::felt_add(v14, v6)
 End:
-  Goto(blk3, {v13 -> v9})
+  Fallthrough(blk5, {})
 
 blk5:
 Inputs:
 Statements:
-  (v13: core::felt) <- core::felt_add(v3, v3)
 End:
-  Fallthrough(blk4, {})
+  Fallthrough(blk9, {v16 -> v9})
 
 blk6:
-Inputs:
+Inputs: v3: core::felt
 Statements:
+  (v4: core::felt) <- test::revoke_ap()
 End:
-  Fallthrough(blk11, {})
+  Fallthrough(blk7, {})
 
 blk7:
 Inputs:
 Statements:
-  (v14: core::felt) <- core::felt_add(v6, v6)
+  (v13: core::felt) <- core::felt_add(v3, v3)
 End:
-  Fallthrough(blk6, {})
+  Fallthrough(blk8, {})
 
 blk8:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk13, {})
+  Goto(blk9, {v13 -> v9})
 
 blk9:
 Inputs:
 Statements:
-  (v15: core::felt) <- core::felt_add(v2, v2)
 End:
-  Fallthrough(blk8, {})
+  Fallthrough(blk10, {})
 
 blk10:
 Inputs:
 Statements:
+  (v15: core::felt) <- core::felt_add(v2, v2)
 End:
-  Goto(blk3, {v16 -> v9})
+  Fallthrough(blk11, {})
 
 blk11:
 Inputs:
 Statements:
-  (v16: core::felt) <- core::felt_add(v14, v6)
 End:
-  Fallthrough(blk10, {})
+  Fallthrough(blk12, {})
 
 blk12:
+Inputs:
+Statements:
+  (v17: core::felt) <- core::felt_add(v1, v1)
+End:
+  Fallthrough(blk13, {})
+
+blk13:
 Inputs:
 Statements:
   (v12: core::felt) <- test::revoke_ap()
 End:
   Return(v9)
-
-blk13:
-Inputs:
-Statements:
-  (v17: core::felt) <- core::felt_add(v1, v1)
-End:
-  Fallthrough(blk12, {})
 
 //! > local_variables
 v9, v2, v0
@@ -211,144 +211,144 @@ blk0 (root):
 Inputs: v0: test::MyEnum, v1: core::felt
 Statements:
 End:
-  Fallthrough(blk8, {})
+  Fallthrough(blk1, {})
 
 blk1:
-Inputs: v3: core::felt
-Statements:
-  (v4: core::felt) <- test::revoke_ap()
-  (v5: core::felt) <- 0u
-End:
-  Return(v5)
-
-blk2:
-Inputs: v6: core::felt
-Statements:
-End:
-  Fallthrough(blk10, {})
-
-blk3:
-Inputs:
-Statements:
-End:
-  Fallthrough(blk12, {})
-
-blk4:
-Inputs: v11: core::felt
-Statements:
-End:
-  Goto(blk6, {})
-
-blk5:
-Inputs: v12: core::felt
-Statements:
-End:
-  Fallthrough(blk14, {})
-
-blk6:
-Inputs:
-Statements:
-End:
-  Fallthrough(blk16, {})
-
-blk7:
-Inputs:
-Statements:
-  () <- match_enum(v0) {
-    MyEnum::A => blk1,
-    MyEnum::B => blk2,
-  }
-End:
-  Fallthrough(blk3, {})
-
-blk8:
 Inputs:
 Statements:
   (v17: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(blk7, {})
+  Fallthrough(blk2, {})
 
-blk9:
+blk2:
 Inputs:
 Statements:
+  () <- match_enum(v0) {
+    MyEnum::A => blk20,
+    MyEnum::B => blk3,
+  }
 End:
-  Fallthrough(blk18, {})
+  Unreachable
 
-blk10:
+blk3:
+Inputs: v6: core::felt
+Statements:
+End:
+  Fallthrough(blk4, {})
+
+blk4:
 Inputs:
 Statements:
   (v18: core::felt) <- core::felt_add(v6, v6)
 End:
-  Fallthrough(blk9, {})
+  Fallthrough(blk5, {})
 
-blk11:
+blk5:
 Inputs:
 Statements:
-  () <- match_enum(v0) {
-    MyEnum::A => blk4,
-    MyEnum::B => blk5,
-  }
 End:
   Fallthrough(blk6, {})
 
-blk12:
+blk6:
+Inputs:
+Statements:
+  (v22: core::felt) <- core::felt_add(v18, v6)
+End:
+  Fallthrough(blk7, {})
+
+blk7:
+Inputs:
+Statements:
+End:
+  Fallthrough(blk8, {})
+
+blk8:
+Inputs:
+Statements:
+End:
+  Fallthrough(blk9, {})
+
+blk9:
 Inputs:
 Statements:
   (v19: core::felt) <- core::felt_add(v17, v1)
 End:
-  Fallthrough(blk11, {})
+  Fallthrough(blk10, {})
 
-blk13:
+blk10:
 Inputs:
 Statements:
+  () <- match_enum(v0) {
+    MyEnum::A => blk16,
+    MyEnum::B => blk11,
+  }
 End:
-  Fallthrough(blk20, {})
+  Unreachable
 
-blk14:
+blk11:
+Inputs: v12: core::felt
+Statements:
+End:
+  Fallthrough(blk12, {})
+
+blk12:
 Inputs:
 Statements:
   (v20: core::felt) <- core::felt_add(v12, v12)
 End:
   Fallthrough(blk13, {})
 
+blk13:
+Inputs:
+Statements:
+End:
+  Fallthrough(blk14, {})
+
+blk14:
+Inputs:
+Statements:
+  (v23: core::felt) <- core::felt_add(v20, v12)
+End:
+  Fallthrough(blk15, {})
+
 blk15:
 Inputs:
 Statements:
 End:
-  Return(v21)
+  Fallthrough(blk17, {})
 
 blk16:
-Inputs:
+Inputs: v11: core::felt
 Statements:
-  (v21: core::felt) <- core::felt_add(v19, v1)
 End:
-  Fallthrough(blk15, {})
+  Goto(blk17, {})
 
 blk17:
 Inputs:
 Statements:
 End:
-  Goto(blk3, {})
+  Fallthrough(blk18, {})
 
 blk18:
 Inputs:
 Statements:
-  (v22: core::felt) <- core::felt_add(v18, v6)
+  (v21: core::felt) <- core::felt_add(v19, v1)
 End:
-  Fallthrough(blk17, {})
+  Fallthrough(blk19, {})
 
 blk19:
 Inputs:
 Statements:
 End:
-  Goto(blk6, {})
+  Return(v21)
 
 blk20:
-Inputs:
+Inputs: v3: core::felt
 Statements:
-  (v23: core::felt) <- core::felt_add(v20, v12)
+  (v4: core::felt) <- test::revoke_ap()
+  (v5: core::felt) <- 0u
 End:
-  Fallthrough(blk19, {})
+  Return(v5)
 
 //! > local_variables
 v19

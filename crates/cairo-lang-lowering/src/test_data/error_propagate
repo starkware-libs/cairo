@@ -28,7 +28,7 @@ Statements:
     Result::Err => blk2,
   }
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
@@ -54,7 +54,7 @@ Statements:
     Result::Err => blk5,
   }
 End:
-  Fallthrough(6, {})
+  Unreachable
 
 blk4:
 Inputs: v5: core::integer::u128
@@ -85,47 +85,47 @@ blk0 (root):
 Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
 Statements:
   () <- match_enum(v0) {
-    Result::Ok => blk1,
-    Result::Err => blk2,
+    Result::Ok => blk2,
+    Result::Err => blk1,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
-Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
-Statements:
-End:
-  Goto(blk3, {})
-
-blk2:
 Inputs: v2: core::felt
 Statements:
   (v3: core::result::Result::<core::felt, core::felt>) <- Result::Err(v2)
 End:
   Return(v3)
 
+blk2:
+Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
+Statements:
+End:
+  Fallthrough(blk3, {})
+
 blk3:
 Inputs:
 Statements:
   () <- match_enum(v1) {
-    Result::Ok => blk4,
-    Result::Err => blk5,
+    Result::Ok => blk5,
+    Result::Err => blk4,
   }
 End:
-  Fallthrough(blk6, {})
+  Unreachable
 
 blk4:
-Inputs: v5: core::integer::u128
-Statements:
-End:
-  Goto(blk6, {})
-
-blk5:
 Inputs: v6: core::felt
 Statements:
   (v7: core::result::Result::<core::felt, core::felt>) <- Result::Err(v6)
 End:
   Return(v7)
+
+blk5:
+Inputs: v5: core::integer::u128
+Statements:
+End:
+  Fallthrough(blk6, {})
 
 blk6:
 Inputs:

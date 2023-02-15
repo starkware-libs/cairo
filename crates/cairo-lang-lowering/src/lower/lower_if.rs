@@ -101,12 +101,7 @@ pub fn lower_expr_if_bool(
         ],
     }));
 
-    // After the merge, continue the rest of the code with a new subscope block.
-    if let Some(following_block) = merged.following_block {
-        scope.fallthrough(ctx, following_block);
-    }
-
-    merged.expr
+    scope.finalize_after_merge(ctx, merged)
 }
 
 /// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::Eq].
@@ -176,12 +171,7 @@ pub fn lower_expr_if_eq(
         location: if_location,
     }));
 
-    // After the merge, continue the rest of the code with a new subscope block.
-    if let Some(following_block) = merged.following_block {
-        scope.fallthrough(ctx, following_block);
-    }
-
-    merged.expr
+    scope.finalize_after_merge(ctx, merged)
 }
 
 /// Lowers an optional else block. If the else block is missing it is replaced with a block
