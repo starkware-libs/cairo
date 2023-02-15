@@ -57,6 +57,15 @@ fn get_caller_address() -> ContractAddress {
     get_caller_address_syscall().unwrap_syscall()
 }
 
+extern fn get_contract_address_syscall() -> SyscallResult::<ContractAddress> implicits(
+    GasBuiltin, System
+) nopanic;
+
+fn get_contract_address() -> ContractAddress {
+    get_contract_address_syscall().unwrap_syscall()
+}
+
+
 trait StorageAccess<T> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult::<T>;
     fn write(address_domain: felt, base: StorageBaseAddress, value: T) -> SyscallResult::<()>;

@@ -106,7 +106,7 @@ fn inner_find_local_variables(
                 let concrete_enum_type = ctx.db.get_concrete_type_id(
                     ctx.lowered_function.variables[statement_match_enum.input].ty,
                 )?;
-                let concrete_function_id = match_enum_libfunc_id(ctx.db, concrete_enum_type);
+                let concrete_function_id = match_enum_libfunc_id(ctx.db, concrete_enum_type)?;
 
                 known_ap_change &= handle_match(
                     ctx,
@@ -142,7 +142,7 @@ fn inner_find_local_variables(
                     ctx.db,
                     &mut state,
                     &mut known_ap_change,
-                    struct_deconstruct_libfunc_id(ctx.db, ty),
+                    struct_deconstruct_libfunc_id(ctx.db, ty)?,
                     &[statement_struct_destructure.input],
                     &statement_struct_destructure.outputs,
                 );
@@ -191,13 +191,17 @@ fn inner_find_local_variables(
             let vars = remapping.values().copied().collect_vec();
             state.use_variables(&vars, res);
 
-            for var_id in remapping.keys().cloned() {
-                state.set_variable_status(var_id, VariableStatus::TemporaryVariable);
-            }
-
-            if let Some(BlockInfo { known_ap_change: false }) = ctx.block_infos.get(target_block_id)
-            {
-                known_ap_change = false;
+            if let Some(block_info) = ctx.block_infos.get(target_block_id) {
+                if let BlockInfo { known_ap_change: false } = block_info {
+                    known_ap_change = false;
+                }
+                for var_id in remapping.keys().cloned() {
+                    state.set_variable_status(var_id, VariableStatus::TemporaryVariable);
+                }
+            } else {
+                for (dst_var_id, src_var_id) in remapping.iter() {
+                    state.set_variable_status(*dst_var_id, VariableStatus::Alias(*src_var_id));
+                }
             }
 
             if !inner_find_local_variables(ctx, *target_block_id, state, res)? {

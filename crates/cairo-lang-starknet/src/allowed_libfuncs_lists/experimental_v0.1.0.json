@@ -58,6 +58,7 @@
         "storage_write_syscall",
         "emit_event_syscall",
         "get_caller_address_syscall",
+        "get_contract_address_syscall",
         "contract_address_const",
         "contract_address_try_from_felt",
         "contract_address_to_felt",

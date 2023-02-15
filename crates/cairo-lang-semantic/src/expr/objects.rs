@@ -246,6 +246,8 @@ pub struct ExprMemberAccess {
     pub member: MemberId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    pub n_snapshots: usize,
+    #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,
 }
 
