@@ -192,13 +192,17 @@ fn inner_find_variable_lifetime(
             | lowering::Statement::Desnap(_)
             | lowering::Statement::Snapshot(_) => {}
             lowering::Statement::MatchExtern(statement_match_extern) => {
-                let arm_blocks: Vec<_> =
-                    statement_match_extern.arms.iter().map(|(_, block_id)| *block_id).collect();
+                let arm_blocks: Vec<_> = statement_match_extern
+                    .arms
+                    .iter()
+                    .rev()
+                    .map(|(_, block_id)| *block_id)
+                    .collect();
                 handle_match(context, &arm_blocks, state);
             }
             lowering::Statement::MatchEnum(statement_match_enum) => {
                 let arm_blocks: Vec<_> =
-                    statement_match_enum.arms.iter().map(|(_, block_id)| *block_id).collect();
+                    statement_match_enum.arms.iter().rev().map(|(_, block_id)| *block_id).collect();
                 handle_match(context, &arm_blocks, state);
             }
         }
