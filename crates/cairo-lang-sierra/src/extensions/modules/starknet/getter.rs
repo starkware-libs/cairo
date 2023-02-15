@@ -9,7 +9,7 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::uint128::Uint128Type;
+use crate::extensions::uint::Uint64Type;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -130,12 +130,12 @@ impl GetterTraits for GetSequencerAddressTrait {
 pub struct GetBlockNumberTrait {}
 impl GetterTraits for GetBlockNumberTrait {
     const STR_ID: &'static str = "get_block_number_syscall";
-    type InfoType = Uint128Type;
+    type InfoType = Uint64Type;
 }
 
 #[derive(Default)]
 pub struct GetBlockTimestampTrait {}
 impl GetterTraits for GetBlockTimestampTrait {
     const STR_ID: &'static str = "get_block_timestamp_syscall";
-    type InfoType = Uint128Type;
+    type InfoType = Uint64Type;
 }
