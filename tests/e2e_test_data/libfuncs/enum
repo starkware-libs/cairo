@@ -1,0 +1,297 @@
+//! > init enum with a single variant
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+enum SingleVariant {
+    Variant: felt,
+}
+
+fn foo() -> SingleVariant {
+    SingleVariant::Variant(5)
+}
+
+//! > casm
+[ap + 0] = 0, ap++;
+[ap + 0] = 5, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type felt = felt;
+type test::SingleVariant = Enum<ut@test::SingleVariant, felt>;
+
+libfunc felt_const<5> = felt_const<5>;
+libfunc enum_init<test::SingleVariant, 0> = enum_init<test::SingleVariant, 0>;
+libfunc store_temp<test::SingleVariant> = store_temp<test::SingleVariant>;
+
+felt_const<5>() -> ([0]);
+enum_init<test::SingleVariant, 0>([0]) -> ([1]);
+store_temp<test::SingleVariant>([1]) -> ([2]);
+return([2]);
+
+test::foo@0() -> (test::SingleVariant);
+
+//! > ==========================================================================
+
+//! > match enum with a single variant
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+enum SingleVariant {
+    Variant: felt,
+}
+
+fn foo(e: SingleVariant) -> felt {
+    match e {
+        SingleVariant::Variant(_) => 0,
+    }
+}
+
+//! > casm
+jmp rel 2;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+
+//! > sierra_code
+type felt = felt;
+type test::SingleVariant = Enum<ut@test::SingleVariant, felt>;
+
+libfunc enum_match<test::SingleVariant> = enum_match<test::SingleVariant>;
+libfunc branch_align = branch_align;
+libfunc drop<felt> = drop<felt>;
+libfunc felt_const<0> = felt_const<0>;
+libfunc store_temp<felt> = store_temp<felt>;
+libfunc rename<felt> = rename<felt>;
+
+enum_match<test::SingleVariant>([0]) { 1([1]) };
+branch_align() -> ();
+drop<felt>([1]) -> ();
+felt_const<0>() -> ([2]);
+store_temp<felt>([2]) -> ([3]);
+rename<felt>([3]) -> ([4]);
+return([4]);
+
+test::foo@0([0]: test::SingleVariant) -> (felt);
+
+//! > ==========================================================================
+
+//! > init enum with 2 variants
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+enum Option {
+    Some: felt,
+    None: (),
+}
+
+fn foo() -> Option {
+    Option::Some(5)
+}
+
+//! > casm
+[ap + 0] = 0, ap++;
+[ap + 0] = 5, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type felt = felt;
+type Unit = Struct<ut@Tuple>;
+type test::Option = Enum<ut@test::Option, felt, Unit>;
+
+libfunc felt_const<5> = felt_const<5>;
+libfunc enum_init<test::Option, 0> = enum_init<test::Option, 0>;
+libfunc store_temp<test::Option> = store_temp<test::Option>;
+
+felt_const<5>() -> ([0]);
+enum_init<test::Option, 0>([0]) -> ([1]);
+store_temp<test::Option>([1]) -> ([2]);
+return([2]);
+
+test::foo@0() -> (test::Option);
+
+//! > ==========================================================================
+
+//! > match enum with 2 variants
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+enum Option {
+    Some: felt,
+    None: (),
+}
+
+fn foo(e: Option) -> felt {
+    match e {
+        Option::Some(_) => 0,
+        Option::None(_) => 1,
+    }
+}
+
+//! > casm
+jmp rel 8 if [fp + -4] != 0;
+jmp rel 2;
+[ap + 0] = 0, ap++;
+jmp rel 4;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type felt = felt;
+type Unit = Struct<ut@Tuple>;
+type test::Option = Enum<ut@test::Option, felt, Unit>;
+
+libfunc enum_match<test::Option> = enum_match<test::Option>;
+libfunc branch_align = branch_align;
+libfunc drop<felt> = drop<felt>;
+libfunc felt_const<0> = felt_const<0>;
+libfunc store_temp<felt> = store_temp<felt>;
+libfunc jump = jump;
+libfunc drop<Unit> = drop<Unit>;
+libfunc felt_const<1> = felt_const<1>;
+libfunc rename<felt> = rename<felt>;
+
+enum_match<test::Option>([0]) { 1([1]) 6([2]) };
+branch_align() -> ();
+drop<felt>([1]) -> ();
+felt_const<0>() -> ([3]);
+store_temp<felt>([3]) -> ([4]);
+jump() { 10() };
+branch_align() -> ();
+drop<Unit>([2]) -> ();
+felt_const<1>() -> ([5]);
+store_temp<felt>([5]) -> ([4]);
+rename<felt>([4]) -> ([6]);
+return([6]);
+
+test::foo@0([0]: test::Option) -> (felt);
+
+//! > ==========================================================================
+
+//! > init enum with more than 2 variants
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+enum Color {
+    Red: felt,
+    Green: felt,
+    Blue: felt,
+}
+
+fn foo() -> Color {
+    Color::Green(10)
+}
+
+//! > casm
+[ap + 0] = 3, ap++;
+[ap + 0] = 10, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type felt = felt;
+type test::Color = Enum<ut@test::Color, felt, felt, felt>;
+
+libfunc felt_const<10> = felt_const<10>;
+libfunc enum_init<test::Color, 1> = enum_init<test::Color, 1>;
+libfunc store_temp<test::Color> = store_temp<test::Color>;
+
+felt_const<10>() -> ([0]);
+enum_init<test::Color, 1>([0]) -> ([1]);
+store_temp<test::Color>([1]) -> ([2]);
+return([2]);
+
+test::foo@0() -> (test::Color);
+
+//! > ==========================================================================
+
+//! > match enum with more than 2 variants
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+enum Color {
+    Red: felt,
+    Green: felt,
+    Blue: felt,
+}
+
+fn foo(e: Color) -> felt {
+    match e {
+        Color::Red(_) => 0,
+        Color::Green(_) => 1,
+        Color::Blue(_) => 2,
+    }
+}
+
+//! > casm
+jmp rel [fp + -4];
+jmp rel 6;
+jmp rel 8;
+jmp rel 10;
+[ap + 0] = 0, ap++;
+jmp rel 8;
+[ap + 0] = 1, ap++;
+jmp rel 4;
+[ap + 0] = 2, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type felt = felt;
+type test::Color = Enum<ut@test::Color, felt, felt, felt>;
+
+libfunc enum_match<test::Color> = enum_match<test::Color>;
+libfunc branch_align = branch_align;
+libfunc drop<felt> = drop<felt>;
+libfunc felt_const<0> = felt_const<0>;
+libfunc store_temp<felt> = store_temp<felt>;
+libfunc jump = jump;
+libfunc felt_const<1> = felt_const<1>;
+libfunc felt_const<2> = felt_const<2>;
+libfunc rename<felt> = rename<felt>;
+
+enum_match<test::Color>([0]) { 1([1]) 6([2]) 11([3]) };
+branch_align() -> ();
+drop<felt>([1]) -> ();
+felt_const<0>() -> ([4]);
+store_temp<felt>([4]) -> ([5]);
+jump() { 15() };
+branch_align() -> ();
+drop<felt>([2]) -> ();
+felt_const<1>() -> ([6]);
+store_temp<felt>([6]) -> ([5]);
+jump() { 15() };
+branch_align() -> ();
+drop<felt>([3]) -> ();
+felt_const<2>() -> ([7]);
+store_temp<felt>([7]) -> ([5]);
+rename<felt>([5]) -> ([8]);
+return([8]);
+
+test::foo@0([0]: test::Color) -> (felt);
