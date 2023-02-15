@@ -14,6 +14,7 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
+use crate::ids::ConcreteTypeId;
 
 /// Trait for implementing getters.
 pub trait GetterTraits: Default {
@@ -23,6 +24,16 @@ pub trait GetterTraits: Default {
     type InfoType: NoGenericArgsGenericType;
 }
 
+/// Same as GetterTraits, but with a function to return the concrete TypeId.
+pub trait GetterTraitsEx: Default {
+    /// The generic libfunc id for the getter libfunc.
+    const STR_ID: &'static str;
+    /// The simple sierra generic type returned by the getter.
+    fn info_type_id(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<ConcreteTypeId, SpecializationError>;
+}
+
 /// Libfunc for a getter system call.
 #[derive(Default)]
 pub struct GetterLibfunc<TGetterTraits: GetterTraits> {
@@ -30,79 +41,104 @@ pub struct GetterLibfunc<TGetterTraits: GetterTraits> {
 }
 impl<TGetterTraits: GetterTraits> NoGenericArgsGenericLibfunc for GetterLibfunc<TGetterTraits> {
     const STR_ID: &'static str = TGetterTraits::STR_ID;
-
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         let info_ty = context.get_concrete_type(TGetterTraits::InfoType::id(), &[])?;
-        let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
-        let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
-        let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?;
-        Ok(LibfuncSignature {
-            param_signatures: vec![
-                // Gas builtin
-                ParamSignature::new(gas_builtin_ty.clone()),
-                // System
-                ParamSignature {
-                    ty: system_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
-            ],
-            branch_signatures: vec![
-                // Success branch.
-                BranchSignature {
-                    vars: vec![
-                        // Gas builtin
-                        OutputVarInfo {
-                            ty: gas_builtin_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                        // System
-                        OutputVarInfo {
-                            ty: system_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
-                        },
-                        // Returned information
-                        OutputVarInfo {
-                            ty: info_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                    ],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-                // Failure branch.
-                BranchSignature {
-                    vars: vec![
-                        // Gas builtin
-                        OutputVarInfo {
-                            ty: gas_builtin_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                        // System
-                        OutputVarInfo {
-                            ty: system_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
-                        },
-                        // Revert reason
-                        OutputVarInfo {
-                            ty: felt_array_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                    ],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-            ],
-            fallthrough: Some(0),
-        })
+
+        getter_specialize_signature_helper(context, info_ty)
     }
+}
+
+/// Libfunc for a getter system call.
+#[derive(Default)]
+pub struct GetterLibfuncEx<TGetterTraitsEx: GetterTraitsEx> {
+    _phantom: PhantomData<TGetterTraitsEx>,
+}
+impl<TGetterTraitsEx: GetterTraitsEx> NoGenericArgsGenericLibfunc
+    for GetterLibfuncEx<TGetterTraitsEx>
+{
+    const STR_ID: &'static str = TGetterTraitsEx::STR_ID;
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let info_ty = TGetterTraitsEx::info_type_id(context)?;
+        getter_specialize_signature_helper(context, info_ty)
+    }
+}
+
+fn getter_specialize_signature_helper(
+    context: &dyn SignatureSpecializationContext,
+    info_ty: ConcreteTypeId,
+) -> Result<LibfuncSignature, SpecializationError> {
+    let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+    let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+    let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
+    let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?;
+    Ok(LibfuncSignature {
+        param_signatures: vec![
+            // Gas builtin
+            ParamSignature::new(gas_builtin_ty.clone()),
+            // System
+            ParamSignature {
+                ty: system_ty.clone(),
+                allow_deferred: false,
+                allow_add_const: true,
+                allow_const: false,
+            },
+        ],
+        branch_signatures: vec![
+            // Success branch.
+            BranchSignature {
+                vars: vec![
+                    // Gas builtin
+                    OutputVarInfo {
+                        ty: gas_builtin_ty.clone(),
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    },
+                    // System
+                    OutputVarInfo {
+                        ty: system_ty.clone(),
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 1,
+                        }),
+                    },
+                    // Returned information
+                    OutputVarInfo {
+                        ty: info_ty,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    },
+                ],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            },
+            // Failure branch.
+            BranchSignature {
+                vars: vec![
+                    // Gas builtin
+                    OutputVarInfo {
+                        ty: gas_builtin_ty,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    },
+                    // System
+                    OutputVarInfo {
+                        ty: system_ty,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 1,
+                        }),
+                    },
+                    // Revert reason
+                    OutputVarInfo {
+                        ty: felt_array_ty,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    },
+                ],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            },
+        ],
+        fallthrough: Some(0),
+    })
 }
 
 #[derive(Default)]
@@ -138,4 +174,16 @@ pub struct GetBlockTimestampTrait {}
 impl GetterTraits for GetBlockTimestampTrait {
     const STR_ID: &'static str = "get_block_timestamp_syscall";
     type InfoType = Uint64Type;
+}
+
+#[derive(Default)]
+pub struct GetTxInfoTrait {}
+impl GetterTraitsEx for GetBlockTimestampTrait {
+    const STR_ID: &'static str = "get_tx_info_syscall";
+
+    fn info_type_id(
+        _context: &dyn SignatureSpecializationContext,
+    ) -> Result<ConcreteTypeId, SpecializationError> {
+        todo!();
+    }
 }
