@@ -38,3 +38,144 @@ Statements:
   (v2: ()) <- struct_construct()
 End:
   Return(v2)
+
+//! > ==========================================================================
+
+//! > Test struct snapshot.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(orig: @A) -> @A{
+  bar(orig.a, orig.b);
+  let A {a, b} = orig;
+  bar(a, b);
+  orig
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: Array::<felt>,
+    b: felt,
+}
+fn bar(a: @Array::<felt>, b: @felt) {
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: @test::A
+Initial refs:
+Statements:
+  (v1: @core::array::Array::<core::felt>, v2: @core::felt) <- struct_destructure(v0)
+  (v3: @core::array::Array::<core::felt>, v4: @core::felt) <- struct_destructure(v0)
+  (v5: ()) <- test::bar(v1, v4)
+  (v6: @core::array::Array::<core::felt>, v7: @core::felt) <- struct_destructure(v0)
+  (v8: ()) <- test::bar(v6, v7)
+End:
+  Return(v0)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: @test::A
+Statements:
+  (v1: @core::array::Array::<core::felt>, v2: @core::felt) <- struct_destructure(v0)
+  (v3: @core::array::Array::<core::felt>, v4: @core::felt) <- struct_destructure(v0)
+  (v5: ()) <- test::bar(v1, v4)
+  (v6: @core::array::Array::<core::felt>, v7: @core::felt) <- struct_destructure(v0)
+  (v8: ()) <- test::bar(v6, v7)
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
+//! > Test enum snapshot.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+fn foo(orig: @A) -> @A {
+  match orig {
+    A::A(a) => bar0(a),
+    A::B(b) => bar1(b),
+  }
+  orig
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    A: Array::<felt>,
+    B: felt,
+}
+fn bar0(a: @Array::<felt>) {
+}
+fn bar1(b: @felt) {
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0:
+Inputs: v1: @core::array::Array::<core::felt>
+Initial refs:
+Statements:
+  (v2: ()) <- test::bar0(v1)
+End:
+  Callsite({v2 -> v5})
+
+blk1:
+Inputs: v3: @core::felt
+Initial refs:
+Statements:
+  (v4: ()) <- test::bar1(v3)
+End:
+  Callsite({v4 -> v5})
+
+blk2 (root):
+Inputs: v0: @test::A
+Initial refs:
+Statements:
+  () <- match_enum(v0) {
+    A::A => blk0,
+    A::B => blk1,
+  }
+End:
+  Return(v0)
+
+//! > lowering_flat
+blk0:
+Inputs: v1: @core::array::Array::<core::felt>
+Statements:
+  (v2: ()) <- test::bar0(v1)
+End:
+  Callsite({})
+
+blk1:
+Inputs: v3: @core::felt
+Statements:
+  (v4: ()) <- test::bar1(v3)
+End:
+  Callsite({})
+
+blk2 (root):
+Inputs: v0: @test::A
+Statements:
+  () <- match_enum(v0) {
+    A::A => blk0,
+    A::B => blk1,
+  }
+End:
+  Return(v0)

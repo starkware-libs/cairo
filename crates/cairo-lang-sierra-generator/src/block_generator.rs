@@ -502,7 +502,7 @@ fn generate_statement_struct_destructure_code(
         struct_deconstruct_libfunc_id(
             context.get_db(),
             context.get_variable_sierra_type(statement.input)?,
-        ),
+        )?,
         &[input],
         &context.get_sierra_variables(&statement.outputs),
     ));
@@ -536,7 +536,7 @@ fn generate_statement_match_enum(
         })
         .collect();
 
-    let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type);
+    let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type)?;
 
     // Call the match libfunc.
     statements.push(pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
