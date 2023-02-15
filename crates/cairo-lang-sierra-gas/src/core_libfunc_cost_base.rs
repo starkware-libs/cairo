@@ -571,7 +571,6 @@ fn u128_libfunc_cost<Ops: CostOperations>(
     ops: &Ops,
     libfunc: &Uint128Concrete,
 ) -> Vec<Ops::CostType> {
-    // TODO(orizi): When sierra_to_casm actually supports integers - fix costs.
     match libfunc {
         Uint128Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
