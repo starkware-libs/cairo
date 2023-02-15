@@ -144,7 +144,7 @@ struct_construct<Unit>() -> ([28]);
 enum_init<core::option::Option::<core::felt>, 1>([28]) -> ([29]);
 store_temp<Array<felt>>([24]) -> ([26]);
 store_temp<core::option::Option::<core::felt>>([29]) -> ([27]);
-enum_match<core::option::Option::<core::felt>>([27]) { 39([30]) 42([31]) };
+enum_match<core::option::Option::<core::felt>>([27]) { fallthrough([30]) 42([31]) };
 branch_align() -> ();
 store_temp<felt>([30]) -> ([8]);
 jump() { 56() };
