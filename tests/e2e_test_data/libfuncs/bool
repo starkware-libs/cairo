@@ -161,7 +161,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 600})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;

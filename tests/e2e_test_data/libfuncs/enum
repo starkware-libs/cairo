@@ -18,7 +18,7 @@ fn foo() -> SingleVariant {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type felt = felt;
@@ -58,7 +58,7 @@ fn foo(e: SingleVariant) -> felt {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 200})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type felt = felt;
@@ -104,7 +104,7 @@ fn foo() -> Option {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type felt = felt;
@@ -150,7 +150,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type felt = felt;
@@ -206,7 +206,7 @@ fn foo() -> Color {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type felt = felt;
@@ -247,7 +247,7 @@ fn foo() -> Color {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type felt = felt;
@@ -298,7 +298,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
 type felt = felt;

@@ -30,7 +30,7 @@ call rel -24;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 970})
+test::foo: OrderedHashMap({Const: 1070})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -130,7 +130,7 @@ call rel -36;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1270})
+test::foo: OrderedHashMap({Const: 1370})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -247,7 +247,7 @@ call rel -36;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1270})
+test::foo: OrderedHashMap({Const: 1370})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -375,7 +375,7 @@ call rel -47;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1570})
+test::foo: OrderedHashMap({Const: 1670})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
