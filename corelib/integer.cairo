@@ -761,6 +761,46 @@ fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) {
     (u256 { low, high }, overflow)
 }
 
+
+const HALF_SHIFT : felt = 18446744073709551616;//2^64;
+//const HALF_SHIFTb  = u128_as_non_zero(18446744073709551616_u128);//2^64;
+fn u256_wide_mul(a: u256, b: u256) -> (u256, u256) implicits(RangeCheck) {
+    let HALF_SHIFTb = u128_as_non_zero(18446744073709551616_u128);//2^64;
+    let (a1u, a0u) = u128_safe_divmod(a.low,HALF_SHIFTb);
+    let (a3u, a2u) = u128_safe_divmod(a.high,HALF_SHIFTb);
+    let (b1u, b0u) = u128_safe_divmod(b.low,HALF_SHIFTb);
+    let (b3u, b2u) = u128_safe_divmod(b.high,HALF_SHIFTb);
+    let a0 = u128_to_felt(a0u);
+    let a1 = u128_to_felt(a1u);
+    let a2 = u128_to_felt(a2u);
+    let a3 = u128_to_felt(a3u);
+    let b0 = u128_to_felt(b0u);
+    let b1 = u128_to_felt(b1u);
+    let b2 = u128_to_felt(b2u);
+    let b3 = u128_to_felt(b3u);
+    
+    let B0 = b0*HALF_SHIFT;
+    let b12 = b1 + b2*HALF_SHIFT;
+    let b_low = u128_to_felt(b.low); 
+    let b_high = u128_to_felt(b.high); 
+    
+    //let (res0, carry) = u256_from_felt(a1 * B0 + a0 * b_low);
+    let res0 = u256_from_felt(a1 * B0 + a0 * b_low);
+    //let (res2, carry) = u256_from_felt(
+    let res2 = u256_from_felt(
+	a3 * B0 + a2 * b_low + a1 * b12 + a0 * b_high + u128_to_felt(res0.high),
+    );
+    //let (res4, carry) = u256_from_felt(
+    let res4 = u256_from_felt(
+	a3 * b12 + a2 * b_high + a1 * b3 + u128_to_felt(res2.high)
+    );
+
+    let res8 = u128_try_from_felt(a3 * b3 + u128_to_felt(res4.high)).unwrap();
+    // let (res6, carry) = split_64(a3 * b3 + carry);
+
+    (u256 {low: res0.low, high: res2.low}, u256 {low: res4.low, high: res8})
+}
+
 fn u256_checked_add(a: u256, b: u256) -> Option::<u256> implicits(RangeCheck) nopanic {
     let (r, overflow) = u256_overflowing_add(a, b);
     if overflow {
