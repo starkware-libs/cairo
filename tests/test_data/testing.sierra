@@ -1,8 +1,8 @@
 type Unit = Struct<ut@Tuple>;
 type core::bool = Enum<ut@core::bool, Unit, Unit>;
 type felt = felt;
-type Array<felt> = Array<felt>;
-type core::PanicResult::<()> = Enum<ut@core::PanicResult::<()>, Unit, Array<felt>>;
+type Queue<felt> = Queue<felt>;
+type core::PanicResult::<()> = Enum<ut@core::PanicResult::<()>, Unit, Queue<felt>>;
 
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
@@ -18,8 +18,8 @@ libfunc enum_init<core::PanicResult::<()>, 1> = enum_init<core::PanicResult::<()
 libfunc store_temp<core::PanicResult::<()>> = store_temp<core::PanicResult::<()>>;
 libfunc enum_init<core::PanicResult::<()>, 0> = enum_init<core::PanicResult::<()>, 0>;
 libfunc enum_match<core::bool> = enum_match<core::bool>;
-libfunc array_new<felt> = array_new<felt>;
-libfunc array_append<felt> = array_append<felt>;
+libfunc queue_new<felt> = queue_new<felt>;
+libfunc queue_append<felt> = queue_append<felt>;
 libfunc drop<felt> = drop<felt>;
 
 struct_construct<Unit>() -> ([0]);
@@ -43,8 +43,8 @@ return([12]);
 enum_match<core::bool>([0]) { fallthrough([2]) 26([3]) };
 branch_align() -> ();
 drop<Unit>([2]) -> ();
-array_new<felt>() -> ([4]);
-array_append<felt>([4], [1]) -> ([5]);
+queue_new<felt>() -> ([4]);
+queue_append<felt>([4], [1]) -> ([5]);
 enum_init<core::PanicResult::<()>, 1>([5]) -> ([6]);
 store_temp<core::PanicResult::<()>>([6]) -> ([7]);
 return([7]);

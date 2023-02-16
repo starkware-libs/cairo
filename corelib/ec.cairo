@@ -61,8 +61,8 @@ extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult::<EcPoint> nopanic;
 fn ec_point_non_zero(p: EcPoint) -> NonZeroEcPoint {
     match ec_point_is_zero(p) {
         IsZeroResult::Zero(()) => {
-            let mut data = array_new();
-            array_append(ref data, 'Zero point');
+            let mut data = queue_new();
+            queue_append(ref data, 'Zero point');
             panic(data)
         },
         IsZeroResult::NonZero(p_nz) => p_nz,

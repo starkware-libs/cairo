@@ -333,7 +333,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a : Array::<felt, 5>) -> felt {
+fn foo(a : Queue::<felt, 5>) -> felt {
   felt_const::<17>()
 }
 
@@ -341,19 +341,19 @@ fn foo(a : Array::<felt, 5>) -> felt {
 foo
 
 //! > module_code
-extern type Array<T, const N>;
+extern type Queue<T, const N>;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Variable not dropped.
  --> lib.cairo:2:8
-fn foo(a : Array::<felt, 5>) -> felt {
+fn foo(a : Queue::<felt, 5>) -> felt {
        ^
 
 //! > lowering_structured
 blk0 (root):
-Inputs: v0: test::Array::<core::felt, 5>
+Inputs: v0: test::Queue::<core::felt, 5>
 Initial refs:
 Statements:
   (v1: core::felt) <- core::felt_const::<LiteralLongId { value: 17 }>()
@@ -362,7 +362,7 @@ End:
 
 //! > lowering_flat
 blk0 (root):
-Inputs: v0: test::Array::<core::felt, 5>
+Inputs: v0: test::Queue::<core::felt, 5>
 Statements:
   (v1: core::felt) <- core::felt_const::<LiteralLongId { value: 17 }>()
 End:
@@ -422,7 +422,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(mut data: Array::<felt>) -> u128 {
+fn foo(mut data: Queue::<felt>) -> u128 {
    serde::Serde::<u128>::deserialize(ref data)
 }
 
@@ -434,7 +434,7 @@ foo
 //! > semantic_diagnostics
 error: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
  --> lib.cairo:1:41
-fn foo(mut data: Array::<felt>) -> u128 {
+fn foo(mut data: Queue::<felt>) -> u128 {
                                         ^
 
 //! > lowering_diagnostics

@@ -1,5 +1,4 @@
 use super::syscalls::SystemType;
-use crate::extensions::array::ArrayType;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
@@ -7,6 +6,7 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
+use crate::extensions::queue::QueueType;
 use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::uint::Uint8Type;
 use crate::extensions::{
@@ -156,8 +156,8 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        let felt_array_ty =
-            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty.clone())])?;
+        let felt_queue_ty =
+            context.get_concrete_type(QueueType::id(), &[GenericArg::Type(felt_ty.clone())])?;
 
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -216,7 +216,7 @@ impl NoGenericArgsGenericLibfunc for StorageReadLibfunc {
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_array_ty,
+                            ty: felt_queue_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
@@ -242,8 +242,8 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(StorageAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        let felt_array_ty =
-            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty.clone())])?;
+        let felt_queue_ty =
+            context.get_concrete_type(QueueType::id(), &[GenericArg::Type(felt_ty.clone())])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -298,7 +298,7 @@ impl NoGenericArgsGenericLibfunc for StorageWriteLibfunc {
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_array_ty,
+                            ty: felt_queue_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],

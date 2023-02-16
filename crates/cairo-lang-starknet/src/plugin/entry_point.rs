@@ -37,8 +37,8 @@ pub fn generate_entry_point_wrapper(
                 match serde::Serde::<{type_name}>::deserialize(ref data) {{
                     Option::Some(x) => x,
                     Option::None(()) => {{
-                        let mut err_data = array_new();
-                        array_append(ref err_data, {input_data_short_err});
+                        let mut err_data = queue_new();
+                        queue_append(ref err_data, {input_data_short_err});
                         panic(err_data)
                     }},
                 }};"
@@ -47,7 +47,7 @@ pub fn generate_entry_point_wrapper(
 
         if is_ref {
             ref_appends.push(RewriteNode::Text(format!(
-                "\n            serde::Serde::<{type_name}>::serialize(ref arr, {arg_name});"
+                "\n            serde::Serde::<{type_name}>::serialize(ref q, {arg_name});"
             )));
         }
     }
@@ -65,7 +65,7 @@ pub fn generate_entry_point_wrapper(
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
                 "\n            let res = ",
-                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res);"),
+                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref q, res);"),
             )
         }
     };
@@ -80,40 +80,40 @@ pub fn generate_entry_point_wrapper(
     // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
     Ok(RewriteNode::interpolate_patched(
         format!(
-            "fn $function_name$(mut data: Array::<felt>) -> Array::<felt> {{
+            "fn $function_name$(mut data: Queue::<felt>) -> Queue::<felt> {{
             internal::revoke_ap_tracking();
             match get_gas() {{
                 Option::Some(_) => {{
                 }},
                 Option::None(_) => {{
-                    let mut err_data = array_new();
-                    array_append(ref err_data, {oog_err});
+                    let mut err_data = queue_new();
+                    queue_append(ref err_data, {oog_err});
                     panic(err_data)
                 }},
             }}
             {arg_definitions}
-            if !array::ArrayTrait::is_empty(@data) {{
+            if !queue::QueueTrait::is_empty(@data) {{
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, {input_data_long_err});
+                let mut err_data = queue_new();
+                queue_append(ref err_data, {input_data_long_err});
                 panic(err_data);
             }}
             match get_gas_all(get_builtin_costs()) {{
                 Option::Some(_) => {{
                 }},
                 Option::None(_) => {{
-                    let mut err_data = array_new();
-                    array_append(ref err_data, {oog_err});
+                    let mut err_data = queue_new();
+                    queue_append(ref err_data, {oog_err});
                     panic(err_data)
                 }},
             }}
             {let_res}$wrapped_name$({arg_names_str});
-            let mut arr = array_new();
+            let mut q = queue_new();
             // References.$ref_appends$
             // Result.{append_res}
-            arr
+            q
         }}"
         )
         .as_str(),

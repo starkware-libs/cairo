@@ -1,5 +1,4 @@
 use super::syscalls::SystemType;
-use crate::extensions::array::ArrayType;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
@@ -7,6 +6,7 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
+use crate::extensions::queue::QueueType;
 use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
@@ -128,8 +128,8 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
         let addr_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        let felt_array_ty =
-            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty)])?;
+        let felt_queue_ty =
+            context.get_concrete_type(QueueType::id(), &[GenericArg::Type(felt_ty)])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -144,7 +144,7 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
                 // Address
                 ParamSignature::new(addr_ty),
                 // Call data
-                ParamSignature::new(felt_array_ty.clone()),
+                ParamSignature::new(felt_queue_ty.clone()),
             ],
             branch_signatures: vec![
                 // Success branch
@@ -164,7 +164,7 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
                         },
                         // result
                         OutputVarInfo {
-                            ty: felt_array_ty.clone(),
+                            ty: felt_queue_ty.clone(),
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
@@ -186,7 +186,7 @@ impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_array_ty,
+                            ty: felt_queue_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],

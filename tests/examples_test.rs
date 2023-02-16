@@ -49,7 +49,7 @@ fn checked_compile_to_sierra(name: &str) -> cairo_lang_sierra::program::Program 
 /// Tests lowering from Cairo to Sierra.
 #[test_case("fib")]
 #[test_case("fib_box")]
-#[test_case("fib_array")]
+#[test_case("fib_queue")]
 #[test_case("fib_counter")]
 #[test_case("fib_struct")]
 #[test_case("fib_u128")]
@@ -70,7 +70,7 @@ fn cairo_to_sierra(name: &str) {
 /// Tests lowering from Cairo to casm.
 #[test_case("fib", false)]
 #[test_case("fib_box", false)]
-#[test_case("fib_array", false)]
+#[test_case("fib_queue", false)]
 #[test_case("fib_counter", false)]
 #[test_case("fib_struct", false)]
 #[test_case("fib_u128", false)]
@@ -101,7 +101,7 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 
 #[test_case("fib")]
 #[test_case("fib_box")]
-#[test_case("fib_array")]
+#[test_case("fib_queue")]
 #[test_case("fib_counter")]
 #[test_case("fib_struct")]
 #[test_case("fib_u128")]
@@ -224,10 +224,10 @@ fn run_function_test(
 #[test_case(8, 21)]
 #[test_case(9, 34)]
 #[test_case(10, 55)]
-fn run_fib_array_len(n: usize, last: usize) {
+fn run_fib_queue_len(n: usize, last: usize) {
     assert_matches!(
         &extract_matches!(
-            run_function_test("fib_array", &[n].map(Felt::from), None, None),
+            run_function_test("fib_queue", &[n].map(Felt::from), None, None),
             RunResultValue::Success
         )[..],
         [_, _, actual_last, actual_len] if actual_last == &Felt::from(last) && actual_len == &Felt::from(n)

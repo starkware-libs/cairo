@@ -15,14 +15,14 @@
     "0x2",
     "0x66656c74",
     "0x0",
-    "0x4172726179",
+    "0x5175657565",
     "0x1",
     "0x1",
     "0x4",
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x39a7936ed480188b5481fdccbc2e15e79f8bbae8caee03dda25f96e0b91d2c5",
+    "0x4b901fdf20d1b29a15feadbd294d0a7f32c337294601a55367ec0e021afc71",
     "0x1",
     "0x5",
     "0x1",
@@ -184,7 +184,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x3ecd5f7a9ffb17c6f59022c7837161ff4c29b2b8d1187de9ec9a612e1ace783",
+    "0x178137a4abc58edcc683994d46daf3ee4b965a201c59d773a4a321c5fad5cab",
     "0x1",
     "0x4",
     "0x1",
@@ -192,7 +192,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x1f73851cb7179647e81ecec81aeac14f31000e7bc2a0ba96a069a483934544a",
+    "0x2328d129cb4596bd598ff66b17d8f991790522c216a1dc2816e3ed9c86fd1ce",
     "0x1",
     "0xe",
     "0x1",
@@ -200,7 +200,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x7834085c48189ad7d0091544378ca7a95246ad33c2cb8e77762f4531cd8519",
+    "0x28ac9b59003813a2cbe78994fd9fa15d0c99757d87b146e3c90e38aa4c90fc0",
     "0x1",
     "0x26",
     "0x1",
@@ -208,7 +208,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x1768bad06fa242cd373556d3c3ed8b42093bdd2dac66169dd8fddf1bbca6684",
+    "0x350c0d2e3b141ab07c591e2f2b122a66d1febd415e6451ec17417d6da4d2e55",
     "0x1",
     "0x11",
     "0x1",
@@ -216,7 +216,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x2721baddaadbfe6893fb43d812f3c7d14c679a6347f63be463fdbcb496c352f",
+    "0x14dd344d902de598d1ee1f9027e4d4019304c1bd2e55c68b1e17317180b42fb",
     "0x1",
     "0x28",
     "0x1",
@@ -224,7 +224,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x556465ece6753f03736054b9fd05194611875eaec763a36e675234fae534ad",
+    "0x14cc83c267cb0f120327ef5e2d0a519383b2a87b529a3d9c9834d2fe9a969c1",
     "0x1",
     "0x13",
     "0x1",
@@ -240,7 +240,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x2f5bfc8c89cba75131e402b1bca558b82eb61532362a092e246ea6e476d1dbd",
+    "0x308e06e7ccdc07f21d5eddacec781cf0f493df975491e98518b3f40a0b68752",
     "0x1",
     "0xa",
     "0x1",
@@ -248,7 +248,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x222d3c7ea67485118493f8cc3ca9a097c74863362b2581c75b0863c513358c1",
+    "0x1d8dc7b29f3c345ae9fcd1cbbebf22a21c7f22afe324cacb2ec5a0852264122",
     "0x1",
     "0x10",
     "0x1",
@@ -256,7 +256,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x13a9089eaf0146519213628613cda1032a09fa8260a2d2db6e4e6437a1d0231",
+    "0x2c770ca1a8f1a880677dd629df6db81cc5adbb07103128c84e2b94bb923f890",
     "0x1",
     "0x2e",
     "0x1",
@@ -332,7 +332,7 @@
     "0x1",
     "0x1",
     "0x3",
-    "0x61727261795f6e6577",
+    "0x71756575655f6e6577",
     "0x1",
     "0x1",
     "0x4",
@@ -344,7 +344,7 @@
     "0x1",
     "0x1",
     "0x4",
-    "0x61727261795f617070656e64",
+    "0x71756575655f617070656e64",
     "0x1",
     "0x1",
     "0x4",
@@ -366,7 +366,7 @@
     "0x1",
     "0x1",
     "0x5",
-    "0x61727261795f6c656e",
+    "0x71756575655f6c656e",
     "0x1",
     "0x1",
     "0x4",
@@ -612,7 +612,7 @@
     "0x1",
     "0x1",
     "0x1a",
-    "0x61727261795f706f705f66726f6e74",
+    "0x71756575655f706f705f66726f6e74",
     "0x1",
     "0x1",
     "0x4",
@@ -36434,11 +36434,11 @@
       ],
       [
         5,
-        "Array<felt>"
+        "Queue<felt>"
       ],
       [
         6,
-        "core::PanicResult::<core::array::Array::<core::felt>>"
+        "core::PanicResult::<core::queue::Queue::<core::felt>>"
       ],
       [
         7,
@@ -36446,7 +36446,7 @@
       ],
       [
         8,
-        "Snapshot<Array<felt>>"
+        "Snapshot<Queue<felt>>"
       ],
       [
         9,
@@ -36562,27 +36562,27 @@
       ],
       [
         37,
-        "core::result::Result::<core::felt, core::array::Array::<core::felt>>"
+        "core::result::Result::<core::felt, core::queue::Queue::<core::felt>>"
       ],
       [
         38,
-        "core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>"
+        "core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>"
       ],
       [
         39,
-        "core::PanicResult::<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>>"
+        "core::PanicResult::<core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>>"
       ],
       [
         40,
-        "core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>"
+        "core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>"
       ],
       [
         41,
-        "core::PanicResult::<core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>>"
+        "core::PanicResult::<core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>>"
       ],
       [
         42,
-        "core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>"
+        "core::result::Result::<core::starknet::ContractAddress, core::queue::Queue::<core::felt>>"
       ],
       [
         43,
@@ -36594,15 +36594,15 @@
       ],
       [
         45,
-        "core::result::Result::<(), core::array::Array::<core::felt>>"
+        "core::result::Result::<(), core::queue::Queue::<core::felt>>"
       ],
       [
         46,
-        "core::result::Result::<core::integer::u128, core::array::Array::<core::felt>>"
+        "core::result::Result::<core::integer::u128, core::queue::Queue::<core::felt>>"
       ],
       [
         47,
-        "core::PanicResult::<core::result::Result::<core::integer::u128, core::array::Array::<core::felt>>>"
+        "core::PanicResult::<core::result::Result::<core::integer::u128, core::queue::Queue::<core::felt>>>"
       ],
       [
         48,
@@ -36660,7 +36660,7 @@
       ],
       [
         9,
-        "drop<Array<felt>>"
+        "drop<Queue<felt>>"
       ],
       [
         10,
@@ -36672,7 +36672,7 @@
       ],
       [
         12,
-        "array_new<felt>"
+        "queue_new<felt>"
       ],
       [
         13,
@@ -36684,11 +36684,11 @@
       ],
       [
         15,
-        "array_append<felt>"
+        "queue_append<felt>"
       ],
       [
         16,
-        "enum_init<core::PanicResult::<core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::PanicResult::<core::queue::Queue::<core::felt>>, 1>"
       ],
       [
         17,
@@ -36696,15 +36696,15 @@
       ],
       [
         18,
-        "store_temp<core::PanicResult::<core::array::Array::<core::felt>>>"
+        "store_temp<core::PanicResult::<core::queue::Queue::<core::felt>>>"
       ],
       [
         19,
-        "snapshot_take<Array<felt>>"
+        "snapshot_take<Queue<felt>>"
       ],
       [
         20,
-        "array_len<felt>"
+        "queue_len<felt>"
       ],
       [
         21,
@@ -36788,7 +36788,7 @@
       ],
       [
         41,
-        "store_temp<Array<felt>>"
+        "store_temp<Queue<felt>>"
       ],
       [
         42,
@@ -36796,7 +36796,7 @@
       ],
       [
         43,
-        "enum_init<core::PanicResult::<core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::PanicResult::<core::queue::Queue::<core::felt>>, 0>"
       ],
       [
         44,
@@ -36952,7 +36952,7 @@
       ],
       [
         82,
-        "array_pop_front<felt>"
+        "queue_pop_front<felt>"
       ],
       [
         83,
@@ -37280,19 +37280,19 @@
       ],
       [
         164,
-        "enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<core::felt, core::queue::Queue::<core::felt>>, 0>"
       ],
       [
         165,
-        "store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<core::felt, core::queue::Queue::<core::felt>>>"
       ],
       [
         166,
-        "enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<core::felt, core::queue::Queue::<core::felt>>, 1>"
       ],
       [
         167,
-        "rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<core::felt, core::queue::Queue::<core::felt>>>"
       ],
       [
         168,
@@ -37316,15 +37316,15 @@
       ],
       [
         173,
-        "enum_match<core::PanicResult::<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>>>"
+        "enum_match<core::PanicResult::<core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>>>"
       ],
       [
         174,
-        "store_temp<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>>"
       ],
       [
         175,
-        "rename<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>>"
       ],
       [
         176,
@@ -37340,15 +37340,15 @@
       ],
       [
         179,
-        "enum_match<core::PanicResult::<core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>>>"
+        "enum_match<core::PanicResult::<core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>>>"
       ],
       [
         180,
-        "store_temp<core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>>"
       ],
       [
         181,
-        "rename<core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>>"
       ],
       [
         182,
@@ -37388,19 +37388,19 @@
       ],
       [
         191,
-        "enum_init<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<core::starknet::ContractAddress, core::queue::Queue::<core::felt>>, 0>"
       ],
       [
         192,
-        "store_temp<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<core::starknet::ContractAddress, core::queue::Queue::<core::felt>>>"
       ],
       [
         193,
-        "enum_init<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<core::starknet::ContractAddress, core::queue::Queue::<core::felt>>, 1>"
       ],
       [
         194,
-        "rename<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<core::starknet::ContractAddress, core::queue::Queue::<core::felt>>>"
       ],
       [
         195,
@@ -37512,19 +37512,19 @@
       ],
       [
         222,
-        "enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<(), core::queue::Queue::<core::felt>>, 0>"
       ],
       [
         223,
-        "store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<(), core::queue::Queue::<core::felt>>>"
       ],
       [
         224,
-        "enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<(), core::queue::Queue::<core::felt>>, 1>"
       ],
       [
         225,
-        "rename<core::result::Result::<(), core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<(), core::queue::Queue::<core::felt>>>"
       ],
       [
         226,
@@ -37548,19 +37548,19 @@
       ],
       [
         231,
-        "enum_match<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<core::felt, core::queue::Queue::<core::felt>>>"
       ],
       [
         232,
-        "enum_init<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>, 1>"
       ],
       [
         233,
-        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>>, 0>"
+        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>>, 0>"
       ],
       [
         234,
-        "store_temp<core::PanicResult::<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>>>"
+        "store_temp<core::PanicResult::<core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>>>"
       ],
       [
         235,
@@ -37572,15 +37572,15 @@
       ],
       [
         237,
-        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>>, 1>"
+        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>>, 1>"
       ],
       [
         238,
-        "enum_init<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>, 0>"
       ],
       [
         239,
-        "enum_match<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<core::integer::u8, core::queue::Queue::<core::felt>>>"
       ],
       [
         240,
@@ -37596,11 +37596,11 @@
       ],
       [
         243,
-        "enum_match<core::PanicResult::<core::result::Result::<core::integer::u128, core::array::Array::<core::felt>>>>"
+        "enum_match<core::PanicResult::<core::result::Result::<core::integer::u128, core::queue::Queue::<core::felt>>>>"
       ],
       [
         244,
-        "store_temp<core::result::Result::<core::integer::u128, core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<core::integer::u128, core::queue::Queue::<core::felt>>>"
       ],
       [
         245,
@@ -37608,23 +37608,23 @@
       ],
       [
         246,
-        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>>, 1>"
+        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>>, 1>"
       ],
       [
         247,
-        "store_temp<core::PanicResult::<core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>>>"
+        "store_temp<core::PanicResult::<core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>>>"
       ],
       [
         248,
-        "enum_match<core::result::Result::<core::integer::u128, core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<core::integer::u128, core::queue::Queue::<core::felt>>>"
       ],
       [
         249,
-        "enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>, 1>"
       ],
       [
         250,
-        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>>, 0>"
+        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>>, 0>"
       ],
       [
         251,
@@ -37652,11 +37652,11 @@
       ],
       [
         257,
-        "enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>, 0>"
       ],
       [
         258,
-        "enum_match<core::result::Result::<core::integer::u256, core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<core::integer::u256, core::queue::Queue::<core::felt>>>"
       ],
       [
         259,
@@ -37692,7 +37692,7 @@
       ],
       [
         267,
-        "enum_match<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<core::starknet::ContractAddress, core::queue::Queue::<core::felt>>>"
       ],
       [
         268,
@@ -37712,7 +37712,7 @@
       ],
       [
         272,
-        "enum_match<core::result::Result::<(), core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<(), core::queue::Queue::<core::felt>>>"
       ],
       [
         273,
@@ -37720,15 +37720,15 @@
       ],
       [
         274,
-        "enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<core::integer::u128, core::queue::Queue::<core::felt>>, 1>"
       ],
       [
         275,
-        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u128, core::array::Array::<core::felt>>>, 0>"
+        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u128, core::queue::Queue::<core::felt>>>, 0>"
       ],
       [
         276,
-        "store_temp<core::PanicResult::<core::result::Result::<core::integer::u128, core::array::Array::<core::felt>>>>"
+        "store_temp<core::PanicResult::<core::result::Result::<core::integer::u128, core::queue::Queue::<core::felt>>>>"
       ],
       [
         277,
@@ -37736,11 +37736,11 @@
       ],
       [
         278,
-        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u128, core::array::Array::<core::felt>>>, 1>"
+        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u128, core::queue::Queue::<core::felt>>>, 1>"
       ],
       [
         279,
-        "enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<core::integer::u128, core::queue::Queue::<core::felt>>, 0>"
       ],
       [
         280,

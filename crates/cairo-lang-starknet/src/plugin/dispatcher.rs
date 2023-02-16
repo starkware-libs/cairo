@@ -111,7 +111,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
 
                 functions.push(RewriteNode::interpolate_patched(
                     "$func_decl$ {
-        let mut calldata = array_new();
+        let mut calldata = queue_new();
 $serialization_code$
         let mut ret_data = starknet::call_contract_syscall(
             contract_address,

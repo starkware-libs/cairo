@@ -56,7 +56,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 duplicatable: true,
                 size: 1,
             })
-        } else if id == "ArrayFelt".into() || id == "ArrayU128".into() {
+        } else if id == "QueueFelt".into() || id == "QueueU128".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: true,
@@ -96,7 +96,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 duplicatable: true,
                 size: 1,
             })
-        } else if id == "SnapshotArrayU128".into() {
+        } else if id == "SnapshotQueueU128".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: true,
@@ -160,11 +160,11 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("felt", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "felt<T>")]
 #[test_case("u128", vec![] => Ok(()); "u128")]
 #[test_case("u128", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "u128<T>")]
-#[test_case("Array", vec![type_arg("u128")] => Ok(()); "Array<u128>")]
-#[test_case("Array", vec![] => Err(WrongNumberOfGenericArgs); "Array")]
-#[test_case("Array", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Array<5>")]
-#[test_case("Array", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
-            "Array<UninitializedFelt>")]
+#[test_case("Queue", vec![type_arg("u128")] => Ok(()); "Queue<u128>")]
+#[test_case("Queue", vec![] => Err(WrongNumberOfGenericArgs); "Queue")]
+#[test_case("Queue", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Queue<5>")]
+#[test_case("Queue", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
+            "Queue<UninitializedFelt>")]
 #[test_case("NonZero", vec![type_arg("T")] => Ok(()); "NonZero<T>")]
 #[test_case("NonZero", vec![] => Err(WrongNumberOfGenericArgs); "NonZero")]
 #[test_case("NonZero", vec![value_arg(5)] => Err(UnsupportedGenericArg); "NonZero<5>")]
@@ -221,14 +221,14 @@ fn find_type_specialization(
 #[test_case("function_call", vec![GenericArg::UserFunc("RegisteredFunction".into())]
             => Ok(()); "function_call<&RegisteredFunction>")]
 #[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
-#[test_case("array_new", vec![] => Err(WrongNumberOfGenericArgs); "array_new")]
-#[test_case("array_new", vec![type_arg("u128")] => Ok(()); "array_new<u128>")]
-#[test_case("array_append", vec![] => Err(WrongNumberOfGenericArgs); "array_append")]
-#[test_case("array_append", vec![type_arg("u128")] => Ok(()); "array_append<u128>")]
-#[test_case("array_get", vec![] => Err(WrongNumberOfGenericArgs); "array_get")]
-#[test_case("array_get", vec![type_arg("u128")] => Ok(()); "array_get<u128>")]
-#[test_case("array_len", vec![] => Err(WrongNumberOfGenericArgs); "array_len")]
-#[test_case("array_len", vec![type_arg("u128")] => Ok(()); "array_len<u128>")]
+#[test_case("queue_new", vec![] => Err(WrongNumberOfGenericArgs); "queue_new")]
+#[test_case("queue_new", vec![type_arg("u128")] => Ok(()); "queue_new<u128>")]
+#[test_case("queue_append", vec![] => Err(WrongNumberOfGenericArgs); "queue_append")]
+#[test_case("queue_append", vec![type_arg("u128")] => Ok(()); "queue_append<u128>")]
+#[test_case("queue_get", vec![] => Err(WrongNumberOfGenericArgs); "queue_get")]
+#[test_case("queue_get", vec![type_arg("u128")] => Ok(()); "queue_get<u128>")]
+#[test_case("queue_len", vec![] => Err(WrongNumberOfGenericArgs); "queue_len")]
+#[test_case("queue_len", vec![type_arg("u128")] => Ok(()); "queue_len<u128>")]
 #[test_case("get_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "get_gas<0>")]
 #[test_case("get_gas", vec![] => Ok(()); "get_gas")]
 #[test_case("refund_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "refund_gas<0>")]

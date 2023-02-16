@@ -1,11 +1,11 @@
 use super::syscalls::SystemType;
-use crate::extensions::array::ArrayType;
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
+use crate::extensions::queue::QueueType;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
 };
@@ -22,11 +22,11 @@ impl NoGenericArgsGenericLibfunc for EmitEventLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
+        let queue_ty = context.get_wrapped_concrete_type(QueueType::id(), felt_ty.clone())?;
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
-        let felt_array_ty =
-            context.get_concrete_type(ArrayType::id(), &[GenericArg::Type(felt_ty)])?;
+        let felt_queue_ty =
+            context.get_concrete_type(QueueType::id(), &[GenericArg::Type(felt_ty)])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -39,9 +39,9 @@ impl NoGenericArgsGenericLibfunc for EmitEventLibfunc {
                     allow_const: false,
                 },
                 // keys
-                ParamSignature::new(arr_ty.clone()),
+                ParamSignature::new(queue_ty.clone()),
                 // data
-                ParamSignature::new(arr_ty),
+                ParamSignature::new(queue_ty),
             ],
             branch_signatures: vec![
                 // Success branch.
@@ -79,7 +79,7 @@ impl NoGenericArgsGenericLibfunc for EmitEventLibfunc {
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_array_ty,
+                            ty: felt_queue_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],

@@ -59,10 +59,10 @@ foo
 
 //! > module_code
 struct A {
-    a: Array::<felt>,
+    a: Queue::<felt>,
     b: felt,
 }
-fn bar(a: @Array::<felt>, b: @felt) {
+fn bar(a: @Queue::<felt>, b: @felt) {
 }
 
 //! > semantic_diagnostics
@@ -74,10 +74,10 @@ blk0 (root):
 Inputs: v0: @test::A
 Initial refs:
 Statements:
-  (v1: @core::array::Array::<core::felt>, v2: @core::felt) <- struct_destructure(v0)
-  (v3: @core::array::Array::<core::felt>, v4: @core::felt) <- struct_destructure(v0)
+  (v1: @core::queue::Queue::<core::felt>, v2: @core::felt) <- struct_destructure(v0)
+  (v3: @core::queue::Queue::<core::felt>, v4: @core::felt) <- struct_destructure(v0)
   (v5: ()) <- test::bar(v1, v4)
-  (v6: @core::array::Array::<core::felt>, v7: @core::felt) <- struct_destructure(v0)
+  (v6: @core::queue::Queue::<core::felt>, v7: @core::felt) <- struct_destructure(v0)
   (v8: ()) <- test::bar(v6, v7)
 End:
   Return(v0)
@@ -86,10 +86,10 @@ End:
 blk0 (root):
 Inputs: v0: @test::A
 Statements:
-  (v1: @core::array::Array::<core::felt>, v2: @core::felt) <- struct_destructure(v0)
-  (v3: @core::array::Array::<core::felt>, v4: @core::felt) <- struct_destructure(v0)
+  (v1: @core::queue::Queue::<core::felt>, v2: @core::felt) <- struct_destructure(v0)
+  (v3: @core::queue::Queue::<core::felt>, v4: @core::felt) <- struct_destructure(v0)
   (v5: ()) <- test::bar(v1, v4)
-  (v6: @core::array::Array::<core::felt>, v7: @core::felt) <- struct_destructure(v0)
+  (v6: @core::queue::Queue::<core::felt>, v7: @core::felt) <- struct_destructure(v0)
   (v8: ()) <- test::bar(v6, v7)
 End:
   Return(v0)
@@ -115,10 +115,10 @@ foo
 
 //! > module_code
 enum A {
-    A: Array::<felt>,
+    A: Queue::<felt>,
     B: felt,
 }
-fn bar0(a: @Array::<felt>) {
+fn bar0(a: @Queue::<felt>) {
 }
 fn bar1(b: @felt) {
 }
@@ -129,7 +129,7 @@ fn bar1(b: @felt) {
 
 //! > lowering_structured
 blk0:
-Inputs: v1: @core::array::Array::<core::felt>
+Inputs: v1: @core::queue::Queue::<core::felt>
 Initial refs:
 Statements:
   (v2: ()) <- test::bar0(v1)
@@ -157,7 +157,7 @@ End:
 
 //! > lowering_flat
 blk0:
-Inputs: v1: @core::array::Array::<core::felt>
+Inputs: v1: @core::queue::Queue::<core::felt>
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:

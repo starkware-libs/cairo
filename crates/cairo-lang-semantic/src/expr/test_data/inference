@@ -17,15 +17,15 @@ foo
 
 //! > ==========================================================================
 
-//! > Test array inference
+//! > Test queue inference
 
 //! > test_function_name
 test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr = array_new();
-    array_append(ref arr, 1)
+    let mut q = queue_new();
+    queue_append(ref q, 1)
 }
 
 //! > function_name
@@ -47,8 +47,8 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr = array_new();
-    array_append(arr, arr)
+    let mut q = queue_new();
+    queue_append(q, q)
 }
 
 //! > function_name
@@ -59,18 +59,18 @@ foo
 //! > expected_diagnostics
 error: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:3:18
-    array_append(arr, arr)
-                 ^*^
+    queue_append(q, q)
+                 ^
 
-error: Unexpected argument type. Expected: "?0", found: "core::array::Array::<?0>".
- --> lib.cairo:3:23
-    array_append(arr, arr)
-                      ^*^
+error: Unexpected argument type. Expected: "?0", found: "core::queue::Queue::<?0>".
+ --> lib.cairo:3:21
+    queue_append(q, q)
+                    ^
 
 error: Type annotation needed.
- --> lib.cairo:2:19
-    let mut arr = array_new();
-                  ^*******^
+ --> lib.cairo:2:17
+    let mut q = queue_new();
+                ^*******^
 
 //! > ==========================================================================
 
@@ -81,7 +81,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr = array_new();
+    let mut q = queue_new();
 }
 
 //! > function_name
@@ -91,9 +91,9 @@ foo
 
 //! > expected_diagnostics
 error: Type annotation needed.
- --> lib.cairo:2:19
-    let mut arr = array_new();
-                  ^*******^
+ --> lib.cairo:2:17
+    let mut q = queue_new();
+                ^*******^
 
 //! > ==========================================================================
 
@@ -104,7 +104,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr: felt = array_new::<felt>();
+    let mut q: felt = queue_new::<felt>();
 }
 
 //! > function_name
@@ -113,10 +113,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt", found: "core::array::Array::<core::felt>".
- --> lib.cairo:2:25
-    let mut arr: felt = array_new::<felt>();
-                        ^*****************^
+error: Unexpected argument type. Expected: "core::felt", found: "core::queue::Queue::<core::felt>".
+ --> lib.cairo:2:23
+    let mut q: felt = queue_new::<felt>();
+                      ^*****************^
 
 //! > ==========================================================================
 
@@ -127,7 +127,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() -> felt {
-    panic(array_new())
+    panic(queue_new())
 }
 
 //! > function_name

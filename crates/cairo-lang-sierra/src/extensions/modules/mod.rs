@@ -6,7 +6,6 @@ use crate::ids::{ConcreteTypeId, UserTypeId};
 use crate::program::GenericArg;
 
 pub mod ap_tracking;
-pub mod array;
 pub mod bitwise;
 pub mod boolean;
 pub mod boxing;
@@ -29,6 +28,7 @@ pub mod mem;
 pub mod non_zero;
 pub mod nullable;
 pub mod pedersen;
+pub mod queue;
 pub mod range_check;
 pub mod snapshot;
 pub mod squashed_dict_felt_to;

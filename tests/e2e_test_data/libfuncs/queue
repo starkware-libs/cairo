@@ -1,4 +1,4 @@
-//! > array_new libfunc
+//! > queue_new libfunc
 
 //! > test_comments
 
@@ -6,8 +6,8 @@
 run_small_e2e_test
 
 //! > cairo
-fn foo() -> Array::<felt> {
-    array_new::<felt>()
+fn foo() -> Queue::<felt> {
+    queue_new::<felt>()
 }
 
 //! > casm
@@ -22,20 +22,20 @@ test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt = felt;
-type Array<felt> = Array<felt>;
+type Queue<felt> = Queue<felt>;
 
-libfunc array_new<felt> = array_new<felt>;
-libfunc store_temp<Array<felt>> = store_temp<Array<felt>>;
+libfunc queue_new<felt> = queue_new<felt>;
+libfunc store_temp<Queue<felt>> = store_temp<Queue<felt>>;
 
-array_new<felt>() -> ([0]);
-store_temp<Array<felt>>([0]) -> ([1]);
+queue_new<felt>() -> ([0]);
+store_temp<Queue<felt>>([0]) -> ([1]);
 return([1]);
 
-test::foo@0() -> (Array<felt>);
+test::foo@0() -> (Queue<felt>);
 
 //! > ==========================================================================
 
-//! > array_append libfunc
+//! > queue_append libfunc
 
 //! > test_comments
 
@@ -43,8 +43,8 @@ test::foo@0() -> (Array<felt>);
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<felt>, value: felt) {
-    array_append::<felt>(ref arr, value);
+fn foo(ref q: Queue::<felt>, value: felt) {
+    queue_append::<felt>(ref q, value);
 }
 
 //! > casm
@@ -58,25 +58,25 @@ test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt = felt;
-type Array<felt> = Array<felt>;
+type Queue<felt> = Queue<felt>;
 type Unit = Struct<ut@Tuple>;
 
-libfunc array_append<felt> = array_append<felt>;
+libfunc queue_append<felt> = queue_append<felt>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Array<felt>> = store_temp<Array<felt>>;
+libfunc store_temp<Queue<felt>> = store_temp<Queue<felt>>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 
-array_append<felt>([0], [1]) -> ([2]);
+queue_append<felt>([0], [1]) -> ([2]);
 struct_construct<Unit>() -> ([3]);
-store_temp<Array<felt>>([2]) -> ([4]);
+store_temp<Queue<felt>>([2]) -> ([4]);
 store_temp<Unit>([3]) -> ([5]);
 return([4], [5]);
 
-test::foo@0([0]: Array<felt>, [1]: felt) -> (Array<felt>, Unit);
+test::foo@0([0]: Queue<felt>, [1]: felt) -> (Queue<felt>, Unit);
 
 //! > ==========================================================================
 
-//! > array_append libfunc twice.
+//! > queue_append libfunc twice.
 
 //! > test_comments
 
@@ -84,9 +84,9 @@ test::foo@0([0]: Array<felt>, [1]: felt) -> (Array<felt>, Unit);
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<felt>, value1: felt, value2: felt) {
-    array_append::<felt>(ref arr, value1);
-    array_append::<felt>(ref arr, value2);
+fn foo(ref q: Queue::<felt>, value1: felt, value2: felt) {
+    queue_append::<felt>(ref q, value1);
+    queue_append::<felt>(ref q, value2);
 }
 
 //! > casm
@@ -101,26 +101,26 @@ test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type felt = felt;
-type Array<felt> = Array<felt>;
+type Queue<felt> = Queue<felt>;
 type Unit = Struct<ut@Tuple>;
 
-libfunc array_append<felt> = array_append<felt>;
+libfunc queue_append<felt> = queue_append<felt>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Array<felt>> = store_temp<Array<felt>>;
+libfunc store_temp<Queue<felt>> = store_temp<Queue<felt>>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 
-array_append<felt>([0], [1]) -> ([3]);
-array_append<felt>([3], [2]) -> ([4]);
+queue_append<felt>([0], [1]) -> ([3]);
+queue_append<felt>([3], [2]) -> ([4]);
 struct_construct<Unit>() -> ([5]);
-store_temp<Array<felt>>([4]) -> ([6]);
+store_temp<Queue<felt>>([4]) -> ([6]);
 store_temp<Unit>([5]) -> ([7]);
 return([6], [7]);
 
-test::foo@0([0]: Array<felt>, [1]: felt, [2]: felt) -> (Array<felt>, Unit);
+test::foo@0([0]: Queue<felt>, [1]: felt, [2]: felt) -> (Queue<felt>, Unit);
 
 //! > ==========================================================================
 
-//! > array_pop_front libfunc
+//! > queue_pop_front libfunc
 
 //! > test_comments
 
@@ -128,8 +128,8 @@ test::foo@0([0]: Array<felt>, [1]: felt, [2]: felt) -> (Array<felt>, Unit);
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<felt>) -> Option::<felt> {
-    array_pop_front::<felt>(ref arr)
+fn foo(ref q: Queue::<felt>) -> Option::<felt> {
+    queue_pop_front::<felt>(ref q)
 }
 
 //! > casm
@@ -152,41 +152,41 @@ test::foo: OrderedHashMap({Const: 800})
 
 //! > sierra_code
 type felt = felt;
-type Array<felt> = Array<felt>;
+type Queue<felt> = Queue<felt>;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::felt> = Enum<ut@core::option::Option::<core::felt>, felt, Unit>;
 
-libfunc array_pop_front<felt> = array_pop_front<felt>;
+libfunc queue_pop_front<felt> = queue_pop_front<felt>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::felt>, 0> = enum_init<core::option::Option::<core::felt>, 0>;
-libfunc store_temp<Array<felt>> = store_temp<Array<felt>>;
+libfunc store_temp<Queue<felt>> = store_temp<Queue<felt>>;
 libfunc store_temp<core::option::Option::<core::felt>> = store_temp<core::option::Option::<core::felt>>;
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::felt>, 1> = enum_init<core::option::Option::<core::felt>, 1>;
-libfunc rename<Array<felt>> = rename<Array<felt>>;
+libfunc rename<Queue<felt>> = rename<Queue<felt>>;
 libfunc rename<core::option::Option::<core::felt>> = rename<core::option::Option::<core::felt>>;
 
-array_pop_front<felt>([0]) { fallthrough([1], [2]) 6([3]) };
+queue_pop_front<felt>([0]) { fallthrough([1], [2]) 6([3]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::felt>, 0>([2]) -> ([4]);
-store_temp<Array<felt>>([1]) -> ([5]);
+store_temp<Queue<felt>>([1]) -> ([5]);
 store_temp<core::option::Option::<core::felt>>([4]) -> ([6]);
 jump() { 11() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([7]);
 enum_init<core::option::Option::<core::felt>, 1>([7]) -> ([8]);
-store_temp<Array<felt>>([3]) -> ([5]);
+store_temp<Queue<felt>>([3]) -> ([5]);
 store_temp<core::option::Option::<core::felt>>([8]) -> ([6]);
-rename<Array<felt>>([5]) -> ([9]);
+rename<Queue<felt>>([5]) -> ([9]);
 rename<core::option::Option::<core::felt>>([6]) -> ([10]);
 return([9], [10]);
 
-test::foo@0([0]: Array<felt>) -> (Array<felt>, core::option::Option::<core::felt>);
+test::foo@0([0]: Queue<felt>) -> (Queue<felt>, core::option::Option::<core::felt>);
 
 //! > ==========================================================================
 
-//! > array_get libfunc
+//! > queue_get libfunc
 
 //! > test_comments
 
@@ -194,8 +194,8 @@ test::foo@0([0]: Array<felt>) -> (Array<felt>, core::option::Option::<core::felt
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<felt>, idx: usize) -> Option::<felt> {
-    array_get::<felt>(ref arr, idx)
+fn foo(ref q: Queue::<felt>, idx: usize) -> Option::<felt> {
+    queue_get::<felt>(ref q, idx)
 }
 
 //! > casm
@@ -229,47 +229,47 @@ test::foo: OrderedHashMap({Const: 1370})
 //! > sierra_code
 type RangeCheck = RangeCheck;
 type felt = felt;
-type Array<felt> = Array<felt>;
+type Queue<felt> = Queue<felt>;
 type u32 = u32;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::felt> = Enum<ut@core::option::Option::<core::felt>, felt, Unit>;
 
-libfunc array_get<felt> = array_get<felt>;
+libfunc queue_get<felt> = queue_get<felt>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::felt>, 0> = enum_init<core::option::Option::<core::felt>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<Array<felt>> = store_temp<Array<felt>>;
+libfunc store_temp<Queue<felt>> = store_temp<Queue<felt>>;
 libfunc store_temp<core::option::Option::<core::felt>> = store_temp<core::option::Option::<core::felt>>;
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::felt>, 1> = enum_init<core::option::Option::<core::felt>, 1>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<Array<felt>> = rename<Array<felt>>;
+libfunc rename<Queue<felt>> = rename<Queue<felt>>;
 libfunc rename<core::option::Option::<core::felt>> = rename<core::option::Option::<core::felt>>;
 
-array_get<felt>([0], [1], [2]) { fallthrough([3], [4], [5]) 7([6], [7]) };
+queue_get<felt>([0], [1], [2]) { fallthrough([3], [4], [5]) 7([6], [7]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::felt>, 0>([5]) -> ([8]);
 store_temp<RangeCheck>([3]) -> ([9]);
-store_temp<Array<felt>>([4]) -> ([10]);
+store_temp<Queue<felt>>([4]) -> ([10]);
 store_temp<core::option::Option::<core::felt>>([8]) -> ([11]);
 jump() { 13() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([12]);
 enum_init<core::option::Option::<core::felt>, 1>([12]) -> ([13]);
 store_temp<RangeCheck>([6]) -> ([9]);
-store_temp<Array<felt>>([7]) -> ([10]);
+store_temp<Queue<felt>>([7]) -> ([10]);
 store_temp<core::option::Option::<core::felt>>([13]) -> ([11]);
 rename<RangeCheck>([9]) -> ([14]);
-rename<Array<felt>>([10]) -> ([15]);
+rename<Queue<felt>>([10]) -> ([15]);
 rename<core::option::Option::<core::felt>>([11]) -> ([16]);
 return([14], [15], [16]);
 
-test::foo@0([0]: RangeCheck, [1]: Array<felt>, [2]: u32) -> (RangeCheck, Array<felt>, core::option::Option::<core::felt>);
+test::foo@0([0]: RangeCheck, [1]: Queue<felt>, [2]: u32) -> (RangeCheck, Queue<felt>, core::option::Option::<core::felt>);
 
 //! > ==========================================================================
 
-//! > array_get libfunc on larger element
+//! > queue_get libfunc on larger element
 
 //! > test_comments
 
@@ -277,8 +277,8 @@ test::foo@0([0]: RangeCheck, [1]: Array<felt>, [2]: u32) -> (RangeCheck, Array<f
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<u256>, idx: usize) -> Option::<u256> {
-    array_get::<u256>(ref arr, idx)
+fn foo(ref q: Queue::<u256>, idx: usize) -> Option::<u256> {
+    queue_get::<u256>(ref q, idx)
 }
 
 //! > casm
@@ -317,47 +317,47 @@ test::foo: OrderedHashMap({Const: 1580})
 type RangeCheck = RangeCheck;
 type u128 = u128;
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type Array<core::integer::u256> = Array<core::integer::u256>;
+type Queue<core::integer::u256> = Queue<core::integer::u256>;
 type u32 = u32;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::integer::u256> = Enum<ut@core::option::Option::<core::integer::u256>, core::integer::u256, Unit>;
 
-libfunc array_get<core::integer::u256> = array_get<core::integer::u256>;
+libfunc queue_get<core::integer::u256> = queue_get<core::integer::u256>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::integer::u256>, 0> = enum_init<core::option::Option::<core::integer::u256>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<Array<core::integer::u256>> = store_temp<Array<core::integer::u256>>;
+libfunc store_temp<Queue<core::integer::u256>> = store_temp<Queue<core::integer::u256>>;
 libfunc store_temp<core::option::Option::<core::integer::u256>> = store_temp<core::option::Option::<core::integer::u256>>;
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u256>, 1> = enum_init<core::option::Option::<core::integer::u256>, 1>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<Array<core::integer::u256>> = rename<Array<core::integer::u256>>;
+libfunc rename<Queue<core::integer::u256>> = rename<Queue<core::integer::u256>>;
 libfunc rename<core::option::Option::<core::integer::u256>> = rename<core::option::Option::<core::integer::u256>>;
 
-array_get<core::integer::u256>([0], [1], [2]) { fallthrough([3], [4], [5]) 7([6], [7]) };
+queue_get<core::integer::u256>([0], [1], [2]) { fallthrough([3], [4], [5]) 7([6], [7]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::integer::u256>, 0>([5]) -> ([8]);
 store_temp<RangeCheck>([3]) -> ([9]);
-store_temp<Array<core::integer::u256>>([4]) -> ([10]);
+store_temp<Queue<core::integer::u256>>([4]) -> ([10]);
 store_temp<core::option::Option::<core::integer::u256>>([8]) -> ([11]);
 jump() { 13() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([12]);
 enum_init<core::option::Option::<core::integer::u256>, 1>([12]) -> ([13]);
 store_temp<RangeCheck>([6]) -> ([9]);
-store_temp<Array<core::integer::u256>>([7]) -> ([10]);
+store_temp<Queue<core::integer::u256>>([7]) -> ([10]);
 store_temp<core::option::Option::<core::integer::u256>>([13]) -> ([11]);
 rename<RangeCheck>([9]) -> ([14]);
-rename<Array<core::integer::u256>>([10]) -> ([15]);
+rename<Queue<core::integer::u256>>([10]) -> ([15]);
 rename<core::option::Option::<core::integer::u256>>([11]) -> ([16]);
 return([14], [15], [16]);
 
-test::foo@0([0]: RangeCheck, [1]: Array<core::integer::u256>, [2]: u32) -> (RangeCheck, Array<core::integer::u256>, core::option::Option::<core::integer::u256>);
+test::foo@0([0]: RangeCheck, [1]: Queue<core::integer::u256>, [2]: u32) -> (RangeCheck, Queue<core::integer::u256>, core::option::Option::<core::integer::u256>);
 
 //! > ==========================================================================
 
-//! > array_len libfunc
+//! > queue_len libfunc
 
 //! > test_comments
 
@@ -365,8 +365,8 @@ test::foo@0([0]: RangeCheck, [1]: Array<core::integer::u256>, [2]: u32) -> (Rang
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<felt>) -> usize {
-    array_len::<felt>(@arr)
+fn foo(ref q: Queue::<felt>) -> usize {
+    queue_len::<felt>(@q)
 }
 
 //! > casm
@@ -380,26 +380,26 @@ test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt = felt;
-type Array<felt> = Array<felt>;
-type Snapshot<Array<felt>> = Snapshot<Array<felt>>;
+type Queue<felt> = Queue<felt>;
+type Snapshot<Queue<felt>> = Snapshot<Queue<felt>>;
 type u32 = u32;
 
-libfunc snapshot_take<Array<felt>> = snapshot_take<Array<felt>>;
-libfunc array_len<felt> = array_len<felt>;
-libfunc store_temp<Array<felt>> = store_temp<Array<felt>>;
+libfunc snapshot_take<Queue<felt>> = snapshot_take<Queue<felt>>;
+libfunc queue_len<felt> = queue_len<felt>;
+libfunc store_temp<Queue<felt>> = store_temp<Queue<felt>>;
 libfunc store_temp<u32> = store_temp<u32>;
 
-snapshot_take<Array<felt>>([0]) -> ([0], [1]);
-array_len<felt>([1]) -> ([2]);
-store_temp<Array<felt>>([0]) -> ([3]);
+snapshot_take<Queue<felt>>([0]) -> ([0], [1]);
+queue_len<felt>([1]) -> ([2]);
+store_temp<Queue<felt>>([0]) -> ([3]);
 store_temp<u32>([2]) -> ([4]);
 return([3], [4]);
 
-test::foo@0([0]: Array<felt>) -> (Array<felt>, u32);
+test::foo@0([0]: Queue<felt>) -> (Queue<felt>, u32);
 
 //! > ==========================================================================
 
-//! > array_len libfunc on larger element
+//! > queue_len libfunc on larger element
 
 //! > test_comments
 
@@ -407,8 +407,8 @@ test::foo@0([0]: Array<felt>) -> (Array<felt>, u32);
 run_small_e2e_test
 
 //! > cairo
-fn foo(ref arr: Array::<u256>) -> usize {
-    array_len::<u256>(@arr)
+fn foo(ref q: Queue::<u256>) -> usize {
+    queue_len::<u256>(@q)
 }
 
 //! > casm
@@ -424,19 +424,19 @@ test::foo: OrderedHashMap({Const: 400})
 //! > sierra_code
 type u128 = u128;
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type Array<core::integer::u256> = Array<core::integer::u256>;
-type Snapshot<Array<core::integer::u256>> = Snapshot<Array<core::integer::u256>>;
+type Queue<core::integer::u256> = Queue<core::integer::u256>;
+type Snapshot<Queue<core::integer::u256>> = Snapshot<Queue<core::integer::u256>>;
 type u32 = u32;
 
-libfunc snapshot_take<Array<core::integer::u256>> = snapshot_take<Array<core::integer::u256>>;
-libfunc array_len<core::integer::u256> = array_len<core::integer::u256>;
-libfunc store_temp<Array<core::integer::u256>> = store_temp<Array<core::integer::u256>>;
+libfunc snapshot_take<Queue<core::integer::u256>> = snapshot_take<Queue<core::integer::u256>>;
+libfunc queue_len<core::integer::u256> = queue_len<core::integer::u256>;
+libfunc store_temp<Queue<core::integer::u256>> = store_temp<Queue<core::integer::u256>>;
 libfunc store_temp<u32> = store_temp<u32>;
 
-snapshot_take<Array<core::integer::u256>>([0]) -> ([0], [1]);
-array_len<core::integer::u256>([1]) -> ([2]);
-store_temp<Array<core::integer::u256>>([0]) -> ([3]);
+snapshot_take<Queue<core::integer::u256>>([0]) -> ([0], [1]);
+queue_len<core::integer::u256>([1]) -> ([2]);
+store_temp<Queue<core::integer::u256>>([0]) -> ([3]);
 store_temp<u32>([2]) -> ([4]);
 return([3], [4]);
 
-test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u32);
+test::foo@0([0]: Queue<core::integer::u256>) -> (Queue<core::integer::u256>, u32);

@@ -19,14 +19,14 @@
     "0x1",
     "0x1",
     "0x4",
-    "0x4172726179",
+    "0x5175657565",
     "0x1",
     "0x1",
     "0x4",
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x39a7936ed480188b5481fdccbc2e15e79f8bbae8caee03dda25f96e0b91d2c5",
+    "0x4b901fdf20d1b29a15feadbd294d0a7f32c337294601a55367ec0e021afc71",
     "0x1",
     "0x6",
     "0x1",
@@ -84,7 +84,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x3ecd5f7a9ffb17c6f59022c7837161ff4c29b2b8d1187de9ec9a612e1ace783",
+    "0x178137a4abc58edcc683994d46daf3ee4b965a201c59d773a4a321c5fad5cab",
     "0x1",
     "0x4",
     "0x1",
@@ -92,7 +92,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x2f5bfc8c89cba75131e402b1bca558b82eb61532362a092e246ea6e476d1dbd",
+    "0x308e06e7ccdc07f21d5eddacec781cf0f493df975491e98518b3f40a0b68752",
     "0x1",
     "0x9",
     "0x1",
@@ -144,7 +144,7 @@
     "0x1",
     "0x1",
     "0x3",
-    "0x61727261795f6e6577",
+    "0x71756575655f6e6577",
     "0x1",
     "0x1",
     "0x4",
@@ -156,7 +156,7 @@
     "0x1",
     "0x1",
     "0x4",
-    "0x61727261795f617070656e64",
+    "0x71756575655f617070656e64",
     "0x1",
     "0x1",
     "0x4",
@@ -182,7 +182,7 @@
     "0x1",
     "0x1",
     "0x2",
-    "0x61727261795f706f705f66726f6e74",
+    "0x71756575655f706f705f66726f6e74",
     "0x1",
     "0x1",
     "0x4",
@@ -226,7 +226,7 @@
     "0x1",
     "0x1",
     "0x6",
-    "0x61727261795f6c656e",
+    "0x71756575655f6c656e",
     "0x1",
     "0x1",
     "0x4",
@@ -3577,11 +3577,11 @@
       ],
       [
         6,
-        "Array<felt>"
+        "Queue<felt>"
       ],
       [
         7,
-        "core::PanicResult::<core::array::Array::<core::felt>>"
+        "core::PanicResult::<core::queue::Queue::<core::felt>>"
       ],
       [
         8,
@@ -3597,7 +3597,7 @@
       ],
       [
         11,
-        "Snapshot<Array<felt>>"
+        "Snapshot<Queue<felt>>"
       ],
       [
         12,
@@ -3629,11 +3629,11 @@
       ],
       [
         19,
-        "core::result::Result::<core::felt, core::array::Array::<core::felt>>"
+        "core::result::Result::<core::felt, core::queue::Queue::<core::felt>>"
       ],
       [
         20,
-        "core::result::Result::<(), core::array::Array::<core::felt>>"
+        "core::result::Result::<(), core::queue::Queue::<core::felt>>"
       ]
     ],
     "libfunc_names": [
@@ -3683,7 +3683,7 @@
       ],
       [
         11,
-        "drop<Array<felt>>"
+        "drop<Queue<felt>>"
       ],
       [
         12,
@@ -3695,7 +3695,7 @@
       ],
       [
         14,
-        "array_new<felt>"
+        "queue_new<felt>"
       ],
       [
         15,
@@ -3707,11 +3707,11 @@
       ],
       [
         17,
-        "array_append<felt>"
+        "queue_append<felt>"
       ],
       [
         18,
-        "enum_init<core::PanicResult::<core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::PanicResult::<core::queue::Queue::<core::felt>>, 1>"
       ],
       [
         19,
@@ -3719,7 +3719,7 @@
       ],
       [
         20,
-        "store_temp<core::PanicResult::<core::array::Array::<core::felt>>>"
+        "store_temp<core::PanicResult::<core::queue::Queue::<core::felt>>>"
       ],
       [
         21,
@@ -3731,7 +3731,7 @@
       ],
       [
         23,
-        "array_pop_front<felt>"
+        "queue_pop_front<felt>"
       ],
       [
         24,
@@ -3739,7 +3739,7 @@
       ],
       [
         25,
-        "store_temp<Array<felt>>"
+        "store_temp<Queue<felt>>"
       ],
       [
         26,
@@ -3767,11 +3767,11 @@
       ],
       [
         32,
-        "snapshot_take<Array<felt>>"
+        "snapshot_take<Queue<felt>>"
       ],
       [
         33,
-        "array_len<felt>"
+        "queue_len<felt>"
       ],
       [
         34,
@@ -3851,7 +3851,7 @@
       ],
       [
         53,
-        "enum_init<core::PanicResult::<core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::PanicResult::<core::queue::Queue::<core::felt>>, 0>"
       ],
       [
         54,
@@ -3927,19 +3927,19 @@
       ],
       [
         72,
-        "enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<core::felt, core::queue::Queue::<core::felt>>, 0>"
       ],
       [
         73,
-        "store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<core::felt, core::queue::Queue::<core::felt>>>"
       ],
       [
         74,
-        "enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<core::felt, core::queue::Queue::<core::felt>>, 1>"
       ],
       [
         75,
-        "rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<core::felt, core::queue::Queue::<core::felt>>>"
       ],
       [
         76,
@@ -3951,19 +3951,19 @@
       ],
       [
         78,
-        "enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<(), core::queue::Queue::<core::felt>>, 0>"
       ],
       [
         79,
-        "store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<(), core::queue::Queue::<core::felt>>>"
       ],
       [
         80,
-        "enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<(), core::queue::Queue::<core::felt>>, 1>"
       ],
       [
         81,
-        "rename<core::result::Result::<(), core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<(), core::queue::Queue::<core::felt>>>"
       ],
       [
         82,
@@ -3971,11 +3971,11 @@
       ],
       [
         83,
-        "enum_match<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<core::felt, core::queue::Queue::<core::felt>>>"
       ],
       [
         84,
-        "enum_match<core::result::Result::<(), core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<(), core::queue::Queue::<core::felt>>>"
       ]
     ],
     "user_func_names": [

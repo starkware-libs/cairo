@@ -17,7 +17,7 @@ pub enum CoreValue {
     Uint128(u128),
     NonZero(Box<CoreValue>),
     Ref(Box<CoreValue>),
-    Array(Vec<CoreValue>),
+    Queue(Vec<CoreValue>),
     Dict(HashMap<BigInt, CoreValue>),
     Enum {
         value: Box<CoreValue>,

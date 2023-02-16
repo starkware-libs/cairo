@@ -670,9 +670,9 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(mut arr: Array::<felt>, mut b: (felt,)) -> Array::<felt> {
-    let y = match f(ref arr, ref b) {
-        MyEnum::A(x) => arr
+fn foo(mut q: Queue::<felt>, mut b: (felt,)) -> Queue::<felt> {
+    let y = match f(ref q, ref b) {
+        MyEnum::A(x) => q
     };
     y
 }
@@ -684,7 +684,7 @@ foo
 enum MyEnum {
   A: felt,
 }
-extern fn f(ref arr: Array::<felt>, ref b: (felt,)) -> MyEnum nopanic;
+extern fn f(ref q: Queue::<felt>, ref b: (felt,)) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -692,14 +692,14 @@ extern fn f(ref arr: Array::<felt>, ref b: (felt,)) -> MyEnum nopanic;
 
 //! > lowering_structured
 blk0:
-Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
+Inputs: v2: core::queue::Queue::<core::felt>, v3: (core::felt,), v4: core::felt
 Initial refs:
 Statements:
 End:
   Callsite({v2 -> v6, v3 -> v7, v2 -> v5})
 
 blk1 (root):
-Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
+Inputs: v0: core::queue::Queue::<core::felt>, v1: (core::felt,)
 Initial refs:
 Statements:
   () <- match test::f(v0, v1) {
@@ -710,13 +710,13 @@ End:
 
 //! > lowering_flat
 blk0:
-Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
+Inputs: v2: core::queue::Queue::<core::felt>, v3: (core::felt,), v4: core::felt
 Statements:
 End:
   Callsite({v2 -> v5})
 
 blk1 (root):
-Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
+Inputs: v0: core::queue::Queue::<core::felt>, v1: (core::felt,)
 Statements:
   () <- match test::f(v0, v1) {
     MyEnum::A => blk0,

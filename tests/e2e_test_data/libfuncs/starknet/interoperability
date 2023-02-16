@@ -6,7 +6,7 @@
 run_small_e2e_test
 
 //! > cairo
-fn foo(address: ContractAddress, calldata: Array::<felt>) -> starknet::SyscallResult::<Array::<felt>> {
+fn foo(address: ContractAddress, calldata: Queue::<felt>) -> starknet::SyscallResult::<Queue::<felt>> {
     starknet::call_contract_syscall(address, calldata)
 }
 
@@ -41,39 +41,39 @@ type GasBuiltin = GasBuiltin;
 type System = System;
 type ContractAddress = ContractAddress;
 type felt = felt;
-type Array<felt> = Array<felt>;
-type core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, Array<felt>, Array<felt>>;
+type Queue<felt> = Queue<felt>;
+type core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>> = Enum<ut@core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>, Queue<felt>, Queue<felt>>;
 
 libfunc call_contract_syscall = call_contract_syscall;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 0>;
+libfunc enum_init<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>, 0> = enum_init<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<System> = store_temp<System>;
-libfunc store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>> = store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>;
+libfunc store_temp<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>> = store_temp<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>>;
 libfunc jump = jump;
-libfunc enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 1>;
+libfunc enum_init<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>, 1> = enum_init<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>, 1>;
 libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
-libfunc rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>> = rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>;
+libfunc rename<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>> = rename<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>>;
 
 call_contract_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
 branch_align() -> ();
-enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 0>([6]) -> ([10]);
+enum_init<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>, 0>([6]) -> ([10]);
 store_temp<GasBuiltin>([4]) -> ([11]);
 store_temp<System>([5]) -> ([12]);
-store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([10]) -> ([13]);
+store_temp<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>>([10]) -> ([13]);
 jump() { 12() };
 branch_align() -> ();
-enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 1>([9]) -> ([14]);
+enum_init<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>, 1>([9]) -> ([14]);
 store_temp<GasBuiltin>([7]) -> ([11]);
 store_temp<System>([8]) -> ([12]);
-store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([14]) -> ([13]);
+store_temp<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>>([14]) -> ([13]);
 rename<GasBuiltin>([11]) -> ([15]);
 rename<System>([12]) -> ([16]);
-rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([13]) -> ([17]);
+rename<core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>>([13]) -> ([17]);
 return([15], [16], [17]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: Array<felt>) -> (GasBuiltin, System, core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>);
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: Queue<felt>) -> (GasBuiltin, System, core::result::Result::<core::queue::Queue::<core::felt>, core::queue::Queue::<core::felt>>);
 
 //! > ==========================================================================
 

@@ -2,13 +2,13 @@ use std::marker::PhantomData;
 
 use super::interoperability::ContractAddressType;
 use super::syscalls::SystemType;
-use crate::extensions::array::ArrayType;
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
+use crate::extensions::queue::QueueType;
 use crate::extensions::uint::Uint64Type;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
@@ -60,7 +60,7 @@ impl<TGetterTraitsEx: GetterTraitsEx> NoGenericArgsGenericLibfunc
         let info_ty = TGetterTraitsEx::info_type_id(context)?;
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
-        let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?;
+        let felt_queue_ty = context.get_wrapped_concrete_type(QueueType::id(), felt_ty)?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Gas builtin
@@ -114,7 +114,7 @@ impl<TGetterTraitsEx: GetterTraitsEx> NoGenericArgsGenericLibfunc
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_array_ty,
+                            ty: felt_queue_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],

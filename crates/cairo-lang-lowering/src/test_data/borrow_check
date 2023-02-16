@@ -206,8 +206,8 @@ fn foo(ref x: ADrop, y: ADrop) {
 }
 
 fn bar(){
-  let mut data = array_new::<felt>();
-  array_append::<felt>(ref data, 1);
+  let mut data = queue_new::<felt>();
+  queue_append::<felt>(ref data, 1);
   panic(data);
 }
 
@@ -266,7 +266,7 @@ End:
   Callsite({})
 
 blk2:
-Inputs: v6: core::array::Array::<core::felt>
+Inputs: v6: core::queue::Queue::<core::felt>
 Statements:
   (v8: core::PanicResult::<()>) <- PanicResult::Err(v6)
 End:
@@ -274,7 +274,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Borrow checking array
+//! > Borrow checking queue
 
 //! > test_function_name
 test_function_lowering
@@ -282,7 +282,7 @@ test_function_lowering
 //! > function
 fn foo(ref self: Query::<felt>, value: felt) {
   let mut data = self.data;
-  array_append(ref data, value)
+  queue_append(ref data, value)
 }
 
 //! > function_name
@@ -290,7 +290,7 @@ foo
 
 //! > module_code
 struct Query<T> {
-  data: Array::<T>, 
+  data: Queue::<T>, 
 }
 
 //! > semantic_diagnostics
@@ -306,9 +306,9 @@ blk0 (root):
 Inputs: v0: test::Query::<core::felt>, v1: core::felt
 Initial refs: v0: test::Query::<core::felt>
 Statements:
-  (v2: core::array::Array::<core::felt>) <- struct_destructure(v0)
+  (v2: core::queue::Queue::<core::felt>) <- struct_destructure(v0)
     Ref changes: r0 <- v0
-  (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v2, v1)
+  (v3: core::queue::Queue::<core::felt>) <- core::queue::queue_append::<core::felt>(v2, v1)
   (v4: ()) <- struct_construct()
 End:
   Return(v0, v4)
@@ -317,8 +317,8 @@ End:
 blk0 (root):
 Inputs: v0: test::Query::<core::felt>, v1: core::felt
 Statements:
-  (v2: core::array::Array::<core::felt>) <- struct_destructure(v0)
-  (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v2, v1)
+  (v2: core::queue::Queue::<core::felt>) <- struct_destructure(v0)
+  (v3: core::queue::Queue::<core::felt>) <- core::queue::queue_append::<core::felt>(v2, v1)
   (v4: ()) <- struct_construct()
 End:
   Return(v0, v4)

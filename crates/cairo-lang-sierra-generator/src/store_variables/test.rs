@@ -25,13 +25,13 @@ use crate::test_utils::{
 fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
     let libfunc_long_id = db.lookup_intern_concrete_lib_func(libfunc);
     let felt_ty = db.get_concrete_type_id(db.core_felt_ty()).expect("Can't find core::felt.");
-    let array_ty = db
+    let queue_ty = db
         .get_concrete_type_id(get_core_ty_by_name(
             db.upcast(),
-            "Array".into(),
+            "Queue".into(),
             vec![GenericArgumentId::Type(db.core_felt_ty())],
         ))
-        .expect("Can't find core::Array<core::felt>.");
+        .expect("Can't find core::Queue<core::felt>.");
     let name = libfunc_long_id.generic_id.0;
     match name.as_str() {
         "felt_add" => {
@@ -85,10 +85,10 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             }],
             fallthrough: Some(0),
         },
-        "array_append" => LibfuncSignature {
+        "queue_append" => LibfuncSignature {
             param_signatures: vec![
                 ParamSignature {
-                    ty: array_ty.clone(),
+                    ty: queue_ty.clone(),
                     allow_deferred: false,
                     allow_add_const: true,
                     allow_const: false,
@@ -97,7 +97,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             ],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
-                    ty: array_ty,
+                    ty: queue_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                         param_idx: 0,
                     }),
@@ -776,9 +776,9 @@ fn consecutive_const_additions_with_branch() {
 fn consecutive_appends_with_branch() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "array_append", &["0", "1"], &["2"]),
-        dummy_simple_statement(&db, "array_append", &["2", "3"], &["4"]),
-        dummy_simple_statement(&db, "array_append", &["4", "5"], &["6"]),
+        dummy_simple_statement(&db, "queue_append", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "queue_append", &["2", "3"], &["4"]),
+        dummy_simple_statement(&db, "queue_append", &["4", "5"], &["6"]),
         dummy_simple_branch(&db, "branch", &[], 0),
         dummy_label(0),
         dummy_push_values(&db, &[("6", "7")]),
@@ -788,10 +788,10 @@ fn consecutive_appends_with_branch() {
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "array_append(0, 1) -> (2)",
-            "array_append(2, 3) -> (4)",
-            "array_append(4, 5) -> (6)",
-            "store_temp<Array<felt>>(6) -> (6)",
+            "queue_append(0, 1) -> (2)",
+            "queue_append(2, 3) -> (4)",
+            "queue_append(4, 5) -> (6)",
+            "store_temp<Queue<felt>>(6) -> (6)",
             "branch() { label0() fallthrough() }",
             "label0:",
             // Return.

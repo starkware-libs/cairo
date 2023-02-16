@@ -1,5 +1,5 @@
-use super::array::ArrayType;
 use super::felt::FeltType;
+use super::queue::QueueType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibfuncSignature, SierraApChange, SignatureSpecializationContext,
@@ -25,9 +25,9 @@ impl NoGenericArgsGenericLibfunc for PrintLibfunc {
         // TODO(spapini): We should get a StringView, which is something like
         // (Span<StringLimb>, len), or something like that.
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?;
+        let queue_type = context.get_wrapped_concrete_type(QueueType::id(), felt_ty)?;
         Ok(LibfuncSignature::new_non_branch(
-            vec![arr_type],
+            vec![queue_type],
             vec![],
             SierraApChange::Known { new_vars_only: true },
         ))

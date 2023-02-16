@@ -13,12 +13,12 @@ mod TestContract {
     struct WrappedFelt {
         value: felt,
     }
-    use array::ArrayTrait;
+    use queue::QueueTrait;
     impl WrappedFeltSerde of serde::Serde::<WrappedFelt> {
-        fn serialize(ref serialized: Array::<felt>, input: WrappedFelt) {
+        fn serialize(ref serialized: Queue::<felt>, input: WrappedFelt) {
             serialized.append(input.value);
         }
-        fn deserialize(ref serialized: Array::<felt>) -> Option::<WrappedFelt> {
+        fn deserialize(ref serialized: Queue::<felt>) -> Option::<WrappedFelt> {
             Option::<WrappedFelt>::Some(WrappedFelt { value: (serialized.pop_front())? })
         }
     }
@@ -49,12 +49,12 @@ mod TestContract {
     struct WrappedFelt {
         value: felt,
     }
-    use array::ArrayTrait;
+    use queue::QueueTrait;
     impl WrappedFeltSerde of serde::Serde::<WrappedFelt> {
-        fn serialize(ref serialized: Array::<felt>, input: WrappedFelt) {
+        fn serialize(ref serialized: Queue::<felt>, input: WrappedFelt) {
             serialized.append(input.value);
         }
-        fn deserialize(ref serialized: Array::<felt>) -> Option::<WrappedFelt> {
+        fn deserialize(ref serialized: Queue::<felt>) -> Option::<WrappedFelt> {
             Option::<WrappedFelt>::Some(WrappedFelt { value: (serialized.pop_front())? })
         }
     }
@@ -79,7 +79,7 @@ mod TestContract {
     
     mod var {
         use super::WrappedFelt;
-        use super::ArrayTrait;
+        use super::QueueTrait;
         use super::WrappedFeltSerde;
         use super::WrappedFeltStorageAccess;
         use super::WrappedFeltLegacyHash;
@@ -109,7 +109,7 @@ mod TestContract {
     }
     mod mapping {
         use super::WrappedFelt;
-        use super::ArrayTrait;
+        use super::QueueTrait;
         use super::WrappedFeltSerde;
         use super::WrappedFeltStorageAccess;
         use super::WrappedFeltLegacyHash;
@@ -148,7 +148,7 @@ mod TestContract {
 
     mod __external {
         use super::WrappedFelt;
-        use super::ArrayTrait;
+        use super::QueueTrait;
         use super::WrappedFeltSerde;
         use super::WrappedFeltStorageAccess;
         use super::WrappedFeltLegacyHash;
@@ -159,7 +159,7 @@ mod TestContract {
 
     mod __constructor {
         use super::WrappedFelt;
-        use super::ArrayTrait;
+        use super::QueueTrait;
         use super::WrappedFeltSerde;
         use super::WrappedFeltStorageAccess;
         use super::WrappedFeltLegacyHash;

@@ -28,7 +28,6 @@ use crate::references::{ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
-mod array;
 mod bitwise;
 mod boolean;
 mod boxing;
@@ -45,6 +44,7 @@ mod mem;
 mod misc;
 mod nullable;
 mod pedersen;
+mod queue;
 mod starknet;
 
 mod structure;
@@ -463,7 +463,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Uint128(libfunc) => uint128::build(libfunc, builder),
         CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
         CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
-        CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),
+        CoreConcreteLibfunc::Queue(libfunc) => queue::build(libfunc, builder),
         CoreConcreteLibfunc::Drop(_) => misc::build_drop(builder),
         CoreConcreteLibfunc::Dup(_) => misc::build_dup(builder),
         CoreConcreteLibfunc::Mem(libfunc) => mem::build(libfunc, builder),
@@ -485,7 +485,7 @@ pub fn compile_invocation(
 }
 
 /// A trait for views of the Complex ReferenceExpressions as specific data structures (e.g.
-/// enum/array).
+/// enum/queue).
 trait ReferenceExpressionView: Sized {
     type Error;
     /// Extracts the specific view from the reference expressions. Can include validations and thus

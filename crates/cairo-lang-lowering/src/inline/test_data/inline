@@ -344,15 +344,15 @@ test_function_inlining
 
 //! > function
 fn foo() {
-  let mut arr = ArrayTrait::new();
-  arr.append(5)
+  let mut q = QueueTrait::new();
+  q.append(5)
 }
 
 //! > function_name
 foo
 
 //! > module_code
-use array::ArrayTrait;
+use queue::QueueTrait;
 
 //! > semantic_diagnostics
 
@@ -360,9 +360,9 @@ use array::ArrayTrait;
 blk0 (root):
 Inputs:
 Statements:
-  (v0: core::array::Array::<core::felt>) <- core::array::ArrayImpl::<core::felt>::new()
+  (v0: core::queue::Queue::<core::felt>) <- core::queue::QueueImpl::<core::felt>::new()
   (v1: core::felt) <- 5u
-  (v3: core::array::Array::<core::felt>, v2: ()) <- core::array::ArrayImpl::<core::felt>::append(v0, v1)
+  (v3: core::queue::Queue::<core::felt>, v2: ()) <- core::queue::QueueImpl::<core::felt>::append(v0, v1)
 End:
   Return(v2)
 
@@ -370,7 +370,7 @@ End:
 blk0 (root):
 Inputs:
 Statements:
-  (v0: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v0: core::queue::Queue::<core::felt>) <- core::queue::queue_new::<core::felt>()
 End:
   Fallthrough(1, {})
 
@@ -378,7 +378,7 @@ blk1:
 Inputs:
 Statements:
   (v1: core::felt) <- 5u
-  (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v0, v1)
+  (v3: core::queue::Queue::<core::felt>) <- core::queue::queue_append::<core::felt>(v0, v1)
   (v2: ()) <- struct_construct()
 End:
   Fallthrough(2, {})

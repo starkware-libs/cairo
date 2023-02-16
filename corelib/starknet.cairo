@@ -37,8 +37,8 @@ extern fn storage_write_syscall(
 // Interoperability.
 extern fn contract_address_const<const address>() -> ContractAddress nopanic;
 extern fn call_contract_syscall(
-    address: ContractAddress, calldata: Array::<felt>
-) -> SyscallResult::<Array::<felt>> implicits(GasBuiltin, System) nopanic;
+    address: ContractAddress, calldata: Queue::<felt>
+) -> SyscallResult::<Queue::<felt>> implicits(GasBuiltin, System) nopanic;
 
 extern fn contract_address_try_from_felt(
     address: felt
@@ -58,7 +58,7 @@ impl ContractAddressIntoFelt of Into::<ContractAddress, felt> {
 
 // Events.
 extern fn emit_event_syscall(
-    keys: Array::<felt>, data: Array::<felt>
+    keys: Queue::<felt>, data: Queue::<felt>
 ) -> SyscallResult::<()> implicits(GasBuiltin, System) nopanic;
 
 // Getters.
@@ -133,7 +133,7 @@ impl StorageAccessBool of StorageAccess::<bool> {
 }
 
 impl StorageAccessU8 of StorageAccess::<u8> {
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u8, Array::<felt>> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u8, Queue::<felt>> {
         Result::Ok(
             StorageAccess::<felt>::read(
                 address_domain, base
@@ -143,7 +143,7 @@ impl StorageAccessU8 of StorageAccess::<u8> {
     #[inline(always)]
     fn write(
         address_domain: felt, base: StorageBaseAddress, value: u8
-    ) -> Result::<(), Array::<felt>> {
+    ) -> Result::<(), Queue::<felt>> {
         StorageAccess::<felt>::write(address_domain, base, value.into())
     }
 }
@@ -182,7 +182,7 @@ impl StorageAccessU256 of StorageAccess::<u256> {
 }
 
 /// The result type for a syscall.
-type SyscallResult<T> = Result::<T, Array::<felt>>;
+type SyscallResult<T> = Result::<T, Queue::<felt>>;
 
 trait SyscallResultTrait<T> {
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with the revert reason.

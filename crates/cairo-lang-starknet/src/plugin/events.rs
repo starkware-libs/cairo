@@ -90,9 +90,9 @@ pub fn handle_event(
                     "
     $attrs$
     $declaration$ {{
-        let mut __keys = array_new();
-        array_append(ref __keys, {event_key});
-        let mut __data = array_new();
+        let mut __keys = queue_new();
+        queue_append(ref __keys, {event_key});
+        let mut __data = queue_new();
         $param_serializations$
         starknet::emit_event_syscall(__keys, __data).unwrap_syscall()
     }}

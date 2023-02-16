@@ -1,12 +1,12 @@
 use hash::LegacyHash;
-use array::ArrayTrait;
+use queue::QueueTrait;
 use option::OptionTrait;
 
 fn reproduce_bug() {
     match get_gas_all(get_builtin_costs()) {
         Option::Some(_) => {},
         Option::None(_) => {
-            let mut data = ArrayTrait::new();
+            let mut data = QueueTrait::new();
             data.append('OOG');
             panic(data);
         }

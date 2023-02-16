@@ -6,8 +6,8 @@ test_function_lowering
 //! > function
 fn foo(ref x: felt, a: bool) -> felt {
   x = 7;
-  let mut data = array_new::<felt>();
-  array_append::<felt>(ref data, 1);
+  let mut data = queue_new::<felt>();
+  queue_append::<felt>(ref data, 1);
   let y = panic(data);
   5
 }
@@ -28,10 +28,10 @@ Initial refs: v0: core::felt
 Statements:
   (v2: core::felt) <- 7u
     Ref changes: r0 <- v0
-  (v3: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v3: core::queue::Queue::<core::felt>) <- core::queue::queue_new::<core::felt>()
     Ref changes: r0 <- v2
   (v4: core::felt) <- 1u
-  (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v3, v4)
+  (v5: core::queue::Queue::<core::felt>) <- core::queue::queue_append::<core::felt>(v3, v4)
 End:
   Panic(v2, v5)
 
@@ -40,9 +40,9 @@ blk0 (root):
 Inputs: v0: core::felt, v1: core::bool
 Statements:
   (v2: core::felt) <- 7u
-  (v3: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v3: core::queue::Queue::<core::felt>) <- core::queue::queue_new::<core::felt>()
   (v4: core::felt) <- 1u
-  (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v3, v4)
+  (v5: core::queue::Queue::<core::felt>) <- core::queue::queue_append::<core::felt>(v3, v4)
   (v6: core::PanicResult::<core::felt>) <- PanicResult::Err(v5)
 End:
   Return(v2, v6)
@@ -65,8 +65,8 @@ foo
 
 //! > module_code
 fn bar(ref a: bool) -> felt {
-  let mut data = array_new::<felt>();
-  array_append::<felt>(ref data, 1);
+  let mut data = queue_new::<felt>();
+  queue_append::<felt>(ref data, 1);
   let y = panic(data);
   5
 }
@@ -149,7 +149,7 @@ End:
   Callsite({v12 -> v9})
 
 blk4:
-Inputs: v13: core::array::Array::<core::felt>
+Inputs: v13: core::queue::Queue::<core::felt>
 Statements:
   (v15: core::PanicResult::<core::felt>) <- PanicResult::Err(v13)
 End:
