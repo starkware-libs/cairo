@@ -795,6 +795,8 @@ fn u256_wide_mul(a: u256, b: u256) -> (u256, u256) implicits(RangeCheck) {
 	a3 * b12 + a2 * b_high + a1 * b3 + u128_to_felt(res2.high)
     );
 
+    //guaranteed to fit in a u128, thus the check isn't necessary
+    //but felt_to_u128_unsafe doesn't exist
     let res8 = u128_try_from_felt(a3 * b3 + u128_to_felt(res4.high)).unwrap();
     // let (res6, carry) = split_64(a3 * b3 + carry);
 
