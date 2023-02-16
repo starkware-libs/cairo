@@ -33,14 +33,14 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Fallthrough(blk1, {})
 
 blk1:
 Inputs:
 Statements:
   (v2: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(2, {})
+  Fallthrough(blk2, {})
 
 blk2:
 Inputs:
@@ -48,14 +48,14 @@ Statements:
   (v3: core::felt) <- test::revoke_ap()
   (v4: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(3, {})
+  Fallthrough(blk3, {})
 
 blk3:
 Inputs:
 Statements:
   (v5: core::felt) <- core::felt_add(v1, v2)
 End:
-  Fallthrough(4, {})
+  Fallthrough(blk4, {})
 
 blk4:
 Inputs:
@@ -63,7 +63,7 @@ Statements:
   (v6: core::felt) <- test::revoke_ap()
   (v7: core::felt) <- core::felt_add(v1, v4)
 End:
-  Fallthrough(5, {})
+  Fallthrough(blk5, {})
 
 blk5:
 Inputs:
