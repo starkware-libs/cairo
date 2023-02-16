@@ -18,8 +18,7 @@ pub fn build_protostar_casm(named_tests: Option<Vec<String>>, contents: &str) ->
   Ok(res)
 }
 
-pub fn build_protostar_casm_from_file(named_tests: Option<Vec<String>>, input_path: String, maybe_output_path: Option<String>) -> anyhow::Result<Option<String>> {
-  let sierra_code = fs::read_to_string(input_path).expect("Could not read file!");
+pub fn build_protostar_casm_from_sierra(named_tests: Option<Vec<String>>, sierra_code: String, maybe_output_path: Option<String>) -> anyhow::Result<Option<String>> {
   let casm_contents = build_protostar_casm(named_tests, &sierra_code[..])?;
 
   if let Some(output_path) = maybe_output_path {
@@ -27,4 +26,9 @@ pub fn build_protostar_casm_from_file(named_tests: Option<Vec<String>>, input_pa
     return Ok(None);
   }
   Ok(Some(casm_contents))
+}
+
+pub fn build_protostar_casm_from_path(named_tests: Option<Vec<String>>, input_path: String, maybe_output_path: Option<String>) -> anyhow::Result<Option<String>> {
+  let sierra_code = fs::read_to_string(input_path).expect("Could not read file!");
+  build_protostar_casm_from_sierra(named_tests, sierra_code, maybe_output_path)
 }
