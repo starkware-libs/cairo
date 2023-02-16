@@ -69,6 +69,7 @@ fn test_full_contract_deseralization(example_file_name: &str) {
 }
 
 #[test_case("test_contract")]
+#[test_case("minimal_contract")]
 #[test_case("hello_starknet")]
 #[test_case("erc20")]
 fn test_compile_path(example_file_name: &str) {
