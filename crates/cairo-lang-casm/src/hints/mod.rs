@@ -157,6 +157,11 @@ pub enum Hint {
         result: CellRef,
         error_code: CellRef,
     },
+    StartPrank {
+        caller_address: ResOperand,
+        target_contract_address: ResOperand,
+        error_code: CellRef,
+    },
     /// Prints the values from start to end.
     /// Both must be pointers.
     DebugPrint {
@@ -329,6 +334,16 @@ impl Display for Hint {
                     "
 
                         memory{dst} = roll(address={address}, caller_address={caller_address}); 
+                        
+                    "
+                )
+            }
+            Hint::StartPrank { caller_address, target_contract_address , error_code} => {
+                writedoc!(
+                    f,
+                    "
+
+                    memory{error_code} = start_prank(caller_address={caller_address}, target_contract_address={target_contract_address}); 
                         
                     "
                 )

@@ -10,6 +10,7 @@ define_libfunc_hierarchy! {
     pub enum CheatcodesLibFunc {
         Roll(RollLibFunc),
         Declare(DeclareLibFunc),
+        StartPrank(StartPrankLibFunc),
     }, CheatcodesConcreteLibFunc
 }
 
@@ -82,6 +83,48 @@ impl NoGenericArgsGenericLibfunc for RollLibFunc {
                     vars: vec![],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                BranchSignature {
+                    vars: vec![
+                        // Error reason
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+
+/// LibFunc for creating a new array.
+#[derive(Default)]
+pub struct StartPrankLibFunc {}
+impl NoGenericArgsGenericLibfunc for StartPrankLibFunc {
+    const STR_ID: &'static str = "start_prank";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // caller_address
+                ParamSignature::new(felt_ty.clone()),
+                // target_contract_address
+                ParamSignature::new(felt_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success branch
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Failure branch
                 BranchSignature {
                     vars: vec![
                         // Error reason
