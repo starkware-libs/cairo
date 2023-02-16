@@ -227,7 +227,7 @@ impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
         Ok(LibfuncSignature {
             param_signatures: vec![enum_type.into()],
             branch_signatures,
-            fallthrough: None,
+            fallthrough: Some(0),
         })
     }
 }

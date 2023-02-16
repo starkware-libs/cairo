@@ -91,19 +91,18 @@ struct_construct<Unit>() -> ([4])
 enum_init<core::bool, 1>([4]) -> ([5])
 store_temp<core::bool>([5]) -> ([5])
 store_local<felt>([1], [0]) -> ([0])
-enum_match<core::bool>([5]) { label1([6]) label2([7]) }
-label1:
+enum_match<core::bool>([5]) { fallthrough([6]) label1([7]) }
 branch_align() -> ()
 drop<Unit>([6]) -> ()
 function_call<user@test::revoke_ap>() -> ([8])
 rename<felt>([8]) -> ([2])
-jump() { label3() }
-label2:
+jump() { label2() }
+label1:
 branch_align() -> ()
 drop<Unit>([7]) -> ()
 felt_const<1>() -> ([9])
 store_temp<felt>([9]) -> ([2])
-label3:
+label2:
 store_local<felt>([3], [2]) -> ([2])
 function_call<user@test::revoke_ap>() -> ([10])
 drop<felt>([10]) -> ()
