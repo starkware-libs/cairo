@@ -17,9 +17,7 @@ mod TestContract {
     }
 
     #[view]
-    fn get_appended_array(arr: Array::<felt>) -> Array::<felt> {
-        // `mut` is currently not allowed in the signature.
-        let mut arr = arr;
+    fn get_appended_array(mut arr: Array::<felt>) -> Array::<felt> {
         let elem = arr.len().into();
         arr.append(elem);
         arr
