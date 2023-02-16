@@ -1,0 +1,29 @@
+//! > u16 to u64 upcast
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+fn foo(a: u16) -> u64 {
+    upcast(a)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type u16 = u16;
+type u64 = u64;
+
+libfunc upcast<u16, u64> = upcast<u16, u64>;
+libfunc store_temp<u64> = store_temp<u64>;
+
+upcast<u16, u64>([0]) -> ([1]);
+store_temp<u64>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: u16) -> (u64);

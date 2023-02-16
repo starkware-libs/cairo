@@ -971,3 +971,7 @@ impl U128TryIntoU64 of TryInto::<u128, u64> {
         as_felt.try_into()
     }
 }
+
+// TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
+//   will not lead to Sierra errors.
+extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
