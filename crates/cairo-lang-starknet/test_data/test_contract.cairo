@@ -23,9 +23,6 @@ mod TestContract {
     }
 
     #[external]
-    fn empty() {}
-
-    #[external]
     fn call_foo(another_contract_address: ContractAddress, a: u128) -> u128 {
         super::IAnotherContractDispatcher::foo(another_contract_address, a)
     }

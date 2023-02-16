@@ -5,6 +5,7 @@ use crate::casm_contract_class::CasmContractClass;
 use crate::test_utils::{get_example_file_path, get_test_contract};
 
 #[test_case("test_contract")]
+#[test_case("minimal_contract")]
 #[test_case("hello_starknet")]
 #[test_case("erc20")]
 fn test_casm_contract_from_contract_class(example_file_name: &str) {
