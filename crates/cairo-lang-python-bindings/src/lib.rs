@@ -184,6 +184,14 @@ fn call_protostar_sierra_to_casm(named_tests: Vec<String>, input_data: String, o
     Ok(casm)
 }
 
+#[pyfunction]
+fn call_protostar_sierra_to_casm_from_path(named_tests: Vec<String>, input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
+    let casm = build_protostar_casm_from_file(Some(named_tests), input_path.to_string(), output_path.map(|s| s.to_string()))
+        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
+
+    Ok(casm)
+}
+
 #[pymodule]
 fn cairo_python_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(call_cairo_to_sierra_compiler))?;
@@ -192,5 +200,6 @@ fn cairo_python_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(call_starknet_contract_compiler))?;
     m.add_wrapped(wrap_pyfunction!(call_test_collector))?;
     m.add_wrapped(wrap_pyfunction!(call_protostar_sierra_to_casm))?;
+    m.add_wrapped(wrap_pyfunction!(call_protostar_sierra_to_casm_from_path))?;
     Ok(())
 }
