@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::collections::HashSet;
 
+use cairo_lang_protostar::build_protostar_casm_from_sierra;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use pyo3::exceptions::RuntimeError;
@@ -36,7 +37,7 @@ use cairo_lang_diagnostics::ToOption;
 mod find_tests;
 
 use find_tests::find_all_tests;
-use cairo_lang_protostar::build_protostar_casm_from_file;
+use cairo_lang_protostar::build_protostar_casm_from_path;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::functions::ConcreteFunctionWithBodyId;
@@ -177,8 +178,16 @@ fn call_test_collector(path: &str, output_path: Option<&str>, maybe_cairo_paths:
 }
 
 #[pyfunction]
-fn call_protostar_sierra_to_casm(named_tests: Vec<String>, input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
-    let casm = build_protostar_casm_from_file(Some(named_tests), input_path.to_string(), output_path.map(|s| s.to_string()))
+fn call_protostar_sierra_to_casm(named_tests: Vec<String>, input_data: String, output_path: Option<&str>) -> PyResult<Option<String>> {
+    let casm = build_protostar_casm_from_sierra(Some(named_tests), input_data, output_path.map(|s| s.to_string()))
+        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
+
+    Ok(casm)
+}
+
+#[pyfunction]
+fn call_protostar_sierra_to_casm_from_path(named_tests: Vec<String>, input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
+    let casm = build_protostar_casm_from_path(Some(named_tests), input_path.to_string(), output_path.map(|s| s.to_string()))
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
 
     Ok(casm)
@@ -192,5 +201,6 @@ fn cairo_python_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(call_starknet_contract_compiler))?;
     m.add_wrapped(wrap_pyfunction!(call_test_collector))?;
     m.add_wrapped(wrap_pyfunction!(call_protostar_sierra_to_casm))?;
+    m.add_wrapped(wrap_pyfunction!(call_protostar_sierra_to_casm_from_path))?;
     Ok(())
 }
