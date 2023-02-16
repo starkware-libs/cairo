@@ -1,4 +1,5 @@
 use super::range_check::RangeCheckType;
+use super::snapshot::SnapshotType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -80,19 +81,14 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty)?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty)?;
+        let snapshot_ty = context.get_wrapped_concrete_type(SnapshotType::id(), arr_ty)?;
         Ok(LibfuncSignature::new_non_branch(
-            vec![arr_type.clone()],
-            vec![
-                OutputVarInfo {
-                    ty: arr_type,
-                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-                },
-                OutputVarInfo {
-                    ty: context.get_concrete_type(ArrayIndexType::id(), &[])?,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                },
-            ],
+            vec![snapshot_ty],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(ArrayIndexType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
             SierraApChange::Known { new_vars_only: true },
         ))
     }

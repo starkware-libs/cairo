@@ -92,7 +92,7 @@ pub fn generate_entry_point_wrapper(
                 }},
             }}
             {arg_definitions}
-            if !array::ArrayTrait::is_empty(ref data) {{
+            if !array::ArrayTrait::is_empty(@data) {{
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

@@ -21,8 +21,8 @@ libfunc struct_deconstruct<Tuple<felt, felt>> = struct_deconstruct<Tuple<felt, f
 libfunc rename<Tuple<felt, felt>> = rename<Tuple<felt, felt>>;
 
 revoke_ap_tracking() -> ();
-dup<felt>([2]) -> ([2], [3]);
-felt_is_zero([3]) { fallthrough() 10([4]) };
+dup<felt>([2]) -> ([2], [4]);
+felt_is_zero([4]) { fallthrough() 10([3]) };
 branch_align() -> ();
 drop<felt>([1]) -> ();
 drop<felt>([2]) -> ();
@@ -31,7 +31,7 @@ struct_construct<Tuple<felt, felt>>([0], [5]) -> ([6]);
 store_temp<Tuple<felt, felt>>([6]) -> ([7]);
 jump() { 25() };
 branch_align() -> ();
-drop<NonZero<felt>>([4]) -> ();
+drop<NonZero<felt>>([3]) -> ();
 dup<felt>([1]) -> ([1], [9]);
 felt_add([0], [9]) -> ([8]);
 felt_const<1>() -> ([10]);
