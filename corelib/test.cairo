@@ -2,6 +2,7 @@ use array::ArrayTrait;
 use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
+use hash::LegacyHash;
 
 #[test]
 #[should_panic]
@@ -166,6 +167,7 @@ fn test_felt_operators() {
     assert(1231 - 231 == 1000, '1231-231=1000');
     assert(1 * 3 == 3, '1 * 3 == 3');
     assert(3 * 6 == 18, '3 * 6 == 18');
+    assert(-3 == 1 - 4, '-3 == 1 - 4');
     assert(1 < 4, '1 < 4');
     assert(1 <= 4, '1 <= 4');
     assert(!(4 < 4), '!(4 < 4)');
@@ -821,6 +823,12 @@ fn test_array_out_of_bound_2() {
 #[test]
 fn test_dict_new() -> DictFeltTo::<felt> {
     DictFeltToTrait::new()
+}
+
+#[test]
+fn test_dict_squash_empty() {
+    let mut dict: DictFeltTo::<felt> = DictFeltToTrait::new();
+    let squashed_dict = dict.squash();
 }
 
 #[test]

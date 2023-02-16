@@ -1,0 +1,29 @@
+//! > Test that a variable is dropped if it is unused after taking its snapshot.
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(a: felt) -> @felt {
+   @a
+}
+
+//! > module_code
+
+//! > lowering_format
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: @core::felt) <- snapshot(v0)
+End:
+  Return(v1)
+
+//! > last_use
+v1: ((BlockId(0), 1), 0)
+v0: ((BlockId(0), 0), 0)
+
+//! > drops
+PostStatement((BlockId(0), 0)): v0

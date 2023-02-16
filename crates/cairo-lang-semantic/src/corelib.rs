@@ -264,24 +264,22 @@ pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> 
 
 pub fn core_unary_operator(
     db: &dyn SemanticGroup,
+    inference: &mut Inference<'_>,
     unary_op: &UnaryOperator,
-    ty: TypeId,
-) -> Result<FunctionId, SemanticDiagnosticKind> {
-    let felt_ty = core_felt_ty(db);
-    let bool_ty = core_bool_ty(db);
-    let unsupported_operator =
-        |op: &str| Err(SemanticDiagnosticKind::UnsupportedUnaryOperator { op: op.into(), ty });
-
-    let function_name = match unary_op {
-        UnaryOperator::Minus(_) if ty == felt_ty => "felt_neg",
-        UnaryOperator::Minus(_) => return unsupported_operator("-"),
-
-        UnaryOperator::Not(_) if ty == bool_ty => "bool_not",
-        UnaryOperator::Not(_) => return unsupported_operator("!"),
-
+    stable_ptr: SyntaxStablePtrId,
+) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
+    let (trait_name, function_name) = match unary_op {
+        UnaryOperator::Minus(_) => ("Neg", "neg"),
+        UnaryOperator::Not(_) => ("Not", "not"),
         UnaryOperator::At(_) => unreachable!("@ is not an unary operator."),
     };
-    Ok(get_core_function_id(db, function_name.into(), vec![]))
+    Ok(Ok(get_core_trait_function_infer(
+        db,
+        inference,
+        trait_name.into(),
+        function_name.into(),
+        stable_ptr,
+    )))
 }
 
 pub fn core_binary_operator(

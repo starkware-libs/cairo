@@ -8,7 +8,7 @@ use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
 };
 
-/// Builds instructions for StarkNet getter system call that return a result of size 1.
+/// Builds instructions for Starknet getter system call that return a result of size 1.
 pub fn build_getter(
     builder: CompiledInvocationBuilder<'_>,
     selector: &str,

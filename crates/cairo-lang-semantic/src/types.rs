@@ -212,6 +212,15 @@ impl ConcreteStructId {
         db.lookup_intern_concrete_struct(*self).struct_id
     }
 }
+impl DebugWithDb<dyn SemanticGroup> for ConcreteStructLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{:?}", ConcreteTypeId::Struct(db.intern_concrete_struct(self.clone())).debug(db))
+    }
+}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteEnumLongId {
@@ -480,4 +489,25 @@ pub fn type_info(
         }
         TypeLongId::Snapshot(_) => TypeInfo { droppable: true, duplicatable: true },
     })
+}
+
+/// Peels all wrapping Snapshot (`@`) from the type.
+/// Returns the number of peeled snapshots and the inner type.
+pub fn peel_snapshots(db: &dyn SemanticGroup, ty: TypeId) -> (usize, TypeLongId) {
+    let mut long_ty = db.lookup_intern_type(ty);
+    let mut n_snapshots = 0;
+    while let TypeLongId::Snapshot(ty) = long_ty {
+        long_ty = db.lookup_intern_type(ty);
+        n_snapshots += 1;
+    }
+    (n_snapshots, long_ty)
+}
+
+/// Wraps a type with Snapshot (`@`) `n_snapshots` times.
+pub fn wrap_in_snapshots(db: &dyn SemanticGroup, ty: TypeId, n_snapshots: usize) -> TypeId {
+    let mut ty = ty;
+    for _ in 0..n_snapshots {
+        ty = db.intern_type(TypeLongId::Snapshot(ty));
+    }
+    ty
 }

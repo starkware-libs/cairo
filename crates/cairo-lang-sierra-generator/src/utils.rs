@@ -1,8 +1,11 @@
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::LibfuncSignature;
-use cairo_lang_sierra::extensions::GenericLibfuncEx;
+use cairo_lang_sierra::extensions::snapshot::SnapshotType;
+use cairo_lang_sierra::extensions::{GenericLibfuncEx, NamedType};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
+use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
 use num_bigint::BigInt;
 use semantic::corelib::get_const_libfunc_name_by_type;
@@ -85,8 +88,19 @@ pub fn struct_construct_libfunc_id(
 pub fn struct_deconstruct_libfunc_id(
     db: &dyn SierraGenGroup,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,
-) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    get_libfunc_id_with_generic_arg(db, "struct_deconstruct", ty)
+) -> Maybe<cairo_lang_sierra::ids::ConcreteLibfuncId> {
+    let long_id = &db.get_type_info(ty.clone())?.long_id;
+    let is_snapshot = long_id.generic_id == SnapshotType::id();
+    Ok(if is_snapshot {
+        let concrete_enum_type = extract_matches!(
+            &long_id.generic_args[0],
+            cairo_lang_sierra::program::GenericArg::Type
+        )
+        .clone();
+        get_libfunc_id_with_generic_arg(db, "struct_snapshot_deconstruct", concrete_enum_type)
+    } else {
+        get_libfunc_id_with_generic_arg(db, "struct_deconstruct", ty)
+    })
 }
 
 pub fn enum_init_libfunc_id(
@@ -151,8 +165,19 @@ pub fn const_libfunc_id_by_type(
 pub fn match_enum_libfunc_id(
     db: &dyn SierraGenGroup,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,
-) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    get_libfunc_id_with_generic_arg(db, "enum_match", ty)
+) -> Maybe<cairo_lang_sierra::ids::ConcreteLibfuncId> {
+    let long_id = &db.get_type_info(ty.clone())?.long_id;
+    let is_snapshot = long_id.generic_id == SnapshotType::id();
+    Ok(if is_snapshot {
+        let concrete_enum_type = extract_matches!(
+            &long_id.generic_args[0],
+            cairo_lang_sierra::program::GenericArg::Type
+        )
+        .clone();
+        get_libfunc_id_with_generic_arg(db, "enum_snapshot_match", concrete_enum_type)
+    } else {
+        get_libfunc_id_with_generic_arg(db, "enum_match", ty)
+    })
 }
 
 pub fn drop_libfunc_id(
@@ -291,6 +316,12 @@ pub fn statement_outputs(
             let blocks = arms.iter().map(|(_, block)| *block).collect_vec();
             collect_outputs(lowered_function, &blocks)
         }
+        // The input to Statement::Snapshot is not consumed.
+        // The lowering and sierra-gen model this in different ways.
+        // In sierra, the input is also an output.
+        // in the lowering phases Snapshot is treated as non-consuming so stmt.input is not part of
+        // `statement.outputs()`.
+        lowering::Statement::Snapshot(stmt) => vec![stmt.input, stmt.output],
         _ => statement.outputs(),
     }
 }
