@@ -248,3 +248,25 @@ error: Type annotation needed.
  --> lib.cairo:20:17
    MyTrait::foo(Option::None(()));
                 ^****^
+
+//! > ==========================================================================
+
+//! > Test dot_expr inference.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo(my_box: Box::<MyStruct>) -> felt {
+   box::unbox(my_box).a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+   a: felt
+}
+
+//! > expected_diagnostics

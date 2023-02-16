@@ -1406,7 +1406,7 @@ fn member_access_expr(
 
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, lexpr.ty());
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ctx.reduce_ty(lexpr.ty()));
     match long_ty {
         TypeLongId::Concrete(concrete) => match concrete {
             ConcreteTypeId::Struct(concrete_struct_id) => {
