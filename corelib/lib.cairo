@@ -364,6 +364,10 @@ use gas::get_builtin_costs;
 use gas::get_gas;
 use gas::get_gas_all;
 
+// Span
+mod span;
+use span::Span;
+
 // Panics.
 enum PanicResult<T> {
     Ok: T,
