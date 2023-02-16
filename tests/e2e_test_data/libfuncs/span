@@ -1,0 +1,34 @@
+//! > init enum with a single variant
+
+//! > test_function_name
+run_small_e2e_test
+
+//! > cairo
+use span::SpanTrait;
+use span::SpanImpl;
+
+fn foo(a: Span::<felt>) -> usize {
+    a.len()
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type felt = felt;
+type Array<felt> = Array<felt>;
+type Snapshot<Array<felt>> = Snapshot<Array<felt>>;
+type u32 = u32;
+
+libfunc array_len<felt> = array_len<felt>;
+libfunc store_temp<u32> = store_temp<u32>;
+
+array_len<felt>([0]) -> ([1]);
+store_temp<u32>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: Snapshot<Array<felt>>) -> (u32);
