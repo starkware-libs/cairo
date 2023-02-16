@@ -504,8 +504,7 @@ pub fn peel_snapshots(db: &dyn SemanticGroup, ty: TypeId) -> (usize, TypeLongId)
 }
 
 /// Wraps a type with Snapshot (`@`) `n_snapshots` times.
-pub fn wrap_in_snapshots(db: &dyn SemanticGroup, ty: TypeId, n_snapshots: usize) -> TypeId {
-    let mut ty = ty;
+pub fn wrap_in_snapshots(db: &dyn SemanticGroup, mut ty: TypeId, n_snapshots: usize) -> TypeId {
     for _ in 0..n_snapshots {
         ty = db.intern_type(TypeLongId::Snapshot(ty));
     }
