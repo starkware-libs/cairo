@@ -30,7 +30,7 @@ Statements:
   }
   (v1: core::felt) <- 0u
 End:
-  Fallthrough(1, {})
+  Fallthrough(blk1, {})
 
 blk1:
 Inputs:
@@ -43,7 +43,7 @@ Inputs:
 Statements:
   (v2: core::felt) <- 1u
 End:
-  Goto(1, {v2 -> v1})
+  Goto(blk1, {v2 -> v1})
 
 blk3:
 Inputs: v3: core::NonZero::<core::felt>
@@ -97,7 +97,7 @@ Statements:
   }
   (v3: core::felt) <- 0u
 End:
-  Fallthrough(3, {})
+  Fallthrough(blk3, {})
 
 blk1:
 Inputs: v4: core::NonZero::<core::felt>
@@ -111,7 +111,7 @@ Statements:
   (v1: core::felt) <- 2u
   (v2: core::felt) <- core::felt_sub(v0, v1)
 End:
-  Fallthrough(6, {})
+  Fallthrough(blk6, {})
 
 blk3:
 Inputs:
@@ -124,7 +124,7 @@ Inputs:
 Statements:
   (v6: core::felt) <- 1u
 End:
-  Goto(3, {v6 -> v3})
+  Goto(blk3, {v6 -> v3})
 
 blk5:
 Inputs: v7: core::NonZero::<core::felt>
@@ -196,7 +196,7 @@ Statements:
     IsZeroResult::NonZero => blk3,
   }
 End:
-  Fallthrough(1, {})
+  Fallthrough(blk1, {})
 
 blk1:
 Inputs:
@@ -215,7 +215,7 @@ Inputs: v4: core::NonZero::<core::felt>
 Statements:
   (v2: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(4, {})
+  Fallthrough(blk4, {})
 
 blk4:
 Inputs:

@@ -35,7 +35,7 @@ Statements:
   (v1: core::felt) <- 4660u
   (v2: core::felt) <- core::felt_add(v1, v0)
 End:
-  Fallthrough(1, {})
+  Fallthrough(blk1, {})
 
 blk1:
 Inputs:
