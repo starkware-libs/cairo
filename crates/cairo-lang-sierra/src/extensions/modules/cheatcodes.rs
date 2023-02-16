@@ -104,7 +104,7 @@ impl NoGenericArgsGenericLibfunc for RollLibFunc {
 #[derive(Default)]
 pub struct StartPrankLibFunc {}
 impl NoGenericArgsGenericLibfunc for StartPrankLibFunc {
-    const STR_ID: &'static str = "cheat_start_prank";
+    const STR_ID: &'static str = "start_prank";
 
     fn specialize_signature(
         &self,
