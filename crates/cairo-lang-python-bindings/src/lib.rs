@@ -177,7 +177,7 @@ fn call_test_collector(path: &str, output_path: Option<&str>, maybe_cairo_paths:
 }
 
 #[pyfunction]
-fn call_protostar_sierra_to_casm(named_tests: Vec<String>, input_path: &str, output_path: Option<&str>) -> PyResult<Option<String>> {
+fn call_protostar_sierra_to_casm(named_tests: Vec<String>, input_data: String, output_path: Option<&str>) -> PyResult<Option<String>> {
     let casm = build_protostar_casm_from_file(Some(named_tests), input_path.to_string(), output_path.map(|s| s.to_string()))
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
 
