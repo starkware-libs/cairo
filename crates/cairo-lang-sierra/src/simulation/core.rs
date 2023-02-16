@@ -7,11 +7,10 @@ use num_traits::{ToPrimitive, Zero};
 
 use super::value::CoreValue;
 use super::LibfuncSimulationError;
-use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt, FunctionCall,
-    Gas, Mem, Struct, Uint128, Uint16, Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt, FunctionCall, Gas,
+    Mem, Queue, Struct, Uint128, Uint16, Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use crate::extensions::ec::EcConcreteLibfunc;
@@ -25,6 +24,7 @@ use crate::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
+use crate::extensions::queue::QueueConcreteLibfunc;
 use crate::extensions::structure::StructConcreteLibfunc;
 use crate::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
@@ -131,58 +131,58 @@ pub fn simulate<
             get_statement_gas_info().ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
             Ok((vec![], 0))
         }
-        Array(ArrayConcreteLibfunc::New(_)) => {
+        Queue(QueueConcreteLibfunc::New(_)) => {
             if inputs.is_empty() {
-                Ok((vec![CoreValue::Array(vec![])], 0))
+                Ok((vec![CoreValue::Queue(vec![])], 0))
             } else {
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        Array(ArrayConcreteLibfunc::Append(_)) => match &inputs[..] {
-            [CoreValue::Array(_), _] => {
+        Queue(QueueConcreteLibfunc::Append(_)) => match &inputs[..] {
+            [CoreValue::Queue(_), _] => {
                 let mut iter = inputs.into_iter();
-                let mut arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
-                arr.push(iter.next().unwrap());
-                Ok((vec![CoreValue::Array(arr)], 0))
+                let mut q = extract_matches!(iter.next().unwrap(), CoreValue::Queue);
+                q.push(iter.next().unwrap());
+                Ok((vec![CoreValue::Queue(q)], 0))
             }
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Array(ArrayConcreteLibfunc::PopFront(_)) => match &inputs[..] {
-            [CoreValue::Array(_)] => {
+        Queue(QueueConcreteLibfunc::PopFront(_)) => match &inputs[..] {
+            [CoreValue::Queue(_)] => {
                 let mut iter = inputs.into_iter();
-                let mut arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
-                if arr.is_empty() {
-                    Ok((vec![CoreValue::Array(arr)], 1))
+                let mut q = extract_matches!(iter.next().unwrap(), CoreValue::Queue);
+                if q.is_empty() {
+                    Ok((vec![CoreValue::Queue(q)], 1))
                 } else {
-                    let front = arr.remove(0);
-                    Ok((vec![CoreValue::Array(arr), front], 0))
+                    let front = q.remove(0);
+                    Ok((vec![CoreValue::Queue(q), front], 0))
                 }
             }
             [_] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Array(ArrayConcreteLibfunc::Get(_)) => match &inputs[..] {
-            [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint64(_)] => {
+        Queue(QueueConcreteLibfunc::Get(_)) => match &inputs[..] {
+            [CoreValue::RangeCheck, CoreValue::Queue(_), CoreValue::Uint64(_)] => {
                 let mut iter = inputs.into_iter();
                 iter.next(); // Ignore range check.
-                let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
+                let q = extract_matches!(iter.next().unwrap(), CoreValue::Queue);
                 let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint64) as usize;
-                match arr.get(idx).cloned() {
+                match q.get(idx).cloned() {
                     Some(element) => {
-                        Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr), element], 0))
+                        Ok((vec![CoreValue::RangeCheck, CoreValue::Queue(q), element], 0))
                     }
-                    None => Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr)], 1)),
+                    None => Ok((vec![CoreValue::RangeCheck, CoreValue::Queue(q)], 1)),
                 }
             }
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Array(ArrayConcreteLibfunc::Len(_)) => match &inputs[..] {
-            [CoreValue::Array(_)] => {
-                let arr = extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Array);
-                let len = arr.len();
-                Ok((vec![CoreValue::Array(arr), CoreValue::Uint64(len as u64)], 0))
+        Queue(QueueConcreteLibfunc::Len(_)) => match &inputs[..] {
+            [CoreValue::Queue(_)] => {
+                let q = extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Queue);
+                let len = q.len();
+                Ok((vec![CoreValue::Queue(q), CoreValue::Uint64(len as u64)], 0))
             }
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
@@ -309,9 +309,9 @@ pub fn simulate<
         }
         CoreConcreteLibfunc::Debug(_) => {
             if inputs.len() == 1 {
-                let arr = extract_matches!(&inputs[0], CoreValue::Array);
+                let q = extract_matches!(&inputs[0], CoreValue::Queue);
                 let mut bytes = Vec::new();
-                for limb in arr {
+                for limb in q {
                     let limb = extract_matches!(limb, CoreValue::Felt);
                     // TODO(spapini): What to do with the sign?
                     let (_sign, limb_bytes) = limb.to_bytes_be();

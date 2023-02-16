@@ -35,7 +35,7 @@ mod IContractDispatcher {
     use option::OptionTraitImpl;
 
     fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
-        let mut calldata = array_new();
+        let mut calldata = queue_new();
         serde::Serde::<felt>::serialize(ref calldata, arg);
         serde::Serde::<felt>::serialize(ref calldata, num);
 
@@ -49,7 +49,7 @@ mod IContractDispatcher {
     }
 
     fn empty(contract_address: ContractAddress, ) {
-        let mut calldata = array_new();
+        let mut calldata = queue_new();
 
         let mut ret_data = starknet::call_contract_syscall(
             contract_address,

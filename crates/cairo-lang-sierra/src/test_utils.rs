@@ -19,8 +19,8 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("Option".into(), as_named_type_long_id("Enum", "Option", &["felt", "Tuple<>"]));
     elements.insert("NonZeroFelt".into(), as_type_long_id("NonZero", &["felt"]));
     elements.insert("NonZeroU128".into(), as_type_long_id("NonZero", &["u128"]));
-    elements.insert("ArrayFelt".into(), as_type_long_id("Array", &["felt"]));
-    elements.insert("ArrayU128".into(), as_type_long_id("Array", &["u128"]));
+    elements.insert("QueueFelt".into(), as_type_long_id("Queue", &["felt"]));
+    elements.insert("QueueU128".into(), as_type_long_id("Queue", &["u128"]));
     elements.insert("UninitializedFelt".into(), as_type_long_id("Uninitialized", &["felt"]));
     elements.insert("Uninitializedu128".into(), as_type_long_id("Uninitialized", &["u128"]));
     elements.insert("GasBuiltin".into(), as_type_long_id("GasBuiltin", &[]));
@@ -30,7 +30,7 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("StorageAddress".into(), as_type_long_id("StorageAddress", &[]));
     elements.insert("ContractAddress".into(), as_type_long_id("ContractAddress", &[]));
     elements.insert("SnapshotRangeCheck".into(), as_type_long_id("Snapshot", &["RangeCheck"]));
-    elements.insert("SnapshotArrayU128".into(), as_type_long_id("Snapshot", &["ArrayU128"]));
+    elements.insert("SnapshotQueueU128".into(), as_type_long_id("Snapshot", &["QueueU128"]));
     elements.insert(
         "NonDupStruct".into(),
         as_named_type_long_id("Struct", "NonDupStruct", &["felt", "RangeCheck"]),

@@ -116,7 +116,7 @@ fn build_get_builtin_costs(
         // After calling an empty function, `[ap - 1]` contains the current `pc`.
         // Using the relocations below, the immediate value (`1`) will be changed so that it will
         // compute a pointer to the second cell after the end of the program, which will contain
-        // the pointer to the builtin cost array.
+        // the pointer to the builtin cost queue.
         [ap] = [ap - 1] + 1, ap++;
     };
     let relocations = vec![

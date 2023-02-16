@@ -11,7 +11,7 @@ cairo_lang_test_utils::test_file_test!(
     libfunc_e2e,
     "e2e_test_data/libfuncs",
     {
-        array: "array",
+        queue: "queue",
         snapshot: "snapshot",
         bitwise: "bitwise",
         box_: "box",

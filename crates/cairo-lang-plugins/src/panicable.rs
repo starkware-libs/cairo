@@ -116,8 +116,8 @@ fn generate_panicable_code(
                                 v
                             }},
                             {failure_variant} (v) => {{
-                                let mut data = array_new::<felt>();
-                                array_append::<felt>(ref data, {err_value});
+                                let mut data = queue_new::<felt>();
+                                queue_append::<felt>(ref data, {err_value});
                                 panic(data)
                             }},
                         }}

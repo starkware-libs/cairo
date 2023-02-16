@@ -1,12 +1,11 @@
-use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
 };
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup,
-    Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16, Uint32, Uint64,
+    self, ApTracking, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup, Ec,
+    Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Queue, Struct, Uint128, Uint16, Uint32, Uint64,
     Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
@@ -19,6 +18,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
+use cairo_lang_sierra::extensions::queue::QueueConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
@@ -213,12 +213,12 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 )
             }]
         }
-        Array(ArrayConcreteLibfunc::New(_)) => vec![ops.steps(1)],
-        Array(ArrayConcreteLibfunc::Append(libfunc)) => {
+        Queue(QueueConcreteLibfunc::New(_)) => vec![ops.steps(1)],
+        Queue(QueueConcreteLibfunc::Append(libfunc)) => {
             vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
         }
-        Array(ArrayConcreteLibfunc::PopFront(_)) => vec![ops.steps(2), ops.steps(3)],
-        Array(ArrayConcreteLibfunc::Get(libfunc)) => {
+        Queue(QueueConcreteLibfunc::PopFront(_)) => vec![ops.steps(2), ops.steps(3)],
+        Queue(QueueConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![
                     ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
@@ -231,7 +231,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 ]
             }
         }
-        Array(ArrayConcreteLibfunc::Len(libfunc)) => {
+        Queue(QueueConcreteLibfunc::Len(libfunc)) => {
             vec![ops.steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
         }
         Uint128(libfunc) => u128_libfunc_cost(ops, libfunc),

@@ -1,4 +1,4 @@
-use array::ArrayTrait;
+use queue::QueueTrait;
 
 enum Option<T> {
     Some: T,
@@ -19,7 +19,7 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
         match self {
             Option::Some(x) => x,
             Option::None(()) => {
-                let mut data = ArrayTrait::new();
+                let mut data = QueueTrait::new();
                 data.append(err);
                 panic(data)
             },

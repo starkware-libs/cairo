@@ -1,4 +1,3 @@
-use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::builtin_cost::{
@@ -12,6 +11,7 @@ use cairo_lang_sierra::extensions::felt::FeltConcrete;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
+use cairo_lang_sierra::extensions::queue::QueueConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
@@ -39,16 +39,16 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
 ) -> Vec<ApChange> {
     match libfunc {
         CoreConcreteLibfunc::ApTracking(_) => vec![ApChange::Unknown],
-        CoreConcreteLibfunc::Array(libfunc) => match libfunc {
-            ArrayConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
-            ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
-            ArrayConcreteLibfunc::PopFront(_) => vec![ApChange::Known(1), ApChange::Known(1)],
-            ArrayConcreteLibfunc::Get(libfunc) => {
+        CoreConcreteLibfunc::Queue(libfunc) => match libfunc {
+            QueueConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
+            QueueConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
+            QueueConcreteLibfunc::PopFront(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+            QueueConcreteLibfunc::Get(libfunc) => {
                 if info_provider.type_size(&libfunc.ty) == 1 { [5, 3] } else { [6, 5] }
                     .map(ApChange::Known)
                     .to_vec()
             }
-            ArrayConcreteLibfunc::Len(libfunc) => {
+            QueueConcreteLibfunc::Len(libfunc) => {
                 vec![ApChange::Known(usize::from(info_provider.type_size(&libfunc.ty) != 1))]
             }
         },

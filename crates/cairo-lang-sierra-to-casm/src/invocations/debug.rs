@@ -19,14 +19,14 @@ pub fn build(
 fn build_print(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+    let [queue_start, queue_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
-        buffer(0) arr_start;
-        buffer(0) arr_end;
+        buffer(0) queue_start;
+        buffer(0) queue_end;
     };
     casm_build_extend! {casm_builder,
-        hint DebugPrint {start: arr_start, end: arr_end} into {};
+        hint DebugPrint {start: queue_start, end: queue_end} into {};
         // Since we can't have hints not carried on actual instructions.
         ap += 0;
     };

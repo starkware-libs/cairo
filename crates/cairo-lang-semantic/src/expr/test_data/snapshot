@@ -13,10 +13,10 @@ foo
 
 //! > module_code
 struct A {
-    a: Array::<felt>,
+    a: Queue::<felt>,
     b: felt,
 }
-fn bar(a: @Array::<felt>, b: @felt) {
+fn bar(a: @Queue::<felt>, b: @felt) {
 }
 
 //! > expected_diagnostics

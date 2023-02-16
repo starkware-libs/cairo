@@ -3,7 +3,7 @@ use num_bigint::BigInt;
 use test_case::test_case;
 
 use super::value::CoreValue::{
-    self, Array, GasBuiltin, NonZero, RangeCheck, Uint128, Uint64, Uninitialized,
+    self, GasBuiltin, NonZero, Queue, RangeCheck, Uint128, Uint64, Uninitialized,
 };
 use super::LibfuncSimulationError::{
     self, FunctionSimulationError, MemoryLayoutMismatch, WrongNumberOfArgs,
@@ -159,13 +159,13 @@ fn simulate_branch(
 
 /// Tests for simulation of a non branch invocations.
 #[test_case("refund_gas", vec![], vec![GasBuiltin(2)] => Ok(vec![GasBuiltin(6)]); "refund_gas(2)")]
-#[test_case("array_new", vec![type_arg("u128")], vec![] => Ok(vec![Array(vec![])]); "array_new()")]
-#[test_case("array_append", vec![type_arg("u128")], vec![Array(vec![]), Uint128(4)] =>
-            Ok(vec![Array(vec![Uint128(4)])]); "array_append([], 4)")]
-#[test_case("array_get", vec![type_arg("u128")], vec![RangeCheck, Array(vec![Uint128(5)]), Uint64(0)]
-             => Ok(vec![RangeCheck, Array(vec![Uint128(5)]), Uint128(5)]); "array_get([5], 0)")]
-#[test_case("array_len", vec![type_arg("u128")], vec![Array(vec![])] =>
-            Ok(vec![Array(vec![]), Uint64(0)]); "array_len([])")]
+#[test_case("queue_new", vec![type_arg("u128")], vec![] => Ok(vec![Queue(vec![])]); "queue_new()")]
+#[test_case("queue_append", vec![type_arg("u128")], vec![Queue(vec![]), Uint128(4)] =>
+            Ok(vec![Queue(vec![Uint128(4)])]); "queue_append([], 4)")]
+#[test_case("queue_get", vec![type_arg("u128")], vec![RangeCheck, Queue(vec![Uint128(5)]), Uint64(0)]
+             => Ok(vec![RangeCheck, Queue(vec![Uint128(5)]), Uint128(5)]); "queue_get([5], 0)")]
+#[test_case("queue_len", vec![type_arg("u128")], vec![Queue(vec![])] =>
+            Ok(vec![Queue(vec![]), Uint64(0)]); "queue_len([])")]
 #[test_case("u128_safe_divmod", vec![], vec![RangeCheck, Uint128(32), NonZero(Box::new(Uint128(5)))]
              => Ok(vec![RangeCheck, Uint128(6), Uint128(2)]); "u128_safe_divmod(32, 5)")]
 #[test_case("u128_const", vec![value_arg(3)], vec![] => Ok(vec![Uint128(3)]);

@@ -211,18 +211,18 @@ use nullable::null;
 use nullable::into_nullable;
 use nullable::from_nullable;
 
-// Arrays.
-mod array;
-use array::Array;
-use array::array_new;
-use array::array_append;
-use array::array_pop_front;
-use array::array_get;
-use array::array_at;
-use array::array_len;
-use array::ArrayTrait;
-use array::ArrayImpl;
-impl ArrayFeltDrop of Drop::<Array::<felt>>;
+// Queues.
+mod queue;
+use queue::Queue;
+use queue::queue_new;
+use queue::queue_append;
+use queue::queue_pop_front;
+use queue::queue_get;
+use queue::queue_at;
+use queue::queue_len;
+use queue::QueueTrait;
+use queue::QueueImpl;
+impl QueueFeltDrop of Drop::<Queue::<felt>>;
 type usize = u32;
 
 // Dictionary.
@@ -366,14 +366,14 @@ use gas::get_gas_all;
 // Panics.
 enum PanicResult<T> {
     Ok: T,
-    Err: Array::<felt>,
+    Err: Queue::<felt>,
 }
 enum never {}
-extern fn panic(data: Array::<felt>) -> never;
+extern fn panic(data: Queue::<felt>) -> never;
 
 fn assert(cond: bool, err_code: felt) {
     if !cond {
-        let mut data = ArrayTrait::new();
+        let mut data = QueueTrait::new();
         data.append(err_code);
         panic(data);
     }

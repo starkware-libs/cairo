@@ -1,7 +1,7 @@
 mod corelib_usage;
 mod enum_flow;
 mod fib;
-mod fib_array;
+mod fib_queue;
 mod fib_box;
 mod fib_caller;
 mod fib_counter;

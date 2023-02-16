@@ -1,5 +1,4 @@
 use super::ap_tracking::RevokeApTrackingLibfunc;
-use super::array::{ArrayLibfunc, ArrayType};
 use super::bitwise::{BitwiseLibfunc, BitwiseType};
 use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
@@ -21,6 +20,7 @@ use super::modules::uint128::{Uint128Libfunc, Uint128Type};
 use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
+use super::queue::{QueueLibfunc, QueueType};
 use super::range_check::RangeCheckType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
@@ -35,7 +35,7 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 define_type_hierarchy! {
     pub enum CoreType {
-        Array(ArrayType),
+        Queue(QueueType),
         Bitwise(BitwiseType),
         Box(BoxType),
         EcOp(EcOpType),
@@ -67,7 +67,7 @@ define_type_hierarchy! {
 define_libfunc_hierarchy! {
     pub enum CoreLibfunc {
         ApTracking(RevokeApTrackingLibfunc),
-        Array(ArrayLibfunc),
+        Queue(QueueLibfunc),
         Bitwise(BitwiseLibfunc),
         BranchAlign(BranchAlignLibfunc),
         Bool(BoolLibfunc),

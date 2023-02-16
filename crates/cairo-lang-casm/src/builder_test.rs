@@ -300,7 +300,7 @@ fn test_local_fib() {
 }
 
 #[test]
-fn test_array_access() {
+fn test_queue_access() {
     let mut builder = CasmBuilder::default();
     casm_build_extend! {builder,
         const zero = 0;

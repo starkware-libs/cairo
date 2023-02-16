@@ -1,9 +1,9 @@
-use array::ArrayTrait;
+use queue::QueueTrait;
 
-extern fn print(message: Array::<felt>) nopanic;
+extern fn print(message: Queue::<felt>) nopanic;
 
 fn print_felt(message: felt) {
-    let mut arr = ArrayTrait::new();
-    arr.append(message);
-    print(arr);
+    let mut q = QueueTrait::new();
+    q.append(message);
+    print(q);
 }

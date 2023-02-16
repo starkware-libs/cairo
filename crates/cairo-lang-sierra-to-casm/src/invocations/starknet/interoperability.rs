@@ -21,11 +21,11 @@ pub fn build_call_contract(
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, "CallContract".as_bytes());
 
-    let [expr_gas_builtin, expr_system, expr_address, expr_arr] = builder.try_get_refs()?;
+    let [expr_gas_builtin, expr_system, expr_address, expr_queue] = builder.try_get_refs()?;
     let gas_builtin = expr_gas_builtin.try_unpack_single()?;
     let system = expr_system.try_unpack_single()?;
     let contract_address = expr_address.try_unpack_single()?;
-    let [call_data_start, call_data_end] = expr_arr.try_unpack()?;
+    let [call_data_start, call_data_end] = expr_queue.try_unpack()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,

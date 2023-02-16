@@ -107,14 +107,14 @@ mod TestContract {
     mod __external {
         use starknet_serde::ContractAddressSerde;
 
-        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+        fn foo(mut data: Queue::<felt>) -> Queue::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = queue_new();
+                    queue_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
@@ -123,33 +123,33 @@ mod TestContract {
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
-                        let mut err_data = array_new();
-                        array_append(ref err_data, 'Input too short for arguments');
+                        let mut err_data = queue_new();
+                        queue_append(ref err_data, 'Input too short for arguments');
                         panic(err_data)
                     },
                 };
-            if !array::ArrayTrait::is_empty(@data) {
+            if !queue::QueueTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, 'Input too long for arguments');
+                let mut err_data = queue_new();
+                queue_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             match get_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = queue_new();
+                    queue_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
             super::foo(__arg_x);
-            let mut arr = array_new();
+            let mut q = queue_new();
             // References.
             // Result.
-            arr
+            q
         }
         
     }
@@ -205,42 +205,42 @@ mod TestContract {
     mod __external {
         use starknet_serde::ContractAddressSerde;
 
-        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+        fn foo(mut data: Queue::<felt>) -> Queue::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = queue_new();
+                    queue_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
             
-            if !array::ArrayTrait::is_empty(@data) {
+            if !queue::QueueTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, 'Input too long for arguments');
+                let mut err_data = queue_new();
+                queue_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             match get_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = queue_new();
+                    queue_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
             
             let res = super::foo();
-            let mut arr = array_new();
+            let mut q = queue_new();
             // References.
             // Result.
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
-            arr
+            serde::Serde::<(felt, felt)>::serialize(ref q, res);
+            q
         }
         
     }
@@ -260,8 +260,8 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
 
 error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
  --> contract:57:13
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
-            ^***************************************************^
+            serde::Serde::<(felt, felt)>::serialize(ref q, res);
+            ^*************************************************^
 
 //! > ==========================================================================
 
@@ -301,14 +301,14 @@ mod TestContract {
     mod __external {
         use starknet_serde::ContractAddressSerde;
 
-        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+        fn foo(mut data: Queue::<felt>) -> Queue::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = queue_new();
+                    queue_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
@@ -317,33 +317,33 @@ mod TestContract {
                 match serde::Serde::<T>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
-                        let mut err_data = array_new();
-                        array_append(ref err_data, 'Input too short for arguments');
+                        let mut err_data = queue_new();
+                        queue_append(ref err_data, 'Input too short for arguments');
                         panic(err_data)
                     },
                 };
-            if !array::ArrayTrait::is_empty(@data) {
+            if !queue::QueueTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, 'Input too long for arguments');
+                let mut err_data = queue_new();
+                queue_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             match get_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = queue_new();
+                    queue_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
             super::foo(__arg_x);
-            let mut arr = array_new();
+            let mut q = queue_new();
             // References.
             // Result.
-            arr
+            q
         }
         
     }
@@ -371,7 +371,7 @@ error: Type not found.
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
-error: Trait `core::serde::Serde` has multiple implementations, in: "core::starknet_serde::ContractAddressSerde", "core::serde::FeltSerde", "core::serde::BoolSerde", "core::serde::U8Serde", "core::serde::U32Serde", "core::serde::U64Serde", "core::serde::U128Serde", "core::serde::U256Serde", "core::serde::ArrayFeltSerde"
+error: Trait `core::serde::Serde` has multiple implementations, in: "core::starknet_serde::ContractAddressSerde", "core::serde::FeltSerde", "core::serde::BoolSerde", "core::serde::U8Serde", "core::serde::U32Serde", "core::serde::U64Serde", "core::serde::U128Serde", "core::serde::U256Serde", "core::serde::QueueFeltSerde"
  --> contract:36:23
                 match serde::Serde::<T>::deserialize(ref data) {
                       ^**************************************^
@@ -419,14 +419,14 @@ mod TestContract {
     mod __external {
         use starknet_serde::ContractAddressSerde;
 
-        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+        fn foo(mut data: Queue::<felt>) -> Queue::<felt> {
             internal::revoke_ap_tracking();
             match get_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = queue_new();
+                    queue_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
@@ -435,8 +435,8 @@ mod TestContract {
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
-                        let mut err_data = array_new();
-                        array_append(ref err_data, 'Input too short for arguments');
+                        let mut err_data = queue_new();
+                        queue_append(ref err_data, 'Input too short for arguments');
                         panic(err_data)
                     },
                 };
@@ -445,35 +445,35 @@ mod TestContract {
                 match serde::Serde::<(felt, felt)>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
-                        let mut err_data = array_new();
-                        array_append(ref err_data, 'Input too short for arguments');
+                        let mut err_data = queue_new();
+                        queue_append(ref err_data, 'Input too short for arguments');
                         panic(err_data)
                     },
                 };
-            if !array::ArrayTrait::is_empty(@data) {
+            if !queue::QueueTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, 'Input too long for arguments');
+                let mut err_data = queue_new();
+                queue_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             match get_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = queue_new();
+                    queue_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
             
             let res = super::foo(__arg_x, __arg_y);
-            let mut arr = array_new();
+            let mut q = queue_new();
             // References.
             // Result.
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
-            arr
+            serde::Serde::<(felt, felt)>::serialize(ref q, res);
+            q
         }
         
     }
@@ -503,8 +503,8 @@ error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementat
 
 error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
  --> contract:76:13
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
-            ^***************************************************^
+            serde::Serde::<(felt, felt)>::serialize(ref q, res);
+            ^*************************************************^
 
 //! > ==========================================================================
 

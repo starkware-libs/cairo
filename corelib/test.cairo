@@ -1,4 +1,4 @@
-use array::ArrayTrait;
+use queue::QueueTrait;
 use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
@@ -793,31 +793,31 @@ fn test_u256_mul_overflow_2() {
 }
 
 // TODO(orizi): Switch to operators and literals when added.
-fn test_array_helper(idx: usize) -> felt {
-    let mut arr = ArrayTrait::new();
-    arr.append(10);
-    arr.append(11);
-    arr.append(12);
-    array_at(ref arr, idx)
+fn test_queue_helper(idx: usize) -> felt {
+    let mut q = QueueTrait::new();
+    q.append(10);
+    q.append(11);
+    q.append(12);
+    queue_at(ref q, idx)
 }
 
 #[test]
-fn test_array() {
-    assert(test_array_helper(0_usize) == 10, 'array[0] == 10');
-    assert(test_array_helper(1_usize) == 11, 'array[1] == 11');
-    assert(test_array_helper(2_usize) == 12, 'array[2] == 12');
-}
-
-#[test]
-#[should_panic]
-fn test_array_out_of_bound_1() {
-    test_array_helper(3_usize);
+fn test_queue() {
+    assert(test_queue_helper(0_usize) == 10, 'queue[0] == 10');
+    assert(test_queue_helper(1_usize) == 11, 'queue[1] == 11');
+    assert(test_queue_helper(2_usize) == 12, 'queue[2] == 12');
 }
 
 #[test]
 #[should_panic]
-fn test_array_out_of_bound_2() {
-    test_array_helper(11_usize);
+fn test_queue_out_of_bound_1() {
+    test_queue_helper(3_usize);
+}
+
+#[test]
+#[should_panic]
+fn test_queue_out_of_bound_2() {
+    test_queue_helper(11_usize);
 }
 
 #[test]

@@ -120,31 +120,31 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 #[test_case(indoc! {"
                 type felt = felt;
                 type UninitializedFelt = Uninitialized<felt>;
-                type ArrayFelt = Array<felt>;
-                type UninitializedArrayFelt = Uninitialized<ArrayFelt>;
+                type QueueFelt = Queue<felt>;
+                type UninitializedQueueFelt = Uninitialized<QueueFelt>;
 
                 libfunc finalize_locals = finalize_locals;
                 libfunc alloc_local_felt = alloc_local<felt>;
                 libfunc store_local_felt = store_local<felt>;
-                libfunc alloc_local_array_felt = alloc_local<ArrayFelt>;
-                libfunc store_local_array_felt = store_local<ArrayFelt>;
+                libfunc alloc_local_queue_felt = alloc_local<QueueFelt>;
+                libfunc store_local_queue_felt = store_local<QueueFelt>;
                 libfunc store_temp_felt = store_temp<felt>;
-                libfunc store_temp_array_felt = store_temp<ArrayFelt>;
+                libfunc store_temp_queue_felt = store_temp<QueueFelt>;
 
                 store_temp_felt([1]) -> ([1]);
                 alloc_local_felt() -> ([4]);
                 alloc_local_felt() -> ([5]);
-                alloc_local_array_felt() -> ([6]);
+                alloc_local_queue_felt() -> ([6]);
                 store_local_felt([4], [1]) -> ([4]);
                 finalize_locals() -> ();
                 store_local_felt([5], [2]) -> ([5]);
-                store_local_array_felt([6], [3]) -> ([6]);
+                store_local_queue_felt([6], [3]) -> ([6]);
                 store_temp_felt([4]) -> ([4]);
                 store_temp_felt([5]) -> ([5]);
-                store_temp_array_felt([6]) -> ([6]);
+                store_temp_queue_felt([6]) -> ([6]);
                 return ([4], [5], [6]);
 
-                test_program@0([1]: felt, [2]: felt, [3]: ArrayFelt) -> (felt, felt, ArrayFelt);
+                test_program@0([1]: felt, [2]: felt, [3]: QueueFelt) -> (felt, felt, QueueFelt);
             "},
             false,
             indoc! {"

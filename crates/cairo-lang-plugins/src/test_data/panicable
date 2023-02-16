@@ -31,8 +31,8 @@ fn foo_improved(a: felt, ref b: other) -> () {
             v
         },
         Option::None (v) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, '1');
+            let mut data = queue_new::<felt>();
+            queue_append::<felt>(ref data, '1');
             panic(data)
         },
     }
@@ -48,8 +48,8 @@ fn bar_changed() -> felt {
             v
         },
         Result::Err (v) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, '2');
+            let mut data = queue_new::<felt>();
+            queue_append::<felt>(ref data, '2');
             panic(data)
         },
     }
@@ -67,8 +67,8 @@ fn non_extern_stuff(_a: some_type) -> (felt, other) {
             v
         },
         Option::None (v) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, '3');
+            let mut data = queue_new::<felt>();
+            queue_append::<felt>(ref data, '3');
             panic(data)
         },
     }
@@ -84,8 +84,8 @@ fn generic_panic<T>(t: T, v: felt) -> T {
             v
         },
         Result::Err (v) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, '4');
+            let mut data = queue_new::<felt>();
+            queue_append::<felt>(ref data, '4');
             panic(data)
         },
     }
@@ -100,8 +100,8 @@ fn wrapped_possibly_panic() -> felt {
             v
         },
         Result::Err (v) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, '5');
+            let mut data = queue_new::<felt>();
+            queue_append::<felt>(ref data, '5');
             panic(data)
         },
     }
