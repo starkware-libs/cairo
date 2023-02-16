@@ -27,6 +27,7 @@ cairo_lang_test_utils::test_file_test!(
         u128: "u128",
         bool: "bool",
         enum_: "enum",
+        enum_snapshot: "enum_snapshot",
     },
     run_small_e2e_test
 );
