@@ -4,6 +4,7 @@ use super::bitwise::{BitwiseLibfunc, BitwiseType};
 use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::builtin_cost::{BuiltinCostLibfunc, BuiltinCostsType};
+use super::casts::CastLibfunc;
 use super::debug::DebugLibfunc;
 use super::dict_felt_to::{DictFeltToLibfunc, DictFeltToType};
 use super::dict_manager::DictManagerType;
@@ -73,6 +74,7 @@ define_libfunc_hierarchy! {
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
         BuiltinCost(BuiltinCostLibfunc),
+        Cast(CastLibfunc),
         Drop(DropLibfunc),
         Dup(DupLibfunc),
         Ec(EcLibfunc),

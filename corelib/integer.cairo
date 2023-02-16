@@ -2,6 +2,8 @@ use result::ResultTrait;
 use result::ResultTraitImpl;
 use option::OptionTrait;
 use option::OptionTraitImpl;
+use traits::Into;
+use traits::TryInto;
 
 #[derive(Copy, Drop)]
 extern type u128;
@@ -309,7 +311,6 @@ impl U8SubEq of SubEq::<u8> {
 extern fn u8_wide_mul(a: u8, b: u8) -> u16 implicits() nopanic;
 impl U8Mul of Mul::<u8> {
     fn mul(a: u8, b: u8) -> u8 {
-        // TODO(orizi): Use direct conversion, instead of going through felt.
         u8_try_from_felt(u16_to_felt(u8_wide_mul(a, b))).expect('u8_mul Overflow')
     }
 }
@@ -927,3 +928,92 @@ fn u256_from_felt(a: felt) -> u256 implicits(RangeCheck) nopanic {
         U128sFromFeltResult::Wide((high, low)) => u256 { low, high },
     }
 }
+
+/// Conversions.
+impl FeltTryIntoU8 of TryInto::<felt, u8> {
+    fn try_into(self: felt) -> Option::<u8> {
+        u8_try_from_felt(self)
+    }
+}
+impl U8IntoFelt of Into::<u8, felt> {
+    fn into(self: u8) -> felt {
+        u8_to_felt(self)
+    }
+}
+impl FeltTryIntoU16 of TryInto::<felt, u16> {
+    fn try_into(self: felt) -> Option::<u16> {
+        u16_try_from_felt(self)
+    }
+}
+impl U16IntoFelt of Into::<u16, felt> {
+    fn into(self: u16) -> felt {
+        u16_to_felt(self)
+    }
+}
+impl FeltTryIntoU32 of TryInto::<felt, u32> {
+    fn try_into(self: felt) -> Option::<u32> {
+        u32_try_from_felt(self)
+    }
+}
+impl U32IntoFelt of Into::<u32, felt> {
+    fn into(self: u32) -> felt {
+        u32_to_felt(self)
+    }
+}
+impl FeltTryIntoU64 of TryInto::<felt, u64> {
+    fn try_into(self: felt) -> Option::<u64> {
+        u64_try_from_felt(self)
+    }
+}
+impl U64IntoFelt of Into::<u64, felt> {
+    fn into(self: u64) -> felt {
+        u64_to_felt(self)
+    }
+}
+impl FeltTryIntoU128 of TryInto::<felt, u128> {
+    fn try_into(self: felt) -> Option::<u128> {
+        u128_try_from_felt(self)
+    }
+}
+impl U128IntoFelt of Into::<u128, felt> {
+    fn into(self: u128) -> felt {
+        u128_to_felt(self)
+    }
+}
+impl FeltIntoU256 of Into::<felt, u256> {
+    fn into(self: felt) -> u256 {
+        u256_from_felt(self)
+    }
+}
+impl U16TryIntoU8 of TryInto::<u16, u8> {
+    fn try_into(self: u16) -> Option::<u8> {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        let as_felt: felt = self.into();
+        as_felt.try_into()
+    }
+}
+impl U32TryIntoU16 of TryInto::<u32, u16> {
+    fn try_into(self: u32) -> Option::<u16> {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        let as_felt: felt = self.into();
+        as_felt.try_into()
+    }
+}
+impl U64TryIntoU32 of TryInto::<u64, u32> {
+    fn try_into(self: u64) -> Option::<u32> {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        let as_felt: felt = self.into();
+        as_felt.try_into()
+    }
+}
+impl U128TryIntoU64 of TryInto::<u128, u64> {
+    fn try_into(self: u128) -> Option::<u64> {
+        // TODO(orizi): Use direct conversion, instead of going through felt.
+        let as_felt: felt = self.into();
+        as_felt.try_into()
+    }
+}
+
+// TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
+//   will not lead to Sierra errors.
+extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;

@@ -2,7 +2,8 @@ use array::ArrayTrait;
 use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
-use hash::LegacyHash;
+use core::traits::TryInto;
+use core::traits::Into;
 
 #[test]
 #[should_panic]
@@ -39,7 +40,6 @@ fn test_bool_operators() {
 
 impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
 impl NonZeroEcPointDrop of Drop::<NonZeroEcPoint>;
-use core::traits::ToBool;
 
 #[test]
 fn test_ec_operations() {
@@ -83,7 +83,7 @@ fn test_ec_operations() {
     assert(sub_y == y, 'bad y for 2p - p');
 
     // Compute `p - p`.
-    assert(ec_point_is_zero(p - p).to_bool(), 'p - p did not return 0.');
+    assert(ec_point_is_zero(p - p).into(), 'p - p did not return 0.');
 
     // Compute `(-p) - p`.
     let (sub2_x, sub2_y) = ec_point_unwrap(ec_point_non_zero(ec_neg(p) - p));
@@ -654,9 +654,9 @@ fn as_u256(high: u128, low: u128) -> u256 {
 
 #[test]
 fn test_u256_from_felt() {
-    assert(u256_from_felt(1) == as_u256(0_u128, 1_u128), 'into 1');
+    assert(1.into() == as_u256(0_u128, 1_u128), 'into 1');
     assert(
-        u256_from_felt(170141183460469231731687303715884105728 * 2) == as_u256(1_u128, 0_u128),
+        (170141183460469231731687303715884105728 * 2).into() == as_u256(1_u128, 0_u128),
         'into 2**128'
     );
 }

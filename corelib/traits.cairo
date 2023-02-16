@@ -68,9 +68,14 @@ trait PartialOrd<T> {
     fn gt(a: T, b: T) -> bool;
 }
 
-/// Represents a type that can be converted to `bool` using the `to_bool()` method.
-trait ToBool<T> {
-    fn to_bool(self: T) -> bool;
+/// Trait for convertion between types.
+trait Into<T, S> {
+    fn into(self: T) -> S;
+}
+
+/// Trait for fallible convertion between types.
+trait TryInto<T, S> {
+    fn try_into(self: T) -> Option::<S>;
 }
 
 trait Neg<T> {

@@ -16,9 +16,10 @@ use traits::Rem;
 use traits::RemEq;
 use traits::Sub;
 use traits::SubEq;
-use traits::ToBool;
 use traits::Not;
 use traits::Neg;
+use traits::Into;
+use traits::TryInto;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -145,8 +146,8 @@ enum IsZeroResult<T> {
 }
 extern fn unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
 
-impl IsZeroResultToBool<T> of ToBool::<IsZeroResult::<T>> {
-    fn to_bool(self: IsZeroResult::<T>) -> bool {
+impl IsZeroResultIntoBool<T> of Into::<IsZeroResult::<T>, bool> {
+    fn into(self: IsZeroResult::<T>) -> bool {
         match self {
             IsZeroResult::Zero(()) => true,
             IsZeroResult::NonZero(_) => false,
@@ -183,7 +184,7 @@ impl PartialOrdFelt of PartialOrd::<felt> {
     }
     #[inline(always)]
     fn lt(a: felt, b: felt) -> bool {
-        u256_from_felt(a) < u256_from_felt(b)
+        integer::u256_from_felt(a) < integer::u256_from_felt(b)
     }
     #[inline(always)]
     fn gt(a: felt, b: felt) -> bool {
@@ -280,10 +281,8 @@ mod ecdsa;
 mod integer;
 use integer::u128;
 use integer::u128_const;
-use integer::u128_from_felt;
-use integer::u128_try_from_felt;
-use integer::u128_to_felt;
 use integer::u128_sqrt;
+use integer::upcast;
 use integer::U128Add;
 use integer::U128Sub;
 use integer::U128Mul;
@@ -297,9 +296,6 @@ use integer::U128BitXor;
 use integer::u128_is_zero;
 use integer::u8;
 use integer::u8_const;
-use integer::u8_from_felt;
-use integer::u8_try_from_felt;
-use integer::u8_to_felt;
 use integer::U8Add;
 use integer::U8Div;
 use integer::U8PartialEq;
@@ -309,9 +305,6 @@ use integer::U8Sub;
 use integer::U8Mul;
 use integer::u16;
 use integer::u16_const;
-use integer::u16_from_felt;
-use integer::u16_try_from_felt;
-use integer::u16_to_felt;
 use integer::U16Add;
 use integer::U16Div;
 use integer::U16PartialEq;
@@ -321,9 +314,6 @@ use integer::U16Sub;
 use integer::U16Mul;
 use integer::u32;
 use integer::u32_const;
-use integer::u32_from_felt;
-use integer::u32_try_from_felt;
-use integer::u32_to_felt;
 use integer::U32Add;
 use integer::U32Div;
 use integer::U32PartialEq;
@@ -333,9 +323,6 @@ use integer::U32Sub;
 use integer::U32Mul;
 use integer::u64;
 use integer::u64_const;
-use integer::u64_from_felt;
-use integer::u64_try_from_felt;
-use integer::u64_to_felt;
 use integer::U64Add;
 use integer::U64Div;
 use integer::U64PartialEq;
@@ -352,7 +339,21 @@ use integer::U256PartialEq;
 use integer::U256BitAnd;
 use integer::U256BitOr;
 use integer::U256BitXor;
-use integer::u256_from_felt;
+use integer::FeltTryIntoU8;
+use integer::U8IntoFelt;
+use integer::FeltTryIntoU16;
+use integer::U16IntoFelt;
+use integer::FeltTryIntoU32;
+use integer::U32IntoFelt;
+use integer::FeltTryIntoU64;
+use integer::U64IntoFelt;
+use integer::FeltTryIntoU128;
+use integer::U128IntoFelt;
+use integer::U16TryIntoU8;
+use integer::U32TryIntoU16;
+use integer::U64TryIntoU32;
+use integer::U128TryIntoU64;
+use integer::FeltIntoU256;
 use integer::Bitwise;
 
 // Gas.
