@@ -26,4 +26,6 @@ fn test_declare() {
    }
 }
 
-
+fn test_start_prank() {
+    start_prank(123, Option::Some(123))
+}

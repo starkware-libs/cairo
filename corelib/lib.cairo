@@ -367,6 +367,8 @@ mod cheatcodes;
 use cheatcodes::roll;
 use cheatcodes::declare;
 use cheatcodes::cheat_roll;
+use cheatcodes::cheat_start_prank;
+use cheatcodes::start_prank;
 
 // Internals.
 mod internal;
