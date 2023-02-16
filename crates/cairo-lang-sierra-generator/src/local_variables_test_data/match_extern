@@ -73,7 +73,7 @@ Statements:
   }
   (v6: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(5, {})
+  Fallthrough(blk5, {})
 
 blk5:
 Inputs:
@@ -152,14 +152,14 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(5, {})
+  Fallthrough(blk5, {})
 
 blk5:
 Inputs:
 Statements:
   (v2: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(6, {})
+  Fallthrough(blk6, {})
 
 blk6:
 Inputs:
@@ -170,7 +170,7 @@ Statements:
   }
   (v7: core::felt) <- core::felt_add(v1, v6)
 End:
-  Fallthrough(7, {})
+  Fallthrough(blk7, {})
 
 blk7:
 Inputs:
@@ -266,7 +266,7 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(5, {})
+  Fallthrough(blk5, {})
 
 blk5:
 Inputs:
@@ -277,7 +277,7 @@ Statements:
   }
   (v7: core::felt) <- core::felt_add(v1, v0)
 End:
-  Fallthrough(6, {})
+  Fallthrough(blk6, {})
 
 blk6:
 Inputs:
@@ -288,7 +288,7 @@ Statements:
   }
   (v12: core::felt) <- core::felt_add(v7, v0)
 End:
-  Fallthrough(7, {})
+  Fallthrough(blk7, {})
 
 blk7:
 Inputs:

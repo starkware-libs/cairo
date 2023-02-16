@@ -32,7 +32,7 @@ Inputs: v1: core::NonZero::<core::felt>
 Statements:
   (v2: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(3, {})
+  Fallthrough(blk3, {})
 
 blk2 (root):
 Inputs: v0: core::felt

@@ -48,7 +48,7 @@ Inputs: v9: core::felt
 Statements:
   (v10: core::felt) <- core::felt_add(v9, v1)
 End:
-  Fallthrough(4, {})
+  Fallthrough(blk4, {})
 
 blk2:
 Inputs: v13: (core::felt, core::felt)
@@ -75,7 +75,7 @@ Inputs:
 Statements:
   (v11: core::felt) <- core::felt_add(v10, v2)
 End:
-  Fallthrough(5, {})
+  Fallthrough(blk5, {})
 
 blk5:
 Inputs:

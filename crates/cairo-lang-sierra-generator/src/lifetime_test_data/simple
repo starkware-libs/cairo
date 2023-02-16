@@ -24,21 +24,21 @@ Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v2: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Fallthrough(blk1, {})
 
 blk1:
 Inputs:
 Statements:
   (v3: core::felt) <- core::felt_add(v2, v2)
 End:
-  Fallthrough(2, {})
+  Fallthrough(blk2, {})
 
 blk2:
 Inputs:
 Statements:
   (v4: core::felt) <- core::felt_add(v3, v3)
 End:
-  Fallthrough(3, {})
+  Fallthrough(blk3, {})
 
 blk3:
 Inputs:
@@ -46,7 +46,7 @@ Statements:
   (v5: core::felt) <- 1u
   (v6: core::felt) <- core::felt_add(v3, v5)
 End:
-  Fallthrough(4, {})
+  Fallthrough(blk4, {})
 
 blk4:
 Inputs:

@@ -301,21 +301,21 @@ Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
   (v4: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(3, {})
+  Fallthrough(blk3, {})
 
 blk3:
 Inputs:
 Statements:
   (v5: core::felt) <- core::felt_sub(v2, v3)
 End:
-  Fallthrough(4, {})
+  Fallthrough(blk4, {})
 
 blk4:
 Inputs:
 Statements:
   (v6: core::felt) <- core::felt_sub(v4, v5)
 End:
-  Fallthrough(5, {})
+  Fallthrough(blk5, {})
 
 blk5:
 Inputs:
