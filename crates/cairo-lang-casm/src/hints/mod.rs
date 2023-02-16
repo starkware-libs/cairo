@@ -343,7 +343,7 @@ impl Display for Hint {
                     f,
                     "
 
-                    memory{error_code} = roll(caller_address={caller_address}, target_contract_address={target_contract_address}); 
+                    memory{error_code} = start_prank(caller_address={caller_address}, target_contract_address={target_contract_address}); 
                         
                     "
                 )
