@@ -84,7 +84,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x398a4ef144572e21c71ab5c4e52c06499beaae468457f39df7025927177305",
+    "0x3f4521c03a324fa22568d7ff565c7db7828044884c251027a97caef410de8d0",
     "0x1",
     "0x10",
     "0x1",
@@ -7295,7 +7295,7 @@
       ],
       [
         20,
-        "core::option::Option::<core::contract_address::ContractAddress>"
+        "core::option::Option::<core::starknet::ContractAddress>"
       ],
       [
         21,
@@ -7581,7 +7581,7 @@
       ],
       [
         61,
-        "enum_match<core::option::Option::<core::contract_address::ContractAddress>>"
+        "enum_match<core::option::Option::<core::starknet::ContractAddress>>"
       ],
       [
         62,
@@ -7673,11 +7673,11 @@
       ],
       [
         84,
-        "enum_init<core::option::Option::<core::contract_address::ContractAddress>, 1>"
+        "enum_init<core::option::Option::<core::starknet::ContractAddress>, 1>"
       ],
       [
         85,
-        "store_temp<core::option::Option::<core::contract_address::ContractAddress>>"
+        "store_temp<core::option::Option::<core::starknet::ContractAddress>>"
       ],
       [
         86,
@@ -7685,7 +7685,7 @@
       ],
       [
         87,
-        "enum_init<core::option::Option::<core::contract_address::ContractAddress>, 0>"
+        "enum_init<core::option::Option::<core::starknet::ContractAddress>, 0>"
       ],
       [
         88,
@@ -8001,7 +8001,7 @@
       "inputs": [
         {
           "name": "another_contract_address",
-          "ty": "core::contract_address::ContractAddress"
+          "ty": "core::starknet::ContractAddress"
         },
         {
           "name": "a",

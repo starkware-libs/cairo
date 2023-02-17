@@ -2,8 +2,8 @@
 mod ERC20 {
     use zeroable::Zeroable;
     use starknet::get_caller_address;
-    use contract_address::contract_address_const;
-    use contract_address::ContractAddressZeroable;
+    use starknet::contract_address_const;
+    use starknet::ContractAddressZeroable;
 
     struct Storage {
         name: felt,

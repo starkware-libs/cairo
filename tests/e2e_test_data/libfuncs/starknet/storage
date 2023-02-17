@@ -6,8 +6,8 @@
 run_small_e2e_test
 
 //! > cairo
-fn foo(addr: felt) -> storage_access::StorageBaseAddress {
-    storage_access::storage_base_address_from_felt(addr)
+fn foo(addr: felt) -> starknet::StorageBaseAddress {
+    starknet::storage_base_address_from_felt(addr)
 }
 
 //! > casm
@@ -78,8 +78,8 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, StorageBaseAddress);
 run_small_e2e_test
 
 //! > cairo
-fn foo(base: storage_access::StorageBaseAddress, offset: u8) -> storage_access::StorageAddress {
-    storage_access::storage_address_from_base_and_offset(base, offset)
+fn foo(base: starknet::StorageBaseAddress, offset: u8) -> starknet::StorageAddress {
+    starknet::storage_address_from_base_and_offset(base, offset)
 }
 
 //! > casm
@@ -114,9 +114,9 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(
-    address_domain: felt, address: storage_access::StorageAddress,
+    address_domain: felt, address: starknet::StorageAddress,
 ) -> Result::<felt, Array::<felt>> {
-   storage_access::storage_read_syscall(address_domain, address)
+    starknet::storage_read_syscall(address_domain, address)
 }
 
 //! > casm
@@ -194,9 +194,9 @@ run_small_e2e_test
 
 //! > cairo
 fn foo(
-    address_domain: felt, address: storage_access::StorageAddress, value: felt,
+    address_domain: felt, address: starknet::StorageAddress, value: felt,
 ) -> Result::<(), Array::<felt>> {
-    storage_access::storage_write_syscall(address_domain, address, value)
+    starknet::storage_write_syscall(address_domain, address, value)
 }
 
 //! > casm
