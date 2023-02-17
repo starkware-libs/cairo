@@ -24,7 +24,7 @@ fn test_assert_false() {
 
 # Longer Example
 
-Longer example can be found at [Core Library Test](../../corelib/test.cairo).
+Longer example can be found at [Core Library Test](../../corelib/src/test.cairo).
 
 ```
 cargo run --bin cairo-test -- -p corelib/
