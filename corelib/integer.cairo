@@ -15,6 +15,8 @@ enum U128sFromFeltResult {
 }
 extern fn u128s_from_felt(a: felt) -> U128sFromFeltResult implicits(RangeCheck) nopanic;
 
+extern fn u128_to_u64s(a: u128) -> (u64,u64) implicits(RangeCheck) nopanic;
+
 #[panic_with('u128_from OF', u128_from_felt)]
 fn u128_try_from_felt(a: felt) -> Option::<u128> implicits(RangeCheck) nopanic {
     match u128s_from_felt(a) {
@@ -768,6 +770,7 @@ const HALF_SHIFT : felt = 18446744073709551616;//2^64;
 fn u256_wide_mul(a: u256, b: u256) -> (u256, u256) implicits(RangeCheck) {
     let HALF_SHIFTb = u128_as_non_zero(18446744073709551616_u128);//2^64;
     let (a1u, a0u) = u128_safe_divmod(a.low,HALF_SHIFTb);
+    //let (a0u, a1u) = u128_to_u64s(a.low);
     let (a3u, a2u) = u128_safe_divmod(a.high,HALF_SHIFTb);
     let (b1u, b0u) = u128_safe_divmod(b.low,HALF_SHIFTb);
     let (b3u, b2u) = u128_safe_divmod(b.high,HALF_SHIFTb);

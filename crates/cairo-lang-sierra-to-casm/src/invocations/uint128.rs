@@ -181,6 +181,45 @@ fn build_u128_divmod(
     ))
 }
 
+/// Splits a u128 into two u64's.
+fn build_u128_to_u64s(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, a] = builder.try_get_single_cells()?;
+    let u64_bound: BigInt = BigInt::from(u64::MAX) + 1; // = 2**64.
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref a;
+    };
+    casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
+            const u64_limit = u64_bound.clone();
+            tempvar high;
+	    tempvar low;
+	    tempvar rced_value;
+	    tempvar h_2_64;
+            hint DivMod { lhs: a, rhs: u64_limit } into { quotient: high, remainder: low };
+            // Write value as 2**64 * high + low.
+            assert high = *(range_check++);
+            assert low = *(range_check++);
+	    // Verify `low < 2**64` by constraining `low + 2**64 < 2**128`.
+	    assert rced_value = low + u64_limit;
+	    assert rced_value = *(range_check++);
+            // Check that value = 2**128 * x + y (mod PRIME).
+            assert h_2_64 = high * u64_limit;
+            assert a = h_2_64 + low;
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[low], &[high]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
 /// Handles a u128 overflowing widemul operation.
 fn build_u128_widemul(
     builder: CompiledInvocationBuilder<'_>,
