@@ -1,3 +1,5 @@
+// TODO(mkaput): Move tests to ../tests
+
 use array::ArrayTrait;
 use dict::DictFeltToTrait;
 use option::OptionTrait;

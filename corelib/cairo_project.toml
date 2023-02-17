@@ -1,2 +1,2 @@
 [crate_roots]
-core = "."
+core = "src"
