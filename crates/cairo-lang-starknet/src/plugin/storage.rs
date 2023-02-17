@@ -107,13 +107,13 @@ fn handle_simple_storage_var(address: &str) -> String {
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
-        fn address() -> starknet::StorageBaseAddress {{
-            starknet::storage_base_address_const::<{address}>()
+        fn address() -> storage_access::StorageBaseAddress {{
+            storage_access::storage_base_address_const::<{address}>()
         }}
         fn read() -> $type_name$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<$type_name$>::read(
+            storage_access::StorageAccess::<$type_name$>::read(
                 address_domain,
                 address(),
             ).unwrap_syscall()
@@ -121,7 +121,7 @@ fn handle_simple_storage_var(address: &str) -> String {
         fn write(value: $type_name$) {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<$type_name$>::write(
+            storage_access::StorageAccess::<$type_name$>::write(
                 address_domain,
                 address(),
                 value,
@@ -139,14 +139,14 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
-        fn address(key: $key_type$) -> starknet::StorageBaseAddress {{
-            starknet::storage_base_address_from_felt(
+        fn address(key: $key_type$) -> storage_access::StorageBaseAddress {{
+            storage_access::storage_base_address_from_felt(
                 hash::LegacyHash::<$key_type$>::hash({address}, key))
         }}
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<$value_type$>::read(
+            storage_access::StorageAccess::<$value_type$>::read(
                 address_domain,
                 address(key),
             ).unwrap_syscall()
@@ -154,7 +154,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
         fn write(key: $key_type$, value: $value_type$) {{
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<$value_type$>::write(
+            storage_access::StorageAccess::<$value_type$>::write(
                 address_domain,
                 address(key),
                 value,
