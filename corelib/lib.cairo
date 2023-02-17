@@ -395,7 +395,13 @@ mod debug;
 // Starknet
 mod starknet;
 use starknet::System;
-use starknet::ContractAddress;
+
+// ContractAddress
+mod contract_address;
+use contract_address::ContractAddress;
+
+// StorageAccess
+mod storage_access;
 
 // Internals.
 mod internal;
