@@ -96,7 +96,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x3f4521c03a324fa22568d7ff565c7db7828044884c251027a97caef410de8d0",
+    "0x398a4ef144572e21c71ab5c4e52c06499beaae468457f39df7025927177305",
     "0x1",
     "0x13",
     "0x1",
@@ -164,7 +164,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x258521807eaa6afa1a1406c8fcc3e756ae1d492fdbd107a38f509359fd7445f",
+    "0xc40d708cea0bd8de87d4746e168bbc5aba8f1c90d77f85d10731f9d2c6080b",
     "0x1",
     "0x13",
     "0x1",
@@ -224,7 +224,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x556465ece6753f03736054b9fd05194611875eaec763a36e675234fae534ad",
+    "0x10ca1524a0f062ba0350b65b623ec0a4927659cb645594acf50fcee681a38c4",
     "0x1",
     "0x13",
     "0x1",
@@ -36502,7 +36502,7 @@
       ],
       [
         22,
-        "core::option::Option::<core::starknet::ContractAddress>"
+        "core::option::Option::<core::contract_address::ContractAddress>"
       ],
       [
         23,
@@ -36542,7 +36542,7 @@
       ],
       [
         32,
-        "core::PanicResult::<core::starknet::ContractAddress>"
+        "core::PanicResult::<core::contract_address::ContractAddress>"
       ],
       [
         33,
@@ -36582,7 +36582,7 @@
       ],
       [
         42,
-        "core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>"
+        "core::result::Result::<core::contract_address::ContractAddress, core::array::Array::<core::felt>>"
       ],
       [
         43,
@@ -36856,7 +36856,7 @@
       ],
       [
         58,
-        "enum_match<core::option::Option::<core::starknet::ContractAddress>>"
+        "enum_match<core::option::Option::<core::contract_address::ContractAddress>>"
       ],
       [
         59,
@@ -37080,11 +37080,11 @@
       ],
       [
         114,
-        "enum_init<core::option::Option::<core::starknet::ContractAddress>, 1>"
+        "enum_init<core::option::Option::<core::contract_address::ContractAddress>, 1>"
       ],
       [
         115,
-        "store_temp<core::option::Option::<core::starknet::ContractAddress>>"
+        "store_temp<core::option::Option::<core::contract_address::ContractAddress>>"
       ],
       [
         116,
@@ -37092,7 +37092,7 @@
       ],
       [
         117,
-        "enum_init<core::option::Option::<core::starknet::ContractAddress>, 0>"
+        "enum_init<core::option::Option::<core::contract_address::ContractAddress>, 0>"
       ],
       [
         118,
@@ -37140,7 +37140,7 @@
       ],
       [
         129,
-        "enum_match<core::PanicResult::<core::starknet::ContractAddress>>"
+        "enum_match<core::PanicResult::<core::contract_address::ContractAddress>>"
       ],
       [
         130,
@@ -37312,7 +37312,7 @@
       ],
       [
         172,
-        "function_call<user@core::starknet::StorageAccessU8::read>"
+        "function_call<user@core::storage_access::StorageAccessU8::read>"
       ],
       [
         173,
@@ -37336,7 +37336,7 @@
       ],
       [
         178,
-        "function_call<user@core::starknet::StorageAccessU256::read>"
+        "function_call<user@core::storage_access::StorageAccessU256::read>"
       ],
       [
         179,
@@ -37388,35 +37388,35 @@
       ],
       [
         191,
-        "enum_init<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<core::contract_address::ContractAddress, core::array::Array::<core::felt>>, 0>"
       ],
       [
         192,
-        "store_temp<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<core::contract_address::ContractAddress, core::array::Array::<core::felt>>>"
       ],
       [
         193,
-        "enum_init<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<core::contract_address::ContractAddress, core::array::Array::<core::felt>>, 1>"
       ],
       [
         194,
-        "rename<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<core::contract_address::ContractAddress, core::array::Array::<core::felt>>>"
       ],
       [
         195,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::starknet::ContractAddress>::unwrap_syscall>"
+        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::contract_address::ContractAddress>::unwrap_syscall>"
       ],
       [
         196,
-        "enum_init<core::PanicResult::<core::starknet::ContractAddress>, 1>"
+        "enum_init<core::PanicResult::<core::contract_address::ContractAddress>, 1>"
       ],
       [
         197,
-        "store_temp<core::PanicResult::<core::starknet::ContractAddress>>"
+        "store_temp<core::PanicResult::<core::contract_address::ContractAddress>>"
       ],
       [
         198,
-        "enum_init<core::PanicResult::<core::starknet::ContractAddress>, 0>"
+        "enum_init<core::PanicResult::<core::contract_address::ContractAddress>, 0>"
       ],
       [
         199,
@@ -37532,7 +37532,7 @@
       ],
       [
         227,
-        "function_call<user@core::starknet::StorageAccessU256::write>"
+        "function_call<user@core::storage_access::StorageAccessU256::write>"
       ],
       [
         228,
@@ -37592,7 +37592,7 @@
       ],
       [
         242,
-        "function_call<user@core::starknet::StorageAccessU128::read>"
+        "function_call<user@core::storage_access::StorageAccessU128::read>"
       ],
       [
         243,
@@ -37692,7 +37692,7 @@
       ],
       [
         267,
-        "enum_match<core::result::Result::<core::starknet::ContractAddress, core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<core::contract_address::ContractAddress, core::array::Array::<core::felt>>>"
       ],
       [
         268,
@@ -38030,7 +38030,7 @@
       ],
       [
         54,
-        "core::starknet::StorageAccessU8::read"
+        "core::storage_access::StorageAccessU8::read"
       ],
       [
         55,
@@ -38038,7 +38038,7 @@
       ],
       [
         56,
-        "core::starknet::StorageAccessU256::read"
+        "core::storage_access::StorageAccessU256::read"
       ],
       [
         57,
@@ -38058,7 +38058,7 @@
       ],
       [
         61,
-        "core::starknet::SyscallResultTraitImpl::<core::starknet::ContractAddress>::unwrap_syscall"
+        "core::starknet::SyscallResultTraitImpl::<core::contract_address::ContractAddress>::unwrap_syscall"
       ],
       [
         62,
@@ -38086,7 +38086,7 @@
       ],
       [
         68,
-        "core::starknet::StorageAccessU256::write"
+        "core::storage_access::StorageAccessU256::write"
       ],
       [
         69,
@@ -38098,7 +38098,7 @@
       ],
       [
         71,
-        "core::starknet::StorageAccessU128::read"
+        "core::storage_access::StorageAccessU128::read"
       ],
       [
         72,
@@ -38206,7 +38206,7 @@
         },
         {
           "name": "recipient",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         }
       ],
       "output_ty": "()",
@@ -38246,7 +38246,7 @@
       "inputs": [
         {
           "name": "account",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         }
       ],
       "output_ty": "core::integer::u256",
@@ -38258,11 +38258,11 @@
       "inputs": [
         {
           "name": "owner",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "spender",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         }
       ],
       "output_ty": "core::integer::u256",
@@ -38274,7 +38274,7 @@
       "inputs": [
         {
           "name": "recipient",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "amount",
@@ -38290,11 +38290,11 @@
       "inputs": [
         {
           "name": "sender",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "recipient",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "amount",
@@ -38310,7 +38310,7 @@
       "inputs": [
         {
           "name": "spender",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "amount",
@@ -38326,7 +38326,7 @@
       "inputs": [
         {
           "name": "spender",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "added_value",
@@ -38342,7 +38342,7 @@
       "inputs": [
         {
           "name": "spender",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "subtracted_value",
@@ -38358,11 +38358,11 @@
       "inputs": [
         {
           "name": "from",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "to",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "value",
@@ -38376,11 +38376,11 @@
       "inputs": [
         {
           "name": "owner",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "spender",
-          "ty": "core::starknet::ContractAddress"
+          "ty": "core::contract_address::ContractAddress"
         },
         {
           "name": "value",
