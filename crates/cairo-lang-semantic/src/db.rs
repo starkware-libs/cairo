@@ -146,49 +146,85 @@ pub trait SemanticGroup:
 
     // Struct.
     // =======
-    /// Private query to compute data about a struct.
-    #[salsa::invoke(items::structure::priv_struct_semantic_data)]
-    fn priv_struct_semantic_data(&self, struct_id: StructId)
-    -> Maybe<items::structure::StructData>;
-    /// Returns the semantic diagnostics of a struct.
-    #[salsa::invoke(items::structure::struct_semantic_diagnostics)]
-    fn struct_semantic_diagnostics(&self, struct_id: StructId) -> Diagnostics<SemanticDiagnostic>;
+    /// Private query to compute data about a struct declaration.
+    #[salsa::invoke(items::structure::priv_struct_declaration_data)]
+    fn priv_struct_declaration_data(
+        &self,
+        struct_id: StructId,
+    ) -> Maybe<items::structure::StructDeclarationData>;
+    /// Returns the declaration diagnostics of a struct.
+    #[salsa::invoke(items::structure::struct_declaration_diagnostics)]
+    fn struct_declaration_diagnostics(
+        &self,
+        struct_id: StructId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the attributes of a struct.
+    #[salsa::invoke(items::structure::struct_attributes)]
+    fn struct_attributes(&self, struct_id: StructId) -> Maybe<Vec<Attribute>>;
     /// Returns the generic parameters of an enum.
     #[salsa::invoke(items::structure::struct_generic_params)]
     fn struct_generic_params(&self, struct_id: StructId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the resolution lookback of a struct declaration.
+    #[salsa::invoke(items::structure::struct_declaration_resolved_lookback)]
+    fn struct_declaration_resolved_lookback(
+        &self,
+        structure_id: StructId,
+    ) -> Maybe<Arc<ResolvedLookback>>;
+
+    /// Private query to compute data about a struct definition.
+    #[salsa::invoke(items::structure::priv_struct_definition_data)]
+    fn priv_struct_definition_data(
+        &self,
+        struct_id: StructId,
+    ) -> Maybe<items::structure::StructDefinitionData>;
+    /// Returns the semantic diagnostics of a struct definition.
+    #[salsa::invoke(items::structure::struct_definition_diagnostics)]
+    fn struct_definition_diagnostics(&self, struct_id: StructId)
+    -> Diagnostics<SemanticDiagnostic>;
     /// Returns the members of a struct.
     #[salsa::invoke(items::structure::struct_members)]
     fn struct_members(
         &self,
         struct_id: StructId,
     ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>>;
-    /// Returns the attributes of a struct.
-    #[salsa::invoke(items::structure::struct_attributes)]
-    fn struct_attributes(&self, struct_id: StructId) -> Maybe<Vec<Attribute>>;
-    /// Returns the resolution lookback of a struct.
-    #[salsa::invoke(items::structure::struct_resolved_lookback)]
-    fn struct_resolved_lookback(&self, structure_id: StructId) -> Maybe<Arc<ResolvedLookback>>;
+    /// Returns the resolution lookback of a struct definition.
+    #[salsa::invoke(items::structure::struct_definition_resolved_lookback)]
+    fn struct_definition_resolved_lookback(
+        &self,
+        structure_id: StructId,
+    ) -> Maybe<Arc<ResolvedLookback>>;
 
     // Enum.
     // =======
-    /// Private query to compute data about an enum.
-    #[salsa::invoke(items::enm::priv_enum_semantic_data)]
-    fn priv_enum_semantic_data(&self, enum_id: EnumId) -> Maybe<items::enm::EnumData>;
-    /// Returns the semantic diagnostics of an enum.
-    #[salsa::invoke(items::enm::enum_semantic_diagnostics)]
-    fn enum_semantic_diagnostics(&self, enum_id: EnumId) -> Diagnostics<SemanticDiagnostic>;
+    /// Private query to compute data about an enum declaration.
+    #[salsa::invoke(items::enm::priv_enum_declaration_data)]
+    fn priv_enum_declaration_data(&self, enum_id: EnumId)
+    -> Maybe<items::enm::EnumDeclarationData>;
+    /// Returns the diagnostics of an enum declaration.
+    #[salsa::invoke(items::enm::enum_declaration_diagnostics)]
+    fn enum_declaration_diagnostics(&self, enum_id: EnumId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an enum.
     #[salsa::invoke(items::enm::enum_generic_params)]
     fn enum_generic_params(&self, enum_id: EnumId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the resolution lookback of an enum declaration.
+    #[salsa::invoke(items::enm::enum_declaration_resolved_lookback)]
+    fn enum_declaration_resolved_lookback(&self, enum_id: EnumId) -> Maybe<Arc<ResolvedLookback>>;
+
+    /// Private query to compute data about an enum definition.
+    #[salsa::invoke(items::enm::priv_enum_definition_data)]
+    fn priv_enum_definition_data(&self, enum_id: EnumId) -> Maybe<items::enm::EnumDefinitionData>;
+    /// Returns the definition diagnostics of an enum definition.
+    #[salsa::invoke(items::enm::enum_definition_diagnostics)]
+    fn enum_definition_diagnostics(&self, enum_id: EnumId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the members of an enum.
     #[salsa::invoke(items::enm::enum_variants)]
     fn enum_variants(&self, enum_id: EnumId) -> Maybe<OrderedHashMap<SmolStr, VariantId>>;
     /// Returns the semantic model of a variant.
     #[salsa::invoke(items::enm::variant_semantic)]
     fn variant_semantic(&self, enum_id: EnumId, variant_id: VariantId) -> Maybe<semantic::Variant>;
-    /// Returns the resolution lookback of an enum.
-    #[salsa::invoke(items::enm::enum_resolved_lookback)]
-    fn enum_resolved_lookback(&self, enum_id: EnumId) -> Maybe<Arc<ResolvedLookback>>;
+    /// Returns the resolution lookback of an enum definition.
+    #[salsa::invoke(items::enm::enum_definition_resolved_lookback)]
+    fn enum_definition_resolved_lookback(&self, enum_id: EnumId) -> Maybe<Arc<ResolvedLookback>>;
 
     // Type Alias.
     // ====
@@ -742,10 +778,12 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.free_function_body_diagnostics(*free_function));
             }
             ModuleItemId::Struct(struct_id) => {
-                diagnostics.extend(db.struct_semantic_diagnostics(*struct_id));
+                diagnostics.extend(db.struct_declaration_diagnostics(*struct_id));
+                diagnostics.extend(db.struct_definition_diagnostics(*struct_id));
             }
             ModuleItemId::Enum(enum_id) => {
-                diagnostics.extend(db.enum_semantic_diagnostics(*enum_id));
+                diagnostics.extend(db.enum_definition_diagnostics(*enum_id));
+                diagnostics.extend(db.enum_declaration_diagnostics(*enum_id));
             }
             ModuleItemId::Trait(trait_id) => {
                 diagnostics.extend(db.trait_semantic_diagnostics(*trait_id));
@@ -896,8 +934,14 @@ fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<R
                 db.free_function_declaration_resolved_lookback(id),
                 db.free_function_body_resolved_lookback(id),
             ],
-            ModuleItemId::Struct(id) => vec![db.struct_resolved_lookback(id)],
-            ModuleItemId::Enum(id) => vec![db.enum_resolved_lookback(id)],
+            ModuleItemId::Struct(id) => vec![
+                db.struct_declaration_resolved_lookback(id),
+                db.struct_definition_resolved_lookback(id),
+            ],
+            ModuleItemId::Enum(id) => vec![
+                db.enum_definition_resolved_lookback(id),
+                db.enum_declaration_resolved_lookback(id),
+            ],
             ModuleItemId::TypeAlias(id) => vec![db.type_alias_resolved_lookback(id)],
             ModuleItemId::Trait(_) => vec![],
             ModuleItemId::Impl(id) => vec![db.impl_def_resolved_lookback(id)],
