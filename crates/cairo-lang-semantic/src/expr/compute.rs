@@ -38,13 +38,11 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::{
-    ConcreteImplGenericFunctionId, GenericFunctionId, ImplGenericParamFunctionId,
-};
-use crate::items::imp::{has_impl_at_context, ImplId};
+use crate::items::functions::GenericFunctionId;
+use crate::items::imp::has_impl_at_context;
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::ConcreteTraitGenericFunctionLongId;
 use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
@@ -471,38 +469,6 @@ pub fn compute_named_argument_clause(
     (expr, arg_name_identifier, mutability)
 }
 
-/// Resolves a trait function to an impl function.
-pub fn resolve_trait_function(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    resolver: &mut Resolver<'_>,
-    concrete_trait_function: ConcreteTraitGenericFunctionId,
-    stable_ptr: SyntaxStablePtrId,
-) -> Maybe<GenericFunctionId> {
-    // Resolve impl.
-
-    let trait_function_id = concrete_trait_function.function_id(db);
-    let impl_id = resolver.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
-    match impl_id {
-        ImplId::Concrete(concrete_impl_id) => {
-            let impl_def_id = concrete_impl_id.impl_def_id(db);
-            let function = db
-                .impl_function_by_trait_function(impl_def_id, trait_function_id)?
-                .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
-            Ok(GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
-                concrete_impl_id,
-                function,
-            }))
-        }
-        ImplId::GenericParameter(param) => {
-            Ok(GenericFunctionId::ImplGenericParam(ImplGenericParamFunctionId {
-                param,
-                trait_function_id,
-            }))
-        }
-    }
-}
-
 pub fn compute_root_expr(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBlock,
@@ -517,86 +483,19 @@ pub fn compute_root_expr(
     }
 
     // Apply inference.
-    for (_id, expr) in ctx.exprs.iter_mut() {
-        match expr {
-            Expr::Constant(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Tuple(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Snapshot(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Assignment(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Block(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::FunctionCall(call_expr) => {
-                call_expr.ty = ctx.resolver.inference.reduce_ty(call_expr.ty);
-                let mut long_function_id = ctx.db.lookup_intern_function(call_expr.function);
-                long_function_id.function.generic_args = ctx
-                    .resolver
-                    .inference
-                    .reduce_generic_args(&long_function_id.function.generic_args);
-                if let GenericFunctionId::Trait(concrete_trait_function) =
-                    long_function_id.function.generic_function
-                {
-                    let generic_function = match resolve_trait_function(
-                        ctx.db,
-                        ctx.diagnostics,
-                        &mut ctx.resolver,
-                        concrete_trait_function,
-                        call_expr.stable_ptr.untyped(),
-                    ) {
-                        Ok(generic_function) => generic_function,
-                        Err(diag_added) => {
-                            *expr = Expr::Missing(ExprMissing {
-                                ty: TypeId::missing(ctx.db, diag_added),
-                                stable_ptr: call_expr.stable_ptr,
-                                diag_added,
-                            });
-                            continue;
-                        }
-                    };
-
-                    long_function_id.function.generic_function = generic_function;
-                }
-                long_function_id.function.generic_function.generic_args_apply(
-                    ctx.db,
-                    |generic_args| {
-                        *generic_args = ctx.resolver.inference.reduce_generic_args(generic_args)
-                    },
-                );
-                call_expr.function = ctx.db.intern_function(long_function_id)
+    loop {
+        let n_variables = ctx.resolver.inference.n_variables();
+        for (_id, expr) in ctx.exprs.iter_mut() {
+            ctx.resolver.reduce_expr(ctx.diagnostics, expr).ok();
+        }
+        for (_id, stmt) in ctx.statements.iter_mut() {
+            match stmt {
+                Statement::Let(stmt) => ctx.resolver.inference.reduce_pattern(&mut stmt.pattern),
+                Statement::Expr(_) | Statement::Return(_) => {}
             }
-            Expr::Match(expr) => {
-                expr.ty = ctx.resolver.inference.reduce_ty(expr.ty);
-                for arm in expr.arms.iter_mut() {
-                    ctx.resolver.inference.reduce_pattern(&mut arm.pattern);
-                }
-            }
-            Expr::If(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Var(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Literal(_) => {
-                // TODO(spapini): Support literal inference. Perhaps using Numeric trait.
-            }
-            Expr::MemberAccess(expr) => {
-                expr.concrete_struct_id =
-                    ctx.resolver.inference.reduce_concrete_struct(expr.concrete_struct_id);
-                expr.ty = ctx.resolver.inference.reduce_ty(expr.ty)
-            }
-            Expr::StructCtor(expr) => {
-                expr.ty = ctx.resolver.inference.reduce_ty(expr.ty);
-            }
-            Expr::EnumVariantCtor(expr) => {
-                expr.ty = ctx.resolver.inference.reduce_ty(expr.ty);
-                ctx.resolver.inference.reduce_concrete_variant(&mut expr.variant);
-            }
-            Expr::PropagateError(expr) => {
-                ctx.resolver.inference.reduce_concrete_variant(&mut expr.err_variant);
-                ctx.resolver.inference.reduce_concrete_variant(&mut expr.ok_variant);
-                ctx.resolver.inference.reduce_concrete_variant(&mut expr.func_err_variant);
-            }
-            Expr::Missing(_) => {}
-        };
-    }
-    for (_id, stmt) in ctx.statements.iter_mut() {
-        match stmt {
-            Statement::Let(stmt) => ctx.resolver.inference.reduce_pattern(&mut stmt.pattern),
-            Statement::Expr(_) | Statement::Return(_) => {}
+        }
+        if ctx.resolver.inference.n_variables() == n_variables {
+            break;
         }
     }
 
@@ -608,6 +507,7 @@ pub fn compute_root_expr(
 
     Ok(res)
 }
+
 /// Computes the semantic model of an expression of type [ast::ExprBlock].
 pub fn compute_expr_block_semantic(
     ctx: &mut ComputationContext<'_>,

@@ -78,6 +78,12 @@ impl<'db> Inference<'db> {
         None
     }
 
+    /// Returns the number of variables allocated for current inference.
+    /// Useful for deciding if new variables were introduced.
+    pub fn n_variables(&self) -> usize {
+        self.var_ptrs.len()
+    }
+
     /// Gets current canonical representation for a [TypeId] after all known substitutions.
     pub fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
         let long_type_id = self.db.lookup_intern_type(ty);
