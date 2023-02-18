@@ -3,6 +3,24 @@ use traits::Into;
 use traits::TryInto;
 use option::OptionTrait;
 
+// Re-imports
+use storage_access::StorageAddress;
+use storage_access::StorageBaseAddress;
+use storage_access::storage_base_address_const;
+use storage_access::storage_base_address_from_felt;
+use storage_access::storage_read_syscall;
+use storage_access::storage_write_syscall;
+use storage_access::storage_address_from_base;
+use storage_access::storage_address_from_base_and_offset;
+
+use contract_address::ContractAddress;
+use contract_address::ContractAddressIntoFelt;
+use contract_address::FeltTryIntoContractAddress;
+use contract_address::contract_address_const;
+use contract_address::contract_address_to_felt;
+use contract_address::contract_address_try_from_felt;
+use contract_address::ContractAddressZeroable;
+
 extern type System;
 
 // An Helper function to force the inclusion of `System` in the list of implicits.
