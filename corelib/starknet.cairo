@@ -4,6 +4,7 @@ use traits::TryInto;
 use option::OptionTrait;
 
 // Re-imports
+use storage_access::StorageAccess;
 use storage_access::StorageAddress;
 use storage_access::StorageBaseAddress;
 use storage_access::storage_base_address_const;

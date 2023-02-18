@@ -1,7 +1,7 @@
 use array::ArrayTrait;
 use serde::Serde;
-use contract_address::contract_address_to_felt;
-use contract_address::contract_address_try_from_felt;
+use starknet::contract_address_to_felt;
+use starknet::contract_address_try_from_felt;
 
 impl ContractAddressSerde of Serde::<ContractAddress> {
     fn serialize(ref serialized: Array::<felt>, input: ContractAddress) {
