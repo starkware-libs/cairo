@@ -397,12 +397,6 @@ mod starknet;
 use starknet::System;
 use starknet::ContractAddress;
 
-// ContractAddress
-mod contract_address;
-
-// StorageAccess
-mod storage_access;
-
 // Internals.
 mod internal;
 
