@@ -387,7 +387,7 @@ test::foo@0() -> (core::bool);
 //! > u8_eq libfunc (a immediate, b deref)
 
 //! > test_comments
-//! see the comment for: u8_eq libfunc (a deref, b deref). 
+//! see the comment for: u8_eq libfunc (a deref, b deref).
 
 //! > test_function_name
 run_small_e2e_test
