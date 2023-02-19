@@ -17,7 +17,7 @@ use cairo_lang_sierra::extensions::felt::FeltConcrete;
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
-    AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
+    AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
@@ -260,7 +260,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             let size = info_provider.type_size(&libfunc.ty) as i32;
             vec![ops.const_cost(ConstCost { steps: size, holes: -size, range_checks: 0 })]
         }
-        Mem(AllocLocal(libfunc) | AlignTemps(libfunc)) => {
+        Mem(AllocLocal(libfunc)) => {
             vec![ops.holes(info_provider.type_size(&libfunc.ty) as i32)]
         }
 
