@@ -52,10 +52,7 @@ pub fn get_ap_change(
             let signature = get_libfunc_signature(db, invocation.libfunc_id.clone());
             // Go over the branches.
             for branch_signature in signature.branch_signatures {
-                if matches!(
-                    branch_signature.ap_change,
-                    SierraApChange::Unknown | SierraApChange::NotImplemented
-                ) {
+                if matches!(branch_signature.ap_change, SierraApChange::Unknown) {
                     return Ok(SierraApChange::Unknown);
                 }
             }

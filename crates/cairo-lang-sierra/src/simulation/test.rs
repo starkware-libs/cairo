@@ -100,7 +100,7 @@ impl SignatureSpecializationContext for MockSpecializationContext {
     }
 
     fn try_get_function_ap_change(&self, _function_id: &FunctionId) -> Option<SierraApChange> {
-        Some(SierraApChange::NotImplemented)
+        Some(SierraApChange::Unknown)
     }
 }
 
