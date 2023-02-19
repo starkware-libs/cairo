@@ -217,6 +217,7 @@ pub enum Statement {
     MatchEnum(StatementMatchEnum),
 
     Snapshot(StatementSnapshot),
+    Desnap(StatementDesnap),
 }
 impl Statement {
     pub fn inputs(&self) -> Vec<VariableId> {
@@ -229,6 +230,7 @@ impl Statement {
             Statement::EnumConstruct(stmt) => vec![stmt.input],
             Statement::MatchEnum(stmt) => vec![stmt.input],
             Statement::Snapshot(stmt) => vec![stmt.input],
+            Statement::Desnap(stmt) => vec![stmt.input],
         }
     }
     pub fn outputs(&self) -> Vec<VariableId> {
@@ -241,6 +243,7 @@ impl Statement {
             Statement::EnumConstruct(stmt) => vec![stmt.output],
             Statement::MatchEnum(_) => vec![],
             Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
+            Statement::Desnap(stmt) => vec![stmt.output],
         }
     }
 }
@@ -325,4 +328,12 @@ pub struct StatementSnapshot {
     pub input: VariableId,
     pub output_original: VariableId,
     pub output_snapshot: VariableId,
+}
+
+/// A statement that desnaps a variable.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatementDesnap {
+    pub input: VariableId,
+    /// The variable to bind the value to.
+    pub output: VariableId,
 }

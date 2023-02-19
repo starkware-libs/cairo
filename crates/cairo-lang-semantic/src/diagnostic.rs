@@ -527,6 +527,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 // TODO(spapini): Add details.
                 "Inference error".into()
             }
+            SemanticDiagnosticKind::DesnapNonSnapshot => {
+                "Desnap operator can only be applied on snapshots".into()
+            }
         }
     }
 
@@ -777,6 +780,7 @@ pub enum SemanticDiagnosticKind {
     ExternItemWithImplGenericsNotSupported,
     MissingSemicolon,
     TraitMismatch,
+    DesnapNonSnapshot,
     InternalInferenceError(InferenceError),
 }
 

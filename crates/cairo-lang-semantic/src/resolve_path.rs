@@ -906,6 +906,7 @@ impl<'db> Resolver<'db> {
             Expr::Constant(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
             Expr::Tuple(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
             Expr::Snapshot(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
+            Expr::Desnap(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
             Expr::Assignment(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
             Expr::Block(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
             Expr::FunctionCall(call_expr) => {

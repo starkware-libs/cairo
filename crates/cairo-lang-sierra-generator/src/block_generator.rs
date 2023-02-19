@@ -15,8 +15,8 @@ use crate::pre_sierra;
 use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, dup_libfunc_id,
     enum_init_libfunc_id, get_concrete_libfunc_id, jump_libfunc_id, jump_statement,
-    match_enum_libfunc_id, return_statement, simple_statement, snapshot_take_libfunc_id,
-    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    match_enum_libfunc_id, rename_libfunc_id, return_statement, simple_statement,
+    snapshot_take_libfunc_id, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Generates Sierra code for the body of the given [lowering::FlatBlock].
@@ -246,6 +246,9 @@ pub fn generate_statement_code(
         }
         lowering::Statement::Snapshot(statement) => {
             generate_statement_snapshot(context, statement, statement_location)
+        }
+        lowering::Statement::Desnap(statement) => {
+            generate_statement_desnap(context, statement, statement_location)
         }
     }
 }
@@ -597,6 +600,24 @@ fn generate_statement_snapshot(
             context.get_sierra_variable(statement.output_original),
             context.get_sierra_variable(statement.output_snapshot),
         ],
+    ));
+    Ok(statements)
+}
+
+/// Generates Sierra code for [lowering::StatementDesnap].
+fn generate_statement_desnap(
+    context: &mut ExprGeneratorContext<'_>,
+    statement: &lowering::StatementDesnap,
+    _statement_location: &StatementLocation,
+) -> Maybe<Vec<pre_sierra::Statement>> {
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+    let input = context.get_sierra_variable(statement.input);
+
+    statements.push(simple_statement(
+        rename_libfunc_id(context.get_db(), context.get_variable_sierra_type(statement.input)?),
+        &[input],
+        &[context.get_sierra_variable(statement.output)],
     ));
     Ok(statements)
 }

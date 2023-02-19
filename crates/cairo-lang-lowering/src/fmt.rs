@@ -9,9 +9,9 @@ use crate::objects::{
     StatementStructDestructure, StructuredBlock, StructuredBlockEnd, VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, StatementEnumConstruct, StatementMatchEnum,
-    StatementSnapshot, StatementStructConstruct, StructuredLowered, StructuredStatement,
-    VarRemapping, Variable,
+    FlatBlock, FlatBlockEnd, FlatLowered, StatementDesnap, StatementEnumConstruct,
+    StatementMatchEnum, StatementSnapshot, StatementStructConstruct, StructuredLowered,
+    StructuredStatement, VarRemapping, Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
@@ -261,6 +261,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
             Statement::EnumConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::MatchEnum(stmt) => stmt.fmt(f, ctx),
             Statement::Snapshot(stmt) => stmt.fmt(f, ctx),
+            Statement::Desnap(stmt) => stmt.fmt(f, ctx),
         }
     }
 }
@@ -363,6 +364,14 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementStructDestructure {
 impl DebugWithDb<LoweredFormatter<'_>> for StatementSnapshot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "snapshot(")?;
+        self.input.fmt(f, ctx)?;
+        write!(f, ")")
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for StatementDesnap {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "desnap(")?;
         self.input.fmt(f, ctx)?;
         write!(f, ")")
     }

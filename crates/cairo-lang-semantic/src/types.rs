@@ -8,7 +8,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{define_short_id, extract_matches, OptionFrom};
+use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionFrom};
 use itertools::{zip_eq, Itertools};
 
 use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
@@ -295,6 +295,18 @@ pub fn maybe_resolve_type(
         {
             let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
             db.intern_type(TypeLongId::Snapshot(ty))
+        }
+        ast::Expr::Unary(unary_syntax)
+            if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::Desnap(_)) =>
+        {
+            let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
+            if let Some(desnapped_ty) =
+                try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Snapshot)
+            {
+                desnapped_ty
+            } else {
+                return Err(diagnostics.report(ty_syntax, DesnapNonSnapshot));
+            }
         }
         _ => {
             return Err(diagnostics.report(ty_syntax, UnknownType));
