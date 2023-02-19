@@ -58,7 +58,7 @@ v3: ((BlockId(2), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(3)): v4, v2
+BeginningOfBlock(BlockId(3)): v4
 
 //! > ==========================================================================
 
@@ -155,8 +155,8 @@ v9: ((BlockId(2), 2), 0)
 v1: ((BlockId(2), 1), 1)
 
 //! > drops
-BeginningOfBlock(BlockId(5)): v8, v6
-BeginningOfBlock(BlockId(1)): v4, v6
+BeginningOfBlock(BlockId(5)): v8
+BeginningOfBlock(BlockId(1)): v4
 
 //! > ==========================================================================
 
@@ -239,3 +239,117 @@ v0: ((BlockId(3), 0), 1)
 PostStatement((BlockId(4), 0)): v4
 BeginningOfBlock(BlockId(3)): v5
 BeginningOfBlock(BlockId(2)): UninitializedLocal(v6)
+
+//! > ==========================================================================
+
+//! > Test match where is there a goto in one arm and callsite in another.
+
+//! > test_function_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(data: Array::<felt>) -> Array::<felt> {
+     bar(data)
+}
+
+//! > module_code
+#[inline(always)]
+fn bar(data: Array::<felt>) -> Array::<felt> {
+     match get_gas() {
+          Option::Some(_) => {},
+          Option::None(_) => {
+              let mut err_data = array_new();
+              array_append(ref err_data, 'Out of gas');
+              panic(err_data)
+          },
+      }
+
+      let mut arr = array_new();
+
+      arr
+}
+
+//! > lowering_format
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::felt>
+Statements:
+  () <- match core::gas::get_gas(v0, v1) {
+    Option::Some => blk4,
+    Option::None => blk5,
+  }
+  (v22: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v13: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v22)
+End:
+  Fallthrough(blk3, {v11 -> v4, v12 -> v5, v13 -> v6})
+
+blk1:
+Inputs: v7: core::array::Array::<core::felt>
+Statements:
+End:
+  Callsite({v7 -> v3})
+
+blk2:
+Inputs: v8: core::array::Array::<core::felt>
+Statements:
+  (v10: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v8)
+End:
+  Return(v4, v5, v10)
+
+blk3:
+Inputs:
+Statements:
+  () <- match_enum(v6) {
+    PanicResult::Ok => blk1,
+    PanicResult::Err => blk2,
+  }
+  (v9: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v3)
+End:
+  Return(v4, v5, v9)
+
+blk4:
+Inputs: v14: core::RangeCheck, v15: core::gas::GasBuiltin
+Statements:
+End:
+  Callsite({v14 -> v11, v15 -> v12})
+
+blk5:
+Inputs: v20: core::RangeCheck, v21: core::gas::GasBuiltin
+Statements:
+  (v16: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v17: core::felt) <- 375233589013918064796019u
+  (v18: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v16, v17)
+  (v19: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v18)
+End:
+  Goto(blk3, {v20 -> v4, v21 -> v5, v19 -> v6})
+
+//! > last_use
+v9: ((BlockId(3), 2), 2)
+v5: ((BlockId(3), 2), 1)
+v4: ((BlockId(3), 2), 0)
+v3: ((BlockId(3), 1), 0)
+v7: ((BlockId(1), 0), 0)
+v10: ((BlockId(2), 1), 2)
+v5: ((BlockId(2), 1), 1)
+v4: ((BlockId(2), 1), 0)
+v8: ((BlockId(2), 0), 0)
+v6: ((BlockId(3), 0), 0)
+v13: ((BlockId(0), 3), 2)
+v12: ((BlockId(0), 3), 1)
+v11: ((BlockId(0), 3), 0)
+v22: ((BlockId(0), 2), 0)
+v15: ((BlockId(4), 0), 1)
+v14: ((BlockId(4), 0), 0)
+v19: ((BlockId(5), 4), 2)
+v21: ((BlockId(5), 4), 1)
+v20: ((BlockId(5), 4), 0)
+v18: ((BlockId(5), 3), 0)
+v17: ((BlockId(5), 2), 1)
+v16: ((BlockId(5), 2), 0)
+v1: ((BlockId(0), 0), 1)
+v0: ((BlockId(0), 0), 0)
+
+//! > drops
+BeginningOfBlock(BlockId(0)): v2
