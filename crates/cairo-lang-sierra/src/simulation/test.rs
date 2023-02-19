@@ -72,6 +72,14 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 duplicatable: false,
                 size: 0,
             })
+        } else if id == "ArrayU128".into() {
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: true,
+                duplicatable: false,
+                size: 2,
+            })
         } else {
             None
         }
@@ -163,9 +171,9 @@ fn simulate_branch(
 #[test_case("array_append", vec![type_arg("u128")], vec![Array(vec![]), Uint128(4)] =>
             Ok(vec![Array(vec![Uint128(4)])]); "array_append([], 4)")]
 #[test_case("array_get", vec![type_arg("u128")], vec![RangeCheck, Array(vec![Uint128(5)]), Uint64(0)]
-             => Ok(vec![RangeCheck, Array(vec![Uint128(5)]), Uint128(5)]); "array_get([5], 0)")]
+             => Ok(vec![RangeCheck, Uint128(5)]); "array_get([5], 0)")]
 #[test_case("array_len", vec![type_arg("u128")], vec![Array(vec![])] =>
-            Ok(vec![Array(vec![]), Uint64(0)]); "array_len([])")]
+            Ok(vec![Uint64(0)]); "array_len([])")]
 #[test_case("u128_safe_divmod", vec![], vec![RangeCheck, Uint128(32), NonZero(Box::new(Uint128(5)))]
              => Ok(vec![RangeCheck, Uint128(6), Uint128(2)]); "u128_safe_divmod(32, 5)")]
 #[test_case("u128_const", vec![value_arg(3)], vec![] => Ok(vec![Uint128(3)]);
