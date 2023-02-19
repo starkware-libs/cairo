@@ -273,6 +273,7 @@ impl LoweredExprExternEnum {
             function: self.function,
             inputs: self.inputs,
             arms,
+            location: self.location,
         }));
         merged.expr?.var(ctx, scope)
     }

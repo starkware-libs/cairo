@@ -73,6 +73,7 @@ impl Call {
             function: self.function,
             inputs: self.inputs,
             outputs,
+            location: self.location,
         }));
 
         CallResult { returns, ref_outputs, implicit_outputs }

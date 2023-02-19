@@ -296,6 +296,7 @@ impl<'a, 'b> Mapper<'a, 'b> {
                 function: stmt.function,
                 inputs: stmt.inputs.iter().map(|v| self.rename_var(v)).collect(),
                 outputs: stmt.outputs.iter().map(|v| self.rename_var(v)).collect(),
+                location: stmt.location,
             }),
             Statement::MatchExtern(stmt) => Statement::MatchExtern(StatementMatchExtern {
                 function: stmt.function,
@@ -307,6 +308,7 @@ impl<'a, 'b> Mapper<'a, 'b> {
                         (concrete_variant.clone(), self.renamed_blocks[block_id])
                     })
                     .collect(),
+                location: stmt.location,
             }),
             Statement::StructConstruct(stmt) => {
                 Statement::StructConstruct(StatementStructConstruct {
