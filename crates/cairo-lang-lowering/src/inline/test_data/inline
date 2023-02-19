@@ -745,3 +745,184 @@ End:
   Return(v1)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining of a function that calls a panicable function outside of the root block.
+//!
+//! Note that a panicable function can have a block with a low `block_id` with a match_arm that goes
+//! to a higher 'block_id'.
+//! We want to test this outside of the root block as the root block is rebuild last.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function
+fn foo(a: u128, b: u128) -> u128 {
+    bar1(a, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar1(a: u128, b: u128) -> u128 {
+   if a == 1_u128 {
+      return bar2(b, a);
+   }
+   a
+}
+
+#[inline(always)]
+fn bar2(a: u128, b: u128) -> u128 {
+    a + b
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
+Statements:
+  (v4: core::RangeCheck, v5: core::PanicResult::<core::integer::u128>) <- test::bar1(v0, v1, v2)
+  () <- match_enum(v5) {
+    PanicResult::Ok => blk1,
+    PanicResult::Err => blk2,
+  }
+  (v8: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v3)
+End:
+  Return(v4, v8)
+
+blk1:
+Inputs: v6: core::integer::u128
+Statements:
+End:
+  Callsite({v6 -> v3})
+
+blk2:
+Inputs: v7: core::array::Array::<core::felt>
+Statements:
+  (v9: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v7)
+End:
+  Return(v4, v9)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
+Statements:
+  (v21: core::integer::u128) <- 1u
+  () <- match core::integer::u128_eq(v1, v21) {
+    bool::False => blk9,
+    bool::True => blk10,
+  }
+End:
+  Fallthrough(blk8, {v22 -> v20})
+
+blk1:
+Inputs: v6: core::integer::u128
+Statements:
+End:
+  Callsite({v6 -> v3})
+
+blk2:
+Inputs: v7: core::array::Array::<core::felt>
+Statements:
+  (v9: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v7)
+End:
+  Return(v4, v9)
+
+blk3:
+Inputs:
+Statements:
+  () <- match_enum(v5) {
+    PanicResult::Ok => blk1,
+    PanicResult::Err => blk2,
+  }
+  (v8: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v3)
+End:
+  Return(v4, v8)
+
+blk4:
+Inputs: v14: core::integer::u128
+Statements:
+End:
+  Callsite({v14 -> v13})
+
+blk5:
+Inputs: v15: core::array::Array::<core::felt>
+Statements:
+  (v16: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v15)
+End:
+  Goto(blk3, {v11 -> v4, v16 -> v5})
+
+blk6:
+Inputs: v18: ()
+Statements:
+  (v27: core::RangeCheck, v33: core::PanicResult::<core::integer::u128>) <- core::integer::U128Add::add(v0, v2, v1)
+  () <- match_enum(v33) {
+    PanicResult::Ok => blk12,
+    PanicResult::Err => blk13,
+  }
+  (v28: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v29)
+End:
+  Fallthrough(blk11, {v27 -> v11, v28 -> v12})
+
+blk7:
+Inputs: v19: ()
+Statements:
+End:
+  Callsite({})
+
+blk8:
+Inputs:
+Statements:
+  () <- match_enum(v20) {
+    bool::False => blk7,
+    bool::True => blk6,
+  }
+  (v10: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
+End:
+  Fallthrough(blk3, {v0 -> v4, v10 -> v5})
+
+blk9:
+Inputs:
+Statements:
+  (v23: ()) <- struct_construct()
+  (v24: core::bool) <- bool::False(v23)
+End:
+  Callsite({v24 -> v22})
+
+blk10:
+Inputs:
+Statements:
+  (v25: ()) <- struct_construct()
+  (v26: core::bool) <- bool::True(v25)
+End:
+  Callsite({v26 -> v22})
+
+blk11:
+Inputs:
+Statements:
+  () <- match_enum(v12) {
+    PanicResult::Ok => blk4,
+    PanicResult::Err => blk5,
+  }
+  (v17: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v13)
+End:
+  Goto(blk3, {v11 -> v4, v17 -> v5})
+
+blk12:
+Inputs: v30: core::integer::u128
+Statements:
+End:
+  Callsite({v30 -> v29})
+
+blk13:
+Inputs: v31: core::array::Array::<core::felt>
+Statements:
+  (v32: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v31)
+End:
+  Goto(blk11, {v27 -> v11, v32 -> v12})
+
+//! > lowering_diagnostics
