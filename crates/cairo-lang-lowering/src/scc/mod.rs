@@ -55,6 +55,7 @@ pub fn function_scc_explicit_implicits(
     Ok(explicit_implicits)
 }
 
+// TODO(spapini): This code ignores the concreteness of FunctionId. Fix it to follow concrete calls.
 /// Query implementation of [crate::db::LoweringGroup::function_all_implicits].
 pub fn function_all_implicits(
     db: &dyn LoweringGroup,
