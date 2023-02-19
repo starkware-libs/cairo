@@ -83,14 +83,7 @@ pub fn generate_entry_point_wrapper(
         let arg_definition = format!(
             "
             let {mut_modifier}{arg_name} =
-                match serde::Serde::<{type_name}>::deserialize(ref data) {{
-                    Option::Some(x) => x,
-                    Option::None(()) => {{
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, {input_data_short_err});
-                        panic(err_data)
-                    }},
-                }};"
+                serde::Serde::<{type_name}>::deserialize(ref data).expect({input_data_short_err});"
         );
         arg_definitions.push(arg_definition);
 
