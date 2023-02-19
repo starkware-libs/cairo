@@ -1,6 +1,8 @@
 use array::ArrayTrait;
-use zeroable::Zeroable;
 use starknet::ContractAddressZeroable;
+use starknet::ContractAddressIntoFelt;
+use traits::Into;
+use zeroable::Zeroable;
 
 #[contract]
 mod TestContract {
@@ -221,10 +223,42 @@ fn write_read_large_value() {
 
 #[test]
 #[available_gas(300000)]
-fn getter_syscalls() {
-    assert(starknet::get_caller_address().is_zero(), 'non default value');
-    assert(starknet::get_contract_address().is_zero(), 'non default value');
-    assert(starknet::get_sequencer_address().is_zero(), 'non default value');
+fn test_get_block_number() {
     assert(starknet::get_block_number() == 0_u64, 'non default value');
+    starknet_testing::set_block_number(1_u64);
+    assert(starknet::get_block_number() == 1_u64, 'not set value');
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_get_block_timestamp() {
     assert(starknet::get_block_timestamp() == 0_u64, 'non default value');
+    starknet_testing::set_block_timestamp(1_u64);
+    assert(starknet::get_block_timestamp() == 1_u64, 'not set value');
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_get_caller_address() {
+    assert(starknet::get_caller_address().is_zero(), 'non default value');
+    starknet_testing::set_caller_address(starknet::contract_address_const::<1>());
+    assert(starknet::get_caller_address().into() == 1, 'not set value');
+}
+
+
+#[test]
+#[available_gas(300000)]
+fn test_get_contract_address() {
+    assert(starknet::get_contract_address().is_zero(), 'non default value');
+    starknet_testing::set_contract_address(starknet::contract_address_const::<1>());
+    assert(starknet::get_contract_address().into() == 1, 'not set value');
+}
+
+
+#[test]
+#[available_gas(300000)]
+fn test_get_sequencer_address() {
+    assert(starknet::get_sequencer_address().is_zero(), 'non default value');
+    starknet_testing::set_sequencer_address(starknet::contract_address_const::<1>());
+    assert(starknet::get_sequencer_address().into() == 1, 'not set value');
 }

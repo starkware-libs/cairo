@@ -16,6 +16,7 @@ pub mod getter;
 
 pub mod emit_event;
 use emit_event::EmitEventLibfunc;
+pub mod testing;
 
 pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
@@ -29,6 +30,7 @@ use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc, StorageAddressType,
     StorageBaseAddressFromFeltLibfunc,
 };
+use self::testing::TestingLibfunc;
 use super::array::ArrayType;
 use super::felt::FeltType;
 use super::snapshot::SnapshotType;
@@ -63,6 +65,7 @@ define_libfunc_hierarchy! {
          GetContractAddress(GetterLibfunc<GetContractAddressTrait>),
          GetSequencerAddress(GetterLibfunc<GetSequencerAddressTrait>),
          GetTxInfo(GetterLibfunc<GetTxInfoTrait>),
+         Testing(TestingLibfunc),
     }, StarkNetConcreteLibfunc
 }
 
