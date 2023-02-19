@@ -7,66 +7,106 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt, y: felt) -> felt {
-    let a = x + x;
-    let b = a + a;
-    let c = b + b;
-    let d = b + 1;
-    1234;
-    a
+fn foo(data: Array::<felt>) -> Array::<felt> {
+     bar(data)
 }
 
 //! > module_code
+#[inline(always)]
+fn bar(data: Array::<felt>) -> Array::<felt> {
+     match get_gas() {
+          Option::Some(_) => {},
+          Option::None(_) => {
+              let mut err_data = array_new();
+              array_append(ref err_data, 'Out of gas');
+              panic(err_data)
+          },
+      }
+
+      let mut arr = array_new();
+
+      arr
+}
 
 //! > lowering_format
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::felt>
 Statements:
-  (v8: core::felt) <- core::felt_add(v0, v0)
+  () <- match core::gas::get_gas(v0, v1) {
+    Option::Some => blk4,
+    Option::None => blk5,
+  }
+  (v22: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v13: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v22)
 End:
-  Fallthrough(blk1, {v8 -> v2})
+  Fallthrough(blk3, {v11 -> v4, v12 -> v5, v13 -> v6})
 
 blk1:
-Inputs:
+Inputs: v7: core::array::Array::<core::felt>
 Statements:
-  (v9: core::felt) <- core::felt_add(v2, v2)
 End:
-  Fallthrough(blk2, {v9 -> v3})
+  Callsite({v7 -> v3})
 
 blk2:
-Inputs:
+Inputs: v8: core::array::Array::<core::felt>
 Statements:
-  (v10: core::felt) <- core::felt_add(v3, v3)
+  (v10: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v8)
 End:
-  Fallthrough(blk3, {v10 -> v4})
+  Return(v4, v5, v10)
 
 blk3:
 Inputs:
 Statements:
-  (v5: core::felt) <- 1u
-  (v11: core::felt) <- core::felt_add(v3, v5)
+  () <- match_enum(v6) {
+    PanicResult::Ok => blk1,
+    PanicResult::Err => blk2,
+  }
+  (v9: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v3)
 End:
-  Fallthrough(blk4, {v11 -> v6})
+  Return(v4, v5, v9)
 
 blk4:
-Inputs:
+Inputs: v14: core::RangeCheck, v15: core::gas::GasBuiltin
 Statements:
-  (v7: core::felt) <- 1234u
 End:
-  Return(v2)
+  Callsite({v14 -> v11, v15 -> v12})
+
+blk5:
+Inputs: v20: core::RangeCheck, v21: core::gas::GasBuiltin
+Statements:
+  (v16: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v17: core::felt) <- 375233589013918064796019u
+  (v18: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v16, v17)
+  (v19: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v18)
+End:
+  Goto(blk3, {v20 -> v4, v21 -> v5, v19 -> v6})
 
 //! > last_use
-v2: ((BlockId(4), 1), 0)
-v11: ((BlockId(3), 2), 0)
-v5: ((BlockId(3), 1), 1)
+v9: ((BlockId(3), 2), 2)
+v5: ((BlockId(3), 2), 1)
+v4: ((BlockId(3), 2), 0)
 v3: ((BlockId(3), 1), 0)
-v10: ((BlockId(2), 1), 0)
-v9: ((BlockId(1), 1), 0)
-v8: ((BlockId(0), 1), 0)
-v0: ((BlockId(0), 0), 1)
+v7: ((BlockId(1), 0), 0)
+v10: ((BlockId(2), 1), 2)
+v5: ((BlockId(2), 1), 1)
+v4: ((BlockId(2), 1), 0)
+v8: ((BlockId(2), 0), 0)
+v6: ((BlockId(3), 0), 0)
+v13: ((BlockId(0), 3), 2)
+v12: ((BlockId(0), 3), 1)
+v11: ((BlockId(0), 3), 0)
+v22: ((BlockId(0), 2), 0)
+v15: ((BlockId(4), 0), 1)
+v14: ((BlockId(4), 0), 0)
+v19: ((BlockId(5), 4), 2)
+v21: ((BlockId(5), 4), 1)
+v20: ((BlockId(5), 4), 0)
+v18: ((BlockId(5), 3), 0)
+v17: ((BlockId(5), 2), 1)
+v16: ((BlockId(5), 2), 0)
+v1: ((BlockId(0), 0), 1)
+v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(4), 0)): v7
-BeginningOfBlock(BlockId(4)): v6
-BeginningOfBlock(BlockId(3)): v4
-BeginningOfBlock(BlockId(0)): v1
+BeginningOfBlock(BlockId(4)): v11, v12, v13
+BeginningOfBlock(BlockId(0)): v2

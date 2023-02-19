@@ -1,4 +1,4 @@
-//! > Last use in one branch
+//! > Test variable lifetime in simple scenario
 
 //! > test_function_name
 check_variable_lifetime
@@ -7,90 +7,69 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt, y: felt) -> felt {
-    if x == 0 { y } else { 0 }
+// fn foo(data: Array::<felt>) -> Array::<felt> {
+//      bar(data)
+// }
+fn foo(data: Array::<felt>) -> Array::<felt> {
+     match get_gas() {
+          Option::Some(_) => {},
+          Option::None(_) => {
+              let mut err_data = array_new();
+              array_append(ref err_data, 'Out of gas');
+              panic(err_data)
+          },
+      }
+
+      let mut arr = array_new();
+
+      arr
 }
 
 //! > module_code
+#[inline(always)]
+fn bar(data: Array::<felt>) -> Array::<felt> {
+     match get_gas() {
+          Option::Some(_) => {},
+          Option::None(_) => {
+              let mut err_data = array_new();
+              array_append(ref err_data, 'Out of gas');
+              panic(err_data)
+          },
+      }
 
-//! > lowering_format
-blk0:
-Inputs:
-Statements:
-End:
-  Callsite({v1 -> v4})
+      let mut arr = array_new();
 
-blk1:
-Inputs: v2: core::NonZero::<core::felt>
-Statements:
-  (v3: core::felt) <- 0u
-End:
-  Callsite({v3 -> v4})
-
-blk2 (root):
-Inputs: v0: core::felt, v1: core::felt
-Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
-End:
-  Return(v4)
-
-//! > last_use
-v4: ((BlockId(2), 1), 0)
-v1: ((BlockId(0), 0), 0)
-v3: ((BlockId(1), 1), 0)
-v0: ((BlockId(2), 0), 0)
-
-//! > drops
-BeginningOfBlock(BlockId(1)): v2, v1
-
-//! > ==========================================================================
-
-//! > Last use after branch
-
-//! > test_function_name
-check_variable_lifetime
-
-//! > function_name
-foo
-
-//! > function_code
-fn foo(x: felt, y: felt) -> felt {
-    let z = if x == 0 { y } else { 0 };
-    y
+      arr
 }
 
-//! > module_code
-
 //! > lowering_format
 blk0:
-Inputs:
+Inputs: v3: core::RangeCheck, v4: core::gas::GasBuiltin
 Statements:
 End:
-  Callsite({})
+  Callsite({v3 -> v10, v4 -> v11})
 
 blk1:
-Inputs: v2: core::NonZero::<core::felt>
+Inputs: v5: core::RangeCheck, v6: core::gas::GasBuiltin
 Statements:
-  (v3: core::felt) <- 0u
+  (v7: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v8: core::felt) <- 375233589013918064796019u
+  (v9: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v7, v8)
+  (v13: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v9)
 End:
-  Callsite({})
+  Return(v5, v6, v13)
 
 blk2 (root):
-Inputs: v0: core::felt, v1: core::felt
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::felt>
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
+  () <- match core::gas::get_gas(v0, v1) {
+    Option::Some => blk0,
+    Option::None => blk1,
   }
+  (v12: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v14: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v12)
 End:
-  Return(v1)
-
-//! > last_use
-v1: ((BlockId(2), 1), 0)
-v0: ((BlockId(2), 0), 0)
+  Return(v10, v11, v14)
 
 //! > drops
 PostStatement((BlockId(1), 0)): v3
