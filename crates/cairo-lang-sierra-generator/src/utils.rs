@@ -316,12 +316,6 @@ pub fn statement_outputs(
             let blocks = arms.iter().map(|(_, block)| *block).collect_vec();
             collect_outputs(lowered_function, &blocks)
         }
-        // The input to Statement::Snapshot is not consumed.
-        // The lowering and sierra-gen model this in different ways.
-        // In sierra, the input is also an output.
-        // in the lowering phases Snapshot is treated as non-consuming so stmt.input is not part of
-        // `statement.outputs()`.
-        lowering::Statement::Snapshot(stmt) => vec![stmt.input, stmt.output],
         _ => statement.outputs(),
     }
 }

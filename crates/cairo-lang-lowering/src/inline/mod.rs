@@ -338,7 +338,8 @@ impl<'a, 'b> Mapper<'a, 'b> {
             }),
             Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot {
                 input: self.rename_var(&stmt.input),
-                output: self.rename_var(&stmt.output),
+                output_original: self.rename_var(&stmt.output_original),
+                output_snapshot: self.rename_var(&stmt.output_snapshot),
             }),
         }
     }

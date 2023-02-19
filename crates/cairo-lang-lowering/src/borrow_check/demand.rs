@@ -12,18 +12,12 @@ pub struct Demand {
 
 impl Demand {
     /// Updates the demand when some variables are used right before the current flow.
-    /// If take is true, the variables are consumed, and thus, might need to be duplicatable.
-    pub fn variables_used(
-        &mut self,
-        borrow_checker: &mut BorrowChecker<'_>,
-        vars: &[VariableId],
-        take: bool,
-    ) {
+    pub fn variables_used(&mut self, borrow_checker: &mut BorrowChecker<'_>, vars: &[VariableId]) {
         for var in vars {
             if !self.vars.insert(*var) {
                 // Variable already used. If it's not dup, that is an issue.
                 let var = &borrow_checker.lowered.variables[*var];
-                if take && !var.duplicatable {
+                if !var.duplicatable {
                     borrow_checker.diagnostics.report_by_location(var.location, VariableMoved);
                 }
             }

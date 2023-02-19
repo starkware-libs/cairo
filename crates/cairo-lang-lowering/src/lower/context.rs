@@ -12,6 +12,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::zip_eq;
+use semantic::types::wrap_in_snapshots;
 
 use super::generators;
 use super::scope::{merge_sealed, BlockBuilder, SealedBlockBuilder};
@@ -130,14 +131,22 @@ pub struct VarRequest {
 }
 
 /// Representation of the value of a computed expression.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum LoweredExpr {
     /// The expression value lies in a variable.
     AtVariable(VariableId),
     /// The expression value is a tuple.
-    Tuple { exprs: Vec<LoweredExpr>, location: StableLocation },
+    Tuple {
+        exprs: Vec<LoweredExpr>,
+        location: StableLocation,
+    },
     /// The expression value is an enum result from an extern call.
     ExternEnum(LoweredExprExternEnum),
+    SemanticVar(semantic::VarId),
+    Snapshot {
+        expr: Box<LoweredExpr>,
+        location: StableLocation,
+    },
 }
 impl LoweredExpr {
     pub fn var(
@@ -157,6 +166,17 @@ impl LoweredExpr {
                 Ok(generators::StructConstruct { inputs, ty, location }.add(ctx, scope))
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
+            LoweredExpr::SemanticVar(semantic_var_id) => Ok(scope.get_semantic(semantic_var_id)),
+            LoweredExpr::Snapshot { expr, location } => {
+                let (original, snapshot) =
+                    generators::Snapshot { input: expr.clone().var(ctx, scope)?, location }
+                        .add(ctx, scope);
+                if let LoweredExpr::SemanticVar(semantic_var_id) = &*expr {
+                    scope.put_semantic(ctx, *semantic_var_id, original);
+                }
+
+                Ok(snapshot)
+            }
         }
     }
     pub fn ty(&self, ctx: &mut LoweringContext<'_>) -> semantic::TypeId {
@@ -170,12 +190,16 @@ impl LoweredExpr {
                     extern_enum.concrete_enum_id,
                 )))
             }
+            LoweredExpr::SemanticVar(semantic_var_id) => ctx.semantic_defs[*semantic_var_id].ty(),
+            LoweredExpr::Snapshot { expr, .. } => {
+                wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
+            }
         }
     }
 }
 
 /// Lazy expression value of an extern call returning an enum.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct LoweredExprExternEnum {
     pub function: semantic::FunctionId,
     pub concrete_enum_id: semantic::ConcreteEnumId,

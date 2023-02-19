@@ -192,11 +192,8 @@ pub fn lower_statement(
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
             // The LoweredExpr must be evaluated now to push/bring back variables in case it is
             // LoweredExpr::ExternEnum.
-            match lowered_expr {
-                LoweredExpr::ExternEnum(x) => {
-                    x.var(ctx, scope)?;
-                }
-                LoweredExpr::AtVariable(_) | LoweredExpr::Tuple { .. } => {}
+            if let LoweredExpr::ExternEnum(x) = lowered_expr {
+                x.var(ctx, scope)?;
             }
         }
         semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
@@ -319,7 +316,7 @@ fn lower_expr(
         semantic::Expr::If(expr) => lower_expr_if(ctx, scope, expr),
         semantic::Expr::Var(expr) => {
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
-            Ok(LoweredExpr::AtVariable(scope.get_semantic(expr.var)))
+            Ok(LoweredExpr::SemanticVar(expr.var))
         }
         semantic::Expr::Literal(expr) => lower_expr_literal(ctx, expr, scope),
         semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, scope),
@@ -382,9 +379,8 @@ fn lower_expr_snapshot(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a snapshot: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let input = lower_expr(ctx, scope, expr.inner)?.var(ctx, scope)?;
-
-    Ok(LoweredExpr::AtVariable(generators::Snapshot { input, location }.add(ctx, scope)))
+    let expr = Box::new(lower_expr(ctx, scope, expr.inner)?);
+    Ok(LoweredExpr::Snapshot { expr, location })
 }
 
 /// Lowers an expression of type [semantic::ExprFunctionCall].
