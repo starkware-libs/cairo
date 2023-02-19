@@ -31,7 +31,6 @@ fn bar(ref a: felt, b: bool) {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial implicits:
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
@@ -45,7 +44,6 @@ End:
 
 blk1:
 Inputs: v5: ()
-Initial implicits:
 Statements:
   (v7: core::felt, v6: ()) <- test::bar(v0, v2)
 End:
@@ -53,14 +51,12 @@ End:
 
 blk2:
 Inputs: v8: ()
-Initial implicits:
 Statements:
 End:
   Goto(3, {v0 -> v9})
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
   (v10: ()) <- struct_construct()
   (v11: core::bool) <- bool::False(v10)
@@ -72,7 +68,6 @@ End:
 
 blk4:
 Inputs: v12: ()
-Initial implicits:
 Statements:
   (v13: core::felt) <- 6u
 End:
@@ -80,14 +75,12 @@ End:
 
 blk5:
 Inputs: v14: ()
-Initial implicits:
 Statements:
 End:
   Goto(6, {})
 
 blk6:
 Inputs:
-Initial implicits:
 Statements:
   (v15: core::felt) <- 5u
 End:
@@ -190,7 +183,6 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
 //! > lowering_structured
 blk0 (root):
 Inputs:
-Initial implicits:
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<core::felt>) <- Option::None(v0)
