@@ -76,7 +76,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
-            SyntaxKind::TokenMinus => {
+            SyntaxKind::TokenMinus | SyntaxKind::TokenMul => {
                 matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprUnary))
             }
             SyntaxKind::TokenLT
@@ -415,8 +415,18 @@ impl SyntaxNodeFormat for SyntaxNode {
                         trailing: None,
                     }
                 }
-
-                SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv => WrappingBreakLinePoints {
+                SyntaxKind::TerminalMul if parent_kind(db, self) != Some(SyntaxKind::ExprUnary) => {
+                    WrappingBreakLinePoints {
+                        leading: Some(BreakLinePointProperties::new(
+                            9,
+                            BreakLinePointIndentation::Indented,
+                            true,
+                            true,
+                        )),
+                        trailing: None,
+                    }
+                }
+                SyntaxKind::TerminalDiv => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         9,
                         BreakLinePointIndentation::Indented,
