@@ -52,6 +52,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
             }
             LoweringDiagnosticKind::VariableMoved => "Variable was previously moved.".into(),
             LoweringDiagnosticKind::VariableNotDropped => "Variable not dropped.".into(),
+            LoweringDiagnosticKind::DesnapingANonCopyableType => {
+                "Cannot desnap a non copyable type.".into()
+            }
             LoweringDiagnosticKind::UnsupportedMatch => "Unsupported match. Currently, matches \
                                                          require one arm per variant, in the \
                                                          order of variant definition."
@@ -100,6 +103,7 @@ pub enum LoweringDiagnosticKind {
     OnlyMatchZeroIsSupported,
     VariableMoved,
     VariableNotDropped,
+    DesnapingANonCopyableType,
     UnsupportedMatch,
     UnsupportedMatchArm,
     CannotInlineFunctionThatMightCallItself,

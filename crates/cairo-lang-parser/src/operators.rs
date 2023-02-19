@@ -1,11 +1,10 @@
 use cairo_lang_syntax::node::kind::SyntaxKind;
 
 pub fn get_unary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
-    if [SyntaxKind::TerminalAt, SyntaxKind::TerminalNot, SyntaxKind::TerminalMinus].contains(&kind)
-    {
-        get_post_operator_precedence(kind)
-    } else {
-        None
+    match kind {
+        SyntaxKind::TerminalAt | SyntaxKind::TerminalNot | SyntaxKind::TerminalMul => Some(2),
+        SyntaxKind::TerminalMinus => Some(4),
+        _ => None,
     }
 }
 pub fn get_post_operator_precedence(kind: SyntaxKind) -> Option<usize> {

@@ -235,6 +235,16 @@ fn compute_expr_unary_semantic(
             stable_ptr: syntax.stable_ptr().into(),
         }));
     }
+    if let UnaryOperator::Desnap(_) = unary_op {
+        let Some(desnapped_ty) = try_extract_matches!(ctx.db.lookup_intern_type(expr_ty), TypeLongId::Snapshot) else {
+            return Err(ctx.diagnostics.report(&unary_op, DesnapNonSnapshot));
+        };
+        return Ok(Expr::Desnap(ExprDesnap {
+            inner: ctx.exprs.alloc(expr),
+            ty: desnapped_ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        }));
+    }
     let function = match core_unary_operator(
         ctx.db,
         &mut ctx.resolver.inference,

@@ -1739,6 +1739,7 @@ pub enum UnaryOperator {
     Not(TerminalNot),
     Minus(TerminalMinus),
     At(TerminalAt),
+    Desnap(TerminalMul),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct UnaryOperatorPtr(pub SyntaxStablePtrId);
@@ -1762,6 +1763,11 @@ impl From<TerminalAtPtr> for UnaryOperatorPtr {
         Self(value.0)
     }
 }
+impl From<TerminalMulPtr> for UnaryOperatorPtr {
+    fn from(value: TerminalMulPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalNotGreen> for UnaryOperatorGreen {
     fn from(value: TerminalNotGreen) -> Self {
         Self(value.0)
@@ -1774,6 +1780,11 @@ impl From<TerminalMinusGreen> for UnaryOperatorGreen {
 }
 impl From<TerminalAtGreen> for UnaryOperatorGreen {
     fn from(value: TerminalAtGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMulGreen> for UnaryOperatorGreen {
+    fn from(value: TerminalMulGreen) -> Self {
         Self(value.0)
     }
 }
@@ -1794,6 +1805,9 @@ impl TypedSyntaxNode for UnaryOperator {
                 UnaryOperator::Minus(TerminalMinus::from_syntax_node(db, node))
             }
             SyntaxKind::TerminalAt => UnaryOperator::At(TerminalAt::from_syntax_node(db, node)),
+            SyntaxKind::TerminalMul => {
+                UnaryOperator::Desnap(TerminalMul::from_syntax_node(db, node))
+            }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "UnaryOperator"),
         }
     }
@@ -1802,6 +1816,7 @@ impl TypedSyntaxNode for UnaryOperator {
             UnaryOperator::Not(x) => x.as_syntax_node(),
             UnaryOperator::Minus(x) => x.as_syntax_node(),
             UnaryOperator::At(x) => x.as_syntax_node(),
+            UnaryOperator::Desnap(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {

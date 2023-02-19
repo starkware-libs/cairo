@@ -150,6 +150,14 @@ impl<'a> BorrowChecker<'a> {
                     demand.variables_used(self, &stmt.inputs()[..]);
                     demand
                 }
+                Statement::Desnap(stmt) => {
+                    let var = &self.lowered.variables[stmt.output];
+                    if !var.duplicatable {
+                        self.diagnostics
+                            .report_by_location(var.location, DesnapingANonCopyableType);
+                    }
+                    continue;
+                }
                 Statement::Literal(_)
                 | Statement::Call(_)
                 | Statement::StructConstruct(_)

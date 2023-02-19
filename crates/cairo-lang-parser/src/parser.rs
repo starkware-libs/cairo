@@ -576,6 +576,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalAt => self.take::<TerminalAt>().into(),
             SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
             SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
+            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
             _ => unreachable!(),
         }
     }

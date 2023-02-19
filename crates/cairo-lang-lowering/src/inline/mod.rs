@@ -18,7 +18,7 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall, StatementDesnap,
     StatementEnumConstruct, StatementLiteral, StatementMatchEnum, StatementMatchExtern,
     StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VariableId,
@@ -340,6 +340,10 @@ impl<'a, 'b> Mapper<'a, 'b> {
                 input: self.rename_var(&stmt.input),
                 output_original: self.rename_var(&stmt.output_original),
                 output_snapshot: self.rename_var(&stmt.output_snapshot),
+            }),
+            Statement::Desnap(stmt) => Statement::Desnap(StatementDesnap {
+                input: self.rename_var(&stmt.input),
+                output: self.rename_var(&stmt.output),
             }),
         }
     }

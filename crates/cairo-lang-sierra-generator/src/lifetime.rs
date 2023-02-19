@@ -182,6 +182,7 @@ fn inner_find_variable_lifetime(
             | lowering::Statement::StructConstruct(_)
             | lowering::Statement::StructDestructure(_)
             | lowering::Statement::EnumConstruct(_)
+            | lowering::Statement::Desnap(_)
             | lowering::Statement::Snapshot(_) => {}
             lowering::Statement::MatchExtern(statement_match_extern) => {
                 let arm_blocks: Vec<_> =
