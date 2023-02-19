@@ -387,10 +387,6 @@ pub enum SierraApChange {
     /// The lib func is `branch_align`.
     /// The `ap` change is know during compilation.
     BranchAlign,
-    /// Indicates that the value of ApChange was not assigned properly yet. Behaves as `Unknown`.
-    /// This will be removed, once all places using it are fixed.
-    // TODO(lior): Remove this value once it is no longer used.
-    NotImplemented,
 }
 /// Trait for a specialized library function.
 pub trait ConcreteLibfunc {
