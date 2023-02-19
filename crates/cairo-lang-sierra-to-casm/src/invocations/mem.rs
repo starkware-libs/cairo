@@ -29,9 +29,6 @@ pub fn build(
         MemConcreteLibfunc::StoreLocal(SignatureAndTypeConcreteLibfunc { ty, .. }) => {
             build_store_local(builder, ty)
         }
-        MemConcreteLibfunc::AlignTemps(_) => {
-            Err(InvocationError::NotImplemented(builder.invocation.clone()))
-        }
     }
 }
 

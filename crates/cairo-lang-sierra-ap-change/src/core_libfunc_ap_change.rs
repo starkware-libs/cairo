@@ -202,9 +202,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             MemConcreteLibfunc::StoreTemp(libfunc) => {
                 vec![ApChange::Known(info_provider.type_size(&libfunc.ty))]
             }
-            MemConcreteLibfunc::AlignTemps(libfunc) => {
-                vec![ApChange::Known(info_provider.type_size(&libfunc.ty))]
-            }
             MemConcreteLibfunc::StoreLocal(_) => vec![ApChange::Known(0)],
             MemConcreteLibfunc::FinalizeLocals(_) => vec![ApChange::FinalizeLocals],
             MemConcreteLibfunc::AllocLocal(libfunc) => {

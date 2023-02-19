@@ -25,7 +25,6 @@
         "u128s_from_felt",
         "revoke_ap_tracking",
         "store_temp",
-        "align_temps",
         "store_local",
         "finalize_locals",
         "alloc_local",
