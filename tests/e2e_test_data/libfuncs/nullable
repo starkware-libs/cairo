@@ -1,8 +1,5 @@
 //! > null libfunc
 
-//! > test_comments
-// TODO(lior): Cost should be 2 rather than 1.
-
 //! > test_function_name
 run_small_e2e_test
 

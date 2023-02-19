@@ -177,8 +177,6 @@ fn inner_find_local_variables(
         }
     }
 
-    // TODO(lior): Handle block.drops.
-
     match &block.end {
         lowering::FlatBlockEnd::Callsite(remapping) => {
             let vars = remapping.values().copied().collect_vec();
