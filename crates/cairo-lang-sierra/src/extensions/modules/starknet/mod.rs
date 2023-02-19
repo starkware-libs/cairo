@@ -12,6 +12,7 @@ pub mod getter;
 
 pub mod emit_event;
 use emit_event::EmitEventLibfunc;
+pub mod testing;
 
 pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
@@ -25,6 +26,7 @@ use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc, StorageAddressType,
     StorageBaseAddressFromFeltLibfunc,
 };
+use self::testing::TestingLibfunc;
 
 define_type_hierarchy! {
     pub enum StarkNetType {
@@ -53,5 +55,6 @@ define_libfunc_hierarchy! {
          GetCallerAddress(GetterLibfunc<GetCallerAddressTrait>),
          GetContractAddress(GetterLibfunc<GetContractAddressTrait>),
          GetSequencerAddress(GetterLibfunc<GetSequencerAddressTrait>),
+         Testing(TestingLibfunc),
     }, StarkNetConcreteLibfunc
 }

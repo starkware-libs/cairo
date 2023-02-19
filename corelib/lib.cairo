@@ -400,6 +400,7 @@ mod debug;
 mod starknet;
 use starknet::System;
 use starknet::ContractAddress;
+mod starknet_testing;
 
 // Internals.
 mod internal;
