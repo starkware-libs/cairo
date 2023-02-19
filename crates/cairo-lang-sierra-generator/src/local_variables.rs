@@ -16,7 +16,7 @@ use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, match_enum_libfunc_id,
-    snapshot_take_libfunc_id, statement_outputs, struct_construct_libfunc_id,
+    rename_libfunc_id, snapshot_take_libfunc_id, statement_outputs, struct_construct_libfunc_id,
     struct_deconstruct_libfunc_id,
 };
 
@@ -174,10 +174,22 @@ fn inner_find_local_variables(
                     &vars[..],
                 );
             }
+            lowering::Statement::Desnap(statement_desnap) => {
+                let ty = ctx.db.get_concrete_type_id(
+                    ctx.lowered_function.variables[statement_desnap.output].ty,
+                )?;
+
+                let concrete_function_id = rename_libfunc_id(ctx.db, ty);
+                let libfunc_signature = get_libfunc_signature(ctx.db, concrete_function_id.clone());
+                let vars = &libfunc_signature.branch_signatures[0].vars;
+                state.register_outputs(
+                    &[statement_desnap.input],
+                    &[statement_desnap.output],
+                    &vars[..],
+                );
+            }
         }
     }
-
-    // TODO(lior): Handle block.drops.
 
     match &block.end {
         lowering::FlatBlockEnd::Callsite(remapping) => {

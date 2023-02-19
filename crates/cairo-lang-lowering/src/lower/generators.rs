@@ -4,6 +4,7 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
+use cairo_lang_utils::extract_matches;
 use itertools::chain;
 use num_bigint::BigInt;
 
@@ -14,7 +15,7 @@ use crate::objects::{
     Statement, StatementCall, StatementLiteral, StatementStructConstruct,
     StatementStructDestructure,
 };
-use crate::{StatementEnumConstruct, StatementSnapshot};
+use crate::{StatementDesnap, StatementEnumConstruct, StatementSnapshot};
 
 /// Generator for [StatementLiteral].
 pub struct Literal {
@@ -73,6 +74,7 @@ impl Call {
             function: self.function,
             inputs: self.inputs,
             outputs,
+            location: self.location,
         }));
 
         CallResult { returns, ref_outputs, implicit_outputs }
@@ -130,6 +132,26 @@ impl Snapshot {
             output_snapshot,
         }));
         (output_original, output_snapshot)
+    }
+}
+
+/// Generator for [StatementDesnap].
+pub struct Desnap {
+    pub input: VariableId,
+    pub location: StableLocation,
+}
+impl Desnap {
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockBuilder) -> VariableId {
+        let ty = extract_matches!(
+            ctx.db.lookup_intern_type(ctx.variables[self.input].ty),
+            semantic::TypeLongId::Snapshot
+        );
+        let output = ctx.new_var(VarRequest { ty, location: self.location });
+        scope.push_finalized_statement(Statement::Desnap(StatementDesnap {
+            input: self.input,
+            output,
+        }));
+        output
     }
 }
 

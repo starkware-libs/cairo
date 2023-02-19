@@ -27,7 +27,6 @@ pub fn build(
 fn build_builtin_get_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    // TODO(lior): Share code with get_gas().
     let [range_check, gas_counter, builtin_cost] = builder.try_get_single_cells()?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);

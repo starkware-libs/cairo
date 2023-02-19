@@ -235,6 +235,16 @@ fn compute_expr_unary_semantic(
             stable_ptr: syntax.stable_ptr().into(),
         }));
     }
+    if let UnaryOperator::Desnap(_) = unary_op {
+        let Some(desnapped_ty) = try_extract_matches!(ctx.db.lookup_intern_type(expr_ty), TypeLongId::Snapshot) else {
+            return Err(ctx.diagnostics.report(&unary_op, DesnapNonSnapshot));
+        };
+        return Ok(Expr::Desnap(ExprDesnap {
+            inner: ctx.exprs.alloc(expr),
+            ty: desnapped_ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        }));
+    }
     let function = match core_unary_operator(
         ctx.db,
         &mut ctx.resolver.inference,
@@ -785,15 +795,12 @@ fn compute_pattern_semantic(
             // Check that type is an enum, and get the concrete enum from it.
             let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
                 .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
-                .ok_or_else(|| {
+                .ok_or(())
+                .or_else(|_| {
                     // Don't add a diagnostic if the type is missing.
                     // A diagnostic should've already been added.
-                    if !ty.is_missing(ctx.db) {
-                        ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty })
-                    } else {
-                        // TODO(lior): Take the DiagnosticAdded from the missing type.
-                        skip_diagnostic()
-                    }
+                    ty.check_not_missing(ctx.db)?;
+                    Err(ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty }))
                 })?;
 
             // Extract the enum variant from the path syntax.
@@ -857,15 +864,12 @@ fn compute_pattern_semantic(
             // Check that type is an struct, and get the concrete struct from it.
             let concrete_struct_id = try_extract_matches!(long_ty, TypeLongId::Concrete)
                 .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
-                .ok_or_else(|| {
+                .ok_or(())
+                .or_else(|_| {
                     // Don't add a diagnostic if the type is missing.
                     // A diagnostic should've already been added.
-                    if !ty.is_missing(ctx.db) {
-                        ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty })
-                    } else {
-                        // TODO(lior): Take the DiagnosticAdded from the missing type.
-                        skip_diagnostic()
-                    }
+                    ty.check_not_missing(ctx.db)?;
+                    Err(ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty }))
                 })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
