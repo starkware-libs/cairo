@@ -30,7 +30,6 @@ impl MyImpl of MyTrait::<felt> {
 //! > lowering_structured
 blk0 (root):
 Inputs:
-Initial implicits:
 Statements:
   (v0: core::felt) <- 5u
   (v1: ()) <- struct_construct()
@@ -113,7 +112,6 @@ struct Query<V> {
 //! > lowering_structured
 blk0 (root):
 Inputs:
-Initial implicits:
 Statements:
   (v0: core::felt) <- 1u
   (v1: test::Query::<core::felt>) <- struct_construct(v0)
