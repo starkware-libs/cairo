@@ -19,6 +19,7 @@ type NonZeroEcPoint = NonZero::<EcPoint>;
 impl NonZeroEcPointCopy of Copy::<NonZeroEcPoint>;
 impl OptionNonZeroEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
 impl NonZeroEcPointDrop of Drop::<NonZeroEcPoint>;
+impl OptionNonZeroEcPointDrop of Drop::<Option::<NonZeroEcPoint>>;
 
 /// Returns the zero point of the curve ("the point at infinity").
 extern fn ec_point_zero() -> EcPoint nopanic;

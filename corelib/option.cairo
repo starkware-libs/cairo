@@ -10,9 +10,9 @@ trait OptionTrait<T> {
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
     fn unwrap(self: Option::<T>) -> T;
     /// Returns `true` if the `Option` is `Option::Some`.
-    fn is_some(self: Option::<T>) -> bool;
+    fn is_some(self: @Option::<T>) -> bool;
     /// Returns `true` if the `Option` is `Option::None`.
-    fn is_none(self: Option::<T>) -> bool;
+    fn is_none(self: @Option::<T>) -> bool;
 }
 impl OptionTraitImpl<T> of OptionTrait::<T> {
     fn expect(self: Option::<T>, err: felt) -> T {
@@ -28,13 +28,13 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
     fn unwrap(self: Option::<T>) -> T {
         self.expect('Option::unwrap failed.')
     }
-    fn is_some(self: Option::<T>) -> bool {
+    fn is_some(self: @Option::<T>) -> bool {
         match self {
             Option::Some(_) => true,
             Option::None(_) => false,
         }
     }
-    fn is_none(self: Option::<T>) -> bool {
+    fn is_none(self: @Option::<T>) -> bool {
         match self {
             Option::Some(_) => false,
             Option::None(_) => true,
