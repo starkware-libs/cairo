@@ -36,16 +36,16 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_mul(v0, v0)
+  (v3: core::felt) <- core::felt_mul(v0, v0)
 End:
-  Fallthrough(blk1, {})
+  Fallthrough(blk1, {v3 -> v1})
 
 blk1:
 Inputs:
 Statements:
-  (v2: core::felt) <- core::felt_add(v0, v1)
+  (v4: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(blk2, {})
+  Fallthrough(blk2, {v4 -> v2})
 
 blk2:
 Inputs:
@@ -181,9 +181,9 @@ Statements:
   (v2: ()) <- struct_construct()
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
-  (v5: core::felt) <- core::felt_sub(v3, v4)
+  (v18: core::felt) <- core::felt_sub(v3, v4)
 End:
-  Fallthrough(blk3, {})
+  Fallthrough(blk3, {v18 -> v5})
 
 blk3:
 Inputs:
@@ -197,23 +197,23 @@ Statements:
   (v12: core::felt) <- 5u
   (v13: core::felt) <- 3u
   (v14: core::felt) <- 0u
-  (v15: core::felt) <- core::felt_add(v0, v14)
+  (v19: core::felt) <- core::felt_add(v0, v14)
 End:
-  Fallthrough(blk4, {})
+  Fallthrough(blk4, {v19 -> v15})
 
 blk4:
 Inputs:
 Statements:
-  (v16: core::felt) <- core::felt_mul(v12, v15)
+  (v20: core::felt) <- core::felt_mul(v12, v15)
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk5, {v20 -> v16})
 
 blk5:
 Inputs:
 Statements:
-  (v17: core::felt) <- core::felt_add(v11, v16)
+  (v21: core::felt) <- core::felt_add(v11, v16)
 End:
-  Fallthrough(blk6, {})
+  Fallthrough(blk6, {v21 -> v17})
 
 blk6:
 Inputs:
