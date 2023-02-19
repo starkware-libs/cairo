@@ -792,32 +792,34 @@ fn test_u256_mul_overflow_2() {
     as_u256(0_u128, pow_2_127()) * as_u256(2_u128, 0_u128);
 }
 
-// TODO(orizi): Switch to operators and literals when added.
-fn test_array_helper(idx: usize) -> felt {
+fn test_array_helper() -> Array::<felt> {
     let mut arr = ArrayTrait::new();
     arr.append(10);
     arr.append(11);
     arr.append(12);
-    array_at(ref arr, idx)
+    arr
 }
 
 #[test]
 fn test_array() {
-    assert(test_array_helper(0_usize) == 10, 'array[0] == 10');
-    assert(test_array_helper(1_usize) == 11, 'array[1] == 11');
-    assert(test_array_helper(2_usize) == 12, 'array[2] == 12');
+    let arr = test_array_helper();
+    assert(arr.at(0_usize) == 10, 'array[0] == 10');
+    assert(arr.at(1_usize) == 11, 'array[1] == 11');
+    assert(arr.at(2_usize) == 12, 'array[2] == 12');
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_1() {
-    test_array_helper(3_usize);
+    let arr = test_array_helper();
+    arr.at(3_usize);
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_2() {
-    test_array_helper(11_usize);
+    let arr = test_array_helper();
+    arr.at(11_usize);
 }
 
 #[test]
