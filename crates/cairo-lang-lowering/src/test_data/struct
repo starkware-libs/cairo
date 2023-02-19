@@ -25,7 +25,6 @@ struct MyStruct {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial implicits:
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::felt) <- 3u
@@ -76,7 +75,6 @@ struct MyStruct {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::MyStruct
-Initial implicits:
 Statements:
   (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
 End:
@@ -120,7 +118,6 @@ struct MyStruct {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::MyStruct
-Initial implicits:
 Statements:
   (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)

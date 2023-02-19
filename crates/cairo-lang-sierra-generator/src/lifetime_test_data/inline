@@ -313,7 +313,7 @@ fn bar(data: Array::<felt>) -> Array::<felt> {
 
 //! > lowering_format
 blk0 (root):
-Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::felt>
+Inputs: v16: core::RangeCheck, v17: core::gas::GasBuiltin, v0: core::array::Array::<core::felt>
 Statements:
 End:
   Goto(blk1, {})
@@ -322,13 +322,13 @@ blk1:
 Inputs:
 Statements:
 End:
-  Match(match core::gas::try_fetch_gas(v0, v1) {
+  Match(match core::gas::try_fetch_gas(v16, v17) {
     Option::Some => blk2,
     Option::None => blk4,
   })
 
 blk2:
-Inputs: v13: core::RangeCheck, v14: core::gas::GasBuiltin
+Inputs: v20: core::RangeCheck, v21: core::gas::GasBuiltin
 Statements:
 End:
   Goto(blk3, {})
@@ -336,72 +336,72 @@ End:
 blk3:
 Inputs:
 Statements:
-  (v23: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-  (v24: (core::array::Array::<core::felt>,)) <- struct_construct(v23)
-  (v25: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Ok(v24)
+  (v13: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v14: (core::array::Array::<core::felt>,)) <- struct_construct(v13)
+  (v15: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Ok(v14)
 End:
-  Goto(blk5, {v13 -> v4, v14 -> v5, v25 -> v6})
+  Goto(blk5, {v20 -> v26, v21 -> v27, v15 -> v2})
 
 blk4:
-Inputs: v17: core::RangeCheck, v18: core::gas::GasBuiltin
+Inputs: v22: core::RangeCheck, v23: core::gas::GasBuiltin
 Statements:
-  (v19: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-  (v20: core::felt) <- 375233589013918064796019u
-  (v21: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v19, v20)
-  (v22: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Err(v21)
+  (v9: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v10: core::felt) <- 375233589013918064796019u
+  (v11: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v9, v10)
+  (v12: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Err(v11)
 End:
-  Goto(blk5, {v17 -> v4, v18 -> v5, v22 -> v6})
+  Goto(blk5, {v22 -> v26, v23 -> v27, v12 -> v2})
 
 blk5:
 Inputs:
 Statements:
 End:
-  Match(match_enum(v6) {
+  Match(match_enum(v2) {
     PanicResult::Ok => blk6,
     PanicResult::Err => blk8,
   })
 
 blk6:
-Inputs: v7: (core::array::Array::<core::felt>,)
+Inputs: v3: (core::array::Array::<core::felt>,)
 Statements:
-  (v8: core::array::Array::<core::felt>) <- struct_destructure(v7)
+  (v4: core::array::Array::<core::felt>) <- struct_destructure(v3)
 End:
   Goto(blk7, {})
 
 blk7:
 Inputs:
 Statements:
-  (v10: (core::array::Array::<core::felt>,)) <- struct_construct(v8)
-  (v11: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Ok(v10)
+  (v6: (core::array::Array::<core::felt>,)) <- struct_construct(v4)
+  (v7: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Ok(v6)
 End:
-  Return(v4, v5, v11)
+  Return(v26, v27, v7)
 
 blk8:
-Inputs: v9: core::array::Array::<core::felt>
+Inputs: v5: core::array::Array::<core::felt>
 Statements:
-  (v12: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Err(v9)
+  (v8: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Err(v5)
 End:
-  Return(v4, v5, v12)
+  Return(v26, v27, v8)
 
 //! > last_use
-v12: ((BlockId(8), 1), 2)
-v5: ((BlockId(8), 1), 1)
-v4: ((BlockId(8), 1), 0)
-v9: ((BlockId(8), 0), 0)
-v11: ((BlockId(7), 2), 2)
-v5: ((BlockId(7), 2), 1)
-v4: ((BlockId(7), 2), 0)
-v10: ((BlockId(7), 1), 0)
-v8: ((BlockId(7), 0), 0)
-v7: ((BlockId(6), 0), 0)
-v6: ((BlockId(5), 0), 0)
-v21: ((BlockId(4), 3), 0)
-v20: ((BlockId(4), 2), 1)
-v19: ((BlockId(4), 2), 0)
-v24: ((BlockId(3), 2), 0)
-v23: ((BlockId(3), 1), 0)
-v1: ((BlockId(1), 0), 1)
-v0: ((BlockId(1), 0), 0)
+v8: ((BlockId(8), 1), 2)
+v27: ((BlockId(8), 1), 1)
+v26: ((BlockId(8), 1), 0)
+v5: ((BlockId(8), 0), 0)
+v7: ((BlockId(7), 2), 2)
+v27: ((BlockId(7), 2), 1)
+v26: ((BlockId(7), 2), 0)
+v6: ((BlockId(7), 1), 0)
+v4: ((BlockId(7), 0), 0)
+v3: ((BlockId(6), 0), 0)
+v2: ((BlockId(5), 0), 0)
+v11: ((BlockId(4), 3), 0)
+v10: ((BlockId(4), 2), 1)
+v9: ((BlockId(4), 2), 0)
+v14: ((BlockId(3), 2), 0)
+v13: ((BlockId(3), 1), 0)
+v17: ((BlockId(1), 0), 1)
+v16: ((BlockId(1), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(0)): v2
+BeginningOfBlock(BlockId(0)): v0

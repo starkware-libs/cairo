@@ -21,7 +21,6 @@ const MY_CONST: felt = 0x1234;
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial implicits:
 Statements:
   (v1: core::felt) <- 4660u
   (v2: core::felt) <- core::FeltAdd::add(v1, v0)

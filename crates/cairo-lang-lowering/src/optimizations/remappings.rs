@@ -45,7 +45,9 @@ impl Rebuilder for Context {
             *res
         } else {
             let srcs = self.dest_to_srcs.get(&var).cloned().unwrap_or_default();
-            let src_representatives = srcs.iter().map(|src| self.map_var_id(*src)).collect_vec();
+            let src_representatives: HashSet<_> =
+                srcs.iter().map(|src| self.map_var_id(*src)).collect();
+            let src_representatives = src_representatives.into_iter().collect_vec();
             let new_var =
                 if let [single_var] = &src_representatives[..] { *single_var } else { var };
             self.var_representatives.insert(var, new_var);

@@ -7,25 +7,16 @@ use itertools::chain;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use crate::{
-    BlockId, MatchInfo, RefIndex, Statement, StructuredBlock, StructuredBlockEnd,
-    StructuredStatement, VarRemapping, VariableId,
+    BlockId, MatchInfo, Statement, StructuredBlock, StructuredBlockEnd, StructuredStatement,
+    VarRemapping, VariableId,
 };
 
 /// StructuredBlock builder, describing its current state.
 #[derive(Clone)]
 pub struct BlockBuilder {
-    /// The variable ids currently bound to the ref variables.
-    current_implicits: Vec<Option<VariableId>>,
-    /// The variable ids bound to the ref variables (including implicits) at the beginning of the
-    /// block.
-    initial_implicits: Option<Vec<VariableId>>,
     /// Variables given as inputs to the block, including implicits. Relevant for function blocks /
     /// match arm blocks, etc...
     inputs: Vec<VariableId>,
-    /// A store for implicit variables, owning their OwnedVariable instances.
-    implicits: OrderedHashMap<semantic::TypeId, VariableId>,
-    /// The implicits that are changed in this block.
-    changed_implicits: OrderedHashSet<semantic::TypeId>,
     /// A store for semantic variables, owning their OwnedVariable instances.
     semantics: OrderedHashMap<semantic::VarId, VariableId>,
     /// The semantic variables that are added/changed in this block.
@@ -34,27 +25,18 @@ pub struct BlockBuilder {
     statements: Vec<StructuredStatement>,
     /// Statement pending finalize_statement().
     pending_statement: Option<Statement>,
-    /// Updates to the variable ids bound to the ref variables (including implicits), from the last
-    /// update until exactly after next statement. When finalize_statement() will be called, these
-    /// updates will be added to the statement.
-    pending_ref_updates: OrderedHashMap<RefIndex, VariableId>,
     /// The block id to use for this block when it's finalized.
     pub block_id: BlockId,
 }
 impl BlockBuilder {
     /// Creates a new [BlockBuilder] for the root block of a function body.
-    pub fn root(ctx: &LoweringContext<'_>, block_id: BlockId) -> Self {
+    pub fn root(_ctx: &LoweringContext<'_>, block_id: BlockId) -> Self {
         BlockBuilder {
-            current_implicits: (0..ctx.implicits.len()).map(|_| None).collect(),
-            initial_implicits: None,
             inputs: vec![],
-            implicits: Default::default(),
-            changed_implicits: Default::default(),
             semantics: Default::default(),
             changed_semantics: Default::default(),
             statements: Default::default(),
             pending_statement: None,
-            pending_ref_updates: Default::default(),
             block_id,
         }
     }
@@ -62,45 +44,31 @@ impl BlockBuilder {
     /// Creates a [BlockBuilder] for a subscope.
     pub fn subscope(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
-            current_implicits: self.current_implicits.clone(),
-            initial_implicits: None,
             inputs: vec![],
-            implicits: self.implicits.clone(),
-            changed_implicits: Default::default(),
             semantics: self.semantics.clone(),
             changed_semantics: Default::default(),
             statements: Default::default(),
             pending_statement: None,
-            pending_ref_updates: Default::default(),
             block_id,
         }
     }
 
     /// Creates a [BlockBuilder] for a subscope with unchanged refs.
     pub fn subscope_with_bound_refs(&self, block_id: BlockId) -> BlockBuilder {
-        let mut subscope = self.subscope(block_id);
-        subscope.bind_refs();
-        subscope
+        self.subscope(block_id)
     }
 
     /// Creates a [BlockBuilder] for a sibling scope. This is used when an original block is split
     /// (e.g. after a match statement) to add the ability to 'goto' to after-the-block.
     pub fn sibling_scope(&self, block_id: BlockId) -> BlockBuilder {
-        let mut scope = BlockBuilder {
-            current_implicits: self.current_implicits.clone(),
-            initial_implicits: None,
+        BlockBuilder {
             inputs: vec![],
-            implicits: self.implicits.clone(),
-            changed_implicits: self.changed_implicits.clone(),
             semantics: self.semantics.clone(),
             changed_semantics: self.changed_semantics.clone(),
             statements: Default::default(),
             pending_statement: None,
-            pending_ref_updates: Default::default(),
             block_id,
-        };
-        scope.bind_refs();
-        scope
+        }
     }
 
     /// Adds an input to the block.
@@ -108,32 +76,6 @@ impl BlockBuilder {
         let var_id = ctx.new_var(req);
         self.inputs.push(var_id);
         var_id
-    }
-
-    /// Binds an implicit to a lowered variable.
-    pub fn put_implicit(
-        &mut self,
-        ctx: &mut LoweringContext<'_>,
-        ty: semantic::TypeId,
-        var: VariableId,
-    ) {
-        if self.implicits.insert(ty, var) == Some(var) {
-            return;
-        }
-        self.changed_implicits.insert(ty);
-        let (implicit_index, _) = ctx
-            .implicits
-            .iter()
-            .enumerate()
-            .find(|(_, imp_ty)| **imp_ty == ty)
-            .expect("Unknown implicit.");
-        self.pending_ref_updates.insert(RefIndex(implicit_index), var);
-        self.current_implicits[implicit_index] = Some(var);
-    }
-
-    /// Gets the current lowered variable bound to an implicit.
-    pub fn get_implicit(&mut self, ty: semantic::TypeId) -> VariableId {
-        self.implicits.get(&ty).copied().expect("Use of undefined implicit cannot happen.")
     }
 
     /// Binds a semantic variable to a lowered variable.
@@ -157,19 +99,6 @@ impl BlockBuilder {
             .expect("Use of undefined variable cannot happen after semantic phase.")
     }
 
-    /// Confirms that all refs (including implicits) for the beginning of the block are set using
-    /// put_implicit() and put_semantic(). Should be called once per block before any statement.
-    pub fn bind_refs(&mut self) {
-        assert!(self.initial_implicits.is_none(), "References cannot be bound twice.");
-        self.initial_implicits = Some(
-            self.current_implicits
-                .iter()
-                .copied()
-                .map(|v| v.expect("Reference not bound."))
-                .collect(),
-        );
-    }
-
     /// Adds a statement to the block. finalize_statement() should be called after binding the refs
     /// that are relevant right after the statement, and always before the next push_statement().
     pub fn push_statement(&mut self, stmt: Statement) {
@@ -179,10 +108,7 @@ impl BlockBuilder {
     /// Finalizes a statement after binding its refs.
     pub fn finalize_statement(&mut self) {
         let statement = self.pending_statement.take().expect("push_statement() not called.");
-        self.statements.push(StructuredStatement {
-            statement,
-            implicit_updates: std::mem::take(&mut self.pending_ref_updates),
-        });
+        self.statements.push(StructuredStatement { statement });
     }
 
     /// Adds a statement to the block without rebinding refs - the refs will remain like they were
@@ -204,13 +130,7 @@ impl BlockBuilder {
 
     /// Ends a block with Panic.
     pub fn panic(self, ctx: &mut LoweringContext<'_>, data: VariableId) -> Maybe<()> {
-        let implicits = ctx
-            .implicits
-            .iter()
-            .map(|ty| self.implicits.get(ty).copied())
-            .collect::<Option<Vec<_>>>()
-            .to_maybe()?;
-        self.finalize(ctx, StructuredBlockEnd::Panic { implicits, data });
+        self.finalize(ctx, StructuredBlockEnd::Panic { data });
         Ok(())
     }
 
@@ -221,13 +141,6 @@ impl BlockBuilder {
 
     /// Ends a block with Return.
     pub fn ret(self, ctx: &mut LoweringContext<'_>, expr: VariableId) -> Maybe<()> {
-        let implicits = ctx
-            .implicits
-            .iter()
-            .map(|ty| self.implicits.get(ty).copied())
-            .collect::<Option<Vec<_>>>()
-            .to_maybe()?;
-
         let ref_vars = ctx
             .ref_params
             .iter()
@@ -237,19 +150,14 @@ impl BlockBuilder {
 
         self.finalize(
             ctx,
-            StructuredBlockEnd::Return { implicits, returns: chain!(ref_vars, [expr]).collect() },
+            StructuredBlockEnd::Return { returns: chain!(ref_vars, [expr]).collect() },
         );
         Ok(())
     }
 
     /// Ends a block with known ending information. Used by [SealedBlockBuilder].
     fn finalize(self, ctx: &mut LoweringContext<'_>, end: StructuredBlockEnd) {
-        let block = StructuredBlock {
-            initial_implicits: self.initial_implicits.expect("References have not been bound yet."),
-            inputs: self.inputs,
-            statements: self.statements,
-            end,
-        };
+        let block = StructuredBlock { inputs: self.inputs, statements: self.statements, end };
         ctx.blocks.set_block(self.block_id, block);
     }
 
@@ -275,7 +183,6 @@ impl BlockBuilder {
 #[derive(Debug, Default)]
 pub struct SemanticRemapping {
     expr: Option<VariableId>,
-    implicits: OrderedHashMap<semantic::TypeId, VariableId>,
     semantics: OrderedHashMap<semantic::VarId, VariableId>,
 }
 
@@ -301,9 +208,6 @@ impl SealedBlockBuilder {
             SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
                 let mut remapping = VarRemapping::default();
                 // Since SemanticRemapping should have unique variable ids, these asserts will pass.
-                for (ty, remapped_var) in semantic_remapping.implicits.iter() {
-                    assert!(remapping.insert(*remapped_var, scope.implicits[*ty]).is_none());
-                }
                 for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
                     assert!(remapping.insert(*remapped_var, scope.semantics[*semantic]).is_none());
                 }
@@ -374,12 +278,6 @@ pub fn merge_sealed(
                 ctx.variables.alloc(var)
             });
         }
-        for implicit in subscope.changed_implicits.iter() {
-            semantic_remapping.implicits.entry(*implicit).or_insert_with(|| {
-                let var = ctx.variables[subscope.implicits[*implicit]].clone();
-                ctx.variables.alloc(var)
-            });
-        }
     }
 
     // If there are reachable blocks, create a new empty block for the code after this match.
@@ -391,9 +289,6 @@ pub fn merge_sealed(
     }
 
     // Apply remapping on scope.
-    for (implicit, var) in semantic_remapping.implicits {
-        scope.put_implicit(ctx, implicit, var);
-    }
     for (semantic, var) in semantic_remapping.semantics {
         scope.put_semantic(ctx, semantic, var);
     }
