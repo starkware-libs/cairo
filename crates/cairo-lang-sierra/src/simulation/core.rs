@@ -23,7 +23,7 @@ use crate::extensions::felt::{
 use crate::extensions::function_call::FunctionCallConcreteLibfunc;
 use crate::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
-    AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
+    AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::structure::StructConcreteLibfunc;
 use crate::extensions::uint::{
@@ -206,7 +206,7 @@ pub fn simulate<
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        Mem(AlignTemps(_)) | Mem(FinalizeLocals(_)) | UnconditionalJump(_) | ApTracking(_) => {
+        Mem(FinalizeLocals(_)) | UnconditionalJump(_) | ApTracking(_) => {
             if inputs.is_empty() {
                 Ok((inputs, 0))
             } else {

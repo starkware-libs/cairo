@@ -15,7 +15,6 @@ use crate::program::GenericArg;
 define_libfunc_hierarchy! {
     pub enum MemLibfunc {
         StoreTemp(StoreTempLibfunc),
-        AlignTemps(AlignTempsLibfunc),
         StoreLocal(StoreLocalLibfunc),
         FinalizeLocals(FinalizeLocalsLibfunc),
         AllocLocal(AllocLocalLibfunc),
@@ -51,22 +50,6 @@ impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
     }
 }
 pub type StoreTempLibfunc = WrapSignatureAndTypeGenericLibfunc<StoreTempLibfuncWrapped>;
-
-/// Libfunc for aligning the temporary buffer for flow control merge.
-#[derive(Default)]
-pub struct AlignTempsLibfuncWrapped {}
-impl SignatureAndTypeGenericLibfunc for AlignTempsLibfuncWrapped {
-    const STR_ID: &'static str = "align_temps";
-
-    fn specialize_signature(
-        &self,
-        _context: &dyn SignatureSpecializationContext,
-        _ty: ConcreteTypeId,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch(vec![], vec![], SierraApChange::NotImplemented))
-    }
-}
-pub type AlignTempsLibfunc = WrapSignatureAndTypeGenericLibfunc<AlignTempsLibfuncWrapped>;
 
 /// Libfunc for storing a value into local memory.
 #[derive(Default)]

@@ -177,8 +177,6 @@ fn simulate_branch(
              => Ok(vec![Uint128(6)]); "unwrap_nz<u128>(6)")]
 #[test_case("store_temp", vec![type_arg("u128")], vec![Uint128(6)] => Ok(vec![Uint128(6)]);
             "store_temp<u128>(6)")]
-#[test_case("align_temps", vec![type_arg("u128")], vec![] => Ok(vec![]);
-            "align_temps<u128>()")]
 #[test_case("store_local", vec![type_arg("u128")], vec![Uninitialized, Uint128(6)]
              => Ok(vec![Uint128(6)]); "store_local<u128>(_, 6)")]
 #[test_case("finalize_locals", vec![], vec![] => Ok(vec![]); "finalize_locals()")]
@@ -220,8 +218,6 @@ fn simulate_none_branch(
             "unwrap_nz<u128>()")]
 #[test_case("store_temp", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;
             "store_temp<u128>()")]
-#[test_case("align_temps", vec![type_arg("u128")], vec![Uint128(1)] => WrongNumberOfArgs;
-            "align_temps<u128>(4)")]
 #[test_case("store_local", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;
             "store_local<u128>()")]
 #[test_case("finalize_locals", vec![], vec![Uint128(4)] => WrongNumberOfArgs; "finalize_locals(4)")]
