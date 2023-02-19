@@ -174,8 +174,8 @@ fn build_array_get(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[arr_start, arr_end], &elem_cells], None),
-            ("FailureHandle", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
+            ("Fallthrough", &[&[range_check], &elem_cells], None),
+            ("FailureHandle", &[&[range_check]], Some(failure_handle)),
         ],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
