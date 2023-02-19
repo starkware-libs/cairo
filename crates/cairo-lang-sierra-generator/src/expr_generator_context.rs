@@ -18,8 +18,6 @@ pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
     lowered: &'a FlatLowered,
     function_id: ConcreteFunctionWithBodyId,
-    // TODO(lior): Remove `allow(dead_code)` once this field is used.
-    #[allow(dead_code)]
     lifetime: &'a VariableLifetimeResult,
 
     var_id_allocator: IdAllocator,
