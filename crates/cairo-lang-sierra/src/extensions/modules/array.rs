@@ -1,5 +1,5 @@
 use super::range_check::RangeCheckType;
-use super::snapshot::SnapshotType;
+use super::snapshot::snapshot_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -82,9 +82,8 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty)?;
-        let snapshot_ty = context.get_wrapped_concrete_type(SnapshotType::id(), arr_ty)?;
         Ok(LibfuncSignature::new_non_branch(
-            vec![snapshot_ty],
+            vec![snapshot_ty(context, arr_ty)?],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(ArrayIndexType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -190,11 +189,11 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
         }
         let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let uint128_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
+        let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
         let param_signatures = vec![
             ParamSignature::new(range_check_type.clone()),
-            ParamSignature::new(arr_type.clone()),
-            ParamSignature::new(uint128_type),
+            ParamSignature::new(snapshot_ty(context, arr_type)?),
+            ParamSignature::new(index_type),
         ];
         let branch_signatures = vec![
             // First (success) branch returns rc, array and element; failure branch does not return
@@ -208,10 +207,6 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
                         }),
                     },
                     OutputVarInfo {
-                        ty: arr_type.clone(),
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                    },
-                    OutputVarInfo {
                         ty,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
@@ -219,18 +214,12 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
                 ap_change: SierraApChange::Known { new_vars_only: false },
             },
             BranchSignature {
-                vars: vec![
-                    OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    },
-                    OutputVarInfo {
-                        ty: arr_type,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                    },
-                ],
+                vars: vec![OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                }],
                 ap_change: SierraApChange::Known { new_vars_only: false },
             },
         ];
