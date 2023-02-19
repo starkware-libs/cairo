@@ -108,5 +108,5 @@ v1: ((BlockId(0), 0), 1)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(4)): v11, v12, v13
+BeginningOfBlock(BlockId(4)): v4, v5, v6
 BeginningOfBlock(BlockId(0)): v2

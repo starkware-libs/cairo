@@ -143,6 +143,9 @@ fn inner_find_variable_lifetime(
         }
         lowering::FlatBlockEnd::Fallthrough(target_block_id, remapping) => {
             inner_find_variable_lifetime(context, *target_block_id, state);
+            if context.block_state.insert(*target_block_id, state.clone()).is_some() {
+                panic!("block {target_block_id:?} lifetime was computed more than once.")
+            }
             let vars = remapping.values().copied().collect_vec();
             state.use_variables(context, &vars, (block_id, block.statements.len()));
 
@@ -151,10 +154,6 @@ fn inner_find_variable_lifetime(
                 &remapping.keys().copied().collect_vec(),
                 DropLocation::BeginningOfBlock(*target_block_id),
             );
-
-            if context.block_state.insert(*target_block_id, state.clone()).is_some() {
-                panic!("block {target_block_id:?} lifetime was computed more than once.")
-            }
         }
         lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
             *state = context.block_state[*target_block_id].clone();
@@ -236,6 +235,7 @@ fn handle_match(
     // If a variable was last-used in one arm but not in others, it should be dropped
     // in the other arms.
     for (block_id, used_variables) in block_to_used_vars {
+        eprintln!("blk{}, used: {:?}", block_id.0, used_variables);
         let drop_location = DropLocation::BeginningOfBlock(block_id);
         for var_id in &all_used_variables - &used_variables {
             context.res.add_drop(var_id, drop_location);
