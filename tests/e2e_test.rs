@@ -29,6 +29,7 @@ cairo_lang_test_utils::test_file_test!(
         bool: "bool",
         enum_: "enum",
         span: "span",
+        enum_snapshot: "enum_snapshot",
     },
     run_small_e2e_test
 );
