@@ -91,6 +91,8 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         ("ClassHashSerde", "starknet::class_hash::ClassHashSerde"),
         ("ContractAddressSerde", "starknet::contract_address::ContractAddressSerde"),
         ("StorageAddressSerde", "starknet::storage_access::StorageAddressSerde"),
+        ("OptionTrait", "option::OptionTrait"),
+        ("OptionTraitImpl", "option::OptionTraitImpl"),
     ]
     .into_iter()
     {
@@ -103,6 +105,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             .map(|use_path| RewriteNode::Text(format!("\n        use {use_path};")))
             .collect(),
     );
+
     let mut generated_external_functions = Vec::new();
     let mut generated_constructor_functions = Vec::new();
     let mut generated_l1_handler_functions = Vec::new();
