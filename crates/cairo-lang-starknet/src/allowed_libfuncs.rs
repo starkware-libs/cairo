@@ -36,6 +36,8 @@ fn deserialize_libfuncs_set<'de, D: serde::Deserializer<'de>>(
 
 /// The allowed libfuncs list to use if no list is supplied to the compiler.
 pub const DEFAULT_AUDITED_LIBFUNCS_LIST: &str = "audited_v0.1.0";
+/// The allowed libfuncs list to use allowed on testnet.
+pub const DEFAULT_TESTNET_LIBFUNCS_LIST: &str = "testnet_v0.1.0";
 /// The experimental list contains all the libfuncs and is currently used for development.
 pub const DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST: &str = "experimental_v0.1.0";
 
@@ -46,6 +48,9 @@ pub fn lookup_allowed_libfuncs_list(
     let allowed_libfuncs_str: &str = match list_name {
         DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST => {
             include_str!("allowed_libfuncs_lists/experimental_v0.1.0.json")
+        }
+        DEFAULT_TESTNET_LIBFUNCS_LIST => {
+            include_str!("allowed_libfuncs_lists/testnet_v0.1.0.json")
         }
         DEFAULT_AUDITED_LIBFUNCS_LIST => {
             include_str!("allowed_libfuncs_lists/audited_v0.1.0.json")
