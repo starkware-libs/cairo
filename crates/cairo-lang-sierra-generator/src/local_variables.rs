@@ -162,7 +162,7 @@ fn inner_find_local_variables(
             }
             lowering::Statement::Snapshot(statement_snapshot) => {
                 let ty = ctx.db.get_concrete_type_id(
-                    ctx.lowered_function.variables[statement_snapshot.output].ty,
+                    ctx.lowered_function.variables[statement_snapshot.input].ty,
                 )?;
 
                 let concrete_function_id = snapshot_take_libfunc_id(ctx.db, ty);
@@ -170,8 +170,8 @@ fn inner_find_local_variables(
                 let vars = &libfunc_signature.branch_signatures[0].vars;
                 state.register_outputs(
                     &[statement_snapshot.input],
-                    &[statement_snapshot.output],
-                    &vars[1..],
+                    &[statement_snapshot.output_original, statement_snapshot.output_snapshot],
+                    &vars[..],
                 );
             }
         }

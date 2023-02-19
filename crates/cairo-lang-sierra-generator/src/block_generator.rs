@@ -592,8 +592,11 @@ fn generate_statement_snapshot(
             context.get_db(),
             context.get_variable_sierra_type(statement.input)?,
         ),
-        &[input.clone()],
-        &[input, context.get_sierra_variable(statement.output)],
+        &[input],
+        &[
+            context.get_sierra_variable(statement.output_original),
+            context.get_sierra_variable(statement.output_snapshot),
+        ],
     ));
     Ok(statements)
 }

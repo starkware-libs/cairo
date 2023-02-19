@@ -240,7 +240,7 @@ impl Statement {
             Statement::StructDestructure(stmt) => stmt.outputs.clone(),
             Statement::EnumConstruct(stmt) => vec![stmt.output],
             Statement::MatchEnum(_) => vec![],
-            Statement::Snapshot(stmt) => vec![stmt.output],
+            Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
         }
     }
 }
@@ -323,6 +323,6 @@ pub struct StatementStructDestructure {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot {
     pub input: VariableId,
-    /// The variable to bind the value to.
-    pub output: VariableId,
+    pub output_original: VariableId,
+    pub output_snapshot: VariableId,
 }

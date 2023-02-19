@@ -115,14 +115,21 @@ pub struct Snapshot {
     pub location: StableLocation,
 }
 impl Snapshot {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockBuilder) -> VariableId {
-        let ty = ctx.db.intern_type(semantic::TypeLongId::Snapshot(ctx.variables[self.input].ty));
-        let output = ctx.new_var(VarRequest { ty, location: self.location });
+    pub fn add(
+        self,
+        ctx: &mut LoweringContext<'_>,
+        scope: &mut BlockBuilder,
+    ) -> (VariableId, VariableId) {
+        let input_ty = ctx.variables[self.input].ty;
+        let ty = ctx.db.intern_type(semantic::TypeLongId::Snapshot(input_ty));
+        let output_original = ctx.new_var(VarRequest { ty: input_ty, location: self.location });
+        let output_snapshot = ctx.new_var(VarRequest { ty, location: self.location });
         scope.push_finalized_statement(Statement::Snapshot(StatementSnapshot {
             input: self.input,
-            output,
+            output_original,
+            output_snapshot,
         }));
-        output
+        (output_original, output_snapshot)
     }
 }
 

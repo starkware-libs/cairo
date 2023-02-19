@@ -23,21 +23,21 @@ blk0 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
-  (v1: @core::felt) <- snapshot(v0)
-  () <- test::bar(v1)
-  (v2: ()) <- struct_construct()
+  (v1: core::felt, v2: @core::felt) <- snapshot(v0)
+  () <- test::bar(v2)
+  (v3: ()) <- struct_construct()
 End:
-  Return(v2)
+  Return(v3)
 
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: @core::felt) <- snapshot(v0)
-  () <- test::bar(v1)
-  (v2: ()) <- struct_construct()
+  (v1: core::felt, v2: @core::felt) <- snapshot(v0)
+  () <- test::bar(v2)
+  (v3: ()) <- struct_construct()
 End:
-  Return(v2)
+  Return(v3)
 
 //! > ==========================================================================
 
