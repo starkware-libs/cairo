@@ -22,7 +22,6 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs:
-Initial implicits:
 Statements:
   (v0: core::felt) <- 1u
   (v1: core::felt) <- 2u

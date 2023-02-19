@@ -15,6 +15,7 @@ use semantic::items::functions::ConcreteFunctionWithBodyId;
 use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::diagnostic::LoweringDiagnostic;
+use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
 use crate::optimizations::remappings::optimize_remappings;
@@ -78,7 +79,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Returns the representative of the function's strongly connected component. The
     /// representative is consistently chosen for all the functions in the same SCC.
-    #[salsa::invoke(crate::lower::implicits::function_scc_representative)]
+    #[salsa::invoke(crate::scc::function_scc_representative)]
     fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
 
     /// Returns the explicit implicits required by all the functions in the SCC of this function.
@@ -86,7 +87,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// the given function's SCC.
     ///
     /// For better caching, this function should be called only with the representative of the SCC.
-    #[salsa::invoke(crate::lower::implicits::function_scc_explicit_implicits)]
+    #[salsa::invoke(crate::scc::function_scc_explicit_implicits)]
     fn function_scc_explicit_implicits(
         &self,
         function: SCCRepresentative,
@@ -96,12 +97,12 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// signature and the functions it calls). The items in the returned vector are unique and the
     /// order is consistent, but not necessarily related to the order of the explicit implicits in
     /// the signature of the function.
-    #[salsa::invoke(crate::lower::implicits::function_all_implicits)]
+    #[salsa::invoke(crate::scc::function_all_implicits)]
     fn function_all_implicits(&self, function: semantic::FunctionId) -> Maybe<Vec<TypeId>>;
 
     /// Returns all the implicit parameters that a function with a body requires (according to both
     /// its signature and the functions it calls).
-    #[salsa::invoke(crate::lower::implicits::function_with_body_all_implicits)]
+    #[salsa::invoke(crate::scc::function_with_body_all_implicits)]
     fn function_with_body_all_implicits(
         &self,
         function: FunctionWithBodyId,
@@ -111,22 +112,22 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// its signature and the functions it calls). The items in the returned vector are unique
     /// and the order is consistent, but not necessarily related to the order of the explicit
     /// implicits in the signature of the function.
-    #[salsa::invoke(crate::lower::implicits::function_with_body_all_implicits_vec)]
+    #[salsa::invoke(crate::scc::function_with_body_all_implicits_vec)]
     fn function_with_body_all_implicits_vec(
         &self,
         function: FunctionWithBodyId,
     ) -> Maybe<Vec<TypeId>>;
 
     /// Returns whether the function may panic.
-    #[salsa::invoke(crate::lower::implicits::function_may_panic)]
+    #[salsa::invoke(crate::scc::function_may_panic)]
     fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
 
     /// Returns whether the function may panic.
-    #[salsa::invoke(crate::lower::implicits::function_with_body_may_panic)]
+    #[salsa::invoke(crate::scc::function_with_body_may_panic)]
     fn function_with_body_may_panic(&self, function: FunctionWithBodyId) -> Maybe<bool>;
 
     /// Returns all the functions in the same strongly connected component as the given function.
-    #[salsa::invoke(crate::lower::implicits::function_with_body_scc)]
+    #[salsa::invoke(crate::scc::function_with_body_scc)]
     fn function_with_body_scc(&self, function_id: FunctionWithBodyId) -> Vec<FunctionWithBodyId>;
 
     /// An array that sets the precedence of implicit types.
@@ -142,6 +143,8 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct SCCRepresentative(pub FunctionWithBodyId);
 
+// Main lowering phases in order.
+// * Lowers into structured representation.
 fn priv_function_with_body_lowered_structured(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
@@ -149,6 +152,8 @@ fn priv_function_with_body_lowered_structured(
     Ok(Arc::new(lower(db.upcast(), function_id)?))
 }
 
+// * Adds panics.
+// * Borrow checking.
 fn priv_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
@@ -159,6 +164,7 @@ fn priv_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
+// * Concretizes lowered representation (monomorphization).
 fn priv_concrete_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
@@ -171,6 +177,7 @@ fn priv_concrete_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
+// * Applies inlining.
 fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
@@ -181,6 +188,7 @@ fn concrete_function_with_body_lowered(
     // TODO(spapini): passing function.function_with_body_id might be weird here.
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
+    lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
     topological_sort(&mut lowered);
     Ok(Arc::new(lowered))

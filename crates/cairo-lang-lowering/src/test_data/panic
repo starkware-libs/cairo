@@ -24,7 +24,6 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt, v1: core::bool
-Initial implicits:
 Statements:
   (v2: core::felt) <- 7u
   (v3: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
@@ -76,7 +75,6 @@ fn bar(ref a: bool) -> felt {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt, v1: core::bool
-Initial implicits:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
@@ -88,7 +86,6 @@ End:
 
 blk1:
 Inputs: v4: ()
-Initial implicits:
 Statements:
   (v5: core::felt) <- 7u
 End:
@@ -96,7 +93,6 @@ End:
 
 blk2:
 Inputs: v6: ()
-Initial implicits:
 Statements:
   (v7: core::felt) <- 6u
 End:
@@ -104,7 +100,6 @@ End:
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
   (v10: core::bool, v9: core::felt) <- test::bar(v1)
 End:
