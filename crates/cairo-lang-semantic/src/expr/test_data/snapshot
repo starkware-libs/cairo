@@ -20,3 +20,38 @@ fn bar(a: @Array::<felt>, b: @felt) {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test coercion failure.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let x: @felt = 5;
+    let y: felt = @6;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: Array::<felt>,
+    b: felt,
+}
+fn bar(a: @Array::<felt>, b: @felt) {
+}
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "@core::felt", found: "core::felt".
+ --> lib.cairo:8:20
+    let x: @felt = 5;
+                   ^
+
+error: Unexpected argument type. Expected: "core::felt", found: "@core::felt".
+ --> lib.cairo:9:19
+    let y: felt = @6;
+                  ^^
