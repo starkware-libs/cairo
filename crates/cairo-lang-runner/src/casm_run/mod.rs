@@ -258,24 +258,7 @@ impl HintProcessor for CairoHintProcessor {
                 })?;
             }
             Hint::SystemCall { system } => {
-                let starknet_exec_scope =
-                    match exec_scopes.get_mut_ref::<StarknetExecScope>("starknet_exec_scope") {
-                        Ok(starknet_exec_scope) => starknet_exec_scope,
-                        Err(_) => {
-                            exec_scopes.assign_or_update_variable(
-                                "starknet_exec_scope",
-                                Box::new(StarknetExecScope {
-                                    storage: HashMap::default(),
-                                    sequencer_address: 0.into(),
-                                    caller_address: 0.into(),
-                                    contract_address: 0.into(),
-                                    block_number: 0,
-                                    block_timestamp: 0,
-                                }),
-                            );
-                            exec_scopes.get_mut_ref::<StarknetExecScope>("starknet_exec_scope")?
-                        }
-                    };
+                let starknet_exec_scope = starknet_execution_scope(exec_scopes)?;
                 let (cell, base_offset) = extract_buffer(system);
                 let selector = get_double_deref_val(vm, cell, &base_offset)?.to_bytes_be();
                 let mut check_handle_oog =
@@ -393,6 +376,23 @@ impl HintProcessor for CairoHintProcessor {
                 } else {
                     panic!("Unknown selector for system call!");
                 }
+            }
+            Hint::SetBlockNumber { value } => {
+                starknet_execution_scope(exec_scopes)?.block_number =
+                    get_val(vm, value)?.to_u64().unwrap();
+            }
+            Hint::SetBlockTimestamp { value } => {
+                starknet_execution_scope(exec_scopes)?.block_timestamp =
+                    get_val(vm, value)?.to_u64().unwrap();
+            }
+            Hint::SetCallerAddress { value } => {
+                starknet_execution_scope(exec_scopes)?.caller_address = get_val(vm, value)?;
+            }
+            Hint::SetContractAddress { value } => {
+                starknet_execution_scope(exec_scopes)?.contract_address = get_val(vm, value)?;
+            }
+            Hint::SetSequencerAddress { value } => {
+                starknet_execution_scope(exec_scopes)?.sequencer_address = get_val(vm, value)?;
             }
             Hint::AllocDictFeltTo { dict_manager_ptr } => {
                 let (cell, base_offset) = extract_buffer(dict_manager_ptr);
@@ -665,6 +665,27 @@ impl HintProcessor for CairoHintProcessor {
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
+}
+
+/// Returns the starknet execution scope.
+fn starknet_execution_scope(
+    exec_scopes: &mut ExecutionScopes,
+) -> Result<&mut StarknetExecScope, HintError> {
+    Ok(exec_scopes
+        .get_local_variables_mut()?
+        .entry("starknet_exec_scope".to_string())
+        .or_insert_with(|| {
+            Box::new(StarknetExecScope {
+                storage: HashMap::default(),
+                sequencer_address: 0.into(),
+                caller_address: 0.into(),
+                contract_address: 0.into(),
+                block_number: 0,
+                block_timestamp: 0,
+            })
+        })
+        .downcast_mut::<StarknetExecScope>()
+        .unwrap())
 }
 
 /// Extracts a parameter assumed to be a buffer.

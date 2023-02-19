@@ -261,6 +261,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::GetBlockTimestamp(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
+            StarkNetConcreteLibfunc::Testing(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],

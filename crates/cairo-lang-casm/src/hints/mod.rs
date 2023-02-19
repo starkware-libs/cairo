@@ -158,6 +158,21 @@ pub enum Hint {
         size: ResOperand,
         dst: CellRef,
     },
+    SetBlockNumber {
+        value: ResOperand,
+    },
+    SetBlockTimestamp {
+        value: ResOperand,
+    },
+    SetCallerAddress {
+        value: ResOperand,
+    },
+    SetContractAddress {
+        value: ResOperand,
+    },
+    SetSequencerAddress {
+        value: ResOperand,
+    },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -494,6 +509,21 @@ impl Display for Hint {
                     ",
                     ResOperandFormatter(size)
                 )
+            }
+            Hint::SetBlockNumber { value } => {
+                write!(f, "syscall_handler.block_number = {}", ResOperandFormatter(value))
+            }
+            Hint::SetBlockTimestamp { value } => {
+                write!(f, "syscall_handler.block_timestamp = {}", ResOperandFormatter(value))
+            }
+            Hint::SetCallerAddress { value } => {
+                write!(f, "syscall_handler.caller_address = {}", ResOperandFormatter(value))
+            }
+            Hint::SetContractAddress { value } => {
+                write!(f, "syscall_handler.contract_address = {}", ResOperandFormatter(value))
+            }
+            Hint::SetSequencerAddress { value } => {
+                write!(f, "syscall_handler.sequencer_address = {}", ResOperandFormatter(value))
             }
         }
     }
