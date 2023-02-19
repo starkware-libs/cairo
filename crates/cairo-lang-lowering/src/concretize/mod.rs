@@ -39,6 +39,7 @@ pub fn concretize_lowered(
                     substitute_variant(semantic_db, substitution, &mut stmt.variant);
                 }
                 Statement::Snapshot(_)
+                | Statement::Desnap(_)
                 | Statement::Literal(_)
                 | Statement::StructConstruct(_)
                 | Statement::StructDestructure(_) => {}

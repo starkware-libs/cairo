@@ -272,6 +272,7 @@ pub fn core_unary_operator(
         UnaryOperator::Minus(_) => ("Neg", "neg"),
         UnaryOperator::Not(_) => ("Not", "not"),
         UnaryOperator::At(_) => unreachable!("@ is not an unary operator."),
+        UnaryOperator::Desnap(_) => unreachable!("* is not an unary operator."),
     };
     Ok(Ok(get_core_trait_function_infer(
         db,
