@@ -24,7 +24,6 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::bool, v1: core::felt
-Initial implicits:
 Statements:
 End:
   Match(match_enum(v0) {
@@ -34,7 +33,6 @@ End:
 
 blk1:
 Inputs: v2: ()
-Initial implicits:
 Statements:
   (v3: core::felt) <- 1u
 End:
@@ -42,14 +40,12 @@ End:
 
 blk2:
 Inputs: v4: ()
-Initial implicits:
 Statements:
 End:
   Goto(3, {v1 -> v5})
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
 End:
   Return(v5)
@@ -111,7 +107,6 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial implicits:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -121,7 +116,6 @@ End:
 
 blk1:
 Inputs:
-Initial implicits:
 Statements:
   (v1: core::felt) <- 1u
 End:
@@ -129,14 +123,12 @@ End:
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
-Initial implicits:
 Statements:
 End:
   Goto(3, {v0 -> v3})
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
 End:
   Return(v3)
@@ -197,7 +189,6 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial implicits:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -207,7 +198,6 @@ End:
 
 blk1:
 Inputs:
-Initial implicits:
 Statements:
   (v1: core::felt) <- 10u
 End:
@@ -215,14 +205,12 @@ End:
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
-Initial implicits:
 Statements:
 End:
   Goto(3, {})
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
   (v3: core::felt) <- 20u
 End:
@@ -286,7 +274,6 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
-Initial implicits:
 Statements:
   (v4: core::felt) <- core::FeltAdd::add(v0, v1)
   (v5: core::felt) <- core::FeltSub::sub(v2, v3)
@@ -299,7 +286,6 @@ End:
 
 blk1:
 Inputs:
-Initial implicits:
 Statements:
   (v7: core::felt) <- 0u
 End:
@@ -307,7 +293,6 @@ End:
 
 blk2:
 Inputs: v8: core::NonZero::<core::felt>
-Initial implicits:
 Statements:
   (v9: core::felt) <- 1u
 End:
@@ -315,7 +300,6 @@ End:
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
 End:
   Return(v10)
