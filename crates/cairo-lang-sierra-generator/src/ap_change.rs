@@ -54,7 +54,7 @@ pub fn get_ap_change(
             for branch_signature in signature.branch_signatures {
                 if matches!(
                     branch_signature.ap_change,
-                    SierraApChange::Unknown | SierraApChange::NotImplemented
+                    SierraApChange::Unknown
                 ) {
                     return Ok(SierraApChange::Unknown);
                 }
