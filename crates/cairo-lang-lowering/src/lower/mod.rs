@@ -477,7 +477,12 @@ fn perform_function_call(
         let call_result =
             generators::Call { function, inputs, ref_tys, ret_tys: vec![ret_ty], location }
                 .add(ctx, scope);
-        let res = LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap());
+        let var = call_result.returns.into_iter().next().unwrap();
+        let res = if ctx.variables[var].ty == unit_ty(ctx.db.upcast()) {
+            LoweredExpr::Tuple { exprs: vec![], location }
+        } else {
+            LoweredExpr::AtVariable(var)
+        };
         return Ok((call_result.implicit_outputs, call_result.ref_outputs, res));
     };
 
