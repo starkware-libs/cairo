@@ -57,7 +57,7 @@ pub fn priv_extern_type_declaration_data(
         &mut resolver,
         module_file_id,
         &type_syntax.generic_params(db.upcast()),
-    );
+    )?;
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
         diagnostics.report_by_ptr(
             param.stable_ptr(db.upcast()).untyped(),

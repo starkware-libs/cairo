@@ -155,7 +155,7 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
         &mut resolver,
         module_file_id,
         &trait_ast.generic_params(syntax_db),
-    );
+    )?;
 
     let attributes = ast_attributes_to_semantic(syntax_db, trait_ast.attributes(syntax_db));
     let mut function_asts = OrderedHashMap::default();
@@ -249,7 +249,7 @@ pub fn priv_trait_function_data(
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
-    );
+    )?;
 
     let signature_syntax = declaration.signature(syntax_db);
     let mut environment = Environment::default();

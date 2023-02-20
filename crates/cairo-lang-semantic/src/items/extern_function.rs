@@ -98,7 +98,7 @@ pub fn priv_extern_function_declaration_data(
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
-    );
+    )?;
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
         diagnostics.report_by_ptr(
             param.stable_ptr(db.upcast()).untyped(),

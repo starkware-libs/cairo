@@ -46,7 +46,7 @@ pub fn priv_constant_semantic_data(
     let const_ast = module_constants.get(&const_id).to_maybe()?;
     let syntax_db = db.upcast();
 
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new_without_inference(db, module_file_id);
 
     let const_type = resolve_type(
         db,
