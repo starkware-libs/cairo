@@ -3,7 +3,7 @@
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u8, b: u8) -> Result::<u8, u8> {
@@ -69,7 +69,7 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::result::Res
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u8, b: u8) -> Result::<u8, u8> {
@@ -136,7 +136,7 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::result::Res
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u8, b: u8) -> bool {
@@ -204,7 +204,7 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::bool);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u8, b: u8) -> bool {
@@ -274,7 +274,7 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::bool);
 //! This case produces the same code as the case (a deref, b immediate).
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u8, b: u8) -> bool {
@@ -330,7 +330,7 @@ test::foo@0([0]: u8, [1]: u8) -> (core::bool);
 //! see the comment for: u8_eq libfunc (a deref, b deref).
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> bool {
@@ -390,7 +390,7 @@ test::foo@0() -> (core::bool);
 //! see the comment for: u8_eq libfunc (a deref, b deref).
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(b: u8) -> bool {
@@ -447,7 +447,7 @@ test::foo@0([0]: u8) -> (core::bool);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(v: felt) -> Option::<u8> {
@@ -532,7 +532,7 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<c
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u8) -> u8 {
@@ -584,7 +584,7 @@ test::foo@0([0]: u8) -> (u8);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u8, b: NonZero::<u8>) -> (u8, u8) {

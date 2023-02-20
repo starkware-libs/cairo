@@ -180,6 +180,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
             function: call.function,
             inputs: call.inputs.clone(),
             outputs,
+            location,
         }));
 
         // Start constructing a match on the result.

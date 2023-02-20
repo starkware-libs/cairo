@@ -264,7 +264,7 @@ impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
         Ok(LibfuncSignature {
             param_signatures: vec![snapshot_ty(context, enum_type)?.into()],
             branch_signatures,
-            fallthrough: None,
+            fallthrough: Some(0),
         })
     }
 }

@@ -160,6 +160,7 @@ pub fn lower_expr_if_eq(
             (corelib::jump_nz_zero_variant(ctx.db.upcast()), merged.blocks[0]),
             (corelib::jump_nz_nonzero_variant(ctx.db.upcast()), merged.blocks[1]),
         ],
+        location: if_location,
     }));
     merged.expr
 }

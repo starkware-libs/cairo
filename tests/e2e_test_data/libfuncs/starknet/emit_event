@@ -3,7 +3,7 @@
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(keys: Array::<felt>, data: Array::<felt>) -> Result::<(), Array::<felt>> {

@@ -38,8 +38,7 @@ fn test_bool_operators() {
     assert(!(true ^ true), '!(t ^ t)');
 }
 
-impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
-impl NonZeroEcPointDrop of Drop::<NonZeroEcPoint>;
+use ec::OptionNonZeroEcPointDrop;
 
 #[test]
 fn test_ec_operations() {

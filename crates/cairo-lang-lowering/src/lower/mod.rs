@@ -652,6 +652,7 @@ fn lower_optimized_extern_match(
         function: extern_enum.function,
         inputs: extern_enum.inputs,
         arms,
+        location,
     }));
     merged.expr
 }
@@ -717,6 +718,7 @@ fn lower_expr_match_felt(
         function: core_felt_is_zero(semantic_db),
         inputs: vec![expr_var],
         arms,
+        location,
     }));
     merged.expr
 }
@@ -959,6 +961,7 @@ fn lower_optimized_extern_error_propagate(
         function: extern_enum.function,
         inputs: extern_enum.inputs,
         arms,
+        location,
     }));
     merged.expr
 }
