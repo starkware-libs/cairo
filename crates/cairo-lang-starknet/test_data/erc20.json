@@ -38127,7 +38127,6 @@
     "minor": 1,
     "patch": 0
   },
-  "allowed_libfuncs_list_name": "experimental_v0.1.0",
   "entry_points_by_type": {
     "EXTERNAL": [
       {
