@@ -1,4 +1,6 @@
 use array::ArrayTrait;
+use zeroable::Zeroable;
+use starknet::ContractAddressZeroable;
 
 #[contract]
 mod TestContract {
@@ -215,4 +217,14 @@ fn write_read_large_value() {
     assert_empty(retdata);
     assert(value.low == 3_u128, 'bad low');
     assert(value.high == 4_u128, 'bad high');
+}
+
+#[test]
+#[available_gas(300000)]
+fn getter_syscalls() {
+    assert(starknet::get_caller_address().is_zero(), 'non default value');
+    assert(starknet::get_contract_address().is_zero(), 'non default value');
+    assert(starknet::get_sequencer_address().is_zero(), 'non default value');
+    assert(starknet::get_block_number() == 0_u64, 'non default value');
+    assert(starknet::get_block_timestamp() == 0_u64, 'non default value');
 }
