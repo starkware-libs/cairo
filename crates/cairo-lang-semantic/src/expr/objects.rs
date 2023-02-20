@@ -184,10 +184,16 @@ pub struct ExprBlock {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
+pub enum ExprFunctionCallArg {
+    Reference(VarId),
+    Value(ExprId),
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprFunctionCall {
     pub function: FunctionId,
-    pub ref_args: Vec<VarId>,
-    pub args: Vec<ExprId>,
+    pub args: Vec<ExprFunctionCallArg>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,
