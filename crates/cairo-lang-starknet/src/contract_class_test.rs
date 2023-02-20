@@ -4,7 +4,6 @@ use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
-use crate::allowed_libfuncs::DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST;
 use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
 use crate::felt_serde::sierra_from_felts;
 use crate::sierra_version;
@@ -18,7 +17,6 @@ fn test_serialization() {
         sierra_program: vec![],
         sierra_program_debug_info: None,
         sierra_version: sierra_version::CURRENT_VERSION_ID,
-        allowed_libfuncs_list_name: DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST.to_string(),
         entry_points_by_type: ContractEntryPoints {
             external,
             l1_handler: vec![],
@@ -41,7 +39,6 @@ fn test_serialization() {
             "minor": 1,
             "patch": 0
           },
-          "allowed_libfuncs_list_name": "experimental_v0.1.0",
           "entry_points_by_type": {
             "EXTERNAL": [
               {
