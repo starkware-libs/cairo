@@ -2,7 +2,7 @@
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -68,7 +68,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -134,7 +134,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -201,7 +201,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -257,7 +257,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<u128>) -> (RangeCheck, Tupl
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -338,7 +338,7 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::integer::U128sFrom
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -406,7 +406,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -476,7 +476,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 //! Different cases of a,b produce different code. This is why u128_eq has multiple e2e tests.
 //! This case produces the same code as the case (a deref, b immediate).
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -532,7 +532,7 @@ test::foo@0([0]: u128, [1]: u128) -> (core::bool);
 //! > test_comments
 //! see the comment for: u128_eq libfunc (a deref, b deref).
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -592,7 +592,7 @@ test::foo@0() -> (core::bool);
 //! > test_comments
 //! see the comment for: u128_eq libfunc (a deref, b deref).
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -649,7 +649,7 @@ test::foo@0([0]: u128) -> (core::bool);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo

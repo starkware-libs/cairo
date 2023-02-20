@@ -1,6 +1,6 @@
 //! > Test match 0.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -86,7 +86,7 @@ End:
 
 //! > Test match zero with non-zero value.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -119,7 +119,7 @@ error: Match with a non-zero value is not supported.
 
 //! > Test unsupported match zero.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -152,7 +152,7 @@ error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported
 
 //! > Test empty enum match.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -181,7 +181,7 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
 
 //! > Test empty extern match.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function

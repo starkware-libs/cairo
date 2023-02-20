@@ -2,7 +2,7 @@
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -68,7 +68,7 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::result::R
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -135,7 +135,7 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::result::R
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -203,7 +203,7 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::bool);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -273,7 +273,7 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::bool);
 //! Different cases of a,b produce different code. This is why u64_eq has multiple e2e tests.
 //! This case produces the same code as the case (a deref, b immediate).
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -329,7 +329,7 @@ test::foo@0([0]: u64, [1]: u64) -> (core::bool);
 //! > test_comments
 //! see the comment for: u64_eq libfunc (a deref, b deref).
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -389,7 +389,7 @@ test::foo@0() -> (core::bool);
 //! > test_comments
 //! see the comment for: u64_eq libfunc (a deref, b deref).
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -446,7 +446,7 @@ test::foo@0([0]: u64) -> (core::bool);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -531,7 +531,7 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<c
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -583,7 +583,7 @@ test::foo@0([0]: u64) -> (u64);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo

@@ -1,6 +1,6 @@
 //! > Incompatible types in if blocks.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -33,7 +33,7 @@ fn foo() {
 
 //! > Single sided if.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

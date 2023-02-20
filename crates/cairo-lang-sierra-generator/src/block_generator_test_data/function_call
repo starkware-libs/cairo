@@ -1,6 +1,6 @@
 //! > Test function call.
 
-//! > test_function_name
+//! > test_runner_name
 block_generator_test
 
 //! > function
@@ -45,7 +45,7 @@ struct_construct<Unit>() -> ([16])
 
 //! > Test function call 2.
 
-//! > test_function_name
+//! > test_runner_name
 block_generator_test
 
 //! > function
@@ -91,7 +91,7 @@ function_call<user@test::bar2>([14], [15]) -> ([13])
 
 //! > Call libfunc explicitly
 
-//! > test_function_name
+//! > test_runner_name
 block_generator_test
 
 //! > function

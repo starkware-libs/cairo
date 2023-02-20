@@ -1,6 +1,6 @@
 //! > Test that a variable is dropped if it is unused after taking its snapshot.
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name

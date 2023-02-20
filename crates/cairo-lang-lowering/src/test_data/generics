@@ -1,6 +1,6 @@
 //! > Test extern function calling.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -76,7 +76,7 @@ End:
 
 //! > Test generic structs.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
