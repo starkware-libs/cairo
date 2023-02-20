@@ -1,6 +1,6 @@
 //! > Test struct snapshot.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -25,7 +25,7 @@ fn bar(a: @Array::<felt>, b: @felt) {
 
 //! > Test coercion failure.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

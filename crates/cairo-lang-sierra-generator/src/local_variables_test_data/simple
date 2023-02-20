@@ -1,6 +1,6 @@
 //! > Simple local variables
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -84,7 +84,7 @@ v10, v12
 
 //! > Return revoked value
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -127,7 +127,7 @@ v3
 
 //! > SameAsParam
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name

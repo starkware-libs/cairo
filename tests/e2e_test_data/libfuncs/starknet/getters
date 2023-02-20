@@ -2,7 +2,7 @@
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -31,7 +31,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -78,7 +78,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -107,7 +107,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -154,7 +154,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -183,7 +183,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -230,7 +230,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -259,7 +259,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -306,7 +306,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -335,7 +335,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -382,7 +382,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -411,7 +411,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;

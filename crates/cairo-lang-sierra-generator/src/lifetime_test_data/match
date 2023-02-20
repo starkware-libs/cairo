@@ -1,6 +1,6 @@
 //! > Last use in one branch
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -50,7 +50,7 @@ BeginningOfBlock(BlockId(1)): v2, v1
 
 //! > Last use after branch
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -100,7 +100,7 @@ BeginningOfBlock(BlockId(1)): v2
 
 //! > Last use in both branches
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -161,7 +161,7 @@ BeginningOfBlock(BlockId(0)): v1
 
 //! > Nested ifs
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name

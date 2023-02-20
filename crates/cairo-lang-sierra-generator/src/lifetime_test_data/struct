@@ -1,6 +1,6 @@
 //! > Test variable lifetime for structs
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name

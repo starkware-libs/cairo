@@ -1,6 +1,6 @@
 //! > Test missing token
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -18,7 +18,7 @@ error: Missing tokens. Expected an expression.
 
 //! > Test complex expression
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code

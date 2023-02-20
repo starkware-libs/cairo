@@ -1,6 +1,6 @@
 //! > Test unreachable code.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -57,7 +57,7 @@ End:
 
 //! > Test single patterns.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -98,7 +98,7 @@ End:
 
 //! > Test compound expressions.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -225,7 +225,7 @@ End:
 
 //! > Test match enum.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -329,7 +329,7 @@ End:
 
 //! > Test literal generic argument.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -375,7 +375,7 @@ End:
 //! > Comments
 TODO(spapini): Make this a semantic diagnostic.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -418,7 +418,7 @@ End:
 
 //! > Test concretization with bad types.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function

@@ -1,6 +1,6 @@
 //! > Local variables in function calls
 
-//! > test_function_name
+//! > test_runner_name
 test_function_generator
 
 //! > function
@@ -56,7 +56,7 @@ return([19])
 
 //! > Test locals with if
 
-//! > test_function_name
+//! > test_runner_name
 test_function_generator
 
 //! > function
@@ -114,7 +114,7 @@ return([12])
 
 //! > Local used immediately after definition
 
-//! > test_function_name
+//! > test_runner_name
 test_function_generator
 
 //! > function
@@ -152,7 +152,7 @@ return([7])
 
 //! > Test locals with dup
 
-//! > test_function_name
+//! > test_runner_name
 test_function_generator
 
 //! > function

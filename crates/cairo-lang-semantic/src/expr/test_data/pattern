@@ -1,6 +1,6 @@
 //! > pattern type for a param.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -18,7 +18,7 @@ foo
 
 //! > Destructure a struct.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

@@ -1,6 +1,6 @@
 //! > Test return type inference
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -19,7 +19,7 @@ foo
 
 //! > Test array inference
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -39,7 +39,7 @@ foo
 
 //! > Test cycles
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > comments
@@ -76,7 +76,7 @@ error: Type annotation needed.
 
 //! > Test undetermined system
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -99,7 +99,7 @@ error: Type annotation needed.
 
 //! > Test type mismatch
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -122,7 +122,7 @@ error: Unexpected argument type. Expected: "core::felt", found: "core::array::Ar
 
 //! > Test never type
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -141,7 +141,7 @@ foo
 
 //! > Test anti never type
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -164,7 +164,7 @@ fn foo() -> never {
 
 //! > Test trait inference.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -197,7 +197,7 @@ impl MyImpl3 of MyTrait::<Option::<felt>> {
 
 //! > Test trait inference failures.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -253,7 +253,7 @@ error: Type annotation needed.
 
 //! > Test dot_expr inference.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

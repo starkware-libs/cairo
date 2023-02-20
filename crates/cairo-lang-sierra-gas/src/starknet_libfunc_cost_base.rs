@@ -37,6 +37,7 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
         | StarkNetConcreteLibfunc::GetBlockNumber(_)
         | StarkNetConcreteLibfunc::GetBlockTimestamp(_)
         | StarkNetConcreteLibfunc::GetTxInfo(_) => syscall_cost(ops, 5, 5),
+        StarkNetConcreteLibfunc::Testing(_) => vec![ops.steps(1)],
     }
 }
 

@@ -1,6 +1,6 @@
 //! > Test panicable from panicable.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -22,7 +22,7 @@ fn bar_nopanic() nopanic {}
 
 //! > Test panicable from non-panicable.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

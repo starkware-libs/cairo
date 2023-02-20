@@ -1,6 +1,6 @@
 //! > Match extern
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -94,7 +94,7 @@ v12
 
 //! > Match extern - if
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -192,7 +192,7 @@ v13, v11
 
 //! > Match extern early return
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name

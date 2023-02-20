@@ -1,6 +1,6 @@
 //! > get_gas_all use no builtins
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -30,7 +30,7 @@ call rel -24;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 970})
+test::foo: OrderedHashMap({Const: 870})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -89,7 +89,7 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: BuiltinCosts) -> (RangeCheck,
 
 //! > get_gas_all use pedersen builtin
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -130,7 +130,7 @@ call rel -36;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1270})
+test::foo: OrderedHashMap({Const: 1170})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -206,7 +206,7 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: BuiltinCosts) 
 
 //! > get_gas_all use bitwise builtin
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -247,7 +247,7 @@ call rel -36;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1270})
+test::foo: OrderedHashMap({Const: 1170})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;
@@ -325,7 +325,7 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: BuiltinCosts) -
 
 //! > get_gas_all use pedersen and bitwise builtins
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -375,7 +375,7 @@ call rel -47;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1570})
+test::foo: OrderedHashMap({Const: 1470})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;

@@ -221,7 +221,7 @@ pub fn priv_impl_declaration_data_inner(
         &mut resolver,
         module_file_id,
         &impl_ast.generic_params(syntax_db),
-    );
+    )?;
 
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
@@ -760,7 +760,7 @@ pub fn priv_impl_function_declaration_data(
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
-    );
+    )?;
 
     let signature_syntax = declaration.signature(syntax_db);
 

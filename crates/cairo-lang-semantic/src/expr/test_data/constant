@@ -1,6 +1,6 @@
 //! > Const
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -24,7 +24,7 @@ mod MyModule {
 
 //! > Const diagnostics
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

@@ -56,7 +56,7 @@ pub fn priv_struct_declaration_data(
         &mut resolver,
         module_file_id,
         &struct_ast.generic_params(db.upcast()),
-    );
+    )?;
 
     let attributes = ast_attributes_to_semantic(syntax_db, struct_ast.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
@@ -129,7 +129,7 @@ pub fn priv_struct_definition_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new_without_inference(db, module_file_id);
     let generic_params = db.struct_generic_params(struct_id)?;
     for generic_param in generic_params {
         resolver.add_generic_param(generic_param);

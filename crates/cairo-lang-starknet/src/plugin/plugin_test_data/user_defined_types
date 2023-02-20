@@ -1,6 +1,6 @@
 //! > Test expansion of Starknet for user types.
 
-//! > test_function_name
+//! > test_runner_name
 ExpandContractTestRunner
 
 //! > cairo_code

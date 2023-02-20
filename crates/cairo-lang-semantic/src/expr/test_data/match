@@ -1,6 +1,6 @@
 //! > Test match
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -40,7 +40,7 @@ error: Wrong number of generic arguments. Expected 2, found: 3
 
 //! > Match with missing type
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

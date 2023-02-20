@@ -1,6 +1,6 @@
 //! > inlining of a function with a local var.
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -84,7 +84,7 @@ blk1: known_ap_change: true.
 
 //! > inlining of a function with a revoking goto.
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -177,7 +177,7 @@ blk1: known_ap_change: true.
 
 //! > Remapping - fallthrough without incoming gotos
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name

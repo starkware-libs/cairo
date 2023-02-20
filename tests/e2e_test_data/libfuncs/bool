@@ -2,7 +2,7 @@
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -37,7 +37,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -73,7 +73,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -107,7 +107,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -145,7 +145,7 @@ test::foo@0([0]: core::bool) -> (core::bool);
 //! Different cases of a,b produce different code. This is why bool_eq has multiple e2e tests.
 //! This case produces the same code as the case (a deref, b immediate).
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -163,7 +163,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -200,7 +200,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! > test_comments
 //! see comment of: bool_eq libfunc (a deref, b deref)
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -220,7 +220,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 900})
+test::foo: OrderedHashMap({Const: 600})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
@@ -263,7 +263,7 @@ test::foo@0() -> (core::bool);
 //! > test_comments
 //! see comment of: bool_eq libfunc (a deref, b deref)
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -282,7 +282,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 700})
+test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
