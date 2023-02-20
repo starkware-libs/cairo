@@ -281,12 +281,15 @@ impl HintProcessor for CairoHintProcessor {
                 // Given `res_offset` as the offset in the system ptr where the result begins,
                 // `cost` as the cost of the function and a `handler` which actually implements the
                 // syscall, changes the vm status and writes the system buffer in case of success
-                // and may also return false if additional checks failed. Runs the simulation
-                // including gas checks and revert reasons.
+                // and may also return a revert reason if additional checks failed. Runs the
+                // simulation including gas checks and revert reasons.
                 let mut check_handle_oog =
                     |res_offset: u32,
                      cost: usize,
-                     handler: &mut dyn FnMut(&mut VirtualMachine) -> Result<bool, HintError>|
+                     handler: &mut dyn FnMut(
+                        &mut VirtualMachine,
+                    )
+                        -> Result<Option<Felt>, HintError>|
                      -> Result<(), HintError> {
                         let gas_counter =
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 1u32))?;
@@ -294,22 +297,26 @@ impl HintProcessor for CairoHintProcessor {
                             get_ptr(vm, cell, &(base_offset.clone() + res_offset))?;
                         let failure_flag_ptr =
                             get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 1)))?;
-                        if gas_counter >= cost.into() && handler(vm)? {
+                        let revert_reason = if gas_counter < cost.into() {
+                            Felt::from_bytes_be(b"Syscall out of gas")
+                        } else if let Some(revert_reason) = handler(vm)? {
+                            revert_reason
+                        } else {
                             vm.insert_value(&gas_counter_updated_ptr, gas_counter - cost)?;
                             vm.insert_value(&failure_flag_ptr, Felt::from(0))?;
-                        } else {
-                            vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
-                            vm.insert_value(&failure_flag_ptr, Felt::from(1))?;
-                            let revert_reason_start = vm.add_memory_segment();
-                            // TODO(ilya): Add revert reason.
-                            let revert_reason_end = revert_reason_start;
-                            let revert_reason_start_ptr =
-                                get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 2)))?;
-                            vm.insert_value(&revert_reason_start_ptr, revert_reason_start)?;
-                            let revert_reason_end_ptr =
-                                get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 3)))?;
-                            vm.insert_value(&revert_reason_end_ptr, revert_reason_end)?;
-                        }
+                            return Ok(());
+                        };
+                        vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
+                        vm.insert_value(&failure_flag_ptr, Felt::from(1))?;
+                        let revert_reason_start = vm.add_memory_segment();
+                        vm.insert_value(&revert_reason_start, revert_reason)?;
+                        let revert_reason_end = revert_reason_start + 1;
+                        let revert_reason_start_ptr =
+                            get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 2)))?;
+                        vm.insert_value(&revert_reason_start_ptr, revert_reason_start)?;
+                        let revert_reason_end_ptr =
+                            get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 3)))?;
+                        vm.insert_value(&revert_reason_end_ptr, revert_reason_end)?;
                         Ok(())
                     };
                 if selector == "StorageWrite".as_bytes() {
@@ -318,7 +325,7 @@ impl HintProcessor for CairoHintProcessor {
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
                         if !addr_domain.is_zero() {
                             // Only address_domain 0 is currently supported.
-                            return Ok(false);
+                            return Ok(Some(Felt::from_bytes_be(b"Unsupported address domain")));
                         }
                         let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
                         let value = get_double_deref_val(vm, cell, &(base_offset.clone() + 4u32))?;
@@ -328,7 +335,7 @@ impl HintProcessor for CairoHintProcessor {
                             .entry(contract)
                             .or_default()
                             .insert(addr, value);
-                        Ok(true)
+                        Ok(None)
                     })?;
                 } else if selector == "StorageRead".as_bytes() {
                     check_handle_oog(4, 100, &mut |vm| {
@@ -336,7 +343,7 @@ impl HintProcessor for CairoHintProcessor {
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
                         if !addr_domain.is_zero() {
                             // Only address_domain 0 is currently supported.
-                            return Ok(false);
+                            return Ok(Some(Felt::from_bytes_be(b"Unsupported address domain")));
                         }
                         let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
                         let value = starknet_exec_scope
@@ -347,19 +354,19 @@ impl HintProcessor for CairoHintProcessor {
                             .unwrap_or_else(|| Felt::from(0));
                         let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 6u32))?;
                         vm.insert_value(&result_ptr, value)?;
-                        Ok(true)
+                        Ok(None)
                     })?;
                 } else if selector == "GetContractAddress".as_bytes() {
                     check_handle_oog(2, 50, &mut |vm| {
                         let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
                         vm.insert_value(&result_ptr, starknet_exec_scope.contract_address.clone())?;
-                        Ok(true)
+                        Ok(None)
                     })?;
                 } else if selector == "GetCallerAddress".as_bytes() {
                     check_handle_oog(2, 50, &mut |vm| {
                         let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
                         vm.insert_value(&result_ptr, starknet_exec_scope.caller_address.clone())?;
-                        Ok(true)
+                        Ok(None)
                     })?;
                 } else if selector == "GetSequencerAddress".as_bytes() {
                     check_handle_oog(2, 50, &mut |vm| {
@@ -368,13 +375,13 @@ impl HintProcessor for CairoHintProcessor {
                             &result_ptr,
                             starknet_exec_scope.sequencer_address.clone(),
                         )?;
-                        Ok(true)
+                        Ok(None)
                     })?;
                 } else if selector == "GetBlockNumber".as_bytes() {
                     check_handle_oog(2, 50, &mut |vm| {
                         let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
                         vm.insert_value(&result_ptr, Felt::from(starknet_exec_scope.block_number))?;
-                        Ok(true)
+                        Ok(None)
                     })?;
                 } else if selector == "GetBlockTimestmp".as_bytes() {
                     check_handle_oog(2, 50, &mut |vm| {
@@ -383,7 +390,7 @@ impl HintProcessor for CairoHintProcessor {
                             &result_ptr,
                             Felt::from(starknet_exec_scope.block_timestamp),
                         )?;
-                        Ok(true)
+                        Ok(None)
                     })?;
                 } else if selector == "EmitEvent".as_bytes() {
                     check_handle_oog(6, 50, &mut |vm| {
@@ -391,7 +398,7 @@ impl HintProcessor for CairoHintProcessor {
                         let _keys_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 3u32))?;
                         let _values_start_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
                         let _values_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
-                        Ok(true)
+                        Ok(None)
                     })?;
                 } else if selector == "CallContract".as_bytes() {
                     todo!()
