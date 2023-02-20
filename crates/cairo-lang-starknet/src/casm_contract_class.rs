@@ -67,7 +67,6 @@ impl CasmContractClass {
     pub fn from_contract_class(
         contract_class: ContractClass,
     ) -> Result<Self, StarknetSierraCompilationError> {
-        contract_class.verify_compatible_sierra_version()?;
         let prime = BigUint::from_str_radix(
             "800000000000011000000000000000000000000000000000000000000000001",
             16,

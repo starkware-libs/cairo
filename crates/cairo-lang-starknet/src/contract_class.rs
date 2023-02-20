@@ -50,31 +50,9 @@ pub struct ContractClass {
     pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,
     /// The sierra version used in compilation.
     pub sierra_version: VersionId,
-    pub allowed_libfuncs_list_name: String,
     pub entry_points_by_type: ContractEntryPoints,
     pub abi: Option<Contract>,
 }
-
-impl ContractClass {
-    /// Checks that all the used libfuncs in the contract class are allowed in the contract class
-    /// sierra version.
-    pub fn verify_compatible_sierra_version(&self) -> Result<(), AllowedLibfuncsError> {
-        let allowed_libfuncs = lookup_allowed_libfuncs_list(&self.allowed_libfuncs_list_name)?;
-        let sierra_program = sierra_from_felts(&self.sierra_program)
-            .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
-        for libfunc in sierra_program.libfunc_declarations.iter() {
-            if !allowed_libfuncs.allowed_libfuncs.contains(&libfunc.long_id.generic_id) {
-                return Err(AllowedLibfuncsError::UnsupportedLibfunc {
-                    invalid_libfunc: libfunc.long_id.generic_id.to_string(),
-
-                    allowed_libfuncs_list_name: self.allowed_libfuncs_list_name.clone(),
-                });
-            }
-        }
-        Ok(())
-    }
-}
-
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractEntryPoints {
     #[serde(rename = "EXTERNAL")]
@@ -191,15 +169,10 @@ fn compile_contract_with_prepared_and_checked_db(
         sierra_program_debug_info: Some(cairo_lang_sierra::debug_info::DebugInfo::extract(
             &sierra_program,
         )),
-        allowed_libfuncs_list_name: compiler_config
-            .allowed_libfuncs_list_name
-            .clone()
-            .unwrap_or(DEFAULT_AUDITED_LIBFUNCS_LIST.to_string()),
         sierra_version: sierra_version::CURRENT_VERSION_ID,
         entry_points_by_type,
         abi: Some(Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?),
     };
-    contract_class.verify_compatible_sierra_version()?;
     Ok(contract_class)
 }
 
