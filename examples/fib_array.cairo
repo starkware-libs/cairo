@@ -13,7 +13,7 @@ fn fib(n: usize) -> (Array::<felt>, felt, usize) {
 }
 
 fn fib_inner(n: usize, mut arr: Array::<felt>) -> Array::<felt> {
-    let length = arr.len();
+    let length = (@arr).len();
     if n <= length {
         return arr;
     }

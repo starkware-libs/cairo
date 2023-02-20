@@ -135,7 +135,7 @@ impl BlockBuilder {
     }
 
     /// Gets the current lowered variable bound to a semantic variable.
-    pub fn get_semantic(&mut self, semantic_var_id: semantic::VarId) -> VariableId {
+    pub fn get_semantic(&self, semantic_var_id: semantic::VarId) -> VariableId {
         self.semantics
             .get(&semantic_var_id)
             .copied()
