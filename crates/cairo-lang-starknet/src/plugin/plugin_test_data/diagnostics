@@ -1,7 +1,7 @@
 //! > Test diagnostics from invalid contract.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
@@ -25,7 +25,7 @@ error: Module file not found. Expected path: src/TestContract.cairo
 //! > Test diagnostics non legacy storage variable.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
@@ -74,7 +74,7 @@ error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
 //! > Test diagnostics of non-serializable parameter in entry point.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
@@ -172,7 +172,7 @@ error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementat
 //! > Test diagnostics of non-serializable return type in entry point.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
@@ -268,7 +268,7 @@ error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementat
 //! > Test diagnostics of generic entry point.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
@@ -386,7 +386,7 @@ error: Plugin diagnostic: Type annotation needed.
 //! > Test multiple diagnostics from entry point.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
@@ -511,7 +511,7 @@ error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementat
 //! > Test diagnostics from event with nonempty body.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
@@ -561,7 +561,7 @@ error: Plugin diagnostic: Event function body must be empty.
 //! > Test diagnostics from event with ref params.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
@@ -610,7 +610,7 @@ error: Plugin diagnostic: `ref` parameters are not supported in contract events.
 //! > Test diagnostics from event with non-unit return type.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
@@ -659,7 +659,7 @@ error: Plugin diagnostic: Event functions must not return a value.
 //! > Test diagnostics from event with a non-serializable type.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
@@ -708,7 +708,7 @@ error: Plugin diagnostic: Event functions cannot have generic arguments
 //! > Test multiple diagnostics from event.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
