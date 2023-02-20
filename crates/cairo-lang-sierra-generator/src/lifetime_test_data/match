@@ -124,9 +124,8 @@ blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 3u
-  (v7: core::felt) <- core::felt_add(v1, v3)
 End:
-  Fallthrough(blk3, {v7 -> v4})
+  Fallthrough(blk4, {})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
@@ -145,11 +144,18 @@ Statements:
 End:
   Callsite({})
 
+blk4:
+Inputs:
+Statements:
+  (v7: core::felt) <- core::felt_add(v1, v3)
+End:
+  Fallthrough(blk3, {v7 -> v4})
+
 //! > last_use
 v6: ((BlockId(2), 2), 0)
-v7: ((BlockId(1), 2), 0)
-v3: ((BlockId(1), 1), 1)
-v1: ((BlockId(1), 1), 0)
+v7: ((BlockId(4), 1), 0)
+v3: ((BlockId(4), 0), 1)
+v1: ((BlockId(4), 0), 0)
 v0: ((BlockId(2), 0), 0)
 
 //! > drops
@@ -203,9 +209,8 @@ End:
 blk2:
 Inputs:
 Statements:
-  (v14: core::felt) <- core::felt_sub(v0, v1)
 End:
-  Fallthrough(blk7, {v14 -> v5})
+  Fallthrough(blk8, {})
 
 blk3:
 Inputs: v9: core::NonZero::<core::felt>
@@ -224,9 +229,8 @@ blk5:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 1u
-  (v15: core::felt) <- core::felt_sub(v0, v3)
 End:
-  Fallthrough(blk8, {v15 -> v4})
+  Fallthrough(blk10, {})
 
 blk6 (root):
 Inputs: v0: core::felt, v1: core::felt
@@ -252,6 +256,13 @@ End:
 blk8:
 Inputs:
 Statements:
+  (v14: core::felt) <- core::felt_sub(v0, v1)
+End:
+  Fallthrough(blk7, {v14 -> v5})
+
+blk9:
+Inputs:
+Statements:
   () <- match core::felt_is_zero(v4) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
@@ -259,15 +270,22 @@ Statements:
 End:
   Callsite({})
 
+blk10:
+Inputs:
+Statements:
+  (v15: core::felt) <- core::felt_sub(v0, v3)
+End:
+  Fallthrough(blk9, {v15 -> v4})
+
 //! > last_use
 v13: ((BlockId(6), 2), 0)
 v5: ((BlockId(7), 0), 0)
-v14: ((BlockId(2), 1), 0)
-v1: ((BlockId(2), 0), 1)
-v0: ((BlockId(2), 0), 0)
-v4: ((BlockId(8), 0), 0)
-v15: ((BlockId(5), 2), 0)
-v3: ((BlockId(5), 1), 1)
+v14: ((BlockId(8), 1), 0)
+v1: ((BlockId(8), 0), 1)
+v0: ((BlockId(8), 0), 0)
+v4: ((BlockId(9), 0), 0)
+v15: ((BlockId(10), 1), 0)
+v3: ((BlockId(10), 0), 1)
 
 //! > drops
 PostStatement((BlockId(1), 0)): v7
