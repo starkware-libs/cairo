@@ -31,7 +31,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -107,7 +107,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -183,7 +183,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -259,7 +259,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -335,7 +335,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -411,7 +411,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11200})
+test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
