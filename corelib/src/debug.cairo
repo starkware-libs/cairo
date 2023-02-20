@@ -12,5 +12,5 @@ fn print_felt(message: felt) {
 }
 
 fn print_contract_address(message: ContractAddress) {
-    print_felt(message.into()) 
+    print_felt(message.into())
 }
