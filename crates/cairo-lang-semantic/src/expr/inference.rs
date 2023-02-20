@@ -206,31 +206,29 @@ impl<'db> Inference<'db> {
         ty1: TypeId,
         ty0_is_self: bool,
     ) -> Result<(TypeId, usize), InferenceError> {
-        let n_snapshots = 0;
-
         let ty0 = self.reduce_ty(ty0);
         let ty1 = self.reduce_ty(ty1);
         if ty0 == never_ty(self.db) {
-            return Ok((ty1, n_snapshots));
+            return Ok((ty1, 0));
         }
         if ty0 == ty1 {
-            return Ok((ty0, n_snapshots));
+            return Ok((ty0, 0));
         }
         let long_ty1 = self.db.lookup_intern_type(ty1);
         match long_ty1 {
-            TypeLongId::Var(var) => return Ok((self.assign(var, ty0)?, n_snapshots)),
-            TypeLongId::Missing(_) => return Ok((ty1, n_snapshots)),
+            TypeLongId::Var(var) => return Ok((self.assign(var, ty0)?, 0)),
+            TypeLongId::Missing(_) => return Ok((ty1, 0)),
             TypeLongId::Snapshot(inner_ty) if ty0_is_self && inner_ty == ty0 => {
-                return Ok((ty1, n_snapshots));
+                return Ok((ty1, 1));
             }
             _ => {}
         }
+        let n_snapshots = 0;
         let long_ty0 = self.db.lookup_intern_type(ty0);
 
         match long_ty0 {
             TypeLongId::Concrete(concrete0) => {
-                let (n_snapshots, long_ty1) = peel_snapshots(self.db, ty1);
-
+                let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
                 let TypeLongId::Concrete(concrete1) = long_ty1 else {
                     return Err(InferenceError::KindMismatch { ty0, ty1 });
                 };
@@ -248,7 +246,7 @@ impl<'db> Inference<'db> {
                 Ok((self.db.intern_type(long_ty), n_snapshots))
             }
             TypeLongId::Tuple(tys0) => {
-                let (n_snapshots, long_ty1) = peel_snapshots(self.db, ty1);
+                let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
                 let TypeLongId::Tuple(tys1) = long_ty1 else {
                     return Err(InferenceError::KindMismatch { ty0, ty1 });
                 };
@@ -271,6 +269,16 @@ impl<'db> Inference<'db> {
             TypeLongId::Var(var) => Ok((self.assign(var, ty1)?, n_snapshots)),
             TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
         }
+    }
+
+    // Conditionally peels snapshots.
+    fn maybe_peel_snapshots(&mut self, ty0_is_self: bool, ty1: TypeId) -> (usize, TypeLongId) {
+        let (n_snapshots, long_ty1) = if ty0_is_self {
+            peel_snapshots(self.db, ty1)
+        } else {
+            (0, self.db.lookup_intern_type(ty1))
+        };
+        (n_snapshots, long_ty1)
     }
 
     /// Conforms generics args. See `conform_ty()`.
