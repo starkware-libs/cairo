@@ -1,6 +1,6 @@
 //! > Test arm pattern destructure for match-enum param.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -191,7 +191,7 @@ End:
 
 //! > Test arm pattern destructure for match-extern.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -381,7 +381,7 @@ End:
 
 //! > Test arm pattern destructure for match-enum variable.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -728,7 +728,7 @@ End:
 
 //! > Test arm pattern destructure for match-extern (with refs and implicits).
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -923,7 +923,7 @@ End:
 
 //! > Test arm pattern destructure for match-enum variable (with refs and implicits).
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function

@@ -1,6 +1,6 @@
 //! > Test ignoring of test config in the test config.
 
-//! > test_function_name
+//! > test_runner_name
 test_expand_plugin
 
 //! > cairo_code

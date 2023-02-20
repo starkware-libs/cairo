@@ -1,6 +1,6 @@
 //! > Test function call.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -136,7 +136,7 @@ End:
 
 //! > Test method call.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function

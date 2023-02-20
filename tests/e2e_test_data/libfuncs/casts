@@ -1,6 +1,6 @@
 //! > u16 to u64 upcast
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo

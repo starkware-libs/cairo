@@ -1,6 +1,6 @@
 //! > get_gas_all use no builtins
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -89,7 +89,7 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: BuiltinCosts) -> (RangeCheck,
 
 //! > get_gas_all use pedersen builtin
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -206,7 +206,7 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: BuiltinCosts) 
 
 //! > get_gas_all use bitwise builtin
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -325,7 +325,7 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: BuiltinCosts) -
 
 //! > get_gas_all use pedersen and bitwise builtins
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo

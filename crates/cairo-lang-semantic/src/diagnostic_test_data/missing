@@ -1,6 +1,6 @@
 //! > Unknown return type
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code
@@ -47,7 +47,7 @@ error: Type not found.
 
 //! > Unknown type in struct
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code

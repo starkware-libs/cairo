@@ -2,7 +2,7 @@
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -74,7 +74,7 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, StorageBaseAddress);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -109,7 +109,7 @@ test::foo@0([0]: StorageBaseAddress, [1]: u8) -> (StorageAddress);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -189,7 +189,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt, [3]: StorageAddress) -> (Ga
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo

@@ -150,7 +150,7 @@ pub trait TestFileRunner {
 /// ```text
 /// //! > test description
 ///
-/// //! > test_function_name
+/// //! > test_runner_name
 /// TestToUpperRunner
 ///
 /// //! > input1
@@ -230,7 +230,7 @@ impl TestFileRunner for SimpleRunner {
 /// ```text
 /// //! > test description
 ///
-/// //! > test_function_name
+/// //! > test_runner_name
 /// test_to_upper
 ///
 /// //! > input1
@@ -286,7 +286,7 @@ macro_rules! test_file_test {
 /// May fix the test file if `CAIRO_FIX_TESTS` is set to true.
 pub fn run_test_file(
     path: &Path,
-    test_func_name: &str,
+    runner_name: &str,
     runner: &mut dyn TestFileRunner,
 ) -> Result<(), std::io::Error> {
     let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
@@ -307,7 +307,7 @@ pub fn run_test_file(
             })
         };
 
-        pretty_assertions::assert_eq!(get_attr("test_function_name"), test_func_name);
+        pretty_assertions::assert_eq!(get_attr("test_runner_name"), runner_name);
 
         if is_fix_mode {
             let mut new_test = test.clone();

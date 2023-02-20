@@ -1,6 +1,6 @@
 //! > Test inlining diagnostics for a recursive function.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -43,7 +43,7 @@ End:
 
 //! > Test inlining attribute diagnostics.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -120,7 +120,7 @@ error: Redundant `inline` attribute.
 
 //! > Test inlining a function where the root block does not return.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function_name

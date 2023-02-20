@@ -1,6 +1,6 @@
 //! > Test match zero.
 
-//! > test_function_name
+//! > test_runner_name
 block_generator_test
 
 //! > function
@@ -44,7 +44,7 @@ label1:
 
 //! > Test match zero 2.
 
-//! > test_function_name
+//! > test_runner_name
 block_generator_test
 
 //! > function

@@ -2,7 +2,7 @@
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -61,7 +61,7 @@ test::bar@6([0]: Snapshot<Array<felt>>) -> (Unit);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -150,7 +150,7 @@ test::bar@18([0]: Snapshot<Array<felt>>, [1]: felt) -> (Unit);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo

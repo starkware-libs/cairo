@@ -1,6 +1,6 @@
 //! > Named arguments
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -54,7 +54,7 @@ error: Named arguments are not supported in this context.
 
 //! > Ref arguments
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -121,7 +121,7 @@ error: Argument to immutable parameter cannot have modifiers.
 
 //! > Unknown function
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

@@ -1,6 +1,6 @@
 //! > match enum with a single variant
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -46,7 +46,7 @@ test::foo@0([0]: test::SingleVariant) -> (felt);
 
 //! > match enum with 2 variants
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -106,7 +106,7 @@ test::foo@0([0]: test::Option) -> (felt);
 
 //! > match enum with more than 2 variants
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -176,7 +176,7 @@ test::foo@0([0]: test::Color) -> (felt);
 
 //! > match non-duplicatable enum with more than 2 variants
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo

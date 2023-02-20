@@ -1,6 +1,6 @@
 //! > Test +=, -=, *=, /=, %=
 
-//! > test_function_name
+//! > test_runner_name
 test_partial_parser_tree
 
 //! > cairo_code
@@ -78,7 +78,7 @@ StatementLet
 
 //! > Test error of `+=` with `let`.
 
-//! > test_function_name
+//! > test_runner_name
 test_partial_parser_tree
 
 //! > cairo_code

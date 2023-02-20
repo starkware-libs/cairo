@@ -1,6 +1,6 @@
 //! > Test variable lifetime in simple inlining scenario
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_code
@@ -64,7 +64,7 @@ BeginningOfBlock(BlockId(3)): v4
 
 //! > Test variable lifetime in inlining scenario with callsite
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_code
@@ -162,7 +162,7 @@ BeginningOfBlock(BlockId(1)): v4
 
 //! > Test variable lifetime with local variables
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -244,7 +244,7 @@ BeginningOfBlock(BlockId(2)): UninitializedLocal(v6)
 
 //! > Test match where is there a goto in one arm and callsite in another.
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name

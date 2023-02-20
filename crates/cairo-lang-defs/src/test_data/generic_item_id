@@ -1,6 +1,6 @@
 //! > Test ParamId::generic_item_id()
 
-//! > test_function_name
+//! > test_runner_name
 test_generic_item_id
 
 //! > module_code

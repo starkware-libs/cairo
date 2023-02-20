@@ -3,7 +3,7 @@
 //! > test_file_name
 fib_jumps
 
-//! > test_function_name
+//! > test_runner_name
 test_solve_gas
 
 //! > gas_solution
