@@ -264,15 +264,11 @@ impl Default for BlockQueue {
 pub struct Mapper<'a, 'b> {
     ctx: &'a mut LoweringContext<'b>,
     lowered: &'a FlatLowered,
-    /// A Queue of blocks on which we want to apply the FunctionInlinerRewriter.
-    /// The queue is moved from the FunctionInlinerRewriter to assign block number
-    /// during rename_block and moved back when the remapping is done.
-    block_queue: BlockQueue,
-    return_block_id: BlockId,
-    outputs: &'a [id_arena::Id<crate::Variable>],
-
     renamed_vars: HashMap<VariableId, VariableId>,
-    renamed_blocks: HashMap<BlockId, BlockId>,
+
+    /// Auxiliary information for rename_block.
+    block_id_offset: BlockId,
+    root_block_id: BlockId,
 }
 impl<'a, 'b> Mapper<'a, 'b> {
     /// Renames a var from lowered.variable, if the variable wasn't assigned an id yet,
@@ -286,45 +282,14 @@ impl<'a, 'b> Mapper<'a, 'b> {
         })
     }
 
-    /// Renames a var from lowered.blocks, if the block wasn't assigned an id yet,
-    /// the block is rebuilt in the new context and assigned an id.
+    /// Renames a var from lowered.blocks to the a new block_id.
     fn rename_block(&mut self, old_block_id: &BlockId) -> BlockId {
-        if let Some(block_id) = self.renamed_blocks.get(old_block_id) {
-            return *block_id;
-        }
-
-        let mut statements = vec![];
-        let block = &self.lowered.blocks[*old_block_id];
-
-        for stmt in &block.statements {
-            statements.push(self.rebuild_statement(stmt));
-        }
-        let end = match &block.end {
-            FlatBlockEnd::Callsite(remapping) => {
-                FlatBlockEnd::Callsite(self.update_remapping(remapping))
-            }
-            FlatBlockEnd::Return(returns) => FlatBlockEnd::Goto(
-                self.return_block_id,
-                VarRemapping {
-                    remapping: OrderedHashMap::from_iter(izip!(
-                        self.outputs.iter().cloned(),
-                        returns.iter().map(|var_id| self.rename_var(var_id)),
-                    )),
-                },
-            ),
-
-            FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
-            FlatBlockEnd::Fallthrough(block_id, remapping)
-            | FlatBlockEnd::Goto(block_id, remapping) => {
-                FlatBlockEnd::Goto(self.rename_block(block_id), self.update_remapping(remapping))
-            }
-        };
-
-        let inputs = block.inputs.iter().map(|v| self.rename_var(v)).collect();
-        let new_block = FlatBlock { inputs, statements, end };
-        let new_block_id = self.block_queue.enqueue_block(new_block);
-        self.renamed_blocks.insert(*old_block_id, new_block_id);
-        new_block_id
+        // TODO(ilya): Removing the following logic once root_block_id == 0.
+        BlockId(
+            self.block_id_offset.0
+                + old_block_id.0
+                + if old_block_id.0 > self.root_block_id.0 { 0 } else { 1 },
+        )
     }
 
     /// Apply rename_var to all the variable in the `remapping`.
@@ -502,14 +467,13 @@ impl<'db> FunctionInlinerRewriter<'db> {
         let mut mapper = Mapper {
             ctx: &mut self.ctx,
             lowered: &lowered,
-            block_queue: std::mem::take(&mut self.block_queue),
-            return_block_id,
-            outputs,
+
             renamed_vars: HashMap::<VariableId, VariableId>::from_iter(izip!(
                 root_block.inputs.iter().cloned(),
                 inputs.iter().cloned()
             )),
-            renamed_blocks: HashMap::new(),
+            block_id_offset: return_block_id,
+            root_block_id,
         };
 
         self.block_end = FlatBlockEnd::Fallthrough(
@@ -524,19 +488,51 @@ impl<'db> FunctionInlinerRewriter<'db> {
             },
         );
 
-        for (block_id, _) in lowered.blocks.iter() {
+        for (block_id, block) in lowered.blocks.iter() {
             if block_id == root_block_id {
                 continue;
             }
-            mapper.rename_block(&block_id);
+            let end = match &block.end {
+                FlatBlockEnd::Callsite(remapping) => {
+                    FlatBlockEnd::Callsite(mapper.update_remapping(remapping))
+                }
+                FlatBlockEnd::Return(returns) => FlatBlockEnd::Goto(
+                    return_block_id,
+                    VarRemapping {
+                        remapping: OrderedHashMap::from_iter(izip!(
+                            outputs.iter().cloned(),
+                            returns.iter().map(|var_id| mapper.rename_var(var_id)),
+                        )),
+                    },
+                ),
+
+                FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
+                FlatBlockEnd::Fallthrough(block_id, remapping)
+                | FlatBlockEnd::Goto(block_id, remapping) => FlatBlockEnd::Goto(
+                    mapper.rename_block(block_id),
+                    mapper.update_remapping(remapping),
+                ),
+            };
+
+            let new_block = FlatBlock {
+                inputs: block.inputs.iter().map(|v| mapper.rename_var(v)).collect(),
+                statements: block
+                    .statements
+                    .iter()
+                    .map(|statement| mapper.rebuild_statement(statement))
+                    .collect_vec(),
+                end,
+            };
+            assert_eq!(
+                mapper.rename_block(&block_id),
+                self.block_queue.enqueue_block(new_block),
+                "Unexpected block_id."
+            );
         }
 
         self.statement_rewrite_stack.push_statments(
             root_block.statements.iter().map(|statement| mapper.rebuild_statement(statement)),
         );
-
-        // Return block_queue to self.
-        self.block_queue = std::mem::take(&mut mapper.block_queue);
 
         Ok(())
     }
