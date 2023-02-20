@@ -3,7 +3,7 @@
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(mut a: bool, b: bool) -> bool {
@@ -38,7 +38,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: bool, b: bool) -> bool {
@@ -74,7 +74,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: bool, b: bool) -> bool {
@@ -108,7 +108,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: bool) -> bool {
@@ -146,7 +146,7 @@ test::foo@0([0]: core::bool) -> (core::bool);
 //! This case produces the same code as the case (a deref, b immediate).
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: bool, b: bool) -> bool {
@@ -201,7 +201,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! see comment of: bool_eq libfunc (a deref, b deref)
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> bool {
@@ -264,7 +264,7 @@ test::foo@0() -> (core::bool);
 //! see comment of: bool_eq libfunc (a deref, b deref)
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(b: bool) -> bool {

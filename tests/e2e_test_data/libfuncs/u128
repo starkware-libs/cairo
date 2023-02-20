@@ -3,7 +3,7 @@
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> Result::<u128, u128> {
@@ -69,7 +69,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> Result::<u128, u128> {
@@ -135,7 +135,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> (u128, u128) {
@@ -202,7 +202,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: NonZero::<u128>) -> (u128, u128) {
@@ -258,7 +258,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<u128>) -> (RangeCheck, Tupl
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(v: felt) -> integer::U128sFromFeltResult {
@@ -339,7 +339,7 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::integer::U128sFrom
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> bool {
@@ -407,7 +407,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> bool {
@@ -477,7 +477,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 //! This case produces the same code as the case (a deref, b immediate).
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> bool {
@@ -533,7 +533,7 @@ test::foo@0([0]: u128, [1]: u128) -> (core::bool);
 //! see the comment for: u128_eq libfunc (a deref, b deref).
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> bool {
@@ -593,7 +593,7 @@ test::foo@0() -> (core::bool);
 //! see the comment for: u128_eq libfunc (a deref, b deref).
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(b: u128) -> bool {
@@ -650,7 +650,7 @@ test::foo@0([0]: u128) -> (core::bool);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(value: u128) -> u128 {

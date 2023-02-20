@@ -3,7 +3,7 @@
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u64, b: u64) -> Result::<u64, u64> {
@@ -69,7 +69,7 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::result::R
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u64, b: u64) -> Result::<u64, u64> {
@@ -136,7 +136,7 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::result::R
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u64, b: u64) -> bool {
@@ -204,7 +204,7 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::bool);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u64, b: u64) -> bool {
@@ -274,7 +274,7 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::bool);
 //! This case produces the same code as the case (a deref, b immediate).
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u64, b: u64) -> bool {
@@ -330,7 +330,7 @@ test::foo@0([0]: u64, [1]: u64) -> (core::bool);
 //! see the comment for: u64_eq libfunc (a deref, b deref).
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> bool {
@@ -390,7 +390,7 @@ test::foo@0() -> (core::bool);
 //! see the comment for: u64_eq libfunc (a deref, b deref).
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(b: u64) -> bool {
@@ -447,7 +447,7 @@ test::foo@0([0]: u64) -> (core::bool);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(v: felt) -> Option::<u64> {
@@ -532,7 +532,7 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<c
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u64) -> u64 {
@@ -584,7 +584,7 @@ test::foo@0([0]: u64) -> (u64);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u64, b: NonZero::<u64>) -> (u64, u64) {

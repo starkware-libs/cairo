@@ -3,7 +3,7 @@
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: Array::<felt>) -> Array::<felt> {
@@ -62,7 +62,7 @@ test::bar@6([0]: Snapshot<Array<felt>>) -> (Unit);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 struct A {
@@ -151,7 +151,7 @@ test::bar@18([0]: Snapshot<Array<felt>>, [1]: felt) -> (Unit);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 enum A {

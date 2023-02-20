@@ -1,7 +1,7 @@
 //! > match enum with a single variant
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 enum SingleVariant {
@@ -47,7 +47,7 @@ test::foo@0([0]: test::SingleVariant) -> (felt);
 //! > match enum with 2 variants
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 enum Option {
@@ -107,7 +107,7 @@ test::foo@0([0]: test::Option) -> (felt);
 //! > match enum with more than 2 variants
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 enum Color {
@@ -177,7 +177,7 @@ test::foo@0([0]: test::Color) -> (felt);
 //! > match non-duplicatable enum with more than 2 variants
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 enum Color {
