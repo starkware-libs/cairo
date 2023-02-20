@@ -36,22 +36,34 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v3: core::felt) <- core::felt_mul(v0, v0)
 End:
-  Fallthrough(blk1, {v3 -> v1})
+  Fallthrough(blk2, {})
 
 blk1:
 Inputs:
 Statements:
-  (v4: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(blk2, {v4 -> v2})
+  Fallthrough(blk4, {})
 
 blk2:
 Inputs:
 Statements:
+  (v3: core::felt) <- core::felt_mul(v0, v0)
+End:
+  Fallthrough(blk1, {v3 -> v1})
+
+blk3:
+Inputs:
+Statements:
 End:
   Return(v2)
+
+blk4:
+Inputs:
+Statements:
+  (v4: core::felt) <- core::felt_add(v0, v1)
+End:
+  Fallthrough(blk3, {v4 -> v2})
 
 //! > ==========================================================================
 
@@ -181,9 +193,8 @@ Statements:
   (v2: ()) <- struct_construct()
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
-  (v18: core::felt) <- core::felt_sub(v3, v4)
 End:
-  Fallthrough(blk3, {v18 -> v5})
+  Fallthrough(blk4, {})
 
 blk3:
 Inputs:
@@ -197,29 +208,54 @@ Statements:
   (v12: core::felt) <- 5u
   (v13: core::felt) <- 3u
   (v14: core::felt) <- 0u
-  (v19: core::felt) <- core::felt_add(v0, v14)
 End:
-  Fallthrough(blk4, {v19 -> v15})
+  Fallthrough(blk6, {})
 
 blk4:
 Inputs:
 Statements:
-  (v20: core::felt) <- core::felt_mul(v12, v15)
+  (v18: core::felt) <- core::felt_sub(v3, v4)
 End:
-  Fallthrough(blk5, {v20 -> v16})
+  Fallthrough(blk3, {v18 -> v5})
 
 blk5:
 Inputs:
 Statements:
-  (v21: core::felt) <- core::felt_add(v11, v16)
 End:
-  Fallthrough(blk6, {v21 -> v17})
+  Fallthrough(blk8, {})
 
 blk6:
 Inputs:
 Statements:
+  (v19: core::felt) <- core::felt_add(v0, v14)
+End:
+  Fallthrough(blk5, {v19 -> v15})
+
+blk7:
+Inputs:
+Statements:
+End:
+  Fallthrough(blk10, {})
+
+blk8:
+Inputs:
+Statements:
+  (v20: core::felt) <- core::felt_mul(v12, v15)
+End:
+  Fallthrough(blk7, {v20 -> v16})
+
+blk9:
+Inputs:
+Statements:
 End:
   Return(v17)
+
+blk10:
+Inputs:
+Statements:
+  (v21: core::felt) <- core::felt_add(v11, v16)
+End:
+  Fallthrough(blk9, {v21 -> v17})
 
 //! > ==========================================================================
 
