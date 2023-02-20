@@ -1,7 +1,7 @@
 //! > Test expansion of StarkNet storage logic.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 // TODO(ilya): update format.
