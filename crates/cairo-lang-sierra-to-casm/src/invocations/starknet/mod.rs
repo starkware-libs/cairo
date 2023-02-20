@@ -13,6 +13,7 @@ use super::{misc, CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::InvocationError;
 
 mod getter;
+mod testing;
 
 mod storage;
 use storage::{build_storage_read, build_storage_write};
@@ -59,5 +60,6 @@ pub fn build(
         StarkNetConcreteLibfunc::GetBlockNumber(_) => build_getter(builder, "GetBlockNumber"),
         StarkNetConcreteLibfunc::GetBlockTimestamp(_) => build_getter(builder, "GetBlockTimestmp"),
         StarkNetConcreteLibfunc::GetTxInfo(_) => build_getter(builder, "GetTxInfo"),
+        StarkNetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
     }
 }
