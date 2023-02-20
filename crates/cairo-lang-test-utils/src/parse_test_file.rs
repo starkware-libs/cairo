@@ -134,6 +134,84 @@ impl TestBuilder {
     }
 }
 
+/// Trait for running a parsed test file.
+pub trait TestFileRunner {
+    /// Reads tags from the input map, and returns the output map, that should match the expected
+    /// outputs.
+    fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String>;
+}
+
+/// Creates a test that reads test files for a given function.
+/// test_name - the name of the test.
+/// filenames - a vector of tests files the test applies to.
+/// runner - the struct implementing `TestFileRunner + Default`.
+///
+/// The structure of the file must be of the following form:
+/// ```text
+/// //! > test description
+///
+/// //! > test_function_name
+/// TestToUpperRunner
+///
+/// //! > input1
+/// hello
+///
+/// //! > input2
+/// world
+///
+/// //! > expected_output1
+/// HELLO
+///
+/// //! > expected_output2
+/// WORLD
+///
+/// //! > ==========================================================================
+///
+/// <another test>
+/// ```
+///
+/// The call to the macro looks like:
+/// ```ignore
+/// test_file_test_with_runner!(
+///     test_suite_name,
+///     "path/to/test/dir",
+///     {
+///         test_name1: "test_file1",
+///         test_name2: "test_file2",
+///     },
+///     TestToUpperRunner
+/// );
+/// ```
+#[macro_export]
+macro_rules! test_file_test_with_runner {
+    ($suite:ident, $base_dir:expr, { $($test_name:ident : $test_file:expr),* $(,)? }, $runner:ident) => {
+        mod $suite {
+            use super::*;
+        $(
+            #[test_log::test]
+            fn $test_name() -> Result<(), std::io::Error> {
+                let path: std::path::PathBuf = [env!("CARGO_MANIFEST_DIR"), $base_dir, $test_file].iter().collect();
+                cairo_lang_test_utils::parse_test_file::run_test_file(
+                    path.as_path(),
+                    stringify!($runner),
+                    &mut $runner::default(),
+                )
+            }
+        )*
+        }
+    };
+}
+
+/// Simple runner wrapping a test function.
+pub struct SimpleRunner {
+    pub func: fn(&OrderedHashMap<String, String>) -> OrderedHashMap<String, String>,
+}
+impl TestFileRunner for SimpleRunner {
+    fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+        (self.func)(inputs)
+    }
+}
+
 /// Creates a test that reads test files for a given function.
 /// test_name - the name of the test.
 /// filenames - a vector of tests files the test applies to.
@@ -196,7 +274,7 @@ macro_rules! test_file_test {
                 cairo_lang_test_utils::parse_test_file::run_test_file(
                     path.as_path(),
                     stringify!($test_func),
-                    $test_func,
+                    &mut cairo_lang_test_utils::parse_test_file::SimpleRunner { func: $test_func },
                 )
             }
         )*
@@ -209,13 +287,13 @@ macro_rules! test_file_test {
 pub fn run_test_file(
     path: &Path,
     test_func_name: &str,
-    test_func: fn(&OrderedHashMap<String, String>) -> OrderedHashMap<String, String>,
+    runner: &mut dyn TestFileRunner,
 ) -> Result<(), std::io::Error> {
     let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
     let tests = parse_test_file(path)?;
     let mut new_tests = OrderedHashMap::<String, Test>::default();
     for (test_name, test) in tests {
-        let outputs = test_func(&test.attributes);
+        let outputs = runner.run(&test.attributes);
         let line_num = test.line_num;
         let full_filename = std::fs::canonicalize(path)?;
         let full_filename_str = full_filename.to_str().unwrap();

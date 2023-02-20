@@ -3,7 +3,7 @@
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> Array::<felt> {
@@ -40,7 +40,7 @@ test::foo@0() -> (Array<felt>);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(ref arr: Array::<felt>, value: felt) {
@@ -81,7 +81,7 @@ test::foo@0([0]: Array<felt>, [1]: felt) -> (Array<felt>, Unit);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(ref arr: Array::<felt>, value1: felt, value2: felt) {
@@ -125,7 +125,7 @@ test::foo@0([0]: Array<felt>, [1]: felt, [2]: felt) -> (Array<felt>, Unit);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(ref arr: Array::<felt>) -> Option::<felt> {
@@ -191,7 +191,7 @@ test::foo@0([0]: Array<felt>) -> (Array<felt>, core::option::Option::<core::felt
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(arr: @Array::<felt>, idx: usize) -> Option::<@felt> {
@@ -266,7 +266,7 @@ test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<felt>>, [2]: u32) -> (RangeChec
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(arr: @Array::<u256>, idx: usize) -> Option::<@u256> {
@@ -346,7 +346,7 @@ test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<core::integer::u256>>, [2]: u32
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(ref arr: Array::<felt>) -> usize {
@@ -388,7 +388,7 @@ test::foo@0([0]: Array<felt>) -> (Array<felt>, u32);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(ref arr: Array::<u256>) -> usize {

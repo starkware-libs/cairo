@@ -3,7 +3,7 @@
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(address: ContractAddress, calldata: Array::<felt>) -> starknet::SyscallResult::<Array::<felt>> {
@@ -82,7 +82,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: Array<felt>
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(address: felt) -> Option::<starknet::ContractAddress> {
@@ -175,7 +175,7 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<c
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(address: ContractAddress) -> felt {
