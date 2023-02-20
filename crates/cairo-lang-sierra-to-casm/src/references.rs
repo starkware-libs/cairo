@@ -2,8 +2,7 @@ use std::collections::HashMap;
 
 use cairo_lang_casm::ap_change::ApplyApChange;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
-use cairo_lang_sierra::extensions::felt::FeltBinaryOperator;
+use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::Function;
 use thiserror::Error;
@@ -30,26 +29,6 @@ pub type StatementRefs = HashMap<VarId, ReferenceValue>;
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BinOpExpression {
-    pub op: FeltBinaryOperator,
-    pub a: CellRef,
-    pub b: DerefOrImmediate,
-}
-impl ApplyApChange for BinOpExpression {
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
-        Some(BinOpExpression {
-            op: self.op,
-            a: self.a.apply_known_ap_change(ap_change)?,
-            b: self.b.apply_known_ap_change(ap_change)?,
-        })
-    }
-
-    fn can_apply_unknown(&self) -> bool {
-        self.a.can_apply_unknown() && self.b.can_apply_unknown()
-    }
 }
 
 /// A collection of Cell Expression which represents one logical object.
