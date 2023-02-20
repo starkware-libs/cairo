@@ -29,6 +29,16 @@ fn test_declare() {
 fn test_prepare() {
    match prepare_tp(555) {
       Result::Ok((a, b, c)) => (),
+            Result::Err(x) => {
+         let mut data = array_new::<felt>();
+         array_append::<felt>(ref data, x);
+         panic(data)
+      },
+   }
+}
+fn test_start_prank() {
+   match start_prank(123, 123) {
+      Result::Ok(class_hash) => (),
       Result::Err(x) => {
          let mut data = array_new::<felt>();
          array_append::<felt>(ref data, x);
@@ -36,6 +46,4 @@ fn test_prepare() {
       },
    }
 }
-
-
 

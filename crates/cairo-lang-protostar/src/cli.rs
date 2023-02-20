@@ -1,7 +1,7 @@
 //! Compiles and runs a Cairo program.
 use clap::Parser;
 
-use cairo_lang_protostar::build_protostar_casm_from_file;
+use cairo_lang_protostar::build_protostar_casm_from_path;
 
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
@@ -14,7 +14,7 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    if let Some(output_contents) = build_protostar_casm_from_file(None, args.file, args.output)? {
+    if let Some(output_contents) = build_protostar_casm_from_path(None, args.file, args.output)? {
         println!("{}", output_contents);
     }
 

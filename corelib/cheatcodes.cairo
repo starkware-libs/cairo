@@ -20,3 +20,5 @@ struct PreparedContract {
 }
 
 extern fn prepare_tp(class_hash: felt) -> Result::<(Array::<felt>, felt, felt), felt> nopanic;
+extern fn start_prank(caller_address: felt, target_contract_address: felt) -> Result::<(), felt> nopanic;
+

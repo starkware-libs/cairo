@@ -12,6 +12,7 @@ define_libfunc_hierarchy! {
         Roll(RollLibFunc),
         Declare(DeclareLibFunc),
         Prepare(PrepareLibFunc),
+        StartPrank(StartPrankLibFunc),
     }, CheatcodesConcreteLibFunc
 }
 
@@ -105,7 +106,6 @@ impl NoGenericArgsGenericLibfunc for RollLibFunc {
 pub struct PrepareLibFunc {}
 impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
     const STR_ID: &'static str = "prepare_tp";
-
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
@@ -114,27 +114,68 @@ impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(felt_ty.clone()),
+                ],
+                branch_signatures: vec![
+                    BranchSignature {
+                        vars: vec![
+                            OutputVarInfo {
+                                ty: context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?,
+                                ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                            },
+                            OutputVarInfo {
+                                ty: felt_ty.clone(),
+                                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            },
+                            OutputVarInfo {
+                                ty: felt_ty.clone(),
+                                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            },
+                        ],
+                        ap_change: SierraApChange::Known { new_vars_only: false },
+                    },
+                    BranchSignature {
+                        vars: vec![
+                            OutputVarInfo {
+                                ty: felt_ty.clone(),
+                                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            },
+                        ],
+                        ap_change: SierraApChange::Known { new_vars_only: false },
+                    },
+                ],
+                fallthrough: Some(0),
+            })
+        }
+    }
+
+/// LibFunc for creating a new array.
+#[derive(Default)]
+pub struct StartPrankLibFunc {}
+impl NoGenericArgsGenericLibfunc for StartPrankLibFunc {
+    const STR_ID: &'static str = "start_prank";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // caller_address
+                ParamSignature::new(felt_ty.clone()),
+                // target_contract_address
+                ParamSignature::new(felt_ty.clone()),
             ],
             branch_signatures: vec![
+                // Success branch
                 BranchSignature {
-                    vars: vec![
-                        OutputVarInfo {
-                            ty: context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
-                        },
-                        OutputVarInfo {
-                            ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-                        },
-                        OutputVarInfo {
-                            ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-                        },
-                    ],
+                    vars: vec![],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Failure branch
                 BranchSignature {
                     vars: vec![
+                        // Error reason
                         OutputVarInfo {
                             ty: felt_ty.clone(),
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
