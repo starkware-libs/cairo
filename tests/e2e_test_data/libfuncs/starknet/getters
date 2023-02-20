@@ -2,7 +2,7 @@
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -78,7 +78,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -154,7 +154,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -230,7 +230,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -306,7 +306,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo

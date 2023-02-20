@@ -1,6 +1,6 @@
 //! > Test panic.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -51,7 +51,7 @@ End:
 
 //! > Test call panicable.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function

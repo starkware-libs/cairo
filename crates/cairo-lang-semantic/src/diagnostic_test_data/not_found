@@ -1,6 +1,6 @@
 //! > Test PathNotFound.
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code
@@ -29,7 +29,7 @@ error: Function not found.
 
 //! > Test trying to access a function from a module whose file is missing.
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code

@@ -1,6 +1,6 @@
 //! > Basic borrow checking valid.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -97,7 +97,7 @@ End:
 
 //! > Basic borrow checking failures.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -195,7 +195,7 @@ End:
 
 //! > Borrow checking with panic
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -276,7 +276,7 @@ End:
 
 //! > Borrow checking array
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function

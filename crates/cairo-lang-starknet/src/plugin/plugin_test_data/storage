@@ -1,6 +1,6 @@
 //! > Test expansion of StarkNet storage logic.
 
-//! > test_function_name
+//! > test_runner_name
 ExpandContractTestRunner
 
 //! > cairo_code

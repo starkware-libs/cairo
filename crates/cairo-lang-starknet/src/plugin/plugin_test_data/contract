@@ -1,6 +1,6 @@
 //! > Test expansion of a simple starknet contract.
 
-//! > test_function_name
+//! > test_runner_name
 ExpandContractTestRunner
 
 //! > cairo_code

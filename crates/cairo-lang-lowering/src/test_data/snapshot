@@ -1,6 +1,6 @@
 //! > Test panic.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -43,7 +43,7 @@ End:
 
 //! > Test struct snapshot.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -98,7 +98,7 @@ End:
 
 //! > Test enum snapshot.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -184,7 +184,7 @@ End:
 
 //! > Test felt desnap.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -222,7 +222,7 @@ End:
 
 //! > Test array desnap.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function

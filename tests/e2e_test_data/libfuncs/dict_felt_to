@@ -2,7 +2,7 @@
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -61,7 +61,7 @@ test::foo@0([0]: DictManager) -> (DictManager, DictFeltTo<felt>);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -109,7 +109,7 @@ test::foo@0([0]: DictFeltTo<felt>, [1]: felt, [2]: felt) -> (DictFeltTo<felt>, U
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -154,7 +154,7 @@ test::foo@0([0]: DictFeltTo<felt>, [1]: felt) -> (DictFeltTo<felt>, felt);
 
 //! > test_comments
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo

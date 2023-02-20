@@ -1,6 +1,6 @@
 //! > get_builtin_costs libfunc
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo

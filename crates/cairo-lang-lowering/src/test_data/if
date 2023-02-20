@@ -1,6 +1,6 @@
 //! > Test boolean if.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -76,7 +76,7 @@ End:
 
 //! > Test if analyzer.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -152,7 +152,7 @@ End:
 
 //! > Test if without else.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -229,7 +229,7 @@ End:
 
 //! > Test if x == y
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function

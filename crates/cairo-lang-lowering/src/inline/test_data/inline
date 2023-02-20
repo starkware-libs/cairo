@@ -1,6 +1,6 @@
 //! > Test simple inlining.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -50,7 +50,7 @@ End:
 
 //! > Test generic function inlining.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -119,7 +119,7 @@ End:
 
 //! > Test inlining same arg twice.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -172,7 +172,7 @@ End:
 
 //! > Test inlining.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -264,7 +264,7 @@ End:
 
 //! > Test recursive inlining.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -339,7 +339,7 @@ End:
 
 //! > Test impl inlining.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -395,7 +395,7 @@ End:
 
 //! > Test inlining of a function with an early return.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -508,7 +508,7 @@ End:
 
 //! > Test inlining heuristic
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -580,7 +580,7 @@ End:
 
 //! > Test preventing inlining heuristic
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -636,7 +636,7 @@ End:
 
 //! > Test returning an input variable as is (not in root block).
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -704,7 +704,7 @@ End:
 
 //! > Test inlining of identity function.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function

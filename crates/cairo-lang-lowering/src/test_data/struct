@@ -1,6 +1,6 @@
 //! > Test struct constructor.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -51,7 +51,7 @@ End:
 
 //! > Test struct member access.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -94,7 +94,7 @@ End:
 
 //! > Test struct destructure.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function

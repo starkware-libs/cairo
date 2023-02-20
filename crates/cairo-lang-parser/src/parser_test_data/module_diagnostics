@@ -1,6 +1,6 @@
 //! > Missing semicolon.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -17,7 +17,7 @@ mod my_mod
 
 //! > Missing lbrace.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -38,7 +38,7 @@ mod my_mod }
 
 //! > Missing rbrace.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code

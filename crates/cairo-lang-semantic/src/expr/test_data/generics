@@ -1,6 +1,6 @@
 //! > Test generics substitution.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -28,7 +28,7 @@ error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", f
 
 //! > Test generics in trait functions.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -56,7 +56,7 @@ foo
 
 //! > Test ref self in trait functions.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -82,7 +82,7 @@ foo
 
 //! > Test generic kind failures
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -133,7 +133,7 @@ error: Const generic inference not yet supported.
 
 //! > Test generic impl
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -169,7 +169,7 @@ error: Supplied impl does not match the required trait
 
 //! > Test generic impl params usage
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

@@ -1,6 +1,6 @@
 //! > Test expansion of derive.
 
-//! > test_function_name
+//! > test_runner_name
 test_expand_plugin
 
 //! > cairo_code
@@ -39,7 +39,7 @@ impl ExternTypeDrop of Drop::<ExternType>;
 
 //! > Test diagnostics of panic with.
 
-//! > test_function_name
+//! > test_runner_name
 test_expand_plugin
 
 //! > cairo_code

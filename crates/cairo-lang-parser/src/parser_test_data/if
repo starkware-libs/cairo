@@ -3,7 +3,7 @@
 //! > test_comments
 // TODO(spapini): Improve diagnostics.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -25,7 +25,7 @@ error: Skipped tokens. Expected: statement.
 //! > test_comments
 // TODO(spapini): Improve diagnostics.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code

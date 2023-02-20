@@ -1,6 +1,6 @@
 //! > init enum with a single variant
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -39,7 +39,7 @@ test::foo@0() -> (test::SingleVariant);
 
 //! > match enum with a single variant
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -85,7 +85,7 @@ test::foo@0([0]: test::SingleVariant) -> (felt);
 
 //! > init enum with 2 variants
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -126,7 +126,7 @@ test::foo@0() -> (test::Option);
 
 //! > match enum with 2 variants
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -186,7 +186,7 @@ test::foo@0([0]: test::Option) -> (felt);
 
 //! > init a non-first variant in an enum with more than 2 variants
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -227,7 +227,7 @@ test::foo@0() -> (test::Color);
 
 //! > init the first variant in an enum with more than 2 variants
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
@@ -268,7 +268,7 @@ test::foo@0() -> (test::Color);
 
 //! > match enum with more than 2 variants
 
-//! > test_function_name
+//! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
