@@ -1,8 +1,10 @@
 use std::marker::PhantomData;
 
+use super::get_tx_info_type;
 use super::interoperability::ContractAddressType;
 use super::syscalls::SystemType;
 use crate::extensions::array::ArrayType;
+use crate::extensions::boxing::BoxType;
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
 use crate::extensions::lib_func::{
@@ -167,8 +169,8 @@ impl GetterTraitsEx for GetTxInfoTrait {
     const STR_ID: &'static str = "get_tx_info_syscall";
 
     fn info_type_id(
-        _context: &dyn SignatureSpecializationContext,
+        context: &dyn SignatureSpecializationContext,
     ) -> Result<ConcreteTypeId, SpecializationError> {
-        todo!();
+        context.get_wrapped_concrete_type(BoxType::id(), get_tx_info_type(context)?)
     }
 }

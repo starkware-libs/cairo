@@ -35,7 +35,8 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
         | StarkNetConcreteLibfunc::GetContractAddress(_)
         | StarkNetConcreteLibfunc::GetSequencerAddress(_)
         | StarkNetConcreteLibfunc::GetBlockNumber(_)
-        | StarkNetConcreteLibfunc::GetBlockTimestamp(_) => syscall_cost(ops, 5, 5),
+        | StarkNetConcreteLibfunc::GetBlockTimestamp(_)
+        | StarkNetConcreteLibfunc::GetTxInfo(_) => syscall_cost(ops, 5, 5),
     }
 }
 

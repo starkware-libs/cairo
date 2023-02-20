@@ -255,7 +255,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::GetContractAddress(_)
             | StarkNetConcreteLibfunc::GetSequencerAddress(_)
             | StarkNetConcreteLibfunc::GetBlockNumber(_)
-            | StarkNetConcreteLibfunc::GetBlockTimestamp(_) => {
+            | StarkNetConcreteLibfunc::GetBlockTimestamp(_)
+            | StarkNetConcreteLibfunc::GetTxInfo(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
         },

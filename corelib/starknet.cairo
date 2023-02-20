@@ -1,8 +1,9 @@
+use box::Box;
+use option::OptionTrait;
 use span::Span;
-use zeroable::Zeroable;
 use traits::Into;
 use traits::TryInto;
-use option::OptionTrait;
+use zeroable::Zeroable;
 
 // Re-imports
 // StorageAccess
@@ -28,6 +29,7 @@ use contract_address::contract_address_const;
 use contract_address::contract_address_to_felt;
 use contract_address::contract_address_try_from_felt;
 use contract_address::ContractAddressZeroable;
+
 
 extern type System;
 
@@ -96,6 +98,14 @@ extern fn get_block_number_syscall() -> SyscallResult::<u64> implicits(GasBuilti
 
 fn get_block_number() -> u64 {
     get_block_number_syscall().unwrap_syscall()
+}
+
+extern fn get_tx_info_syscall() -> SyscallResult::<Box::<TxInfo>> implicits(
+    GasBuiltin, System
+) nopanic;
+
+fn get_tx_info() -> Box::<TxInfo> {
+    get_tx_info_syscall().unwrap_syscall()
 }
 
 extern fn get_block_timestamp_syscall() -> SyscallResult::<u64> implicits(
