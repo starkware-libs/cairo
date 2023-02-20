@@ -3,7 +3,7 @@
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(addr: felt) -> starknet::StorageBaseAddress {
@@ -75,7 +75,7 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, StorageBaseAddress);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(base: starknet::StorageBaseAddress, offset: u8) -> starknet::StorageAddress {
@@ -110,7 +110,7 @@ test::foo@0([0]: StorageBaseAddress, [1]: u8) -> (StorageAddress);
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(
@@ -190,7 +190,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt, [3]: StorageAddress) -> (Ga
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(

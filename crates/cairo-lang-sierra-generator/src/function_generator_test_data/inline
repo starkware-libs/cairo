@@ -46,7 +46,6 @@ jump() { label5() }
 label3:
 branch_align() -> ()
 drop<NonZero<felt>>([5]) -> ()
-drop<felt>([8]) -> ()
 label4:
 felt_const<0>() -> ([8])
 label5:
@@ -56,7 +55,6 @@ jump() { label2() }
 label1:
 branch_align() -> ()
 drop<NonZero<felt>>([4]) -> ()
-drop<felt>([8]) -> ()
 store_temp<felt>([0]) -> ([9])
 label2:
 rename<felt>([9]) -> ([10])

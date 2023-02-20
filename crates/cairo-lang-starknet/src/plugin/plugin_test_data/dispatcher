@@ -1,7 +1,7 @@
 //! > Test expansion of a dispatcher.
 
 //! > test_function_name
-test_expand_contract
+ExpandContractTestRunner
 
 //! > cairo_code
 #[abi]

@@ -22,7 +22,7 @@ mod interoperability;
 mod emit_event;
 use emit_event::build_emit_event;
 
-/// Builds instructions for Sierra array operations.
+/// Builds instructions for Sierra starknet operations.
 pub fn build(
     libfunc: &StarkNetConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,

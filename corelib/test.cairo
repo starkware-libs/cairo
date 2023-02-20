@@ -38,8 +38,7 @@ fn test_bool_operators() {
     assert(!(true ^ true), '!(t ^ t)');
 }
 
-impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
-impl NonZeroEcPointDrop of Drop::<NonZeroEcPoint>;
+use ec::OptionNonZeroEcPointDrop;
 
 #[test]
 fn test_ec_operations() {
@@ -803,9 +802,9 @@ fn test_array_helper() -> Array::<felt> {
 #[test]
 fn test_array() {
     let arr = test_array_helper();
-    assert(arr.at(0_usize) == 10, 'array[0] == 10');
-    assert(arr.at(1_usize) == 11, 'array[1] == 11');
-    assert(arr.at(2_usize) == 12, 'array[2] == 12');
+    assert(*arr.at(0_usize) == 10, 'array[0] == 10');
+    assert(*arr.at(1_usize) == 11, 'array[1] == 11');
+    assert(*arr.at(2_usize) == 12, 'array[2] == 12');
 }
 
 #[test]

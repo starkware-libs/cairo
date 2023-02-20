@@ -3,7 +3,7 @@
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> Result::<starknet::ContractAddress, Array::<felt>> {
@@ -79,7 +79,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> Result::<starknet::ContractAddress, Array::<felt>> {
@@ -155,7 +155,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> Result::<starknet::ContractAddress, Array::<felt>> {
@@ -231,7 +231,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> Result::<u64, Array::<felt>> {
@@ -307,7 +307,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 //! > test_comments
 
 //! > test_function_name
-run_small_e2e_test
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> Result::<u64, Array::<felt>> {
