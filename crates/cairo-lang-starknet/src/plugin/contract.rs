@@ -13,8 +13,8 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 
 use super::consts::{
-    ABI_TRAIT, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_ATTR,
-    EXTERNAL_MODULE, STORAGE_STRUCT_NAME, VIEW_ATTR,
+    ABI_TRAIT, ACCOUNT_CONTRACT_ENTRY_POINTS, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR,
+    EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, STORAGE_STRUCT_NAME, VIEW_ATTR,
 };
 use super::entry_point::generate_entry_point_wrapper;
 use super::events::handle_event;
@@ -113,6 +113,21 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                         stable_ptr: generic_params.stable_ptr().untyped(),
                     })
                 }
+
+                let name = declaration.name(db);
+                let name_str = name.text(db);
+                for account_contract_entry_point in ACCOUNT_CONTRACT_ENTRY_POINTS {
+                    if name_str == account_contract_entry_point {
+                        diagnostics.push(PluginDiagnostic {
+                            message: format!(
+                                "Only an account contract may implement `{name_str}`."
+                            ),
+
+                            stable_ptr: name.stable_ptr().untyped(),
+                        })
+                    }
+                }
+
                 abi_functions.push(RewriteNode::Modified(ModifiedNode {
                     children: vec![
                         RewriteNode::Text(format!("#[{attr}]\n        ")),
