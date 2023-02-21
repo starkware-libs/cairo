@@ -65,6 +65,7 @@ fn test_full_contract_deseralization(example_file_name: &str) {
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
 }
 
+#[test_case("account")]
 #[test_case("test_contract")]
 #[test_case("minimal_contract")]
 #[test_case("hello_starknet")]
