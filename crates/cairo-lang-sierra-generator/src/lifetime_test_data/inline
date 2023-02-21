@@ -214,7 +214,7 @@ End:
   Callsite({v0 -> v2})
 
 blk3:
-Inputs: v5: core::NonZero::<core::felt>
+Inputs: v4: core::NonZero::<core::felt>
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v0)
 End:
@@ -223,7 +223,7 @@ End:
 blk4:
 Inputs:
 Statements:
-  (v4: ()) <- test::revoke_tempvars()
+  (v5: ()) <- test::revoke_tempvars()
 End:
   Callsite({v3 -> v2})
 
@@ -236,8 +236,8 @@ v6: ((BlockId(3), 1), 0)
 v0: ((BlockId(3), 0), 1)
 
 //! > drops
-PostStatement((BlockId(4), 0)): v4
-BeginningOfBlock(BlockId(3)): v5
+PostStatement((BlockId(4), 0)): v5
+BeginningOfBlock(BlockId(3)): v4
 BeginningOfBlock(BlockId(2)): UninitializedLocal(v6)
 
 //! > ==========================================================================
@@ -316,14 +316,14 @@ End:
   Callsite({v14 -> v11, v15 -> v12})
 
 blk5:
-Inputs: v20: core::RangeCheck, v21: core::gas::GasBuiltin
+Inputs: v16: core::RangeCheck, v17: core::gas::GasBuiltin
 Statements:
-  (v16: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-  (v17: core::felt) <- 375233589013918064796019u
-  (v18: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v16, v17)
-  (v19: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v18)
+  (v19: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v20: core::felt) <- 375233589013918064796019u
+  (v21: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v19, v20)
+  (v18: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v21)
 End:
-  Goto(blk3, {v20 -> v4, v21 -> v5, v19 -> v6})
+  Goto(blk3, {v16 -> v4, v17 -> v5, v18 -> v6})
 
 //! > last_use
 v9: ((BlockId(3), 2), 2)
@@ -342,12 +342,12 @@ v11: ((BlockId(0), 3), 0)
 v22: ((BlockId(0), 2), 0)
 v15: ((BlockId(4), 0), 1)
 v14: ((BlockId(4), 0), 0)
-v19: ((BlockId(5), 4), 2)
-v21: ((BlockId(5), 4), 1)
-v20: ((BlockId(5), 4), 0)
-v18: ((BlockId(5), 3), 0)
-v17: ((BlockId(5), 2), 1)
-v16: ((BlockId(5), 2), 0)
+v18: ((BlockId(5), 4), 2)
+v17: ((BlockId(5), 4), 1)
+v16: ((BlockId(5), 4), 0)
+v21: ((BlockId(5), 3), 0)
+v20: ((BlockId(5), 2), 1)
+v19: ((BlockId(5), 2), 0)
 v1: ((BlockId(0), 0), 1)
 v0: ((BlockId(0), 0), 0)
 
