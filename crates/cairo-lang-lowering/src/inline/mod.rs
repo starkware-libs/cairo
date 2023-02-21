@@ -44,7 +44,7 @@ pub struct PrivInlineData {
 #[derive(Debug, PartialEq, Eq)]
 pub struct InlineInfo {
     // Indicates that the function can be inlined.
-    pub is_inlineable: bool,
+    pub is_inlinable: bool,
     // Indicates that the function should be inlined.
     pub should_inline: bool,
 }
@@ -57,7 +57,7 @@ pub fn priv_inline_data(
     let config = parse_inline_attribute(db, &mut diagnostics, function_id)?;
 
     let info = if config == InlineConfiguration::Never {
-        InlineInfo { is_inlineable: false, should_inline: false }
+        InlineInfo { is_inlinable: false, should_inline: false }
     } else {
         // If the the function is marked as #[inline(always)], we need to report
         // inlining problems.
@@ -76,7 +76,7 @@ fn gather_inlining_info(
     report_diagnostics: bool,
     function_id: FunctionWithBodyId,
 ) -> Maybe<InlineInfo> {
-    let mut info = InlineInfo { is_inlineable: false, should_inline: false };
+    let mut info = InlineInfo { is_inlinable: false, should_inline: false };
     let defs_db = db.upcast();
     if db
             .function_with_body_direct_function_with_body_callees(function_id)?
@@ -120,7 +120,7 @@ fn gather_inlining_info(
         };
     }
 
-    info.is_inlineable = true;
+    info.is_inlinable = true;
     info.should_inline = should_inline(db, &lowered)?;
 
     Ok(info)
@@ -425,7 +425,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     self.inlining_failed = true;
                 }
 
-                if inline_data.info.is_inlineable
+                if inline_data.info.is_inlinable
                     && (inline_data.info.should_inline
                         || inline_data.config == InlineConfiguration::Always)
                 {
