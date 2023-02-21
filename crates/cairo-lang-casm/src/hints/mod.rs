@@ -152,6 +152,11 @@ pub enum Hint {
         caller_address: ResOperand,
         err_code: CellRef,
     },
+    Warp {
+        blk_timestamp: ResOperand,
+        target_contract_address: ResOperand,
+        err_code: CellRef,
+    },
     Declare {
         contract: ResOperand,
         result: CellRef,
@@ -328,7 +333,7 @@ impl Display for Hint {
             Hint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
-            Hint::Roll { address, caller_address , err_code} => {
+            Hint::Roll { address, caller_address, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -336,7 +341,15 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::StartPrank { caller_address, target_contract_address , err_code} => {
+            Hint::Warp { blk_timestamp, target_contract_address, err_code } => {
+                writedoc!(
+                    f,
+                    "
+                    memory{err_code} = warp(blk_timestamp={blk_timestamp}, target_contract_address={target_contract_address}).err_code; 
+                    "
+                )
+            }
+            Hint::StartPrank { caller_address, target_contract_address, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -344,7 +357,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::Declare { contract , result, err_code} => {
+            Hint::Declare { contract, result, err_code } => {
                 writedoc!(
                     f,
                     "

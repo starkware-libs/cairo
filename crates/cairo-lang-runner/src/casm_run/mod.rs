@@ -304,6 +304,7 @@ impl HintProcessor for CairoHintProcessor {
                 }
             }
             &Hint::Roll { .. } => todo!(),
+            &Hint::Warp { .. } => todo!(),
             &Hint::Declare { .. } => todo!(),
             &Hint::StartPrank { .. } => todo!(),
             Hint::AllocDictFeltTo { dict_manager_ptr } => {
