@@ -4,11 +4,12 @@ use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::skip_diagnostic;
 
 pub use self::demand::Demand;
+use self::demand::DemandReporter;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, Statement, StatementMatchEnum, StatementMatchExtern,
-    VarRemapping,
+    VarRemapping, VariableId,
 };
 
 mod demand;
@@ -27,23 +28,48 @@ pub struct CallsiteInfo<'a> {
     parent: Option<&'a CallsiteInfo<'a>>,
 }
 
+pub type LoweredDemand = Demand<VariableId>;
 pub struct BorrowChecker<'a> {
     diagnostics: &'a mut LoweringDiagnostics,
     lowered: &'a FlatLowered,
     /// New block ends to be applied at the end of the borrow checking, for optimization.
     new_ends: HashMap<BlockId, FlatBlockEnd>,
-    cache: HashMap<RealBlock, Demand>,
+    cache: HashMap<RealBlock, LoweredDemand>,
     success: bool,
 }
 
+#[derive(Copy, Clone)]
+enum ReportPosition {
+    Report,
+    // Currently some reporting is disabled, since Drop is not properly implemented everywhere.
+    // TODO(spapini): Fix this.
+    DoNotReport,
+}
+
+impl<'a> DemandReporter<VariableId, ReportPosition> for BorrowChecker<'a> {
+    fn drop(&mut self, position: ReportPosition, var: VariableId) {
+        let var = &self.lowered.variables[var];
+        if matches!(position, ReportPosition::Report) && !var.droppable {
+            self.diagnostics.report_by_location(var.location, VariableNotDropped);
+        }
+    }
+
+    fn dup(&mut self, position: ReportPosition, var: VariableId) {
+        let var = &self.lowered.variables[var];
+        if matches!(position, ReportPosition::Report) && !var.duplicatable {
+            self.diagnostics.report_by_location(var.location, VariableMoved);
+        }
+    }
+}
+
 impl<'a> BorrowChecker<'a> {
-    /// Computes the variables [Demand] from the beginning of a [RealBlock], while outputting borrow
-    /// checking diagnostics.
+    /// Computes the variables [LoweredDemand] from the beginning of a [RealBlock], while outputting
+    /// borrow checking diagnostics.
     pub fn get_demand(
         &mut self,
         callsite_info: Option<CallsiteInfo<'_>>,
         block: RealBlock,
-    ) -> Demand {
+    ) -> LoweredDemand {
         if let Some(cached_result) = self.cache.get(&block) {
             return cached_result.clone();
         }
@@ -69,13 +95,17 @@ impl<'a> BorrowChecker<'a> {
             .iter()
             .rev()
         {
-            demand.variables_introduced(self, &stmt.outputs());
-            demand.variables_used(self, &stmt.inputs());
+            demand.variables_introduced(self, &stmt.outputs(), ReportPosition::Report);
+            demand.variables_used(self, &stmt.inputs(), ReportPosition::Report);
         }
 
         if stmt_offset == 0 {
             // Update block inputs.
-            demand.variables_introduced(self, &self.lowered.blocks[block_id].inputs);
+            demand.variables_introduced(
+                self,
+                &self.lowered.blocks[block_id].inputs,
+                ReportPosition::Report,
+            );
         }
 
         // Cache result.
@@ -83,14 +113,14 @@ impl<'a> BorrowChecker<'a> {
         demand
     }
 
-    /// Computes the variables [Demand] from a [FlatBlockEnd], while outputting borrow checking
-    /// diagnostics.
+    /// Computes the variables [LoweredDemand] from a [FlatBlockEnd], while outputting borrow
+    /// checking diagnostics.
     fn get_block_end_demand(
         &mut self,
         block_id: BlockId,
         block_end: &FlatBlockEnd,
         callsite_info: Option<CallsiteInfo<'_>>,
-    ) -> Demand {
+    ) -> LoweredDemand {
         let demand = match block_end {
             FlatBlockEnd::Fallthrough(_target_block_id, _remapping)
             | FlatBlockEnd::Goto(_target_block_id, _remapping) => todo!(),
@@ -111,23 +141,23 @@ impl<'a> BorrowChecker<'a> {
                 );
                 demand
             }
-            FlatBlockEnd::Return(vars) => Demand { vars: vars.iter().copied().collect() },
-            FlatBlockEnd::Unreachable => Demand::default(),
+            FlatBlockEnd::Return(vars) => LoweredDemand { vars: vars.iter().copied().collect() },
+            FlatBlockEnd::Unreachable => LoweredDemand::default(),
         };
         demand
     }
 
     // Note: When lowering uses Gotos, this will be merged with get_block_end_demand().
-    /// Computes the variables [Demand] from the next branching statement in a block.
+    /// Computes the variables [LoweredDemand] from the next branching statement in a block.
     /// A [RealBlock] ends in either a branching statement (e.g. match) or a [FlatBlockEnd].
-    /// If such a statement was found, returns its index and the [Demand] from that point.
+    /// If such a statement was found, returns its index and the [LoweredDemand] from that point.
     /// Otherwise, returns None.
     fn get_demand_from_next_split(
         &mut self,
         block_id: BlockId,
         stmt_offset: usize,
         callsite_info: Option<CallsiteInfo<'_>>,
-    ) -> Option<(usize, Demand)> {
+    ) -> Option<(usize, LoweredDemand)> {
         for (i, stmt) in self.lowered.blocks[block_id].statements[stmt_offset..].iter().enumerate()
         {
             // Closure that creates a new CallsiteInfo struct for a branching statement.
@@ -146,8 +176,12 @@ impl<'a> BorrowChecker<'a> {
                             self.get_demand(new_callsite.clone(), RealBlock(*arm_block, 0))
                         })
                         .collect();
-                    let mut demand = self.merge_demands(arm_demands);
-                    demand.variables_used(self, &stmt.inputs()[..]);
+                    let mut demand = LoweredDemand::merge_demands(
+                        arm_demands,
+                        self,
+                        ReportPosition::DoNotReport,
+                    );
+                    demand.variables_used(self, &stmt.inputs()[..], ReportPosition::Report);
                     demand
                 }
                 Statement::Desnap(stmt) => {
@@ -168,33 +202,6 @@ impl<'a> BorrowChecker<'a> {
             return Some((stmt_offset + i, demand));
         }
         None
-    }
-
-    /// Merges [Demand]s from multiple branches into one, reporting diagnostics in the way.
-    fn merge_demands(&mut self, arm_demands: Vec<Demand>) -> Demand {
-        // Union demands.
-        let mut demand = Demand::default();
-        for arm_demand in &arm_demands {
-            demand.vars.extend(arm_demand.vars.iter().copied());
-        }
-        // Check each var.
-        for var in demand.vars.iter() {
-            for arm_demand in &arm_demands {
-                if !arm_demand.vars.contains(var) {
-                    // Variable demanded only on some branches. It should be dropped in other.
-                    // If it's not drop, that is an issue.
-                    // Currently disabled, since Drop is not properly implemented everywhere.
-                    let var = &self.lowered.variables[*var];
-                    #[allow(clippy::overly_complex_bool_expr)]
-                    if false && !var.droppable {
-                        self.diagnostics.report_by_location(var.location, VariableNotDropped);
-                    }
-                    // Report only once per variable.
-                    break;
-                }
-            }
-        }
-        demand
     }
 }
 
