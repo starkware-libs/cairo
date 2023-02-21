@@ -196,19 +196,19 @@ fn build_u128_to_u64s(
     };
     casm_build_extend! {casm_builder,
             let orig_range_check = range_check;
-	    const u64_limit = u64_bound.clone();
-	    const m_u64 = max_u64.clone();
+            const u64_limit = u64_bound.clone();
+            const m_u64 = max_u64.clone();
             tempvar high;
-	    tempvar low;
-	    tempvar rced_value;
-	    tempvar h_2_64;
+            tempvar low;
+            tempvar rced_value;
+            tempvar h_2_64;
             hint DivMod { lhs: a, rhs: u64_limit } into { quotient: high, remainder: low };
             // Write value as 2**64 * high + low.
             assert high = *(range_check++);
             assert low = *(range_check++);
-	    // Verify `low < 2**64` by constraining `0 <= (2**64-1) - low`.
-	    assert rced_value = m_u64 - low;
-	    assert rced_value = *(range_check++);
+            // Verify `low < 2**64` by constraining `0 <= (2**64-1) - low`.
+            assert rced_value = m_u64 - low;
+            assert rced_value = *(range_check++);
             // Check that value = 2**128 * x + y (mod PRIME).
             assert h_2_64 = high * u64_limit;
             assert a = h_2_64 + low;
