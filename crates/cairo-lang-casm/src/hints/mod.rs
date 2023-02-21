@@ -150,17 +150,17 @@ pub enum Hint {
     Roll {
         address: ResOperand,
         caller_address: ResOperand,
-        dst: CellRef,
+        err_code: CellRef,
     },
     Declare {
         contract: ResOperand,
         result: CellRef,
-        error_code: CellRef,
+        err_code: CellRef,
     },
     StartPrank {
         caller_address: ResOperand,
         target_contract_address: ResOperand,
-        error_code: CellRef,
+        err_code: CellRef,
     },
     /// Prints the values from start to end.
     /// Both must be pointers.
@@ -328,32 +328,28 @@ impl Display for Hint {
             Hint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
-            Hint::Roll { address, caller_address , dst} => {
+            Hint::Roll { address, caller_address , err_code} => {
                 writedoc!(
                     f,
                     "
-
-                        memory{dst} = roll(address={address}, caller_address={caller_address}); 
-                        
+                    memory{err_code} = roll(address={address}, caller_address={caller_address}).err_code; 
                     "
                 )
             }
-            Hint::StartPrank { caller_address, target_contract_address , error_code} => {
+            Hint::StartPrank { caller_address, target_contract_address , err_code} => {
                 writedoc!(
                     f,
                     "
-
-                    memory{error_code} = start_prank(caller_address={caller_address}, target_contract_address={target_contract_address}); 
-                        
+                    memory{err_code} = start_prank(caller_address={caller_address}, target_contract_address={target_contract_address}).err_code;
                     "
                 )
             }
-            Hint::Declare { contract , result, error_code} => {
+            Hint::Declare { contract , result, err_code} => {
                 writedoc!(
                     f,
                     "
                         r = declare(contract={contract});
-                        memory{error_code} = r.err_code
+                        memory{err_code} = r.err_code
                         memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
                     "
                 )
