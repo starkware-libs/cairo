@@ -43,8 +43,8 @@ fn test_resolve_path() {
     assert_eq!(
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
-         FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt, Q)>, ref_args: [], \
-         args: [Var(ExprVar { var: ParamId(test::value), ty: test::S::<core::felt> })], ty: \
+         FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt, Q)>, args: \
+         [Value(Var(ExprVar { var: ParamId(test::value), ty: test::S::<core::felt> }))], ty: \
          test::S::<()> }) }), Let(StatementLet { pattern: Variable(c), expr: Var(ExprVar { var: \
          ParamId(test::b), ty: Q }) })], tail: None, ty: () }))"
     );
@@ -139,9 +139,8 @@ fn test_resolve_path_trait_impl() {
     assert_eq!(
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [], tail: Some(FunctionCall(ExprFunctionCall { \
-         function: core::FeltAdd::add, ref_args: [], args: [FunctionCall(ExprFunctionCall { \
-         function: test::MyImpl::foo, ref_args: [], args: [], ty: core::felt }), \
-         Literal(ExprLiteral { value: 1, ty: core::felt })], ty: core::felt })), ty: core::felt \
-         }))"
+         function: core::FeltAdd::add, args: [Value(FunctionCall(ExprFunctionCall { function: \
+         test::MyImpl::foo, args: [], ty: core::felt })), Value(Literal(ExprLiteral { value: 1, \
+         ty: core::felt }))], ty: core::felt })), ty: core::felt }))"
     );
 }

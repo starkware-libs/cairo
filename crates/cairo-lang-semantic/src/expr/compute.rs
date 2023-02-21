@@ -1455,7 +1455,6 @@ fn expr_function_call(
     // Check argument names and types.
     check_named_arguments(&named_args, &signature, ctx)?;
 
-    let mut ref_args = Vec::new();
     let mut args = Vec::new();
     for ((arg, _name, mutability), param) in named_args.into_iter().zip(signature.params.iter()) {
         let arg_typ = arg.ty();
@@ -1474,7 +1473,7 @@ fn expr_function_call(
             );
         }
 
-        if param.mutability == Mutability::Reference {
+        args.push(if param.mutability == Mutability::Reference {
             // Verify the argument is a variable.
             let expr_var = try_extract_matches!(&arg, Expr::Var).ok_or_else(|| {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable)
@@ -1487,19 +1486,18 @@ fn expr_function_call(
             if mutability != Mutability::Reference {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotExplicit);
             }
-            ref_args.push(expr_var.var);
+            ExprFunctionCallArg::Reference(expr_var.var)
         } else {
             // Verify that it is passed without modifiers.
             if mutability != Mutability::Immutable {
                 ctx.diagnostics
                     .report_by_ptr(arg.stable_ptr().untyped(), ImmutableArgWithModifiers);
             }
-            args.push(ctx.exprs.alloc(arg));
-        }
+            ExprFunctionCallArg::Value(ctx.exprs.alloc(arg))
+        });
     }
     Ok(Expr::FunctionCall(ExprFunctionCall {
         function: function_id,
-        ref_args,
         args,
         ty: signature.return_type,
         stable_ptr,

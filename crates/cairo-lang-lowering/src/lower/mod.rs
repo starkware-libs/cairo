@@ -15,7 +15,7 @@ use semantic::corelib::{
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::structure::SemanticStructEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
-use semantic::{ConcreteTypeId, ExprPropagateError, TypeLongId};
+use semantic::{ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, TypeLongId};
 
 use self::context::{
     lowering_flow_error_to_sealed_block, LoweredExpr, LoweredExprExternEnum, LoweringContext,
@@ -408,20 +408,18 @@ fn lower_expr_function_call(
 
     // TODO(spapini): Use the correct stable pointer.
     let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
-    let (ref_tys, ref_inputs): (_, Vec<VariableId>) = expr
-        .ref_args
+    let ref_args_iter = expr
+        .args
         .iter()
-        .map(|semantic_var_id| {
-            Ok((ctx.semantic_defs[*semantic_var_id].ty(), scope.get_semantic(*semantic_var_id)))
-        })
-        .collect::<Result<Vec<_>, _>>()?
-        .into_iter()
-        .unzip();
+        .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Reference));
+    let ref_tys = ref_args_iter
+        .clone()
+        .map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty())
+        .collect();
     let callee_implicit_types =
         ctx.db.function_all_implicits(expr.function).map_err(LoweringFlowError::Failed)?;
     let implicits = callee_implicit_types.iter().map(|ty| scope.get_implicit(*ty));
-    // TODO(orizi): Support ref args that are not the first arguments.
-    let inputs = chain!(implicits, ref_inputs, arg_inputs.into_iter()).collect();
+    let inputs = chain!(implicits, arg_inputs.into_iter()).collect();
 
     // If the function is panic(), do something special.
     if expr.function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
@@ -438,7 +436,7 @@ fn lower_expr_function_call(
                 function: expr.function,
                 concrete_enum_id,
                 inputs,
-                ref_args: expr.ref_args.clone(),
+                ref_args: ref_args_iter.cloned().collect(),
                 implicits: callee_implicit_types,
                 location,
             };
@@ -460,7 +458,7 @@ fn lower_expr_function_call(
         scope.put_implicit(ctx, implicit_type, implicit_output);
     }
     // Rebind the ref variables.
-    for (semantic_var_id, output_var) in zip_eq(&expr.ref_args, ref_outputs) {
+    for (semantic_var_id, output_var) in zip_eq(ref_args_iter, ref_outputs) {
         scope.put_semantic(ctx, *semantic_var_id, output_var);
     }
 
@@ -770,13 +768,25 @@ fn extract_concrete_enum(
 /// propagates that flow error without returning any variable.
 fn lower_exprs_as_vars(
     ctx: &mut LoweringContext<'_>,
-    exprs: &[semantic::ExprId],
+    args: &[semantic::ExprFunctionCallArg],
     scope: &mut BlockBuilder,
 ) -> Result<Vec<VariableId>, LoweringFlowError> {
-    exprs
+    // Since value expressions may depends on the same variables as the references, which must be
+    // variables, all expressions must be evaluated before using the references for binding into the
+    // call.
+    let mut value_iter = args
         .iter()
+        .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Value))
         .map(|arg_expr_id| lower_expr(ctx, scope, *arg_expr_id)?.var(ctx, scope))
-        .collect::<Result<Vec<_>, _>>()
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter();
+    Ok(args
+        .iter()
+        .map(|arg| match arg {
+            semantic::ExprFunctionCallArg::Reference(var_id) => scope.get_semantic(*var_id),
+            semantic::ExprFunctionCallArg::Value(_) => value_iter.next().unwrap(),
+        })
+        .collect())
 }
 
 /// Lowers an expression of type [semantic::ExprEnumVariantCtor].
