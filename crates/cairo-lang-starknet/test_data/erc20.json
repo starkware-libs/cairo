@@ -1,5 +1,6 @@
 {
   "sierra_program": [
+    "0x31",
     "0x34",
     "0x52616e6765436865636b",
     "0x0",
@@ -38122,11 +38123,7 @@
       ]
     ]
   },
-  "sierra_version": {
-    "major": 0,
-    "minor": 1,
-    "patch": 0
-  },
+  "contract_class_version": "1",
   "entry_points_by_type": {
     "EXTERNAL": [
       {

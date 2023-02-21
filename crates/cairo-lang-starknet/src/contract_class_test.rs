@@ -4,7 +4,9 @@ use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
-use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
+use crate::contract_class::{
+    ContractClass, ContractEntryPoint, ContractEntryPoints, DEFAULT_CONTRACT_CLASS_VERSION,
+};
 use crate::felt_serde::sierra_from_felts;
 use crate::sierra_version;
 use crate::test_utils::{get_example_file_path, get_test_contract};
@@ -16,7 +18,7 @@ fn test_serialization() {
     let contract = ContractClass {
         sierra_program: vec![],
         sierra_program_debug_info: None,
-        sierra_version: sierra_version::CURRENT_VERSION_ID,
+        contract_class_version: DEFAULT_CONTRACT_CLASS_VERSION.to_string(),
         entry_points_by_type: ContractEntryPoints {
             external,
             l1_handler: vec![],
@@ -34,11 +36,7 @@ fn test_serialization() {
         {
           "sierra_program": [],
           "sierra_program_debug_info": null,
-          "sierra_version": {
-            "major": 0,
-            "minor": 1,
-            "patch": 0
-          },
+          "contract_class_version": "1",
           "entry_points_by_type": {
             "EXTERNAL": [
               {
@@ -77,7 +75,12 @@ fn test_compile_path(example_file_name: &str) {
         serde_json::to_string_pretty(&contract).unwrap() + "\n",
     );
 
-    let mut sierra_program = sierra_from_felts(&contract.sierra_program).unwrap();
+    let (version_id, mut sierra_program) = sierra_from_felts(&contract.sierra_program).unwrap();
+    assert_eq!(
+        version_id,
+        sierra_version::VersionId::current_version_id(),
+        "Serialized Sierra version should be the current version."
+    );
     contract.sierra_program_debug_info.unwrap().populate(&mut sierra_program);
 
     // There is a separate file for the sierra code as it is hard to review inside the json.

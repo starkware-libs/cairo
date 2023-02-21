@@ -27,7 +27,7 @@ use crate::contract::{
 use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::felt_serde::sierra_to_felts;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE};
-use crate::sierra_version::{self, VersionId};
+use crate::sierra_version::{self};
 
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
@@ -46,11 +46,13 @@ pub enum StarknetCompilationError {
 pub struct ContractClass {
     pub sierra_program: Vec<BigIntAsHex>,
     pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,
-    /// The sierra version used in compilation.
-    pub sierra_version: VersionId,
+    pub contract_class_version: String,
     pub entry_points_by_type: ContractEntryPoints,
     pub abi: Option<Contract>,
 }
+
+const DEFAULT_CONTRACT_CLASS_VERSION: &str = "1";
+
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractEntryPoints {
     #[serde(rename = "EXTERNAL")]
@@ -163,11 +165,14 @@ fn compile_contract_with_prepared_and_checked_db(
         constructor: get_entry_points(db, &constructor_functions, &replacer)?,
     };
     let contract_class = ContractClass {
-        sierra_program: sierra_to_felts(&sierra_program)?,
+        sierra_program: sierra_to_felts(
+            sierra_version::VersionId::current_version_id(),
+            &sierra_program,
+        )?,
         sierra_program_debug_info: Some(cairo_lang_sierra::debug_info::DebugInfo::extract(
             &sierra_program,
         )),
-        sierra_version: sierra_version::CURRENT_VERSION_ID,
+        contract_class_version: DEFAULT_CONTRACT_CLASS_VERSION.to_string(),
         entry_points_by_type,
         abi: Some(Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?),
     };
