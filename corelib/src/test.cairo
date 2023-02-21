@@ -700,6 +700,60 @@ fn test_u256_operators() {
         '1 * max_u128'
     );
     
+    let(low,high)=integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 1_u128));
+    assert(
+        low == as_u256(4_u128, 3_u128),
+	'wide mul by 1 low'
+    );
+    assert(
+	high == as_u256(0_u128, 0_u128),
+        'wide mul by 1 high'
+    );
+    let(low,high)=integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 2_u128));
+    assert(
+        low == as_u256(8_u128, 6_u128),
+	'wide mul by 2 low'
+    );
+    assert(
+	high == as_u256(0_u128, 0_u128),
+        'wide mul by 2 high'
+    );
+    let(low,high)=integer::u256_wide_mul(as_u256(0_u128, pow_2_127()), as_u256(0_u128, 2_u128));
+    assert(
+        low == as_u256(1_u128, 0_u128),
+	'wide mul by OF low'
+    );
+    assert(
+	high == as_u256(0_u128, 0_u128),
+        'wide mul by OF high'
+    );
+    let(low,high)=integer::u256_wide_mul(as_u256(max_u128, max_u128), as_u256(max_u128, max_u128));
+    assert(
+        low == as_u256(0_u128, 1_u128),
+	'wide max_u256 * max_u256 low'
+    );
+    assert(
+	high == as_u256(max_u128, 0xfffffffffffffffffffffffffffffffe_u128),
+        'wide max_u256 * max_u256 high'
+    );
+    let(low,high)=integer::u256_wide_mul(as_u256(0_u128, 1_u128), as_u256(max_u128, max_u128));
+    assert(
+        low == as_u256(max_u128, max_u128),
+	'wide 1 * max_u256 low'
+    );
+    assert(
+	high == as_u256(0_u128, 0_u128),
+        'wide 1 * max_u256 high'
+    );
+    let(low,high)=integer::u256_wide_mul(as_u256(1_u128, 0_u128), as_u256(max_u128, max_u128));
+    assert(
+        low == as_u256(0_u128, 0_u128),
+	'wide 2^128 * max_u256 low'
+    );
+    assert(
+	high == as_u256(max_u128, max_u128),
+        'wide 2^128 * max_u256 high'
+    );
     let(low,high)=integer::u256_wide_mul(as_u256(155419417030398358529415680970430503750_u128,
 						 208595563450721923828867081157420252200_u128),
 					 as_u256(285431191531813133557775306831253175872_u128,
