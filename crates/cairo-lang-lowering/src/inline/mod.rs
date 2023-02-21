@@ -218,7 +218,7 @@ impl StatementStack {
     ///
     /// Note that to keep the order of the statements when they are popped from the stack
     /// they need to be pushed in reverse order.
-    fn push_statments(&mut self, statements: impl DoubleEndedIterator<Item = Statement>) {
+    fn push_statements(&mut self, statements: impl DoubleEndedIterator<Item = Statement>) {
         self.stack.extend(statements.rev());
     }
 
@@ -387,7 +387,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         rewriter.ctx.variables = flat_lower.variables.clone();
         while let Some(block) = rewriter.block_queue.dequeue() {
             rewriter.block_end = block.end;
-            rewriter.statement_rewrite_stack.push_statments(block.statements.into_iter());
+            rewriter.statement_rewrite_stack.push_statements(block.statements.into_iter());
 
             while let Some(statement) = rewriter.statement_rewrite_stack.pop_statement() {
                 rewriter.rewrite(statement)?;
@@ -532,7 +532,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
             );
         }
 
-        self.statement_rewrite_stack.push_statments(
+        self.statement_rewrite_stack.push_statements(
             root_block.statements.iter().map(|statement| mapper.rebuild_statement(statement)),
         );
 
