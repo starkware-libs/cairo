@@ -1,0 +1,24 @@
+{
+  "sierra_program": [
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x0"
+  ],
+  "sierra_program_debug_info": {
+    "type_names": [],
+    "libfunc_names": [],
+    "user_func_names": []
+  },
+  "sierra_version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
+  "entry_points_by_type": {
+    "EXTERNAL": [],
+    "L1_HANDLER": [],
+    "CONSTRUCTOR": []
+  },
+  "abi": []
+}
