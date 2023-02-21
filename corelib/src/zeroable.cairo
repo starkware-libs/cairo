@@ -16,7 +16,7 @@ impl FeltZeroable of Zeroable::<felt> {
     fn is_zero(self: felt) -> bool {
         self == 0
     }
-    
+
     #[inline(always)]
     fn is_not_zero(self: felt) -> bool {
         !self.is_zero()
