@@ -11,7 +11,7 @@ fn roll(address: felt, caller_address: felt) -> () {
     }
 }
 
-extern fn warp(blk_timestamp: felt, target_contract_address: Option::<felt>) -> Result::<(), felt> nopanic;
+extern fn warp(blk_timestamp: felt, target_contract_address: felt) -> Result::<(), felt> nopanic;
 
 extern fn start_prank(caller_address: felt, target_contract_address: felt) -> Result::<(), felt> nopanic;
 

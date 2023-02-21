@@ -16,18 +16,7 @@ fn test_cheatcode_caller_three() {
 }
 
 fn test_warp() {
-   match warp(CONSTANT, Option::<felt>::Some(2)) {
-      Result::Ok(class_hash) => (),
-      Result::Err(x) => {
-         let mut data = array_new::<felt>();
-         array_append::<felt>(ref data, x);
-         panic(data)
-      },
-   }
-}
-
-fn test_warp_with_none() {
-   match warp(1, Option::<felt>::None(())) {
+   match warp(CONSTANT, 2) {
       Result::Ok(class_hash) => (),
       Result::Err(x) => {
          let mut data = array_new::<felt>();
