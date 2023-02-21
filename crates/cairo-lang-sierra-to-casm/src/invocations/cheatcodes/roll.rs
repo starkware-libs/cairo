@@ -16,9 +16,9 @@ pub fn build_roll(
     };
 
     casm_build_extend! {casm_builder,
-        tempvar error_reason;
-        hint Roll {address: address, caller_address: caller_address} into {dst: error_reason};
-        jump Failure if error_reason != 0;
+        tempvar err_code;
+        hint Roll {address: address, caller_address: caller_address} into {err_code: err_code};
+        jump Failure if err_code != 0;
     };
 
 
@@ -28,7 +28,7 @@ pub fn build_roll(
             ("Fallthrough", &[], None),
             (
                 "Failure",
-                &[&[error_reason]],
+                &[&[err_code]],
                 Some(failure_handle_statement_id),
             ),
         ],

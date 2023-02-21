@@ -18,11 +18,11 @@ pub fn build_declare(
     };
 
     casm_build_extend! {casm_builder,
-        tempvar error_reason;
+        tempvar err_code;
         tempvar result;
-        hint Declare {contract: contract} into {result: error_reason, error_code: error_reason};
+        hint Declare {contract: contract} into {result: result, err_code: err_code};
         ap += 1;
-        jump Failure if error_reason != 0;
+        jump Failure if err_code != 0;
     };
 
 
@@ -32,7 +32,7 @@ pub fn build_declare(
             ("Fallthrough", &[&[result]], None),
             (
                 "Failure",
-                &[&[error_reason]],
+                &[&[err_code]],
                 Some(failure_handle_statement_id),
             ),
         ],

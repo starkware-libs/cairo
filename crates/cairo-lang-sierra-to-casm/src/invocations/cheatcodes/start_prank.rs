@@ -16,9 +16,9 @@ pub fn build_start_prank(
     };
 
     casm_build_extend! {casm_builder,
-        tempvar error_code;
-        hint StartPrank {caller_address: caller_address, target_contract_address: target_contract_address} into {error_code: error_code};
-        jump Failure if error_code != 0;
+        tempvar err_code;
+        hint StartPrank {caller_address: caller_address, target_contract_address: target_contract_address} into {err_code: err_code};
+        jump Failure if err_code != 0;
     };
 
     Ok(builder.build_from_casm_builder(
@@ -27,7 +27,7 @@ pub fn build_start_prank(
             ("Fallthrough", &[], None),
             (
                 "Failure",
-                &[&[error_code]],
+                &[&[err_code]],
                 Some(failure_handle_statement_id),
             ),
         ],
