@@ -53,11 +53,6 @@ macro_rules! define_identity {
                 Self { id, debug_name: None }
             }
 
-            // TODO(lior): Remove this function once issue #45 is resolved. Use new() instead.
-            pub fn from_usize(id: usize) -> Self {
-                Self::new(id.try_into().unwrap())
-            }
-
             pub fn from_string(name: impl Into<SmolStr>) -> Self {
                 let s: SmolStr = name.into();
                 Self { id: const_fnv1a_hash::fnv1a_hash_str_64(&s), debug_name: Some(s) }
@@ -80,7 +75,7 @@ macro_rules! define_identity {
         }
         impl salsa::InternKey for $type_name {
             fn from_intern_id(salsa_id: salsa::InternId) -> Self {
-                Self::from_usize(salsa_id.as_usize())
+                Self::new(salsa_id.as_u32() as u64)
             }
 
             fn as_intern_id(&self) -> salsa::InternId {
