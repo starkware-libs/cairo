@@ -1,6 +1,6 @@
 //! > Test boolean if.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -76,7 +76,7 @@ End:
 
 //! > Test if analyzer.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -152,7 +152,7 @@ End:
 
 //! > Test if without else.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -229,7 +229,7 @@ End:
 
 //! > Test if x == y
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -299,23 +299,23 @@ End:
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
-  (v4: core::felt) <- core::felt_add(v0, v1)
+  (v11: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(blk3, {})
+  Fallthrough(blk3, {v11 -> v4})
 
 blk3:
 Inputs:
 Statements:
-  (v5: core::felt) <- core::felt_sub(v2, v3)
+  (v12: core::felt) <- core::felt_sub(v2, v3)
 End:
-  Fallthrough(blk4, {})
+  Fallthrough(blk4, {v12 -> v5})
 
 blk4:
 Inputs:
 Statements:
-  (v6: core::felt) <- core::felt_sub(v4, v5)
+  (v13: core::felt) <- core::felt_sub(v4, v5)
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk5, {v13 -> v6})
 
 blk5:
 Inputs:

@@ -1,0 +1,7 @@
+[package]
+name = "core"
+version = "1.0.0-alpha.3"
+
+# NOTE: This is non-public, unstable Scarb's field, which instructs resolver that this package does not
+#   depend on `core`, which is only true for this particular package. Nobody else should use it.
+no-core = true

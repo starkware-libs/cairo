@@ -1,7 +1,7 @@
 //! > u16 to u64 upcast
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u16) -> u64 {

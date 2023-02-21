@@ -1,3 +1,5 @@
+use std::iter;
+
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
@@ -17,7 +19,7 @@ use cairo_lang_sierra::extensions::felt::FeltConcrete;
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
-    AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
+    AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
@@ -28,7 +30,7 @@ use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
-use itertools::Itertools;
+use itertools::{chain, Itertools};
 
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
@@ -47,12 +49,12 @@ impl ConstCost {
 // The costs of the dict_squash libfunc, divided into different parts.
 /// The cost per each unique key in the dictionary.
 pub const DICT_SQUASH_UNIQUE_KEY_COST: i32 =
-    ConstCost { steps: 64, holes: 0, range_checks: 6 }.cost();
+    ConstCost { steps: 62, holes: 0, range_checks: 6 }.cost();
 /// The cost per each access to a key after the first access.
 pub const DICT_SQUASH_REPEATED_ACCESS_COST: i32 =
     ConstCost { steps: 12, holes: 0, range_checks: 1 }.cost();
 /// The cost not dependent on the number of keys and access.
-pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 90, holes: 0, range_checks: 3 }.cost();
+pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 86, holes: 0, range_checks: 3 }.cost();
 /// The cost to charge per each read/write access. `DICT_SQUASH_UNIQUE_KEY_COST` is refunded for
 /// each repeated access in dict_squash.
 pub const DICT_SQUASH_ACCESS_COST: i32 =
@@ -260,16 +262,23 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             let size = info_provider.type_size(&libfunc.ty) as i32;
             vec![ops.const_cost(ConstCost { steps: size, holes: -size, range_checks: 0 })]
         }
-        Mem(AllocLocal(libfunc) | AlignTemps(libfunc)) => {
+        Mem(AllocLocal(libfunc)) => {
             vec![ops.holes(info_provider.type_size(&libfunc.ty) as i32)]
         }
 
         Mem(FinalizeLocals(_)) | UnconditionalJump(_) => {
             vec![ops.steps(1)]
         }
-        Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(1)],
+        Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(0)],
         Enum(EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig)) => {
-            vec![ops.steps(1); sig.signature.branch_signatures.len()]
+            let n = sig.signature.branch_signatures.len();
+            match n {
+                0 => unreachable!(),
+                1 => vec![ops.steps(0)],
+                2 => vec![ops.steps(1); 2],
+                _ => chain!(iter::once(ops.steps(1)), itertools::repeat_n(ops.steps(2), n - 1),)
+                    .collect_vec(),
+            }
         }
         Struct(
             StructConcreteLibfunc::Construct(_)

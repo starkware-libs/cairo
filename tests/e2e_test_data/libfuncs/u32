@@ -2,8 +2,8 @@
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u32, b: u32) -> Result::<u32, u32> {
@@ -29,7 +29,7 @@ jmp rel 7;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 970})
+test::foo: OrderedHashMap({Const: 870})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -68,8 +68,8 @@ test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::result::R
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u32, b: u32) -> Result::<u32, u32> {
@@ -96,7 +96,7 @@ jmp rel 7;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1070})
+test::foo: OrderedHashMap({Const: 970})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -135,8 +135,8 @@ test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::result::R
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u32, b: u32) -> bool {
@@ -160,7 +160,7 @@ jmp rel 6;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 880})
+test::foo: OrderedHashMap({Const: 780})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -203,8 +203,8 @@ test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u32, b: u32) -> bool {
@@ -228,7 +228,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 880})
+test::foo: OrderedHashMap({Const: 780})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -273,8 +273,8 @@ test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);
 //! Different cases of a,b produce different code. This is why u32_eq has multiple e2e tests.
 //! This case produces the same code as the case (a deref, b immediate).
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u32, b: u32) -> bool {
@@ -291,7 +291,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type u32 = u32;
@@ -329,8 +329,8 @@ test::foo@0([0]: u32, [1]: u32) -> (core::bool);
 //! > test_comments
 //! see the comment for: u32_eq libfunc (a deref, b deref).
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> bool {
@@ -347,7 +347,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type u32 = u32;
@@ -389,8 +389,8 @@ test::foo@0() -> (core::bool);
 //! > test_comments
 //! see the comment for: u32_eq libfunc (a deref, b deref).
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(b: u32) -> bool {
@@ -407,7 +407,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type u32 = u32;
@@ -446,8 +446,8 @@ test::foo@0([0]: u32) -> (core::bool);
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(v: felt) -> Option::<u32> {
@@ -488,7 +488,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1610})
+test::foo: OrderedHashMap({Const: 1510})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -531,8 +531,8 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<c
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u32) -> u32 {
@@ -583,8 +583,8 @@ test::foo@0([0]: u32) -> (u32);
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u32, b: NonZero::<u32>) -> (u32, u32) {

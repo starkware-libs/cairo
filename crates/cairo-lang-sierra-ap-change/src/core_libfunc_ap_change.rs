@@ -203,9 +203,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             MemConcreteLibfunc::StoreTemp(libfunc) => {
                 vec![ApChange::Known(info_provider.type_size(&libfunc.ty))]
             }
-            MemConcreteLibfunc::AlignTemps(libfunc) => {
-                vec![ApChange::Known(info_provider.type_size(&libfunc.ty))]
-            }
             MemConcreteLibfunc::StoreLocal(_) => vec![ApChange::Known(0)],
             MemConcreteLibfunc::FinalizeLocals(_) => vec![ApChange::FinalizeLocals],
             MemConcreteLibfunc::AllocLocal(libfunc) => {
@@ -259,9 +256,11 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::GetContractAddress(_)
             | StarkNetConcreteLibfunc::GetSequencerAddress(_)
             | StarkNetConcreteLibfunc::GetBlockNumber(_)
-            | StarkNetConcreteLibfunc::GetBlockTimestamp(_) => {
+            | StarkNetConcreteLibfunc::GetBlockTimestamp(_)
+            | StarkNetConcreteLibfunc::GetTxInfo(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
+            StarkNetConcreteLibfunc::Testing(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],

@@ -135,7 +135,7 @@ impl BlockBuilder {
     }
 
     /// Gets the current lowered variable bound to a semantic variable.
-    pub fn get_semantic(&mut self, semantic_var_id: semantic::VarId) -> VariableId {
+    pub fn get_semantic(&self, semantic_var_id: semantic::VarId) -> VariableId {
         self.semantics
             .get(&semantic_var_id)
             .copied()
@@ -257,9 +257,13 @@ pub enum SealedBlockBuilder {
 }
 impl SealedBlockBuilder {
     /// Given the extra information needed, returns the final StructuredBlock.
-    fn finalize(self, semantic_remapping: &SemanticRemapping) -> StructuredBlock {
+    fn finalize(
+        self,
+        ctx: &mut LoweringContext<'_>,
+        semantic_remapping: &SemanticRemapping,
+    ) -> StructuredBlock {
         match self {
-            SealedBlockBuilder::GotoCallsite { scope, expr } => {
+            SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
                 let mut remapping = VarRemapping::default();
                 // Since SemanticRemapping should have unique variable ids, these asserts will pass.
                 for (ty, remapped_var) in semantic_remapping.implicits.iter() {
@@ -269,7 +273,14 @@ impl SealedBlockBuilder {
                     assert!(remapping.insert(*remapped_var, scope.semantics[*semantic]).is_none());
                 }
                 if let Some(remapped_var) = semantic_remapping.expr {
-                    let expr = expr.expect("Block expr is unit, while sibling block isn't.");
+                    let expr = expr.unwrap_or_else(|| {
+                        LoweredExpr::Tuple {
+                            exprs: vec![],
+                            location: ctx.variables[remapped_var].location,
+                        }
+                        .var(ctx, &mut scope)
+                        .unwrap()
+                    });
                     assert!(remapping.insert(remapped_var, expr).is_none());
                 }
 
@@ -342,7 +353,7 @@ pub fn merge_sealed(
     let blocks = sealed_blocks
         .into_iter()
         .map(|s| {
-            let var = s.finalize(&semantic_remapping);
+            let var = s.finalize(ctx, &semantic_remapping);
             ctx.blocks.alloc(var)
         })
         .collect();

@@ -1,6 +1,6 @@
 //! > Repeated modifiers for a local variable (first modifier is `mut`).
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -38,7 +38,7 @@ error: `ref` modifier was specified after another modifier (`mut`). Only a singl
 
 //! > Repeated modifiers for a local variable (first modifier is `ref`).
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -66,7 +66,7 @@ error: `ref` is only allowed for function parameters, not for local variables.
 
 //! > Unsupported ref modifier for a local variable.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -89,7 +89,7 @@ error: `ref` is only allowed for function parameters, not for local variables.
 
 //! > Variable not found diagnostics
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

@@ -106,7 +106,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         // A simple invocation.
                         let branch_signature = &signature.branch_signatures[0];
                         match branch_signature.ap_change {
-                            SierraApChange::Unknown | SierraApChange::NotImplemented => {
+                            SierraApChange::Unknown => {
                                 // If the ap-change is unknown, variables that will be revoked
                                 // otherwise should be stored as locals.
                                 self.store_variables_as_locals();

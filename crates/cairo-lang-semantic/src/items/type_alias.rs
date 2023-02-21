@@ -29,7 +29,7 @@ impl TypeAliasData {
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_struct_semantic_data].
+/// Query implementation of [crate::db::SemanticGroup::priv_type_alias_semantic_data].
 pub fn priv_type_alias_semantic_data(
     db: &(dyn SemanticGroup),
     type_alias_id: TypeAliasId,
@@ -50,7 +50,7 @@ pub fn priv_type_alias_semantic_data(
         &mut resolver,
         module_file_id,
         &type_alias_ast.generic_params(syntax_db),
-    );
+    )?;
     let ty = resolve_type(db, &mut diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
     Ok(TypeAliasData {
@@ -61,7 +61,7 @@ pub fn priv_type_alias_semantic_data(
     })
 }
 
-/// Cycle handling for [crate::db::SemanticGroup::priv_struct_semantic_data].
+/// Cycle handling for [crate::db::SemanticGroup::priv_type_alias_semantic_data].
 pub fn priv_type_alias_semantic_data_cycle(
     db: &dyn SemanticGroup,
     _cycle: &[String],
@@ -82,7 +82,7 @@ pub fn priv_type_alias_semantic_data_cycle(
         &mut resolver,
         module_file_id,
         &type_alias_ast.generic_params(syntax_db),
-    );
+    )?;
     Ok(TypeAliasData {
         diagnostics: diagnostics.build(),
         resolved_type: err,

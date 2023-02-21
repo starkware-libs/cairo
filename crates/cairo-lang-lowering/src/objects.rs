@@ -217,6 +217,7 @@ pub enum Statement {
     MatchEnum(StatementMatchEnum),
 
     Snapshot(StatementSnapshot),
+    Desnap(StatementDesnap),
 }
 impl Statement {
     pub fn inputs(&self) -> Vec<VariableId> {
@@ -229,6 +230,7 @@ impl Statement {
             Statement::EnumConstruct(stmt) => vec![stmt.input],
             Statement::MatchEnum(stmt) => vec![stmt.input],
             Statement::Snapshot(stmt) => vec![stmt.input],
+            Statement::Desnap(stmt) => vec![stmt.input],
         }
     }
     pub fn outputs(&self) -> Vec<VariableId> {
@@ -240,7 +242,8 @@ impl Statement {
             Statement::StructDestructure(stmt) => stmt.outputs.clone(),
             Statement::EnumConstruct(stmt) => vec![stmt.output],
             Statement::MatchEnum(_) => vec![],
-            Statement::Snapshot(stmt) => vec![stmt.output],
+            Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
+            Statement::Desnap(stmt) => vec![stmt.output],
         }
     }
 }
@@ -263,6 +266,8 @@ pub struct StatementCall {
     pub inputs: Vec<VariableId>,
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
+    /// Location for the call.
+    pub location: StableLocation,
 }
 
 /// A statement that calls an extern function with branches, and "calls" a possibly different block
@@ -277,6 +282,8 @@ pub struct StatementMatchExtern {
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
+    /// Location for the call.
+    pub location: StableLocation,
 }
 
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
@@ -322,6 +329,14 @@ pub struct StatementStructDestructure {
 /// A statement that takes a snapshot of a variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot {
+    pub input: VariableId,
+    pub output_original: VariableId,
+    pub output_snapshot: VariableId,
+}
+
+/// A statement that desnaps a variable.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatementDesnap {
     pub input: VariableId,
     /// The variable to bind the value to.
     pub output: VariableId,

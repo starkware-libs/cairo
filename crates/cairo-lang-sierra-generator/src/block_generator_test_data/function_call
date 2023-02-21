@@ -1,6 +1,6 @@
 //! > Test function call.
 
-//! > test_function_name
+//! > test_runner_name
 block_generator_test
 
 //! > function
@@ -30,12 +30,12 @@ impl MyStructDrop of Drop::<MyStruct>;
 //! > sierra_code
 felt_const<1>() -> ([0])
 felt_const<2>() -> ([1])
-PushValues([2]: MyStruct, [0]: felt, [1]: felt) -> ([5], [6], [7])
+PushValues([0]: felt, [1]: felt, [2]: MyStruct) -> ([5], [6], [7])
 function_call<user@test::bar>([5], [6], [7]) -> ([3], [4])
 dup<felt>([4]) -> ([4], [9])
 dup<felt>([4]) -> ([4], [10])
 felt_add([9], [10]) -> ([8])
-PushValues([3]: MyStruct, [4]: felt, [8]: felt) -> ([13], [14], [15])
+PushValues([4]: felt, [8]: felt, [3]: MyStruct) -> ([13], [14], [15])
 function_call<user@test::bar>([13], [14], [15]) -> ([11], [12])
 drop<MyStruct>([11]) -> ()
 drop<felt>([12]) -> ()
@@ -45,7 +45,7 @@ struct_construct<Unit>() -> ([16])
 
 //! > Test function call 2.
 
-//! > test_function_name
+//! > test_runner_name
 block_generator_test
 
 //! > function
@@ -91,7 +91,7 @@ function_call<user@test::bar2>([14], [15]) -> ([13])
 
 //! > Call libfunc explicitly
 
-//! > test_function_name
+//! > test_runner_name
 block_generator_test
 
 //! > function

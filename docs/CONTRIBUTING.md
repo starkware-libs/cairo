@@ -19,6 +19,15 @@ To set up a development environment, please follow these steps:
 
 2. TODO
 
+If you have a lot of failing tests when running:  
+`cargo test`  
+And those are due to file diff not being correct, there is a way to automatically fix it.  
+Set CAIRO_FIX_TESTS=1 as env var:  
+`export CAIRO_FIX_TESTS=1`  
+Then run the tests using  
+`cargo test`  
+Some tests should now be fixed
+
 ## Issues and feature requests
 
 You've found a bug in the source code, a mistake in the documentation or maybe you'd like a new feature?Take a look at [GitHub Discussions](https://github.com/starkware-libs-cairo/discussions) to see if it's already being discussed.  You can help us by [submitting an issue on GitHub](https://github.com/starkware-libs-cairo/issues). Before you create an issue, make sure to search the issue archive -- your issue may have already been addressed!

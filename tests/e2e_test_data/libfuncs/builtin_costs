@@ -1,7 +1,7 @@
 //! > get_builtin_costs libfunc
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> BuiltinCosts {

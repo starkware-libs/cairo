@@ -1,6 +1,6 @@
 //! > Test unexpected argument types for operators.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -29,7 +29,7 @@ error: Trait `core::traits::Add::<?1>` has no implementation in the context.
 
 //! > Test operators.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -73,7 +73,7 @@ error: Trait `core::traits::PartialOrd::<?16>` has no implementation in the cont
 
 //! > Test unary operators.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

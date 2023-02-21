@@ -1,7 +1,7 @@
 //! > into_box libfunc for felt (size 1)
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: felt) -> Box::<felt> {
@@ -38,8 +38,8 @@ test::foo@0([0]: felt) -> (Box<felt>);
 
 //! > unbox libfunc for felt (size 1)
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: Box::<felt>) -> felt {
@@ -70,8 +70,8 @@ test::foo@0([0]: Box<felt>) -> (felt);
 
 //! > into_box libfunc for u256 (size 2)
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: u256) -> Box::<u256> {
@@ -110,8 +110,8 @@ test::foo@0([0]: core::integer::u256) -> (Box<core::integer::u256>);
 
 //! > unbox libfunc for u256 (size 2)
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: Box::<u256>) -> u256 {
@@ -144,8 +144,8 @@ test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
 
 //! > into_box libfunc for unit type (size 0)
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> Box::<()> {
@@ -180,8 +180,8 @@ test::foo@0() -> (Box<Unit>);
 
 //! > unbox libfunc for unit type (size 0)
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: Box::<()>) -> Box::<()> {
@@ -212,8 +212,8 @@ test::foo@0([0]: Box<Unit>) -> (Box<Unit>);
 
 //! > into_box libfunc for empty struct (size 0)
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 struct Empty {}
@@ -249,8 +249,8 @@ test::foo@0() -> (Box<test::Empty>);
 
 //! > unbox libfunc for empty struct (size 0)
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 struct Empty {}

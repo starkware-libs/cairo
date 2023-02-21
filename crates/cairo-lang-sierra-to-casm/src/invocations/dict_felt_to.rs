@@ -238,8 +238,8 @@ fn build_dict_felt_to_squash(
             tempvar returned_dict_manager_ptr = new_dict_manager_ptr;
             tempvar returned_squashed_dict_start = local_squashed_dict_start;
             tempvar returned_squashed_dict_end = local_squashed_dict_end;
-            ret;
             #{ fixed_steps += steps; steps = 0; }
+            ret;
         };
         (
             dict_access_size,
@@ -264,8 +264,8 @@ fn build_dict_felt_to_squash(
             DefaultDictFinalizeInner:
             #{ validate steps == 0; }
             jump DictFinalizeInnerAssert if dict_finalize_inner_arg_n_accesses != 0;
-            ret;
             #{ fixed_steps += steps; steps = 0; }
+            ret;
             DictFinalizeInnerAssert:
             assert dict_finalize_inner_arg_default_value =
                 dict_finalize_inner_arg_dict_accesses_start[1];
@@ -274,8 +274,8 @@ fn build_dict_felt_to_squash(
             tempvar rec_arg_n_accesses = dict_finalize_inner_arg_n_accesses - one;
             tempvar rec_arg_default_value = dict_finalize_inner_arg_default_value;
             let () = call DefaultDictFinalizeInner;
-            ret;
             #{ unique_key_steps += steps; steps = 0; }
+            ret;
         }
     };
 
@@ -396,8 +396,8 @@ fn build_dict_felt_to_squash(
             let (range_check_ptr, squashed_dict_end) = call SquashDictInner;
             tempvar returned_range_check_ptr = range_check_ptr;
             tempvar returned_squashed_dict_end = squashed_dict_end;
-            ret;
             #{ fixed_steps += steps; steps = 0; }
+            ret;
         };
         (
             squash_dict_inner_arg_range_check_ptr,
@@ -560,8 +560,8 @@ fn build_dict_felt_to_squash(
             tempvar retuened_range_check_ptr = arg_range_check_ptr;
             tempvar retuened_squashed_dict =
                 squash_dict_inner_arg_squashed_dict_end+dict_access_size;
-            ret;
             #{ fixed_steps += steps; steps = 0; }
+            ret;
         }
         // Split just to avoid recursion limit when the macro is parsed.
         casm_build_extend! {casm_builder,
@@ -625,8 +625,8 @@ fn build_dict_felt_to_squash(
                 squash_dict_inner_arg_squashed_dict_end + dict_access_size;
             tempvar rec_arg_big_keys = squash_dict_inner_arg_big_keys;
             let () = call SquashDictInner;
-            ret;
             #{ unique_key_steps += steps; steps = 0; }
+            ret;
         };
     }
     casm_build_extend! {casm_builder,

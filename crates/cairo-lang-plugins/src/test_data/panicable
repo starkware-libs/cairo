@@ -1,6 +1,6 @@
 //! > Test expansion of panic_with.
 
-//! > test_function_name
+//! > test_runner_name
 test_expand_plugin
 
 //! > cairo_code
@@ -113,7 +113,7 @@ fn wrapped_possibly_panic() -> felt {
 
 //! > Test diagnostics of panic with.
 
-//! > test_function_name
+//! > test_runner_name
 test_expand_plugin
 
 //! > cairo_code

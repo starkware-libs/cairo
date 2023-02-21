@@ -2,8 +2,8 @@
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(keys: Array::<felt>, data: Array::<felt>) -> Result::<(), Array::<felt>> {
@@ -35,7 +35,7 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11600})
+test::foo: OrderedHashMap({Const: 11500})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;

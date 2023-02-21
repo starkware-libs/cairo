@@ -1,6 +1,6 @@
 //! > Test panic.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -23,27 +23,27 @@ blk0 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
-  (v1: @core::felt) <- snapshot(v0)
-  () <- test::bar(v1)
-  (v2: ()) <- struct_construct()
+  (v1: core::felt, v2: @core::felt) <- snapshot(v0)
+  () <- test::bar(v2)
+  (v3: ()) <- struct_construct()
 End:
-  Return(v2)
+  Return(v3)
 
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: @core::felt) <- snapshot(v0)
-  () <- test::bar(v1)
-  (v2: ()) <- struct_construct()
+  (v1: core::felt, v2: @core::felt) <- snapshot(v0)
+  () <- test::bar(v2)
+  (v3: ()) <- struct_construct()
 End:
-  Return(v2)
+  Return(v3)
 
 //! > ==========================================================================
 
 //! > Test struct snapshot.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -98,7 +98,7 @@ End:
 
 //! > Test enum snapshot.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -179,3 +179,83 @@ Statements:
   }
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > Test felt desnap.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(value: @felt) -> felt {
+  *value
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: @core::felt
+Initial refs:
+Statements:
+  (v1: core::felt) <- desnap(v0)
+End:
+  Return(v1)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: @core::felt
+Statements:
+  (v1: core::felt) <- desnap(v0)
+End:
+  Return(v1)
+
+//! > ==========================================================================
+
+//! > Test array desnap.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(value: @Array::<felt>) -> Array::<felt> {
+  *value
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Cannot desnap a non copyable type.
+ --> lib.cairo:2:3
+  *value
+  ^****^
+
+//! > lowering_structured
+blk0 (root):
+Inputs: v0: @core::array::Array::<core::felt>
+Initial refs:
+Statements:
+  (v1: core::array::Array::<core::felt>) <- desnap(v0)
+End:
+  Return(v1)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: @core::array::Array::<core::felt>
+Statements:
+  (v1: core::array::Array::<core::felt>) <- desnap(v0)
+End:
+  Return(v1)

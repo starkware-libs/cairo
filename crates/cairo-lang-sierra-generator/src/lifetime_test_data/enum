@@ -1,6 +1,6 @@
 //! > Test variable lifetime in enum and match
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -46,9 +46,9 @@ End:
 blk1:
 Inputs: v9: core::felt
 Statements:
-  (v10: core::felt) <- core::felt_add(v9, v1)
+  (v19: core::felt) <- core::felt_add(v9, v1)
 End:
-  Fallthrough(blk4, {})
+  Fallthrough(blk4, {v19 -> v10})
 
 blk2:
 Inputs: v13: (core::felt, core::felt)
@@ -73,9 +73,9 @@ End:
 blk4:
 Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v10, v2)
+  (v20: core::felt) <- core::felt_add(v10, v2)
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk5, {v20 -> v11})
 
 blk5:
 Inputs:
@@ -89,8 +89,10 @@ v3: ((BlockId(3), 1), 0)
 v7: ((BlockId(0), 3), 0)
 v5: ((BlockId(0), 1), 0)
 v11: ((BlockId(5), 0), 0)
+v20: ((BlockId(4), 1), 0)
 v2: ((BlockId(4), 0), 1)
 v10: ((BlockId(4), 0), 0)
+v19: ((BlockId(1), 1), 0)
 v1: ((BlockId(1), 0), 1)
 v9: ((BlockId(1), 0), 0)
 v16: ((BlockId(2), 2), 0)

@@ -1,6 +1,6 @@
 //! > Test extern function calling.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -57,7 +57,7 @@ End:
 
 //! > Test extern function enum calling.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -218,7 +218,7 @@ End:
 
 //! > Test extern function enum calling with optimization.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -313,7 +313,7 @@ End:
 
 //! > Test extern function enum calling with optimization with ref.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -409,7 +409,7 @@ End:
 
 //! > Test extern function enum calling with implicits.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -570,7 +570,7 @@ End:
 
 //! > Test extern function enum calling with optimization with implicits.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -666,7 +666,7 @@ End:
 
 //! > Test match on libfunc call that uses the refs of the libfunc in one of the arms.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -728,7 +728,7 @@ End:
 
 //! > Test calling libfunc that returns enum but does nothing with the result.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -811,7 +811,7 @@ End:
 
 //! > Test calling libfunc that returns enum and returns the result as a tail expression.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -892,7 +892,7 @@ End:
 
 //! > Test calling libfunc that returns enum and returns the result with `return`.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function

@@ -1,6 +1,6 @@
 //! > inlining of a function with a local var.
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -38,7 +38,7 @@ Statements:
     IsZeroResult::NonZero => blk3,
   }
 End:
-  Fallthrough(blk1, {})
+  Fallthrough(blk1, {v2 -> v1})
 
 blk1:
 Inputs:
@@ -49,17 +49,17 @@ End:
 blk2:
 Inputs:
 Statements:
-  (v2: core::felt) <- 1u
-  (v3: core::felt) <- core::felt_add(v0, v2)
+  (v4: core::felt) <- 1u
+  (v8: core::felt) <- core::felt_add(v0, v4)
 End:
-  Fallthrough(blk4, {})
+  Fallthrough(blk4, {v8 -> v3})
 
 blk3:
 Inputs: v6: core::NonZero::<core::felt>
 Statements:
-  (v4: core::felt) <- core::felt_add(v0, v0)
+  (v9: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk5, {v9 -> v5})
 
 blk4:
 Inputs:
@@ -70,12 +70,12 @@ End:
 blk5:
 Inputs:
 Statements:
-  (v5: ()) <- test::revoke_ap()
+  (v7: ()) <- test::revoke_ap()
 End:
-  Callsite({v4 -> v1})
+  Callsite({v5 -> v2})
 
 //! > local_variables
-v4
+v9
 
 //! > block_infos
 blk1: known_ap_change: true.
@@ -84,7 +84,7 @@ blk1: known_ap_change: true.
 
 //! > inlining of a function with a revoking goto.
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -123,30 +123,30 @@ Statements:
     IsZeroResult::NonZero => blk3,
   }
 End:
-  Fallthrough(blk1, {})
+  Fallthrough(blk1, {v3 -> v1})
 
 blk1:
 Inputs:
 Statements:
-  (v2: core::felt) <- core::felt_add(v1, v0)
+  (v10: core::felt) <- core::felt_add(v1, v0)
 End:
-  Fallthrough(blk4, {})
+  Fallthrough(blk4, {v10 -> v2})
 
 blk2:
 Inputs:
 Statements:
-  (v3: ()) <- test::revoke_ap()
-  (v4: core::felt) <- 1u
-  (v5: core::felt) <- core::felt_add(v0, v4)
+  (v5: ()) <- test::revoke_ap()
+  (v6: core::felt) <- 1u
+  (v11: core::felt) <- core::felt_add(v0, v6)
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk5, {v11 -> v4})
 
 blk3:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
-  (v6: core::felt) <- core::felt_add(v0, v0)
+  (v12: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk6, {})
+  Fallthrough(blk6, {v12 -> v7})
 
 blk4:
 Inputs:
@@ -158,17 +158,17 @@ blk5:
 Inputs:
 Statements:
 End:
-  Goto(blk1, {v5 -> v1})
+  Goto(blk1, {v4 -> v1})
 
 blk6:
 Inputs:
 Statements:
-  (v7: ()) <- test::revoke_ap()
+  (v9: ()) <- test::revoke_ap()
 End:
-  Callsite({v6 -> v1})
+  Callsite({v7 -> v3})
 
 //! > local_variables
-v6
+v12
 
 //! > block_infos
 blk1: known_ap_change: true.
@@ -177,7 +177,7 @@ blk1: known_ap_change: true.
 
 //! > Remapping - fallthrough without incoming gotos
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -206,9 +206,9 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 1u
-  (v2: core::felt) <- core::felt_add(v0, v1)
+  (v5: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(blk1, {})
+  Fallthrough(blk1, {v5 -> v2})
 
 blk1:
 Inputs:
@@ -224,6 +224,6 @@ End:
   Return(v3)
 
 //! > local_variables
-v2
+v5
 
 //! > block_infos

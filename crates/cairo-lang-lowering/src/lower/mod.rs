@@ -15,7 +15,7 @@ use semantic::corelib::{
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::structure::SemanticStructEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
-use semantic::{ConcreteTypeId, ExprPropagateError, TypeLongId};
+use semantic::{ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, TypeLongId};
 
 use self::context::{
     lowering_flow_error_to_sealed_block, LoweredExpr, LoweredExprExternEnum, LoweringContext,
@@ -192,11 +192,8 @@ pub fn lower_statement(
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
             // The LoweredExpr must be evaluated now to push/bring back variables in case it is
             // LoweredExpr::ExternEnum.
-            match lowered_expr {
-                LoweredExpr::ExternEnum(x) => {
-                    x.var(ctx, scope)?;
-                }
-                LoweredExpr::AtVariable(_) | LoweredExpr::Tuple { .. } => {}
+            if let LoweredExpr::ExternEnum(x) = lowered_expr {
+                x.var(ctx, scope)?;
             }
         }
         semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
@@ -312,6 +309,7 @@ fn lower_expr(
         semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, scope),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, scope),
         semantic::Expr::Snapshot(expr) => lower_expr_snapshot(ctx, expr, scope),
+        semantic::Expr::Desnap(expr) => lower_expr_desnap(ctx, expr, scope),
         semantic::Expr::Assignment(expr) => lower_expr_assignment(ctx, expr, scope),
         semantic::Expr::Block(expr) => lower_expr_block(ctx, scope, expr),
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, scope),
@@ -319,7 +317,7 @@ fn lower_expr(
         semantic::Expr::If(expr) => lower_expr_if(ctx, scope, expr),
         semantic::Expr::Var(expr) => {
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
-            Ok(LoweredExpr::AtVariable(scope.get_semantic(expr.var)))
+            Ok(LoweredExpr::SemanticVar(expr.var))
         }
         semantic::Expr::Literal(expr) => lower_expr_literal(ctx, expr, scope),
         semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, scope),
@@ -382,9 +380,21 @@ fn lower_expr_snapshot(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a snapshot: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
+    let expr = Box::new(lower_expr(ctx, scope, expr.inner)?);
+    Ok(LoweredExpr::Snapshot { expr, location })
+}
+
+/// Lowers an expression of type [semantic::ExprDesnap].
+fn lower_expr_desnap(
+    ctx: &mut LoweringContext<'_>,
+    expr: &semantic::ExprDesnap,
+    scope: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a desnap: {:?}", expr.debug(&ctx.expr_formatter));
+    let location = ctx.get_location(expr.stable_ptr.untyped());
     let input = lower_expr(ctx, scope, expr.inner)?.var(ctx, scope)?;
 
-    Ok(LoweredExpr::AtVariable(generators::Snapshot { input, location }.add(ctx, scope)))
+    Ok(LoweredExpr::AtVariable(generators::Desnap { input, location }.add(ctx, scope)))
 }
 
 /// Lowers an expression of type [semantic::ExprFunctionCall].
@@ -398,20 +408,18 @@ fn lower_expr_function_call(
 
     // TODO(spapini): Use the correct stable pointer.
     let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
-    let (ref_tys, ref_inputs): (_, Vec<VariableId>) = expr
-        .ref_args
+    let ref_args_iter = expr
+        .args
         .iter()
-        .map(|semantic_var_id| {
-            Ok((ctx.semantic_defs[*semantic_var_id].ty(), scope.get_semantic(*semantic_var_id)))
-        })
-        .collect::<Result<Vec<_>, _>>()?
-        .into_iter()
-        .unzip();
+        .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Reference));
+    let ref_tys = ref_args_iter
+        .clone()
+        .map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty())
+        .collect();
     let callee_implicit_types =
         ctx.db.function_all_implicits(expr.function).map_err(LoweringFlowError::Failed)?;
     let implicits = callee_implicit_types.iter().map(|ty| scope.get_implicit(*ty));
-    // TODO(orizi): Support ref args that are not the first arguments.
-    let inputs = chain!(implicits, ref_inputs, arg_inputs.into_iter()).collect();
+    let inputs = chain!(implicits, arg_inputs.into_iter()).collect();
 
     // If the function is panic(), do something special.
     if expr.function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
@@ -428,7 +436,7 @@ fn lower_expr_function_call(
                 function: expr.function,
                 concrete_enum_id,
                 inputs,
-                ref_args: expr.ref_args.clone(),
+                ref_args: ref_args_iter.cloned().collect(),
                 implicits: callee_implicit_types,
                 location,
             };
@@ -450,7 +458,7 @@ fn lower_expr_function_call(
         scope.put_implicit(ctx, implicit_type, implicit_output);
     }
     // Rebind the ref variables.
-    for (semantic_var_id, output_var) in zip_eq(&expr.ref_args, ref_outputs) {
+    for (semantic_var_id, output_var) in zip_eq(ref_args_iter, ref_outputs) {
         scope.put_semantic(ctx, *semantic_var_id, output_var);
     }
 
@@ -642,6 +650,7 @@ fn lower_optimized_extern_match(
         function: extern_enum.function,
         inputs: extern_enum.inputs,
         arms,
+        location,
     }));
     merged.expr
 }
@@ -707,6 +716,7 @@ fn lower_expr_match_felt(
         function: core_felt_is_zero(semantic_db),
         inputs: vec![expr_var],
         arms,
+        location,
     }));
     merged.expr
 }
@@ -758,13 +768,27 @@ fn extract_concrete_enum(
 /// propagates that flow error without returning any variable.
 fn lower_exprs_as_vars(
     ctx: &mut LoweringContext<'_>,
-    exprs: &[semantic::ExprId],
+    args: &[semantic::ExprFunctionCallArg],
     scope: &mut BlockBuilder,
 ) -> Result<Vec<VariableId>, LoweringFlowError> {
-    exprs
+    // Since value expressions may depends on the same variables as the references, which must be
+    // variables, all expressions must be evaluated before using the references for binding into the
+    // call.
+    // TODO(orizi): Consider changing this to disallow taking a reference and then using the
+    // variable, while still allowing `arr.append(arr.len())`.
+    let mut value_iter = args
         .iter()
+        .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Value))
         .map(|arg_expr_id| lower_expr(ctx, scope, *arg_expr_id)?.var(ctx, scope))
-        .collect::<Result<Vec<_>, _>>()
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter();
+    Ok(args
+        .iter()
+        .map(|arg| match arg {
+            semantic::ExprFunctionCallArg::Reference(var_id) => scope.get_semantic(*var_id),
+            semantic::ExprFunctionCallArg::Value(_) => value_iter.next().unwrap(),
+        })
+        .collect())
 }
 
 /// Lowers an expression of type [semantic::ExprEnumVariantCtor].
@@ -949,6 +973,7 @@ fn lower_optimized_extern_error_propagate(
         function: extern_enum.function,
         inputs: extern_enum.inputs,
         arms,
+        location,
     }));
     merged.expr
 }

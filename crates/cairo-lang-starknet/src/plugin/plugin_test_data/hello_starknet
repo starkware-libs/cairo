@@ -1,7 +1,7 @@
 //! > Test expansion of the hello_starknet contract.
 
-//! > test_function_name
-test_expand_contract
+//! > test_runner_name
+ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]

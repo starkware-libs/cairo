@@ -1,6 +1,6 @@
 //! > Test simple struct type alias.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -24,7 +24,7 @@ type RenamedStruct = MyStruct;
 
 //! > Test simple enum type alias.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -50,7 +50,7 @@ type RenamedEnum = MyEnum;
 
 //! > Test tuple type alias.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -71,7 +71,7 @@ type RenamedTuple = (felt, u128);
 
 //! > Test generic enum type alias.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -94,7 +94,7 @@ type OptionFelt = Option::<felt>;
 
 //! > Test generic tuple type alias.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -115,7 +115,7 @@ type RenamedTuple<T> = (felt, T);
 
 //! > Test type alias chain.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -136,7 +136,7 @@ type B<P1, P2, P3> = (P1, P3, P2);
 
 //! > Test type alias wrong generic argument.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -161,7 +161,7 @@ fn foo(a: A::<5>) -> felt {
 
 //! > Test type alias cycle.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -191,7 +191,7 @@ type B = A;
 
 //! > Test type alias cycle of size 1.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -215,7 +215,7 @@ type A = A;
 
 //! > Test simple unknown type alias.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

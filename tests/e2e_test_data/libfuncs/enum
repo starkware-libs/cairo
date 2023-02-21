@@ -1,7 +1,7 @@
 //! > init enum with a single variant
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 enum SingleVariant {
@@ -18,7 +18,7 @@ fn foo() -> SingleVariant {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type felt = felt;
@@ -39,8 +39,8 @@ test::foo@0() -> (test::SingleVariant);
 
 //! > match enum with a single variant
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 enum SingleVariant {
@@ -58,7 +58,7 @@ fn foo(e: SingleVariant) -> felt {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 200})
+test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type felt = felt;
@@ -85,8 +85,8 @@ test::foo@0([0]: test::SingleVariant) -> (felt);
 
 //! > init enum with 2 variants
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 enum Option {
@@ -104,7 +104,7 @@ fn foo() -> Option {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type felt = felt;
@@ -126,8 +126,8 @@ test::foo@0() -> (test::Option);
 
 //! > match enum with 2 variants
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 enum Option {
@@ -184,10 +184,10 @@ test::foo@0([0]: test::Option) -> (felt);
 
 //! > ==========================================================================
 
-//! > init enum with more than 2 variants
+//! > init a non-first variant in an enum with more than 2 variants
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 enum Color {
@@ -197,7 +197,7 @@ enum Color {
 }
 
 fn foo() -> Color {
-    Color::Green(10)
+    Color::Blue(10)
 }
 
 //! > casm
@@ -206,18 +206,59 @@ fn foo() -> Color {
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
 type felt = felt;
 type test::Color = Enum<ut@test::Color, felt, felt, felt>;
 
 libfunc felt_const<10> = felt_const<10>;
-libfunc enum_init<test::Color, 1> = enum_init<test::Color, 1>;
+libfunc enum_init<test::Color, 2> = enum_init<test::Color, 2>;
 libfunc store_temp<test::Color> = store_temp<test::Color>;
 
 felt_const<10>() -> ([0]);
-enum_init<test::Color, 1>([0]) -> ([1]);
+enum_init<test::Color, 2>([0]) -> ([1]);
+store_temp<test::Color>([1]) -> ([2]);
+return([2]);
+
+test::foo@0() -> (test::Color);
+
+//! > ==========================================================================
+
+//! > init the first variant in an enum with more than 2 variants
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+enum Color {
+    Red: felt,
+    Green: felt,
+    Blue: felt,
+}
+
+fn foo() -> Color {
+    Color::Red(10)
+}
+
+//! > casm
+[ap + 0] = 5, ap++;
+[ap + 0] = 10, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+
+//! > sierra_code
+type felt = felt;
+type test::Color = Enum<ut@test::Color, felt, felt, felt>;
+
+libfunc felt_const<10> = felt_const<10>;
+libfunc enum_init<test::Color, 0> = enum_init<test::Color, 0>;
+libfunc store_temp<test::Color> = store_temp<test::Color>;
+
+felt_const<10>() -> ([0]);
+enum_init<test::Color, 0>([0]) -> ([1]);
 store_temp<test::Color>([1]) -> ([2]);
 return([2]);
 
@@ -227,8 +268,8 @@ test::foo@0() -> (test::Color);
 
 //! > match enum with more than 2 variants
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 enum Color {
@@ -247,7 +288,6 @@ fn foo(e: Color) -> felt {
 
 //! > casm
 jmp rel [fp + -4];
-jmp rel 6;
 jmp rel 8;
 jmp rel 10;
 [ap + 0] = 0, ap++;
@@ -258,7 +298,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type felt = felt;

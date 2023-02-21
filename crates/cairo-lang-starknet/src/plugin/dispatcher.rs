@@ -138,6 +138,7 @@ $deserialization_code$
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
             "mod {dispatcher_name} {{
+                use super;
                 use starknet::SyscallResultTrait;
                 use starknet::SyscallResultTraitImpl;
                 use option::OptionTrait;

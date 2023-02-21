@@ -5,7 +5,7 @@
     * `a` (missing a semicolon)
     * `!b;` (not `b`)
 
-//! > test_function_name
+//! > test_runner_name
 test_partial_parser_tree
 
 //! > cairo_code

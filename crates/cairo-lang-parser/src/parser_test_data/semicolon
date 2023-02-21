@@ -1,6 +1,6 @@
 //! > Missing semicolon
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code

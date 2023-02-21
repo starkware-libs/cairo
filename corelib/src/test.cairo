@@ -1,9 +1,11 @@
 use array::ArrayTrait;
+use array::SpanTrait;
 use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
 use core::traits::TryInto;
 use core::traits::Into;
+
 
 #[test]
 #[should_panic]
@@ -38,8 +40,7 @@ fn test_bool_operators() {
     assert(!(true ^ true), '!(t ^ t)');
 }
 
-impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
-impl NonZeroEcPointDrop of Drop::<NonZeroEcPoint>;
+use ec::OptionNonZeroEcPointDrop;
 
 #[test]
 fn test_ec_operations() {
@@ -808,32 +809,34 @@ fn test_u256_mul_overflow_2() {
     as_u256(0_u128, pow_2_127()) * as_u256(2_u128, 0_u128);
 }
 
-// TODO(orizi): Switch to operators and literals when added.
-fn test_array_helper(idx: usize) -> felt {
+fn test_array_helper() -> Array::<felt> {
     let mut arr = ArrayTrait::new();
     arr.append(10);
     arr.append(11);
     arr.append(12);
-    array_at(ref arr, idx)
+    arr
 }
 
 #[test]
 fn test_array() {
-    assert(test_array_helper(0_usize) == 10, 'array[0] == 10');
-    assert(test_array_helper(1_usize) == 11, 'array[1] == 11');
-    assert(test_array_helper(2_usize) == 12, 'array[2] == 12');
+    let arr = test_array_helper();
+    assert(*arr.at(0_usize) == 10, 'array[0] == 10');
+    assert(*arr.at(1_usize) == 11, 'array[1] == 11');
+    assert(*arr.at(2_usize) == 12, 'array[2] == 12');
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_1() {
-    test_array_helper(3_usize);
+    let arr = test_array_helper();
+    arr.at(3_usize);
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_2() {
-    test_array_helper(11_usize);
+    let arr = test_array_helper();
+    arr.at(11_usize);
 }
 
 #[test]
@@ -890,4 +893,13 @@ fn test_box_unbox_u256() {
     let boxed_y = into_box::<u256>(y);
     assert(unbox::<u256>(boxed_x) == as_u256(1_u128, 0_u128), 'unbox u256 x');
     assert(unbox::<u256>(boxed_y) == as_u256(1_u128, 1_u128), 'unbox u256 y');
+}
+
+#[test]
+fn test_span() {
+    let span = test_array_helper().span();
+
+    assert(span.len() == 3_u32, 'Unexpected span length.');
+    assert(*span.get(0_u32).unwrap() == 10, 'Unexpected element');
+    assert(*span.at(1_u32) == 11, 'Unexpected element');
 }

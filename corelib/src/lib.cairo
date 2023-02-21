@@ -226,6 +226,10 @@ use array::ArrayImpl;
 impl ArrayFeltDrop of Drop::<Array::<felt>>;
 type usize = u32;
 
+// Span.
+use array::Span;
+
+
 // Dictionary.
 mod dict;
 use dict::DictFeltTo;
@@ -364,6 +368,7 @@ use gas::get_builtin_costs;
 use gas::get_gas;
 use gas::get_gas_all;
 
+
 // Panics.
 enum PanicResult<T> {
     Ok: T,
@@ -396,6 +401,7 @@ mod debug;
 mod starknet;
 use starknet::System;
 use starknet::ContractAddress;
+mod starknet_testing;
 
 // Internals.
 mod internal;

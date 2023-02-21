@@ -1,10 +1,7 @@
 //! > null libfunc
 
-//! > test_comments
-// TODO(lior): Cost should be 2 rather than 1.
-
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> Nullable::<felt> {
@@ -35,8 +32,8 @@ test::foo@0() -> (Nullable<felt>);
 
 //! > into_nullable libfunc
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: Box::<felt>) -> Nullable::<felt> {
@@ -68,8 +65,8 @@ test::foo@0([0]: Box<felt>) -> (Nullable<felt>);
 
 //! > from_nullable libfunc
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: Nullable::<felt>, y: Box::<felt>) -> Box::<felt> {
@@ -117,8 +114,8 @@ test::foo@0([0]: Nullable<felt>, [1]: Box<felt>) -> (Box<felt>);
 
 //! > nullable libfuncs
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> felt {

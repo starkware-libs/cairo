@@ -1,6 +1,6 @@
 //! > Block
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -31,39 +31,39 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v8: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk1, {})
+  Fallthrough(blk1, {v8 -> v1})
 
 blk1:
 Inputs:
 Statements:
-  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v9: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(blk2, {})
+  Fallthrough(blk2, {v9 -> v2})
 
 blk2:
 Inputs:
 Statements:
   (v3: core::felt) <- test::revoke_ap()
-  (v4: core::felt) <- core::felt_add(v1, v1)
+  (v10: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(blk3, {})
+  Fallthrough(blk3, {v10 -> v4})
 
 blk3:
 Inputs:
 Statements:
-  (v5: core::felt) <- core::felt_add(v1, v2)
+  (v11: core::felt) <- core::felt_add(v1, v2)
 End:
-  Fallthrough(blk4, {})
+  Fallthrough(blk4, {v11 -> v5})
 
 blk4:
 Inputs:
 Statements:
   (v6: core::felt) <- test::revoke_ap()
-  (v7: core::felt) <- core::felt_add(v1, v4)
+  (v12: core::felt) <- core::felt_add(v1, v4)
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk5, {v12 -> v7})
 
 blk5:
 Inputs:
@@ -72,6 +72,6 @@ End:
   Return(v7)
 
 //! > local_variables
-v1, v2, v4
+v8, v9, v10
 
 //! > block_infos

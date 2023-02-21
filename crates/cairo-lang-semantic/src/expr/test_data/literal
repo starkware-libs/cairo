@@ -1,6 +1,6 @@
 //! > Illegally escaped short string.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -24,7 +24,7 @@ invalid char, 'p' break at 1
 
 //! > Short string containing unicode characters.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -47,7 +47,7 @@ error: Short strings can only include ASCII characters.
 
 //! > Type not supported for short string.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -70,7 +70,7 @@ error: A literal with this type cannot be created.
 
 //! > Literal value out of range.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -123,7 +123,7 @@ error: The value does not fit within the range of type core::felt.
 
 //! > Literal short string out of range.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

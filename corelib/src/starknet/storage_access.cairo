@@ -1,18 +1,12 @@
-use zeroable::Zeroable;
 use traits::Into;
 use traits::TryInto;
 use option::OptionTrait;
 
-extern type System;
-#[derive(Copy, Drop)]
-extern type StorageBaseAddress;
 #[derive(Copy, Drop)]
 extern type StorageAddress;
-#[derive(Copy, Drop)]
-extern type ContractAddress;
 
-// An Helper function to force the inclusion of `System` in the list of implicits.
-fn use_system_implicit() implicits(System) {}
+#[derive(Copy, Drop)]
+extern type StorageBaseAddress;
 
 // Storage.
 extern fn storage_base_address_const<const address>() -> StorageBaseAddress nopanic;
@@ -22,7 +16,6 @@ extern fn storage_base_address_from_felt(
 extern fn storage_address_from_base_and_offset(
     base: StorageBaseAddress, offset: u8
 ) -> StorageAddress nopanic;
-extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
 // Only address_domain 0 is currently supported.
 // This parameter is going to be used to access address spaces with different
@@ -34,73 +27,7 @@ extern fn storage_write_syscall(
     address_domain: felt, address: StorageAddress, value: felt
 ) -> SyscallResult::<()> implicits(GasBuiltin, System) nopanic;
 
-// Interoperability.
-extern fn contract_address_const<const address>() -> ContractAddress nopanic;
-extern fn call_contract_syscall(
-    address: ContractAddress, calldata: Array::<felt>
-) -> SyscallResult::<Array::<felt>> implicits(GasBuiltin, System) nopanic;
-
-extern fn contract_address_try_from_felt(
-    address: felt
-) -> Option::<ContractAddress> implicits(RangeCheck) nopanic;
-extern fn contract_address_to_felt(address: ContractAddress) -> felt nopanic;
-
-impl FeltTryIntoContractAddress of TryInto::<felt, ContractAddress> {
-    fn try_into(self: felt) -> Option::<ContractAddress> {
-        contract_address_try_from_felt(self)
-    }
-}
-impl ContractAddressIntoFelt of Into::<ContractAddress, felt> {
-    fn into(self: ContractAddress) -> felt {
-        contract_address_to_felt(self)
-    }
-}
-
-// Events.
-extern fn emit_event_syscall(
-    keys: Array::<felt>, data: Array::<felt>
-) -> SyscallResult::<()> implicits(GasBuiltin, System) nopanic;
-
-// Getters.
-extern fn get_caller_address_syscall() -> SyscallResult::<ContractAddress> implicits(
-    GasBuiltin, System
-) nopanic;
-
-fn get_caller_address() -> ContractAddress {
-    get_caller_address_syscall().unwrap_syscall()
-}
-
-extern fn get_contract_address_syscall() -> SyscallResult::<ContractAddress> implicits(
-    GasBuiltin, System
-) nopanic;
-
-fn get_contract_address() -> ContractAddress {
-    get_contract_address_syscall().unwrap_syscall()
-}
-
-extern fn get_sequencer_address_syscall() -> SyscallResult::<ContractAddress> implicits(
-    GasBuiltin, System
-) nopanic;
-
-fn get_sequencer_address() -> ContractAddress {
-    get_sequencer_address_syscall().unwrap_syscall()
-}
-
-extern fn get_block_number_syscall() -> SyscallResult::<u64> implicits(GasBuiltin, System) nopanic;
-
-fn get_block_number() -> u64 {
-    get_block_number_syscall().unwrap_syscall()
-}
-
-extern fn get_block_timestamp_syscall() -> SyscallResult::<u64> implicits(
-    GasBuiltin, System
-) nopanic;
-
-// TODO(ilya): Consider Adding a type for timestamps.
-fn get_block_timestamp() -> u64 {
-    get_block_timestamp_syscall().unwrap_syscall()
-}
-
+extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
 trait StorageAccess<T> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult::<T>;
@@ -199,13 +126,3 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
     }
 }
 
-impl ContractAddressZeroable of Zeroable::<ContractAddress> {
-    fn zero() -> ContractAddress {
-        contract_address_const::<0>()
-    }
-
-    #[inline(always)]
-    fn is_zero(self: ContractAddress) -> bool {
-        contract_address_to_felt(self).is_zero()
-    }
-}

@@ -1,6 +1,6 @@
 //! > Module name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -16,7 +16,7 @@ mod _;
 
 //! > Struct name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -32,7 +32,7 @@ struct _ {}
 
 //! > Enum name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -48,7 +48,7 @@ enum _ {}
 
 //! > Extern function name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -64,7 +64,7 @@ extern fn _() nopanic;
 
 //! > Extern type name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -80,7 +80,7 @@ extern type _;
 
 //! > Attribute name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -97,7 +97,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > Free function name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -113,7 +113,7 @@ fn _() {}
 
 //! > Trait name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -129,7 +129,7 @@ trait _ {}
 
 //! > Trait function name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -147,7 +147,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > Impl name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -163,7 +163,7 @@ impl _ of MyTrait {}
 
 //! > Struct c'tor single argument - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -181,7 +181,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > Pattern with modifiers - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -199,7 +199,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > Pattern's struct parameter - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -217,7 +217,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > Param name with modifiers - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -233,7 +233,7 @@ fn f(ref _: felt) {}
 
 //! > Param name without modifiers
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -249,7 +249,7 @@ fn f(_: felt) {}
 
 //! > Struct member name - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -267,7 +267,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > Path segment - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -283,7 +283,7 @@ use _::foo;
 
 //! > Generic parameter - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -299,7 +299,7 @@ struct A<_> {}
 
 //! > Implicit - underscore not supported.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code

@@ -9,6 +9,7 @@ use cairo_lang_utils::Upcast;
 use itertools::enumerate;
 use smol_str::SmolStr;
 
+use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -21,11 +22,80 @@ use crate::{semantic, ConcreteEnumId, SemanticDiagnostic};
 #[path = "enm_test.rs"]
 mod test;
 
+// Declaration
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct EnumData {
+pub struct EnumDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<semantic::GenericParam>,
+    attributes: Vec<Attribute>,
+    resolved_lookback: Arc<ResolvedLookback>,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_enum_declaration_data].
+pub fn priv_enum_declaration_data(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+) -> Maybe<EnumDeclarationData> {
+    let module_file_id = enum_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
+    let module_enums = db.module_enums(module_file_id.0)?;
+    let enum_ast = module_enums.get(&enum_id).to_maybe()?;
+    let syntax_db = db.upcast();
+
+    // Generic params.
+    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        &mut resolver,
+        module_file_id,
+        &enum_ast.generic_params(db.upcast()),
+    )?;
+
+    let attributes = ast_attributes_to_semantic(syntax_db, enum_ast.attributes(syntax_db));
+    let resolved_lookback = Arc::new(resolver.lookback);
+
+    Ok(EnumDeclarationData {
+        diagnostics: diagnostics.build(),
+        generic_params,
+        attributes,
+        resolved_lookback,
+    })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::enum_declaration_diagnostics].
+pub fn enum_declaration_diagnostics(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_enum_declaration_data(enum_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::enum_generic_params].
+pub fn enum_generic_params(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+) -> Maybe<Vec<semantic::GenericParam>> {
+    Ok(db.priv_enum_declaration_data(enum_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::enum_declaration_resolved_lookback].
+pub fn enum_declaration_resolved_lookback(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_enum_declaration_data(enum_id)?.resolved_lookback)
+}
+
+// Definition
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct EnumDefinitionData {
+    diagnostics: Diagnostics<SemanticDiagnostic>,
     variants: OrderedHashMap<SmolStr, VariantId>,
     variant_semantic: OrderedHashMap<VariantId, Variant>,
     resolved_lookback: Arc<ResolvedLookback>,
@@ -51,50 +121,11 @@ pub struct ConcreteVariant {
     pub idx: usize,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::enum_semantic_diagnostics].
-pub fn enum_semantic_diagnostics(
+/// Query implementation of [crate::db::SemanticGroup::priv_enum_definition_data].
+pub fn priv_enum_definition_data(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
-) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_enum_semantic_data(enum_id).map(|data| data.diagnostics).unwrap_or_default()
-}
-
-/// Query implementation of [crate::db::SemanticGroup::enum_generic_params].
-pub fn enum_generic_params(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Maybe<Vec<semantic::GenericParam>> {
-    Ok(db.priv_enum_semantic_data(enum_id)?.generic_params)
-}
-
-/// Query implementation of [crate::db::SemanticGroup::enum_variants].
-pub fn enum_variants(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Maybe<OrderedHashMap<SmolStr, VariantId>> {
-    Ok(db.priv_enum_semantic_data(enum_id)?.variants)
-}
-
-/// Query implementation of [crate::db::SemanticGroup::variant_semantic].
-pub fn variant_semantic(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-    variant_id: VariantId,
-) -> Maybe<Variant> {
-    let data = db.priv_enum_semantic_data(enum_id)?;
-    data.variant_semantic.get(&variant_id).cloned().to_maybe()
-}
-
-/// Query implementation of [crate::db::SemanticGroup::enum_resolved_lookback].
-pub fn enum_resolved_lookback(
-    db: &dyn SemanticGroup,
-    enum_id: EnumId,
-) -> Maybe<Arc<ResolvedLookback>> {
-    Ok(db.priv_enum_semantic_data(enum_id)?.resolved_lookback)
-}
-
-/// Query implementation of [crate::db::SemanticGroup::priv_enum_semantic_data].
-pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<EnumData> {
+) -> Maybe<EnumDefinitionData> {
     let module_file_id = enum_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
@@ -105,14 +136,11 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &enum_ast.generic_params(db.upcast()),
-    );
+    let mut resolver = Resolver::new_without_inference(db, module_file_id);
+    let generic_params = db.enum_generic_params(enum_id)?;
+    for generic_param in generic_params {
+        resolver.add_generic_param(generic_param);
+    }
 
     // Variants.
     let mut variants = OrderedHashMap::default();
@@ -134,13 +162,46 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe
 
     let resolved_lookback = Arc::new(resolver.lookback);
 
-    Ok(EnumData {
+    Ok(EnumDefinitionData {
         diagnostics: diagnostics.build(),
-        generic_params,
         variants,
         variant_semantic,
         resolved_lookback,
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::enum_definition_diagnostics].
+pub fn enum_definition_diagnostics(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_enum_definition_data(enum_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::enum_definition_resolved_lookback].
+pub fn enum_definition_resolved_lookback(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_enum_definition_data(enum_id)?.resolved_lookback)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::enum_variants].
+pub fn enum_variants(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+) -> Maybe<OrderedHashMap<SmolStr, VariantId>> {
+    Ok(db.priv_enum_definition_data(enum_id)?.variants)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::variant_semantic].
+pub fn variant_semantic(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+    variant_id: VariantId,
+) -> Maybe<Variant> {
+    let data = db.priv_enum_definition_data(enum_id)?;
+    data.variant_semantic.get(&variant_id).cloned().to_maybe()
 }
 
 // TODO(spapini): Consider making these queries.

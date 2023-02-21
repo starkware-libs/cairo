@@ -1,7 +1,7 @@
 //! > Test expansion of a dispatcher.
 
-//! > test_function_name
-test_expand_contract
+//! > test_runner_name
+ExpandContractTestRunner
 
 //! > cairo_code
 #[abi]
@@ -29,6 +29,7 @@ trait IContract {
     fn my_event();
 }
 mod IContractDispatcher {
+    use super;
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
     use option::OptionTrait;

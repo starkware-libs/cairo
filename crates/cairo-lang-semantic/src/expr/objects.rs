@@ -83,6 +83,7 @@ pub struct StatementReturn {
 pub enum Expr {
     Tuple(ExprTuple),
     Snapshot(ExprSnapshot),
+    Desnap(ExprDesnap),
     Assignment(ExprAssignment),
     Block(ExprBlock),
     FunctionCall(ExprFunctionCall),
@@ -103,6 +104,7 @@ impl Expr {
             Expr::Assignment(expr) => expr.ty,
             Expr::Tuple(expr) => expr.ty,
             Expr::Snapshot(expr) => expr.ty,
+            Expr::Desnap(expr) => expr.ty,
             Expr::Block(expr) => expr.ty,
             Expr::FunctionCall(expr) => expr.ty,
             Expr::Match(expr) => expr.ty,
@@ -122,6 +124,7 @@ impl Expr {
             Expr::Assignment(expr) => expr.stable_ptr,
             Expr::Tuple(expr) => expr.stable_ptr,
             Expr::Snapshot(expr) => expr.stable_ptr,
+            Expr::Desnap(expr) => expr.stable_ptr,
             Expr::Block(expr) => expr.stable_ptr,
             Expr::FunctionCall(expr) => expr.stable_ptr,
             Expr::Match(expr) => expr.stable_ptr,
@@ -158,6 +161,15 @@ pub struct ExprSnapshot {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
+pub struct ExprDesnap {
+    pub inner: ExprId,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprBlock {
     pub statements: Vec<StatementId>,
     /// Blocks may end with an expression, without a trailing `;`.
@@ -172,10 +184,16 @@ pub struct ExprBlock {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
+pub enum ExprFunctionCallArg {
+    Reference(VarId),
+    Value(ExprId),
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprFunctionCall {
     pub function: FunctionId,
-    pub ref_args: Vec<VarId>,
-    pub args: Vec<ExprId>,
+    pub args: Vec<ExprFunctionCallArg>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,

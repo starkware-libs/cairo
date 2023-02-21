@@ -1,6 +1,6 @@
 //! > Match extern
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -71,9 +71,9 @@ Statements:
     IsZeroResult::Zero => blk0,
     IsZeroResult::NonZero => blk1,
   }
-  (v6: core::felt) <- core::felt_add(v0, v0)
+  (v12: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk5, {v12 -> v6})
 
 blk5:
 Inputs:
@@ -86,7 +86,7 @@ End:
   Return(v11)
 
 //! > local_variables
-v6
+v12
 
 //! > block_infos
 
@@ -94,7 +94,7 @@ v6
 
 //! > Match extern - if
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -150,16 +150,16 @@ End:
 blk4 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v13: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk5, {v13 -> v1})
 
 blk5:
 Inputs:
 Statements:
-  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v14: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(blk6, {})
+  Fallthrough(blk6, {v14 -> v2})
 
 blk6:
 Inputs:
@@ -168,9 +168,9 @@ Statements:
     IsZeroResult::Zero => blk0,
     IsZeroResult::NonZero => blk1,
   }
-  (v7: core::felt) <- core::felt_add(v1, v6)
+  (v15: core::felt) <- core::felt_add(v1, v6)
 End:
-  Fallthrough(blk7, {})
+  Fallthrough(blk7, {v15 -> v7})
 
 blk7:
 Inputs:
@@ -184,7 +184,7 @@ End:
   Return(v11)
 
 //! > local_variables
-v1, v11
+v13, v11
 
 //! > block_infos
 
@@ -192,7 +192,7 @@ v1, v11
 
 //! > Match extern early return
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -264,9 +264,9 @@ End:
 blk4 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v13: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk5, {v13 -> v1})
 
 blk5:
 Inputs:
@@ -275,9 +275,9 @@ Statements:
     IsZeroResult::Zero => blk0,
     IsZeroResult::NonZero => blk1,
   }
-  (v7: core::felt) <- core::felt_add(v1, v0)
+  (v14: core::felt) <- core::felt_add(v1, v0)
 End:
-  Fallthrough(blk6, {})
+  Fallthrough(blk6, {v14 -> v7})
 
 blk6:
 Inputs:
@@ -286,9 +286,9 @@ Statements:
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
   }
-  (v12: core::felt) <- core::felt_add(v7, v0)
+  (v15: core::felt) <- core::felt_add(v7, v0)
 End:
-  Fallthrough(blk7, {})
+  Fallthrough(blk7, {v15 -> v12})
 
 blk7:
 Inputs:
@@ -297,6 +297,6 @@ End:
   Return(v12)
 
 //! > local_variables
-v7
+v14
 
 //! > block_infos
