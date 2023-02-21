@@ -50,7 +50,7 @@ fn get_function_code(
 ) -> Maybe<Arc<pre_sierra::Function>> {
     let signature = db.concrete_function_signature(function_id.function_id(db.upcast()))?;
     let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
-    let block_id = lowered_function.root?;
+    let block_id = lowered_function.root_block?;
     let block = &lowered_function.blocks[block_id];
 
     // Find the local variables.

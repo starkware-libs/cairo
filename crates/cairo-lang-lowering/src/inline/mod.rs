@@ -95,7 +95,7 @@ fn gather_inlining_info(
     }
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
-    let root_block_id = lowered.root?;
+    let root_block_id = lowered.root_block?;
 
     for (block_id, block) in lowered.blocks.iter() {
         match &block.end {
@@ -128,7 +128,7 @@ fn gather_inlining_info(
 
 // A heuristic to decide if a function should be inlined.
 fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
-    let root_block_id = lowered.root?;
+    let root_block_id = lowered.root_block?;
     let root_block = &lowered.blocks[root_block_id];
 
     match &root_block.end {
@@ -371,7 +371,7 @@ impl<'a, 'b> Mapper<'a, 'b> {
 
 impl<'db> FunctionInlinerRewriter<'db> {
     fn apply(ctx: LoweringContext<'db>, flat_lower: &FlatLowered) -> Maybe<FlatLowered> {
-        let orig_root = flat_lower.root?;
+        let orig_root = flat_lower.root_block?;
         let mut rewriter = Self {
             ctx,
             block_queue: BlockQueue {
@@ -405,7 +405,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         assert!(rewriter.ctx.diagnostics.build().is_empty());
         Ok(FlatLowered {
             diagnostics: flat_lower.diagnostics.clone(),
-            root,
+            root_block: root,
             variables: rewriter.ctx.variables,
             blocks: rewriter.block_queue.flat_blocks,
         })
@@ -450,7 +450,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         outputs: &[VariableId],
     ) -> Maybe<()> {
         let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
-        let root_block_id = lowered.root?;
+        let root_block_id = lowered.root_block?;
         let root_block = &lowered.blocks[root_block_id];
 
         // Create a new block with all the statements that follow

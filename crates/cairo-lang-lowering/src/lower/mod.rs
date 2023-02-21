@@ -101,7 +101,7 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<S
     };
     Ok(StructuredLowered {
         diagnostics: ctx.diagnostics.build(),
-        root,
+        root_block: root,
         variables: ctx.variables,
         blocks: ctx.blocks,
     })
