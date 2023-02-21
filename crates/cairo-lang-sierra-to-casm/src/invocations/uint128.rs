@@ -20,6 +20,7 @@ pub fn build(
             IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
         },
         Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
+        Uint128Concrete::Split(_) => build_u128_to_u64s(builder),
         Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),
@@ -191,7 +192,7 @@ fn build_u128_to_u64s(
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
         buffer(2) range_check;
-        deref a;
+        deref_or_immediate a;
     };
     casm_build_extend! {casm_builder,
             let orig_range_check = range_check;

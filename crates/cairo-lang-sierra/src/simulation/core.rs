@@ -467,6 +467,20 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint128Concrete::Split(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(x)] => {
+                Ok((
+                    vec![
+                        CoreValue::RangeCheck,
+                        CoreValue::Uint64((x % 1<<64).try_into().unwrap()),
+                        CoreValue::Uint64((x / 1<<64).try_into().unwrap()),
+                    ],
+                    0,
+                ))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint128Concrete::WideMul(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)] => {
                 let result = BigInt::from(*lhs) * BigInt::from(*rhs);
