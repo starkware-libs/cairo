@@ -183,10 +183,6 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        // Value type must be duplicatable.
-        if !context.get_type_info(ty.clone())?.duplicatable {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
         let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
@@ -207,7 +203,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
                         }),
                     },
                     OutputVarInfo {
-                        ty,
+                        ty: snapshot_ty(context, ty)?,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
                 ],
