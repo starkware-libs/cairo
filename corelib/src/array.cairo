@@ -2,7 +2,7 @@ extern type Array<T>;
 extern fn array_new<T>() -> Array::<T> nopanic;
 extern fn array_append<T>(ref arr: Array::<T>, value: T) nopanic;
 extern fn array_pop_front<T>(ref arr: Array::<T>) -> Option::<T> nopanic;
-#[panic_with('Array out of bounds', array_at)]
+#[panic_with('Index out of bounds', array_at)]
 extern fn array_get<T>(
     arr: @Array::<T>, index: usize
 ) -> Option::<@T> implicits(RangeCheck) nopanic;

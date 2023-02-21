@@ -4,6 +4,7 @@ use option::OptionTrait;
 use option::OptionTraitImpl;
 use core::traits::TryInto;
 use core::traits::Into;
+use span::SpanTrait;
 
 #[test]
 #[should_panic]
@@ -875,4 +876,13 @@ fn test_box_unbox_u256() {
     let boxed_y = into_box::<u256>(y);
     assert(unbox::<u256>(boxed_x) == as_u256(1_u128, 0_u128), 'unbox u256 x');
     assert(unbox::<u256>(boxed_y) == as_u256(1_u128, 1_u128), 'unbox u256 y');
+}
+
+#[test]
+fn test_span() {
+    let span = Span { snapshot: @test_array_helper() };
+
+    assert(span.len() == 3_u32, 'Unexpected span length.');
+    assert(*span.get(0_u32).unwrap() == 10, 'Unexpected element');
+    assert(*span.at(1_u32) == 11, 'Unexpected element');
 }
