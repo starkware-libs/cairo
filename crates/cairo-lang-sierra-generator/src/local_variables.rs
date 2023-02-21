@@ -29,7 +29,7 @@ pub fn find_local_variables(
     let mut res = OrderedHashSet::<VariableId>::default();
     inner_find_local_variables(
         &mut FindLocalsContext { db, lowered_function, block_infos: OrderedHashMap::default() },
-        lowered_function.root?,
+        lowered_function.root_block?,
         LocalVariablesState::default(),
         &mut res,
     )?;

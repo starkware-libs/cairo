@@ -25,7 +25,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredLowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         for (block_id, block) in self.blocks.iter() {
             block_id.fmt(f, ctx)?;
-            if self.root == Ok(block_id) {
+            if self.root_block == Ok(block_id) {
                 writeln!(f, " (root):")?;
             } else {
                 writeln!(f, ":")?;
@@ -122,7 +122,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         for (block_id, block) in self.blocks.iter() {
             block_id.fmt(f, ctx)?;
-            if self.root == Ok(block_id) {
+            if self.root_block == Ok(block_id) {
                 writeln!(f, " (root):")?;
             } else {
                 writeln!(f, ":")?;
