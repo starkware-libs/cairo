@@ -846,20 +846,7 @@ End:
   Return(v4, v8)
 
 blk4:
-Inputs: v14: core::integer::u128
-Statements:
-End:
-  Callsite({v14 -> v13})
-
-blk5:
-Inputs: v15: core::array::Array::<core::felt>
-Statements:
-  (v16: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v15)
-End:
-  Goto(blk3, {v11 -> v4, v16 -> v5})
-
-blk6:
-Inputs: v18: ()
+Inputs: v13: ()
 Statements:
   (v27: core::RangeCheck, v33: core::PanicResult::<core::integer::u128>) <- core::integer::U128Add::add(v0, v2, v1)
   () <- match_enum(v33) {
@@ -868,20 +855,33 @@ Statements:
   }
   (v28: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v29)
 End:
-  Fallthrough(blk11, {v27 -> v11, v28 -> v12})
+  Fallthrough(blk11, {v27 -> v11, v28 -> v14})
 
-blk7:
-Inputs: v19: ()
+blk5:
+Inputs: v16: ()
 Statements:
 End:
   Callsite({})
+
+blk6:
+Inputs: v17: core::integer::u128
+Statements:
+End:
+  Callsite({v17 -> v15})
+
+blk7:
+Inputs: v19: core::array::Array::<core::felt>
+Statements:
+  (v18: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v19)
+End:
+  Goto(blk3, {v11 -> v4, v18 -> v5})
 
 blk8:
 Inputs:
 Statements:
   () <- match_enum(v20) {
-    bool::False => blk7,
-    bool::True => blk6,
+    bool::False => blk5,
+    bool::True => blk4,
   }
   (v10: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
 End:
@@ -890,29 +890,29 @@ End:
 blk9:
 Inputs:
 Statements:
-  (v23: ()) <- struct_construct()
-  (v24: core::bool) <- bool::False(v23)
+  (v24: ()) <- struct_construct()
+  (v23: core::bool) <- bool::False(v24)
 End:
-  Callsite({v24 -> v22})
+  Callsite({v23 -> v22})
 
 blk10:
 Inputs:
 Statements:
-  (v25: ()) <- struct_construct()
-  (v26: core::bool) <- bool::True(v25)
+  (v26: ()) <- struct_construct()
+  (v25: core::bool) <- bool::True(v26)
 End:
-  Callsite({v26 -> v22})
+  Callsite({v25 -> v22})
 
 blk11:
 Inputs:
 Statements:
-  () <- match_enum(v12) {
-    PanicResult::Ok => blk4,
-    PanicResult::Err => blk5,
+  () <- match_enum(v14) {
+    PanicResult::Ok => blk6,
+    PanicResult::Err => blk7,
   }
-  (v17: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v13)
+  (v12: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v15)
 End:
-  Goto(blk3, {v11 -> v4, v17 -> v5})
+  Goto(blk3, {v11 -> v4, v12 -> v5})
 
 blk12:
 Inputs: v30: core::integer::u128
@@ -921,10 +921,10 @@ End:
   Callsite({v30 -> v29})
 
 blk13:
-Inputs: v31: core::array::Array::<core::felt>
+Inputs: v32: core::array::Array::<core::felt>
 Statements:
-  (v32: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v31)
+  (v31: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v32)
 End:
-  Goto(blk11, {v27 -> v11, v32 -> v12})
+  Goto(blk11, {v27 -> v11, v31 -> v14})
 
 //! > lowering_diagnostics
