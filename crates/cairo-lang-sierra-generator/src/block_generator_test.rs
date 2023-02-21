@@ -38,7 +38,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let lowered =
         db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
 
-    if lowered.root.is_err() {
+    if lowered.root_block.is_err() {
         return OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
@@ -47,7 +47,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         ]);
     }
 
-    let block_id = lowered.root.unwrap();
+    let block_id = lowered.root_block.unwrap();
     let block = &lowered.blocks[block_id];
 
     // Generate (pre-)Sierra statements.

@@ -55,7 +55,7 @@ fn check_find_local_variables(
         FindLocalsContext { db, lowered_function, block_infos: OrderedHashMap::default() };
     inner_find_local_variables(
         &mut ctx,
-        lowered_function.root.unwrap(),
+        lowered_function.root_block.unwrap(),
         LocalVariablesState::default(),
         &mut res,
     )

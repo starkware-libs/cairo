@@ -107,7 +107,7 @@ pub fn find_variable_lifetime(
         block_state: UnorderedHashMap::default(),
     };
     let mut state = VariableLifetimeState::default();
-    let root_block_id = lowered_function.root?;
+    let root_block_id = lowered_function.root_block?;
     inner_find_variable_lifetime(&mut context, root_block_id, &mut state);
 
     Ok(context.res)

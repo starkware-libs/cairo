@@ -13,8 +13,9 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 
 use super::consts::{
-    ABI_TRAIT, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_ATTR,
-    EXTERNAL_MODULE, STORAGE_STRUCT_NAME, VIEW_ATTR,
+    ABI_TRAIT, ACCOUNT_CONTRACT_ATTR, ACCOUNT_CONTRACT_ENTRY_POINTS, CONSTRUCTOR_ATTR,
+    CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE,
+    STORAGE_STRUCT_NAME, VIEW_ATTR,
 };
 use super::entry_point::generate_entry_point_wrapper;
 use super::events::handle_event;
@@ -23,8 +24,9 @@ use crate::plugin::aux_data::StarkNetContractAuxData;
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
 pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
-    if !module_ast.has_attr(db, CONTRACT_ATTR) {
-        // TODO(ilya): diagnostic
+    let is_account_contract = module_ast.has_attr(db, ACCOUNT_CONTRACT_ATTR);
+
+    if !is_account_contract && !module_ast.has_attr(db, CONTRACT_ATTR) {
         return PluginResult::default();
     }
 
@@ -113,6 +115,25 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                         stable_ptr: generic_params.stable_ptr().untyped(),
                     })
                 }
+
+                let name = declaration.name(db);
+                let name_str = name.text(db);
+
+                if !is_account_contract {
+                    for account_contract_entry_point in ACCOUNT_CONTRACT_ENTRY_POINTS {
+                        if name_str == account_contract_entry_point {
+                            diagnostics.push(PluginDiagnostic {
+                                message: format!(
+                                    "Only an account contract may implement `{name_str}`."
+                                ),
+
+                                stable_ptr: name.stable_ptr().untyped(),
+                            })
+                        }
+                    }
+                }
+                // TODO(ilya): Validate that an account contract has all the required functions.
+
                 abi_functions.push(RewriteNode::Modified(ModifiedNode {
                     children: vec![
                         RewriteNode::Text(format!("#[{attr}]\n        ")),
