@@ -47,7 +47,6 @@ pub struct ContractClass {
     pub sierra_program: Vec<BigIntAsHex>,
     pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,
     /// The sierra version used in compilation.
-    pub sierra_version: VersionId,
     pub entry_points_by_type: ContractEntryPoints,
     pub abi: Option<Contract>,
 }
@@ -163,7 +162,7 @@ fn compile_contract_with_prepared_and_checked_db(
         constructor: get_entry_points(db, &constructor_functions, &replacer)?,
     };
     let contract_class = ContractClass {
-        sierra_program: sierra_to_felts(&sierra_program)?,
+        sierra_program: sierra_to_felts(sierra_version::CURRENT_VERSION_ID, &sierra_program)?,
         sierra_program_debug_info: Some(cairo_lang_sierra::debug_info::DebugInfo::extract(
             &sierra_program,
         )),

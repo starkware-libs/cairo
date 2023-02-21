@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VersionId {
-    major: usize,
-    minor: usize,
-    patch: usize,
+    pub major: usize,
+    pub minor: usize,
+    pub patch: usize,
 }
 
 impl Display for VersionId {

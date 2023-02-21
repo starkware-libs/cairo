@@ -77,7 +77,12 @@ fn test_compile_path(example_file_name: &str) {
         serde_json::to_string_pretty(&contract).unwrap() + "\n",
     );
 
-    let mut sierra_program = sierra_from_felts(&contract.sierra_program).unwrap();
+    let (version_id, mut sierra_program) = sierra_from_felts(&contract.sierra_program).unwrap();
+    assert_eq!(
+        version_id,
+        sierra_version::CURRENT_VERSION_ID,
+        "Serialized Sierra version should be the current version."
+    );
     contract.sierra_program_debug_info.unwrap().populate(&mut sierra_program);
 
     // There is a separate file for the sierra code as it is hard to review inside the json.

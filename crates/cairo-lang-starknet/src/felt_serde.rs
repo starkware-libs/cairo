@@ -18,6 +18,7 @@ use thiserror::Error;
 
 use crate::casm_contract_class::BigIntAsHex;
 use crate::contract::starknet_keccak;
+use crate::sierra_version::VersionId;
 
 #[cfg(test)]
 #[path = "felt_serde_test.rs"]
@@ -42,15 +43,21 @@ pub enum FeltSerdeError {
 }
 
 /// Serializes a Sierra program into a vector of felts.
-pub fn sierra_to_felts(program: &Program) -> Result<Vec<BigIntAsHex>, FeltSerdeError> {
+pub fn sierra_to_felts(
+    sierra_version: VersionId,
+    program: &Program,
+) -> Result<Vec<BigIntAsHex>, FeltSerdeError> {
     let mut serialized = vec![];
+    sierra_version.serialize(&mut serialized)?;
     program.serialize(&mut serialized)?;
     Ok(serialized)
 }
 
 /// Deserializes a Sierra program from a slice of felts.
-pub fn sierra_from_felts(felts: &[BigIntAsHex]) -> Result<Program, FeltSerdeError> {
-    Ok(Program::deserialize(felts)?.0)
+pub fn sierra_from_felts(felts: &[BigIntAsHex]) -> Result<(VersionId, Program), FeltSerdeError> {
+    let (version_id, felts) = VersionId::deserialize(felts)?;
+    let program = Program::deserialize(felts)?.0;
+    Ok((version_id, program))
 }
 
 /// Trait for serializing and deserializing into a felt vector.
@@ -393,6 +400,14 @@ struct_serde! {
     BranchInfo {
         target: BranchTarget,
         results: Vec<VarId>,
+    }
+}
+
+struct_serde! {
+    VersionId {
+        major: usize,
+        minor: usize,
+        patch: usize,
     }
 }
 
