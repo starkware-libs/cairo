@@ -29,6 +29,7 @@ trait IContract {
     fn my_event();
 }
 mod IContractDispatcher {
+    use super;
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
     use option::OptionTrait;
