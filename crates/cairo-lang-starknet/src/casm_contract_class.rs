@@ -73,7 +73,7 @@ impl CasmContractClass {
         )
         .unwrap();
 
-        let program = sierra_from_felts(&contract_class.sierra_program)?;
+        let (_, program) = sierra_from_felts(&contract_class.sierra_program)?;
 
         let entrypoint_ids = chain!(
             &contract_class.entry_points_by_type.constructor,

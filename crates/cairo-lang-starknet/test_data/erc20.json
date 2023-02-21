@@ -1,5 +1,8 @@
 {
   "sierra_program": [
+    "0x0",
+    "0x1",
+    "0x0",
     "0x34",
     "0x52616e6765436865636b",
     "0x0",
@@ -38121,11 +38124,6 @@
         "core::integer::u256_overflow_sub"
       ]
     ]
-  },
-  "sierra_version": {
-    "major": 0,
-    "minor": 1,
-    "patch": 0
   },
   "entry_points_by_type": {
     "EXTERNAL": [

@@ -1,5 +1,8 @@
 {
   "sierra_program": [
+    "0x0",
+    "0x1",
+    "0x0",
     "0xd",
     "0x52616e6765436865636b",
     "0x0",
@@ -1184,11 +1187,6 @@
         "minimal_contract::minimal_contract::MinimalContract::empty"
       ]
     ]
-  },
-  "sierra_version": {
-    "major": 0,
-    "minor": 1,
-    "patch": 0
   },
   "entry_points_by_type": {
     "EXTERNAL": [
