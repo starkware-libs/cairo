@@ -108,15 +108,15 @@ pub fn generate_block_code(
         }
         lowering::FlatBlockEnd::Fallthrough(block_id, remapping) => {
             if context.block_has_label(block_id) {
-                statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
-                    id: context.block_label(*block_id),
-                }));
-
                 statements.push(generate_push_values_statement_for_remapping(
                     context,
                     statement_location,
                     remapping,
                 )?);
+
+                statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
+                    id: context.block_label(*block_id),
+                }));
             } else {
                 // There are no goto's leading to this block, so we can use var_remapping
                 // instead of `generate_push_values_statement_for_remapping`.

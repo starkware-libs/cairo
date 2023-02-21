@@ -745,3 +745,186 @@ End:
   Return(v1)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match where is there a goto in one arm and callsite in another.
+
+//! > Motivation:
+// The goal of this test is to test the block renaming logic.
+// A panicable function can have a block with a low `block_id` with a match_arm that goes
+// to a higher 'block_id'.
+// We want to test this outside of the root block as the root block is rebuild last.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function
+fn foo(a: u128, b: u128) -> u128 {
+    bar1(a, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar1(a: u128, b: u128) -> u128 {
+   if a == 1_u128 {
+      return bar2(b, a);
+   }
+   a
+}
+
+#[inline(always)]
+fn bar2(a: u128, b: u128) -> u128 {
+    a + b
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
+Statements:
+  (v4: core::RangeCheck, v5: core::PanicResult::<core::integer::u128>) <- test::bar1(v0, v1, v2)
+  () <- match_enum(v5) {
+    PanicResult::Ok => blk1,
+    PanicResult::Err => blk2,
+  }
+  (v8: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v3)
+End:
+  Return(v4, v8)
+
+blk1:
+Inputs: v6: core::integer::u128
+Statements:
+End:
+  Callsite({v6 -> v3})
+
+blk2:
+Inputs: v7: core::array::Array::<core::felt>
+Statements:
+  (v9: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v7)
+End:
+  Return(v4, v9)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
+Statements:
+  (v21: core::integer::u128) <- 1u
+  () <- match core::integer::u128_eq(v1, v21) {
+    bool::False => blk9,
+    bool::True => blk10,
+  }
+End:
+  Fallthrough(blk8, {v22 -> v20})
+
+blk1:
+Inputs: v6: core::integer::u128
+Statements:
+End:
+  Callsite({v6 -> v3})
+
+blk2:
+Inputs: v7: core::array::Array::<core::felt>
+Statements:
+  (v9: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v7)
+End:
+  Return(v4, v9)
+
+blk3:
+Inputs:
+Statements:
+  () <- match_enum(v5) {
+    PanicResult::Ok => blk1,
+    PanicResult::Err => blk2,
+  }
+  (v8: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v3)
+End:
+  Return(v4, v8)
+
+blk4:
+Inputs: v13: ()
+Statements:
+  (v27: core::RangeCheck, v33: core::PanicResult::<core::integer::u128>) <- core::integer::U128Add::add(v0, v2, v1)
+  () <- match_enum(v33) {
+    PanicResult::Ok => blk12,
+    PanicResult::Err => blk13,
+  }
+  (v28: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v29)
+End:
+  Fallthrough(blk11, {v27 -> v11, v28 -> v14})
+
+blk5:
+Inputs: v16: ()
+Statements:
+End:
+  Callsite({})
+
+blk6:
+Inputs: v17: core::integer::u128
+Statements:
+End:
+  Callsite({v17 -> v15})
+
+blk7:
+Inputs: v19: core::array::Array::<core::felt>
+Statements:
+  (v18: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v19)
+End:
+  Goto(blk3, {v11 -> v4, v18 -> v5})
+
+blk8:
+Inputs:
+Statements:
+  () <- match_enum(v20) {
+    bool::False => blk5,
+    bool::True => blk4,
+  }
+  (v10: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
+End:
+  Fallthrough(blk3, {v0 -> v4, v10 -> v5})
+
+blk9:
+Inputs:
+Statements:
+  (v24: ()) <- struct_construct()
+  (v23: core::bool) <- bool::False(v24)
+End:
+  Callsite({v23 -> v22})
+
+blk10:
+Inputs:
+Statements:
+  (v26: ()) <- struct_construct()
+  (v25: core::bool) <- bool::True(v26)
+End:
+  Callsite({v25 -> v22})
+
+blk11:
+Inputs:
+Statements:
+  () <- match_enum(v14) {
+    PanicResult::Ok => blk6,
+    PanicResult::Err => blk7,
+  }
+  (v12: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v15)
+End:
+  Goto(blk3, {v11 -> v4, v12 -> v5})
+
+blk12:
+Inputs: v30: core::integer::u128
+Statements:
+End:
+  Callsite({v30 -> v29})
+
+blk13:
+Inputs: v32: core::array::Array::<core::felt>
+Statements:
+  (v31: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v32)
+End:
+  Goto(blk11, {v27 -> v11, v31 -> v14})
+
+//! > lowering_diagnostics

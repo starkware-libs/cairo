@@ -82,7 +82,7 @@ fn get_tx_info_type(
     let felt_array_span_ty = context.get_concrete_type(
         StructType::id(),
         &[
-            GenericArg::UserType(UserTypeId::from_string("core::span::Span::<core::felt>")),
+            GenericArg::UserType(UserTypeId::from_string("core::array::Span::<core::felt>")),
             GenericArg::Type(felt_array_snapshot_ty),
         ],
     )?;

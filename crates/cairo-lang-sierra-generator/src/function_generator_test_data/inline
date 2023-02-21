@@ -48,8 +48,8 @@ branch_align() -> ()
 drop<NonZero<felt>>([5]) -> ()
 label4:
 felt_const<0>() -> ([8])
-label5:
 store_temp<felt>([8]) -> ([7])
+label5:
 rename<felt>([7]) -> ([9])
 jump() { label2() }
 label1:
@@ -59,3 +59,72 @@ store_temp<felt>([0]) -> ([9])
 label2:
 rename<felt>([9]) -> ([10])
 return([10])
+
+//! > ==========================================================================
+
+//! > test goto + fallthrough convergence.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo(a: @Array::<felt>) -> @felt {
+    let t: Option::<@felt> = a.get(0_u32);
+    inlined_expect(t)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::ArrayTrait;
+
+#[inline(always)]
+fn inlined_expect(option: Option::<@felt>) -> @felt {
+    match option {
+        Option::Some(x) => x,
+        Option::None(()) => @0,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label0:
+alloc_local<RangeCheck>() -> ([3])
+finalize_locals() -> ()
+u32_const<0>() -> ([4])
+store_temp<u32>([4]) -> ([4])
+array_get<felt>([0], [1], [4]) { fallthrough([5], [6]) label1([7]) }
+branch_align() -> ()
+enum_init<core::option::Option::<@core::felt>, 0>([6]) -> ([8])
+store_temp<RangeCheck>([5]) -> ([2])
+store_temp<core::option::Option::<@core::felt>>([8]) -> ([9])
+jump() { label2() }
+label1:
+branch_align() -> ()
+struct_construct<Unit>() -> ([10])
+enum_init<core::option::Option::<@core::felt>, 1>([10]) -> ([11])
+store_temp<RangeCheck>([7]) -> ([2])
+store_temp<core::option::Option::<@core::felt>>([11]) -> ([9])
+label2:
+store_local<RangeCheck>([3], [2]) -> ([2])
+enum_match<core::option::Option::<@core::felt>>([9]) { fallthrough([12]) label3([13]) }
+branch_align() -> ()
+store_temp<felt>([12]) -> ([14])
+jump() { label4() }
+label3:
+branch_align() -> ()
+struct_deconstruct<Unit>([13]) -> ()
+felt_const<0>() -> ([15])
+snapshot_take<felt>([15]) -> ([16], [17])
+drop<felt>([16]) -> ()
+store_temp<felt>([17]) -> ([14])
+label4:
+store_temp<RangeCheck>([2]) -> ([18])
+store_temp<felt>([14]) -> ([19])
+return([18], [19])

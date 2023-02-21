@@ -1,0 +1,21 @@
+{
+  "sierra_program": [
+    "0x302e312e30",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x0"
+  ],
+  "sierra_program_debug_info": {
+    "type_names": [],
+    "libfunc_names": [],
+    "user_func_names": []
+  },
+  "contract_class_version": "0.1.0",
+  "entry_points_by_type": {
+    "EXTERNAL": [],
+    "L1_HANDLER": [],
+    "CONSTRUCTOR": []
+  },
+  "abi": []
+}

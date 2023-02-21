@@ -767,3 +767,228 @@ error: Plugin diagnostic: Event function body must be empty.
  --> lib.cairo:5:9
         3
         ^
+
+//! > ==========================================================================
+
+//! > Test account contract_entry point on a non-account contract.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn __validate__() {}
+    #[external]
+    fn __validate_declare__() {}
+    #[external]
+    fn __validate_deploy__() {}
+    #[external]
+    fn __execute__() {}
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    fn __validate__() {}
+    #[external]
+    fn __validate_declare__() {}
+    #[external]
+    fn __validate_deploy__() {}
+    #[external]
+    fn __execute__() {}
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn __validate__();
+        #[external]
+        fn __validate_declare__();
+        #[external]
+        fn __validate_deploy__();
+        #[external]
+        fn __execute__();
+        
+        
+    }
+
+    mod __external {
+        use starknet_serde::ContractAddressSerde;
+
+        fn __validate__(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::ArrayTrait::is_empty(@data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::__validate__();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        fn __validate_declare__(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::ArrayTrait::is_empty(@data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::__validate_declare__();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        fn __validate_deploy__(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::ArrayTrait::is_empty(@data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::__validate_deploy__();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        fn __execute__(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::ArrayTrait::is_empty(@data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::__execute__();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        
+    }
+
+    mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Only an account contract may implement `__validate__`.
+ --> lib.cairo:4:8
+    fn __validate__() {}
+       ^**********^
+
+error: Plugin diagnostic: Only an account contract may implement `__validate_declare__`.
+ --> lib.cairo:6:8
+    fn __validate_declare__() {}
+       ^******************^
+
+error: Plugin diagnostic: Only an account contract may implement `__validate_deploy__`.
+ --> lib.cairo:8:8
+    fn __validate_deploy__() {}
+       ^*****************^
+
+error: Plugin diagnostic: Only an account contract may implement `__execute__`.
+ --> lib.cairo:10:8
+    fn __execute__() {}
+       ^*********^

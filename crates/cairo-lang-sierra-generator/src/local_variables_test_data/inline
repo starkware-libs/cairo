@@ -49,13 +49,13 @@ End:
 blk2:
 Inputs:
 Statements:
-  (v3: core::felt) <- 1u
-  (v8: core::felt) <- core::felt_add(v0, v3)
+  (v4: core::felt) <- 1u
+  (v8: core::felt) <- core::felt_add(v0, v4)
 End:
-  Fallthrough(blk4, {v8 -> v4})
+  Fallthrough(blk4, {v8 -> v3})
 
 blk3:
-Inputs: v7: core::NonZero::<core::felt>
+Inputs: v6: core::NonZero::<core::felt>
 Statements:
   (v9: core::felt) <- core::felt_add(v0, v0)
 End:
@@ -65,12 +65,12 @@ blk4:
 Inputs:
 Statements:
 End:
-  Goto(blk1, {v4 -> v1})
+  Goto(blk1, {v3 -> v1})
 
 blk5:
 Inputs:
 Statements:
-  (v6: ()) <- test::revoke_ap()
+  (v7: ()) <- test::revoke_ap()
 End:
   Callsite({v5 -> v2})
 
@@ -135,14 +135,14 @@ End:
 blk2:
 Inputs:
 Statements:
-  (v4: ()) <- test::revoke_ap()
-  (v5: core::felt) <- 1u
-  (v11: core::felt) <- core::felt_add(v0, v5)
+  (v5: ()) <- test::revoke_ap()
+  (v6: core::felt) <- 1u
+  (v11: core::felt) <- core::felt_add(v0, v6)
 End:
-  Fallthrough(blk5, {v11 -> v6})
+  Fallthrough(blk5, {v11 -> v4})
 
 blk3:
-Inputs: v9: core::NonZero::<core::felt>
+Inputs: v8: core::NonZero::<core::felt>
 Statements:
   (v12: core::felt) <- core::felt_add(v0, v0)
 End:
@@ -158,12 +158,12 @@ blk5:
 Inputs:
 Statements:
 End:
-  Goto(blk1, {v6 -> v1})
+  Goto(blk1, {v4 -> v1})
 
 blk6:
 Inputs:
 Statements:
-  (v8: ()) <- test::revoke_ap()
+  (v9: ()) <- test::revoke_ap()
 End:
   Callsite({v7 -> v3})
 

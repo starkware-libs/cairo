@@ -195,7 +195,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(arr: @Array::<felt>, idx: usize) -> Option::<@felt> {
-    array_get::<felt>(arr, idx)
+    array_get(arr, idx)
 }
 
 //! > casm
@@ -270,7 +270,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(arr: @Array::<u256>, idx: usize) -> Option::<@u256> {
-    array_get::<u256>(arr, idx)
+    array_get(arr, idx)
 }
 
 //! > casm
@@ -338,6 +338,87 @@ rename<core::option::Option::<@core::integer::u256>>([8]) -> ([12]);
 return([11], [12]);
 
 test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<core::integer::u256>>, [2]: u32) -> (RangeCheck, core::option::Option::<@core::integer::u256>);
+
+//! > ==========================================================================
+
+//! > array_get libfunc on a non duppable type
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(arr: @Array::<Array::<felt>>, idx: usize) -> Option::<@Array::<felt>> {
+    array_get(arr, idx)
+}
+
+//! > casm
+[fp + -4] = [ap + 0] + [fp + -5], ap++;
+[ap + 0] = [fp + -3] * 2, ap++;
+%{ memory[ap + 0] = memory[ap + -1] < memory[ap + -2] %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + [ap + -3], ap++;
+[ap + -4] = [ap + 0] * 2, ap++;
+[ap + -1] = [[fp + -6] + 0];
+jmp rel 15;
+[ap + 0] = [ap + -2] + 1, ap++;
+[ap + -1] = [ap + 0] + [ap + -4], ap++;
+[ap + -2] = [[fp + -6] + 0];
+[ap + 0] = [fp + -5] + [ap + -4], ap++;
+[ap + 0] = [fp + -6] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[ap + -3] + 0], ap++;
+[ap + 0] = [[ap + -4] + 1], ap++;
+jmp rel 12;
+ap += 1;
+[ap + 0] = [fp + -6] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1280})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type felt = felt;
+type Array<felt> = Array<felt>;
+type Array<Array<felt>> = Array<Array<felt>>;
+type Snapshot<Array<Array<felt>>> = Snapshot<Array<Array<felt>>>;
+type u32 = u32;
+type Snapshot<Array<felt>> = Snapshot<Array<felt>>;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<@core::array::Array::<core::felt>> = Enum<ut@core::option::Option::<@core::array::Array::<core::felt>>, Snapshot<Array<felt>>, Unit>;
+
+libfunc array_get<Array<felt>> = array_get<Array<felt>>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<@core::array::Array::<core::felt>>, 0> = enum_init<core::option::Option::<@core::array::Array::<core::felt>>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<@core::array::Array::<core::felt>>> = store_temp<core::option::Option::<@core::array::Array::<core::felt>>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<@core::array::Array::<core::felt>>, 1> = enum_init<core::option::Option::<@core::array::Array::<core::felt>>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<@core::array::Array::<core::felt>>> = rename<core::option::Option::<@core::array::Array::<core::felt>>>;
+
+array_get<Array<felt>>([0], [1], [2]) { fallthrough([3], [4]) 6([5]) };
+branch_align() -> ();
+enum_init<core::option::Option::<@core::array::Array::<core::felt>>, 0>([4]) -> ([6]);
+store_temp<RangeCheck>([3]) -> ([7]);
+store_temp<core::option::Option::<@core::array::Array::<core::felt>>>([6]) -> ([8]);
+jump() { 11() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([9]);
+enum_init<core::option::Option::<@core::array::Array::<core::felt>>, 1>([9]) -> ([10]);
+store_temp<RangeCheck>([5]) -> ([7]);
+store_temp<core::option::Option::<@core::array::Array::<core::felt>>>([10]) -> ([8]);
+rename<RangeCheck>([7]) -> ([11]);
+rename<core::option::Option::<@core::array::Array::<core::felt>>>([8]) -> ([12]);
+return([11], [12]);
+
+test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<Array<felt>>>, [2]: u32) -> (RangeCheck, core::option::Option::<@core::array::Array::<core::felt>>);
 
 //! > ==========================================================================
 
