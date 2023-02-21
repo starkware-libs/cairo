@@ -18,16 +18,16 @@ pub fn build_warp(
     };
 
     casm_build_extend! {casm_builder,
-        tempvar error_reason;
-        hint Warp {blk_timestamp: blk_timestamp, target_contract_address: target_contract_address} into {dst: error_reason};
-        jump Failure if error_reason != 0;
+        tempvar err_code;
+        hint Warp {blk_timestamp: blk_timestamp, target_contract_address: target_contract_address} into {err_code: err_code};
+        jump Failure if err_code != 0;
     };
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
             ("Fallthrough", &[], None),
-            ("Failure", &[&[error_reason]], Some(failure_handle_statement_id)),
+            ("Failure", &[&[err_code]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo { range_check_info: None, extra_costs: None },
     ))
