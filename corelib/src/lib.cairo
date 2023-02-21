@@ -226,6 +226,10 @@ use array::ArrayImpl;
 impl ArrayFeltDrop of Drop::<Array::<felt>>;
 type usize = u32;
 
+// Span.
+use array::Span;
+
+
 // Dictionary.
 mod dict;
 use dict::DictFeltTo;
@@ -364,9 +368,6 @@ use gas::get_builtin_costs;
 use gas::get_gas;
 use gas::get_gas_all;
 
-// Span
-mod span;
-use span::Span;
 
 // Panics.
 enum PanicResult<T> {

@@ -16,6 +16,7 @@ trait ArrayTrait<T> {
     fn at(self: @Array::<T>, index: usize) -> @T;
     fn len(self: @Array::<T>) -> usize;
     fn is_empty(self: @Array::<T>) -> bool;
+    fn span(self: @Array::<T>) -> Span::<T>;
 }
 impl ArrayImpl<T> of ArrayTrait::<T> {
     #[inline(always)]
@@ -45,6 +46,11 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     fn is_empty(self: @Array::<T>) -> bool {
         self.len() == 0_usize
     }
+
+    #[inline(always)]
+    fn span(self: @Array::<T>) -> Span::<T> {
+        Span { snapshot: self }
+    }
 }
 
 // Impls for common generic types
@@ -54,3 +60,37 @@ impl ArrayU32Drop of Drop::<Array::<u32>>;
 impl ArrayU64Drop of Drop::<Array::<u64>>;
 impl ArrayU128Drop of Drop::<Array::<u128>>;
 impl ArrayU256Drop of Drop::<Array::<u256>>;
+
+
+// Span.
+struct Span<T> {
+    snapshot: @Array::<T>
+}
+
+impl SpanFeltCopy of Copy::<Span::<felt>>;
+impl SpanFeltDrop of Drop::<Span::<felt>>;
+
+trait SpanTrait<T> {
+    fn get(self: Span::<T>, index: usize) -> Option::<@T>;
+    fn at(self: Span::<T>, index: usize) -> @T;
+    fn len(self: Span::<T>) -> usize;
+    fn is_empty(self: Span::<T>) -> bool;
+}
+impl SpanImpl<T> of SpanTrait::<T> {
+    #[inline(always)]
+    fn get(self: Span::<T>, index: usize) -> Option::<@T> {
+        array_get(self.snapshot, index)
+    }
+    #[inline(always)]
+    fn at(self: Span::<T>, index: usize) -> @T {
+        array_at(self.snapshot, index)
+    }
+    #[inline(always)]
+    fn len(self: Span::<T>) -> usize {
+        array_len(self.snapshot)
+    }
+    #[inline(always)]
+    fn is_empty(self: Span::<T>) -> bool {
+        self.len() == 0_usize
+    }
+}

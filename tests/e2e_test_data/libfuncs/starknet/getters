@@ -421,8 +421,8 @@ type ContractAddress = ContractAddress;
 type u128 = u128;
 type Array<felt> = Array<felt>;
 type Snapshot<Array<felt>> = Snapshot<Array<felt>>;
-type core::span::Span::<core::felt> = Struct<ut@core::span::Span::<core::felt>, Snapshot<Array<felt>>>;
-type core::starknet::TxInfo = Struct<ut@core::starknet::TxInfo, felt, ContractAddress, u128, core::span::Span::<core::felt>, felt, felt, felt>;
+type core::array::Span::<core::felt> = Struct<ut@core::array::Span::<core::felt>, Snapshot<Array<felt>>>;
+type core::starknet::TxInfo = Struct<ut@core::starknet::TxInfo, felt, ContractAddress, u128, core::array::Span::<core::felt>, felt, felt, felt>;
 type Box<core::starknet::TxInfo> = Box<core::starknet::TxInfo>;
 type core::result::Result::<core::box::Box::<core::starknet::TxInfo>, core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<core::box::Box::<core::starknet::TxInfo>, core::array::Array::<core::felt>>, Box<core::starknet::TxInfo>, Array<felt>>;
 

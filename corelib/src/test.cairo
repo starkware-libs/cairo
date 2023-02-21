@@ -1,10 +1,11 @@
 use array::ArrayTrait;
+use array::SpanTrait;
 use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
 use core::traits::TryInto;
 use core::traits::Into;
-use span::SpanTrait;
+
 
 #[test]
 #[should_panic]
@@ -880,7 +881,7 @@ fn test_box_unbox_u256() {
 
 #[test]
 fn test_span() {
-    let span = Span { snapshot: @test_array_helper() };
+    let span = test_array_helper().span();
 
     assert(span.len() == 3_u32, 'Unexpected span length.');
     assert(*span.get(0_u32).unwrap() == 10, 'Unexpected element');
