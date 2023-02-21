@@ -163,8 +163,8 @@ impl NoGenericArgsGenericLibfunc for Uint128ToUint64sLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-        let ty64 = context.get_concrete_type(Uint64Type::id(), &[])?;
+        let ty_u128 = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let ty_u64 = context.get_concrete_type(Uint64Type::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
@@ -174,7 +174,7 @@ impl NoGenericArgsGenericLibfunc for Uint128ToUint64sLibfunc {
                     allow_add_const: true,
                     allow_const: false,
                 },
-                ParamSignature::new(ty),
+                ParamSignature::new(ty_u128),
             ],
             vec![
                 OutputVarInfo {
@@ -184,10 +184,10 @@ impl NoGenericArgsGenericLibfunc for Uint128ToUint64sLibfunc {
                     }),
                 },
                 OutputVarInfo {
-                    ty: ty64.clone(),
+                    ty: ty_u64.clone(),
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 },
-                OutputVarInfo { ty: ty64, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) } },
+                OutputVarInfo { ty: ty_u64, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) } },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))
