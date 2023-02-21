@@ -3,6 +3,8 @@ trait Zeroable<T> {
     fn zero() -> T;
     /// Returns whether self is equal to 0, the additive identity element.
     fn is_zero(self: T) -> bool;
+    /// Returns whether self is not equal to 0, the additive identity element.
+    fn is_not_zero(self: T) -> bool;
 }
 
 impl FeltZeroable of Zeroable::<felt> {
@@ -13,5 +15,10 @@ impl FeltZeroable of Zeroable::<felt> {
     #[inline(always)]
     fn is_zero(self: felt) -> bool {
         self == 0
+    }
+    
+    #[inline(always)]
+    fn is_not_zero(self: felt) -> bool {
+        !is_zero(self)
     }
 }
