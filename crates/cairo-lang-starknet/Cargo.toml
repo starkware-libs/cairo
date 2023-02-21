@@ -41,6 +41,7 @@ cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.3" }
 
 [dev-dependencies]
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.3" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "1.0.0-alpha.3" }
 env_logger.workspace = true
 pretty_assertions.workspace = true
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }

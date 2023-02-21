@@ -2,6 +2,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::{MacroPlugin, PluginGeneratedFile, PluginResult};
+use cairo_lang_formatter::format_string;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -39,9 +40,10 @@ impl TestFileRunner for ExpandContractTestRunner {
                 None => continue,
             };
             if !remove_original_item {
-                generated_items.push(item.as_syntax_node().get_text(&self.db));
+                generated_items
+                    .push(format_string(&self.db, item.as_syntax_node().get_text(&self.db)));
             }
-            generated_items.push(content);
+            generated_items.push(format_string(&self.db, content));
         }
 
         OrderedHashMap::from([
