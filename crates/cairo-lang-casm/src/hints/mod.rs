@@ -167,6 +167,12 @@ pub enum Hint {
         target_contract_address: ResOperand,
         err_code: CellRef,
     },
+    Invoke {
+        contract_address: ResOperand,
+        function_name : ResOperand,
+        calldata : ResOperand, // todo array of felts maybe sth like ArrayTypeWrapped
+        err_code: CellRef,
+    },
     /// Prints the values from start to end.
     /// Both must be pointers.
     DebugPrint {
@@ -364,6 +370,15 @@ impl Display for Hint {
                         r = declare(contract={contract});
                         memory{err_code} = r.err_code
                         memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
+                    "
+                )
+            }
+            Hint::Invoke { contract_address , function_name, calldata, err_code} => {
+                writedoc!(
+                    f,
+                    "
+                        r = invoke(contract_address={contract_address}, function_name={function_name}, calldata={calldata});
+                        memory{err_code} = r.err_code
                     "
                 )
             }

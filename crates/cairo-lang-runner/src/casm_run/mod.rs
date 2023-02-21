@@ -307,6 +307,7 @@ impl HintProcessor for CairoHintProcessor {
             &Hint::Warp { .. } => todo!(),
             &Hint::Declare { .. } => todo!(),
             &Hint::StartPrank { .. } => todo!(),
+            &Hint::Invoke { .. } => todo!(),
             Hint::AllocDictFeltTo { dict_manager_ptr } => {
                 let (cell, base_offset) = extract_buffer(dict_manager_ptr);
                 let dict_manager_address = get_ptr(cell, &base_offset)?;

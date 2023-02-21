@@ -7,7 +7,10 @@ use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
 };
 
-use super::felt::FeltType;
+use super::{
+    felt::FeltType,
+    array::ArrayType,
+};
 
 define_libfunc_hierarchy! {
     pub enum CheatcodesLibFunc {
@@ -15,6 +18,7 @@ define_libfunc_hierarchy! {
         Warp(WarpLibFunc),
         Declare(DeclareLibFunc),
         StartPrank(StartPrankLibFunc),
+        Invoke(InvokeLibFunc),
     }, CheatcodesConcreteLibFunc
 }
 
@@ -154,6 +158,51 @@ impl NoGenericArgsGenericLibfunc for StartPrankLibFunc {
                 // caller_address
                 ParamSignature::new(felt_ty.clone()),
                 // target_contract_address
+                ParamSignature::new(felt_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success branch
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Failure branch
+                BranchSignature {
+                    vars: vec![
+                        // Error reason
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+
+
+/// LibFunc for creating a new array.
+#[derive(Default)]
+pub struct InvokeLibFunc {}
+impl NoGenericArgsGenericLibfunc for InvokeLibFunc {
+    const STR_ID: &'static str = "invoke";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // contract_address
+                ParamSignature::new(felt_ty.clone()),
+                // function_name
+                ParamSignature::new(felt_ty.clone()),
+                // calldata
                 ParamSignature::new(felt_ty.clone()),
             ],
             branch_signatures: vec![
