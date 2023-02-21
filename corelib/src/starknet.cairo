@@ -1,6 +1,6 @@
 use box::Box;
 use option::OptionTrait;
-use span::Span;
+use array::Span;
 use traits::Into;
 use traits::TryInto;
 use zeroable::Zeroable;
