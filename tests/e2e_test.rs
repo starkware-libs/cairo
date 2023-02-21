@@ -29,7 +29,6 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         u128: "u128",
         bool: "bool",
         enum_: "enum",
-        span: "span",
         enum_snapshot: "enum_snapshot",
     },
     SmallE2ETestRunner
