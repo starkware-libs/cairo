@@ -1,0 +1,288 @@
+//! > Span.len
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use span::SpanTrait;
+
+fn foo(a: Span::<felt>) -> usize {
+    a.len()
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type felt = felt;
+type Array<felt> = Array<felt>;
+type Snapshot<Array<felt>> = Snapshot<Array<felt>>;
+type core::span::Span::<core::felt> = Struct<ut@core::span::Span::<core::felt>, Snapshot<Array<felt>>>;
+type u32 = u32;
+
+libfunc struct_deconstruct<core::span::Span::<core::felt>> = struct_deconstruct<core::span::Span::<core::felt>>;
+libfunc array_len<felt> = array_len<felt>;
+libfunc store_temp<u32> = store_temp<u32>;
+
+struct_deconstruct<core::span::Span::<core::felt>>([0]) -> ([1]);
+array_len<felt>([1]) -> ([2]);
+store_temp<u32>([2]) -> ([3]);
+return([3]);
+
+test::foo@0([0]: core::span::Span::<core::felt>) -> (u32);
+
+//! > ==========================================================================
+
+//! > Span.get
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use span::SpanTrait;
+
+fn foo(a: Span::<felt>) -> Option::<@felt> {
+    a.get(1_u32)
+}
+
+//! > casm
+[ap + 0] = 1, ap++;
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+%{ memory[ap + 0] = memory[ap + -2] < memory[ap + -1] %}
+jmp rel 6 if [ap + 0] != 0, ap++;
+[ap + -3] = [ap + 0] + [ap + -2], ap++;
+[ap + -3] = [[fp + -5] + 0];
+jmp rel 14;
+[ap + 0] = [ap + -3] + 1, ap++;
+[ap + -1] = [ap + 0] + [ap + -3], ap++;
+[ap + -2] = [[fp + -5] + 0];
+[ap + 0] = [fp + -4] + [ap + -5], ap++;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[ap + -3] + 0], ap++;
+jmp rel 10;
+ap += 2;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1170})
+
+//! > sierra_code
+type u32 = u32;
+type felt = felt;
+type Array<felt> = Array<felt>;
+type Snapshot<Array<felt>> = Snapshot<Array<felt>>;
+type core::span::Span::<core::felt> = Struct<ut@core::span::Span::<core::felt>, Snapshot<Array<felt>>>;
+type RangeCheck = RangeCheck;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<@core::felt> = Enum<ut@core::option::Option::<@core::felt>, felt, Unit>;
+
+libfunc u32_const<1> = u32_const<1>;
+libfunc struct_deconstruct<core::span::Span::<core::felt>> = struct_deconstruct<core::span::Span::<core::felt>>;
+libfunc store_temp<u32> = store_temp<u32>;
+libfunc array_get<felt> = array_get<felt>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<@core::felt>, 0> = enum_init<core::option::Option::<@core::felt>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<@core::felt>> = store_temp<core::option::Option::<@core::felt>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<@core::felt>, 1> = enum_init<core::option::Option::<@core::felt>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<@core::felt>> = rename<core::option::Option::<@core::felt>>;
+
+u32_const<1>() -> ([2]);
+struct_deconstruct<core::span::Span::<core::felt>>([1]) -> ([3]);
+store_temp<u32>([2]) -> ([2]);
+array_get<felt>([0], [3], [2]) { fallthrough([4], [5]) 9([6]) };
+branch_align() -> ();
+enum_init<core::option::Option::<@core::felt>, 0>([5]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([8]);
+store_temp<core::option::Option::<@core::felt>>([7]) -> ([9]);
+jump() { 14() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([10]);
+enum_init<core::option::Option::<@core::felt>, 1>([10]) -> ([11]);
+store_temp<RangeCheck>([6]) -> ([8]);
+store_temp<core::option::Option::<@core::felt>>([11]) -> ([9]);
+rename<RangeCheck>([8]) -> ([12]);
+rename<core::option::Option::<@core::felt>>([9]) -> ([13]);
+return([12], [13]);
+
+test::foo@0([0]: RangeCheck, [1]: core::span::Span::<core::felt>) -> (RangeCheck, core::option::Option::<@core::felt>);
+
+//! > ==========================================================================
+
+//! > Span.at
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use span::SpanTrait;
+
+fn foo(a: Span::<felt>) -> @felt {
+    a.at(2_u32)
+}
+
+//! > casm
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 2, ap++;
+call rel 42;
+jmp rel 5 if [ap + -3] != 0;
+[ap + 0] = [ap + -2], ap++;
+jmp rel 11;
+ap += 1;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+jmp rel 8;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 0, ap++;
+jmp rel 5 if [ap + -3] != 0;
+[ap + 0] = [ap + -2], ap++;
+jmp rel 10;
+ap += 1;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+ret;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 0, ap++;
+ret;
+[fp + -4] = [ap + 0] + [fp + -5], ap++;
+%{ memory[ap + 0] = memory[fp + -3] < memory[ap + -1] %}
+jmp rel 6 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + [ap + -2], ap++;
+[ap + -3] = [[fp + -6] + 0];
+jmp rel 12;
+[ap + 0] = [fp + -3] + 1, ap++;
+[ap + -1] = [ap + 0] + [ap + -3], ap++;
+[ap + -2] = [[fp + -6] + 0];
+[ap + 0] = [fp + -5] + [fp + -3], ap++;
+[ap + 0] = [fp + -6] + 1, ap++;
+[ap + 0] = [[ap + -2] + 0], ap++;
+jmp rel 17;
+ap += 2;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 1637570914057682275393755530660268060279989363, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [fp + -6] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -5] + 1, ap++;
+ret;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 3400})
+core::array::array_at::<core::felt>: OrderedHashMap({Const: 1390})
+
+//! > sierra_code
+type u32 = u32;
+type felt = felt;
+type Array<felt> = Array<felt>;
+type Snapshot<Array<felt>> = Snapshot<Array<felt>>;
+type core::span::Span::<core::felt> = Struct<ut@core::span::Span::<core::felt>, Snapshot<Array<felt>>>;
+type RangeCheck = RangeCheck;
+type core::PanicResult::<@core::felt> = Enum<ut@core::PanicResult::<@core::felt>, felt, Array<felt>>;
+type Unit = Struct<ut@Tuple>;
+
+libfunc u32_const<2> = u32_const<2>;
+libfunc struct_deconstruct<core::span::Span::<core::felt>> = struct_deconstruct<core::span::Span::<core::felt>>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<Snapshot<Array<felt>>> = store_temp<Snapshot<Array<felt>>>;
+libfunc store_temp<u32> = store_temp<u32>;
+libfunc function_call<user@core::array::array_at::<core::felt>> = function_call<user@core::array::array_at::<core::felt>>;
+libfunc enum_match<core::PanicResult::<@core::felt>> = enum_match<core::PanicResult::<@core::felt>>;
+libfunc branch_align = branch_align;
+libfunc store_temp<felt> = store_temp<felt>;
+libfunc jump = jump;
+libfunc enum_init<core::PanicResult::<@core::felt>, 1> = enum_init<core::PanicResult::<@core::felt>, 1>;
+libfunc store_temp<core::PanicResult::<@core::felt>> = store_temp<core::PanicResult::<@core::felt>>;
+libfunc enum_init<core::PanicResult::<@core::felt>, 0> = enum_init<core::PanicResult::<@core::felt>, 0>;
+libfunc array_get<felt> = array_get<felt>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc array_new<felt> = array_new<felt>;
+libfunc felt_const<1637570914057682275393755530660268060279989363> = felt_const<1637570914057682275393755530660268060279989363>;
+libfunc array_append<felt> = array_append<felt>;
+
+u32_const<2>() -> ([2]);
+struct_deconstruct<core::span::Span::<core::felt>>([1]) -> ([3]);
+store_temp<RangeCheck>([0]) -> ([6]);
+store_temp<Snapshot<Array<felt>>>([3]) -> ([7]);
+store_temp<u32>([2]) -> ([8]);
+function_call<user@core::array::array_at::<core::felt>>([6], [7], [8]) -> ([4], [5]);
+enum_match<core::PanicResult::<@core::felt>>([5]) { fallthrough([9]) 10([10]) };
+branch_align() -> ();
+store_temp<felt>([9]) -> ([11]);
+jump() { 15() };
+branch_align() -> ();
+enum_init<core::PanicResult::<@core::felt>, 1>([10]) -> ([12]);
+store_temp<RangeCheck>([4]) -> ([13]);
+store_temp<core::PanicResult::<@core::felt>>([12]) -> ([14]);
+jump() { 18() };
+enum_init<core::PanicResult::<@core::felt>, 0>([11]) -> ([15]);
+store_temp<RangeCheck>([4]) -> ([13]);
+store_temp<core::PanicResult::<@core::felt>>([15]) -> ([14]);
+enum_match<core::PanicResult::<@core::felt>>([14]) { fallthrough([16]) 22([17]) };
+branch_align() -> ();
+store_temp<felt>([16]) -> ([18]);
+jump() { 27() };
+branch_align() -> ();
+enum_init<core::PanicResult::<@core::felt>, 1>([17]) -> ([19]);
+store_temp<RangeCheck>([13]) -> ([20]);
+store_temp<core::PanicResult::<@core::felt>>([19]) -> ([21]);
+return([20], [21]);
+enum_init<core::PanicResult::<@core::felt>, 0>([18]) -> ([22]);
+store_temp<RangeCheck>([13]) -> ([23]);
+store_temp<core::PanicResult::<@core::felt>>([22]) -> ([24]);
+return([23], [24]);
+array_get<felt>([0], [1], [2]) { fallthrough([3], [4]) 36([5]) };
+branch_align() -> ();
+store_temp<RangeCheck>([3]) -> ([6]);
+store_temp<felt>([4]) -> ([7]);
+jump() { 47() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([8]);
+drop<Unit>([8]) -> ();
+array_new<felt>() -> ([9]);
+felt_const<1637570914057682275393755530660268060279989363>() -> ([10]);
+store_temp<felt>([10]) -> ([10]);
+array_append<felt>([9], [10]) -> ([11]);
+enum_init<core::PanicResult::<@core::felt>, 1>([11]) -> ([12]);
+store_temp<RangeCheck>([5]) -> ([13]);
+store_temp<core::PanicResult::<@core::felt>>([12]) -> ([14]);
+return([13], [14]);
+enum_init<core::PanicResult::<@core::felt>, 0>([7]) -> ([15]);
+store_temp<RangeCheck>([6]) -> ([16]);
+store_temp<core::PanicResult::<@core::felt>>([15]) -> ([17]);
+return([16], [17]);
+
+test::foo@0([0]: RangeCheck, [1]: core::span::Span::<core::felt>) -> (RangeCheck, core::PanicResult::<@core::felt>);
+core::array::array_at::<core::felt>@31([0]: RangeCheck, [1]: Snapshot<Array<felt>>, [2]: u32) -> (RangeCheck, core::PanicResult::<@core::felt>);

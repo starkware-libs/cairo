@@ -29,7 +29,6 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         u128: "u128",
         bool: "bool",
         enum_: "enum",
-        span: "span",
         enum_snapshot: "enum_snapshot",
     },
     SmallE2ETestRunner
@@ -43,6 +42,15 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         interoperability: "interoperability",
         emit_event: "emit_event",
         getters: "getters",
+    },
+    SmallE2ETestRunner
+);
+
+cairo_lang_test_utils::test_file_test_with_runner!(
+    corelib_e2e,
+    "e2e_test_data/corelib",
+    {
+        span: "span",
     },
     SmallE2ETestRunner
 );

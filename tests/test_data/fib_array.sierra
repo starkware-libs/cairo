@@ -74,7 +74,7 @@ libfunc store_temp<core::PanicResult::<@core::felt>> = store_temp<core::PanicRes
 libfunc enum_init<core::PanicResult::<@core::felt>, 0> = enum_init<core::PanicResult::<@core::felt>, 0>;
 libfunc enum_match<core::result::Result::<core::integer::u32, core::integer::u32>> = enum_match<core::result::Result::<core::integer::u32, core::integer::u32>>;
 libfunc array_get<felt> = array_get<felt>;
-libfunc felt_const<1459518160254581538105416103334897598843479155> = felt_const<1459518160254581538105416103334897598843479155>;
+libfunc felt_const<1637570914057682275393755530660268060279989363> = felt_const<1637570914057682275393755530660268060279989363>;
 
 revoke_ap_tracking() -> ();
 array_new<felt>() -> ([2]);
@@ -340,7 +340,7 @@ branch_align() -> ();
 struct_construct<Unit>() -> ([8]);
 drop<Unit>([8]) -> ();
 array_new<felt>() -> ([9]);
-felt_const<1459518160254581538105416103334897598843479155>() -> ([10]);
+felt_const<1637570914057682275393755530660268060279989363>() -> ([10]);
 store_temp<felt>([10]) -> ([10]);
 array_append<felt>([9], [10]) -> ([11]);
 enum_init<core::PanicResult::<@core::felt>, 1>([11]) -> ([12]);
