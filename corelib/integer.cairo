@@ -766,9 +766,8 @@ fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) {
 
 
 const HALF_SHIFT : felt = 18446744073709551616;//2^64;
-//const HALF_SHIFTb  = u128_as_non_zero(18446744073709551616_u128);//2^64;
 fn u256_wide_mul(a: u256, b: u256) -> (u256, u256) implicits(RangeCheck) {
-    let HALF_SHIFTb = u128_as_non_zero(18446744073709551616_u128);//2^64;
+    //let HALF_SHIFTb = u128_as_non_zero(18446744073709551616_u128);//2^64;
     //let (a1u, a0u) = u128_safe_divmod(a.low,HALF_SHIFTb);
     let (a0u, a1u) = u128_to_u64s(a.low);
     //let (a3u, a2u) = u128_safe_divmod(a.high,HALF_SHIFTb);
