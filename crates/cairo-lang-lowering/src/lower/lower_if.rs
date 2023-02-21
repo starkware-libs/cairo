@@ -5,7 +5,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_utils::extract_matches;
 use num_traits::Zero;
-use semantic::TypeId;
+use semantic::{ExprFunctionCallArg, TypeId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
 use super::scope::{BlockBuilder, SealedBlockBuilder};
@@ -30,7 +30,10 @@ fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> If
         if function_call.function == corelib::felt_eq(ctx.db.upcast())
             && function_call.args.len() == 2
         {
-            return IfCondition::Eq(function_call.args[0], function_call.args[1]);
+            return IfCondition::Eq(
+                extract_matches!(function_call.args[0], ExprFunctionCallArg::Value),
+                extract_matches!(function_call.args[1], ExprFunctionCallArg::Value),
+            );
         };
     };
 
