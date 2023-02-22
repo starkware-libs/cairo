@@ -8,7 +8,6 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_syntax::node::ast;
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, Itertools};
 
@@ -266,9 +265,8 @@ pub struct Mapper<'a, 'b> {
     lowered: &'a FlatLowered,
     renamed_vars: HashMap<VariableId, VariableId>,
 
-    /// Auxiliary information for map_block_id.
+    /// Offset between blocks_ids in lowered and block_ids in ctx.
     block_id_offset: BlockId,
-    root_block_id: BlockId,
 }
 impl<'a, 'b> Mapper<'a, 'b> {
     /// Maps a var id from the original lowering representation to the equivalent id in the
@@ -286,12 +284,7 @@ impl<'a, 'b> Mapper<'a, 'b> {
     /// Maps a block id from the original lowering representation to the equivalent id in the
     /// new lowering representation.
     fn map_block_id(&mut self, orig_block_id: &BlockId) -> BlockId {
-        // TODO(ilya): Removing the following logic once root_block_id == 0.
-        BlockId(
-            self.block_id_offset.0
-                + orig_block_id.0
-                + if orig_block_id.0 > self.root_block_id.0 { 0 } else { 1 },
-        )
+        BlockId(self.block_id_offset.0 + orig_block_id.0)
     }
 
     /// Applies map_var_id to all the variable in the `remapping`.
@@ -365,6 +358,45 @@ impl<'a, 'b> Mapper<'a, 'b> {
                 input: self.map_var_id(&stmt.input),
                 output: self.map_var_id(&stmt.output),
             }),
+        }
+    }
+
+    /// Fixes a block by remapping var_ids and block_ids.
+    /// Returns are replaced with Goto/Fallthrough to return_block_id.
+    fn fix_block_end(
+        &mut self,
+        block_end: &FlatBlockEnd,
+        return_block_id: BlockId,
+        outputs: &[id_arena::Id<crate::Variable>],
+        should_fallthrough: bool,
+    ) -> FlatBlockEnd {
+        match block_end {
+            FlatBlockEnd::Callsite(remapping) => {
+                FlatBlockEnd::Callsite(self.update_remapping(remapping))
+            }
+            FlatBlockEnd::Return(returns) => {
+                let remapping = VarRemapping {
+                    remapping: OrderedHashMap::from_iter(izip!(
+                        outputs.iter().cloned(),
+                        returns.iter().map(|var_id| self.map_var_id(var_id)),
+                    )),
+                };
+                if should_fallthrough {
+                    FlatBlockEnd::Fallthrough(return_block_id, remapping)
+                } else {
+                    FlatBlockEnd::Goto(return_block_id, remapping)
+                }
+            }
+
+            FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
+            FlatBlockEnd::Fallthrough(target_block_id, remapping) => FlatBlockEnd::Fallthrough(
+                self.map_block_id(target_block_id),
+                self.update_remapping(remapping),
+            ),
+            FlatBlockEnd::Goto(target_block_id, remapping) => FlatBlockEnd::Goto(
+                self.map_block_id(target_block_id),
+                self.update_remapping(remapping),
+            ),
         }
     }
 }
@@ -474,56 +506,36 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 root_block.inputs.iter().cloned(),
                 inputs.iter().cloned()
             )),
-            block_id_offset: return_block_id,
-            root_block_id,
+
+            block_id_offset: BlockId(return_block_id.0 + 1),
         };
 
-        self.block_end = FlatBlockEnd::Fallthrough(
-            return_block_id,
-            VarRemapping {
-                remapping: OrderedHashMap::from_iter(izip!(
-                    outputs.iter().cloned(),
-                    extract_matches!(&root_block.end, FlatBlockEnd::Return)
-                        .iter()
-                        .map(|var_id| mapper.map_var_id(var_id)),
-                )),
-            },
-        );
+        // The current block should Fallthrough to the root block of the inlined function.
+        // Note that we can't remap the inputs as they might be used after we return
+        // from the inlined function.
+        // TODO(ilya): Try to use var remapping instead of renaming for the inputs to
+        // keep track of the correct Variable.location.
+        self.block_end =
+            FlatBlockEnd::Fallthrough(mapper.map_block_id(&root_block_id), VarRemapping::default());
 
         for (block_id, block) in lowered.blocks.iter() {
-            if block_id == root_block_id {
-                continue;
-            }
-            let end = match &block.end {
-                FlatBlockEnd::Callsite(remapping) => {
-                    FlatBlockEnd::Callsite(mapper.update_remapping(remapping))
-                }
-                FlatBlockEnd::Return(returns) => FlatBlockEnd::Goto(
-                    return_block_id,
-                    VarRemapping {
-                        remapping: OrderedHashMap::from_iter(izip!(
-                            outputs.iter().cloned(),
-                            returns.iter().map(|var_id| mapper.map_var_id(var_id)),
-                        )),
-                    },
-                ),
-
-                FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
-                FlatBlockEnd::Fallthrough(block_id, remapping)
-                | FlatBlockEnd::Goto(block_id, remapping) => FlatBlockEnd::Goto(
-                    mapper.map_block_id(block_id),
-                    mapper.update_remapping(remapping),
-                ),
-            };
+            // The root block should end with Fallthrough and not Goto.
+            let should_fallthrough = block_id == root_block_id;
 
             let new_block = FlatBlock {
-                inputs: block.inputs.iter().map(|v| mapper.map_var_id(v)).collect(),
+                inputs: if block_id == root_block_id {
+                    // We need to clear the inputs from the root block as it no longer
+                    // a root block of a function, it receives its inputs from the previous blocks.
+                    vec![]
+                } else {
+                    block.inputs.iter().map(|v| mapper.map_var_id(v)).collect()
+                },
                 statements: block
                     .statements
                     .iter()
                     .map(|statement| mapper.rebuild_statement(statement))
                     .collect_vec(),
-                end,
+                end: mapper.fix_block_end(&block.end, return_block_id, outputs, should_fallthrough),
             };
             assert_eq!(
                 mapper.map_block_id(&block_id),
@@ -531,10 +543,6 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 "Unexpected block_id."
             );
         }
-
-        self.statement_rewrite_stack.push_statements(
-            root_block.statements.iter().map(|statement| mapper.rebuild_statement(statement)),
-        );
 
         Ok(())
     }
