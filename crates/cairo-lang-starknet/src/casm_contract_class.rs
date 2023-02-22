@@ -3,6 +3,7 @@
 mod test;
 
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
@@ -111,7 +112,14 @@ impl CasmContractClass {
         }
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter(
-            [RangeCheckType::ID, PedersenType::ID, GasBuiltinType::ID, SystemType::ID].into_iter(),
+            [
+                RangeCheckType::ID,
+                PedersenType::ID,
+                EcOpType::ID,
+                GasBuiltinType::ID,
+                SystemType::ID,
+            ]
+            .into_iter(),
         );
         let name_by_short_id = UnorderedHashMap::<u64, String>::from_iter(
             program
