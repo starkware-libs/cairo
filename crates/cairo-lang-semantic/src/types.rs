@@ -93,6 +93,14 @@ impl TypeId {
     pub fn is_missing(&self, db: &dyn SemanticGroup) -> bool {
         self.check_not_missing(db).is_err()
     }
+
+    /// Returns `true` if the type is `()`.
+    pub fn is_unit_type(&self, db: &dyn SemanticGroup) -> bool {
+        match db.lookup_intern_type(*self) {
+            TypeLongId::Tuple(types) if types.is_empty() => true,
+            _ => false,
+        }
+    }
 }
 impl TypeLongId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
