@@ -34,7 +34,6 @@ pub fn lower_panics(
     if !db.function_with_body_may_panic(function_id)? {
         return Ok(FlatLowered {
             diagnostics: Default::default(),
-            root_block: lowered.root_block,
             variables: ctx.variables,
             blocks: Blocks(
                 lowered.blocks.0.iter().map(|block| block.clone().try_into().expect("")).collect(),
@@ -83,7 +82,6 @@ pub fn lower_panics(
         diagnostics: Default::default(),
         variables: ctx.ctx.variables,
         blocks: ctx.flat_blocks,
-        root_block: lowered.root_block,
     })
 }
 

@@ -336,11 +336,12 @@ fn collect_outputs(
 
 /// Collects output variables of a block when it reaches a Callsite.
 /// Returns None if Callsite is not reached.
+/// Assumes `block_id` exists in `lowered_function.blocks`.
 fn block_outputs(
     lowered_function: &lowering::FlatLowered,
-    block: &lowering::BlockId,
+    block_id: &lowering::BlockId,
 ) -> Option<Vec<id_arena::Id<lowering::Variable>>> {
-    match &lowered_function.blocks[*block].end {
+    match &lowered_function.blocks[*block_id].end {
         lowering::FlatBlockEnd::Callsite(remapping) => Some(remapping.keys().copied().collect()),
         lowering::FlatBlockEnd::Fallthrough(block_id, _) => {
             block_outputs(lowered_function, block_id)
