@@ -161,14 +161,14 @@ Inputs: v1: @core::array::Array::<core::felt>
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
-  Callsite({})
+  Callsite({v2 -> v5})
 
 blk1:
 Inputs: v3: @core::felt
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
-  Callsite({})
+  Callsite({v4 -> v5})
 
 blk2 (root):
 Inputs: v0: @test::A
