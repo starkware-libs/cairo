@@ -36927,54 +36927,74 @@
       "inputs": [
         {
           "name": "name_",
-          "ty": "core::felt"
+          "type": "core::felt"
         },
         {
           "name": "symbol_",
-          "ty": "core::felt"
+          "type": "core::felt"
         },
         {
           "name": "decimals_",
-          "ty": "core::integer::u8"
+          "type": "core::integer::u8"
         },
         {
           "name": "initial_supply",
-          "ty": "core::integer::u256"
+          "type": "core::integer::u256"
         },
         {
           "name": "recipient",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         }
       ],
-      "output_ty": "()",
+      "outputs": [],
       "state_mutability": "external"
     },
     {
       "type": "function",
       "name": "get_name",
       "inputs": [],
-      "output_ty": "core::felt",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::felt"
+        }
+      ],
       "state_mutability": "view"
     },
     {
       "type": "function",
       "name": "get_symbol",
       "inputs": [],
-      "output_ty": "core::felt",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::felt"
+        }
+      ],
       "state_mutability": "view"
     },
     {
       "type": "function",
       "name": "get_decimals",
       "inputs": [],
-      "output_ty": "core::integer::u8",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::integer::u8"
+        }
+      ],
       "state_mutability": "view"
     },
     {
       "type": "function",
       "name": "get_total_supply",
       "inputs": [],
-      "output_ty": "core::integer::u256",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::integer::u256"
+        }
+      ],
       "state_mutability": "view"
     },
     {
@@ -36983,10 +37003,15 @@
       "inputs": [
         {
           "name": "account",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         }
       ],
-      "output_ty": "core::integer::u256",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::integer::u256"
+        }
+      ],
       "state_mutability": "view"
     },
     {
@@ -36995,14 +37020,19 @@
       "inputs": [
         {
           "name": "owner",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "spender",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         }
       ],
-      "output_ty": "core::integer::u256",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::integer::u256"
+        }
+      ],
       "state_mutability": "view"
     },
     {
@@ -37011,14 +37041,14 @@
       "inputs": [
         {
           "name": "recipient",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "amount",
-          "ty": "core::integer::u256"
+          "type": "core::integer::u256"
         }
       ],
-      "output_ty": "()",
+      "outputs": [],
       "state_mutability": "external"
     },
     {
@@ -37027,18 +37057,18 @@
       "inputs": [
         {
           "name": "sender",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "recipient",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "amount",
-          "ty": "core::integer::u256"
+          "type": "core::integer::u256"
         }
       ],
-      "output_ty": "()",
+      "outputs": [],
       "state_mutability": "external"
     },
     {
@@ -37047,14 +37077,14 @@
       "inputs": [
         {
           "name": "spender",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "amount",
-          "ty": "core::integer::u256"
+          "type": "core::integer::u256"
         }
       ],
-      "output_ty": "()",
+      "outputs": [],
       "state_mutability": "external"
     },
     {
@@ -37063,14 +37093,14 @@
       "inputs": [
         {
           "name": "spender",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "added_value",
-          "ty": "core::integer::u256"
+          "type": "core::integer::u256"
         }
       ],
-      "output_ty": "()",
+      "outputs": [],
       "state_mutability": "external"
     },
     {
@@ -37079,14 +37109,14 @@
       "inputs": [
         {
           "name": "spender",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "subtracted_value",
-          "ty": "core::integer::u256"
+          "type": "core::integer::u256"
         }
       ],
-      "output_ty": "()",
+      "outputs": [],
       "state_mutability": "external"
     },
     {
@@ -37095,15 +37125,15 @@
       "inputs": [
         {
           "name": "from",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "to",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "value",
-          "ty": "core::integer::u256"
+          "type": "core::integer::u256"
         }
       ]
     },
@@ -37113,15 +37143,15 @@
       "inputs": [
         {
           "name": "owner",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "spender",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "value",
-          "ty": "core::integer::u256"
+          "type": "core::integer::u256"
         }
       ]
     }

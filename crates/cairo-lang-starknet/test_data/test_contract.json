@@ -7065,18 +7065,23 @@
       "inputs": [
         {
           "name": "arg",
-          "ty": "core::felt"
+          "type": "core::felt"
         },
         {
           "name": "arg1",
-          "ty": "core::felt"
+          "type": "core::felt"
         },
         {
           "name": "arg2",
-          "ty": "core::felt"
+          "type": "core::felt"
         }
       ],
-      "output_ty": "core::felt",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::felt"
+        }
+      ],
       "state_mutability": "external"
     },
     {
@@ -7085,14 +7090,19 @@
       "inputs": [
         {
           "name": "another_contract_address",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "a",
-          "ty": "core::integer::u128"
+          "type": "core::integer::u128"
         }
       ],
-      "output_ty": "core::integer::u128",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::integer::u128"
+        }
+      ],
       "state_mutability": "external"
     }
   ]

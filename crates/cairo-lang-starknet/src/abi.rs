@@ -63,7 +63,11 @@ impl Contract {
                 })
                 .collect(),
             // TODO(spapini): output refs?
-            output_ty: signature.return_type.format(db),
+            outputs: if signature.return_type.is_unit(db) {
+                vec![]
+            } else {
+                vec![Output { name: "".into(), ty: signature.return_type.format(db) }]
+            },
             state_mutability,
         }));
 
@@ -145,7 +149,7 @@ pub enum StateMutability {
 pub struct Function {
     pub name: String,
     pub inputs: Vec<Input>,
-    pub output_ty: String,
+    pub outputs: Vec<Output>,
     pub state_mutability: StateMutability,
 }
 
@@ -160,5 +164,14 @@ pub struct Event {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Input {
     pub name: String,
+    #[serde(rename = "type")]
+    pub ty: String,
+}
+
+/// Function Output ABI.
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Output {
+    pub name: String,
+    #[serde(rename = "type")]
     pub ty: String,
 }
