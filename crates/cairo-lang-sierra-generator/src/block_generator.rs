@@ -148,6 +148,7 @@ pub fn generate_block_code(
             Ok((statements, false))
         }
         lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),
+        lowering::FlatBlockEnd::NotSet => unreachable!(),
     }
 }
 

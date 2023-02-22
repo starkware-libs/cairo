@@ -72,6 +72,21 @@ pub struct StructuredBlock {
     /// Describes how this block ends: returns to the caller or exits the function.
     pub end: StructuredBlockEnd,
 }
+impl Default for StructuredBlock {
+    fn default() -> Self {
+        Self {
+            initial_refs: Default::default(),
+            inputs: Default::default(),
+            statements: Default::default(),
+            end: StructuredBlockEnd::NotSet,
+        }
+    }
+}
+impl StructuredBlock {
+    pub fn is_set(&self) -> bool {
+        !matches!(self.end, StructuredBlockEnd::NotSet)
+    }
+}
 
 /// Remapping of lowered variable ids. Useful for convergence of branches.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -95,8 +110,13 @@ impl DerefMut for VarRemapping {
 /// Describes what happens to the program flow at the end of a [`StructuredBlock`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StructuredBlockEnd {
+    /// The block was created but still needs to be populated. Block must not be in this state in
+    /// the end of the lowering phase.
+    NotSet,
     /// This block returns to the call-site, remapping variables to the call-site.
     Callsite(VarRemapping),
+    /// This block ends with a jump to a different block.
+    Fallthrough { target: BlockId, remapping: VarRemapping },
     /// This block ends with a `return` statement, exiting the function.
     Return { refs: Vec<VariableId>, returns: Vec<VariableId> },
     /// This block ends with a `panic` statement, exiting the function.
@@ -120,10 +140,27 @@ pub struct FlatBlock {
     /// Describes how this block ends: returns to the caller or exits the function.
     pub end: FlatBlockEnd,
 }
+impl Default for FlatBlock {
+    fn default() -> Self {
+        Self {
+            inputs: Default::default(),
+            statements: Default::default(),
+            end: FlatBlockEnd::NotSet,
+        }
+    }
+}
+impl FlatBlock {
+    pub fn is_set(&self) -> bool {
+        !matches!(self.end, FlatBlockEnd::NotSet)
+    }
+}
 
 /// Describes what happens to the program flow at the end of a [`FlatBlock`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FlatBlockEnd {
+    /// The block was created but still needs to be populated. Block must not be in this state in
+    /// the end of the lowering phase.
+    NotSet,
     /// This block returns to the call-site, outputting variables to the call-site.
     Callsite(VarRemapping),
     /// This block ends with a `return` statement, exiting the function.
@@ -144,7 +181,7 @@ pub enum FlatBlockEnd {
 }
 
 impl TryFrom<StructuredBlock> for FlatBlock {
-    type Error = ();
+    type Error = String;
 
     fn try_from(value: StructuredBlock) -> Result<Self, Self::Error> {
         Ok(FlatBlock {
@@ -156,16 +193,24 @@ impl TryFrom<StructuredBlock> for FlatBlock {
 }
 
 impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
-    type Error = ();
+    type Error = String;
 
     fn try_from(value: StructuredBlockEnd) -> Result<Self, Self::Error> {
         Ok(match value {
             StructuredBlockEnd::Callsite(vars) => FlatBlockEnd::Callsite(vars),
+            StructuredBlockEnd::Fallthrough { target, remapping } => {
+                FlatBlockEnd::Fallthrough(target, remapping)
+            }
             StructuredBlockEnd::Return { refs, returns } => {
                 FlatBlockEnd::Return(chain!(refs.iter(), returns.iter()).copied().collect())
             }
-            StructuredBlockEnd::Panic { .. } => return Err(()),
+            StructuredBlockEnd::Panic { .. } => {
+                return Err("There should not be panic block ends in this phase".to_string());
+            }
             StructuredBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
+            StructuredBlockEnd::NotSet => {
+                return Err("There should not be blocks that are not yet set".to_string());
+            }
         })
     }
 }
