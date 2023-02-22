@@ -4,8 +4,10 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::patcher::{ModifiedNode, RewriteNode};
 use cairo_lang_syntax::node::ast::{FunctionWithBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 
+use super::consts::RAW_OUTPUT_ATTR;
 use super::utils::is_ref_param;
 
 /// Generates Cairo code for an entry point wrapper.
@@ -16,10 +18,13 @@ pub fn generate_entry_point_wrapper(
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
     let params = sig.parameters(db).elements(db);
-    let diagnostics = vec![];
+    let mut diagnostics = vec![];
     let mut arg_names = Vec::new();
     let mut arg_definitions = Vec::new();
     let mut ref_appends = Vec::new();
+
+    let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
+
     let input_data_short_err = "'Input too short for arguments'";
     for param in params {
         let arg_name = format!("__arg_{}", param.name(db).text(db));
@@ -27,6 +32,13 @@ pub fn generate_entry_point_wrapper(
         let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db);
 
         let is_ref = is_ref_param(db, &param);
+        if raw_output && is_ref {
+            diagnostics.push(PluginDiagnostic {
+                message: format!("`{RAW_OUTPUT_ATTR}` functions cannot have `ref` parameters."),
+                stable_ptr: param.modifiers(db).stable_ptr().untyped(),
+            });
+        }
+
         let ref_modifier = if is_ref { "ref " } else { "" };
         arg_names.push(format!("{ref_modifier}{arg_name}"));
         let mut_modifier = if is_ref { "mut " } else { "" };
@@ -58,23 +70,61 @@ pub fn generate_entry_point_wrapper(
         "super::$function_name$",
         HashMap::from([("function_name".to_string(), function_name.clone())]),
     );
-    let (let_res, append_res) = match sig.ret_ty(db) {
-        OptionReturnTypeClause::Empty(_) => ("", "".to_string()),
+
+    let ret_ty = sig.ret_ty(db);
+    let felt_array_type_str = "Array::<felt>";
+    let (let_res, append_res, returns_felt_array, ret_type_ptr) = match &ret_ty {
+        OptionReturnTypeClause::Empty(type_clause_ast) => {
+            ("", "".to_string(), false, type_clause_ast.stable_ptr().untyped())
+        }
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
             let ret_type_ast = ty.ty(db);
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
                 "\n            let res = ",
                 format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res);"),
+                ret_type_name == felt_array_type_str,
+                ret_type_ast.stable_ptr().untyped(),
             )
         }
     };
+
+    if raw_output && !returns_felt_array {
+        diagnostics.push(PluginDiagnostic {
+            message: format!("`{RAW_OUTPUT_ATTR}` must return `{felt_array_type_str}`"),
+            stable_ptr: ret_type_ptr,
+        });
+    }
+
     if !diagnostics.is_empty() {
         return Err(diagnostics);
     }
 
     let oog_err = "'Out of gas'";
     let input_data_long_err = "'Input too long for arguments'";
+
+    let output_handling_string = if raw_output {
+        format!("$wrapped_name$({arg_names_str})")
+    } else {
+        format!(
+            "{let_res}$wrapped_name$({arg_names_str});
+            let mut arr = array_new();
+            // References.$ref_appends$
+            // Result.{append_res}
+            arr"
+        )
+    };
+
+    let output_handling = RewriteNode::interpolate_patched(
+        &output_handling_string,
+        HashMap::from([
+            ("wrapped_name".to_string(), wrapped_name),
+            (
+                "ref_appends".to_string(),
+                RewriteNode::Modified(ModifiedNode { children: ref_appends }),
+            ),
+        ]),
+    );
 
     let arg_definitions = arg_definitions.join("\n");
     // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
@@ -109,22 +159,13 @@ pub fn generate_entry_point_wrapper(
                     panic(err_data)
                 }},
             }}
-            {let_res}$wrapped_name$({arg_names_str});
-            let mut arr = array_new();
-            // References.$ref_appends$
-            // Result.{append_res}
-            arr
+            $output_handling$
         }}"
         )
         .as_str(),
         HashMap::from([
             ("function_name".to_string(), function_name),
-            ("wrapped_name".to_string(), wrapped_name),
-            (
-                "ref_appends".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: ref_appends }),
-            ),
-            ("nothing".to_string(), RewriteNode::Text("".to_string())),
+            ("output_handling".to_string(), output_handling),
         ]),
     ))
 }

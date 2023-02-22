@@ -992,3 +992,104 @@ error: Plugin diagnostic: Only an account contract may implement `__execute__`.
  --> lib.cairo:10:8
     fn __execute__() {}
        ^*********^
+
+//! > ==========================================================================
+
+//! > Test raw_outputs diagnostics.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    #[raw_output]
+    fn foo(ref a: felt, ref b: felt) {}
+
+
+    #[external]
+    #[raw_output]
+    fn bar1(a: felt) -> felt {}
+
+    #[external]
+    #[raw_output]
+    fn bar2(a: felt) {}
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    #[raw_output]
+    fn foo(ref a: felt, ref b: felt) {}
+
+
+    #[external]
+    #[raw_output]
+    fn bar1(a: felt) -> felt {}
+
+    #[external]
+    #[raw_output]
+    fn bar2(a: felt) {}
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn foo(ref a: felt, ref b: felt);
+        #[external]
+        fn bar1(a: felt) -> felt;
+        #[external]
+        fn bar2(a: felt);
+        
+        
+    }
+
+    mod __external {
+        use starknet_serde::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+ --> lib.cairo:5:12
+    fn foo(ref a: felt, ref b: felt) {}
+           ^*^
+
+error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+ --> lib.cairo:5:25
+    fn foo(ref a: felt, ref b: felt) {}
+                        ^*^
+
+error: Plugin diagnostic: `raw_output` must return `Array::<felt>`
+ --> lib.cairo:5:38
+    fn foo(ref a: felt, ref b: felt) {}
+                                     ^
+
+error: Plugin diagnostic: `raw_output` must return `Array::<felt>`
+ --> lib.cairo:10:25
+    fn bar1(a: felt) -> felt {}
+                        ^**^
+
+error: Plugin diagnostic: `raw_output` must return `Array::<felt>`
+ --> lib.cairo:14:22
+    fn bar2(a: felt) {}
+                     ^
+
+error: Plugin diagnostic: Unexpected return type. Expected: "core::felt", found: "()".
+ --> lib.cairo:10:30
+    fn bar1(a: felt) -> felt {}
+                             ^^
