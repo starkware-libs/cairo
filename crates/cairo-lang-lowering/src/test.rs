@@ -47,8 +47,16 @@ fn test_function_lowering(
     .split();
     let structured_lowered =
         db.priv_function_with_body_lowered_structured(test_function.function_id).unwrap();
+    assert!(
+        structured_lowered.blocks.iter().all(|(_, b)| b.is_set()),
+        "There should not be any unset structured blocks"
+    );
     let lowered =
         db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
+    assert!(
+        structured_lowered.blocks.iter().all(|(_, b)| b.is_set()),
+        "There should not be any unset flat blocks"
+    );
     let diagnostics =
         db.function_with_body_lowering_diagnostics(test_function.function_id).unwrap();
 
