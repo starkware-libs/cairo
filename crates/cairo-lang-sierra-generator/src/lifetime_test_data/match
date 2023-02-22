@@ -85,14 +85,14 @@ blk1:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v1 -> v4})
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Callsite({})
+  Callsite({v3 -> v4})
 
 blk3:
 Inputs:
@@ -140,7 +140,7 @@ blk1:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v1 -> v5})
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
@@ -160,7 +160,7 @@ blk4:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v4 -> v5})
 
 blk5:
 Inputs:
@@ -225,7 +225,7 @@ blk1:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v7 -> v8})
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
@@ -244,7 +244,7 @@ blk4:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v1 -> v12})
 
 blk5:
 Inputs: v6: core::NonZero::<core::felt>
@@ -264,7 +264,7 @@ Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 1000u
 End:
-  Callsite({})
+  Callsite({v8 -> v11})
 
 blk8:
 Inputs:
