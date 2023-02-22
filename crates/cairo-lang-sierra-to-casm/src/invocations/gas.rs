@@ -6,7 +6,7 @@ use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use num_bigint::BigInt;
 
-use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
 };
@@ -20,6 +20,7 @@ pub fn build(
     match libfunc {
         GasConcreteLibfunc::TryFetchGas(_) => build_try_fetch_gas(builder),
         GasConcreteLibfunc::RefundGas(_) => build_refund_gas(builder),
+        GasConcreteLibfunc::GetAvailableGas(_) => misc::build_dup(builder),
     }
 }
 

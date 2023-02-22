@@ -105,6 +105,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Gas(libfunc) => match libfunc {
             GasConcreteLibfunc::TryFetchGas(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             GasConcreteLibfunc::RefundGas(_) => vec![ApChange::Known(0)],
+            GasConcreteLibfunc::GetAvailableGas(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint8(libfunc) => match libfunc {
             Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) => vec![ApChange::Known(0)],
