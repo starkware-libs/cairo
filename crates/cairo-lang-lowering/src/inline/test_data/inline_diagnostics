@@ -32,7 +32,7 @@ End:
   Return(v3, v1)
 
 //! > after
-blk0:
+blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
@@ -152,7 +152,7 @@ End:
   Return(v1)
 
 //! > after
-blk0:
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- test::bar(v0)
