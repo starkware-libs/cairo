@@ -348,5 +348,6 @@ fn block_outputs(
         lowering::FlatBlockEnd::Return(_)
         | lowering::FlatBlockEnd::Unreachable
         | lowering::FlatBlockEnd::Goto(_, _) => None,
+        lowering::FlatBlockEnd::NotSet => unreachable!(),
     }
 }
