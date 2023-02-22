@@ -6,35 +6,36 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(address: ContractAddress, calldata: Array::<felt>) -> starknet::SyscallResult::<Array::<felt>> {
-    starknet::call_contract_syscall(address, calldata)
+fn foo(address: ContractAddress, entry_point_selector: felt, calldata: Array::<felt>) -> starknet::SyscallResult::<Array::<felt>> {
+    starknet::call_contract_syscall(address, entry_point_selector, calldata)
 }
 
 //! > casm
 [ap + 0] = 20853273475220472486191784820, ap++;
-[ap + -1] = [[fp + -6] + 0];
-[fp + -7] = [[fp + -6] + 1];
-[fp + -5] = [[fp + -6] + 2];
-[fp + -4] = [[fp + -6] + 3];
-[fp + -3] = [[fp + -6] + 4];
-%{ syscall_handler.syscall(syscall_ptr=memory[fp + -6]) %}
-[ap + 0] = [[fp + -6] + 6], ap++;
+[ap + -1] = [[fp + -7] + 0];
+[fp + -8] = [[fp + -7] + 1];
+[fp + -6] = [[fp + -7] + 2];
+[fp + -5] = [[fp + -7] + 3];
+[fp + -4] = [[fp + -7] + 4];
+[fp + -3] = [[fp + -7] + 5];
+%{ syscall_handler.syscall(syscall_ptr=memory[fp + -7]) %}
+[ap + 0] = [[fp + -7] + 7], ap++;
 jmp rel 11 if [ap + -1] != 0;
-[ap + 0] = [[fp + -6] + 5], ap++;
-[ap + 0] = [fp + -6] + 9, ap++;
+[ap + 0] = [[fp + -7] + 6], ap++;
+[ap + 0] = [fp + -7] + 10, ap++;
 [ap + 0] = 0, ap++;
-[ap + 0] = [[fp + -6] + 7], ap++;
-[ap + 0] = [[fp + -6] + 8], ap++;
+[ap + 0] = [[fp + -7] + 8], ap++;
+[ap + 0] = [[fp + -7] + 9], ap++;
 jmp rel 9;
-[ap + 0] = [[fp + -6] + 5], ap++;
-[ap + 0] = [fp + -6] + 9, ap++;
+[ap + 0] = [[fp + -7] + 6], ap++;
+[ap + 0] = [fp + -7] + 10, ap++;
 [ap + 0] = 1, ap++;
-[ap + 0] = [[fp + -6] + 7], ap++;
-[ap + 0] = [[fp + -6] + 8], ap++;
+[ap + 0] = [[fp + -7] + 8], ap++;
+[ap + 0] = [[fp + -7] + 9], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11400})
+test::foo: OrderedHashMap({Const: 11500})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
@@ -56,24 +57,24 @@ libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
 libfunc rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>> = rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>;
 
-call_contract_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
+call_contract_syscall([0], [1], [2], [3], [4]) { fallthrough([5], [6], [7]) 7([8], [9], [10]) };
 branch_align() -> ();
-enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 0>([6]) -> ([10]);
-store_temp<GasBuiltin>([4]) -> ([11]);
-store_temp<System>([5]) -> ([12]);
-store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([10]) -> ([13]);
+enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 0>([7]) -> ([11]);
+store_temp<GasBuiltin>([5]) -> ([12]);
+store_temp<System>([6]) -> ([13]);
+store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([11]) -> ([14]);
 jump() { 12() };
 branch_align() -> ();
-enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 1>([9]) -> ([14]);
-store_temp<GasBuiltin>([7]) -> ([11]);
-store_temp<System>([8]) -> ([12]);
-store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([14]) -> ([13]);
-rename<GasBuiltin>([11]) -> ([15]);
-rename<System>([12]) -> ([16]);
-rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([13]) -> ([17]);
-return([15], [16], [17]);
+enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 1>([10]) -> ([15]);
+store_temp<GasBuiltin>([8]) -> ([12]);
+store_temp<System>([9]) -> ([13]);
+store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([15]) -> ([14]);
+rename<GasBuiltin>([12]) -> ([16]);
+rename<System>([13]) -> ([17]);
+rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([14]) -> ([18]);
+return([16], [17], [18]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: Array<felt>) -> (GasBuiltin, System, core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>);
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: felt, [4]: Array<felt>) -> (GasBuiltin, System, core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>);
 
 //! > ==========================================================================
 
