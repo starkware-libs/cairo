@@ -66,7 +66,11 @@ pub enum TypeLongId {
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
     fn option_from(other: TypeLongId) -> Option<Self> {
-        if let TypeLongId::Concrete(res) = other { Some(res) } else { None }
+        if let TypeLongId::Concrete(res) = other {
+            Some(res)
+        } else {
+            None
+        }
     }
 }
 
@@ -92,6 +96,11 @@ impl TypeId {
     /// Returns `true` if the type is [TypeLongId::Missing].
     pub fn is_missing(&self, db: &dyn SemanticGroup) -> bool {
         self.check_not_missing(db).is_err()
+    }
+
+    /// Returns `true` if the type is `()`.
+    pub fn is_unit(&self, db: &dyn SemanticGroup) -> bool {
+        matches!(db.lookup_intern_type(*self), TypeLongId::Tuple(types) if types.is_empty())
     }
 }
 impl TypeLongId {

@@ -17080,10 +17080,15 @@
       "inputs": [
         {
           "name": "class_hash",
-          "ty": "core::felt"
+          "type": "core::felt"
         }
       ],
-      "output_ty": "core::felt",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::felt"
+        }
+      ],
       "state_mutability": "external"
     },
     {
@@ -17092,18 +17097,23 @@
       "inputs": [
         {
           "name": "class_hash",
-          "ty": "core::felt"
+          "type": "core::felt"
         },
         {
           "name": "contract_address_salt",
-          "ty": "core::felt"
+          "type": "core::felt"
         },
         {
           "name": "_public_key",
-          "ty": "core::felt"
+          "type": "core::felt"
         }
       ],
-      "output_ty": "core::felt",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::felt"
+        }
+      ],
       "state_mutability": "external"
     },
     {
@@ -17112,18 +17122,23 @@
       "inputs": [
         {
           "name": "contract_address",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "entry_point_selector",
-          "ty": "core::felt"
+          "type": "core::felt"
         },
         {
           "name": "calldata",
-          "ty": "core::array::Array::<core::felt>"
+          "type": "core::array::Array::<core::felt>"
         }
       ],
-      "output_ty": "core::felt",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::felt"
+        }
+      ],
       "state_mutability": "external"
     },
     {
@@ -17132,18 +17147,23 @@
       "inputs": [
         {
           "name": "contract_address",
-          "ty": "core::starknet::contract_address::ContractAddress"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
           "name": "entry_point_selector",
-          "ty": "core::felt"
+          "type": "core::felt"
         },
         {
           "name": "calldata",
-          "ty": "core::array::Array::<core::felt>"
+          "type": "core::array::Array::<core::felt>"
         }
       ],
-      "output_ty": "core::array::Array::<core::felt>",
+      "outputs": [
+        {
+          "name": "",
+          "type": "core::array::Array::<core::felt>"
+        }
+      ],
       "state_mutability": "external"
     }
   ]
