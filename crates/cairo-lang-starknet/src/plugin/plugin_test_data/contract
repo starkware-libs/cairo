@@ -18,6 +18,12 @@ mod TestContract {
     #[external]
     fn set_something(ref arg: felt, num: felt) {}
 
+    #[external]
+    #[raw_output]
+    fn test_raw_output() -> Array::<felt> {
+        array_new()
+    }
+
     #[event]
     fn awesome_event(x: felt, data: Array::<felt>) {}
 
@@ -41,6 +47,12 @@ mod TestContract {
 
     #[external]
     fn set_something(ref arg: felt, num: felt) {}
+
+    #[external]
+    #[raw_output]
+    fn test_raw_output() -> Array::<felt> {
+        array_new()
+    }
 
     
 
@@ -71,6 +83,8 @@ mod TestContract {
         fn get_something(ref arg: felt, num: felt) -> felt;
         #[external]
         fn set_something(ref arg: felt, num: felt);
+        #[external]
+        fn test_raw_output() -> Array::<felt>;
         
         #[event]
         fn awesome_event(x: felt, data: Array::<felt>);
@@ -193,6 +207,38 @@ mod TestContract {
             serde::Serde::<felt>::serialize(ref arr, __arg_arg);
             // Result.
             arr
+        }
+        fn test_raw_output(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match try_fetch_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::ArrayTrait::is_empty(@data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match try_fetch_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            let res: Array::<felt> = super::test_raw_output();
+            res
         }
         
     }

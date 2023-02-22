@@ -992,3 +992,179 @@ error: Plugin diagnostic: Only an account contract may implement `__execute__`.
  --> lib.cairo:10:8
     fn __execute__() {}
        ^*********^
+
+//! > ==========================================================================
+
+//! > Test raw_outputs diagnostics.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    #[raw_output]
+    fn foo(ref a: felt, ref b: felt) {}
+
+
+    #[external]
+    #[raw_output]
+    fn bar1(a: felt) -> felt { 0 }
+
+    #[external]
+    #[raw_output]
+    fn bar2(a: felt) {}
+
+
+    // Should generate diagnistic as path resolving is not supported.
+    #[external]
+    #[raw_output]
+    fn bar3(a: felt) -> core::Array::<felt> {
+         array_new()
+    }
+
+    // Return type with spaces, should not generate diagnostics
+    #[external]
+    #[raw_output]
+    fn bar4(a: felt) -> Array  ::  <  felt > {
+         array_new()
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    #[raw_output]
+    fn foo(ref a: felt, ref b: felt) {}
+
+
+    #[external]
+    #[raw_output]
+    fn bar1(a: felt) -> felt { 0 }
+
+    #[external]
+    #[raw_output]
+    fn bar2(a: felt) {}
+
+
+    // Should generate diagnistic as path resolving is not supported.
+    #[external]
+    #[raw_output]
+    fn bar3(a: felt) -> core::Array::<felt> {
+         array_new()
+    }
+
+    // Return type with spaces, should not generate diagnostics
+    #[external]
+    #[raw_output]
+    fn bar4(a: felt) -> Array  ::  <  felt > {
+         array_new()
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn foo(ref a: felt, ref b: felt);
+        #[external]
+        fn bar1(a: felt) -> felt;
+        #[external]
+        fn bar2(a: felt);
+        #[external]
+        fn bar3(a: felt) -> core::Array::<felt>;
+        #[external]
+        fn bar4(a: felt) -> Array  ::  <  felt >;
+        
+        
+    }
+
+    mod __external {
+        use starknet_serde::ContractAddressSerde;
+
+        fn bar4(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match try_fetch_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_a =
+                match serde::Serde::<felt>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::ArrayTrait::is_empty(@data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match try_fetch_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            let res: Array::<felt> = super::bar4(__arg_a);
+            res
+        }
+        
+    }
+
+    mod __constructor {
+        use starknet_serde::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+ --> lib.cairo:5:12
+    fn foo(ref a: felt, ref b: felt) {}
+           ^*^
+
+error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+ --> lib.cairo:5:25
+    fn foo(ref a: felt, ref b: felt) {}
+                        ^*^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:5:38
+    fn foo(ref a: felt, ref b: felt) {}
+                                     ^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:10:25
+    fn bar1(a: felt) -> felt { 0 }
+                        ^**^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:14:22
+    fn bar2(a: felt) {}
+                     ^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:20:25
+    fn bar3(a: felt) -> core::Array::<felt> {
+                        ^*****************^
