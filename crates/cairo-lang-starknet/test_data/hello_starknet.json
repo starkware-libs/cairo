@@ -3837,17 +3837,21 @@
       "inputs": [
         {
           "name": "amount",
-          "ty": "core::felt"
+          "type": "core::felt"
         }
       ],
-      "output_ty": "()",
+      "outputs": [],
       "state_mutability": "external"
     },
     {
       "type": "function",
       "name": "get_balance",
       "inputs": [],
-      "output_ty": "core::felt",
+      "outputs": [
+        {
+          "type": "core::felt"
+        }
+      ],
       "state_mutability": "view"
     }
   ]
