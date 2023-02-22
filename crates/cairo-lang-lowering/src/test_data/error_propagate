@@ -84,7 +84,7 @@ blk2:
 Inputs: v5: core::integer::u128
 Statements:
 End:
-  Callsite({})
+  Callsite({v5 -> v8})
 
 blk3:
 Inputs: v6: core::felt

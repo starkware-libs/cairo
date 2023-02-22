@@ -219,7 +219,7 @@ blk2:
 Inputs: v11: core::felt
 Statements:
 End:
-  Callsite({})
+  Callsite({v11 -> v15})
 
 blk3:
 Inputs: v12: core::felt
@@ -280,7 +280,7 @@ blk11:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v8 -> v9})
 
 blk12:
 Inputs:
@@ -293,7 +293,7 @@ blk13:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v14 -> v15})
 
 blk14:
 Inputs:

@@ -177,7 +177,7 @@ Statements:
 End:
   Callsite({})
 
-blk2 (root):
+blk2:
 Inputs: v0: test::ACopy, v1: test::ADrop
 Statements:
   (v2: ()) <- struct_construct()
@@ -245,7 +245,7 @@ End:
   Return(v1, v3)
 
 //! > lowering_flat
-blk0 (root):
+blk0:
 Inputs: v0: test::ADrop, v1: test::ADrop
 Statements:
   () <- test::use_a_drop(v0)
@@ -263,7 +263,7 @@ blk1:
 Inputs: v5: ()
 Statements:
 End:
-  Callsite({})
+  Callsite({v5 -> v2})
 
 blk2:
 Inputs: v6: core::array::Array::<core::felt>
@@ -314,7 +314,7 @@ End:
   Return(v0, v4)
 
 //! > lowering_flat
-blk0 (root):
+blk0:
 Inputs: v0: test::Query::<core::felt>, v1: core::felt
 Statements:
   (v2: core::array::Array::<core::felt>) <- struct_destructure(v0)

@@ -39,7 +39,7 @@ Inputs:
 Statements:
   (v1: core::felt) <- 1u
 End:
-  Callsite({})
+  Callsite({v1 -> v5})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
@@ -47,7 +47,7 @@ Statements:
   (v3: core::felt) <- test::revoke_ap()
   (v4: core::felt) <- core::unwrap_nz::<core::felt>(v2)
 End:
-  Callsite({})
+  Callsite({v4 -> v5})
 
 blk2:
 Inputs:
@@ -261,7 +261,7 @@ Inputs:
 Statements:
   (v2: core::felt) <- 1u
 End:
-  Callsite({})
+  Callsite({v2 -> v6})
 
 blk1:
 Inputs: v3: core::NonZero::<core::felt>
@@ -276,14 +276,14 @@ Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
-  Callsite({})
+  Callsite({v8 -> v11})
 
 blk3:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 2u
 End:
-  Callsite({})
+  Callsite({v10 -> v11})
 
 blk4 (root):
 Inputs: v0: core::felt
