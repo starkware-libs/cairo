@@ -213,7 +213,7 @@ pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
     let mut diagnostics = LoweringDiagnostics::new(module_file_id);
     diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
 
-    if let Ok(root) = lowered.root {
+    if let Ok(root) = lowered.root_block {
         let mut checker = BorrowChecker {
             diagnostics: &mut diagnostics,
             lowered,
@@ -228,7 +228,7 @@ pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
             lowered.blocks[block_id].end = new_end;
         }
         if !success {
-            lowered.root = Err(skip_diagnostic());
+            lowered.root_block = Err(skip_diagnostic());
         }
     }
 

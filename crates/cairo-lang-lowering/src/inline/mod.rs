@@ -8,7 +8,6 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_syntax::node::ast;
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, Itertools};
 
@@ -16,12 +15,8 @@ use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
-use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall, StatementDesnap,
-    StatementEnumConstruct, StatementLiteral, StatementMatchEnum, StatementMatchExtern,
-    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
-    VariableId,
-};
+use crate::utils::{Rebuilder, RebuilderEx};
+use crate::{BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, VarRemapping, VariableId};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum InlineConfiguration {
@@ -44,7 +39,7 @@ pub struct PrivInlineData {
 #[derive(Debug, PartialEq, Eq)]
 pub struct InlineInfo {
     // Indicates that the function can be inlined.
-    pub is_inlineable: bool,
+    pub is_inlinable: bool,
     // Indicates that the function should be inlined.
     pub should_inline: bool,
 }
@@ -57,7 +52,7 @@ pub fn priv_inline_data(
     let config = parse_inline_attribute(db, &mut diagnostics, function_id)?;
 
     let info = if config == InlineConfiguration::Never {
-        InlineInfo { is_inlineable: false, should_inline: false }
+        InlineInfo { is_inlinable: false, should_inline: false }
     } else {
         // If the the function is marked as #[inline(always)], we need to report
         // inlining problems.
@@ -76,7 +71,7 @@ fn gather_inlining_info(
     report_diagnostics: bool,
     function_id: FunctionWithBodyId,
 ) -> Maybe<InlineInfo> {
-    let mut info = InlineInfo { is_inlineable: false, should_inline: false };
+    let mut info = InlineInfo { is_inlinable: false, should_inline: false };
     let defs_db = db.upcast();
     if db
             .function_with_body_direct_function_with_body_callees(function_id)?
@@ -95,7 +90,7 @@ fn gather_inlining_info(
     }
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
-    let root_block_id = lowered.root?;
+    let root_block_id = lowered.root_block?;
 
     for (block_id, block) in lowered.blocks.iter() {
         match &block.end {
@@ -120,7 +115,7 @@ fn gather_inlining_info(
         };
     }
 
-    info.is_inlineable = true;
+    info.is_inlinable = true;
     info.should_inline = should_inline(db, &lowered)?;
 
     Ok(info)
@@ -128,7 +123,7 @@ fn gather_inlining_info(
 
 // A heuristic to decide if a function should be inlined.
 fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
-    let root_block_id = lowered.root?;
+    let root_block_id = lowered.root_block?;
     let root_block = &lowered.blocks[root_block_id];
 
     match &root_block.end {
@@ -218,7 +213,7 @@ impl StatementStack {
     ///
     /// Note that to keep the order of the statements when they are popped from the stack
     /// they need to be pushed in reverse order.
-    fn push_statments(&mut self, statements: impl DoubleEndedIterator<Item = Statement>) {
+    fn push_statements(&mut self, statements: impl DoubleEndedIterator<Item = Statement>) {
         self.stack.extend(statements.rev());
     }
 
@@ -265,113 +260,54 @@ pub struct Mapper<'a, 'b> {
     ctx: &'a mut LoweringContext<'b>,
     lowered: &'a FlatLowered,
     renamed_vars: HashMap<VariableId, VariableId>,
+    return_block_id: BlockId,
+    outputs: &'a [id_arena::Id<crate::Variable>],
 
-    /// Auxiliary information for map_block_id.
+    /// Offset between blocks_ids in lowered and block_ids in ctx.
     block_id_offset: BlockId,
-    root_block_id: BlockId,
 }
-impl<'a, 'b> Mapper<'a, 'b> {
+
+impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
     /// Maps a var id from the original lowering representation to the equivalent id in the
     /// new lowering representation.
     /// If the variable wasn't assigned an id yet, a new id is assigned.
-    pub fn map_var_id(&mut self, orig_var_id: &VariableId) -> VariableId {
-        *self.renamed_vars.entry(*orig_var_id).or_insert_with(|| {
+    fn map_var_id(&mut self, orig_var_id: VariableId) -> VariableId {
+        *self.renamed_vars.entry(orig_var_id).or_insert_with(|| {
             self.ctx.new_var(VarRequest {
-                ty: self.lowered.variables[*orig_var_id].ty,
-                location: self.lowered.variables[*orig_var_id].location,
+                ty: self.lowered.variables[orig_var_id].ty,
+                location: self.lowered.variables[orig_var_id].location,
             })
         })
     }
 
     /// Maps a block id from the original lowering representation to the equivalent id in the
     /// new lowering representation.
-    fn map_block_id(&mut self, orig_block_id: &BlockId) -> BlockId {
-        // TODO(ilya): Removing the following logic once root_block_id == 0.
-        BlockId(
-            self.block_id_offset.0
-                + orig_block_id.0
-                + if orig_block_id.0 > self.root_block_id.0 { 0 } else { 1 },
-        )
+    fn map_block_id(&mut self, orig_block_id: BlockId) -> BlockId {
+        BlockId(self.block_id_offset.0 + orig_block_id.0)
     }
 
-    /// Applies map_var_id to all the variable in the `remapping`.
-    pub fn update_remapping(&mut self, remapping: &VarRemapping) -> VarRemapping {
-        VarRemapping {
-            remapping: OrderedHashMap::from_iter(
-                remapping.iter().map(|(dst, src)| (self.map_var_id(dst), self.map_var_id(src))),
-            ),
-        }
-    }
-
-    /// Rebuilds the statement with renamed var and block ids.
-    fn rebuild_statement(&mut self, statement: &Statement) -> Statement {
-        match statement {
-            Statement::Literal(stmt) => Statement::Literal(StatementLiteral {
-                value: stmt.value.clone(),
-                output: self.map_var_id(&stmt.output),
-            }),
-            Statement::Call(stmt) => Statement::Call(StatementCall {
-                function: stmt.function,
-                inputs: stmt.inputs.iter().map(|v| self.map_var_id(v)).collect(),
-                outputs: stmt.outputs.iter().map(|v| self.map_var_id(v)).collect(),
-                location: stmt.location,
-            }),
-            Statement::MatchExtern(stmt) => Statement::MatchExtern(StatementMatchExtern {
-                function: stmt.function,
-                inputs: stmt.inputs.iter().map(|v| self.map_var_id(v)).collect(),
-                arms: stmt
-                    .arms
-                    .iter()
-                    .map(|(concrete_variant, block_id)| {
-                        (concrete_variant.clone(), self.map_block_id(block_id))
-                    })
-                    .collect(),
-                location: stmt.location,
-            }),
-            Statement::StructConstruct(stmt) => {
-                Statement::StructConstruct(StatementStructConstruct {
-                    inputs: stmt.inputs.iter().map(|v| self.map_var_id(v)).collect(),
-                    output: self.map_var_id(&stmt.output),
-                })
+    fn transform_end(&mut self, end: &mut FlatBlockEnd) {
+        match end {
+            FlatBlockEnd::Return(returns) => {
+                let remapping = VarRemapping {
+                    remapping: OrderedHashMap::from_iter(izip!(
+                        self.outputs.iter().cloned(),
+                        returns.iter().copied()
+                    )),
+                };
+                *end = FlatBlockEnd::Goto(self.return_block_id, remapping);
             }
-            Statement::StructDestructure(stmt) => {
-                Statement::StructDestructure(StatementStructDestructure {
-                    input: self.map_var_id(&stmt.input),
-                    outputs: stmt.outputs.iter().map(|v| self.map_var_id(v)).collect(),
-                })
-            }
-            Statement::EnumConstruct(stmt) => Statement::EnumConstruct(StatementEnumConstruct {
-                variant: stmt.variant.clone(),
-                input: self.map_var_id(&stmt.input),
-                output: self.map_var_id(&stmt.output),
-            }),
-            Statement::MatchEnum(stmt) => Statement::MatchEnum(StatementMatchEnum {
-                concrete_enum_id: stmt.concrete_enum_id,
-                input: self.map_var_id(&stmt.input),
-                arms: stmt
-                    .arms
-                    .iter()
-                    .map(|(concrete_variant, block_id)| {
-                        (concrete_variant.clone(), self.map_block_id(block_id))
-                    })
-                    .collect(),
-            }),
-            Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot {
-                input: self.map_var_id(&stmt.input),
-                output_original: self.map_var_id(&stmt.output_original),
-                output_snapshot: self.map_var_id(&stmt.output_snapshot),
-            }),
-            Statement::Desnap(stmt) => Statement::Desnap(StatementDesnap {
-                input: self.map_var_id(&stmt.input),
-                output: self.map_var_id(&stmt.output),
-            }),
+            FlatBlockEnd::Callsite(_)
+            | FlatBlockEnd::Unreachable
+            | FlatBlockEnd::Fallthrough(_, _)
+            | FlatBlockEnd::Goto(_, _) => {}
         }
     }
 }
 
 impl<'db> FunctionInlinerRewriter<'db> {
     fn apply(ctx: LoweringContext<'db>, flat_lower: &FlatLowered) -> Maybe<FlatLowered> {
-        let orig_root = flat_lower.root?;
+        let orig_root = flat_lower.root_block?;
         let mut rewriter = Self {
             ctx,
             block_queue: BlockQueue {
@@ -387,7 +323,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         rewriter.ctx.variables = flat_lower.variables.clone();
         while let Some(block) = rewriter.block_queue.dequeue() {
             rewriter.block_end = block.end;
-            rewriter.statement_rewrite_stack.push_statments(block.statements.into_iter());
+            rewriter.statement_rewrite_stack.push_statements(block.statements.into_iter());
 
             while let Some(statement) = rewriter.statement_rewrite_stack.pop_statement() {
                 rewriter.rewrite(statement)?;
@@ -405,7 +341,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         assert!(rewriter.ctx.diagnostics.build().is_empty());
         Ok(FlatLowered {
             diagnostics: flat_lower.diagnostics.clone(),
-            root,
+            root_block: root,
             variables: rewriter.ctx.variables,
             blocks: rewriter.block_queue.flat_blocks,
         })
@@ -425,7 +361,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     self.inlining_failed = true;
                 }
 
-                if inline_data.info.is_inlineable
+                if inline_data.info.is_inlinable
                     && (inline_data.info.should_inline
                         || inline_data.config == InlineConfiguration::Always)
                 {
@@ -450,7 +386,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         outputs: &[VariableId],
     ) -> Maybe<()> {
         let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
-        let root_block_id = lowered.root?;
+        let root_block_id = lowered.root_block?;
         let root_block = &lowered.blocks[root_block_id];
 
         // Create a new block with all the statements that follow
@@ -474,67 +410,36 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 root_block.inputs.iter().cloned(),
                 inputs.iter().cloned()
             )),
-            block_id_offset: return_block_id,
-            root_block_id,
+
+            block_id_offset: BlockId(return_block_id.0 + 1),
+            return_block_id,
+            outputs,
         };
 
-        self.block_end = FlatBlockEnd::Fallthrough(
-            return_block_id,
-            VarRemapping {
-                remapping: OrderedHashMap::from_iter(izip!(
-                    outputs.iter().cloned(),
-                    extract_matches!(&root_block.end, FlatBlockEnd::Return)
-                        .iter()
-                        .map(|var_id| mapper.map_var_id(var_id)),
-                )),
-            },
-        );
+        // The current block should Fallthrough to the root block of the inlined function.
+        // Note that we can't remap the inputs as they might be used after we return
+        // from the inlined function.
+        // TODO(ilya): Try to use var remapping instead of renaming for the inputs to
+        // keep track of the correct Variable.location.
+        self.block_end =
+            FlatBlockEnd::Fallthrough(mapper.map_block_id(root_block_id), VarRemapping::default());
 
         for (block_id, block) in lowered.blocks.iter() {
+            // The root block should end with Fallthrough and not Goto.
+            let mut block = mapper.rebuild_block(block);
             if block_id == root_block_id {
-                continue;
-            }
-            let end = match &block.end {
-                FlatBlockEnd::Callsite(remapping) => {
-                    FlatBlockEnd::Callsite(mapper.update_remapping(remapping))
+                block.inputs = vec![];
+                if let FlatBlockEnd::Goto(target, remapping) = block.end {
+                    block.end = FlatBlockEnd::Fallthrough(target, remapping);
                 }
-                FlatBlockEnd::Return(returns) => FlatBlockEnd::Goto(
-                    return_block_id,
-                    VarRemapping {
-                        remapping: OrderedHashMap::from_iter(izip!(
-                            outputs.iter().cloned(),
-                            returns.iter().map(|var_id| mapper.map_var_id(var_id)),
-                        )),
-                    },
-                ),
+            }
 
-                FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
-                FlatBlockEnd::Fallthrough(block_id, remapping)
-                | FlatBlockEnd::Goto(block_id, remapping) => FlatBlockEnd::Goto(
-                    mapper.map_block_id(block_id),
-                    mapper.update_remapping(remapping),
-                ),
-            };
-
-            let new_block = FlatBlock {
-                inputs: block.inputs.iter().map(|v| mapper.map_var_id(v)).collect(),
-                statements: block
-                    .statements
-                    .iter()
-                    .map(|statement| mapper.rebuild_statement(statement))
-                    .collect_vec(),
-                end,
-            };
             assert_eq!(
-                mapper.map_block_id(&block_id),
-                self.block_queue.enqueue_block(new_block),
+                mapper.map_block_id(block_id),
+                self.block_queue.enqueue_block(block),
                 "Unexpected block_id."
             );
         }
-
-        self.statement_rewrite_stack.push_statments(
-            root_block.statements.iter().map(|statement| mapper.rebuild_statement(statement)),
-        );
 
         Ok(())
     }

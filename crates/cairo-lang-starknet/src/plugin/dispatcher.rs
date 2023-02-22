@@ -15,6 +15,7 @@ use super::aux_data::StarkNetABIAuxData;
 use super::consts::EVENT_ATTR;
 use super::utils::is_ref_param;
 use super::ABI_ATTR;
+use crate::contract::starknet_keccak;
 
 /// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
@@ -95,6 +96,10 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     }
                 };
 
+                let entry_point_selector = RewriteNode::Text(format!(
+                    "0x{:x}",
+                    starknet_keccak(declaration.name(db).text(db).as_bytes())
+                ));
                 let mut func_declaration = RewriteNode::from_ast(&declaration);
                 func_declaration
                     .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
@@ -111,10 +116,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
 
                 functions.push(RewriteNode::interpolate_patched(
                     "$func_decl$ {
+        let entry_point_selector = $entry_point_selector$;
         let mut calldata = array_new();
 $serialization_code$
         let mut ret_data = starknet::call_contract_syscall(
             contract_address,
+            entry_point_selector,
             calldata,
         ).unwrap_syscall();
 $deserialization_code$
@@ -122,6 +129,7 @@ $deserialization_code$
 ",
                     HashMap::from([
                         ("func_decl".to_string(), func_declaration),
+                        ("entry_point_selector".to_string(), entry_point_selector),
                         (
                             "serialization_code".to_string(),
                             RewriteNode::Modified(ModifiedNode { children: serialization_code }),

@@ -13,7 +13,7 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
     libfunc: &StarkNetConcreteLibfunc,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        StarkNetConcreteLibfunc::CallContract(_) => syscall_cost(ops, 8, 8),
+        StarkNetConcreteLibfunc::CallContract(_) => syscall_cost(ops, 9, 9),
         StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_) => {
             vec![
