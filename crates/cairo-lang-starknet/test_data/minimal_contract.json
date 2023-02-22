@@ -1160,7 +1160,7 @@
       "type": "function",
       "name": "empty",
       "inputs": [],
-      "output_ty": "()",
+      "outputs": [],
       "state_mutability": "external"
     }
   ]
